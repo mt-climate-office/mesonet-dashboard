@@ -1,3 +1,4 @@
+true_start = Sys.time()
 library(RCurl)
 library(dplyr)
 library(tidyverse)
@@ -16,10 +17,10 @@ library(units)
 #   httr::content()
 
 # var name converstion
-name_conversion = read_csv("~/MCO/mesonet/name_conversion_mesonet.csv")
+name_conversion = read_csv("~/mesonet-dashboard/data/mesonet_information/name_conversion_mesonet.csv")
 
 lookup = data.frame(name = name_conversion$name,
-                        long_name = name_conversion$description)
+                    long_name = name_conversion$description)
 
 #get current frame to plot
 time = data.frame(current = Sys.time() %>% as.Date()) %>%
@@ -103,7 +104,7 @@ conversion_func = list(function(x){return(x)},
                        function(x){return(x * 3.28084)})
 
 #loop though stations
-cl = makeCluster(detectCores()-1)
+cl = makeCluster(4)
 registerDoParallel(cl)
 
 #
@@ -113,7 +114,7 @@ clusterCall(cl, function() {lapply(c("RCurl", "dplyr", "tidyverse", "plotly",
 
 start = Sys.time()
 foreach(s=1:length(stations$`Station ID`)) %dopar% {
-  source('~/MCO/R/mesonet_dynamic_rmd.R')
+  source('~/mesonet-dashboard/R/mesonet-build-rmd.R')
   url = paste0("https://cfcmesonet.cfc.umt.edu/api/observations?stations=",stations$`Station ID`[s], "&latest=false&start_time=",
                time$start, "&end_time=", time$current+1, "&tz=US%2FMountain&wide=false&type=csv")
   
@@ -176,7 +177,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
            xaxis = list(
              title = "Time"
            )) %>%
-    saveWidget(., paste0("~/MCO/data/mesonet/station_page/current_plots/",stations$`Station ID`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
+    saveWidget(., paste0("~/mesonet-dashboard/data/station_page/current_plots/",stations$`Station ID`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
   
   ## current conditions
   latest_time = latest %>%
@@ -190,19 +191,20 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     rename(Observation = long_name, Value = value_unit_new, Units = new_units)%>%
     kable(., "html", caption = paste0("Latest observation was at ", latest_time[1]$datetime %>% as.character()))%>%
     kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))%>%
-    save_kable(file = paste0("~/MCO/data/mesonet/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"),  selfcontained = F)
+    save_kable(file = paste0("~/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"),  selfcontained = F)
   
-  read_lines(paste0("~/MCO/data/mesonet/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))
+  #clean up header artifact
+  temp_html = paste(readLines(paste0("~/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))) %>%
+    gsub("<p>&lt;!DOCTYPE html&gt; ", "", .)%>%
+    writeLines(., con = paste0("~/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))
   
   #write out final page from RMD
-  mesonet_dynamic_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
-  
+  mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
 }
 
 Sys.time() - start
-
 stopCluster(cl)
-
+Sys.time() - true_start
 
 
 ## mobile Sandbox

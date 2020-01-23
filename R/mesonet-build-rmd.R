@@ -3,10 +3,7 @@ library(RCurl)
 library(dplyr)
 library(tidyverse)
 
-# stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
-#   read_csv()
-
-mesonet_dynamic_rmd = function(lat, long, station_key, station_name){
+mesonet_build_rmd = function(lat, long, station_key, station_name){
   # define weather iframe
   weather_iframe = paste0('<iframe src="https://mobile.weather.gov/index.php?lat=',lat,'&lon=',long,'" height="680px" width="100%" frameborder="0"></iframe>')
   # define plotly data iframe (web)
@@ -36,27 +33,21 @@ output:
   
 Column {.sidebar data-width=350}
 -------------------------------------
-
 ***
-
 ### {.no-mobile}
   
 <img src="https://climate.umt.edu/imx/MCO_logo.svg" width="100%">
-
 ***
   
 ### Weather & Forecast {.no-mobile}
-
-  ', weather_iframe,
-  '
-
+', weather_iframe,
+'
 Row {data-height=300}
 -------------------------------------
-
 ### Current Conditions {.no-mobile}
   
-',current_table_iframe,'
-
+', current_table_iframe,
+'
 ### Stations  {.no-mobile}
   
 <iframe width="100%" height="300" allowfullscreen="allowfullscreen" target="_parent" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" scrolling="no" src="https://mco.cfc.umt.edu/mesonet_data/simple_map/simple_mesonet_map.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>
@@ -64,21 +55,19 @@ Row {data-height=300}
 Column {.tabset .tabset-fade data-height=1600}
 -------------------------------------
 ### {.no-mobile}
-',
-  plotly_iframe,
-  '
+', plotly_iframe,
+'
 ### {.mobile .tabset .tabset-fade}
 ', plotly_mobile,
 '
-
 '),
-                             con = paste0("~/MCO/data/mesonet/station_page/", station_key, "temp.Rmd"))
-  rmarkdown::render(paste0("~/MCO/data/mesonet/station_page/", station_key, "temp.Rmd"), output_file = paste0("~/MCO/data/mesonet/station_page/", station_key, ".html"), quiet=TRUE)
-  file.remove(paste0("~/MCO/data/mesonet/station_page/", station_key, "temp.Rmd"))
+             con = paste0("~/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
+  rmarkdown::render(paste0("~/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"), output_file = paste0("~/mesonet-dashboard/data/station_page/", station_key, ".html"), quiet=TRUE)
+  file.remove(paste0("~/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
 }
 
-#mesonet_dynamic_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
+#mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
 
 # for(s in 1:length(stations$`Station name`)){
-#   mesonet_dynamic_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
+#   mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
 # }

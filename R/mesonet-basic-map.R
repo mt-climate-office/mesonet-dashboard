@@ -1,9 +1,11 @@
 library(leaflet)
+library(RCurl)
+library(tidyverse)
 
 stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
   read_csv()
 
-source("~/MCO/R/base_map.R")
+source("~/mesonet-dashboard/R/base_map.R")
 
 map = base_map() %>% addCircleMarkers(data = stations, lat = ~Latitude, lng = ~Longitude, stroke = TRUE,
                                 fillColor = "blue", fillOpacity = 0.5, color = "black", opacity = 0.8, radius = 6, weight = 2,
@@ -16,4 +18,4 @@ map = base_map() %>% addCircleMarkers(data = stations, lat = ~Latitude, lng = ~L
                             overlayGroups = c("Radar"),
                             options = leaflet::layersControlOptions(collapsed = FALSE))
 
-htmlwidgets::saveWidget(map, paste0("~/MCO/data/mesonet/simple_map/simple_mesonet_map.html"), selfcontained = F, libdir = "./libs")
+htmlwidgets::saveWidget(map, paste0("~/mesonet-dashboard/data/simple_map/simple_mesonet_map.html"), selfcontained = F, libdir = "./libs")
