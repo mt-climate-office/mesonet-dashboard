@@ -1,16 +1,16 @@
 true_start = Sys.time()
-library(RCurl)
-library(dplyr)
-library(tidyverse)
-library(tictoc)
-library(plotly)
-library(data.table)
-library(doParallel) 
-library(htmltools)
-library(htmlwidgets)
-library(knitr)
-library(kableExtra)
-library(units)
+library(RCurl) ##
+library(dplyr) ##
+library(tidyverse) ##
+library(plotly)##
+library(data.table)##
+library(doParallel) ##
+library(htmltools)##
+library(htmlwidgets)##
+library(knitr)##
+library(kableExtra)##
+library(units)##
+library(lubridate) ##
 
 # httr::GET(url = "https://cfcmesonet.cfc.umt.edu/api/latest", 
 #           query = list(stations=c("arskeogh"),type = "csv")) %>%
@@ -18,6 +18,8 @@ library(units)
 
 # var name converstion
 name_conversion = read_csv("~/mesonet-dashboard/data/mesonet_information/name_conversion_mesonet.csv")
+
+print("relative paths check")
 
 lookup = data.frame(name = name_conversion$name,
                     long_name = name_conversion$description)
