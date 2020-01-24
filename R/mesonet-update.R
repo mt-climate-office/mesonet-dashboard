@@ -203,7 +203,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     writeLines(., con = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))
   
   #write out final page from RMD
-  mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
+  #mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
 }
 
 Sys.time() - start
