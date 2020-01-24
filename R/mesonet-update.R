@@ -16,6 +16,9 @@ library(lubridate) ##
 #           query = list(stations=c("arskeogh"),type = "csv")) %>%
 #   httr::content()
 
+# var set root dir
+setwd("/home/zhoylman/")
+
 # var name converstion
 name_conversion = read_csv("~/mesonet-dashboard/data/mesonet_information/name_conversion_mesonet.csv")
 
