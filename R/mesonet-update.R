@@ -117,7 +117,7 @@ clusterCall(cl, function() {lapply(c("RCurl", "dplyr", "tidyverse", "plotly",
 
 start = Sys.time()
 foreach(s=1:length(stations$`Station ID`)) %dopar% {
-  setwd("/home/zhoylman/")
+  setwd('/home/zhoylman/')
   source('./mesonet-dashboard/R/mesonet-build-rmd.R')
   url = paste0("https://cfcmesonet.cfc.umt.edu/api/observations?stations=",stations$`Station ID`[s], "&latest=false&start_time=",
                time$start, "&end_time=", time$current+1, "&tz=US%2FMountain&wide=false&type=csv")
