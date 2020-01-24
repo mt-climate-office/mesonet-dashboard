@@ -195,7 +195,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     rename(Observation = long_name, Value = value_unit_new, Units = new_units)%>%
     kable(., "html", caption = paste0("Latest observation was at ", latest_time[1]$datetime %>% as.character()))%>%
     kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))%>%
-    save_kable(file = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"),  selfcontained = F)
+    save_kable(file = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"),  selfcontained = T)
   
   #clean up header artifact
   temp_html = paste(readLines(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))) %>%
