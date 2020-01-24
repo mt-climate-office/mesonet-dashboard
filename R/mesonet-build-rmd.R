@@ -37,8 +37,9 @@ Column {.sidebar data-width=350}
 ### {.no-mobile}
   
 <img src="https://climate.umt.edu/imx/MCO_logo.svg" width="100%">
+
 ***
-  
+
 ### Weather & Forecast {.no-mobile}
 ', weather_iframe,
 '
