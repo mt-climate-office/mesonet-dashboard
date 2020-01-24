@@ -61,9 +61,9 @@ Column {.tabset .tabset-fade data-height=1600}
 ', plotly_mobile,
 '
 '),
-             con = paste0("~/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
-  rmarkdown::render(paste0("~/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"), output_file = paste0("~/mesonet-dashboard/data/station_page/", station_key, ".html"), quiet=TRUE)
-  file.remove(paste0("~/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
+             con = paste0("./mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
+  rmarkdown::render(paste0("./mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"), output_file = paste0("./mesonet-dashboard/data/station_page/", station_key, ".html"), quiet=TRUE)
+  file.remove(paste0("./mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
 }
 
 #mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])

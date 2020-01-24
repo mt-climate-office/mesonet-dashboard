@@ -22,11 +22,6 @@ setwd("/home/zhoylman/")
 # var name converstion
 name_conversion = read_csv("./mesonet-dashboard/data/mesonet_information/name_conversion_mesonet.csv")
 
-print("relative paths check")
-print(head(name_conversion))
-source('~/mesonet-dashboard/R/mesonet-build-rmd.R')
-
-
 lookup = data.frame(name = name_conversion$name,
                     long_name = name_conversion$description)
 
@@ -122,7 +117,8 @@ clusterCall(cl, function() {lapply(c("RCurl", "dplyr", "tidyverse", "plotly",
 
 start = Sys.time()
 foreach(s=1:length(stations$`Station ID`)) %dopar% {
-  source('~/mesonet-dashboard/R/mesonet-build-rmd.R')
+  setwd("/home/zhoylman/")
+  source('./mesonet-dashboard/R/mesonet-build-rmd.R')
   url = paste0("https://cfcmesonet.cfc.umt.edu/api/observations?stations=",stations$`Station ID`[s], "&latest=false&start_time=",
                time$start, "&end_time=", time$current+1, "&tz=US%2FMountain&wide=false&type=csv")
   
@@ -185,7 +181,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
            xaxis = list(
              title = "Time"
            )) %>%
-    saveWidget(., paste0("~/mesonet-dashboard/data/station_page/current_plots/",stations$`Station ID`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
+    saveWidget(., paste0("./mesonet-dashboard/data/station_page/current_plots/",stations$`Station ID`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
   
   ## current conditions
   latest_time = latest %>%
@@ -199,12 +195,12 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     rename(Observation = long_name, Value = value_unit_new, Units = new_units)%>%
     kable(., "html", caption = paste0("Latest observation was at ", latest_time[1]$datetime %>% as.character()))%>%
     kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))%>%
-    save_kable(file = paste0("~/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"),  selfcontained = F)
+    save_kable(file = paste0("./mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"),  selfcontained = F)
   
   #clean up header artifact
-  temp_html = paste(readLines(paste0("~/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))) %>%
+  temp_html = paste(readLines(paste0("./mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))) %>%
     gsub("<p>&lt;!DOCTYPE html&gt; ", "", .)%>%
-    writeLines(., con = paste0("~/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))
+    writeLines(., con = paste0("./mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))
   
   #write out final page from RMD
   mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
