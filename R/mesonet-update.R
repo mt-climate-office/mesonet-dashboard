@@ -164,13 +164,13 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
   
   # define title annotation
   a <- list(
-    text = paste0(stations$`Station name`[s], " (", round((stations$`Elevation (masl)`[s] * 3.28084),0), " ft elevation)"),
+    text = paste0(stations$`Station name`[s], " (", round((stations$`Elevation (masl)`[s] * 3.28084),0), " ft)"),
     xref = "paper",
     yref = "paper",
     yanchor = "bottom",
     xanchor = "center",
     align = "center",
-    x = 0.5,
+    x = 0.1,
     y = 1,
     showarrow = FALSE
   )
