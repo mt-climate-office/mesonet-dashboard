@@ -143,9 +143,10 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
              as.numeric() %>%
              paste0(., " in")) %>%
     mutate(value = value * 100) %>%
-    plot_ly(x = ~datetime, y = ~value, name = ~name, color = ~name, showlegend=T, colors = "Set2") %>%
+    plot_ly(x = ~datetime, y = ~value, name = ~name, color = ~name, showlegend=F, colors = "Set2", legendgroup = ~name) %>%
     layout(yaxis = list(
-      title = paste0("Soil Moisture\n(%)"))) %>%
+      title = paste0("Soil Moisture\n(%)"),
+      legend = list(orientation = 'h'))) %>%
     add_lines()
   
   temp = data %>%
@@ -155,7 +156,8 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
              as.numeric() %>%
              paste0(., " in")) %>%
     mutate(value = conversion_func[[2]](value)) %>%
-    plot_ly(x = ~datetime, y = ~value, name = ~name, showlegend=F, color = ~name, colors = "Set2") %>%
+    plot_ly(x = ~datetime, y = ~value, name = ~name, showlegend=T, color = ~name, colors = "Set2", legendgroup = ~name) %>%
+    layout(legend = list(orientation = 'h'))%>%
     layout(yaxis = list(
       title = paste0("Soil Temperature\n(°F)"))) %>%
     add_lines()
@@ -174,13 +176,12 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
   )
   
   #combine all plots into final plot
-  final = subplot(plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 6, shareX = F, titleY = T, titleX = T) %>%
+  final = subplot(plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 6, shareX = F, titleY = T, titleX = F) %>%
+    config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"))%>%
+    config(displaylogo = FALSE)%>%
+    config(showTips = TRUE)%>%
     layout(annotations = a)%>%
     layout(height = 1500) %>%
-    layout(legend = list(x = 100, y = 0.1),
-           xaxis = list(
-             title = "Time"
-           )) %>%
     saveWidget(., paste0("/home/zhoylman/mesonet-dashboard/data/station_page/current_plots/",stations$`Station ID`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
   
   ## current conditions
