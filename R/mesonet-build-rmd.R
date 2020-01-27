@@ -13,7 +13,8 @@ mesonet_build_rmd = function(lat, long, station_key, station_name){
   plotly_iframe = paste0('<iframe width="100%" height="1600px" allowfullscreen="allowfullscreen" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" src="https://mco.cfc.umt.edu/mesonet_data/station_page/current_plots/',
                          station_key,'_current_data.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
   # define plotly data iframe (mobile)
-  plotly_mobile = paste0('<iframe width="100%" height="100%" allowfullscreen="allowfullscreen" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" scrolling="no" src="https://mco.cfc.umt.edu/mesonet_data/station_page/current_plots/mobile_test.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
+  plotly_mobile = paste0('<iframe width="110%" height="1600px" allowfullscreen="allowfullscreen" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" src="https://mco.cfc.umt.edu/mesonet_data/station_page/current_plots/',
+                         station_key,'_current_data.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
   
   writeLines(paste0('---
 title: "Montana Mesonet - ', station_name,'"
@@ -55,20 +56,26 @@ Row {data-height=300}
   
 Column {.tabset .tabset-fade data-height=1600}
 -------------------------------------
+
 ### {.no-mobile}
 ', plotly_iframe,
 '
-### {.mobile .tabset .tabset-fade}
+### {.mobile .tabset .tabset-fade data-height=300}
+', current_table_iframe,
+'
+### {.mobile .tabset .tabset-fade data-height=1600}
 ', plotly_mobile,
 '
+### {.mobile .tabset .tabset-fade data-height=300}
+<iframe width="100%" height="300" allowfullscreen="allowfullscreen" target="_parent" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" scrolling="no" src="https://mco.cfc.umt.edu/mesonet_data/simple_map/simple_mesonet_map.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>
 '),
              con = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
   rmarkdown::render(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"), output_file = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/", station_key, ".html"), quiet=TRUE)
   file.remove(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
 }
 
-#mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
-
+# mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
+# 
 # for(s in 1:length(stations$`Station name`)){
 #   mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
 # }

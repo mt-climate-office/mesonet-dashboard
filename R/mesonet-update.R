@@ -174,7 +174,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
   )
   
   #combine all plots into final plot
-  final = subplot(plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 6, shareX = T, titleY = T, titleX = T) %>%
+  final = subplot(plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 6, shareX = F, titleY = T, titleX = T) %>%
     layout(annotations = a)%>%
     layout(height = 1500) %>%
     layout(legend = list(x = 100, y = 0.1),
