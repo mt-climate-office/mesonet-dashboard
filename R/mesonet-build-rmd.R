@@ -74,7 +74,7 @@ Column {.tabset .tabset-fade data-height=1600}
   file.remove(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
 }
 
-mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
+# mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
 # 
 # for(s in 1:length(stations$`Station name`)){
 #   mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
