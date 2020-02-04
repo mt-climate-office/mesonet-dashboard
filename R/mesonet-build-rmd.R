@@ -31,7 +31,17 @@ output:
       - { title: "MCO GitHub", href: "https://github.com/mt-climate-office", align: right }
     orientation: rows
 ---
-  
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-149859729-3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag("js", new Date());
+
+  gtag("config", "UA-149859729-3");
+</script>
+
 Column {.sidebar data-width=350}
 -------------------------------------
 ***
@@ -74,7 +84,7 @@ Column {.tabset .tabset-fade data-height=1600}
   file.remove(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
 }
 
-# mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
+#mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
 # 
 # for(s in 1:length(stations$`Station name`)){
 #   mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
