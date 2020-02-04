@@ -86,6 +86,6 @@ Column {.tabset .tabset-fade data-height=1600}
 
 #mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
 # 
-# for(s in 1:length(stations$`Station name`)){
-#   mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
-# }
+for(s in 1:length(stations$`Station name`)){
+  mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
+}
