@@ -69,20 +69,6 @@ latest = getURL("https://cfcmesonet.cfc.umt.edu/api/latest?tz=US%2FMountain&wide
   mutate(new_value = round(new_value, 2)) %>%
   mutate(value_unit_new = mixed_units(new_value, new_units))
 
-#define simple plotting fuction (using units)
-# simple_plotly = function(data,name_str,col,ylab,target_unit){
-#   data %>%
-#     dplyr::filter(name == name_str) %>%
-#     mutate(value_unit = mixed_units(value, units) %>%
-#              set_units(target_unit)) %>%
-#     transform(id = as.integer(factor(name))) %>%
-#     plot_ly(x = ~datetime, y = ~value_unit, color = ~name, colors = col, showlegend=F, 
-#             yaxis = ~paste0("y", id)) %>%
-#     layout(yaxis = list(
-#       title = paste0(ylab)))%>%
-#     add_lines()
-# }
-
 #manual
 simple_plotly = function(data,name_str,col,ylab,conversion_func){
   data %>%
@@ -162,6 +148,17 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       title = paste0("Soil Temperature\n(°F)"))) %>%
     add_lines()
   
+  precip = data %>%
+    dplyr::mutate(yday = lubridate::yday(datetime)) %>%
+    dplyr::filter(name == 'precipit') %>%
+    dplyr::group_by(yday) %>%
+    dplyr::summarise(sum = sum(value)/25.4,
+                     datetime_ave = mean(datetime) %>%
+                       as.Date()) %>%
+    plot_ly(x = ~datetime_ave, y = ~sum,  showlegend=F, colors = 'blue', type = 'bar', name = 'precip') %>%
+    layout(yaxis = list(
+      title = paste0("Daily Precipitation Total\n(in)")))
+  
   # define title annotation
   a <- list(
     text = paste0(stations$`Station name`[s], " (", round((stations$`Elevation (masl)`[s] * 3.28084),0), " ft)"),
@@ -176,12 +173,12 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
   )
   
   #combine all plots into final plot
-  final = subplot(plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 6, shareX = F, titleY = T, titleX = F) %>%
+  final = subplot(precip, plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 7, shareX = F, titleY = T, titleX = F) %>%
     config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"))%>%
     config(displaylogo = FALSE)%>%
     config(showTips = TRUE)%>%
     layout(annotations = a)%>%
-    layout(height = 1500) %>%
+    layout(height = 1600) %>%
     saveWidget(., paste0("/home/zhoylman/mesonet-dashboard/data/station_page/current_plots/",stations$`Station ID`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
   
   ## current conditions

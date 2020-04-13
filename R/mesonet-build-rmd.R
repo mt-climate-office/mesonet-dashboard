@@ -9,6 +9,9 @@ mesonet_build_rmd = function(lat, long, station_key, station_name){
   # define plotly data iframe (web)
   current_table_iframe = paste0('<iframe width="100%" height="300" allowfullscreen="allowfullscreen" target="_parent" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" scrolling="yes" src="https://mco.cfc.umt.edu/mesonet_data/station_page/latest_table/', 
                                 station_key,'_current_table.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
+  #define meta table
+  meta_table_iframe = paste0('<iframe width="100%" height="300" allowfullscreen="allowfullscreen" target="_parent" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" scrolling="yes" src="https://mco.cfc.umt.edu/mesonet_data/station_page/latest_table/', 
+                                station_key,'_meta_table.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
   # define plotly data iframe (web)
   plotly_iframe = paste0('<iframe width="100%" height="1600px" allowfullscreen="allowfullscreen" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" src="https://mco.cfc.umt.edu/mesonet_data/station_page/current_plots/',
                          station_key,'_current_data.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
@@ -56,6 +59,11 @@ Column {.sidebar data-width=350}
 '
 Row {data-height=300}
 -------------------------------------
+### Station Information {.no-mobile}
+  
+', meta_table_iframe,
+'
+
 ### Current Conditions {.no-mobile}
   
 ', current_table_iframe,
@@ -73,7 +81,7 @@ Column {.tabset .tabset-fade data-height=1600}
 ### {.mobile .tabset .tabset-fade data-height=300}
 ', current_table_iframe,
 '
-### {.mobile .tabset .tabset-fade data-height=1600}
+### {.mobile .tabset .tabset-fade data-height=1700}
 ', plotly_mobile,
 '
 ### {.mobile .tabset .tabset-fade data-height=300}
