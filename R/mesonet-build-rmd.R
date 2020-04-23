@@ -13,10 +13,10 @@ mesonet_build_rmd = function(lat, long, station_key, station_name){
   meta_table_iframe = paste0('<iframe width="100%" height="300" allowfullscreen="allowfullscreen" target="_parent" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" scrolling="yes" src="https://mco.cfc.umt.edu/mesonet_data/station_page/latest_table/', 
                                 station_key,'_meta_table.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
   # define plotly data iframe (web)
-  plotly_iframe = paste0('<iframe width="100%" height="1700px" allowfullscreen="allowfullscreen" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" src="https://mco.cfc.umt.edu/mesonet_data/station_page/current_plots/',
+  plotly_iframe = paste0('<iframe width="100%" height="1750px" allowfullscreen="allowfullscreen" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" src="https://mco.cfc.umt.edu/mesonet_data/station_page/current_plots/',
                          station_key,'_current_data.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
   # define plotly data iframe (mobile)
-  plotly_mobile = paste0('<iframe width="110%" height="1700px" allowfullscreen="allowfullscreen" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" src="https://mco.cfc.umt.edu/mesonet_data/station_page/current_plots/',
+  plotly_mobile = paste0('<iframe width="110%" height="1750px" allowfullscreen="allowfullscreen" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" src="https://mco.cfc.umt.edu/mesonet_data/station_page/current_plots/',
                          station_key,'_current_data.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
   
   writeLines(paste0('---
@@ -75,7 +75,7 @@ Row {data-height=300}
 Column {.tabset .tabset-fade data-height=1800}
 -------------------------------------
 
-### {.no-mobile}
+### {.no-mobile data-height=1700}
 ', plotly_iframe,
 '
 ### {.mobile .tabset .tabset-fade data-height=300}
