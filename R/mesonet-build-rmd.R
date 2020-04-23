@@ -68,7 +68,7 @@ Row {data-height=300}
   
 ', current_table_iframe,
 '
-### Stations  {.no-mobile}
+### Choose a Station  {.no-mobile}
   
 <iframe width="100%" height="300" allowfullscreen="allowfullscreen" target="_parent" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" scrolling="no" src="https://mco.cfc.umt.edu/mesonet_data/simple_map/simple_mesonet_map.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>
   
