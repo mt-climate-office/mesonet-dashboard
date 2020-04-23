@@ -10,7 +10,7 @@ states = rgdal::readOGR("/home/zhoylman/mesonet-dashboard/data/shp/states.shp")
 #define basemap function
 base_map = function(x){
   leaflet::leaflet(options = leafletOptions(zoomControl = FALSE)) %>%
-    leaflet::addTiles("https://maps.tilehosting.com/data/hillshades/{z}/{x}/{y}.png?key=KZO7rAv96Alr8UVUrd4a") %>%
+    leaflet::addTiles("https://api.maptiler.com/tiles/hillshades/{z}/{x}/{y}.png?key=KZO7rAv96Alr8UVUrd4a") %>%
     leaflet::addProviderTiles("Stamen.TonerLines") %>%
     leaflet::addProviderTiles("Stamen.TonerLabels") %>%
     leaflet::setView(lng = -109.5, lat = 47, zoom = 5) %>%

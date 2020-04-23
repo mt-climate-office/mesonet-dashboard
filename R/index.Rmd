@@ -1,0 +1,26 @@
+---
+title: "Montana Mesonet"
+self_contained: true
+output: 
+  flexdashboard::flex_dashboard:
+    self_contained: true
+    theme: spacelab
+    navbar:
+      - { title: "MCO GitHub", href: "https://github.com/mt-climate-office", align: right }
+    orientation: rows
+---
+
+## Montana Mesonet
+
+###
+
+<center>
+#### **Welcome to the Montana Mesonet Dashboard**
+<br>
+Choose a station from the map below to see the most current recorded conditions and interactive plots of selected variables over the past two-weeks.
+
+Row {.tabset .tabset-fade data-height=1600}
+-------------------------------------
+
+<iframe width="100%" height="100%" allowfullscreen="allowfullscreen" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" scrolling="no" src="https://mco.cfc.umt.edu/mesonet_data/simple_map/simple_mesonet_map_home.html" webkitallowfullscreen="webkitallowfullscreen" style="position: relative; top: -60px"></iframe>
+
