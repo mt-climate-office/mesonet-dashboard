@@ -11,7 +11,7 @@ mesonet_build_rmd = function(lat, long, station_key, station_name){
                                 station_key,'_current_table.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
   #define meta table
   meta_table_iframe = paste0('<iframe width="100%" height="300" allowfullscreen="allowfullscreen" target="_parent" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" scrolling="yes" src="https://mco.cfc.umt.edu/mesonet_data/station_page/latest_table/', 
-                                station_key,'_meta_table.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
+                                 station_key,'_meta_table.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
   # define plotly data iframe (web)
   plotly_iframe = paste0('<iframe width="100%" height="1750px" allowfullscreen="allowfullscreen" allowvr="yes" frameborder="0" mozallowfullscreen="mozallowfullscreen" src="https://mco.cfc.umt.edu/mesonet_data/station_page/current_plots/',
                          station_key,'_current_data.html" webkitallowfullscreen="webkitallowfullscreen"></iframe>')
@@ -92,7 +92,7 @@ Column {.tabset .tabset-fade data-height=1800}
   file.remove(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
 }
 
-#mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
+mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
 # 
 # for(s in 1:length(stations$`Station name`)){
 #   mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
