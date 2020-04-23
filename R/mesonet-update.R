@@ -33,7 +33,8 @@ stations = getURL("https://cfcmesonet.cfc.umt.edu/api/stations?type=csv&clean=tr
 latest = getURL("https://cfcmesonet.cfc.umt.edu/api/latest?tz=US%2FMountain&wide=false&type=csv")%>%
   read_csv() %>%
   mutate(datetime = datetime %>%
-           lubridate::with_tz("America/Denver"))%>%
+           lubridate::with_tz("America/Denver"),
+           units = stringr::str_remove_all(string = units, pattern = 'Â'))%>%
   mutate(value_unit = mixed_units(value, units)) %>%
   plyr::join(.,lookup,by='name') %>%
   select("station_key", "datetime", "name", "value_unit", "units", "long_name") %>%
@@ -189,9 +190,9 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
   vars_of_interest = c('Air Temperature', 'Relative humidity', 'Wind direction', 'Wind speed',
                        'Maximum wind gust speed since previous report', 'Precipitation since previous report',
                        'Maximum precipiation rate', 'Atmospheric Pressure', 'Solar radiation',
-                       'Soil volumetric water content at 0\"','Soil volumetric water content at 8\"',
+                       'Soil volumetric water content at 0\"','Soil volumetric water content at 4\"','Soil volumetric water content at 8\"',
                        'Soil volumetric water content at 20\"', 'Soil volumetric water content at 36\"',
-                       'Soil temperature at 0\"', 'Soil temperature at 8\"', 'Soil temperature at 20\"',
+                       'Soil temperature at 0\"', 'Soil temperature at 4\"', 'Soil temperature at 8\"', 'Soil temperature at 20\"',
                        'Soil temperature at 36\"', 'Vapor pressure deficit', 'Battery Percent', 'Battery Voltage')
   
   latest %>%
