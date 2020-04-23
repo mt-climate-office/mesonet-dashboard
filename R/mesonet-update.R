@@ -159,26 +159,12 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     layout(yaxis = list(
       title = paste0("Daily Precipitation Total\n(in)")))
   
-  # define title annotation
-  a <- list(
-    text = paste0(stations$`Station name`[s], " (", round((stations$`Elevation (masl)`[s] * 3.28084),0), " ft)"),
-    xref = "paper",
-    yref = "paper",
-    yanchor = "bottom",
-    xanchor = "center",
-    align = "center",
-    x = 0.1,
-    y = 1,
-    showarrow = FALSE
-  )
-  
   #combine all plots into final plot
   final = subplot(precip, plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 7, shareX = F, titleY = T, titleX = F) %>%
     config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"))%>%
     config(displaylogo = FALSE)%>%
     config(showTips = TRUE)%>%
-    layout(annotations = a)%>%
-    layout(height = 1600) %>%
+    layout(height = 1700) %>%
     saveWidget(., paste0("/home/zhoylman/mesonet-dashboard/data/station_page/current_plots/",stations$`Station ID`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
   
   ## current conditions
