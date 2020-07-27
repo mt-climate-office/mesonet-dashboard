@@ -44,7 +44,7 @@ map_home = base_map() %>% addCircleMarkers(data = stations, lat = ~Latitude, lng
   leaflet::addLayersControl(position = "topleft",
                             overlayGroups = c("Radar"),
                             options = leaflet::layersControlOptions(collapsed = FALSE)) %>%
-  leaflet::setView(lng = -109.5, lat = 47, zoom = 7) 
+  leaflet::setView(lng = -109.5, lat = 47, zoom = 6) 
   
 
 htmlwidgets::saveWidget(map_home, paste0("/home/zhoylman/mesonet-dashboard/data/simple_map/simple_mesonet_map_home.html"), selfcontained = F, libdir = "./libs")
