@@ -152,7 +152,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     dplyr::mutate(yday = lubridate::yday(datetime)) %>%
     dplyr::filter(name == 'precipit') %>%
     dplyr::group_by(yday) %>%
-    dplyr::summarise(sum = sum(value)/25.4,
+    dplyr::summarise(sum = sum(value, na.rm = T)/25.4,
                      datetime_ave = mean(datetime) %>%
                        as.Date()) %>%
     plot_ly(x = ~datetime_ave, y = ~sum,  showlegend=F, colors = 'blue', type = 'bar', name = 'precip') %>%
