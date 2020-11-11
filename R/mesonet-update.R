@@ -162,7 +162,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       title = paste0("Daily Precipitation Total\n(in)")))
   
   #combine all plots into final plot
-  final = subplot(precip, plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 7, shareX = F, titleY = T, titleX = F) %>%
+  final = subplot(plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 6, shareX = F, titleY = T, titleX = F) %>%
     config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"))%>%
     config(displaylogo = FALSE)%>%
     config(showTips = TRUE)%>%
