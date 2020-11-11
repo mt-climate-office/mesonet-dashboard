@@ -164,7 +164,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
   #combine all plots into final plot
   final = subplot(plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 6, shareX = F, titleY = T, titleX = F) %>%
     config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"))%>%
-    layout(title = 'Precipitaion graphs are unavailable when snow is detected.')%>%
+    layout(title = 'Precipitation graphs are unavailable when snow is detected.')%>%
     config(displaylogo = FALSE)%>%
     config(showTips = TRUE)%>%
     layout(height = 1700) %>%
