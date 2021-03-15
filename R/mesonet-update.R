@@ -76,7 +76,7 @@ simple_plotly = function(data,name_str,col,ylab,conversion_func){
     mutate(value = conversion_func(value)) %>%
     transform(id = as.integer(factor(name))) %>%
     plot_ly(x = ~datetime, y = ~value, color = ~name, colors = col, showlegend=F, 
-            yaxis = ~paste0("y", id)) %>%
+            yaxis = ~paste0("y", id), type = 'scatter', mode = 'lines') %>%
     layout(yaxis = list(
       title = paste0(ylab)))%>%
     add_lines()
@@ -113,7 +113,10 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     read_csv() %>%
     mutate(datetime = datetime %>%
              lubridate::with_tz("America/Denver")) %>%
-    select(name, value, datetime, units) 
+    select(name, value, datetime, units) %>%
+    #fill missing obs with NAs for plotting
+    complete(datetime = seq(ymd_hms(min(.$datetime)),ymd_hms(max(.$datetime)), by = '15 mins'),
+             name = unique(.$name))
   
   #plot simple plotly (single sensor)
   plots = list()
