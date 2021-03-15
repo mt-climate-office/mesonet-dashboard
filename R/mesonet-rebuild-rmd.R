@@ -3,7 +3,7 @@ library(RCurl)
 library(dplyr)
 library(tidyverse)
 
-stations = getURL("https://cfcmesonet.cfc.umt.edu/api/stations?type=csv&clean=true") %>%
+stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
   read_csv()
 
 mesonet_build_rmd = function(lat, long, station_key, station_name){
@@ -33,7 +33,7 @@ output:
     css: css_modifier.css
     vertical_layout: scroll
     navbar:
-      - { title: "Mesonet Map", href: "https://cfcmesonet.cfc.umt.edu/map", align: right }
+      - { title: "Mesonet Map", href: "https://mesonet.climate.umt.edu/map", align: right }
       - { title: "MCO GitHub", href: "https://github.com/mt-climate-office", align: right }
     orientation: rows
 ---

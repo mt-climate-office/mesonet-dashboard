@@ -1,7 +1,7 @@
 library(RCurl) ##
 library(tidyverse) ##
 
-stations = getURL("https://cfcmesonet.cfc.umt.edu/api/stations?type=csv&clean=true") %>%
+stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
   read_csv()
 
 for(s in 1:length(stations$`Station ID`)){

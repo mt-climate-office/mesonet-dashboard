@@ -30,7 +30,7 @@ output:
     css: css_modifier.css
     vertical_layout: scroll
     navbar:
-      - { title: "Mesonet Map", href: "https://cfcmesonet.cfc.umt.edu/map", align: right }
+      - { title: "Mesonet Map", href: "https://mesonet.climate.umt.edu/map", align: right }
       - { title: "MCO GitHub", href: "https://github.com/mt-climate-office", align: right }
     orientation: rows
 ---

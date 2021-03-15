@@ -26,11 +26,11 @@ time = data.frame(current = Sys.time() %>% as.Date()) %>%
   mutate(start = current - 14)
 
 #retrieve the curent station list
-stations = getURL("https://cfcmesonet.cfc.umt.edu/api/stations?type=csv&clean=true") %>%
+stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
   read_csv()
 
 #retrieve the lastest data (last time signiture)
-latest = getURL("https://cfcmesonet.cfc.umt.edu/api/latest?tz=US%2FMountain&wide=false&type=csv")%>%
+latest = getURL("https://mesonet.climate.umt.edu/api/latest?tz=US%2FMountain&wide=false&type=csv")%>%
   read_csv() %>%
   mutate(datetime = datetime %>%
            lubridate::with_tz("America/Denver"),
@@ -105,7 +105,7 @@ start = Sys.time()
 foreach(s=1:length(stations$`Station ID`)) %dopar% {
   setwd('/home/zhoylman/')
   source('/home/zhoylman/mesonet-dashboard/R/mesonet-build-rmd.R')
-  url = paste0("https://cfcmesonet.cfc.umt.edu/api/observations?stations=",stations$`Station ID`[s], "&latest=false&start_time=",
+  url = paste0("https://mesonet.climate.umt.edu/api/observations?stations=",stations$`Station ID`[s], "&latest=false&start_time=",
                time$start, "&end_time=", time$current+1, "&tz=US%2FMountain&wide=false&type=csv")
   
   #download data
