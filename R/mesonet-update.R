@@ -99,7 +99,7 @@ registerDoParallel(cl)
 #
 clusterCall(cl, function() {lapply(c("RCurl", "dplyr", "tidyverse", "plotly",
                                      "data.table", "tidyverse", "htmltools",
-                                     "htmlwidgets", "knitr", "kableExtra", "units"), library, character.only = TRUE)})
+                                     "htmlwidgets", "knitr", "kableExtra", "units", "lubridate"), library, character.only = TRUE)})
 
 start = Sys.time()
 foreach(s=1:length(stations$`Station ID`)) %dopar% {
