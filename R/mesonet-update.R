@@ -115,8 +115,8 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
              lubridate::with_tz("America/Denver")) %>%
     select(name, value, datetime, units) %>%
     #fill missing obs with NAs for plotting
-    complete(datetime = seq(ymd_hms(min(.$datetime)),ymd_hms(max(.$datetime)), by = '15 mins'),
-             name = unique(.$name))
+    complete(datetime = seq(min(.$datetime),max(.$datetime), by = '15 mins'),
+              name = unique(.$name))
   
   #plot simple plotly (single sensor)
   plots = list()
