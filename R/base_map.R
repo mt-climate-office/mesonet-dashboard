@@ -1,3 +1,6 @@
+# Script to build the leaflet base map for selection
+# Author: Zach Hoylman - zachary.hoylman@mso.umt.edu 
+
 library(rgdal)
 library(dplyr)
 library(leaflet)

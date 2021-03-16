@@ -1,3 +1,8 @@
+# Function to build the HTML pages for each of the MT mesonet sites
+# This functions builds R Markdown Documents with iframes for widgets
+# mesonet-rebuild-rmd.R sources this function to rebuild all station pages
+# Author: Zach Hoylman - zachary.hoylman@mso.umt.edu 
+
 library(knitr)
 library(RCurl)
 library(dplyr)
@@ -91,9 +96,3 @@ Column {.tabset .tabset-fade data-height=1800}
   rmarkdown::render(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"), output_file = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/", station_key, ".html"), quiet=TRUE)
   file.remove(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/", station_key, "temp.Rmd"))
 }
-
-#mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
-# 
-# for(s in 1:length(stations$`Station name`)){
-#   mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
-# }

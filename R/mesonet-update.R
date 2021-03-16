@@ -1,23 +1,29 @@
-true_start = Sys.time()
-library(RCurl) ##
-library(dplyr) ##
-library(tidyverse) ##
-library(plotly)##
-library(data.table)##
-library(doParallel) ##
-library(htmltools)##
-library(htmlwidgets)##
-library(knitr)##
-library(kableExtra)##
-library(units)##
-library(lubridate) ##
+# MT mesonet dashboard update script.
+# This script updates the html widgets that are included on the MT mesonet dashboard
+# Widgets include plotly based plots of select variables and a kable table for (latest observations)
+# Author: Zach Hoylman - zachary.hoylman@mso.umt.edu 
 
-# var set root dir
+#import required libraries
+library(RCurl) 
+library(dplyr) 
+library(tidyverse) 
+library(plotly)
+library(data.table)
+library(doParallel)
+library(htmltools)
+library(htmlwidgets)
+library(knitr)
+library(kableExtra)
+library(units)
+library(lubridate)
+
+#set base dir
 setwd("/home/zhoylman/")
 
-# var name converstion
+#var name converstion
 name_conversion = read_csv("/home/zhoylman/mesonet-dashboard/data/mesonet_information/name_conversion_mesonet.csv")
 
+#generate simple look up table for conversions
 lookup = data.frame(name = name_conversion$name,
                     long_name = name_conversion$description)
 
@@ -39,6 +45,7 @@ latest = getURL("https://mesonet.climate.umt.edu/api/latest?tz=US%2FMountain&wid
   plyr::join(.,lookup,by='name') %>%
   select("station_key", "datetime", "name", "value_unit", "units", "long_name") %>%
   rowwise() %>%
+  #convert units using the units package
   mutate(new_value = 
            if(units == "°C") value_unit %>% set_units("°F")  else
              if(units == "m³/m³") value_unit %>% set_units("%") else
@@ -69,7 +76,7 @@ latest = getURL("https://mesonet.climate.umt.edu/api/latest?tz=US%2FMountain&wid
 #rename precip
 latest$long_name = stringr::str_replace(latest$long_name, "Net precipitation since previous report", 'Precipitation since previous report')
 
-#manual
+#Define simple plotly fucntion for plotting most vars 
 simple_plotly = function(data,name_str,col,ylab,conversion_func){
   data %>%
     dplyr::filter(name == name_str) %>%
@@ -92,25 +99,27 @@ conversion_func = list(function(x){return(x)},
                        function(x){return(x)}, 
                        function(x){return(x * 2.237)})
 
-#loop though stations
+#loop though stations in parallel
 cl = makeCluster(4)
 registerDoParallel(cl)
 
-#
+# send each R instance the required dependencies
 clusterCall(cl, function() {lapply(c("RCurl", "dplyr", "tidyverse", "plotly",
                                      "data.table", "tidyverse", "htmltools",
                                      "htmlwidgets", "knitr", "kableExtra", "units", "lubridate"), library, character.only = TRUE)})
 
-start = Sys.time()
+#start foreach loop (parallel)
 foreach(s=1:length(stations$`Station ID`)) %dopar% {
+  #define base dir
   setwd('/home/zhoylman/')
-  source('/home/zhoylman/mesonet-dashboard/R/mesonet-build-rmd.R')
+  #define URL for downloading the last 14 days of data, looping by station, end date = surrent time +1 day (all available data)
   url = paste0("https://mesonet.climate.umt.edu/api/observations?stations=",stations$`Station ID`[s], "&latest=false&start_time=",
                time$start, "&end_time=", time$current+1, "&tz=US%2FMountain&wide=false&type=csv")
   
   #download data
   data = getURL(url) %>%
     read_csv() %>%
+    #force datetime to respect time zone
     mutate(datetime = datetime %>%
              lubridate::with_tz("America/Denver")) %>%
     select(name, value, datetime, units) %>%
@@ -118,12 +127,13 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     complete(datetime = seq(min(.$datetime),max(.$datetime), by = '15 mins'),
               name = unique(.$name))
   
-  #plot simple plotly (single sensor)
+  #plot "simple" variables, defined above prior to the foreach loop
   plots = list()
   for(i in 1:length(names_str)){
     plots[[i]] = simple_plotly(data, names_str[i], col[i], ylab[i], conversion_func[[i]])
   }
   
+  # plot the non-simple vars 
   # Multiple sensors per location (depth)
   vwc = data %>%
     dplyr::filter(name %like% "soilwc") %>%
@@ -138,6 +148,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       legend = list(orientation = 'h'))) %>%
     add_lines()
   
+  #soil temp
   temp = data %>%
     dplyr::filter(name %like% "soilt") %>%
     mutate(name = name %>%
@@ -153,6 +164,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       title = paste0("Soil Temperature\n(°F)"))) %>%
     add_lines()
   
+  #precip data (only during summer, need to implement the wet bulb temp conditional)
   precip = data %>%
     dplyr::mutate(yday = lubridate::yday(datetime)) %>%
     dplyr::filter(name == 'precipit') %>%
@@ -164,7 +176,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     layout(yaxis = list(
       title = paste0("Daily Precipitation Total\n(in)")))
   
-  #combine all plots into final plot
+  # combine all plots into final plot
   final = subplot(plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 6, shareX = F, titleY = T, titleX = F) %>%
     config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"))%>%
     layout(title = 'Precipitation graphs are unavailable when snow is detected.')%>%
@@ -173,12 +185,13 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     layout(height = 1700) %>%
     saveWidget(., paste0("/home/zhoylman/mesonet-dashboard/data/station_page/current_plots/",stations$`Station ID`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
   
-  ## current conditions
+  # current conditions for the "latest table"
   latest_time = latest %>%
     filter(station_key == stations$`Station ID`[s]) %>%
     select(datetime)%>%
     head(1)
   
+  #define variables of interest for "latest table"
   vars_of_interest = c('Air Temperature', 'Relative humidity', 'Wind direction', 'Wind speed',
                        'Maximum wind gust speed since previous report', 'Precipitation since previous report',
                        'Maximum precipiation rate', 'Atmospheric Pressure', 'Solar radiation',
@@ -187,6 +200,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
                        'Soil temperature at 0\"', 'Soil temperature at 4\"', 'Soil temperature at 8\"', 'Soil temperature at 20\"',
                        'Soil temperature at 36\"', 'Vapor pressure deficit', 'Battery Percent', 'Battery Voltage')
   
+  # generate teh latest table and save as a HTML widget (kable)
   latest %>%
     filter(station_key == stations$`Station ID`[s]) %>% 
     select("long_name", "value_unit_new", "new_units") %>%
@@ -202,16 +216,11 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     gsub("<p>&lt;!DOCTYPE html&gt; ", "", .)%>%
     writeLines(., con = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))
   
-  #write out final page from RMD
-  #mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
+  #fin
 }
 
-Sys.time() - start
-stopCluster(cl)
-Sys.time() - true_start
-
-
 ## mobile Sandbox
+## Not done here, this is to make more visually apealling mobile plots
 
 # data_mobile = data %>%
 #   dplyr::filter(datetime > time$current - 3)

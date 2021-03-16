@@ -1,5 +1,10 @@
-library(RCurl) ##
-library(tidyverse) ##
+# Script to build the "meta table" for each station
+# the "meta table" defines the site specific information such as location, name etc. 
+# this table does not change often, can be considered static
+# Author: Zach Hoylman - zachary.hoylman@mso.umt.edu 
+
+library(RCurl) 
+library(tidyverse) 
 
 stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
   read_csv()
