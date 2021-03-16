@@ -1,3 +1,8 @@
+# Script builds the leaflet based map widget
+# sources the base map from base_map.R
+# adds points to the map representing station location with popups to station pages
+# Author: Zach Hoylman - zachary.hoylman@mso.umt.edu 
+
 library(leaflet)
 library(RCurl)
 library(tidyverse)
