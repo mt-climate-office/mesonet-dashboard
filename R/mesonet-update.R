@@ -42,12 +42,12 @@ latest = getURL("https://mesonet.climate.umt.edu/api/latest?tz=US%2FMountain&wid
            lubridate::with_tz("America/Denver"),
            units = stringr::str_remove_all(string = units, pattern = 'Â'))%>%
   mutate(value_unit = mixed_units(value, units)) %>%
-  plyr::join(.,lookup,by='name') %>%
+  left_join(.,lookup,by='name') %>%
   select("station_key", "datetime", "name", "value_unit", "units", "long_name") %>%
   rowwise() %>%
   #convert units using the units package
   mutate(new_value = 
-           if(units == "°C") value_unit %>% set_units("°F")  else
+          list(if(units == "°C") value_unit %>% set_units("°F")  else
              if(units == "m³/m³") value_unit %>% set_units("%") else
                if(units == "mS/cm") value_unit %>% set_units("mS/in") else
                  if(units == "mm/h") value_unit %>% set_units("in/hr") else
@@ -57,9 +57,9 @@ latest = getURL("https://mesonet.climate.umt.edu/api/latest?tz=US%2FMountain&wid
                          if(units == "kPa") value_unit %>% set_units("bar") else
                            if(units == "°") value_unit %>% set_units("°") else
                              if(units == "m/s") value_unit %>% set_units("mi/hr") else
-                               if(units == "mV") value_unit %>% set_units("mV") else NA) %>%
+                               if(units == "mV") value_unit %>% set_units("mV") else NA) %>% unlist()) %>%
   mutate(new_units = 
-           if(units == "°C") "°F"  else
+           list(if(units == "°C") "°F"  else
              if(units == "m³/m³") "%" else
                if(units == "mS/cm") "mS/in" else
                  if(units == "mm/h") "in/hr" else
@@ -69,7 +69,7 @@ latest = getURL("https://mesonet.climate.umt.edu/api/latest?tz=US%2FMountain&wid
                          if(units == "kPa") "bars" else
                            if(units == "°") "°" else
                              if(units == "m/s") "mph" else
-                               if(units == "mV") "mV" else NA) %>%
+                               if(units == "mV") "mV" else NA) %>% unlist()) %>%
   mutate(new_value = round(new_value, 2)) %>%
   mutate(value_unit_new = mixed_units(new_value, new_units))
 
