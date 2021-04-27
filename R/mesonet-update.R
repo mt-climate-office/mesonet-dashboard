@@ -41,6 +41,7 @@ latest = getURL("https://mesonet.climate.umt.edu/api/latest?tz=US%2FMountain&wid
   mutate(datetime = datetime %>%
            lubridate::with_tz("America/Denver"),
            units = stringr::str_remove_all(string = units, pattern = 'Â'))%>%
+  filter(units != 'RH') %>%
   mutate(value_unit = mixed_units(value, units)) %>%
   left_join(.,lookup,by='name') %>%
   select("station_key", "datetime", "name", "value_unit", "units", "long_name") %>%
@@ -122,6 +123,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     #force datetime to respect time zone
     mutate(datetime = datetime %>%
              lubridate::with_tz("America/Denver")) %>%
+    filter(units != 'RH') %>%
     select(name, value, datetime, units) %>%
     #fill missing obs with NAs for plotting
     complete(datetime = seq(min(.$datetime),max(.$datetime), by = '15 mins'),
