@@ -111,112 +111,116 @@ clusterCall(cl, function() {lapply(c("RCurl", "dplyr", "tidyverse", "plotly",
 
 #start foreach loop (parallel)
 foreach(s=1:length(stations$`Station ID`)) %dopar% {
-  #define base dir
-  setwd('/home/zhoylman/')
-  #define URL for downloading the last 14 days of data, looping by station, end date = surrent time +1 day (all available data)
-  url = paste0("https://mesonet.climate.umt.edu/api/observations?stations=",stations$`Station ID`[s], "&latest=false&start_time=",
-               time$start, "&end_time=", time$current+1, "&wide=false&type=csv")
-  
-  #download data
-  data = getURL(url) %>%
-    read_csv() %>%
-    #force datetime to respect time zone
-    mutate(datetime = datetime %>%
-             lubridate::with_tz("America/Denver")) %>%
-    select(name, value, datetime, units) %>%
-    #fill missing obs with NAs for plotting
-    complete(datetime = seq(min(.$datetime),max(.$datetime), by = '15 mins'),
-              name = unique(.$name))
-  
-  #plot "simple" variables, defined above prior to the foreach loop
-  plots = list()
-  for(i in 1:length(names_str)){
-    plots[[i]] = simple_plotly(data, names_str[i], col[i], ylab[i], conversion_func[[i]])
-  }
-  
-  # plot the non-simple vars 
-  # Multiple sensors per location (depth)
-  vwc = data %>%
-    dplyr::filter(name %like% "soilwc") %>%
-    mutate(name = name %>%
-             str_extract(., "(\\d)+") %>%
-             as.numeric() %>%
-             paste0(., " in")) %>%
-    mutate(value = value * 100) %>%
-    plot_ly(x = ~datetime, y = ~value, name = ~name, color = ~name, showlegend=F, colors = "Set2", legendgroup = ~name) %>%
-    layout(yaxis = list(
-      title = paste0("Soil Moisture\n(%)"),
-      legend = list(orientation = 'h'))) %>%
-    add_lines()
-  
-  #soil temp
-  temp = data %>%
-    dplyr::filter(name %like% "soilt") %>%
-    mutate(name = name %>%
-             str_extract(., "(\\d)+") %>%
-             as.numeric() %>%
-             paste0(., " in")) %>%
-    dplyr::na_if(0)%>%
-    drop_na()%>%
-    mutate(value = conversion_func[[2]](value)) %>%
-    plot_ly(x = ~datetime, y = ~value, name = ~name, showlegend=T, color = ~name, colors = "Set2", legendgroup = ~name) %>%
-    layout(legend = list(orientation = 'h'))%>%
-    layout(yaxis = list(
-      title = paste0("Soil Temperature\n(°F)"))) %>%
-    add_lines()
-  
-  #precip data (only during summer, need to implement the wet bulb temp conditional)
-  precip = data %>%
-    dplyr::mutate(yday = lubridate::yday(datetime)) %>%
-    dplyr::filter(name == 'precipit') %>%
-    dplyr::group_by(yday) %>%
-    dplyr::summarise(sum = sum(value, na.rm = T)/25.4,
-                     datetime_ave = mean(datetime) %>%
-                       as.Date()) %>%
-    plot_ly(x = ~datetime_ave, y = ~sum,  showlegend=F, colors = 'blue', type = 'bar', name = 'precip') %>%
-    layout(yaxis = list(
-      title = paste0("Daily Precipitation Total\n(in)")))
-  
-  # combine all plots into final plot
-  final = subplot(precip, plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 7, shareX = F, titleY = T, titleX = F) %>%
-    config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"))%>%
-    config(displaylogo = FALSE)%>%
-    config(showTips = TRUE)%>%
-    layout(height = 1700) %>%
-    saveWidget(., paste0("/home/zhoylman/mesonet-dashboard/data/station_page/current_plots/",stations$`Station ID`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
-  
-  # current conditions for the "latest table"
-  latest_time = latest %>%
-    filter(station_key == stations$`Station ID`[s]) %>%
-    select(datetime)%>%
-    head(1)
-  
-  #define variables of interest for "latest table"
-  vars_of_interest = c('Air Temperature', 'Relative humidity', 'Wind direction', 'Wind speed',
-                       'Maximum wind gust speed since previous report', 'Precipitation since previous report',
-                       'Maximum precipiation rate', 'Atmospheric Pressure', 'Solar radiation',
-                       'Soil volumetric water content at 0\"','Soil volumetric water content at 4\"','Soil volumetric water content at 8\"',
-                       'Soil volumetric water content at 20\"', 'Soil volumetric water content at 36\"',
-                       'Soil temperature at 0\"', 'Soil temperature at 4\"', 'Soil temperature at 8\"', 'Soil temperature at 20\"',
-                       'Soil temperature at 36\"', 'Vapor pressure deficit', 'Battery Percent', 'Battery Voltage')
-  
-  # generate teh latest table and save as a HTML widget (kable)
-  latest %>%
-    filter(station_key == stations$`Station ID`[s]) %>% 
-    select("long_name", "value_unit_new", "new_units") %>%
-    rename(Observation = long_name, Value = value_unit_new, Units = new_units)%>%
-    dplyr::filter(Observation %in% vars_of_interest) %>%
-    arrange(factor(Observation, levels = vars_of_interest))%>%
-    kable(., "html", caption = paste0("Latest observation was at ", latest_time[1]$datetime %>% as.character()), col.names = NULL)%>%
-    kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))%>%
-    save_kable(file = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"),  self_contained = F, libdir = "./libs")
-  
-  #clean up header artifact
-  temp_html = paste(readLines(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))) %>%
-    gsub("<p>&lt;!DOCTYPE html&gt; ", "", .)%>%
-    writeLines(., con = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))
-  
-  #fin
+  tryCatch({
+    #define base dir
+    setwd('/home/zhoylman/')
+    #define URL for downloading the last 14 days of data, looping by station, end date = surrent time +1 day (all available data)
+    url = paste0("https://mesonet.climate.umt.edu/api/observations?stations=",stations$`Station ID`[s], "&latest=false&start_time=",
+                 time$start, "&end_time=", time$current+1, "&wide=false&type=csv")
+    
+    #download data
+    data = getURL(url) %>%
+      read_csv() %>%
+      #force datetime to respect time zone
+      mutate(datetime = datetime %>%
+               lubridate::with_tz("America/Denver")) %>%
+      select(name, value, datetime, units) %>%
+      #fill missing obs with NAs for plotting
+      complete(datetime = seq(min(.$datetime),max(.$datetime), by = '15 mins'),
+               name = unique(.$name))
+    
+    #plot "simple" variables, defined above prior to the foreach loop
+    plots = list()
+    for(i in 1:length(names_str)){
+      plots[[i]] = simple_plotly(data, names_str[i], col[i], ylab[i], conversion_func[[i]])
+    }
+    
+    # plot the non-simple vars 
+    # Multiple sensors per location (depth)
+    vwc = data %>%
+      dplyr::filter(name %like% "soilwc") %>%
+      mutate(name = name %>%
+               str_extract(., "(\\d)+") %>%
+               as.numeric() %>%
+               paste0(., " in")) %>%
+      mutate(value = value * 100) %>%
+      plot_ly(x = ~datetime, y = ~value, name = ~name, color = ~name, showlegend=F, colors = "Set2", legendgroup = ~name) %>%
+      layout(yaxis = list(
+        title = paste0("Soil Moisture\n(%)"),
+        legend = list(orientation = 'h'))) %>%
+      add_lines()
+    
+    #soil temp
+    temp = data %>%
+      dplyr::filter(name %like% "soilt") %>%
+      mutate(name = name %>%
+               str_extract(., "(\\d)+") %>%
+               as.numeric() %>%
+               paste0(., " in")) %>%
+      dplyr::na_if(0)%>%
+      drop_na()%>%
+      mutate(value = conversion_func[[2]](value)) %>%
+      plot_ly(x = ~datetime, y = ~value, name = ~name, showlegend=T, color = ~name, colors = "Set2", legendgroup = ~name) %>%
+      layout(legend = list(orientation = 'h'))%>%
+      layout(yaxis = list(
+        title = paste0("Soil Temperature\n(°F)"))) %>%
+      add_lines()
+    
+    #precip data (only during summer, need to implement the wet bulb temp conditional)
+    precip = data %>%
+      dplyr::mutate(yday = lubridate::yday(datetime)) %>%
+      dplyr::filter(name == 'precipit') %>%
+      dplyr::group_by(yday) %>%
+      dplyr::summarise(sum = sum(value, na.rm = T)/25.4,
+                       datetime_ave = mean(datetime) %>%
+                         as.Date()) %>%
+      plot_ly(x = ~datetime_ave, y = ~sum,  showlegend=F, colors = 'blue', type = 'bar', name = 'precip') %>%
+      layout(yaxis = list(
+        title = paste0("Daily Precipitation Total\n(in)")))
+    
+    # combine all plots into final plot
+    final = subplot(precip, plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 7, shareX = F, titleY = T, titleX = F) %>%
+      config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"))%>%
+      config(displaylogo = FALSE)%>%
+      config(showTips = TRUE)%>%
+      layout(height = 1700) %>%
+      saveWidget(., paste0("/home/zhoylman/mesonet-dashboard/data/station_page/current_plots/",stations$`Station ID`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
+    
+    # current conditions for the "latest table"
+    latest_time = latest %>%
+      filter(station_key == stations$`Station ID`[s]) %>%
+      select(datetime)%>%
+      head(1)
+    
+    #define variables of interest for "latest table"
+    vars_of_interest = c('Air Temperature', 'Relative humidity', 'Wind direction', 'Wind speed',
+                         'Maximum wind gust speed since previous report', 'Precipitation since previous report',
+                         'Maximum precipiation rate', 'Atmospheric Pressure', 'Solar radiation',
+                         'Soil volumetric water content at 0\"','Soil volumetric water content at 4\"','Soil volumetric water content at 8\"',
+                         'Soil volumetric water content at 20\"', 'Soil volumetric water content at 36\"',
+                         'Soil temperature at 0\"', 'Soil temperature at 4\"', 'Soil temperature at 8\"', 'Soil temperature at 20\"',
+                         'Soil temperature at 36\"', 'Vapor pressure deficit', 'Battery Percent', 'Battery Voltage')
+    
+    # generate teh latest table and save as a HTML widget (kable)
+    latest %>%
+      filter(station_key == stations$`Station ID`[s]) %>% 
+      select("long_name", "value_unit_new", "new_units") %>%
+      rename(Observation = long_name, Value = value_unit_new, Units = new_units)%>%
+      dplyr::filter(Observation %in% vars_of_interest) %>%
+      arrange(factor(Observation, levels = vars_of_interest))%>%
+      kable(., "html", caption = paste0("Latest observation was at ", latest_time[1]$datetime %>% as.character()), col.names = NULL)%>%
+      kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))%>%
+      save_kable(file = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"),  self_contained = F, libdir = "./libs")
+    
+    #clean up header artifact
+    temp_html = paste(readLines(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))) %>%
+      gsub("<p>&lt;!DOCTYPE html&gt; ", "", .)%>%
+      writeLines(., con = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))
+    
+    #fin
+  }, error = function(e){
+    paste0('Error on station: ', stations$`Station ID`[s])
+  })
 }
 
 ## mobile Sandbox
