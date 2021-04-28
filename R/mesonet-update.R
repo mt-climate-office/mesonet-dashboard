@@ -36,7 +36,7 @@ stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=t
   read_csv()
 
 #retrieve the lastest data (last time signiture)
-latest = getURL("https://mesonet.climate.umt.edu/api/latest?tz=US%2FMountain&wide=false&type=csv")%>%
+latest = getURL("https://mesonet.climate.umt.edu/api/latest?wide=false&type=csv")%>%
   read_csv() %>%
   mutate(datetime = datetime %>%
            lubridate::with_tz("America/Denver"),
@@ -115,7 +115,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
   setwd('/home/zhoylman/')
   #define URL for downloading the last 14 days of data, looping by station, end date = surrent time +1 day (all available data)
   url = paste0("https://mesonet.climate.umt.edu/api/observations?stations=",stations$`Station ID`[s], "&latest=false&start_time=",
-               time$start, "&end_time=", time$current+1, "&tz=US%2FMountain&wide=false&type=csv")
+               time$start, "&end_time=", time$current+1, "&wide=false&type=csv")
   
   #download data
   data = getURL(url) %>%
