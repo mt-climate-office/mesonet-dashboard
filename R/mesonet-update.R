@@ -123,7 +123,6 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     #force datetime to respect time zone
     mutate(datetime = datetime %>%
              lubridate::with_tz("America/Denver")) %>%
-    filter(units != 'RH') %>%
     select(name, value, datetime, units) %>%
     #fill missing obs with NAs for plotting
     complete(datetime = seq(min(.$datetime),max(.$datetime), by = '15 mins'),
@@ -179,9 +178,8 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       title = paste0("Daily Precipitation Total\n(in)")))
   
   # combine all plots into final plot
-  final = subplot(plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 6, shareX = F, titleY = T, titleX = F) %>%
+  final = subplot(precip, plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 7, shareX = F, titleY = T, titleX = F) %>%
     config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"))%>%
-    layout(title = 'Precipitation graphs are unavailable when snow is detected.')%>%
     config(displaylogo = FALSE)%>%
     config(showTips = TRUE)%>%
     layout(height = 1700) %>%
