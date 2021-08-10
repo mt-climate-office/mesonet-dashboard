@@ -20,6 +20,9 @@ library(lubridate)
 #set base dir
 setwd("/home/zhoylman/")
 
+#source ETr function
+source("/home/zhoylman/mesonet-dashboard/R/fao_etr.R")
+
 #var name converstion
 name_conversion = read_csv("/home/zhoylman/mesonet-dashboard/data/mesonet_information/name_conversion_mesonet.csv")
 
@@ -92,7 +95,7 @@ simple_plotly = function(data,name_str,col,ylab,conversion_func){
 
 #define inputs (add precip when ready)
 names_str = c("sol_radi", "air_temp", "rel_humi", "wind_spd")
-col = c('red', 'green', 'black', "orange")
+col = c('magenta', 'green', 'black', "orange")
 ylab = c("Solar Radiation\n(W/m<sup>2</sup>)", "Air Temperature\n(°F)", "Relative Humidity\n(%)", "Wind Speed\n(mph)")
 target_unit = c("W/m²", "°F", "%", "mph")
 conversion_func = list(function(x){return(x)}, 
@@ -129,11 +132,43 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       complete(datetime = seq(min(.$datetime),max(.$datetime), by = '15 mins'),
                name = unique(.$name))
     
+    #compute Reference ET
+    etr_data = data %>%
+      mutate(hour = lubridate::hour(datetime),
+             date = as.Date(datetime)) %>%
+      group_by(date,hour,name) %>%
+      summarise(mean_value = mean(value, na.rm = T)) %>%
+      ungroup() %>%
+      pivot_wider(names_from = name, values_from = mean_value) %>%
+      mutate(etr = fao_etr(RH = rel_humi, 
+                           Temp_C = air_temp, 
+                           Rs = sol_radi, 
+                           P = atmos_pr, 
+                           U = wind_spd)) %>%
+      pivot_longer(names_to = "name", values_to = "value", cols = -c(date, hour)) %>%
+      mutate(datetime = as.POSIXct(lubridate::ymd(date) + lubridate::hms(paste0(' 0', hour, ':00:00 MST')))) %>%
+      select(datetime, name, value) %>% 
+      filter(name == 'etr') %>%
+      mutate(date = as.Date(datetime)) %>%
+      group_by(date, name) %>%
+      summarise(value = sum(value)) %>%
+      ungroup()
+    
     #plot "simple" variables, defined above prior to the foreach loop
     plots = list()
     for(i in 1:length(names_str)){
       plots[[i]] = simple_plotly(data, names_str[i], col[i], ylab[i], conversion_func[[i]])
     }
+    
+    #plot ETr
+    etr_plot = etr_data %>%
+      #convert from mm to in
+      mutate(value = value/25.4) %>%
+      transform(id = as.integer(factor(name))) %>%
+      plot_ly(x = ~date, y = ~value, color = ~name, colors = 'red', showlegend=F, 
+              yaxis = ~paste0("y", id), type = 'bar') %>%
+      layout(yaxis = list(
+        title = "Reference ET\n(in)"))
     
     # plot the non-simple vars 
     # Multiple sensors per location (depth)
@@ -179,7 +214,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
         title = paste0("Daily Precipitation Total\n(in)")))
     
     # combine all plots into final plot
-    final = subplot(precip, plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 7, shareX = F, titleY = T, titleX = F) %>%
+    final = subplot(precip, etr_plot, plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 8, shareX = F, titleY = T, titleX = F) %>%
       config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"))%>%
       config(displaylogo = FALSE)%>%
       config(showTips = TRUE)%>%
