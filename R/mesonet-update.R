@@ -151,7 +151,9 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       filter(name == 'etr') %>%
       mutate(date = as.Date(datetime)) %>%
       group_by(date, name) %>%
-      summarise(value = sum(value)) %>%
+      summarise(na_flag = sum(value),
+                na_flag = ifelse(is.na(na_flag), 'Incomplete Data', ''),
+                value = sum(value, na.rm = T)) %>%
       ungroup()
     
     #plot "simple" variables, defined above prior to the foreach loop
@@ -166,9 +168,19 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       mutate(value = value/25.4) %>%
       transform(id = as.integer(factor(name))) %>%
       plot_ly(x = ~date, y = ~value, color = ~name, colors = 'red', showlegend=F, 
-              yaxis = ~paste0("y", id), type = 'bar') %>%
+              yaxis = ~paste0("y", id), type = 'bar', text = ~na_flag, textposition = 'auto') %>%
       layout(yaxis = list(
-        title = "Reference ET\n(in)"))
+        title = "Reference ET\n(in)")) %>%
+      add_annotations(text = ~na_flag,
+                      x = ~date,
+                      y = ~value,
+                      xref = "x",
+                      yref = 'paper',
+                      textangle = 90,
+                      font = list(family = 'Arial',
+                                  size = 14,
+                                  color = 'black'),
+                      showarrow = FALSE)
     
     # plot the non-simple vars 
     # Multiple sensors per location (depth)
