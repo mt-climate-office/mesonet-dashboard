@@ -152,7 +152,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       mutate(date = as.Date(datetime)) %>%
       group_by(date, name) %>%
       summarise(na_flag = sum(value),
-                na_flag = ifelse(is.na(na_flag), 'Incomplete Data', ''),
+                na_flag = ifelse(is.na(na_flag), 'Incomplete\nData', ''),
                 value = sum(value, na.rm = T)) %>%
       ungroup()
     
@@ -175,7 +175,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
                       x = ~date,
                       y = ~value,
                       xref = "x",
-                      yref = 'paper',
+                      yref = 'y',
                       textangle = 90,
                       font = list(family = 'Arial',
                                   size = 14,
