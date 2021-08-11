@@ -38,6 +38,23 @@ time = data.frame(current = Sys.time() %>% as.Date()) %>%
 stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
   read_csv()
 
+#manually add elevation to a few sites before they are added to database
+if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Ekalaka SE')])){
+  stations$`Elevation (feet)`[which(stations$`Station name`=='Ekalaka SE')] = 3425
+}
+
+if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Birney N')])){
+  stations$`Elevation (feet)`[which(stations$`Station name`=='Birney N')] = 3123
+}
+
+if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Busby N')])){
+  stations$`Elevation (feet)`[which(stations$`Station name`=='Busby N')] = 3435
+}
+
+if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='MDA Toston SW2')])){
+  stations$`Elevation (feet)`[which(stations$`Station name`=='MDA Toston SW2')] = 3917
+}
+
 #retrieve the lastest data (last time signiture)
 latest = getURL("https://mesonet.climate.umt.edu/api/latest?wide=false&type=csv")%>%
   read_csv() %>%
@@ -132,19 +149,25 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       complete(datetime = seq(min(.$datetime),max(.$datetime), by = '15 mins'),
                name = unique(.$name))
     
-    #compute Reference ET
-    etr_data = data %>%
+    #compute hourly Reference ET
+    etr_hourly_data = data %>%
       mutate(hour = lubridate::hour(datetime),
              date = as.Date(datetime)) %>%
       group_by(date,hour,name) %>%
-      summarise(mean_value = mean(value, na.rm = T)) %>%
+      summarise(mean_value = median(value, na.rm = T)) %>%
       ungroup() %>%
       pivot_wider(names_from = name, values_from = mean_value) %>%
-      mutate(etr = fao_etr(RH = rel_humi, 
-                           Temp_C = air_temp, 
-                           Rs = sol_radi, 
-                           P = atmos_pr, 
-                           U = wind_spd)) %>%
+      mutate(yday = lubridate::yday(date),
+             etr = fao_etr_hourly(lat = stations$Latitude[s],
+                                  lon = stations$Longitude[s],
+                                  J = yday,
+                                  hour = hour,
+                                  z = stations$`Elevation (feet)`[s] * 0.3048, #ft to m
+                                  RH = rel_humi, 
+                                  Temp_C = air_temp, 
+                                  Rs = sol_radi, 
+                                  P = atmos_pr, 
+                                  U = wind_spd)) %>%
       pivot_longer(names_to = "name", values_to = "value", cols = -c(date, hour)) %>%
       mutate(datetime = as.POSIXct(lubridate::ymd(date) + lubridate::hms(paste0(' 0', hour, ':00:00 MST')))) %>%
       select(datetime, name, value) %>% 
@@ -156,11 +179,39 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
                 value = sum(value, na.rm = T)) %>%
       ungroup()
     
+    etr_daily_data = data %>%
+      mutate(date = as.Date(datetime)) %>%
+      group_by(date,name) %>%
+      summarise(mean_value = median(value, na.rm = T),
+                sum_value = sum(value, na.rm = T)) %>%
+      ungroup() %>%
+      mutate(mean_value = ifelse(name == 'sol_radi', sum_value, mean_value),
+             yday = lubridate::yday(date)) %>%
+      select(-sum_value) %>%
+      pivot_wider(names_from = name, values_from = mean_value) %>%
+      mutate(etr = fao_etr_daily(RH = rel_humi, 
+                                 lat = stations$Latitude[s],
+                                 J = yday,
+                                 z = stations$`Elevation (feet)`[s] * 0.3048, #ft to m
+                                 Temp_C = air_temp, 
+                                 Rs = sol_radi, 
+                                 P = atmos_pr, 
+                                 U = wind_spd)) %>%
+      pivot_longer(names_to = "name", values_to = "value_daily", cols = -c(date)) %>%
+      filter(name == 'etr') 
+    
+    #fill in missing data in hourly data with daily data
+    etr_data = etr_hourly_data %>%
+      left_join(., etr_daily_data, by = c('date', 'name')) %>%
+      mutate(value = ifelse(na_flag == "Incomplete\nData", value_daily, value))
+    
     #plot "simple" variables, defined above prior to the foreach loop
     plots = list()
     for(i in 1:length(names_str)){
       plots[[i]] = simple_plotly(data, names_str[i], col[i], ylab[i], conversion_func[[i]])
     }
+    
+    no_data_flag_y_position = mean(etr_data$value)/25.4
     
     #plot ETr
     etr_plot = etr_data %>%
@@ -168,19 +219,9 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       mutate(value = value/25.4) %>%
       transform(id = as.integer(factor(name))) %>%
       plot_ly(x = ~date, y = ~value, color = ~name, colors = 'red', showlegend=F, 
-              yaxis = ~paste0("y", id), type = 'bar', text = ~na_flag, textposition = 'auto') %>%
+              yaxis = ~paste0("y", id), type = 'bar') %>%
       layout(yaxis = list(
-        title = "Reference ET\n(in)")) %>%
-      add_annotations(text = ~na_flag,
-                      x = ~date,
-                      y = ~value,
-                      xref = "x",
-                      yref = 'y',
-                      textangle = 90,
-                      font = list(family = 'Arial',
-                                  size = 14,
-                                  color = 'black'),
-                      showarrow = FALSE)
+        title = "Reference ET\n(in)")) 
     
     # plot the non-simple vars 
     # Multiple sensors per location (depth)
