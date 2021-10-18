@@ -51,9 +51,22 @@ if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Busby N')])
   stations$`Elevation (feet)`[which(stations$`Station name`=='Busby N')] = 3435
 }
 
-if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='MDA Toston SW2')])){
-  stations$`Elevation (feet)`[which(stations$`Station name`=='MDA Toston SW2')] = 3917
+if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Toston SW2 MDA')])){
+  stations$`Elevation (feet)`[which(stations$`Station name`=='Toston SW2 MDA')] = 3917
 }
+
+if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Brisbin PV')])){
+  stations$`Elevation (feet)`[which(stations$`Station name`=='Brisbin PV')] = 4685
+}
+
+if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Emigrant E PV')])){
+  stations$`Elevation (feet)`[which(stations$`Station name`=='Emigrant E PV')] = 5587
+}
+
+if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Carbella N PV')])){
+  stations$`Elevation (feet)`[which(stations$`Station name`=='Carbella N PV')] = 5761
+}
+
 
 #retrieve the lastest data (last time signiture)
 latest = getURL("https://mesonet.climate.umt.edu/api/latest?wide=false&type=csv")%>%
@@ -167,7 +180,8 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
                                   Temp_C = air_temp, 
                                   Rs = sol_radi, 
                                   P = atmos_pr, 
-                                  U = wind_spd)) %>%
+                                  U = wind_spd),
+	     etr = ifelse(etr < 0, 0, etr)) %>%
       pivot_longer(names_to = "name", values_to = "value", cols = -c(date, hour)) %>%
       mutate(datetime = as.POSIXct(lubridate::ymd(date) + lubridate::hms(paste0(' 0', hour, ':00:00 MST')))) %>%
       select(datetime, name, value) %>% 
@@ -203,7 +217,8 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     #fill in missing data in hourly data with daily data
     etr_data = etr_hourly_data %>%
       left_join(., etr_daily_data, by = c('date', 'name')) %>%
-      mutate(value = ifelse(na_flag == "Incomplete\nData", value_daily, value))
+      mutate(value = ifelse(na_flag == "Incomplete\nData", value_daily, value),
+	     value = ifelse(value < 0, 0, value))
     
     #plot "simple" variables, defined above prior to the foreach loop
     plots = list()

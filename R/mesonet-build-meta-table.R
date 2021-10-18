@@ -5,6 +5,7 @@
 
 library(RCurl) 
 library(tidyverse) 
+library(kableExtra)
 
 stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
   read_csv()
