@@ -7,14 +7,14 @@ library(RCurl)
 library(tidyverse) 
 library(kableExtra)
 
-stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
+stations = getURL('https://mesonet.climate.umt.edu/api/v2/stations/?type=csv&clean=true') %>%
   read_csv()
 
-for(s in 1:length(stations$`Station ID`)){
+for(s in 1:length(stations$`station`)){
   stations %>%
-    filter(`Station ID` == stations$`Station ID`[s]) %>% 
+    filter(`station` == stations$`station`[s]) %>% 
     t() %>%
     kable(., "html")%>%
     kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))%>%
-    save_kable(file = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_meta_table.html"),  self_contained = F, libdir = "./libs")
+    save_kable(file = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`station`[s],"_meta_table.html"),  self_contained = F, libdir = "./libs")
 }

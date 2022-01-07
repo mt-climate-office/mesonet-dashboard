@@ -35,77 +35,46 @@ time = data.frame(current = Sys.time() %>% as.Date()) %>%
   mutate(start = current - 14)
 
 #retrieve the curent station list
-stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
+stations = getURL('https://mesonet.climate.umt.edu/api/v2/stations/?type=csv&clean=true') %>%
   read_csv()
 
-#manually add elevation to a few sites before they are added to database
-if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Ekalaka SE')])){
-  stations$`Elevation (feet)`[which(stations$`Station name`=='Ekalaka SE')] = 3425
-}
-
-if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Birney N')])){
-  stations$`Elevation (feet)`[which(stations$`Station name`=='Birney N')] = 3123
-}
-
-if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Busby N')])){
-  stations$`Elevation (feet)`[which(stations$`Station name`=='Busby N')] = 3435
-}
-
-if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Toston SW2 MDA')])){
-  stations$`Elevation (feet)`[which(stations$`Station name`=='Toston SW2 MDA')] = 3917
-}
-
-if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Brisbin PV')])){
-  stations$`Elevation (feet)`[which(stations$`Station name`=='Brisbin PV')] = 4685
-}
-
-if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Emigrant E PV')])){
-  stations$`Elevation (feet)`[which(stations$`Station name`=='Emigrant E PV')] = 5587
-}
-
-if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Carbella N PV')])){
-  stations$`Elevation (feet)`[which(stations$`Station name`=='Carbella N PV')] = 5761
-}
+# #manually add elevation to a few sites before they are added to database
+# if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Ekalaka SE')])){
+#   stations$`Elevation (feet)`[which(stations$`Station name`=='Ekalaka SE')] = 3425
+# }
+# 
+# if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Birney N')])){
+#   stations$`Elevation (feet)`[which(stations$`Station name`=='Birney N')] = 3123
+# }
+# 
+# if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Busby N')])){
+#   stations$`Elevation (feet)`[which(stations$`Station name`=='Busby N')] = 3435
+# }
+# 
+# if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Toston SW2 MDA')])){
+#   stations$`Elevation (feet)`[which(stations$`Station name`=='Toston SW2 MDA')] = 3917
+# }
+# 
+# if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Brisbin PV')])){
+#   stations$`Elevation (feet)`[which(stations$`Station name`=='Brisbin PV')] = 4685
+# }
+# 
+# if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Emigrant E PV')])){
+#   stations$`Elevation (feet)`[which(stations$`Station name`=='Emigrant E PV')] = 5587
+# }
+# 
+# if(is.na(stations$`Elevation (feet)`[which(stations$`Station name`=='Carbella N PV')])){
+#   stations$`Elevation (feet)`[which(stations$`Station name`=='Carbella N PV')] = 5761
+# }
 
 
 #retrieve the lastest data (last time signiture)
-latest = getURL("https://mesonet.climate.umt.edu/api/latest?wide=false&type=csv")%>%
+latest = getURL("https://mesonet.climate.umt.edu/api/v2/observations/dash/?type=csv&units=US")%>%
   read_csv() %>%
   mutate(datetime = datetime %>%
-           lubridate::with_tz("America/Denver"),
-           units = stringr::str_remove_all(string = units, pattern = 'Â'))%>%
-  filter(units != 'RH') %>%
-  mutate(value_unit = mixed_units(value, units)) %>%
+           lubridate::with_tz("America/Denver")) %>%
   left_join(.,lookup,by='name') %>%
-  select("station_key", "datetime", "name", "value_unit", "units", "long_name") %>%
-  rowwise() %>%
-  #convert units using the units package
-  mutate(new_value = 
-          list(if(units == "°C") value_unit %>% set_units("°F")  else
-             if(units == "m³/m³") value_unit %>% set_units("%") else
-               if(units == "mS/cm") value_unit %>% set_units("mS/in") else
-                 if(units == "mm/h") value_unit %>% set_units("in/hr") else
-                   if(units == "mm") value_unit %>% set_units("in") else
-                     if(units == "%") value_unit %>% set_units("%") else
-                       if(units == "W/m²") value_unit %>% set_units("W/m²") else
-                         if(units == "kPa") value_unit %>% set_units("bar") else
-                           if(units == "°") value_unit %>% set_units("°") else
-                             if(units == "m/s") value_unit %>% set_units("mi/hr") else
-                               if(units == "mV") value_unit %>% set_units("mV") else NA) %>% unlist()) %>%
-  mutate(new_units = 
-           list(if(units == "°C") "°F"  else
-             if(units == "m³/m³") "%" else
-               if(units == "mS/cm") "mS/in" else
-                 if(units == "mm/h") "in/hr" else
-                   if(units == "mm") "in" else
-                     if(units == "%") "%" else
-                       if(units == "W/m²") "W/m²" else
-                         if(units == "kPa") "bars" else
-                           if(units == "°") "°" else
-                             if(units == "m/s") "mph" else
-                               if(units == "mV") "mV" else NA) %>% unlist()) %>%
-  mutate(new_value = round(new_value, 2)) %>%
-  mutate(value_unit_new = mixed_units(new_value, new_units))
+  select("station_key", "datetime", "name", 'value', "units", "long_name")
 
 #rename precip
 latest$long_name = stringr::str_replace(latest$long_name, "Net precipitation since previous report", 'Precipitation since previous report')
@@ -114,10 +83,10 @@ latest$long_name = stringr::str_replace(latest$long_name, "Net precipitation sin
 simple_plotly = function(data,name_str,col,ylab,conversion_func){
   data %>%
     dplyr::filter(name == name_str) %>%
-    mutate(value = conversion_func(value)) %>%
+    #mutate(value = conversion_func(value)) %>%
     transform(id = as.integer(factor(name))) %>%
     plot_ly(x = ~datetime, y = ~value, color = ~name, colors = col, showlegend=F, 
-            yaxis = ~paste0("y", id), type = 'scatter', mode = 'lines') %>%
+            yaxis = ~paste0("y", id), type = 'scatter') %>% #, mode = 'lines'
     layout(yaxis = list(
       title = paste0(ylab)))%>%
     add_lines()
@@ -143,17 +112,18 @@ clusterCall(cl, function() {lapply(c("RCurl", "dplyr", "tidyverse", "plotly",
                                      "htmlwidgets", "knitr", "kableExtra", "units", "lubridate"), library, character.only = TRUE)})
 
 #start foreach loop (parallel)
-foreach(s=1:length(stations$`Station ID`)) %dopar% {
+foreach(s=1:length(stations$`station`)) %dopar% {
   tryCatch({
     #define base dir
     setwd('/home/zhoylman/')
     #define URL for downloading the last 14 days of data, looping by station, end date = surrent time +1 day (all available data)
-    url = paste0("https://mesonet.climate.umt.edu/api/observations?stations=",stations$`Station ID`[s], "&latest=false&start_time=",
-                 time$start, "&end_time=", time$current+1, "&wide=false&type=csv")
+    url = paste0("https://mesonet.climate.umt.edu/api/v2/observations/dash/?stations=",stations$`station`[s], "&latest=false&start_time=",
+                 time$start, "&end_time=", time$current+1, "&type=csv&units=US")
     
     #download data
     data = getURL(url) %>%
       read_csv() %>%
+      
       #force datetime to respect time zone
       mutate(datetime = datetime %>%
                lubridate::with_tz("America/Denver")) %>%
@@ -163,81 +133,81 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
                name = unique(.$name))
     
     #compute hourly Reference ET
-    etr_hourly_data = data %>%
-      mutate(hour = lubridate::hour(datetime),
-             date = as.Date(datetime)) %>%
-      group_by(date,hour,name) %>%
-      summarise(mean_value = median(value, na.rm = T)) %>%
-      ungroup() %>%
-      pivot_wider(names_from = name, values_from = mean_value) %>%
-      mutate(yday = lubridate::yday(date),
-             etr = fao_etr_hourly(lat = stations$Latitude[s],
-                                  lon = stations$Longitude[s],
-                                  J = yday,
-                                  hour = hour,
-                                  z = stations$`Elevation (feet)`[s] * 0.3048, #ft to m
-                                  RH = rel_humi, 
-                                  Temp_C = air_temp, 
-                                  Rs = sol_radi, 
-                                  P = atmos_pr, 
-                                  U = wind_spd),
-	     etr = ifelse(etr < 0, 0, etr)) %>%
-      pivot_longer(names_to = "name", values_to = "value", cols = -c(date, hour)) %>%
-      mutate(datetime = as.POSIXct(lubridate::ymd(date) + lubridate::hms(paste0(' 0', hour, ':00:00 MST')))) %>%
-      select(datetime, name, value) %>% 
-      filter(name == 'etr') %>%
-      mutate(date = as.Date(datetime)) %>%
-      group_by(date, name) %>%
-      summarise(na_flag = sum(value),
-                na_flag = ifelse(is.na(na_flag), 'Incomplete\nData', ''),
-                value = sum(value, na.rm = T)) %>%
-      ungroup()
-    
-    etr_daily_data = data %>%
-      mutate(date = as.Date(datetime)) %>%
-      group_by(date,name) %>%
-      summarise(mean_value = median(value, na.rm = T),
-                sum_value = sum(value, na.rm = T)) %>%
-      ungroup() %>%
-      mutate(mean_value = ifelse(name == 'sol_radi', sum_value, mean_value),
-             yday = lubridate::yday(date)) %>%
-      select(-sum_value) %>%
-      pivot_wider(names_from = name, values_from = mean_value) %>%
-      mutate(etr = fao_etr_daily(RH = rel_humi, 
-                                 lat = stations$Latitude[s],
-                                 J = yday,
-                                 z = stations$`Elevation (feet)`[s] * 0.3048, #ft to m
-                                 Temp_C = air_temp, 
-                                 Rs = sol_radi, 
-                                 P = atmos_pr, 
-                                 U = wind_spd)) %>%
-      pivot_longer(names_to = "name", values_to = "value_daily", cols = -c(date)) %>%
-      filter(name == 'etr') 
-    
-    #fill in missing data in hourly data with daily data
-    etr_data = etr_hourly_data %>%
-      left_join(., etr_daily_data, by = c('date', 'name')) %>%
-      mutate(value = ifelse(na_flag == "Incomplete\nData", value_daily, value),
-	     value = ifelse(value < 0, 0, value))
-    
+#     etr_hourly_data = data %>%
+#       mutate(hour = lubridate::hour(datetime),
+#              date = as.Date(datetime)) %>%
+#       group_by(date,hour,name) %>%
+#       summarise(mean_value = median(value, na.rm = T)) %>%
+#       ungroup() %>%
+#       pivot_wider(names_from = name, values_from = mean_value) %>%
+#       mutate(yday = lubridate::yday(date),
+#              etr = fao_etr_hourly(lat = stations$latitude[s],
+#                                   lon = stations$longitude[s],
+#                                   J = yday,
+#                                   hour = hour,
+#                                   z = stations$`elevation`[s], 
+#                                   RH = rel_humi, 
+#                                   Temp_C = air_temp, 
+#                                   Rs = sol_radi, 
+#                                   P = atmos_pr, 
+#                                   U = wind_spd),
+# 	     etr = ifelse(etr < 0, 0, etr)) %>%
+#       pivot_longer(names_to = "name", values_to = "value", cols = -c(date, hour)) %>%
+#       mutate(datetime = as.POSIXct(lubridate::ymd(date) + lubridate::hms(paste0(' 0', hour, ':00:00 MST')))) %>%
+#       select(datetime, name, value) %>% 
+#       filter(name == 'etr') %>%
+#       mutate(date = as.Date(datetime)) %>%
+#       group_by(date, name) %>%
+#       summarise(na_flag = sum(value),
+#                 na_flag = ifelse(is.na(na_flag), 'Incomplete\nData', ''),
+#                 value = sum(value, na.rm = T)) %>%
+#       ungroup()
+#     
+#     etr_daily_data = data %>%
+#       mutate(date = as.Date(datetime)) %>%
+#       group_by(date,name) %>%
+#       summarise(mean_value = median(value, na.rm = T),
+#                 sum_value = sum(value, na.rm = T)) %>%
+#       ungroup() %>%
+#       mutate(mean_value = ifelse(name == 'sol_radi', sum_value, mean_value),
+#              yday = lubridate::yday(date)) %>%
+#       select(-sum_value) %>%
+#       pivot_wider(names_from = name, values_from = mean_value) %>%
+#       mutate(etr = fao_etr_daily(RH = rel_humi, 
+#                                  lat = stations$Latitude[s],
+#                                  J = yday,
+#                                  z = stations$`Elevation (feet)`[s] * 0.3048, #ft to m
+#                                  Temp_C = air_temp, 
+#                                  Rs = sol_radi, 
+#                                  P = atmos_pr, 
+#                                  U = wind_spd)) %>%
+#       pivot_longer(names_to = "name", values_to = "value_daily", cols = -c(date)) %>%
+#       filter(name == 'etr') 
+#     
+#     #fill in missing data in hourly data with daily data
+#     etr_data = etr_hourly_data %>%
+#       left_join(., etr_daily_data, by = c('date', 'name')) %>%
+#       mutate(value = ifelse(na_flag == "Incomplete\nData", value_daily, value),
+# 	     value = ifelse(value < 0, 0, value))
+#     
     #plot "simple" variables, defined above prior to the foreach loop
     plots = list()
     for(i in 1:length(names_str)){
       plots[[i]] = simple_plotly(data, names_str[i], col[i], ylab[i], conversion_func[[i]])
     }
     
-    no_data_flag_y_position = mean(etr_data$value)/25.4
-    
+    #no_data_flag_y_position = mean(etr_data$value)/25.4
+    #
     #plot ETr
-    etr_plot = etr_data %>%
-      #convert from mm to in
-      mutate(value = value/25.4) %>%
-      transform(id = as.integer(factor(name))) %>%
-      plot_ly(x = ~date, y = ~value, color = ~name, colors = 'red', showlegend=F, 
-              yaxis = ~paste0("y", id), type = 'bar') %>%
-      layout(yaxis = list(
-        title = "Reference ET\n(in)")) 
-    
+    # etr_plot = etr_data %>%
+    #   #convert from mm to in
+    #   mutate(value = value/25.4) %>%
+    #   transform(id = as.integer(factor(name))) %>%
+    #   plot_ly(x = ~date, y = ~value, color = ~name, colors = 'red', showlegend=F, 
+    #           yaxis = ~paste0("y", id), type = 'bar') %>%
+    #   layout(yaxis = list(
+    #     title = "Reference ET\n(in)")) 
+    # 
     # plot the non-simple vars 
     # Multiple sensors per location (depth)
     vwc = data %>%
@@ -246,7 +216,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
                str_extract(., "(\\d)+") %>%
                as.numeric() %>%
                paste0(., " in")) %>%
-      mutate(value = value * 100) %>%
+      mutate(value = value) %>%
       plot_ly(x = ~datetime, y = ~value, name = ~name, color = ~name, showlegend=F, colors = "Set2", legendgroup = ~name) %>%
       layout(yaxis = list(
         title = paste0("Soil Moisture\n(%)"),
@@ -262,7 +232,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
                paste0(., " in")) %>%
       dplyr::na_if(0)%>%
       drop_na()%>%
-      mutate(value = conversion_func[[2]](value)) %>%
+      #mutate(value = conversion_func[[2]](value)) %>%
       plot_ly(x = ~datetime, y = ~value, name = ~name, showlegend=T, color = ~name, colors = "Set2", legendgroup = ~name) %>%
       layout(legend = list(orientation = 'h'))%>%
       layout(yaxis = list(
@@ -274,7 +244,7 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
       dplyr::mutate(yday = lubridate::yday(datetime)) %>%
       dplyr::filter(name == 'precipit') %>%
       dplyr::group_by(yday) %>%
-      dplyr::summarise(sum = sum(value, na.rm = T)/25.4,
+      dplyr::summarise(sum = sum(value, na.rm = T),
                        datetime_ave = mean(datetime) %>%
                          as.Date()) %>%
       plot_ly(x = ~datetime_ave, y = ~sum,  showlegend=F, colors = 'blue', type = 'bar', name = 'precip') %>%
@@ -282,16 +252,16 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
         title = paste0("Daily Precipitation Total\n(in)")))
     
     # combine all plots into final plot
-    final = subplot(precip, etr_plot, plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 8, shareX = F, titleY = T, titleX = F) %>%
+    final = subplot(precip,  plots[[1]], plots[[2]], plots[[3]], plots[[4]], vwc, temp, nrows = 7, shareX = F, titleY = T, titleX = F) %>%
       config(modeBarButtonsToRemove = c("zoom2d", "pan2d", "select2d", "lasso2d", "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d"))%>%
       config(displaylogo = FALSE)%>%
       config(showTips = TRUE)%>%
       layout(height = 1700) %>%
-      saveWidget(., paste0("/home/zhoylman/mesonet-dashboard/data/station_page/current_plots/",stations$`Station ID`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
+      saveWidget(., paste0("/home/zhoylman/mesonet-dashboard/data/station_page/current_plots/",stations$`station`[s],"_current_data.html"), selfcontained = F, libdir = "./libs")
     
     # current conditions for the "latest table"
     latest_time = latest %>%
-      filter(station_key == stations$`Station ID`[s]) %>%
+      filter(station_key == stations$`station`[s]) %>%
       select(datetime)%>%
       head(1)
     
@@ -306,23 +276,23 @@ foreach(s=1:length(stations$`Station ID`)) %dopar% {
     
     # generate teh latest table and save as a HTML widget (kable)
     latest %>%
-      filter(station_key == stations$`Station ID`[s]) %>% 
-      select("long_name", "value_unit_new", "new_units") %>%
-      rename(Observation = long_name, Value = value_unit_new, Units = new_units)%>%
-      dplyr::filter(Observation %in% vars_of_interest) %>%
+      filter(station_key == stations$`station`[s]) %>% 
+      select("long_name", "value", "units") %>%
+      rename(Observation = long_name, Value = value, Units = units)%>%
+      #dplyr::filter(Observation %in% vars_of_interest) %>%
       arrange(factor(Observation, levels = vars_of_interest))%>%
       kable(., "html", caption = paste0("Latest observation was at ", latest_time[1]$datetime %>% as.character()), col.names = NULL)%>%
       kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))%>%
-      save_kable(file = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"),  self_contained = F, libdir = "./libs")
+      save_kable(file = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`station`[s],"_current_table.html"),  self_contained = F, libdir = "./libs")
     
     #clean up header artifact
-    temp_html = paste(readLines(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))) %>%
+    temp_html = paste(readLines(paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`station`[s],"_current_table.html"))) %>%
       gsub("<p>&lt;!DOCTYPE html&gt; ", "", .)%>%
-      writeLines(., con = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`Station ID`[s],"_current_table.html"))
+      writeLines(., con = paste0("/home/zhoylman/mesonet-dashboard/data/station_page/latest_table/",stations$`station`[s],"_current_table.html"))
     
     #fin
   }, error = function(e){
-    paste0('Error on station: ', stations$`Station ID`[s])
+    paste0('Error on station: ', stations$`station`[s])
   })
 }
 

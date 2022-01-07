@@ -5,10 +5,10 @@
 
 source('/home/zhoylman/mesonet-dashboard/R/build-rmd-function.R')
 
-stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
+stations = getURL('https://mesonet.climate.umt.edu/api/v2/stations/?type=csv&clean=true') %>%
   read_csv()
 
-for(s in 1:length(stations$`Station name`)){
-  mesonet_build_rmd(stations$Latitude[s], stations$Longitude[s], stations$`Station ID`[s], stations$`Station name`[s])
+for(s in 1:length(stations$`station`)){
+  mesonet_build_rmd(stations$latitude[s], stations$longitude[s], stations$`station`[s], stations$`name`[s])
 }
 

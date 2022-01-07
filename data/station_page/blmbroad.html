@@ -8,9 +8,9 @@
 
 
 
-<title>Montana Mesonet - Broadus BLM</title>
+<title>Montana Mesonet - Broadus</title>
 
-<meta property="og:title" content="Montana Mesonet - Broadus BLM" />
+<meta property="og:title" content="Montana Mesonet - Broadus" />
 
 <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
 
@@ -24,21 +24,12 @@ window.FlexDashboardComponents = [];
 <script id="flexdashboard-navbar" type="application/json">
 [{"title":"Mesonet Data Downloader","href":"https://shiny.cfc.umt.edu/mesonet-download","align":"right"},{"title":"Mesonet Map","href":"https://mesonet.climate.umt.edu/map","align":"right"},{"title":"MCO GitHub","href":"https://github.com/mt-climate-office","align":"right"}]
 </script>
-<script src="libs/jquery-3.5.1/jquery-3.5.1.min.js"></script>
+<script src="libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="libs/bootstrap-3.3.5/css/spacelab.min.css" rel="stylesheet" />
 <script src="libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="libs/bootstrap-3.3.5/shim/respond.min.js"></script>
-<style>h1 {font-size: 34px;}
-       h1.title {font-size: 38px;}
-       h2 {font-size: 30px;}
-       h3 {font-size: 24px;}
-       h4 {font-size: 18px;}
-       h5 {font-size: 16px;}
-       h6 {font-size: 12px;}
-       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
-       pre:not([class]) { background-color: white }</style>
 <script src="libs/stickytableheaders-0.1.19/jquery.stickytableheaders.min.js"></script>
 <style type="text/css">
 
@@ -783,7 +774,7 @@ body {
   
 </span>
 <span class="navbar-brand">
-  Montana Mesonet - Broadus BLM
+  Montana Mesonet - Broadus
   <span class="navbar-author">
         </span>
 </span>
@@ -819,8 +810,7 @@ var FlexDashboard = (function () {
       defaultFigWidthMobile: 360,
       defaultFigHeightMobile: 461,
       isMobile: false,
-      isPortrait: false,
-      resize_reload: true
+      isPortrait: false
     });
   };
 
@@ -873,9 +863,9 @@ var FlexDashboard = (function () {
         globalSidebar.addClass('level3');
         var h1 = globalSidebar.children('h1');
         var h3 = $('<h3></h3>');
-        h3.append(h1.contents());
+        h3.html(h1.html());
         h3.insertBefore(h1);
-        h1.detach();
+        h1.remove();
 
         // move it into the first page
         var page = dashboardContainer.find('.section.level1').first();
@@ -940,29 +930,16 @@ var FlexDashboard = (function () {
     initPrismHighlighting();
 
     // record mobile and orientation state then register a handler
-    // to refresh if resize_reload is set to true and it changes
+    // to refresh if it changes
     _options.isMobile = isMobilePhone();
     _options.isPortrait = isPortrait();
-    if (_options.resize_reload) {
-      $(window).on('resize', function() {
-        if (_options.isMobile !== isMobilePhone() ||
-            _options.isPortrait !== isPortrait()) {
-          window.location.reload();
-        }
-      });
-    } else {
-      // if in desktop mode and resizing to mobile, make sure the heights are 100%
-      // This enforces what `fillpage.css` does for "wider" pages.
-      // Since we are not reloading once the page becomes small, we need to force the height to 100%
-      // This is a new situation introduced when `_options.resize_reload` is `false`
-      if (! _options.isMobile) {
-        // only add if `fillpage.css` was added in the first place
-        if (_options.fillPage) {
-          // fillpage.css
-          $("html,body,#dashboard").css("height", "100%");
-        }
+    $(window).on('resize', function() {
+      if (_options.isMobile !== isMobilePhone() ||
+          _options.isPortrait !== isPortrait()) {
+        window.location.reload();
       }
-    }
+    });
+
     // trigger layoutcomplete event
     dashboardContainer.trigger('flexdashboard:layoutcomplete');
   }
@@ -1074,10 +1051,10 @@ var FlexDashboard = (function () {
     if (active)
       wrapper.addClass('active');
 
-    // get a reference to the h1, discover its inner contens, then detach it
+    // get a reference to the h1, discover it's id and title, then remove it
     var h1 = wrapper.find('h1').first();
-    var title = h1.contents();
-    h1.detach();
+    var title = h1.html();
+    h1.remove();
 
     // create a navbar item
     var li = $('<li></li>');
@@ -1107,14 +1084,7 @@ var FlexDashboard = (function () {
 
       // get the name of the icon set and icon
       var dashPos = icon.indexOf("-");
-      var iconSet = null;
-      var iconSplit = icon.split(" ");
-      if (iconSplit.length > 1) {
-        iconSet = iconSplit[0];
-        icon = iconSplit.slice(1).join(" ");
-      } else {
-        iconSet = icon.substring(0, dashPos);
-      }
+      var iconSet = icon.substring(0, dashPos);
       var iconName = icon.substring(dashPos + 1);
 
       // create the icon
@@ -1215,9 +1185,9 @@ var FlexDashboard = (function () {
       sidebar.wrapInner('<div class="section level3"></div>');
       var h2 = sidebar.find('h2');
       var h3 = $('<h3></h3>');
-      h3.append(h2.contents());
+      h3.html(h2.html());
       h3.insertBefore(h2);
-      h2.detach();
+      h2.remove();
 
       // wipeout h2 elements then enclose them in a single h2
       var level2 = page.find('div.section.level2');
@@ -1359,8 +1329,8 @@ var FlexDashboard = (function () {
       // extract the title from the h3
       var li = $('<li></li>');
       var h3 = frame.children('h3');
-      li.append(h3.contents());
-      h3.detach();
+      li.html(h3.html());
+      h3.remove();
       ul.append(li);
 
       // extract commentary
@@ -1756,7 +1726,7 @@ var FlexDashboard = (function () {
 
     // add the title
     var chartTitle = $('<div class="chart-title"></div>');
-    chartTitle.append(title);
+    chartTitle.html(title);
     chart.prepend(chartTitle);
 
     // add the notes section
@@ -1812,11 +1782,10 @@ var FlexDashboard = (function () {
 
       // get the heading element within it and grab it's text
       var heading = tab.find('h' + tabLevel + ':first');
-      var headingDom = heading.contents();
+      var headingText = heading.html();
 
       // build and append the tab list item
-      var a = $('<a role="tab" data-toggle="tab"></a>');
-      a.append(headingDom);
+      var a = $('<a role="tab" data-toggle="tab">' + headingText + '</a>');
       a.attr('href', '#' + id);
       a.attr('aria-controls', id);
       var li = $('<li role="presentation"></li>');
@@ -1939,8 +1908,8 @@ var FlexDashboard = (function () {
     var h3 = container.children('h3').first();
     var title = '';
     if (!container.hasClass('no-title'))
-      title = h3.contents();
-    h3.detach();
+      title = h3.html();
+    h3.remove();
     return title;
   }
 
@@ -1951,11 +1920,11 @@ var FlexDashboard = (function () {
     var caption = chartContent.children('div.image-container')
                               .children('p.caption');
     if (blockquote.length) {
-      chartNotes.empty().append(blockquote.children('p:first-child').contents());
+      chartNotes.html(blockquote.children('p:first-child').html());
       blockquote.remove();
       return true;
     } else if (caption.length) {
-      chartNotes.empty().append(caption.contents());
+      chartNotes.html(caption.html());
       caption.remove();
       return true;
     } else {
@@ -2015,14 +1984,14 @@ var FlexDashboard = (function () {
   function handleLocationHash() {
 
     // restore tab/page from bookmark
-    var hash = window.decodeURIComponent(window.location.hash);
+    var hash = window.location.hash;
     if (hash.length > 0)
       $('ul.nav a[href="' + hash + '"]').tab('show');
     FlexDashboardUtils.manageActiveNavbarMenu();
 
     // navigate to a tab when the history changes
     window.addEventListener("popstate", function(e) {
-      var hash = window.decodeURIComponent(window.location.hash);
+      var hash = window.location.hash;
       var activeTab = $('ul.nav a[href="' + hash + '"]');
       if (activeTab.length) {
         activeTab.tab('show');
@@ -2485,7 +2454,7 @@ window.FlexDashboardComponents.push({
 
     // caption
     var caption = $('<p class="caption"></p>');
-    caption.append(chartTitle);
+    caption.html(chartTitle);
 
     // build inner div for value box and add it
     var inner = $('<div class="inner"></div>');
@@ -2498,15 +2467,9 @@ window.FlexDashboardComponents.push({
     valueBox.append(icon);
     function setIcon(chartIcon) {
       var iconLib = "";
-      var iconSplit = chartIcon.split(" ");
-      if (iconSplit.length > 1) {
-        iconLib = iconSplit[0];
-        chartIcon = iconSplit.slice(1).join(" ");
-      } else {
-        var components = chartIcon.split("-");
-        if (components.length > 1)
-          iconLib = components[0];
-      }
+      var components = chartIcon.split("-");
+      if (components.length > 1)
+        iconLib = components[0];
       icon.children('i').attr('class', iconLib + ' ' + chartIcon);
     }
     var chartIcon = valueBox.attr('data-icon');
@@ -2586,6 +2549,8 @@ window.FlexDashboardComponents.push({
     );
   }
 });
+
+
 </script>
 
 <div id="dashboard-container">
@@ -2683,8 +2648,7 @@ $(document).ready(function () {
     defaultFigWidth: 576,
     defaultFigHeight: 460,
     defaultFigWidthMobile: 360,
-    defaultFigHeightMobile: 460,
-    resize_reload: true
+    defaultFigHeightMobile: 460
   });
 });
 </script>

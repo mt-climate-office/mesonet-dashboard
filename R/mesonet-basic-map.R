@@ -9,16 +9,16 @@ library(tidyverse)
 
 setwd('/home/zhoylman/')
 
-stations = getURL("https://mesonet.climate.umt.edu/api/stations?type=csv&clean=true") %>%
+stations = getURL('https://mesonet.climate.umt.edu/api/v2/stations/?type=csv&clean=true') %>%
   read_csv()
 
 source("/home/zhoylman/mesonet-dashboard/R/base_map.R")
 
-map = base_map() %>% addCircleMarkers(data = stations, lat = ~Latitude, lng = ~Longitude, stroke = TRUE,
+map = base_map() %>% addCircleMarkers(data = stations, lat = ~latitude, lng = ~longitude, stroke = TRUE,
                                 fillColor = "blue", fillOpacity = 0.5, color = "black", opacity = 0.8, radius = 6, weight = 2,
-  popup = paste0('<div style="text-align:center"> <font size="3"> Station: ' ,stations$`Station name`,"<br> <a href='https://mco.cfc.umt.edu/mesonet_data/station_page/",
-                 stations$`Station ID`,".html' target='blank'>View Current Data</a> <br> <a href='https://shiny.cfc.umt.edu/mesonet-download/' target='blank'>Mesonet Data Downloader</a> </font>"),
-  label = stations$`Station name`,
+  popup = paste0('<div style="text-align:center"> <font size="3"> Station: ' ,stations$`name`,"<br> <a href='https://mco.cfc.umt.edu/mesonet_data/station_page/",
+                 stations$`station`,".html' target='blank'>View Current Data</a> <br> <a href='https://shiny.cfc.umt.edu/mesonet-download/' target='blank'>Mesonet Data Downloader</a> </font>"),
+  label = stations$`name`,
   labelOptions = labelOptions(noHide = F, direction = "bottom",
                               style = list(
                                 "box-shadow" = "3px 3px rgba(0,0,0,0.25)",
@@ -34,10 +34,10 @@ map = base_map() %>% addCircleMarkers(data = stations, lat = ~Latitude, lng = ~L
 
 htmlwidgets::saveWidget(map, paste0("/home/zhoylman/mesonet-dashboard/data/simple_map/simple_mesonet_map.html"), selfcontained = F, libdir = "./libs")
 
-map_home = base_map() %>% addCircleMarkers(data = stations, lat = ~Latitude, lng = ~Longitude, stroke = TRUE,
+map_home = base_map() %>% addCircleMarkers(data = stations, lat = ~latitude, lng = ~longitude, stroke = TRUE,
                                       fillColor = "blue", fillOpacity = 0.5, color = "black", opacity = 0.8, radius = 10, weight = 4,
-                                      popup = paste0('<div style="text-align:center"> <font size="3"> Station: ' ,stations$`Station name`,"<br> <a href='https://mco.cfc.umt.edu/mesonet_data/station_page/",
-                                                     stations$`Station ID`,".html' target='blank'>View Current Data</a> <br> <a href='https://shiny.cfc.umt.edu/mesonet-download/' target='blank'>Mesonet Data Downloader</a> </font>"),                                      label = stations$`Station name`,
+                                      popup = paste0('<div style="text-align:center"> <font size="3"> Station: ' ,stations$`name`,"<br> <a href='https://mco.cfc.umt.edu/mesonet_data/station_page/",
+                                                     stations$`station`,".html' target='blank'>View Current Data</a> <br> <a href='https://shiny.cfc.umt.edu/mesonet-download/' target='blank'>Mesonet Data Downloader</a> </font>"),                                      label = stations$`name`,
                                       labelOptions = labelOptions(noHide = F, direction = "bottom",
                                                                   style = list(
                                                                     "box-shadow" = "3px 3px rgba(0,0,0,0.25)",

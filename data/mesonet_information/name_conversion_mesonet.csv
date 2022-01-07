@@ -1,42 +1,45 @@
 name,sensor_measurement,description,units,height_depth,description_short,sort_order,scale,reverse,public
-air_temp,Air Temperature,Air Temperature,°C,96.00000,Air Temperature,1,RdBu,1,1
-atmos_pr,Atmospheric Pressure,Atmospheric Pressure,kPa,96.00000,Atmospheric Pressure,4,PuRd,0,1
-batt_per,Battery Percent,Battery Percent,%,96.00000,Battery Percent,36,PuRd,0,1
-batt_vol,Battery Voltage,Battery Voltage,mV,96.00000,Battery Voltage,37,PuRd,0,1
-irra_650,650 nm Irradiance,Red (650 nm) irradiance,W·m⁻²·nm⁻¹,192.00000,650 nm Irradiance,24,PuRd,0,0
-irra_810,810 nm Irradiance,Near-infrared (810 nm) irradiance,W·m⁻²·nm⁻¹,192.00000,810 nm Irradiance,25,PuRd,0,0
-light_ct,Lightning Activity,Count of lightning strikes since previous report,count,96.00000,Lightning Activity,28,PuRd,0,0
-light_di,Lightning Distance,Average distance to lightning strikes since previous report,km,96.00000,Lightning Distance,29,PuRd,0,0
-log_pres,Reference Pressure,Reference pressure from the data logger,kPa,96.00000,Reference Pressure,38,PuRd,0,0
-log_temp,Logger Temperature,Temperature reading from the data logger,°C,96.00000,Logger Temperature,39,RdBu,1,0
-max_pr_r,Max Precip Rate,Maximum precipiation rate,mm/hr,96.00000,Max Precip Rate,3,BrBG,0,1
-precipit,Precipitation,Net precipitation since previous report,mm,96.00000,Precipitation,2,BrBG,0,1
-radi_650,650 nm Radiance,Red (650 nm) radiance,W·m⁻²·nm⁻¹·sr⁻¹,192.00000,650 nm Radiance,26,PuRd,0,0
-radi_810,810 nm Radiance,Near-infrared (810 nm) radiance,W·m⁻²·nm⁻¹·sr⁻¹,192.00000,810 nm Radiance,27,PuRd,0,0
-rel_humi,Relative Humidity,Relative humidity,%,96.00000,Relative Humidity,5,BrBG,0,1
-rhs_temp,RH Sensor Temp,Relative humidity sensor temperature,°C,96.00000,RH Sensor Temp,6,RdBu,1,0
-soilec00,Bulk EC,"Bulk soil electrical conductivity at 0""",mS/cm,0.00000,Bulk EC @ 0 in.,17,PuRd,0,1
-soilec04,Bulk EC,"Bulk soil electrical conductivity at 4""",mS/cm,-4.00000,Bulk EC @ 4 in.,18,PuRd,0,1
-soilec08,Bulk EC,"Bulk soil electrical conductivity at 8""",mS/cm,-8.00000,Bulk EC @ 8 in.,19,PuRd,0,1
-soilec20,Bulk EC,"Bulk soil electrical conductivity at 20""",mS/cm,-20.00000,Bulk EC @ 20 in.,20,PuRd,0,1
-soilec36,Bulk EC,"Bulk soil electrical conductivity at 36""",mS/cm,-36.00000,Bulk EC @ 36 in.,21,PuRd,0,1
-soilt_00,Soil Temperature,"Soil temperature at 0""",°C,0.00000,Soil Temperature @ 0 in.,7,RdBu,1,1
-soilt_04,Soil Temperature,"Soil temperature at 4""",°C,-4.00000,Soil Temperature @ 4 in.,8,RdBu,1,1
-soilt_08,Soil Temperature,"Soil temperature at 8""",°C,-8.00000,Soil Temperature @ 8 in.,9,RdBu,1,1
-soilt_20,Soil Temperature,"Soil temperature at 20""",°C,-20.00000,Soil Temperature @ 20 in.,10,RdBu,1,1
-soilt_36,Soil Temperature,"Soil temperature at 36""",°C,-36.00000,Soil Temperature @ 36 in.,11,RdBu,1,1
-soilwc00,Water Content,"Soil volumetric water content at 0""",m³/m³,0.00000,Soil VWC @ 0 in.,12,BrBG,0,1
-soilwc04,Water Content,"Soil volumetric water content at 4""",m³/m³,-4.00000,Soil VWC @ 4 in.,13,BrBG,0,1
-soilwc08,Water Content,"Soil volumetric water content at 8""",m³/m³,-8.00000,Soil VWC @ 8 in.,14,BrBG,0,1
-soilwc20,Water Content,"Soil volumetric water content at 20""",m³/m³,-20.00000,Soil VWC @ 20 in.,15,BrBG,0,1
-soilwc36,Water Content,"Soil volumetric water content at 36""",m³/m³,-36.00000,Soil VWC @ 36 in.,16,BrBG,0,1
-sol_radi,Solar Radiation,Solar radiation,W/m²,96.00000,Solar Radiation,22,RdBu,1,1
-vpd_atmo,VPD,Vapor pressure deficit,kPa,96.00000,VPD,23,PuRd,0,1
-well_eco,EC,Electrical conductivity of well water,mS/cm,0.00000,Well EC,33,PuRd,0,0
-well_lvl,Water Level,Depth of well water,mm,0.00000,Well Water Level,34,PuRd,0,0
-well_tmp,Water Temperature,Temperature of well water,°C,0.00000,Well Water Temperature,35,RdBu,1,0
-wind_dir,Wind Direction,Wind direction,°,96.00000,Wind Direction,30,PuRd,0,1
-wind_spd,Wind Speed,Wind speed,m/s,96.00000,Wind Speed,31,PuRd,0,1
-windgust,Gust Speed,Maximum wind gust speed since previous report,m/s,96.00000,Gust Speed,32,PuRd,0,1
-x_lvl_at,X-axis Level,The level of the ATMOS sensor along its X-axis,°,96.00000,X-axis Level,40,PuRd,0,0
-y_lvl_at,Y-axis Level,The level of the ATMOS sensor along its Y-axis,°,96.00000,Y-axis Level,41,PuRd,0,0
+air_temp,Air Temperature,Air Temperature,°C,96,Air Temperature,1,RdBu,1,1
+atmos_pr,Atmospheric Pressure,Atmospheric Pressure,kPa,96,Atmospheric Pressure,4,PuRd,0,1
+batt_per,Battery Percent,Battery Percent,%,96,Battery Percent,36,PuRd,0,1
+batt_vol,Battery Voltage,Battery Voltage,mV,96,Battery Voltage,37,PuRd,0,1
+irra_650,650 nm Irradiance,Red (650 nm) irradiance,W·m⁻²·nm⁻¹,192,650 nm Irradiance,24,PuRd,0,0
+irra_810,810 nm Irradiance,Near-infrared (810 nm) irradiance,W·m⁻²·nm⁻¹,192,810 nm Irradiance,25,PuRd,0,0
+light_ct,Lightning Activity,Count of lightning strikes since previous report,count,96,Lightning Activity,28,PuRd,0,0
+light_di,Lightning Distance,Average distance to lightning strikes since previous report,km,96,Lightning Distance,29,PuRd,0,0
+log_pres,Reference Pressure,Reference pressure from the data logger,kPa,96,Reference Pressure,38,PuRd,0,0
+log_temp,Logger Temperature,Temperature reading from the data logger,°C,96,Logger Temperature,39,RdBu,1,0
+max_pr_r,Max Precip Rate,Maximum precipiation rate,mm/hr,96,Max Precip Rate,3,BrBG,0,1
+precipit,Precipitation,Net precipitation since previous report,mm,96,Precipitation,2,BrBG,0,1
+radi_650,650 nm Radiance,Red (650 nm) radiance,W·m⁻²·nm⁻¹·sr⁻¹,192,650 nm Radiance,26,PuRd,0,0
+radi_810,810 nm Radiance,Near-infrared (810 nm) radiance,W·m⁻²·nm⁻¹·sr⁻¹,192,810 nm Radiance,27,PuRd,0,0
+rel_humi,Relative Humidity,Relative humidity,%,96,Relative Humidity,5,BrBG,0,1
+rhs_temp,RH Sensor Temp,Relative humidity sensor temperature,°C,96,RH Sensor Temp,6,RdBu,1,0
+soilec00,Bulk EC,"Bulk soil electrical conductivity at 0""",mS/cm,0,Bulk EC @ 0 in.,17,PuRd,0,1
+soilec04,Bulk EC,"Bulk soil electrical conductivity at 4""",mS/cm,-4,Bulk EC @ 4 in.,18,PuRd,0,1
+soilec08,Bulk EC,"Bulk soil electrical conductivity at 8""",mS/cm,-8,Bulk EC @ 8 in.,19,PuRd,0,1
+soilec20,Bulk EC,"Bulk soil electrical conductivity at 20""",mS/cm,-20,Bulk EC @ 20 in.,20,PuRd,0,1
+soilec36,Bulk EC,"Bulk soil electrical conductivity at 36""",mS/cm,-36,Bulk EC @ 36 in.,21,PuRd,0,1
+soilec40,Bulk EC,"Bulk soil electrical conductivity at 40""",mS/cm,-40,Bulk EC @ 40 in.,21,PuRd,0,1
+soilt_00,Soil Temperature,"Soil temperature at 0""",°C,0,Soil Temperature @ 0 in.,7,RdBu,1,1
+soilt_04,Soil Temperature,"Soil temperature at 4""",°C,-4,Soil Temperature @ 4 in.,8,RdBu,1,1
+soilt_08,Soil Temperature,"Soil temperature at 8""",°C,-8,Soil Temperature @ 8 in.,9,RdBu,1,1
+soilt_20,Soil Temperature,"Soil temperature at 20""",°C,-20,Soil Temperature @ 20 in.,10,RdBu,1,1
+soilt_36,Soil Temperature,"Soil temperature at 36""",°C,-36,Soil Temperature @ 36 in.,11,RdBu,1,1
+soilt_40,Soil Temperature,"Soil temperature at 40""",°C,-40,Soil Temperature @ 40 in.,11,RdBu,1,1
+soilwc00,Water Content,"Soil volumetric water content at 0""",m³/m³,0,Soil VWC @ 0 in.,12,BrBG,0,1
+soilwc04,Water Content,"Soil volumetric water content at 4""",m³/m³,-4,Soil VWC @ 4 in.,13,BrBG,0,1
+soilwc08,Water Content,"Soil volumetric water content at 8""",m³/m³,-8,Soil VWC @ 8 in.,14,BrBG,0,1
+soilwc20,Water Content,"Soil volumetric water content at 20""",m³/m³,-20,Soil VWC @ 20 in.,15,BrBG,0,1
+soilwc36,Water Content,"Soil volumetric water content at 36""",m³/m³,-36,Soil VWC @ 36 in.,16,BrBG,0,1
+soilwc40,Water Content,"Soil volumetric water content at 40""",m³/m³,-40,Soil VWC @ 40 in.,16,BrBG,0,1
+sol_radi,Solar Radiation,Solar radiation,W/m²,96,Solar Radiation,22,RdBu,1,1
+vpd_atmo,VPD,Vapor pressure deficit,kPa,96,VPD,23,PuRd,0,1
+well_eco,EC,Electrical conductivity of well water,mS/cm,0,Well EC,33,PuRd,0,0
+well_lvl,Water Level,Depth of well water,mm,0,Well Water Level,34,PuRd,0,0
+well_tmp,Water Temperature,Temperature of well water,°C,0,Well Water Temperature,35,RdBu,1,0
+wind_dir,Wind Direction,Wind direction,°,96,Wind Direction,30,PuRd,0,1
+wind_spd,Wind Speed,Wind speed,m/s,96,Wind Speed,31,PuRd,0,1
+windgust,Gust Speed,Maximum wind gust speed since previous report,m/s,96,Gust Speed,32,PuRd,0,1
+x_lvl_at,X-axis Level,The level of the ATMOS sensor along its X-axis,°,96,X-axis Level,40,PuRd,0,0
+y_lvl_at,Y-axis Level,The level of the ATMOS sensor along its Y-axis,°,96,Y-axis Level,41,PuRd,0,0
