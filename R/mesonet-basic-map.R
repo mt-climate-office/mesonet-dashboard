@@ -10,7 +10,9 @@ library(tidyverse)
 setwd('/home/zhoylman/')
 
 stations = getURL('https://mesonet.climate.umt.edu/api/v2/stations/?type=csv&clean=true') %>%
-  read_csv()
+  read_csv() %>%
+  mutate(latitude = jitter(latitude, factor = 100, amount = 0.01),
+         longitude = jitter(longitude, factor = 100, amount = 0.01))
 
 source("/home/zhoylman/mesonet-dashboard/R/base_map.R")
 

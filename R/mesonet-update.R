@@ -120,17 +120,33 @@ foreach(s=1:length(stations$`station`)) %dopar% {
     url = paste0("https://mesonet.climate.umt.edu/api/v2/observations/dash/?stations=",stations$`station`[s], "&latest=false&start_time=",
                  time$start, "&end_time=", time$current+1, "&type=csv&units=US")
     
-    #download data
-    data = getURL(url) %>%
-      read_csv() %>%
-      
-      #force datetime to respect time zone
-      mutate(datetime = datetime %>%
-               lubridate::with_tz("America/Denver")) %>%
-      select(name, value, datetime, units) %>%
-      #fill missing obs with NAs for plotting
-      complete(datetime = seq(min(.$datetime),max(.$datetime), by = '15 mins'),
-               name = unique(.$name))
+    
+    if(str_detect(stations$`station`[s], 'ace')){
+      #download data
+      data = getURL(url) %>%
+        read_csv() %>%
+        
+        #force datetime to respect time zone
+        mutate(datetime = datetime %>%
+                 lubridate::with_tz("America/Denver")) %>%
+        select(name, value, datetime, units) %>%
+        #fill missing obs with NAs for plotting
+        complete(datetime = seq(min(.$datetime),max(.$datetime), by = '5 mins'),
+                 name = unique(.$name))
+    } else {
+      #download data
+      data = getURL(url) %>%
+        read_csv() %>%
+        
+        #force datetime to respect time zone
+        mutate(datetime = datetime %>%
+                 lubridate::with_tz("America/Denver")) %>%
+        select(name, value, datetime, units) %>%
+        #fill missing obs with NAs for plotting
+        complete(datetime = seq(min(.$datetime),max(.$datetime), by = '15 mins'),
+                 name = unique(.$name))
+    }
+   
     
     #compute hourly Reference ET
 #     etr_hourly_data = data %>%
