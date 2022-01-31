@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 from dash.dependencies import Input, Output
 from plotly.subplots import make_subplots
 
-from .get_data import get_sites, to_view_format, get_station_latest
+from get_data import get_sites, to_view_format, get_station_latest
 
 # TODO: Multiple endpoints with multiple apps: https://dash.plotly.com/urls
 
@@ -30,10 +30,90 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
-app.layout = html.Div([
-    dcc.Graph(id="station-data", figure=fig),
-    dcc.Graph(id="weather-plots"),
+def build_banner():
+    return html.Div(
+        id="banner",
+        className="banner",
+        children=[
+            html.Div(
+                id="banner-text",
+                children=[
+                    html.H5("Montana Mesonet Dashboard"),
+                    html.H6("Download and View Data from Montana Weather Stations"),
+                ],
+            ),
+            html.Div(
+                id="banner-logo",
+                children=[
+                    # TODO: a Modal to make this button render popup: https://github.com/plotly/dash-sample-apps/blob/main/apps/dash-manufacture-spc-dashboard/app.py#L234
+                    html.Button(
+                        id="help-button", children="HELP", n_clicks=0
+                    ),
+                    html.A(
+                        html.Img(id="logo", src=app.get_asset_url('MCO_logo.svg')),
+                        href="https://climate.umt.edu/",
+                    ),
+                ],
+            ),
+        ],
+    )
+
+def build_tabs():
+    return html.Div(
+        id="tabs",
+        className="tabs",
+        children=[
+            dcc.Tabs(
+                id="app-tabs",
+                value="tab-station",
+                className="custom-tabs",
+                children=[
+                    dcc.Tab(
+                        label="Latest Station Data",
+                        value="tab-station",
+                        className="custom-tab",
+                        selected_className="custom-tab--selected",
+                    ),
+                    dcc.Tab(
+                        label="Mesonet Map",
+                        value="tab-map",
+                        className="custom-tab",
+                        selected_className="custom-tab--selected",
+                    ),
+                    dcc.Tab(
+                        label="Mesonet Data Download",
+                        value="tab-download",
+                        className="custom-tab",
+                        selected_className="custom-tab--selected",
+                    ),
+                ],
+            )
+        ],
+    )
+
+
+
+app.layout = html.Div(
+    id='main-app-container',
+    children=[
+        build_banner(),
+        build_tabs()
 ])
+
+@app.callback(
+    Output("app-content", "children"),
+    Input("app-tabs", "value")
+)
+def render_tab_content(tab):
+    if tab == "tab-station":
+        return html.Div(
+            dcc.Graph(id="station-data", figure=fig),
+            dcc.Graph(id="weather-plots"),
+        )
+    elif tab == "tab-map":
+        return html.Div()
+    
+    return html.Div()
 
 
 def style_figure(fig):
@@ -54,6 +134,7 @@ def plot_soil(dat):
         x='datetime',
         y='value', 
         color='elem_lab',
+        # color_discrete_sequence=['yellow', 'blue', 'pink', 'skyblbue'],
         # TODO: Refine hover data: https://plotly.com/python/hover-text-and-formatting/
         hover_name='elem_lab',
         hover_data=['value']
@@ -87,7 +168,6 @@ def plot_ppt(dat):
 def px_to_subplot(*figs, **kwargs):
     """
     Converts a list of plotly express figures (*figs) into a subplot with 1 column.
-
 
     Returns:
         A single plotly subplot.
@@ -139,11 +219,21 @@ def plot_site(station):
     )
     ppt_plot = plot_ppt(ppt)
 
-    return px_to_subplot(
+    sub = px_to_subplot(
         ppt_plot, soil_vwc_plot, temp_plot, rh_plot, 
         rad_plot, wind_plot, soil_temp_plot,
         shared_xaxes=True
     )
+
+    sub.update_yaxes(title_text="Daily Precipitation Total<br>(in)", row=1, col=1)
+    sub.update_yaxes(title_text="Soil Moisture<br>(%)", row=2, col=1)
+    sub.update_yaxes(title_text="Air Temperature<br>(°F)", row=3, col=1)
+    sub.update_yaxes(title_text="Relative Humidity<br>(%)", row=4, col=1)
+    sub.update_yaxes(title_text="Solar Radiation<br>(W/m<sup>2</sup>)", row=5, col=1)
+    sub.update_yaxes(title_text="Wind Speed<br>(mph)", row=6, col=1)
+    sub.update_yaxes(title_text="Soil Temperature<br>(°F)", row=7, col=1)
+
+    return sub
 
 
 
@@ -155,8 +245,7 @@ def display_click_data(clickData):
     # dat = json.load(clickData, indent=2)
     if clickData:
         station = clickData['points'][0]['customdata']
-        out = plot_site(station)
-        return out
+        return plot_site(station)
     return style_figure(px.line())
     
 if __name__ == '__main__':
