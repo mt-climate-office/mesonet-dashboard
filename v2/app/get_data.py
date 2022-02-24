@@ -2,7 +2,7 @@ import asyncio
 import time
 import pandas as pd
 import io
-import requests 
+import requests
 import datetime as dt
 from dateutil import relativedelta as rd
 from dataclasses import dataclass
@@ -13,35 +13,63 @@ import plotly.express as px
 # example weather url https://mobile.weather.gov/index.php?lat=48.34&lon=-111.82
 # MCO Logo
 
-AGRIMET_VARS = ['air_temp_0244', 'ppt', 'rh', 'wind_spd_0244', 'sol_rad', 'soil_temp_0010', 'soil_temp_0020', 'soil_temp_0050', 'soil_temp_0091', 'soil_vwc_0010', 'soil_vwc_0020', 'soil_vwc_0050', 'soil_vwc_0091']
-HYRDOMET_VARS = ['air_temp_0200', 'ppt', 'rh', 'wind_spd_1000', 'sol_rad', 'soil_temp_0005' 'soil_temp_0010', 'soil_temp_0020', 'soil_temp_0050', 'soil_temp_0100', 'soil_vwc_0005', 'soil_vwc_0010', 'soil_vwc_0020', 'soil_vwc_0050', 'soil_vwc_0100']
+AGRIMET_VARS = [
+    "air_temp_0244",
+    "ppt",
+    "rh",
+    "wind_spd_0244",
+    "sol_rad",
+    "soil_temp_0010",
+    "soil_temp_0020",
+    "soil_temp_0050",
+    "soil_temp_0091",
+    "soil_vwc_0010",
+    "soil_vwc_0020",
+    "soil_vwc_0050",
+    "soil_vwc_0091",
+]
+HYRDOMET_VARS = [
+    "air_temp_0200",
+    "ppt",
+    "rh",
+    "wind_spd_1000",
+    "sol_rad",
+    "soil_temp_0005" "soil_temp_0010",
+    "soil_temp_0020",
+    "soil_temp_0050",
+    "soil_temp_0100",
+    "soil_vwc_0005",
+    "soil_vwc_0010",
+    "soil_vwc_0020",
+    "soil_vwc_0050",
+    "soil_vwc_0100",
+]
 API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 station_list = pd.read_csv(f"{API_URL}stations/?type=csv")
 
 
 def switch(val):
-    
-    mapper = {
-        'soil_vwc_0005': 'Soil Moisture at 5 cm',
-        'soil_vwc_0010': 'Soil Moisture at 10 cm',
-        'soil_vwc_0020': 'Soil Moisture at 20 cm',
-        'soil_vwc_0050': 'Soil Moisture at 50 cm',
-        'soil_vwc_0091': 'Soil Moisture at 91 cm',
-        'soil_vwc_0100': 'Soil Moisture at 100 cm',
-        'soil_temp_0005': 'Soil Temperature at 5 cm',
-        'soil_temp_0010': 'Soil Temperature at 10 cm',
-        'soil_temp_0020': 'Soil Temperature at 20 cm',
-        'soil_temp_0050': 'Soil Temperature at 50 cm',
-        'soil_temp_0091': 'Soil Temperature at 91 cm',
-        'soil_temp_0100': 'Soil Temperature at 100 cm',
-        'air_temp_0200': 'Air Temperature',
-        'air_temp_0244': 'Air Temperature',
-        'rh': 'Relatve Humidity',
-        'ppt': 'Daily Precipitation Total',
-        'sol_rad': 'Solar Radiation',
-        'wind_spd_0244': 'Wind Speed',
-        'wind_spd_1000': 'Wind Speed',
 
+    mapper = {
+        "soil_vwc_0005": "Soil Moisture at 5 cm",
+        "soil_vwc_0010": "Soil Moisture at 10 cm",
+        "soil_vwc_0020": "Soil Moisture at 20 cm",
+        "soil_vwc_0050": "Soil Moisture at 50 cm",
+        "soil_vwc_0091": "Soil Moisture at 91 cm",
+        "soil_vwc_0100": "Soil Moisture at 100 cm",
+        "soil_temp_0005": "Soil Temperature at 5 cm",
+        "soil_temp_0010": "Soil Temperature at 10 cm",
+        "soil_temp_0020": "Soil Temperature at 20 cm",
+        "soil_temp_0050": "Soil Temperature at 50 cm",
+        "soil_temp_0091": "Soil Temperature at 91 cm",
+        "soil_temp_0100": "Soil Temperature at 100 cm",
+        "air_temp_0200": "Air Temperature",
+        "air_temp_0244": "Air Temperature",
+        "rh": "Relatve Humidity",
+        "ppt": "Daily Precipitation Total",
+        "sol_rad": "Solar Radiation",
+        "wind_spd_0244": "Wind Speed",
+        "wind_spd_1000": "Wind Speed",
     }
 
     return mapper[val]
@@ -54,50 +82,47 @@ def get_sites():
 def get_station_record(station):
 
     start_time = dt.datetime.now() - rd.relativedelta(weeks=2)
-    start_time = start_time.strftime('%Y-%m-%dT%H:%M:%S')
-    
-    e = ",".join(HYRDOMET_VARS) if station[:3] == 'ace' else ",".join(AGRIMET_VARS)
+    start_time = start_time.strftime("%Y-%m-%dT%H:%M:%S")
+
+    e = ",".join(HYRDOMET_VARS) if station[:3] == "ace" else ",".join(AGRIMET_VARS)
     r = requests.get(
-        url = f"{API_URL}observations",
+        url=f"{API_URL}observations",
         params={
-            'stations': station,
-            'elements': e,
-            'start_time': start_time,
-            'level': 1,
-            'type': 'csv',
-            'wide': False
-        }  
+            "stations": station,
+            "elements": e,
+            "start_time": start_time,
+            "level": 1,
+            "type": "csv",
+            "wide": False,
+        },
     )
-    
+
     with io.StringIO(r.text) as text_io:
         dat = pd.read_csv(text_io)
 
     return dat
 
+
 def to_view_format(station):
     dat = get_station_record(station)
     dat.datetime = pd.to_datetime(dat.datetime)
-    dat = dat.set_index('datetime')  
-    dat['elem_lab'] = dat['element'].apply(switch)
+    dat = dat.set_index("datetime")
+    dat["elem_lab"] = dat["element"].apply(switch)
 
-    hourly = dat[(dat.index.minute == 0) & (dat.element != 'ppt')]
+    hourly = dat[(dat.index.minute == 0) & (dat.element != "ppt")]
 
-    ppt = dat[dat.element == 'ppt']
-    ppt = ppt.groupby(ppt.index.date)['value'].agg('sum')
+    ppt = dat[dat.element == "ppt"]
+    ppt = ppt.groupby(ppt.index.date)["value"].agg("sum")
 
     return hourly.reset_index(), ppt.reset_index()
 
 
 def get_station_latest(station):
-    
+
     r = requests.get(
-        url = f"{API_URL}latest",
-        params={
-            'stations': station,
-            'type': 'csv',
-            'wide': False
-        }
-    ) 
+        url=f"{API_URL}latest",
+        params={"stations": station, "type": "csv", "wide": False},
+    )
 
     with io.StringIO(r.text) as text_io:
         dat = pd.read_csv(text_io)
