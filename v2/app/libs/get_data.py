@@ -18,6 +18,7 @@ AGRIMET_VARS = [
     "ppt",
     "rh",
     "wind_spd_0244",
+    "wind_dir_0244",
     "sol_rad",
     "soil_temp_0010",
     "soil_temp_0020",
@@ -33,8 +34,10 @@ HYRDOMET_VARS = [
     "ppt",
     "rh",
     "wind_spd_1000",
+    "wind_dir_1000",
     "sol_rad",
-    "soil_temp_0005" "soil_temp_0010",
+    "soil_temp_0005",
+    "soil_temp_0010",
     "soil_temp_0020",
     "soil_temp_0050",
     "soil_temp_0100",
@@ -70,6 +73,8 @@ def switch(val):
         "sol_rad": "Solar Radiation",
         "wind_spd_0244": "Wind Speed",
         "wind_spd_1000": "Wind Speed",
+        "wind_dir_0244": "Wind Direction",
+        "wind_dir_1000": "Wind Direction",
     }
 
     return mapper[val]
@@ -103,18 +108,20 @@ def get_station_record(station):
     return dat
 
 
-def to_view_format(station):
+def clean_format(station, hourly=True):
     dat = get_station_record(station)
     dat.datetime = pd.to_datetime(dat.datetime)
     dat = dat.set_index("datetime")
     dat["elem_lab"] = dat["element"].apply(switch)
 
-    hourly = dat[(dat.index.minute == 0) & (dat.element != "ppt")]
-
     ppt = dat[dat.element == "ppt"]
     ppt = ppt.groupby(ppt.index.date)["value"].agg("sum")
 
-    return hourly.reset_index(), ppt.reset_index()
+    dat = dat[dat.element != "ppt"]
+    if hourly:
+        dat = dat[(dat.index.minute == 0)]
+
+    return dat.reset_index(), ppt.reset_index()
 
 
 def get_station_latest(station):

@@ -1,7 +1,9 @@
+from xml.etree.ElementInclude import include
+import pandas as pd
 import plotly.express as px
 from plotly.subplots import make_subplots
 
-from get_data import to_view_format
+from .get_data import clean_format
 
 
 def style_figure(fig):
@@ -72,7 +74,7 @@ def px_to_subplot(*figs, **kwargs):
 def plot_site(station):
 
     # TODO: Add NaN values into missing data?
-    hourly, ppt = to_view_format(station)
+    hourly, ppt = clean_format(station, hourly=True)
 
     soil_temp_plot = plot_soil(hourly[hourly["element"].str.contains("soil_temp")])
     soil_vwc_plot = plot_soil(hourly[hourly["element"].str.contains("soil_vwc")])
@@ -105,4 +107,67 @@ def plot_site(station):
     sub.update_yaxes(title_text="Wind Speed<br>(mph)", row=6, col=1)
     sub.update_yaxes(title_text="Soil Temperature<br>(°F)", row=7, col=1)
 
+    sub.update_layout(
+        xaxis=dict(
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1,
+                        label="1d",
+                        step="day",
+                        stepmode="backward"),
+                    dict(count=7,
+                        label="1w",
+                        step="day",
+                        stepmode="backward"),
+                    dict(step="all")
+                ])
+            ),
+            rangeslider=dict(
+                visible=True
+            ),
+            type="date"
+        )
+    )
+
+    sub.update_xaxes(matches='x')
+
     return sub
+
+
+def plot_stations(sites):
+
+    fig = px.scatter_mapbox(
+        sites,
+        lat="latitude",
+        lon="longitude",
+        hover_name="name",
+        hover_data=["station"],
+        zoom=4.5,
+        height=300,
+    )
+    fig.update_layout(mapbox_style="stamen-terrain")
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    return fig
+
+
+# credit to: https://stackoverflow.com/questions/7490660/converting-wind-direction-in-angles-to-text-words
+def deg_to_compass(num):
+    val=int((num/22.5)+.5)
+    arr=["N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]
+    return arr[(val % 16)]
+
+
+def plot_wind(wind_data):
+    wind_data = pd.read_csv('~/misc/mco/wind_example.csv')
+    wind_data['wind_dir'] = wind_data['wind_dir'].apply(deg_to_compass)
+    wind_data['wind_spd'] = round(wind_data['wind_spd'])
+    wind_data['wind_spd'] = pd.qcut(wind_data.wind_spd, q=10, duplicates='drop')
+    out = wind_data.groupby(['wind_dir', 'wind_spd']).size().reset_index(name='Frequency')
+    out['wind_dir'] = pd.Categorical(out['wind_dir'], ["N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"])
+    out = out.sort_values(['wind_dir', 'wind_spd'])
+    out = out.rename(columns={
+        'wind_dir': 'Wind Direction',
+        'wind_spd': 'Wind Speed (m/s)'
+    })
+
+    fig = px.bar_polar(out, r='Frequency', theta='Wind Direction', color='Wind Speed (m/s)', template = 'plotly_white',color_discrete_sequence= px.colors.sequential.Plasma_r)
