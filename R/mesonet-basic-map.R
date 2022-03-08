@@ -7,7 +7,7 @@ library(leaflet)
 library(RCurl)
 library(tidyverse)
 
-setwd('/home/zhoylman/')
+# setwd('/home/zhoylman/')
 
 row_to_popup <- function(name, station, sub_network) {
   paste0(
@@ -23,11 +23,13 @@ row_to_popup <- function(name, station, sub_network) {
     paste(collapse = '<hr>')
 }
 
-stations <-
+stations_raw <-
   getURL(
     'https://mesonet.climate.umt.edu/api/v2/stations/?type=csv&clean=true&active=True'
   ) %>%
-  read_csv() %>%
+  read_csv()
+
+stations <- stations_raw %>%
   dplyr::group_by(latitude, longitude) %>%
   dplyr::summarise(
     name = list(name),
@@ -107,12 +109,72 @@ map = base_map() %>%
   add_radar_layer_and_controls() %>%
   add_leaflet_legend()
 
-htmlwidgets::saveWidget(map, paste0("./data/simple_map/simple_mesonet_map.html"), selfcontained = F, libdir = "./libs")
+htmlwidgets::saveWidget(
+  map,
+  paste0("./data/simple_map/simple_mesonet_map.html"),
+  selfcontained = F,
+  libdir = "./libs"
+)
 
-map_home = base_map() %>% 
+station_list <- stations_raw %>%
+  dplyr::transmute(
+    lname = paste0(name, ' (', sub_network, ')'),
+    href = paste0(
+      'https://mco.cfc.umt.edu/mesonet_data/station_page/',
+      station,
+      '.html'
+    )
+  ) %>% 
+  dplyr::arrange(lname)
+
+
+registerPlugin <- function(map, plugin) {
+  map$dependencies <- c(map$dependencies, list(plugin))
+  map
+}
+
+map_home = base_map() %>%
+  registerPlugin(jquerylib::jquery_core()) %>%
   add_station_layer(stations, radius = 10, weight = 4) %>%
-  add_radar_layer_and_controls() %>% 
-  leaflet::setView(lng = -109.5, lat = 47, zoom = 6) %>%
-  add_leaflet_legend()
+  add_radar_layer_and_controls() %>%
+  leaflet::setView(lng = -109.5,
+                   lat = 47,
+                   zoom = 6) %>%
+  add_leaflet_legend() %>%
+  htmlwidgets::onRender("
+    function(el, x, data) {
+      var selector = L.control({
+        position: 'topright'
+      })
+      
+      selector.onAdd = function(map) {
+        var div = L.DomUtil.create('select', 'info legend dropdown');
+        return div
+      }
+      
+      selector.addTo(this)
+      
+      $('select').empty()
+      for (var i = 0; i < data.lname.length; i++) {
+        var lname = data.lname[i];
+        var link = data.href[i]
+        
+        $('select')
+          .append($('<option>', {
+            value: link
+          }).text(lname))
+      }
+      
+      $('select').change(function() {
+        window.location.href = $('select').val()
+      })
+    }               
+  ", data = station_list)
 
-htmlwidgets::saveWidget(map_home, paste0("./data/simple_map/simple_mesonet_map_home.html"), selfcontained = F, libdir = "./libs")
+
+htmlwidgets::saveWidget(
+  map_home,
+  paste0("./data/simple_map/simple_mesonet_map_home.html"),
+  selfcontained = F,
+  libdir = "./libs"
+)
