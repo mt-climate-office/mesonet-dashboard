@@ -74,7 +74,23 @@ latest = getURL("https://mesonet.climate.umt.edu/api/v2/observations/dash/?type=
   mutate(datetime = datetime %>%
            lubridate::with_tz("America/Denver")) %>%
   left_join(.,lookup,by='name') %>%
-  select("station_key", "datetime", "name", 'value', "units", "long_name")
+  select("station_key", "datetime", "name", 'value', "units", "long_name") %>% 
+  dplyr::mutate(
+    value = dplyr::case_when(
+      name == 'air_temp' ~ round(value, 2),
+      name == 'rel_humi' ~ round(value, 1),
+      name == 'wind_dir' ~ round(value),
+      name == 'wind_spd' ~ round(value, 2),
+      name == 'windgust' ~ round(value, 2),
+      name == 'atmos_pr' ~ round(value),
+      name == 'sol_radi' ~ round(value, 1),
+      str_detect(name, 'soilwc') ~ round(value, 1),
+      str_detect(name, 'soilt') ~ round(value, 2),
+      name == 'vpd_atmo' ~ round(value, 1),
+      # Keep everything else as is
+      TRUE ~ value
+    )
+  )
 
 #rename precip
 latest$long_name = stringr::str_replace(latest$long_name, "Net precipitation since previous report", 'Precipitation since previous report')
