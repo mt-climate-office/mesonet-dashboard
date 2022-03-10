@@ -20,3 +20,5 @@ sudo su - -c "R -q -e \"install.packages('units', repos='http://cran.rstudio.com
 sudo su - -c "R -q -e \"install.packages('lubridate', repos='http://cran.rstudio.com/')\""
 sudo su - -c "R -q -e \"install.packages('stringr', repos='http://cran.rstudio.com/')\""
 sudo su - -c "R -q -e \"install.packages('plyr', repos='http://cran.rstudio.com/')\""
+sudo su - -c "R -q -e \"install.packages('jquerylib', repos='http://cran.rstudio.com/')\""
+
