@@ -6,9 +6,10 @@ library(dplyr)
 library(leaflet)
 library(leaflet.extras)
 
-setwd("/home/zhoylman/")
+# setwd("/home/zhoylman/")
 
-states = rgdal::readOGR("/home/zhoylman/mesonet-dashboard/data/shp/states.shp")
+# states = rgdal::readOGR("/home/zhoylman/mesonet-dashboard/data/shp/states.shp")
+states = rgdal::readOGR("./data/shp/states.shp")
 
 #define basemap function
 base_map = function(x){
