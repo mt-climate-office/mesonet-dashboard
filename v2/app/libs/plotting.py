@@ -222,8 +222,9 @@ def plot_station(sites, station):
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     return fig
 
+
 def plot_latest_ace_image(station):
 
-    # TODO: Use something like this for loading images. 
+    # TODO: Use something like this for loading images.
     img = np.array(PIL.Image.open(url))
     fig = px.imshow(img)

@@ -149,8 +149,7 @@ app.layout = html.Div(
                 ),
             ]
         ),
-
-        # Store Temporary 
+        # Store Temporary
         dcc.Store(id="temp-station-data"),
         generate_modal(),
     ]
