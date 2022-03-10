@@ -7,7 +7,8 @@ library(leaflet)
 library(RCurl)
 library(tidyverse)
 
-# setwd('/home/zhoylman/')
+setwd('/home/zhoylman/mesonet-dashboard')
+git.dir = '/home/zhoylman/mesonet-dashboard'
 
 row_to_popup <- function(name, station, sub_network) {
   paste0(
@@ -111,7 +112,7 @@ map = base_map() %>%
 
 htmlwidgets::saveWidget(
   map,
-  paste0("./data/simple_map/simple_mesonet_map.html"),
+  paste0(git.dir, "/data/simple_map/simple_mesonet_map.html"),
   selfcontained = F,
   libdir = "./libs"
 )
@@ -157,14 +158,14 @@ map_home = base_map() %>%
       $('select').empty()
       for (var i = 0; i < data.lname.length; i++) {
         var lname = data.lname[i];
-        var link = data.href[i]
+        var link = data.href[i] + '_blank'
         
         $('select')
           .append($('<option>', {
             value: link
           }).text(lname))
       }
-      
+      // changed to open new window
       $('select').change(function() {
         window.location.href = $('select').val()
       })
@@ -174,7 +175,7 @@ map_home = base_map() %>%
 
 htmlwidgets::saveWidget(
   map_home,
-  paste0("./data/simple_map/simple_mesonet_map_home.html"),
+  paste0(git.dir, "/data/simple_map/simple_mesonet_map_home.html"),
   selfcontained = F,
   libdir = "./libs"
 )
