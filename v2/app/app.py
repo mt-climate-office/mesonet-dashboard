@@ -44,22 +44,18 @@ def build_banner():
 
 app.layout = html.Div(
     [
-        dcc.Location(id="url", refresh=False), 
+        dcc.Location(id="url", refresh=False),
         build_banner(),
         html.Div(id="page-content"),
-
-        dcc.Store(id='station-data')
+        dcc.Store(id="station-data"),
     ]
 )
 
 
-@callback(
-    Output("page-content", "children"), 
-    Input("url", "pathname"))
+@callback(Output("page-content", "children"), Input("url", "pathname"))
 def display_page(pathname):
     print(Path(pathname))
     return station_map_page
-
 
 
 # @app.callback(Output("url", "pathname"), Input("station-dropdown", "value"))
@@ -70,7 +66,6 @@ def display_page(pathname):
 # @callback(Output("selected-site", "children"), Input("station-dropdown", "value"))
 # def display_value(value):
 #     return f"You have selected {value}"
-
 
 
 if __name__ == "__main__":

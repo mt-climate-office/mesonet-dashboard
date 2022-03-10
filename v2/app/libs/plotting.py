@@ -61,7 +61,7 @@ def plot_met(dat, color):
 
 
 def plot_ppt(dat, color):
-    fig = px.bar(dat, x="index", y="value")
+    fig = px.bar(dat, x="datetime", y="value")
 
     return fig
 
@@ -97,8 +97,8 @@ def plot_wind(wind_data):
         .reset_index()[["Wind Direction", "Wind Speed"]]
         .reset_index(drop=True)
     )
-
     # wind_data = pd.read_csv('~/misc/mco/wind_example.csv')
+    wind_data = wind_data.dropna()
     wind_data["Wind Direction"] = wind_data["Wind Direction"].apply(deg_to_compass)
     wind_data["Wind Speed"] = round(wind_data["Wind Speed"])
     wind_data["Wind Speed"] = pd.qcut(wind_data["Wind Speed"], q=10, duplicates="drop")
@@ -188,7 +188,6 @@ def get_plot_func(v):
 
 def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
 
-    # TODO: Add NaN values into missing data?
     plots = []
 
     for v in args:
@@ -201,13 +200,17 @@ def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
     for row in range(1, len(plots) + 1):
         sub.update_yaxes(title_text=axis_mapper[args[row - 1]], row=row, col=1)
 
+    height = 500 if len(args) == 1 else 250 * len(args)
+    sub.update_layout(height=height, width=1000)
     return sub
 
 
-def plot_stations(sites):
+def plot_station(sites, station):
+
+    filt = sites[sites["station"] == station]
 
     fig = px.scatter_mapbox(
-        sites,
+        filt,
         lat="latitude",
         lon="longitude",
         hover_name="name",
@@ -218,3 +221,9 @@ def plot_stations(sites):
     fig.update_layout(mapbox_style="stamen-terrain")
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     return fig
+
+def plot_latest_ace_image(station):
+
+    # TODO: Use something like this for loading images. 
+    img = np.array(PIL.Image.open(url))
+    fig = px.imshow(img)

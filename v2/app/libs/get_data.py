@@ -120,13 +120,11 @@ def clean_format(station, hourly=True):
 
     ppt = dat[dat.element == "ppt"]
     ppt = ppt.groupby(ppt.index.date)["value"].agg("sum").reset_index()
-    ppt = ppt.rename(columns={'index': 'datetime'})
-    ppt['station'] = station
-    ppt['element'] = 'ppt'
-    ppt['units'] = 'in'
-    ppt['elem_lab'] = 'Precipitation'
-
-    dat = dat[dat.element != "ppt"]
+    ppt = ppt.rename(columns={"index": "datetime"})
+    ppt["station"] = station
+    ppt["element"] = "ppt_sum"
+    ppt["units"] = "in"
+    ppt["elem_lab"] = "Daily Precipitation Total"
 
     if hourly:
         dat = dat[(dat.index.minute == 0)]
