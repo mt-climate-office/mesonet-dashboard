@@ -47,8 +47,9 @@ HYRDOMET_VARS = [
     "soil_vwc_0050",
     "soil_vwc_0100",
 ]
+
+
 API_URL = "https://mesonet.climate.umt.edu/api/v2/"
-station_list = pd.read_csv(f"{API_URL}stations/?type=csv")
 
 
 def switch(val):
@@ -81,7 +82,10 @@ def switch(val):
 
 
 def get_sites():
-    return pd.read_csv(f"{API_URL}stations/?type=csv")
+    dat = pd.read_csv(f"{API_URL}stations/?type=csv")
+    dat["long_name"] = dat["name"] + " (" + dat["sub_network"] + ")"
+    dat = dat.sort_values("long_name")
+    return dat
 
 
 def get_station_record(station):
@@ -115,13 +119,22 @@ def clean_format(station, hourly=True):
     dat["elem_lab"] = dat["element"].apply(switch)
 
     ppt = dat[dat.element == "ppt"]
-    ppt = ppt.groupby(ppt.index.date)["value"].agg("sum")
+    ppt = ppt.groupby(ppt.index.date)["value"].agg("sum").reset_index()
+    ppt = ppt.rename(columns={'index': 'datetime'})
+    ppt['station'] = station
+    ppt['element'] = 'ppt'
+    ppt['units'] = 'in'
+    ppt['elem_lab'] = 'Precipitation'
 
     dat = dat[dat.element != "ppt"]
+
     if hourly:
         dat = dat[(dat.index.minute == 0)]
+    dat = dat.reset_index()
 
-    return dat.reset_index(), ppt.reset_index()
+    out = pd.concat([dat, ppt], ignore_index=True)
+
+    return out
 
 
 def get_station_latest(station):

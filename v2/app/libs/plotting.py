@@ -1,21 +1,42 @@
-from xml.etree.ElementInclude import include
 import pandas as pd
 import plotly.express as px
 from plotly.subplots import make_subplots
 
+from typing import List
 from .get_data import clean_format
+
+
+color_mapper = {
+    "air_temp": "#c42217",
+    "sol_rad": "#c15366",
+    "rh": "#a16a5c",
+    "wind_spd": "#ec6607",
+    "soil_temp": None,
+    "soil_vwc": None,
+    "ppt": None,
+}
+
+axis_mapper = {
+    "ppt": "Daily<br>Precipitation<br>(in)",
+    "soil_vwc": "Soil VWC.<br>(%)",
+    "air_temp": "Air Temp.<br>(°F)",
+    "rh": "Relative Hum.<br>(%)",
+    "sol_rad": "Solar Rad.<br>(W/m<sup>2</sup>)",
+    "wind_spd": "Wind Spd.<br>(mph)",
+    "soil_temp": "Soil Temp.<br>(°F)",
+}
 
 
 def style_figure(fig):
     fig.update_layout({"plot_bgcolor": "rgba(0, 0, 0, 0)", "showlegend": False})
     fig.update_xaxes(showgrid=True, gridcolor="grey")
     fig.update_yaxes(showgrid=True, gridcolor="grey")
-    fig.update_layout(showlegend=False, height=2000, width=800)
+    fig.update_layout(showlegend=False)
 
     return fig
 
 
-def plot_soil(dat):
+def plot_soil(dat, color):
 
     fig = px.line(
         dat,
@@ -39,9 +60,85 @@ def plot_met(dat, color):
     return fig
 
 
-def plot_ppt(dat):
+def plot_ppt(dat, color):
     fig = px.bar(dat, x="index", y="value")
 
+    return fig
+
+
+# credit to: https://stackoverflow.com/questions/7490660/converting-wind-direction-in-angles-to-text-words
+def deg_to_compass(num):
+    val = int((num / 22.5) + 0.5)
+    arr = [
+        "N",
+        "NNE",
+        "NE",
+        "ENE",
+        "E",
+        "ESE",
+        "SE",
+        "SSE",
+        "S",
+        "SSW",
+        "SW",
+        "WSW",
+        "W",
+        "WNW",
+        "NW",
+        "NNW",
+    ]
+    return arr[(val % 16)]
+
+
+def plot_wind(wind_data):
+    wind_data = wind_data[["datetime", "value", "elem_lab"]]
+    wind_data = (
+        wind_data.pivot_table(values="value", columns="elem_lab", index="datetime")
+        .reset_index()[["Wind Direction", "Wind Speed"]]
+        .reset_index(drop=True)
+    )
+
+    # wind_data = pd.read_csv('~/misc/mco/wind_example.csv')
+    wind_data["Wind Direction"] = wind_data["Wind Direction"].apply(deg_to_compass)
+    wind_data["Wind Speed"] = round(wind_data["Wind Speed"])
+    wind_data["Wind Speed"] = pd.qcut(wind_data["Wind Speed"], q=10, duplicates="drop")
+    out = (
+        wind_data.groupby(["Wind Direction", "Wind Speed"])
+        .size()
+        .reset_index(name="Frequency")
+    )
+    out["Wind Direction"] = pd.Categorical(
+        out["Wind Direction"],
+        [
+            "N",
+            "NNE",
+            "NE",
+            "ENE",
+            "E",
+            "ESE",
+            "SE",
+            "SSE",
+            "S",
+            "SSW",
+            "SW",
+            "WSW",
+            "W",
+            "WNW",
+            "NW",
+            "NNW",
+        ],
+    )
+    out = out.sort_values(["Wind Direction", "Wind Speed"])
+    out = out.rename(columns={"Wind Speed": "Wind Speed (mi/h)"})
+
+    fig = px.bar_polar(
+        out,
+        r="Frequency",
+        theta="Wind Direction",
+        color="Wind Speed (mi/h)",
+        template="plotly_white",
+        color_discrete_sequence=px.colors.sequential.Plasma_r,
+    )
     return fig
 
 
@@ -68,68 +165,41 @@ def px_to_subplot(*figs, **kwargs):
         else:
             sub.add_trace(*traces, row=idx, col=1)
 
+    # return sub
     return style_figure(sub)
 
 
-def plot_site(station):
+def filter_df(df, v):
+
+    if "soil" in v or "air_temp" in v or "wind" in v:
+        return df[df["element"].str.contains(v)]
+    elif v == "rh" or v == "sol_rad":
+        return df[df["element"] == v]
+    return df
+
+
+def get_plot_func(v):
+    if "soil" in v:
+        return plot_soil
+    elif v == "ppt":
+        return plot_ppt
+    return plot_met
+
+
+def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
 
     # TODO: Add NaN values into missing data?
-    hourly, ppt = clean_format(station, hourly=True)
+    plots = []
 
-    soil_temp_plot = plot_soil(hourly[hourly["element"].str.contains("soil_temp")])
-    soil_vwc_plot = plot_soil(hourly[hourly["element"].str.contains("soil_vwc")])
-    temp_plot = plot_met(
-        hourly[hourly["element"].str.contains("air_temp")], color="#c42217"
-    )
-    rh_plot = plot_met(hourly[hourly["element"] == "rh"], color="#a16a5c")
-    rad_plot = plot_met(hourly[hourly["element"] == ("sol_rad")], color="#c15366")
-    wind_plot = plot_met(
-        hourly[hourly["element"].str.contains("wind_spd")], color="#ec6607"
-    )
-    ppt_plot = plot_ppt(ppt)
+    for v in args:
+        df = ppt if v == "ppt" else hourly
+        plot_func = get_plot_func(v)
+        data = filter_df(df, v)
+        plots.append(plot_func(data, color_mapper[v]))
 
-    sub = px_to_subplot(
-        ppt_plot,
-        soil_vwc_plot,
-        temp_plot,
-        rh_plot,
-        rad_plot,
-        wind_plot,
-        soil_temp_plot,
-        shared_xaxes=True,
-    )
-
-    sub.update_yaxes(title_text="Daily Precipitation Total<br>(in)", row=1, col=1)
-    sub.update_yaxes(title_text="Soil Moisture<br>(%)", row=2, col=1)
-    sub.update_yaxes(title_text="Air Temperature<br>(°F)", row=3, col=1)
-    sub.update_yaxes(title_text="Relative Humidity<br>(%)", row=4, col=1)
-    sub.update_yaxes(title_text="Solar Radiation<br>(W/m<sup>2</sup>)", row=5, col=1)
-    sub.update_yaxes(title_text="Wind Speed<br>(mph)", row=6, col=1)
-    sub.update_yaxes(title_text="Soil Temperature<br>(°F)", row=7, col=1)
-
-    sub.update_layout(
-        xaxis=dict(
-            rangeselector=dict(
-                buttons=list([
-                    dict(count=1,
-                        label="1d",
-                        step="day",
-                        stepmode="backward"),
-                    dict(count=7,
-                        label="1w",
-                        step="day",
-                        stepmode="backward"),
-                    dict(step="all")
-                ])
-            ),
-            rangeslider=dict(
-                visible=True
-            ),
-            type="date"
-        )
-    )
-
-    sub.update_xaxes(matches='x')
+    sub = px_to_subplot(*plots, shared_xaxes=True)
+    for row in range(1, len(plots) + 1):
+        sub.update_yaxes(title_text=axis_mapper[args[row - 1]], row=row, col=1)
 
     return sub
 
@@ -148,26 +218,3 @@ def plot_stations(sites):
     fig.update_layout(mapbox_style="stamen-terrain")
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     return fig
-
-
-# credit to: https://stackoverflow.com/questions/7490660/converting-wind-direction-in-angles-to-text-words
-def deg_to_compass(num):
-    val=int((num/22.5)+.5)
-    arr=["N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]
-    return arr[(val % 16)]
-
-
-def plot_wind(wind_data):
-    wind_data = pd.read_csv('~/misc/mco/wind_example.csv')
-    wind_data['wind_dir'] = wind_data['wind_dir'].apply(deg_to_compass)
-    wind_data['wind_spd'] = round(wind_data['wind_spd'])
-    wind_data['wind_spd'] = pd.qcut(wind_data.wind_spd, q=10, duplicates='drop')
-    out = wind_data.groupby(['wind_dir', 'wind_spd']).size().reset_index(name='Frequency')
-    out['wind_dir'] = pd.Categorical(out['wind_dir'], ["N","NNE","NE","ENE","E","ESE", "SE", "SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"])
-    out = out.sort_values(['wind_dir', 'wind_spd'])
-    out = out.rename(columns={
-        'wind_dir': 'Wind Direction',
-        'wind_spd': 'Wind Speed (m/s)'
-    })
-
-    fig = px.bar_polar(out, r='Frequency', theta='Wind Direction', color='Wind Speed (m/s)', template = 'plotly_white',color_discrete_sequence= px.colors.sequential.Plasma_r)
