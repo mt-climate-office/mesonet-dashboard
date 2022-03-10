@@ -158,7 +158,7 @@ map_home = base_map() %>%
       $('select').empty()
       for (var i = 0; i < data.lname.length; i++) {
         var lname = data.lname[i];
-        var link = data.href[i] + '_blank'
+        var link = data.href[i] 
         
         $('select')
           .append($('<option>', {
@@ -167,7 +167,7 @@ map_home = base_map() %>%
       }
       // changed to open new window
       $('select').change(function() {
-        window.location.href = $('select').val()
+        window.open($('select').val())
       })
     }               
   ", data = station_list)
