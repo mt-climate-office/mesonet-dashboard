@@ -8,16 +8,42 @@ from libs.tables import make_latest_table, make_metadata_table
 
 from pathlib import Path
 
-external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 app = Dash(
     __name__,
     suppress_callback_exceptions=True,
-    external_stylesheets=external_stylesheets,
 )
 server = app.server
 
 
 stations = get_sites()
+
+blank_meta_table = pd.DataFrame(
+    {
+        "c1": [
+            "Station Name",
+            "Long Name",
+            "Date Installed",
+            "Sub Network",
+            "Longitude",
+            "Latitude",
+            "Elevation (m)",
+        ],
+        "c2": ["None", "None", "None", "None", "None", "None", "None"],
+    }
+)
+
+blank_data_table = pd.DataFrame(
+    {
+        "c1": [
+            "Latest Reading",
+            "Air Temperature",
+            "Daily Precipitation Total",
+            "...",
+            "...",
+        ],
+        "c2": ["None", "None", "None", "...", "..."],
+    }
+)
 
 
 def generate_modal():
@@ -82,10 +108,135 @@ def build_banner():
                     html.A(
                         html.Img(id="logo", src=app.get_asset_url("MCO_logo.svg")),
                         href="https://climate.umt.edu/",
+                        className="banner-logo",
                     ),
                 ],
             ),
         ],
+    )
+
+
+def build_dropdowns():
+    return html.Div(
+        [
+            html.P(
+                "Select a Mesonet Station:",
+                style={
+                    "display": "flex",
+                    "align-items": "center",
+                    "justify-content": "center",
+                },
+            ),
+            dcc.Dropdown(
+                dict(
+                    zip(
+                        stations["station"],
+                        stations["long_name"],
+                    )
+                ),
+                id="station-dropdown",
+            ),
+            html.P(
+                "Select Variables to Plot:",
+                style={
+                    "display": "flex",
+                    "align-items": "center",
+                    "justify-content": "center",
+                },
+            ),
+            dcc.Dropdown(
+                {
+                    "air_temp": "Air Temperature",
+                    "ppt": "Precipitation",
+                    "wind_spd": "Wind Speed",
+                    "soil_vwc": "Soil Moisture",
+                    "soil_temp": "Soil Temperature",
+                    "sol_rad": "Solar Radiation",
+                    "rh": "Relative Humidity",
+                },
+                id="select-vars",
+                multi=True,
+                value="air_temp",
+            ),
+        ],
+        style={"padding": 10, "flex": 1, "width": "50%"},
+    )
+
+
+def build_map_wind_panel():
+    return html.Div(
+        id="quick-stats",
+        className="five columns",
+        children=[
+            html.Div(
+                id="card-1",
+                children=[
+                    # TODO: Finish this callback
+                    html.P("Station Wind Summary"),
+                    dcc.RadioItems(
+                        [
+                            {"label": "Wind Rose", "value": "wind", "disabled": False},
+                            {
+                                "label": "Station Photo",
+                                "value": "photo",
+                                "disabled": True,
+                            },
+                        ],
+                        "Wind Rose",
+                        inline=True,
+                    ),
+                    dcc.Graph(id="wind-rose"),
+                ],
+            ),
+            html.Div(
+                id="card-2",
+                children=[
+                    html.P("Station Location"),
+                    dcc.Graph(id="station-map"),
+                ],
+            ),
+        ],
+    )
+
+
+def build_variable_plotting():
+    return html.Div(
+        id="graphs-container",
+        children=[
+            build_dropdowns(),
+            dcc.Graph(id="station-data"),
+        ],
+        className="seven columns",
+        # style={"display": "flex", "align-items": "center", "justify-content": "center"}
+    )
+
+
+def build_table_panel():
+    return html.Div(
+        [
+            html.Div(
+                dash_table.DataTable(
+                    blank_meta_table.to_dict("records"), id="meta-tbl", **table_styling
+                ),
+                className="four columns",
+            ),
+            html.Div(
+                dash_table.DataTable(
+                    blank_data_table.to_dict("records"),
+                    id="latest-tbl",
+                    **table_styling,
+                ),
+                className="four columns",
+            ),
+            html.Div(
+                html.Iframe(
+                    id="wx-frame",
+                    src="",
+                    style={"height": "250px"},
+                    className="four columns",
+                )
+            ),
+        ]
     )
 
 
@@ -111,41 +262,17 @@ app.layout = html.Div(
         html.Div(
             [
                 html.Div(
-                    [
-                        dcc.Dropdown(
-                            dict(
-                                zip(
-                                    stations["station"],
-                                    stations["long_name"],
-                                )
-                            ),
-                            id="station-dropdown",
-                        ),
-                        dcc.Dropdown(
-                            {
-                                "air_temp": "Air Temperature",
-                                "ppt": "Precipitation",
-                                "wind_spd": "Wind Speed",
-                                "soil_vwc": "Soil Moisture",
-                                "soil_temp": "Soil Temperature",
-                                "sol_rad": "Solar Radiation",
-                                "rh": "Relative Humidity",
-                            },
-                            id="select-vars",
-                            multi=True,
-                            value="air_temp",
-                        ),
+                    id="upper-row",
+                    children=[
+                        build_map_wind_panel(),
+                        build_variable_plotting(),
                     ],
-                    style={"padding": 10, "flex": 1, "width": "50%"},
+                    className="row",
                 ),
                 html.Div(
-                    [
-                        dcc.Graph(id="station-data"),
-                        dcc.Graph(id="wind-rose"),
-                        dcc.Graph(id="station-map"),
-                        dash_table.DataTable(id="meta-tbl", **table_styling),
-                        dash_table.DataTable(id="latest-tbl", **table_styling),
-                    ]
+                    id="table-row",
+                    children=[build_table_panel()],
+                    className="row",
                 ),
             ]
         ),
@@ -235,6 +362,14 @@ def update_click_output(button_click, close_click):
             return {"display": "block"}
 
     return {"display": "none"}
+
+
+@app.callback(Output("wx-frame", "src"), Input("station-dropdown", "value"))
+def update_wx_iframe(station):
+    if station:
+        row = stations[stations["station"] == station]
+        url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
+        return url
 
 
 if __name__ == "__main__":

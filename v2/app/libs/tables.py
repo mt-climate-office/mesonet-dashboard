@@ -30,7 +30,6 @@ def make_metadata_table(station_df, station):
 
 
 def make_latest_table(df):
-    print(df)
     latest = df["datetime"].max()
     out = df[df["datetime"] == pd.Timestamp(latest)]
 

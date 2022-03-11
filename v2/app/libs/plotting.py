@@ -179,30 +179,32 @@ def reindex_by_date(df, time_freq):
     dates = pd.date_range(df.index.min(), df.index.max(), freq=time_freq)
     out = df.reindex(dates)
 
-    out['station'] = np.unique(df['station'])[0]
-    out['element'] = np.unique(df['element'])[0]
-    out['units'] = np.unique(df['units'])[0]
-    out['elem_lab'] = np.unique(df['elem_lab'])[0]
+    out["station"] = np.unique(df["station"])[0]
+    out["element"] = np.unique(df["element"])[0]
+    out["units"] = np.unique(df["units"])[0]
+    out["elem_lab"] = np.unique(df["elem_lab"])[0]
 
-    out = out.drop(columns='datetime') \
-        .reset_index() \
-        .rename(columns={'index': 'datetime'})
+    out = (
+        out.drop(columns="datetime").reset_index().rename(columns={"index": "datetime"})
+    )
 
     return out
 
 
-def filter_df(df, v):
+def filter_df(df, v, time_freq):
 
     if "soil" in v or "air_temp" in v or "wind" in v:
         df = df[df["element"].str.contains(v)]
     elif v == "rh" or v == "sol_rad":
         df = df[df["element"] == v]
-    
+
     if v != "ppt":
         df.index = pd.DatetimeIndex(df.datetime)
-        df = df.groupby('element') \
-            .apply(reindex_by_date, time_freq='5min') \
+        df = (
+            df.groupby("element")
+            .apply(reindex_by_date, time_freq=time_freq)
             .reset_index(0, drop=True)
+        )
 
     return df
 
@@ -217,12 +219,15 @@ def get_plot_func(v):
 
 def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
 
+    station = np.unique(hourly["station"])[0]
+    time_freq = "5min" if station[:3] == "ace" else "15min"
+
     plots = []
 
     for v in args:
         df = ppt if v == "ppt" else hourly
         plot_func = get_plot_func(v)
-        data = filter_df(df, v)
+        data = filter_df(df, v, time_freq)
         plots.append(plot_func(data, color_mapper[v]))
 
     sub = px_to_subplot(*plots, shared_xaxes=True)
@@ -251,8 +256,9 @@ def plot_station(sites, station):
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     return fig
 
+
 # Credit to https://plotly.com/python/images/#zoom-on-static-images
-def plot_latest_ace_image(station, direction='N'):
+def plot_latest_ace_image(station, direction="N"):
 
     # Create figure
     fig = go.Figure()
@@ -269,21 +275,18 @@ def plot_latest_ace_image(station, direction='N'):
             x=[0, img_width * scale_factor],
             y=[0, img_height * scale_factor],
             mode="markers",
-            marker_opacity=0
+            marker_opacity=0,
         )
     )
 
     # Configure axes
-    fig.update_xaxes(
-        visible=False,
-        range=[0, img_width * scale_factor]
-    )
+    fig.update_xaxes(visible=False, range=[0, img_width * scale_factor])
 
     fig.update_yaxes(
         visible=False,
         range=[0, img_height * scale_factor],
         # the scaleanchor attribute ensures that the aspect ratio stays constant
-        scaleanchor="x"
+        scaleanchor="x",
     )
 
     # Add image
@@ -298,7 +301,8 @@ def plot_latest_ace_image(station, direction='N'):
             opacity=1.0,
             layer="below",
             sizing="stretch",
-            source=f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/")
+            source=f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/",
+        )
     )
 
     # Configure other layout
