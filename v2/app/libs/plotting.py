@@ -1,6 +1,12 @@
+import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
+from PIL import Image
+from io import StringIO
+import requests
+
 
 from typing import List
 from .get_data import clean_format
@@ -169,12 +175,35 @@ def px_to_subplot(*figs, **kwargs):
     return style_figure(sub)
 
 
+def reindex_by_date(df, time_freq):
+    dates = pd.date_range(df.index.min(), df.index.max(), freq=time_freq)
+    out = df.reindex(dates)
+
+    out['station'] = np.unique(df['station'])[0]
+    out['element'] = np.unique(df['element'])[0]
+    out['units'] = np.unique(df['units'])[0]
+    out['elem_lab'] = np.unique(df['elem_lab'])[0]
+
+    out = out.drop(columns='datetime') \
+        .reset_index() \
+        .rename(columns={'index': 'datetime'})
+
+    return out
+
+
 def filter_df(df, v):
 
     if "soil" in v or "air_temp" in v or "wind" in v:
-        return df[df["element"].str.contains(v)]
+        df = df[df["element"].str.contains(v)]
     elif v == "rh" or v == "sol_rad":
-        return df[df["element"] == v]
+        df = df[df["element"] == v]
+    
+    if v != "ppt":
+        df.index = pd.DatetimeIndex(df.datetime)
+        df = df.groupby('element') \
+            .apply(reindex_by_date, time_freq='5min') \
+            .reset_index(0, drop=True)
+
     return df
 
 
@@ -222,9 +251,61 @@ def plot_station(sites, station):
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
     return fig
 
+# Credit to https://plotly.com/python/images/#zoom-on-static-images
+def plot_latest_ace_image(station, direction='N'):
 
-def plot_latest_ace_image(station):
+    # Create figure
+    fig = go.Figure()
 
-    # TODO: Use something like this for loading images.
-    img = np.array(PIL.Image.open(url))
-    fig = px.imshow(img)
+    # Constants
+    img_width = 2048
+    img_height = 1446
+    scale_factor = 0.25
+
+    # Add invisible scatter trace.
+    # This trace is added to help the autoresize logic work.
+    fig.add_trace(
+        go.Scatter(
+            x=[0, img_width * scale_factor],
+            y=[0, img_height * scale_factor],
+            mode="markers",
+            marker_opacity=0
+        )
+    )
+
+    # Configure axes
+    fig.update_xaxes(
+        visible=False,
+        range=[0, img_width * scale_factor]
+    )
+
+    fig.update_yaxes(
+        visible=False,
+        range=[0, img_height * scale_factor],
+        # the scaleanchor attribute ensures that the aspect ratio stays constant
+        scaleanchor="x"
+    )
+
+    # Add image
+    fig.add_layout_image(
+        dict(
+            x=0,
+            sizex=img_width * scale_factor,
+            y=img_height * scale_factor,
+            sizey=img_height * scale_factor,
+            xref="x",
+            yref="y",
+            opacity=1.0,
+            layer="below",
+            sizing="stretch",
+            source=f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/")
+    )
+
+    # Configure other layout
+    fig.update_layout(
+        width=img_width * scale_factor,
+        height=img_height * scale_factor,
+        margin={"l": 0, "r": 0, "t": 0, "b": 0},
+    )
+
+    return fig
