@@ -80,14 +80,26 @@
   background-color: #78787a;
 }
 
+.card-1 {
+  border-style: solid;
+  border-width: 2000px;
+  border-color: #cc1f1f;
+}
+
+.card-2 {
+  border-style: solid;
+  border-width: 2000px;
+  border-color: #cc1f1f;
+}
+
 .graphs-container {
   overflow: scroll;
-  height: 75%
+  height: 25%
 }
 
 .upper-row {
   overflow: scroll;
-  height: 75%
+  height: 25%
 }
 
 .close-container {

@@ -1,9 +1,10 @@
 from dash import Dash, dcc, html, Input, Output, dash_table, callback_context
+import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 
 from libs.get_data import get_sites, clean_format
-from libs.plotting import plot_site, plot_station, plot_wind
+from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
 from libs.tables import make_latest_table, make_metadata_table
 
 from pathlib import Path
@@ -11,6 +12,7 @@ from pathlib import Path
 app = Dash(
     __name__,
     suppress_callback_exceptions=True,
+    # external_stylesheets=[dbc.themes.SLATE]
 )
 server = app.server
 
@@ -86,6 +88,7 @@ def generate_modal():
 
 
 def build_banner():
+
     return html.Div(
         id="banner",
         className="banner",
@@ -101,8 +104,13 @@ def build_banner():
                 id="banner-logo",
                 children=[
                     # TODO: a Modal to make this button render popup: https://github.com/plotly/dash-sample-apps/blob/main/apps/dash-manufacture-spc-dashboard/app.py#L234
-                    html.Button(
-                        id="feedback-button", children="GIVE FEEDBACK", n_clicks=0
+                    dcc.Link(
+                        html.Button(
+                            id="feedback-button", children="GIVE FEEDBACK", n_clicks=0
+                        ),
+                        href="https://airtable.com/shrxlaYUu6DcyK98s",
+                        refresh=True,
+                        target="_blank",
                     ),
                     html.Button(id="help-button", children="HELP", n_clicks=0),
                     html.A(
@@ -117,49 +125,42 @@ def build_banner():
 
 
 def build_dropdowns():
-    return html.Div(
+    return dbc.Card(
         [
-            html.P(
-                "Select a Mesonet Station:",
-                style={
-                    "display": "flex",
-                    "align-items": "center",
-                    "justify-content": "center",
-                },
+            html.Div(
+                [
+                    dbc.Label("Select a Mesonet Station:"),
+                    dcc.Dropdown(
+                        dict(
+                            zip(
+                                stations["station"],
+                                stations["long_name"],
+                            )
+                        ),
+                        id="station-dropdown",
+                    ),
+                ]
             ),
-            dcc.Dropdown(
-                dict(
-                    zip(
-                        stations["station"],
-                        stations["long_name"],
-                    )
-                ),
-                id="station-dropdown",
+            html.Div(
+                [
+                    dbc.Label("Select variables to plot:"),
+                    dbc.Checklist(
+                        options=[
+                            {"value": "air_temp", "label": "Air Temperature"},
+                            {"value": "ppt", "label": "Precipitation"},
+                            {"value": "soil_vwc", "label": "Soil Moisture"},
+                            {"value": "soil_temp", "label": "Soil Temperature"},
+                            {"value": "sol_rad", "label": "Solar Radiation"},
+                            {"value": "rh", "label": "Relative Humidity"},
+                            {"value": "wind_spd", "label": "Wind Speed"},
+                        ],
+                        inline=True,
+                        id="select-vars",
+                        value=["ppt", "soil_vwc", "air_temp"],
+                    ),
+                ]
             ),
-            html.P(
-                "Select Variables to Plot:",
-                style={
-                    "display": "flex",
-                    "align-items": "center",
-                    "justify-content": "center",
-                },
-            ),
-            dcc.Dropdown(
-                {
-                    "air_temp": "Air Temperature",
-                    "ppt": "Precipitation",
-                    "wind_spd": "Wind Speed",
-                    "soil_vwc": "Soil Moisture",
-                    "soil_temp": "Soil Temperature",
-                    "sol_rad": "Solar Radiation",
-                    "rh": "Relative Humidity",
-                },
-                id="select-vars",
-                multi=True,
-                value="air_temp",
-            ),
-        ],
-        style={"padding": 10, "flex": 1, "width": "50%"},
+        ]
     )
 
 
@@ -170,8 +171,8 @@ def build_map_wind_panel():
         children=[
             html.Div(
                 id="card-1",
+                # TODO: Edit this to use DBC cards.
                 children=[
-                    # TODO: Finish this callback
                     html.P("Station Wind Summary"),
                     dcc.RadioItems(
                         [
@@ -182,7 +183,8 @@ def build_map_wind_panel():
                                 "disabled": True,
                             },
                         ],
-                        "Wind Rose",
+                        id="radio-select",
+                        value="wind",
                         inline=True,
                     ),
                     dcc.Graph(id="wind-rose"),
@@ -257,7 +259,7 @@ table_styling = {
 
 app.layout = html.Div(
     [
-        # dcc.Location(id="url", refresh=False),
+        dcc.Location(id="url", refresh=False),
         build_banner(),
         html.Div(
             [
@@ -290,6 +292,40 @@ def get_latest_api_data(station):
         return data.to_json(date_format="iso", orient="records")
 
 
+@app.callback(Output("radio-select", "options"), Input("station-dropdown", "value"))
+def enable_radio(station):
+
+    if station:
+        disable = True
+        if station[:3] == "ace":
+            disable = False
+        return [
+            {"label": "Wind Rose", "value": "wind", "disabled": False},
+            {
+                "label": "Station Photo",
+                "value": "photo",
+                "disabled": disable,
+            },
+        ]
+    return [
+        {"label": "Wind Rose", "value": "wind", "disabled": False},
+        {
+            "label": "Station Photo",
+            "value": "photo",
+            "disabled": True,
+        },
+    ]
+
+
+@app.callback(Output("radio-select", "value"), Input("station-dropdown", "value"))
+def reselect_wind(station):
+    if station:
+        if station[:3] != "ace":
+            return "wind"
+        return "photo"
+    return "wind"
+
+
 @app.callback(
     Output("station-data", "figure"),
     [Input("temp-station-data", "data"), Input("select-vars", "value")],
@@ -309,16 +345,22 @@ def render_station_plot(temp_data, select_vars):
 
 @app.callback(
     Output("wind-rose", "figure"),
-    Input("temp-station-data", "data"),
+    [
+        Input("temp-station-data", "data"),
+        Input("radio-select", "value"),
+        Input("station-dropdown", "value"),
+    ],
 )
-def render_wind_plot(temp_data):
+def render_wind_plot(temp_data, radio, station):
 
-    if temp_data:
-        data = pd.read_json(temp_data, orient="records")
-        data = data[data["element"].str.contains("wind")]
-        return plot_wind(data)
-    else:
-        return px.bar_polar()
+    if radio == "wind":
+        if temp_data:
+            data = pd.read_json(temp_data, orient="records")
+            data = data[data["element"].str.contains("wind")]
+            return plot_wind(data)
+        else:
+            return px.bar_polar()
+    return plot_latest_ace_image(station, direction="N")
 
 
 @app.callback(Output("station-map", "figure"), Input("station-dropdown", "value"))
@@ -371,6 +413,14 @@ def update_wx_iframe(station):
         url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
         return url
 
+
+# @app.callback(Output("station-dropdown", "value"), Input('url', 'pathname'))
+# def update_from_url(pathname):
+#     print(pathname.replace('/', ''))
+#     if pathname.replace('/', '') not in stations.station:
+#         Response("Station does not exist.", 404)
+#         return html.Div("This station does not exist")
+#     return pathname.replace('/', '')
 
 if __name__ == "__main__":
     app.run_server(debug=True)

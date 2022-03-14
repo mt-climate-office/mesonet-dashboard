@@ -301,7 +301,7 @@ def plot_latest_ace_image(station, direction="N"):
             opacity=1.0,
             layer="below",
             sizing="stretch",
-            source=f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/",
+            source=f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True",
         )
     )
 

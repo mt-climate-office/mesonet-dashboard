@@ -114,7 +114,7 @@ def get_station_record(station):
 
 def clean_format(station, hourly=True):
     dat = get_station_record(station)
-    dat.datetime = pd.to_datetime(dat.datetime)
+    dat.datetime = pd.to_datetime(dat.datetime, utc=True)
     dat = dat.set_index("datetime")
     dat["elem_lab"] = dat["element"].apply(switch)
 

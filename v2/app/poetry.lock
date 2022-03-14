@@ -192,6 +192,20 @@ diskcache = ["diskcache (>=5.2.1)", "multiprocess (>=0.70.12)", "psutil (>=5.8.0
 testing = ["beautifulsoup4 (>=4.8.2)", "lxml (>=4.6.2)", "percy (>=2.0.2)", "pytest (>=6.0.2)", "requests[security] (>=2.21.0)", "selenium (>=3.141.0)", "waitress (>=1.4.4)", "cryptography (<3.4)"]
 
 [[package]]
+name = "dash-bootstrap-components"
+version = "1.0.3"
+description = "Bootstrap themed components for use in Plotly Dash"
+category = "main"
+optional = false
+python-versions = ">=3.6, <4"
+
+[package.dependencies]
+dash = ">=2.0.0"
+
+[package.extras]
+pandas = ["numpy", "pandas"]
+
+[[package]]
 name = "dash-core-components"
 version = "2.0.0"
 description = "Core component suite for Dash"
@@ -951,7 +965,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "0946a653e29848b0893e766688c28bf52e66abc19979e2df0560037e054ce3a1"
+content-hash = "402d38846d3ab45ae59a09f31631244d79732d1493e1b984553414643dd04be9"
 
 [metadata.files]
 aiohttp = [
@@ -1216,6 +1230,10 @@ cycler = [
 dash = [
     {file = "dash-2.2.0-py3-none-any.whl", hash = "sha256:e1d2a1ef2ca17d0b2a1ee0a7eca5ccd45168bc6a04b1205c74c3a8c671011987"},
     {file = "dash-2.2.0.tar.gz", hash = "sha256:e88e6615695e83b7a8339301a92700461435fef734b40eca864cff6d853a3b9c"},
+]
+dash-bootstrap-components = [
+    {file = "dash-bootstrap-components-1.0.3.tar.gz", hash = "sha256:d054aed4a162526810a86d80b8682ba2f2047d54baf12a6a28b4fddf45043243"},
+    {file = "dash_bootstrap_components-1.0.3-py3-none-any.whl", hash = "sha256:409e9db7c5013c7f3ce94dc91a00639623191d1f0835be7cbb204228625a452c"},
 ]
 dash-core-components = [
     {file = "dash_core_components-2.0.0.tar.gz", hash = "sha256:c6733874af975e552f95a1398a16c2ee7df14ce43fa60bb3718a3c6e0b63ffee"},
