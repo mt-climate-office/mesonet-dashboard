@@ -44,6 +44,8 @@ stations <- stations_raw %>%
     latitude = latitude,
     longitude = longitude,
     name = paste0(unlist(name), ' (', unlist(sub_network), ')', collapse = ', '),
+    # Still need to figure out how to replace the html.
+    # name = ifelse(length(name) > 1, stringr::str_replace(stringr::fixed("<br> <a href='https://shiny.cfc.umt.edu/mesonet-download/' target='blank'>Mesonet Data Downloader</a>"), ''), name),
     sub_network = ifelse(colocated, 'colocated', unlist(sub_network)),
     color = dplyr::case_when(
       sub_network == 'AgriMet' ~ "blue",
