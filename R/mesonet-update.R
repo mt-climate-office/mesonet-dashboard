@@ -262,8 +262,8 @@ foreach(s=1:length(stations$`station`)) %dopar% {
                str_extract(., "(\\d)+") %>%
                as.numeric() %>%
                paste0(., " in")) %>%
-      dplyr::na_if(0)%>%
-      drop_na()%>%
+      #dplyr::na_if(0)%>%
+      #drop_na()%>%
       #mutate(value = conversion_func[[2]](value)) %>%
       plot_ly(x = ~datetime, y = ~value, name = ~name, showlegend=T, color = ~name, colors = "Set2", legendgroup = ~name) %>%
       layout(legend = list(orientation = 'h'))%>%
