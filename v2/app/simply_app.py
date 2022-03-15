@@ -145,6 +145,7 @@ def build_bottom_left_card():
         color="secondary",
     )
 
+
 def build_dropdowns():
 
     return dbc.Col(
@@ -198,6 +199,7 @@ def build_right_card():
         outline=True,
         className="h-100",
     )
+
 
 table_styling = {
     "css": [
@@ -276,46 +278,42 @@ def render_station_plot(temp_data, select_vars):
         return px.line()
 
 
-#TODO: Figure out why this isn't working.
-@app.callback(
-    Output("ul-tabs", "children"),
-    Input("station-dropdown", "value")
-)
+# TODO: Figure out why this isn't working.
+@app.callback(Output("ul-tabs", "children"), Input("station-dropdown", "value"))
 def enable_photo_tab(station):
     if station:
-        disabled = False if station[:3] == 'ace' else True
+        disabled = False if station[:3] == "ace" else True
     else:
         disabled = True
 
     return [
         dbc.Tab(label="Wind Rose", tab_id="wind-tab"),
         dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
-        dbc.Tab(
-            label="Latest Photo", tab_id="photo-tab", disabled=disabled
-        ),
+        dbc.Tab(label="Latest Photo", tab_id="photo-tab", disabled=disabled),
     ]
 
+
 @app.callback(
-    Output("ul-content", "children"), 
-    [Input("ul-tabs", "active_tab"), Input("station-dropdown", "value"), Input("temp-station-data", "data")]
+    Output("ul-content", "children"),
+    [
+        Input("ul-tabs", "active_tab"),
+        Input("station-dropdown", "value"),
+        Input("temp-station-data", "data"),
+    ],
 )
 def update_ul_card(at, station, tmp_data):
     if station is None or tmp_data is None:
         return html.Div()
-    
-    if at == 'wind-tab':
+
+    if at == "wind-tab":
         data = pd.read_json(tmp_data, orient="records")
         data = data[data["element"].str.contains("wind")]
         plt = plot_wind(data)
         return dcc.Graph(figure=plt)
-    elif at == 'wx-tab':
+    elif at == "wx-tab":
         row = stations[stations["station"] == station]
         url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
-        return html.Div(
-            html.Iframe(
-                src=url
-            ), className="second-row"
-        )
+        return html.Div(html.Iframe(src=url), className="second-row")
     else:
         plt = plot_latest_ace_image(station, direction="N")
         return dcc.Graph(figure=plt)
@@ -323,24 +321,27 @@ def update_ul_card(at, station, tmp_data):
 
 @app.callback(
     Output("bl-content", "children"),
-    [Input("bl-tabs", "active_tab"), Input("station-dropdown", "value"), Input("temp-station-data", "data")]
+    [
+        Input("bl-tabs", "active_tab"),
+        Input("station-dropdown", "value"),
+        Input("temp-station-data", "data"),
+    ],
 )
 def update_bl_card(at, station, tmp_data):
     if station is None or tmp_data is None:
         return html.Div()
-    
-    if at == 'map-tab':
+
+    if at == "map-tab":
         plt = plot_station(stations, station)
         return dcc.Graph(figure=plt)
-    elif at == 'meta-tab':
+    elif at == "meta-tab":
         table = make_metadata_table(stations, station)
-        return dash_table.DataTable(data=table, **table_styling),
+        return (dash_table.DataTable(data=table, **table_styling),)
 
     else:
         data = pd.read_json(tmp_data, orient="records")
         table = make_latest_table(data)
-        return dash_table.DataTable(data=table, **table_styling),
-
+        return (dash_table.DataTable(data=table, **table_styling),)
 
 
 @app.callback(Output("station-map", "figure"), Input("station-dropdown", "value"))
