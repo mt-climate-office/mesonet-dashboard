@@ -6,6 +6,7 @@ output:
     self_contained: true
     theme: spacelab
     navbar:
+      - { title: "Provide Feedback", href: "https://airtable.com/shrchV8wAec5R03Q9", align: right}
       - { title: "MCO GitHub", href: "https://github.com/mt-climate-office", align: right }
     orientation: rows
 ---
@@ -17,7 +18,7 @@ output:
 <center>
 #### **Welcome to the Montana Mesonet Dashboard**
 <br>
-Choose a station from the map below to see the most current recorded conditions and interactive plots of selected variables over the past two-weeks.
+Choose a station from the map or dropdown below to see the most current recorded conditions and interactive plots of selected variables over the past two-weeks.
 
 Row {.tabset .tabset-fade data-height=2000}
 -------------------------------------
