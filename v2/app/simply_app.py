@@ -1,4 +1,4 @@
-from dash import Dash, dcc, html, Input, Output, dash_table, callback_context
+from dash import Dash, dcc, html, Input, Output, dash_table, State
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
@@ -12,116 +12,118 @@ from pathlib import Path
 app = Dash(
     __name__,
     suppress_callback_exceptions=True,
-    # external_stylesheets=[dbc.themes.SLATE]
+    external_stylesheets=[dbc.themes.BOOTSTRAP],
 )
 server = app.server
 
-
 stations = get_sites()
-
-blank_meta_table = pd.DataFrame(
-    {
-        "c1": [
-            "Station Name",
-            "Long Name",
-            "Date Installed",
-            "Sub Network",
-            "Longitude",
-            "Latitude",
-            "Elevation (m)",
-        ],
-        "c2": ["None", "None", "None", "None", "None", "None", "None"],
-    }
-)
-
-blank_data_table = pd.DataFrame(
-    {
-        "c1": [
-            "Latest Reading",
-            "Air Temperature",
-            "Daily Precipitation Total",
-            "...",
-            "...",
-        ],
-        "c2": ["None", "None", "None", "...", "..."],
-    }
-)
 
 
 def generate_modal():
     return html.Div(
-        id="markdown",
-        className="modal",
-        children=(
-            html.Div(
-                id="markdown-container",
-                className="markdown-container",
-                children=[
-                    html.Div(
-                        className="close-container",
-                        children=html.Button(
-                            "Close",
-                            id="markdown_close",
-                            n_clicks=0,
-                            className="closeButton",
-                        ),
-                    ),
-                    html.Div(
-                        className="markdown-text",
-                        children=dcc.Markdown(
-                            children=(
-                                """
+        dbc.Modal(
+            [
+                dbc.ModalHeader(dbc.ModalTitle("The Montana Mesonet Dashboard")),
+                dbc.ModalBody(dcc.Markdown("""
                         Some random info. 
                         
                         Email colin.brust@mso.umt.edu for questions.
                         
                         ###### Source Code
                         See how we built this application at our [Github repository](https://github.com/mt-climate-office/mesonet-dashboard).
-                    """
-                            )
-                        ),
-                    ),
-                ],
-            )
-        ),
+                    """)),
+            ],
+            id="modal",
+            is_open=False,
+        )
     )
 
 
 def build_banner():
 
-    return html.Div(
-        id="banner",
-        className="banner",
-        children=[
-            html.Div(
-                id="banner-text",
-                children=[
-                    html.H5("Montana Mesonet Dashboard"),
-                    html.H6("Download and View Data from Montana Weather Stations"),
-                ],
-            ),
-            html.Div(
-                id="banner-logo",
-                children=[
-                    # TODO: a Modal to make this button render popup: https://github.com/plotly/dash-sample-apps/blob/main/apps/dash-manufacture-spc-dashboard/app.py#L234
-                    dcc.Link(
-                        html.Button(
-                            id="feedback-button", children="GIVE FEEDBACK", n_clicks=0
+    return dbc.Navbar(
+        dbc.Container(
+            [
+                html.A(
+                    # Use row and col to control vertical alignment of logo / brand
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                html.Img(
+                                    src=app.get_asset_url("MCO_logo.svg"), height="50px"
+                                )
+                            ),
+                            dbc.Col(
+                                dbc.NavbarBrand(
+                                    "Montana Mesonet Dashboard", className="ms-1"
+                                )
+                            ),
+                        ],
+                        align="center",
+                        className="g-0",
+                    ),
+                    href="https://climate.umt.edu/",
+                    style={"textDecoration": "none"},
+                ),
+                html.Div(
+                    [
+                        dbc.Button(
+                            "GIVE FEEDBACK",
+                            href="https://airtable.com/shrxlaYUu6DcyK98s",
+                            size="lg",
+                            target="_blank",
+                            id="feedback-button",
+                            className="me-md-2",
                         ),
-                        href="https://airtable.com/shrxlaYUu6DcyK98s",
-                        refresh=True,
-                        target="_blank",
-                    ),
-                    html.Button(id="help-button", children="HELP", n_clicks=0),
-                    html.A(
-                        html.Img(id="logo", src=app.get_asset_url("MCO_logo.svg")),
-                        href="https://climate.umt.edu/",
-                        className="banner-logo",
-                    ),
-                ],
-            ),
-        ],
+                        dbc.Button(
+                            "LEARN MORE",
+                            href="#",
+                            size="lg",
+                            n_clicks=0,
+                            id="help-button",
+                            className="me-md-2",
+                        ),
+                    ],
+                    className="d-grid gap-2 d-md-flex justify-content-md-end",
+                ),
+            ],
+            fluid=True
+        ),
+        color="light",
+        dark=False,
     )
+
+def build_left_card():
+
+    # upper_card = [
+    #     html.P("Station Wind Summary", id="wind-photo-header", className="card-title"),
+    #             dbc.RadioItems(
+    #                 options=[
+    #                     {"label": "Wind Rose", "value": "wind", "disabled": False},
+    #                     {
+    #                         "label": "Station Photo",
+    #                         "value": "photo",
+    #                         "disabled": True,
+    #                     },
+    #                 ],
+    #                 id="radio-select",
+    #                 value="wind",
+    #                 inline=True,
+    #             ),
+    #             dcc.Graph(id="wind-rose"),
+    # ]
+
+    # lower_card = [
+    #     html.P("Station Location", className="card-title"),
+    #     dcc.Graph(id="station-map")
+    # ]
+
+
+    return dbc.Col([
+        dbc.Row(upper_card),
+        dbc.Row(lower_card),
+    ], class_name="h-75", width=4)
+
 
 
 def build_dropdowns():
@@ -146,11 +148,11 @@ def build_dropdowns():
                     dbc.Label("Select variables to plot:"),
                     dbc.Checklist(
                         options=[
-                            {"value": "air_temp", "label": "Air Temperature"},
+                            {"value": "air_temp", "label": "Air Temp."},
                             {"value": "ppt", "label": "Precipitation"},
                             {"value": "soil_vwc", "label": "Soil Moisture"},
-                            {"value": "soil_temp", "label": "Soil Temperature"},
-                            {"value": "sol_rad", "label": "Solar Radiation"},
+                            {"value": "soil_temp", "label": "Soil Temp."},
+                            {"value": "sol_rad", "label": "Solar Rad."},
                             {"value": "rh", "label": "Relative Humidity"},
                             {"value": "wind_spd", "label": "Wind Speed"},
                         ],
@@ -160,71 +162,35 @@ def build_dropdowns():
                     ),
                 ]
             ),
-        ]
-    )
-
-
-def build_map_wind_panel():
-    return html.Div(
-        id="quick-stats",
-        className="five columns",
-        children=[
-            html.Div(
-                id="card-1",
-                # TODO: Edit this to use DBC cards.
-                children=[
-                    html.P("Station Wind Summary"),
-                    dcc.RadioItems(
-                        [
-                            {"label": "Wind Rose", "value": "wind", "disabled": False},
-                            {
-                                "label": "Station Photo",
-                                "value": "photo",
-                                "disabled": True,
-                            },
-                        ],
-                        id="radio-select",
-                        value="wind",
-                        inline=True,
-                    ),
-                    dcc.Graph(id="wind-rose"),
-                ],
-            ),
-            html.Div(
-                id="card-2",
-                children=[
-                    html.P("Station Location"),
-                    dcc.Graph(id="station-map"),
-                ],
-            ),
         ],
+        color="secondary", outline=True
     )
 
 
-def build_variable_plotting():
-    return html.Div(
-        id="graphs-container",
-        children=[
-            build_dropdowns(),
-            dcc.Graph(id="station-data"),
-        ],
-        className="seven columns",
-        # style={"display": "flex", "align-items": "center", "justify-content": "center"}
-    )
+def build_right_card():
+
+    return html.Div([
+        # dbc.Row(build_dropdowns),
+        dbc.Row(
+            dbc.Card(
+                dbc.CardBody(
+                    dcc.Graph(id="station-data")
+                ),
+                color="secondary", outline=True
+            )
+        )
+    ])
 
 
 def build_table_panel():
     return html.Div(
         [
             html.Div(
-                dash_table.DataTable(
-                    blank_meta_table.to_dict("records"), id="meta-tbl", **table_styling
-                ),
+                dash_table.DataTable(id="meta-tbl", **table_styling),
                 className="four columns",
             ),
             html.Div(
                 dash_table.DataTable(
-                    blank_data_table.to_dict("records"),
                     id="latest-tbl",
                     **table_styling,
                 ),
@@ -256,33 +222,57 @@ table_styling = {
     ],
 }
 
-
-app.layout = html.Div(
-    [
-        dcc.Location(id="url", refresh=False),
-        build_banner(),
-        html.Div(
-            [
-                html.Div(
-                    id="upper-row",
-                    children=[
-                        build_map_wind_panel(),
-                        build_variable_plotting(),
+test = [
+        html.P("Station Wind Summary", id="wind-photo-header", className="card-title"),
+                dbc.RadioItems(
+                    options=[
+                        {"label": "Wind Rose", "value": "wind", "disabled": False},
+                        {
+                            "label": "Station Photo",
+                            "value": "photo",
+                            "disabled": True,
+                        },
                     ],
-                    className="row",
+                    id="radio-select",
+                    value="wind",
+                    inline=True,
                 ),
-                html.Div(
-                    id="table-row",
-                    children=[build_table_panel()],
-                    className="row",
-                ),
-            ]
-        ),
-        # Store Temporary
-        dcc.Store(id="temp-station-data"),
-        generate_modal(),
+                dcc.Graph(id="wind-rose"),
     ]
+
+app.layout = dbc.Container(
+    [
+        build_banner(),
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dbc.Row(
+                            children=test,
+                            className='h-50',
+                            style={"background-color": "pink"}
+
+                        ),
+                        dbc.Row(
+                            html.P("locator/tables"),
+                            className='h-50',
+                            style={"background-color": "red"}
+                        )
+                    ],
+                width=4),
+                dbc.Col(
+                    html.P("main chart"),
+                    width=8,
+                    style={"height": "100%", "background-color": "green"},
+                ),
+            ],
+            className="h-100",
+        ),
+    ],
+    fluid=True,
+    style={"height": "92vh"},
 )
+
 
 
 @app.callback(Output("temp-station-data", "data"), Input("station-dropdown", "value"))
@@ -392,19 +382,16 @@ def add_latest_table(temp_data):
     return None
 
 
+
 @app.callback(
-    Output("markdown", "style"),
-    [Input("help-button", "n_clicks"), Input("markdown_close", "n_clicks")],
+    Output("modal", "is_open"),
+    [Input("help-button", "n_clicks")],
+    [State("modal", "is_open")],
 )
-def update_click_output(button_click, close_click):
-    ctx = callback_context
-    if ctx.triggered:
-        prop_id = ctx.triggered[0]["prop_id"].split(".")[0]
-        if prop_id == "help-button":
-            return {"display": "block"}
-
-    return {"display": "none"}
-
+def toggle_modal(n1, is_open):
+    if n1:
+        return not is_open
+    return is_open
 
 @app.callback(Output("wx-frame", "src"), Input("station-dropdown", "value"))
 def update_wx_iframe(station):
