@@ -7,7 +7,6 @@ from libs.get_data import get_sites, clean_format
 from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
 from libs.tables import make_latest_table, make_metadata_table
 
-from pathlib import Path
 
 app = Dash(
     __name__,
@@ -24,14 +23,18 @@ def generate_modal():
         dbc.Modal(
             [
                 dbc.ModalHeader(dbc.ModalTitle("The Montana Mesonet Dashboard")),
-                dbc.ModalBody(dcc.Markdown("""
+                dbc.ModalBody(
+                    dcc.Markdown(
+                        """
                         Some random info. 
                         
                         Email colin.brust@mso.umt.edu for questions.
                         
                         ###### Source Code
-                        See how we built this application at our [Github repository](https://github.com/mt-climate-office/mesonet-dashboard).
-                    """)),
+                        See how we built this application at our [GitHub repository](https://github.com/mt-climate-office/mesonet-dashboard).
+                    """
+                    )
+                ),
             ],
             id="modal",
             is_open=False,
@@ -87,126 +90,114 @@ def build_banner():
                     className="d-grid gap-2 d-md-flex justify-content-md-end",
                 ),
             ],
-            fluid=True
+            fluid=True,
         ),
         color="light",
         dark=False,
     )
 
-def build_left_card():
 
-    # upper_card = [
-    #     html.P("Station Wind Summary", id="wind-photo-header", className="card-title"),
-    #             dbc.RadioItems(
-    #                 options=[
-    #                     {"label": "Wind Rose", "value": "wind", "disabled": False},
-    #                     {
-    #                         "label": "Station Photo",
-    #                         "value": "photo",
-    #                         "disabled": True,
-    #                     },
-    #                 ],
-    #                 id="radio-select",
-    #                 value="wind",
-    #                 inline=True,
-    #             ),
-    #             dcc.Graph(id="wind-rose"),
-    # ]
+def build_top_left_card():
 
-    # lower_card = [
-    #     html.P("Station Location", className="card-title"),
-    #     dcc.Graph(id="station-map")
-    # ]
-
-
-    return dbc.Col([
-        dbc.Row(upper_card),
-        dbc.Row(lower_card),
-    ], class_name="h-75", width=4)
-
-
-
-def build_dropdowns():
     return dbc.Card(
         [
-            html.Div(
-                [
-                    dbc.Label("Select a Mesonet Station:"),
-                    dcc.Dropdown(
-                        dict(
-                            zip(
-                                stations["station"],
-                                stations["long_name"],
-                            )
+            dbc.CardHeader(
+                dbc.Tabs(
+                    [
+                        dbc.Tab(label="Wind Rose", tab_id="wind-tab"),
+                        dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
+                        dbc.Tab(
+                            label="Latest Photo", tab_id="photo-tab", disabled=True
                         ),
-                        id="station-dropdown",
-                    ),
-                ]
+                    ],
+                    id="ul-tabs",
+                    active_tab="wind-tab",
+                )
+            ),
+            dbc.CardBody(html.P(id="ul-content", className="card-text")),
+        ],
+        outline=True,
+        color="secondary",
+    )
+
+
+def build_bottom_left_card():
+
+    return dbc.Card(
+        [
+            dbc.CardHeader(
+                dbc.Tabs(
+                    [
+                        dbc.Tab(label="Locator Map", tab_id="map-tab"),
+                        dbc.Tab(label="Station Metadata", tab_id="meta-tab"),
+                        dbc.Tab(label="Latest Data", tab_id="data-tab"),
+                    ],
+                    id="bl-tabs",
+                    active_tab="map-tab",
+                )
             ),
             html.Div(
-                [
-                    dbc.Label("Select variables to plot:"),
-                    dbc.Checklist(
-                        options=[
-                            {"value": "air_temp", "label": "Air Temp."},
-                            {"value": "ppt", "label": "Precipitation"},
-                            {"value": "soil_vwc", "label": "Soil Moisture"},
-                            {"value": "soil_temp", "label": "Soil Temp."},
-                            {"value": "sol_rad", "label": "Solar Rad."},
-                            {"value": "rh", "label": "Relative Humidity"},
-                            {"value": "wind_spd", "label": "Wind Speed"},
-                        ],
-                        inline=True,
-                        id="select-vars",
-                        value=["ppt", "soil_vwc", "air_temp"],
-                    ),
-                ]
+                dbc.CardBody(id="bl-content", className="card-text"),
+                style={"overflow": "scroll"},
             ),
         ],
-        color="secondary", outline=True
+        outline=True,
+        color="secondary",
+    )
+
+def build_dropdowns():
+
+    return dbc.Col(
+        dbc.Card(
+            [
+                html.Div(
+                    [
+                        dbc.Label("Select a Mesonet Station:"),
+                        dcc.Dropdown(
+                            dict(
+                                zip(
+                                    stations["station"],
+                                    stations["long_name"],
+                                )
+                            ),
+                            id="station-dropdown",
+                        ),
+                    ]
+                ),
+                html.Div(
+                    [
+                        dbc.Label("Select variables to plot:"),
+                        dbc.Checklist(
+                            options=[
+                                {"value": "air_temp", "label": "Air Temp."},
+                                {"value": "ppt", "label": "Precipitation"},
+                                {"value": "soil_vwc", "label": "Soil Moisture"},
+                                {"value": "soil_temp", "label": "Soil Temp."},
+                                {"value": "sol_rad", "label": "Solar Rad."},
+                                {"value": "rh", "label": "Relative Humidity"},
+                                {"value": "wind_spd", "label": "Wind Speed"},
+                            ],
+                            inline=True,
+                            id="select-vars",
+                            value=["ppt", "soil_vwc", "air_temp"],
+                        ),
+                    ]
+                ),
+            ],
+            body=True,
+        ),
+        width=14,
     )
 
 
 def build_right_card():
 
-    return html.Div([
-        # dbc.Row(build_dropdowns),
-        dbc.Row(
-            dbc.Card(
-                dbc.CardBody(
-                    dcc.Graph(id="station-data")
-                ),
-                color="secondary", outline=True
-            )
-        )
-    ])
-
-
-def build_table_panel():
-    return html.Div(
-        [
-            html.Div(
-                dash_table.DataTable(id="meta-tbl", **table_styling),
-                className="four columns",
-            ),
-            html.Div(
-                dash_table.DataTable(
-                    id="latest-tbl",
-                    **table_styling,
-                ),
-                className="four columns",
-            ),
-            html.Div(
-                html.Iframe(
-                    id="wx-frame",
-                    src="",
-                    style={"height": "250px"},
-                    className="four columns",
-                )
-            ),
-        ]
+    return dbc.Card(
+        [dbc.CardHeader(build_dropdowns()), dbc.CardBody(dcc.Graph(id="station-data"))],
+        color="secondary",
+        outline=True,
+        className="h-100",
     )
-
 
 table_styling = {
     "css": [
@@ -222,24 +213,6 @@ table_styling = {
     ],
 }
 
-test = [
-        html.P("Station Wind Summary", id="wind-photo-header", className="card-title"),
-                dbc.RadioItems(
-                    options=[
-                        {"label": "Wind Rose", "value": "wind", "disabled": False},
-                        {
-                            "label": "Station Photo",
-                            "value": "photo",
-                            "disabled": True,
-                        },
-                    ],
-                    id="radio-select",
-                    value="wind",
-                    inline=True,
-                ),
-                dcc.Graph(id="wind-rose"),
-    ]
-
 app.layout = dbc.Container(
     [
         build_banner(),
@@ -248,31 +221,35 @@ app.layout = dbc.Container(
                 dbc.Col(
                     [
                         dbc.Row(
-                            children=test,
-                            className='h-50',
-                            style={"background-color": "pink"}
-
+                            build_top_left_card(),
+                            className="h-50",
+                            style={"padding": "0.5rem 0.5rem"},
                         ),
                         dbc.Row(
-                            html.P("locator/tables"),
-                            className='h-50',
-                            style={"background-color": "red"}
-                        )
+                            build_bottom_left_card(),
+                            className="h-50",
+                            style={"padding": "0.5rem 0.5rem"},
+                        ),
                     ],
-                width=4),
+                    width=4,
+                ),
                 dbc.Col(
-                    html.P("main chart"),
+                    html.Div(
+                        build_right_card(),
+                        style={"maxHeight": "92vh", "overflow": "scroll"},
+                    ),
                     width=8,
-                    style={"height": "100%", "background-color": "green"},
+                    style={"padding": "0.5rem 0.5rem"},
                 ),
             ],
             className="h-100",
         ),
+        dcc.Store(id="temp-station-data"),
+        generate_modal(),
     ],
     fluid=True,
     style={"height": "92vh"},
 )
-
 
 
 @app.callback(Output("temp-station-data", "data"), Input("station-dropdown", "value"))
@@ -280,40 +257,6 @@ def get_latest_api_data(station):
     if station:
         data = clean_format(station, hourly=False)
         return data.to_json(date_format="iso", orient="records")
-
-
-@app.callback(Output("radio-select", "options"), Input("station-dropdown", "value"))
-def enable_radio(station):
-
-    if station:
-        disable = True
-        if station[:3] == "ace":
-            disable = False
-        return [
-            {"label": "Wind Rose", "value": "wind", "disabled": False},
-            {
-                "label": "Station Photo",
-                "value": "photo",
-                "disabled": disable,
-            },
-        ]
-    return [
-        {"label": "Wind Rose", "value": "wind", "disabled": False},
-        {
-            "label": "Station Photo",
-            "value": "photo",
-            "disabled": True,
-        },
-    ]
-
-
-@app.callback(Output("radio-select", "value"), Input("station-dropdown", "value"))
-def reselect_wind(station):
-    if station:
-        if station[:3] != "ace":
-            return "wind"
-        return "photo"
-    return "wind"
 
 
 @app.callback(
@@ -333,24 +276,71 @@ def render_station_plot(temp_data, select_vars):
         return px.line()
 
 
+#TODO: Figure out why this isn't working.
 @app.callback(
-    Output("wind-rose", "figure"),
-    [
-        Input("temp-station-data", "data"),
-        Input("radio-select", "value"),
-        Input("station-dropdown", "value"),
-    ],
+    Output("ul-tabs", "children"),
+    Input("station-dropdown", "value")
 )
-def render_wind_plot(temp_data, radio, station):
+def enable_photo_tab(station):
+    if station:
+        disabled = False if station[:3] == 'ace' else True
+    else:
+        disabled = True
 
-    if radio == "wind":
-        if temp_data:
-            data = pd.read_json(temp_data, orient="records")
-            data = data[data["element"].str.contains("wind")]
-            return plot_wind(data)
-        else:
-            return px.bar_polar()
-    return plot_latest_ace_image(station, direction="N")
+    return [
+        dbc.Tab(label="Wind Rose", tab_id="wind-tab"),
+        dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
+        dbc.Tab(
+            label="Latest Photo", tab_id="photo-tab", disabled=disabled
+        ),
+    ]
+
+@app.callback(
+    Output("ul-content", "children"), 
+    [Input("ul-tabs", "active_tab"), Input("station-dropdown", "value"), Input("temp-station-data", "data")]
+)
+def update_ul_card(at, station, tmp_data):
+    if station is None or tmp_data is None:
+        return html.Div()
+    
+    if at == 'wind-tab':
+        data = pd.read_json(tmp_data, orient="records")
+        data = data[data["element"].str.contains("wind")]
+        plt = plot_wind(data)
+        return dcc.Graph(figure=plt)
+    elif at == 'wx-tab':
+        row = stations[stations["station"] == station]
+        url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
+        return html.Div(
+            html.Iframe(
+                src=url
+            ), className="second-row"
+        )
+    else:
+        plt = plot_latest_ace_image(station, direction="N")
+        return dcc.Graph(figure=plt)
+
+
+@app.callback(
+    Output("bl-content", "children"),
+    [Input("bl-tabs", "active_tab"), Input("station-dropdown", "value"), Input("temp-station-data", "data")]
+)
+def update_bl_card(at, station, tmp_data):
+    if station is None or tmp_data is None:
+        return html.Div()
+    
+    if at == 'map-tab':
+        plt = plot_station(stations, station)
+        return dcc.Graph(figure=plt)
+    elif at == 'meta-tab':
+        table = make_metadata_table(stations, station)
+        return dash_table.DataTable(data=table, **table_styling),
+
+    else:
+        data = pd.read_json(tmp_data, orient="records")
+        table = make_latest_table(data)
+        return dash_table.DataTable(data=table, **table_styling),
+
 
 
 @app.callback(Output("station-map", "figure"), Input("station-dropdown", "value"))
@@ -382,7 +372,6 @@ def add_latest_table(temp_data):
     return None
 
 
-
 @app.callback(
     Output("modal", "is_open"),
     [Input("help-button", "n_clicks")],
@@ -393,6 +382,7 @@ def toggle_modal(n1, is_open):
         return not is_open
     return is_open
 
+
 @app.callback(Output("wx-frame", "src"), Input("station-dropdown", "value"))
 def update_wx_iframe(station):
     if station:
@@ -400,14 +390,6 @@ def update_wx_iframe(station):
         url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
         return url
 
-
-# @app.callback(Output("station-dropdown", "value"), Input('url', 'pathname'))
-# def update_from_url(pathname):
-#     print(pathname.replace('/', ''))
-#     if pathname.replace('/', '') not in stations.station:
-#         Response("Station does not exist.", 404)
-#         return html.Div("This station does not exist")
-#     return pathname.replace('/', '')
 
 if __name__ == "__main__":
     app.run_server(debug=True)
