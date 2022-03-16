@@ -1,11 +1,8 @@
-import asyncio
-import time
 import pandas as pd
 import io
 import requests
 import datetime as dt
 from dateutil import relativedelta as rd
-from dataclasses import dataclass
 
 import pandas as pd
 import plotly.express as px
@@ -88,22 +85,37 @@ def get_sites():
     return dat
 
 
-def get_station_record(station):
+def format_dt(d):
+    if isinstance(d, dt.datetime):
+        return d.strftime("%Y-%m-%dT%H:%M:%S")
+    else:
+        return d.strftime("%Y-%m-%d")
 
-    start_time = dt.datetime.now() - rd.relativedelta(weeks=2)
-    start_time = start_time.strftime("%Y-%m-%dT%H:%M:%S")
+
+def get_station_record(station, start_time, end_time):
+
+    start_time = format_dt(start_time)
 
     e = ",".join(HYRDOMET_VARS) if station[:3] == "ace" else ",".join(AGRIMET_VARS)
+
+    params = {
+        "stations": station,
+        "elements": e,
+        "start_time": start_time,
+        "level": 1,
+        "type": "csv",
+        "wide": False,
+    }
+
+    if end_time:
+        if end_time == dt.date.today():
+            end_time = dt.datetime.now()
+        end_time = format_dt(end_time)
+        params.update({"end_time": end_time})
+
     r = requests.get(
         url=f"{API_URL}observations",
-        params={
-            "stations": station,
-            "elements": e,
-            "start_time": start_time,
-            "level": 1,
-            "type": "csv",
-            "wide": False,
-        },
+        params=params,
     )
 
     with io.StringIO(r.text) as text_io:
@@ -112,8 +124,15 @@ def get_station_record(station):
     return dat
 
 
-def clean_format(station, hourly=True):
-    dat = get_station_record(station)
+def clean_format(
+    station,
+    hourly=True,
+    start_time=dt.datetime.now() - rd.relativedelta(weeks=2),
+    end_time=None,
+):
+
+    print("running function")
+    dat = get_station_record(station, start_time, end_time)
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
     dat = dat.set_index("datetime")
     dat["elem_lab"] = dat["element"].apply(switch)
@@ -146,42 +165,3 @@ def get_station_latest(station):
         dat = pd.read_csv(text_io)
 
     return dat
-
-
-# TODO: Implement above with async
-# import aiohttp
-# import asyncio
-# urls = ['https://mesonet.climate.umt.edu/api/v2/observations/?stations=aceround&level=1&units=SI&elements=ppt&type=csv&wide=False',
-# 'https://mesonet.climate.umt.edu/api/v2/observations/?stations=aceround&level=1&units=SI&start_time=2022-01-14T00:00:00&elements=air_temp_0200&type=csv&wide=False',
-# 'https://mesonet.climate.umt.edu/api/v2/observations/?stations=aceround&level=1&units=SI&start_time=2022-01-14T00:00:00&elements=soil_vwc_0005&type=csv&wide=False',
-# 'https://mesonet.climate.umt.edu/api/v2/observations/?stations=aceround&level=1&units=SI&start_time=2022-01-14T00:00:00&elements=soil_vwc_0010&type=csv&wide=False',
-# 'https://mesonet.climate.umt.edu/api/v2/observations/?stations=aceround&level=1&units=SI&start_time=2022-01-14T00:00:00&elements=soil_vwc_0020&type=csv&wide=False',
-# 'https://mesonet.climate.umt.edu/api/v2/observations/?stations=aceround&level=1&units=SI&start_time=2022-01-14T00:00:00&elements=soil_vwc_0050&type=csv&wide=False',
-# 'https://mesonet.climate.umt.edu/api/v2/observations/?stations=aceround&level=1&units=SI&start_time=2022-01-14T00:00:00&elements=soil_temp_0005&type=csv&wide=False',
-# 'https://mesonet.climate.umt.edu/api/v2/observations/?stations=aceround&level=1&units=SI&start_time=2022-01-14T00:00:00&elements=soil_temp_0010&type=csv&wide=False',
-# 'https://mesonet.climate.umt.edu/api/v2/observations/?stations=aceround&level=1&units=SI&start_time=2022-01-14T00:00:00&elements=soil_temp_0020&type=csv&wide=False',
-# 'https://mesonet.climate.umt.edu/api/v2/observations/?stations=aceround&level=1&units=SI&start_time=2022-01-14T00:00:00&elements=soil_temp_0050&type=csv&wide=False'
-# ]
-
-# async def process_response(session, url):
-#     async with session.get(url) as resp:
-#         with io.StringIO(await resp.text()) as text_io:
-#             return pd.read_csv(text_io)
-#         # dat = await resp.text()
-#         # return dat
-
-
-# async def main():
-
-#     async with aiohttp.ClientSession() as session:
-
-#         tasks = []
-#         for url in urls:
-#             tasks.append(asyncio.ensure_future(process_response(session, url)))
-
-#         out = await asyncio.gather(*tasks)
-#         return out
-
-# start_time = time.perf_counter()
-# asyncio.run(main())
-# print("--- %s seconds ---" % (time.perf_counter() - start_time))

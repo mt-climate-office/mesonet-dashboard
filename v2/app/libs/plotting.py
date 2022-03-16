@@ -198,6 +198,9 @@ def filter_df(df, v, time_freq):
     elif v == "rh" or v == "sol_rad":
         df = df[df["element"] == v]
 
+    if len(df) == 0:
+        return df
+
     if v != "ppt":
         df.index = pd.DatetimeIndex(df.datetime)
         df = (
@@ -228,32 +231,72 @@ def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
         df = ppt if v == "ppt" else hourly
         plot_func = get_plot_func(v)
         data = filter_df(df, v, time_freq)
+        if len(data) == 0:
+            continue
         plots.append(plot_func(data, color_mapper[v]))
 
     sub = px_to_subplot(*plots, shared_xaxes=True)
     for row in range(1, len(plots) + 1):
         sub.update_yaxes(title_text=axis_mapper[args[row - 1]], row=row, col=1)
 
-    height = 500 if len(args) == 1 else 250 * len(args)
+    height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height, width=1000)
     return sub
 
 
-def plot_station(sites, station):
+def plot_station(stations, station):
 
-    filt = sites[sites["station"] == station]
+    token = open(".maptiler_token").read()
 
-    fig = px.scatter_mapbox(
-        filt,
-        lat="latitude",
-        lon="longitude",
-        hover_name="name",
-        hover_data=["station"],
-        zoom=4.5,
-        height=300,
+    filt = stations[stations["station"] == station]
+
+    fig = go.Figure(
+        go.Scattermapbox(
+            mode="markers",
+            lon=filt["longitude"],
+            lat=filt["latitude"],
+            marker={"size": 10},
+        )
     )
-    fig.update_layout(mapbox_style="stamen-terrain")
-    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+
+    fig.update_layout(
+        # width=300,
+        height=250,
+        mapbox_style="white-bg",
+        mapbox_layers=[
+            # Hillshade
+            {
+                "below": "traces",
+                "sourcetype": "raster",
+                "sourceattribution": "MapTiler API Hillshades",
+                "source": [
+                    f"https://api.maptiler.com/tiles/hillshades/{{z}}/{{x}}/{{y}}.png?key={token}"
+                ],
+            },
+            # State outlines and labels
+            {
+                "below": "traces",
+                "sourcetype": "raster",
+                "sourceattribution": 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>; Map data; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                "source": [
+                    "https://stamen-tiles.a.ssl.fastly.net/toner-hybrid/{z}/{x}/{y}.png"
+                ],
+            },
+        ],
+    )
+
+    # fig.update_layout(mapbox_style="stamen-terrain")
+    fig.update_layout(
+        mapbox={
+            "center": {
+                "lon": filt["longitude"].values[0],
+                "lat": filt["latitude"].values[0],
+            },
+            "zoom": 4.5,
+        },
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        autosize=True,
+    )
     return fig
 
 
