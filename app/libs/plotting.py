@@ -3,13 +3,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
-from PIL import Image
-from io import StringIO
-import requests
 
 
 from typing import List
-from .get_data import clean_format
 
 
 color_mapper = {
@@ -252,8 +248,6 @@ def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
 
 def plot_station(stations, station):
 
-    # token = open("maptiler_token").read()
-
     filt = stations[stations["station"] == station]
 
     fig = go.Figure(
@@ -266,7 +260,6 @@ def plot_station(stations, station):
     )
 
     fig.update_layout(
-        # width=300,
         height=250,
         mapbox_style="white-bg",
         mapbox_layers=[

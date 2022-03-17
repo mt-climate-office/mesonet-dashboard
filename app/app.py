@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 
 import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
+from pathlib import Path
 
 from .libs.get_data import get_sites, clean_format
 from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
@@ -21,6 +22,7 @@ app = Dash(
     title="Montana Mesonet",
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
+    url_base_pathname="/dash/"
 )
 app._favicon = "MCO_logo.svg"
 server = app.server
@@ -403,8 +405,7 @@ def render_station_plot(temp_data, select_vars):
 
 @app.callback(Output("station-dropdown", "value"), Input("url", "pathname"))
 def update_dropdown_from_url(pth):
-    pth = pth.replace('/', '')
-    return pth
+    return Path(pth).stem
 
 
 @app.callback(Output("ul-tabs", "children"), Input("station-dropdown", "value"))
