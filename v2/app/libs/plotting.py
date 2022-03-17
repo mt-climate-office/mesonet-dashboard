@@ -39,6 +39,12 @@ def style_figure(fig):
     fig.update_yaxes(showgrid=True, gridcolor="grey")
     fig.update_layout(showlegend=False)
 
+
+    # finish implementing this: https://stackoverflow.com/questions/63213050/plotly-how-to-set-xticks-for-all-subplots
+    # for ax in fig['layout']:
+    #     if ax[:5]=='xaxis':
+    #         fig['layout'][ax]['range']
+
     return fig
 
 
@@ -246,7 +252,7 @@ def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
 
 def plot_station(stations, station):
 
-    token = open(".maptiler_token").read()
+    # token = open("maptiler_token").read()
 
     filt = stations[stations["station"] == station]
 
@@ -270,7 +276,7 @@ def plot_station(stations, station):
                 "sourcetype": "raster",
                 "sourceattribution": "MapTiler API Hillshades",
                 "source": [
-                    f"https://api.maptiler.com/tiles/hillshades/{{z}}/{{x}}/{{y}}.png?key={token}"
+                    f"https://api.maptiler.com/tiles/hillshades/{{z}}/{{x}}/{{y}}.png?key=KZO7rAv96Alr8UVUrd4a"
                 ],
             },
             # State outlines and labels
