@@ -6,4 +6,4 @@ CSS Styling and some implementation borrowed from [this](https://github.com/plot
 Can be run with Docker:
 
     docker build -t mesonet_dash .
-    docker run -p 8080:80 mesonet_dash
+    docker run --name mesonet_dash -d -p 8080:80 mesonet_dash
