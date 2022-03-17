@@ -22,7 +22,7 @@ app = Dash(
     title="Montana Mesonet",
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    url_base_pathname="/dash/"
+    serve_locally=False
 )
 app._favicon = "MCO_logo.svg"
 
