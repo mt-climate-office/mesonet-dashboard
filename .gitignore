@@ -5,3 +5,4 @@
 __pycache__
 *.pyc
 v2/app/.maptiler_token
+.DS_Store
