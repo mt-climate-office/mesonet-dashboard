@@ -25,7 +25,7 @@ app = Dash(
 app._favicon = "MCO_logo.svg"
 server = app.server
 
-@server.route("/dash/")
+#@server.route("/dash/")
 
 stations = get_sites()
 
