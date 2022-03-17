@@ -25,7 +25,12 @@ app = Dash(
     url_base_pathname="/dash/"
 )
 app._favicon = "MCO_logo.svg"
+app.config.update(
+    url_base_pathname='/dash'
+)
 server = app.server
+
+#@server.route("/dash/")
 
 stations = get_sites()
 

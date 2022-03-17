@@ -5,5 +5,5 @@ CSS Styling and some implementation borrowed from [this](https://github.com/plot
 
 Can be run with Docker:
 
-    docker build -t dash .
-    docker run -d --rm --name dash -p 8080:8080 dash
+    docker build -t mesonet_dash https://github.com/mt-climate-office/mesonet-dashboard.git#develop
+    docker run -d --rm --name dash -p 80:80 mesonet_dash
