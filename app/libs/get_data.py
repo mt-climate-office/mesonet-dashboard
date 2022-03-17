@@ -131,7 +131,6 @@ def clean_format(
     end_time=None,
 ):
 
-    print("running function")
     dat = get_station_record(station, start_time, end_time)
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
     dat = dat.set_index("datetime")

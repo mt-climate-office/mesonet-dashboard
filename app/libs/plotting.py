@@ -276,7 +276,7 @@ def plot_station(stations, station):
                 "sourcetype": "raster",
                 "sourceattribution": "MapTiler API Hillshades",
                 "source": [
-                    f"https://api.maptiler.com/tiles/hillshades/{{z}}/{{x}}/{{y}}.png?key=KZO7rAv96Alr8UVUrd4a"
+                    "https://basemap.nationalmap.gov/arcgis/rest/services/USGSShadedReliefOnly/MapServer/tile/{z}/{y}/{x}"
                 ],
             },
             # State outlines and labels
