@@ -254,6 +254,7 @@ table_styling = {
 
 app.layout = dbc.Container(
     [
+        dcc.Location(id='url', refresh=False),
         build_banner(),
         dbc.Row(
             [
@@ -394,11 +395,16 @@ def render_station_plot(temp_data, select_vars):
         return plot_site(*select_vars, hourly=hourly, ppt=ppt)
 
     elif temp_data == -1:
-        print("asdf")
         return make_nodata_figure()
 
     else:
         return px.line()
+
+
+@app.callback(Output("station-dropdown", "value"), Input("url", "pathname"))
+def update_dropdown_from_url(pth):
+    pth = pth.replace('/', '')
+    return pth
 
 
 @app.callback(Output("ul-tabs", "children"), Input("station-dropdown", "value"))
