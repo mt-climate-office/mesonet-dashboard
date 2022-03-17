@@ -7,9 +7,9 @@ import plotly.graph_objects as go
 import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 
-from libs.get_data import get_sites, clean_format
-from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from libs.tables import make_latest_table, make_metadata_table
+from .libs.get_data import get_sites, clean_format
+from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from .libs.tables import make_latest_table, make_metadata_table
 
 
 app = Dash(
