@@ -24,7 +24,7 @@ app = Dash(
 )
 app._favicon = "MCO_logo.svg"
 app.config.update(
-    url_base_pathname='/dash/'
+    url_base_pathname='/dash'
 )
 server = app.server
 
