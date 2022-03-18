@@ -23,7 +23,7 @@ app = Dash(
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
     # serve_locally=False,
-    # requests_pathname_prefix='/dash/'
+    requests_pathname_prefix='/dash/'
 )
 
 app._favicon = "MCO_logo.svg"
