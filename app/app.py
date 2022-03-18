@@ -8,13 +8,13 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-from .libs.get_data import get_sites, clean_format
-from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from .libs.tables import make_latest_table, make_metadata_table
+# from .libs.get_data import get_sites, clean_format
+# from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from .libs.tables import make_latest_table, make_metadata_table
 
-# from libs.get_data import get_sites, clean_format
-# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from libs.tables import make_latest_table, make_metadata_table
+from libs.get_data import get_sites, clean_format
+from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from libs.tables import make_latest_table, make_metadata_table
 
 
 app = Dash(
@@ -26,10 +26,7 @@ app = Dash(
 )
 
 app._favicon = "MCO_logo.svg"
-
 server = app.server
-
-#@server.route("/dash/")
 
 stations = get_sites()
 
@@ -184,6 +181,19 @@ def build_dropdowns():
                 ),
                 html.Div(
                     [
+                        dbc.Checklist(
+                            options=[
+                                {"label": "Top of Hour Data", "value": 1},
+                            ],
+                            inline=True,
+                            id="hourly-switch",
+                            switch=True,
+                            value=[1],
+                        ),
+                    ]
+                ),
+                                html.Div(
+                    [
                         dbc.Label("Select variables to plot:"),
                         dbc.Checklist(
                             options=[
@@ -322,16 +332,19 @@ def make_nodata_figure():
         Input("station-dropdown", "value"),
         Input("start-date", "date"),
         Input("end-date", "date"),
+        Input("hourly-switch", "value"),
     ],
 )
-def get_latest_api_data(station, start, end):
+def get_latest_api_data(station, start, end, hourly):
+
+    hourly = [hourly] if isinstance(hourly, int) else hourly
 
     if (start or end) and station:
         start = dt.datetime.strptime(start, "%Y-%m-%d").date()
         end = dt.datetime.strptime(end, "%Y-%m-%d").date()
 
         try:
-            data = clean_format(station, hourly=True, start_time=start, end_time=end)
+            data = clean_format(station, hourly=len(hourly) == 1, start_time=start, end_time=end)
         except AttributeError:
             return -1
         return data.to_json(date_format="iso", orient="records")
@@ -489,5 +502,4 @@ def toggle_modal(n1, is_open):
 
 
 if __name__ == "__main__":
-    print('asdF')
     app.run_server(debug=True)
