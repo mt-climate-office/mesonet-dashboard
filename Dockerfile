@@ -13,6 +13,6 @@ RUN cd /app && poetry install --no-root --no-dev
 
 COPY ./app /app
 
-CMD ["waitress-serve", "--port=80", "--threads=12", "app.app:server"]
-# CMD gunicorn -b 0.0.0.0:80 app.app:server
+# CMD ["waitress-serve", "--port=80", "--threads=12", "app.app:server"]
+CMD gunicorn -b 0.0.0.0:80 --workers 8 --threads 8 app.app:server
 # CMD ["uvicorn", "app.app:server", "--host", "0.0.0.0", "--port", "80"]
