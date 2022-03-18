@@ -22,7 +22,6 @@ app = Dash(
     title="Montana Mesonet",
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    # serve_locally=False,
     requests_pathname_prefix='/dash/'
 )
 
@@ -332,7 +331,7 @@ def get_latest_api_data(station, start, end):
         end = dt.datetime.strptime(end, "%Y-%m-%d").date()
 
         try:
-            data = clean_format(station, hourly=True, start_time=start, end_time=end)
+            data = clean_format(station, hourly=False, start_time=start, end_time=end)
         except AttributeError:
             return -1
         return data.to_json(date_format="iso", orient="records")
