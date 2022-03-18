@@ -47,7 +47,7 @@ def style_figure(fig):
 def plot_soil(dat, color):
 
     fig = px.line(
-        dat,
+        dat.dropna(),
         x="datetime",
         y="value",
         color="elem_lab",

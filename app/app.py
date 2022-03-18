@@ -23,7 +23,7 @@ app = Dash(
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
     # serve_locally=False,
-    requests_pathname_prefix='/dash/'
+    # requests_pathname_prefix='/dash/'
 )
 
 app._favicon = "MCO_logo.svg"
@@ -392,7 +392,7 @@ def enable_date_button(station):
 def render_station_plot(temp_data, select_vars):
 
     if len(select_vars) == 0:
-        return px.line()
+        return make_nodata_figure()
 
     elif temp_data and temp_data != -1:
         data = pd.read_json(temp_data, orient="records")
@@ -401,11 +401,7 @@ def render_station_plot(temp_data, select_vars):
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
         return plot_site(*select_vars, hourly=hourly, ppt=ppt)
 
-    elif temp_data == -1:
-        return make_nodata_figure()
-
-    else:
-        return px.line()
+    return make_nodata_figure()
 
 
 @app.callback(Output("station-dropdown", "value"), Input("url", "pathname"))
