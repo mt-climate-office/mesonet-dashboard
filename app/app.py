@@ -494,4 +494,5 @@ def toggle_modal(n1, is_open):
 
 
 if __name__ == "__main__":
+    print('asdF')
     app.run_server(debug=True)
