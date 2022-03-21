@@ -8,13 +8,13 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-# from .libs.get_data import get_sites, clean_format
-# from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from .libs.tables import make_latest_table, make_metadata_table
+from .libs.get_data import get_sites, clean_format
+from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from .libs.tables import make_latest_table, make_metadata_table
 
-from libs.get_data import get_sites, clean_format
-from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from libs.tables import make_latest_table, make_metadata_table
+# from libs.get_data import get_sites, clean_format
+# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from libs.tables import make_latest_table, make_metadata_table
 
 
 app = Dash(
@@ -22,7 +22,7 @@ app = Dash(
     title="Montana Mesonet",
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    # requests_pathname_prefix='/dash/'
+    requests_pathname_prefix='/dash/'
 )
 
 app._favicon = "MCO_logo.svg"
@@ -54,11 +54,11 @@ def generate_modal():
                         This dashboard visualizes historical data from all stations that are a part of the Montana Mesonet.
                         Data from a given station can either be visualized by selecting a station from the dropdown, or adding a station name to the URL path (e.g. [https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen](https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen)).
                         If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, either:
-                        - Email [colin.brust@mso.umt.edu](colin.brust@mso.umt.edu),
+                        - Email [colin.brust@mso.umt.edu](mailto:colin.brust@mso.umt.edu),
                         - Fill out our [feedback form](https://airtable.com/shrxlaYUu6DcyK98s),
                         - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
 
-                        For questions about the Mesonet itself, please contact our Mesonet Director (Kevin Hyde) at [kevin.hyde@umontana.edu](kevin.hyde@umontana.edu).
+                        For questions about the Mesonet itself, please contact our Mesonet Director (Kevin Hyde) at [kevin.hyde@umontana.edu](mailto:kevin.hyde@umontana.edu).
 
                         #### Source Code
                         See how we built this application at our [GitHub repository](https://github.com/mt-climate-office/mesonet-dashboard/tree/develop).
@@ -180,101 +180,38 @@ def build_bottom_left_card():
 # TODO: Make this a dbc.FormGroup instead
 def build_dropdowns():
 
-    # select_input = dbc.Row(
-    #     [
-    #         dbc.Label("Select a Mesonet Station:"),
-    #         dbc.Col(
-    #             dcc.Dropdown(
-    #                 dict(
-    #                     zip(
-    #                         stations["station"],
-    #                         stations["long_name"],
-    #                     )
-    #                 ),
-    #                 id="station-dropdown",
-    #             ),
-    #         ),
-    #     ],
-    #     className="mb-3",
-    # )
-
-    # toggle_input = dbc.Row(
-    #     [
-    #         dbc.Label("Top of Hour Data"),
-    #         dbc.Col(
-    #             dbc.Checklist(
-    #                 options=[
-    #                     {"label": "", "value": 1},
-    #                 ],
-    #                 inline=True,
-    #                 id="hourly-switch",
-    #                 switch=True,
-    #                 value=[1],
-    #             ),
-    #         ),
-    #     ],
-    #     className="mb-3",
-    # )
-
-    # checklist_input = dbc.Row(
-    #     [
-    #         dbc.Label("Select variables to plot:"),
-    #         dbc.Col(
-    #             dbc.Checklist(
-    #                 options=[
-    #                     {"value": "air_temp", "label": "Air Temp."},
-    #                     {"value": "ppt", "label": "Precipitation"},
-    #                     {"value": "soil_vwc", "label": "Soil Moisture"},
-    #                     {"value": "soil_temp", "label": "Soil Temp."},
-    #                     {"value": "sol_rad", "label": "Solar Rad."},
-    #                     {"value": "rh", "label": "Relative Humidity"},
-    #                     {"value": "wind_spd", "label": "Wind Speed"},
-    #                 ],
-    #                 inline=True,
-    #                 id="select-vars",
-    #                 value=["ppt", "soil_vwc", "air_temp"],
-    #             ),
-    #         ),
-    #     ],
-    #     className="mb-3",
-    # )
-
-    # dates_input = dbc.Row(
-    #     [
-    #         dbc.Col(
-    #             [
-    #                 dbc.Label("Start Date:"),
-    #                 dcc.DatePickerSingle(
-    #                     id="start-date",
-    #                     date=dt.date.today() - rd(weeks=2),
-    #                     max_date_allowed=dt.date.today(),
-    #                     disabled=True,
-    #                 ),
-    #             ]
-    #         ),
-    #         dbc.Col(
-    #             [
-    #                 dbc.Label("End Date:"),
-    #                 dcc.DatePickerSingle(
-    #                     id="end-date",
-    #                     date=dt.date.today(),
-    #                     max_date_allowed=dt.date.today(),
-    #                     disabled=True,
-    #                 ),
-    #             ]
-    #         ),
-    #     ],
-    #     className="mb-3",
-    # )
-    
-    # return dbc.Form([select_input, checklist_input, dates_input, toggle_input])
-
-    return dbc.Col(
-        dbc.Card(
+    checklist_input = dbc.InputGroup(
+        dbc.InputGroupText(
             [
-                html.Div(
-                    [
-                        dbc.Label("Select a Mesonet Station:"),
+                dbc.Checklist(
+                    options=[
+                        {"value": "air_temp", "label": "Air Temp."},
+                        {"value": "ppt", "label": "Precipitation"},
+                        {"value": "soil_vwc", "label": "Soil Moisture"},
+                        {"value": "soil_temp", "label": "Soil Temp."},
+                        {"value": "sol_rad", "label": "Solar Rad."},
+                        {"value": "rh", "label": "Relative Humidity"},
+                        {"value": "wind_spd", "label": "Wind Speed"},
+                    ],
+                    inline=True,
+                    id="select-vars",
+                    value=[
+                        "ppt",
+                        "soil_vwc",
+                        "air_temp",
+                    ],
+                )
+            ]
+        ),
+        className="mb-1",
+        size="lg",
+    )
+
+    return dbc.Container(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
                         dcc.Dropdown(
                             dict(
                                 zip(
@@ -283,11 +220,36 @@ def build_dropdowns():
                                 )
                             ),
                             id="station-dropdown",
-                        ),
-                    ]
-                ),
-                html.Div(
-                    [
+                            placeholder="Select a Mesonet Station...",
+                        )
+                    ),
+                    dbc.Col(
+                        dbc.InputGroup(
+                            [
+                                dbc.InputGroupText("Start Date"),
+                                dcc.DatePickerSingle(
+                                    id="start-date",
+                                    date=dt.date.today() - rd(weeks=2),
+                                    max_date_allowed=dt.date.today(),
+                                    disabled=True,
+                                ),
+                            ]
+                        )
+                    ),
+                    dbc.Col(
+                        dbc.InputGroup(
+                            [
+                                dbc.InputGroupText("End Date"),
+                                dcc.DatePickerSingle(
+                                    id="end-date",
+                                    date=dt.date.today(),
+                                    max_date_allowed=dt.date.today(),
+                                    disabled=True,
+                                ),
+                            ]
+                        )
+                    ),
+                    dbc.Col(
                         dbc.Checklist(
                             options=[
                                 {"label": "Top of Hour Data", "value": 1},
@@ -297,58 +259,14 @@ def build_dropdowns():
                             switch=True,
                             value=[1],
                         ),
-                    ]
-                ),
-                html.Div(
-                    [
-                        dbc.Label("Select variables to plot:"),
-                        dbc.Checklist(
-                            options=[
-                                {"value": "air_temp", "label": "Air Temp."},
-                                {"value": "ppt", "label": "Precipitation"},
-                                {"value": "soil_vwc", "label": "Soil Moisture"},
-                                {"value": "soil_temp", "label": "Soil Temp."},
-                                {"value": "sol_rad", "label": "Solar Rad."},
-                                {"value": "rh", "label": "Relative Humidity"},
-                                {"value": "wind_spd", "label": "Wind Speed"},
-                            ],
-                            inline=True,
-                            id="select-vars",
-                            value=["ppt", "soil_vwc", "air_temp"],
-                        ),
-                    ]
-                ),
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [
-                                dbc.Label("Start Date:"),
-                                dcc.DatePickerSingle(
-                                    id="start-date",
-                                    date=dt.date.today() - rd(weeks=2),
-                                    max_date_allowed=dt.date.today(),
-                                    disabled=True,
-                                ),
-                            ]
-                        ),
-                        dbc.Col(
-                            [
-                                dbc.Label("End Date:"),
-                                dcc.DatePickerSingle(
-                                    id="end-date",
-                                    date=dt.date.today(),
-                                    max_date_allowed=dt.date.today(),
-                                    disabled=True,
-                                ),
-                            ]
-                        ),
-                    ]
-                ),
-            ],
-            body=True,
-        ),
-        width=14,
+                    ),
+                ]
+            ),
+            html.Br(),
+            dbc.Row(checklist_input),
+        ]
     )
+
 
 def build_right_card():
 
@@ -540,7 +458,10 @@ def render_station_plot(temp_data, select_vars):
 
 @app.callback(Output("station-dropdown", "value"), Input("url", "pathname"))
 def update_dropdown_from_url(pth):
-    return Path(pth).stem
+    stem = Path(pth).stem
+    if stem == "/" or "dash" in stem:
+        return None
+    return stem
 
 
 @app.callback(Output("ul-tabs", "children"), Input("station-dropdown", "value"))
@@ -587,23 +508,28 @@ def update_ul_card(at, station, tmp_data):
         return html.Div(html.Iframe(src=url), className="second-row")
     else:
         buttons = dbc.RadioItems(
-           id='photo-direction',
-           options=[
+            id="photo-direction",
+            options=[
                 {"value": "n", "label": "North"},
                 {"value": "s", "label": "South"},
                 {"value": "g", "label": "Ground"},
-           ], 
-           inline=True,
-           value="n"
+            ],
+            inline=True,
+            value="n",
         )
 
-        return html.Div([
-            dbc.Row(buttons, justify="center", align="center", className="h-50"), 
-            dcc.Graph(id="photo-figure")
-        ])
+        return html.Div(
+            [
+                dbc.Row(buttons, justify="center", align="center", className="h-50"),
+                dcc.Graph(id="photo-figure"),
+            ]
+        )
 
 
-@app.callback(Output("photo-figure", "figure"), [Input("station-dropdown", "value"), Input("photo-direction", "value")])
+@app.callback(
+    Output("photo-figure", "figure"),
+    [Input("station-dropdown", "value"), Input("photo-direction", "value")],
+)
 def update_photo_direction(station, direction):
     return plot_latest_ace_image(station, direction=direction)
 
