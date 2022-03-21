@@ -39,18 +39,36 @@ def generate_modal():
                 dbc.ModalBody(
                     dcc.Markdown(
                         """
-                        Some random info. 
-                        
-                        Email colin.brust@mso.umt.edu for questions.
-                        
-                        ###### Source Code
-                        See how we built this application at our [GitHub repository](https://github.com/mt-climate-office/mesonet-dashboard).
+                        #### Montana Mesonet Background
+
+                        The Montana Climate Office (MCO) is leading the development of a cooperative statewide soil moisture and meteorological information system.
+                        It is designed to support decision-making in agriculture, range and forested watershed contexts.
+                        This network will add new remote sites and integrate existing cooperator networks to develop the first statewide soil-climate network.
+
+                        The Montana Mesonet will:
+                        - Combine information from existing data networks
+                        - Establish a minimum of 100 new soil moisture recording sites through partnerships with cooperators.
+                        - Provide an information system for accessing and visualizing historic, real-time and forecasted data.
+
+                        #### The Montana Mesonet Dashboard
+                        This dashboard visualizes historical data from all stations that are a part of the Montana Mesonet.
+                        Data from a given station can either be visualized by selecting a station from the dropdown, or adding a station name to the URL path (e.g. [https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen](https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen)).
+                        If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, either:
+                        - Email [colin.brust@mso.umt.edu](colin.brust@mso.umt.edu),
+                        - Fill out our [feedback form](https://airtable.com/shrxlaYUu6DcyK98s),
+                        - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
+
+                        For questions about the Mesonet itself, please contact our Mesonet Director (Kevin Hyde) at [kevin.hyde@umontana.edu](kevin.hyde@umontana.edu).
+
+                        #### Source Code
+                        See how we built this application at our [GitHub repository](https://github.com/mt-climate-office/mesonet-dashboard/tree/develop).
                     """
                     )
                 ),
             ],
             id="modal",
             is_open=False,
+            size="xl",
         )
     )
 
@@ -162,6 +180,95 @@ def build_bottom_left_card():
 # TODO: Make this a dbc.FormGroup instead
 def build_dropdowns():
 
+    # select_input = dbc.Row(
+    #     [
+    #         dbc.Label("Select a Mesonet Station:"),
+    #         dbc.Col(
+    #             dcc.Dropdown(
+    #                 dict(
+    #                     zip(
+    #                         stations["station"],
+    #                         stations["long_name"],
+    #                     )
+    #                 ),
+    #                 id="station-dropdown",
+    #             ),
+    #         ),
+    #     ],
+    #     className="mb-3",
+    # )
+
+    # toggle_input = dbc.Row(
+    #     [
+    #         dbc.Label("Top of Hour Data"),
+    #         dbc.Col(
+    #             dbc.Checklist(
+    #                 options=[
+    #                     {"label": "", "value": 1},
+    #                 ],
+    #                 inline=True,
+    #                 id="hourly-switch",
+    #                 switch=True,
+    #                 value=[1],
+    #             ),
+    #         ),
+    #     ],
+    #     className="mb-3",
+    # )
+
+    # checklist_input = dbc.Row(
+    #     [
+    #         dbc.Label("Select variables to plot:"),
+    #         dbc.Col(
+    #             dbc.Checklist(
+    #                 options=[
+    #                     {"value": "air_temp", "label": "Air Temp."},
+    #                     {"value": "ppt", "label": "Precipitation"},
+    #                     {"value": "soil_vwc", "label": "Soil Moisture"},
+    #                     {"value": "soil_temp", "label": "Soil Temp."},
+    #                     {"value": "sol_rad", "label": "Solar Rad."},
+    #                     {"value": "rh", "label": "Relative Humidity"},
+    #                     {"value": "wind_spd", "label": "Wind Speed"},
+    #                 ],
+    #                 inline=True,
+    #                 id="select-vars",
+    #                 value=["ppt", "soil_vwc", "air_temp"],
+    #             ),
+    #         ),
+    #     ],
+    #     className="mb-3",
+    # )
+
+    # dates_input = dbc.Row(
+    #     [
+    #         dbc.Col(
+    #             [
+    #                 dbc.Label("Start Date:"),
+    #                 dcc.DatePickerSingle(
+    #                     id="start-date",
+    #                     date=dt.date.today() - rd(weeks=2),
+    #                     max_date_allowed=dt.date.today(),
+    #                     disabled=True,
+    #                 ),
+    #             ]
+    #         ),
+    #         dbc.Col(
+    #             [
+    #                 dbc.Label("End Date:"),
+    #                 dcc.DatePickerSingle(
+    #                     id="end-date",
+    #                     date=dt.date.today(),
+    #                     max_date_allowed=dt.date.today(),
+    #                     disabled=True,
+    #                 ),
+    #             ]
+    #         ),
+    #     ],
+    #     className="mb-3",
+    # )
+    
+    # return dbc.Form([select_input, checklist_input, dates_input, toggle_input])
+
     return dbc.Col(
         dbc.Card(
             [
@@ -192,7 +299,7 @@ def build_dropdowns():
                         ),
                     ]
                 ),
-                                html.Div(
+                html.Div(
                     [
                         dbc.Label("Select variables to plot:"),
                         dbc.Checklist(
@@ -243,11 +350,24 @@ def build_dropdowns():
         width=14,
     )
 
-
 def build_right_card():
 
     return dbc.Card(
-        [dbc.CardHeader(build_dropdowns()), dbc.CardBody(dcc.Graph(id="station-data"))],
+        [
+            build_dropdowns(),
+            dbc.CardBody(
+                html.Div(
+                    [
+                        # TODO: Create a date range slider as described here: https://community.plotly.com/t/solved-has-anyone-made-a-date-range-slider/6531/8
+                        # dcc.RangeSlider(
+                        #     dt.date.today() - rd(weeks=2),
+                        #     dt.date.today(),
+                        # ),
+                        dcc.Graph(id="station-data"),
+                    ]
+                )
+            ),
+        ],
         color="secondary",
         outline=True,
         className="h-100",
@@ -270,7 +390,7 @@ table_styling = {
 
 app.layout = dbc.Container(
     [
-        dcc.Location(id='url', refresh=False),
+        dcc.Location(id="url", refresh=False),
         build_banner(),
         dbc.Row(
             [
@@ -344,7 +464,9 @@ def get_latest_api_data(station, start, end, hourly):
         end = dt.datetime.strptime(end, "%Y-%m-%d").date()
 
         try:
-            data = clean_format(station, hourly=len(hourly) == 1, start_time=start, end_time=end)
+            data = clean_format(
+                station, hourly=len(hourly) == 1, start_time=start, end_time=end
+            )
         except AttributeError:
             return -1
         return data.to_json(date_format="iso", orient="records")

@@ -29,17 +29,16 @@ axis_mapper = {
 }
 
 
-def style_figure(fig):
+def style_figure(fig, x_ticks):
     fig.update_layout({"plot_bgcolor": "rgba(0, 0, 0, 0)", "showlegend": False})
     fig.update_xaxes(showgrid=True, gridcolor="grey")
     fig.update_yaxes(showgrid=True, gridcolor="grey")
     fig.update_layout(showlegend=False)
 
-
     # finish implementing this: https://stackoverflow.com/questions/63213050/plotly-how-to-set-xticks-for-all-subplots
-    # for ax in fig['layout']:
-    #     if ax[:5]=='xaxis':
-    #         fig['layout'][ax]['range']
+    for ax in fig["layout"]:
+        if ax[:5] == "xaxis":
+            fig["layout"][ax]["range"] = x_ticks
 
     return fig
 
@@ -174,7 +173,7 @@ def px_to_subplot(*figs, **kwargs):
             sub.add_trace(*traces, row=idx, col=1)
 
     # return sub
-    return style_figure(sub)
+    return sub
 
 
 def reindex_by_date(df, time_freq):
@@ -237,13 +236,14 @@ def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
             continue
         plots.append(plot_func(data, color_mapper[v]))
 
-    sub = px_to_subplot(*plots, shared_xaxes=True)
+    sub = px_to_subplot(*plots, shared_xaxes=False)
     for row in range(1, len(plots) + 1):
         sub.update_yaxes(title_text=axis_mapper[args[row - 1]], row=row, col=1)
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height, width=1000)
-    return sub
+    x_ticks = [hourly.datetime.min().date(), hourly.datetime.max().date()]
+    return style_figure(sub, x_ticks)
 
 
 def plot_station(stations, station):
