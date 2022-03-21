@@ -8,13 +8,13 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-from .libs.get_data import get_sites, clean_format
-from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from .libs.tables import make_latest_table, make_metadata_table
+# from .libs.get_data import get_sites, clean_format
+# from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from .libs.tables import make_latest_table, make_metadata_table
 
-# from libs.get_data import get_sites, clean_format
-# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from libs.tables import make_latest_table, make_metadata_table
+from libs.get_data import get_sites, clean_format
+from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from libs.tables import make_latest_table, make_metadata_table
 
 
 app = Dash(
@@ -22,7 +22,7 @@ app = Dash(
     title="Montana Mesonet",
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    requests_pathname_prefix='/dash/'
+    # requests_pathname_prefix='/dash/'
 )
 
 app._favicon = "MCO_logo.svg"
@@ -556,6 +556,11 @@ def enable_photo_tab(station):
     return tabs
 
 
+@app.callback(Output("ul-tabs", "active_tab"), Input("station-dropdown", "value"))
+def select_default_tab(station):
+    return "photo-tab" if station and station[:3] == "ace" else "wind-tab"
+
+
 @app.callback(
     Output("ul-content", "children"),
     [
@@ -581,8 +586,26 @@ def update_ul_card(at, station, tmp_data):
         url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
         return html.Div(html.Iframe(src=url), className="second-row")
     else:
-        plt = plot_latest_ace_image(station, direction="N")
-        return dcc.Graph(figure=plt)
+        buttons = dbc.RadioItems(
+           id='photo-direction',
+           options=[
+                {"value": "n", "label": "North"},
+                {"value": "s", "label": "South"},
+                {"value": "g", "label": "Ground"},
+           ], 
+           inline=True,
+           value="n"
+        )
+
+        return html.Div([
+            dbc.Row(buttons, justify="center", align="center", className="h-50"), 
+            dcc.Graph(id="photo-figure")
+        ])
+
+
+@app.callback(Output("photo-figure", "figure"), [Input("station-dropdown", "value"), Input("photo-direction", "value")])
+def update_photo_direction(station, direction):
+    return plot_latest_ace_image(station, direction=direction)
 
 
 @app.callback(

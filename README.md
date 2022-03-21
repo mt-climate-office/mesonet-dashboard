@@ -1,4 +1,7 @@
+![MCO Logo](./app/assets/MCO_logo.svg)
 # The Montana Mesonet Dashboard
+
+
 
 This repository contains the code used to host the Montana Mesonet dashboard. The dashboard uses the [Dash](https://plotly.com/dash) library to create interactive graphs displaying up to two weeks of data for a given mesonet station. The dashboard calls the [Montana Mesonet API](https://mesonet.climate.umt.edu/api/v2/docs) to obtain the station data. 
 
