@@ -28,6 +28,24 @@ axis_mapper = {
     "soil_temp": "Soil Temp.<br>(°F)",
 }
 
+wind_directions = [
+        "N",
+        "NNE",
+        "NE",
+        "ENE",
+        "E",
+        "ESE",
+        "SE",
+        "SSE",
+        "S",
+        "SSW",
+        "SW",
+        "WSW",
+        "W",
+        "WNW",
+        "NW",
+        "NNW",
+    ]
 
 def style_figure(fig, x_ticks):
     fig.update_layout({"plot_bgcolor": "rgba(0, 0, 0, 0)", "showlegend": False})
@@ -88,24 +106,7 @@ def plot_ppt(dat, **kwargs):
 # credit to: https://stackoverflow.com/questions/7490660/converting-wind-direction-in-angles-to-text-words
 def deg_to_compass(num):
     val = int((num / 22.5) + 0.5)
-    arr = [
-        "N",
-        "NNE",
-        "NE",
-        "ENE",
-        "E",
-        "ESE",
-        "SE",
-        "SSE",
-        "S",
-        "SSW",
-        "SW",
-        "WSW",
-        "W",
-        "WNW",
-        "NW",
-        "NNW",
-    ]
+    arr = wind_directions
     return arr[(val % 16)]
 
 
@@ -116,7 +117,8 @@ def plot_wind(wind_data):
         .reset_index()[["Wind Direction", "Wind Speed"]]
         .reset_index(drop=True)
     )
-    # wind_data = pd.read_csv('~/misc/mco/wind_example.csv')
+
+    # wind_data = pd.read_csv('~/misc/mco/wind_example.csv').rename(columns={'wind_spd': 'Wind Speed', 'wind_dir': 'Wind Direction'})
     wind_data = wind_data.dropna()
     wind_data["Wind Direction"] = wind_data["Wind Direction"].apply(deg_to_compass)
     wind_data["Wind Speed"] = round(wind_data["Wind Speed"])
@@ -128,25 +130,10 @@ def plot_wind(wind_data):
     )
     out["Wind Direction"] = pd.Categorical(
         out["Wind Direction"],
-        [
-            "N",
-            "NNE",
-            "NE",
-            "ENE",
-            "E",
-            "ESE",
-            "SE",
-            "SSE",
-            "S",
-            "SSW",
-            "SW",
-            "WSW",
-            "W",
-            "WNW",
-            "NW",
-            "NNW",
-        ],
+        wind_directions,
     )
+
+    # TODO: Add valyues here if they are missing across the time period.
     out = out.sort_values(["Wind Direction", "Wind Speed"])
     out = out.rename(columns={"Wind Speed": "Wind Speed (mi/h)"})
 

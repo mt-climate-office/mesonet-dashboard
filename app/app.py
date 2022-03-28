@@ -345,8 +345,9 @@ app.layout = dbc.Container(
         dbc.Modal(
             id="station-modal",
             is_open=False,
-            size="lg",
+            size="sm",
             centered=True,
+            scrollable=True,
         ),
     ],
     fluid=True,
