@@ -55,12 +55,10 @@ def plot_soil(dat, **kwargs):
     )
     fig.update_traces(
         connectgaps=False,
-        hovertemplate= 
-        '<b>Date</b>: %{x}<br>'+
-        '<b>Soil Moisture</b>: %{y}',
+        hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Soil Moisture</b>: %{y}",
     )
 
-    fig.update_layout(hovermode='closest')
+    fig.update_layout(hovermode="closest")
 
     return fig
 
@@ -68,15 +66,13 @@ def plot_soil(dat, **kwargs):
 def plot_met(dat, **kwargs):
     fig = px.line(dat, x="datetime", y="value", markers=True)
 
-    fig = fig.update_traces(line_color=kwargs['color'], connectgaps=False)
+    fig = fig.update_traces(line_color=kwargs["color"], connectgaps=False)
 
-    variable_text = axis_mapper[kwargs['variable']]
-    variable_text = variable_text.replace('<br>', ' ')
+    variable_text = axis_mapper[kwargs["variable"]]
+    variable_text = variable_text.replace("<br>", " ")
 
     fig.update_traces(
-        hovertemplate= 
-        '<b>Date</b>: %{x}<br>'+
-        '<b>'+variable_text+'</b>: %{y}',
+        hovertemplate="<b>Date</b>: %{x}<br>" + "<b>" + variable_text + "</b>: %{y}",
     )
     return fig
 
@@ -84,9 +80,7 @@ def plot_met(dat, **kwargs):
 def plot_ppt(dat, **kwargs):
     fig = px.bar(dat, x="datetime", y="value")
     fig.update_traces(
-        hovertemplate= 
-        '<b>Date</b>: %{x}<br>'+
-        '<b>Precipitation Total</b>: %{y}',
+        hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Precipitation Total</b>: %{y}",
     )
     return fig
 
@@ -264,16 +258,37 @@ def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
     return style_figure(sub, x_ticks)
 
 
-def plot_station(stations, station):
+def plot_station(stations):
+    stations = stations[["station", "long_name", "elevation", "latitude", "longitude"]]
+    stations["url"] = (
+        stations["long_name"]
+        + ': [View Latest Data](https://fcfc-mesonet-staging.cfc.umt.edu/dash/'+ stations["station"]+')'
+    )
 
-    filt = stations[stations["station"] == station]
+    grouped = stations.groupby(["latitude", "longitude"])
+    stations = grouped.agg(
+        {
+            "long_name": lambda x: ",<br>".join(x),
+            "elevation": lambda x: round(np.unique(x)[0]),
+            "url": lambda x: ", ".join(x),
+        }
+    ).reset_index()
+
+    stations["color"] = np.where(
+        stations["long_name"].str.contains(",<br>"), "#FB7A7A", "#7A7AFB"
+    )
 
     fig = go.Figure(
         go.Scattermapbox(
             mode="markers",
-            lon=filt["longitude"],
-            lat=filt["latitude"],
-            marker={"size": 10},
+            lon=stations["longitude"],
+            lat=stations["latitude"],
+            marker={"size": 10, "color": stations["color"]},
+            customdata=stations,
+            hovertemplate="<b>Station(s)</b>: %{customdata[2]}<br><extra></extra>",
+            # "<b>Latitude, Longitude</b>: %{lat}, %{lon}<br>" +
+            # "<b>Elevation (m)</b>: %{customdata[3]}<br><extra></extra>",
+            hoverinfo="none",
         )
     )
 
@@ -300,20 +315,18 @@ def plot_station(stations, station):
                 ],
             },
         ],
-    )
-
-    # fig.update_layout(mapbox_style="stamen-terrain")
-    fig.update_layout(
         mapbox={
             "center": {
-                "lon": filt["longitude"].values[0],
-                "lat": filt["latitude"].values[0],
+                "lon": -109.5,
+                "lat": 47,
             },
-            "zoom": 4.5,
+            "zoom": 4,
         },
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
         autosize=True,
+        hoverlabel_align="right",
     )
+
     return fig
 
 

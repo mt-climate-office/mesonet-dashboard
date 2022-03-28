@@ -29,6 +29,7 @@ app._favicon = "MCO_logo.svg"
 server = app.server
 
 stations = get_sites()
+station_fig = plot_station(stations)
 
 
 def generate_modal():
@@ -52,7 +53,7 @@ def generate_modal():
 
                         #### The Montana Mesonet Dashboard
                         This dashboard visualizes historical data from all stations that are a part of the Montana Mesonet.
-                        Data from a given station can either be visualized by selecting a station from the dropdown, or adding a station name to the URL path (e.g. [https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen](https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen)).
+                        Data from a given station can either be visualized by selecting a station from the dropdown, click a station on the locator map, or adding a station name to the URL path (e.g. [https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen](https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen)).
                         If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, either:
                         - Email [colin.brust@mso.umt.edu](mailto:colin.brust@mso.umt.edu),
                         - Fill out our [feedback form](https://airtable.com/shrxlaYUu6DcyK98s),
@@ -69,6 +70,7 @@ def generate_modal():
             id="modal",
             is_open=False,
             size="xl",
+            scrollable=True,
         )
     )
 
@@ -340,6 +342,12 @@ app.layout = dbc.Container(
         ),
         dcc.Store(id="temp-station-data"),
         generate_modal(),
+        dbc.Modal(
+            id="station-modal",
+            is_open=False,
+            size="lg",
+            centered=True,
+        ),
     ],
     fluid=True,
     style={"height": "92vh"},
@@ -547,8 +555,7 @@ def update_bl_card(at, station, tmp_data):
         return html.Div()
 
     if at == "map-tab":
-        plt = plot_station(stations, station)
-        return dcc.Graph(figure=plt)
+        return dcc.Graph(id="station-fig", figure=station_fig)
     elif at == "meta-tab":
         table = make_metadata_table(stations, station)
         return dash_table.DataTable(data=table, **table_styling)
@@ -559,6 +566,34 @@ def update_bl_card(at, station, tmp_data):
             table = make_latest_table(data)
             return dash_table.DataTable(data=table, **table_styling)
         return dcc.Graph(figure=make_nodata_figure())
+
+
+@app.callback(
+    [Output("station-modal", "children"), Output("station-modal", "is_open")],
+    [Input("station-fig", "clickData")],
+    [State("station-modal", "is_open")],
+)
+def station_popup(clickData, is_open):
+
+    if clickData:
+        lat, lon, name, elevation, href, _ = clickData['points'][0]['customdata']
+        name = name.replace(',<br>', ', ')
+        text = dbc.ModalBody(dcc.Markdown(
+            f"""
+            #### {name}
+            **Latitude, Longitude**: {lat}, {lon}
+
+            **Elevation**: {elevation},
+
+            ###### View Station Dashboard
+            {href}
+            """
+        ))
+
+
+    if clickData and text:
+        return text, not is_open
+    return '', is_open
 
 
 @app.callback(
