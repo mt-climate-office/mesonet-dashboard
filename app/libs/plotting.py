@@ -43,7 +43,7 @@ def style_figure(fig, x_ticks):
     return fig
 
 
-def plot_soil(dat, color):
+def plot_soil(dat, **kwargs):
 
     fig = px.line(
         dat.dropna(),
@@ -52,24 +52,42 @@ def plot_soil(dat, color):
         color="elem_lab",
         # color_discrete_sequence=['yellow', 'blue', 'pink', 'skyblbue'],
         # TODO: Refine hover data: https://plotly.com/python/hover-text-and-formatting/
-        hover_name="elem_lab",
-        hover_data=["value"],
     )
-    fig.update_traces(connectgaps=False)
+    fig.update_traces(
+        connectgaps=False,
+        hovertemplate= 
+        '<b>Date</b>: %{x}<br>'+
+        '<b>Soil Moisture</b>: %{y}',
+    )
+
+    fig.update_layout(hovermode='closest')
 
     return fig
 
 
-def plot_met(dat, color):
+def plot_met(dat, **kwargs):
     fig = px.line(dat, x="datetime", y="value", markers=True)
 
-    fig = fig.update_traces(line_color=color, connectgaps=False)
+    fig = fig.update_traces(line_color=kwargs['color'], connectgaps=False)
+
+    variable_text = axis_mapper[kwargs['variable']]
+    variable_text = variable_text.replace('<br>', ' ')
+
+    fig.update_traces(
+        hovertemplate= 
+        '<b>Date</b>: %{x}<br>'+
+        '<b>'+variable_text+'</b>: %{y}',
+    )
     return fig
 
 
-def plot_ppt(dat, color):
+def plot_ppt(dat, **kwargs):
     fig = px.bar(dat, x="datetime", y="value")
-
+    fig.update_traces(
+        hovertemplate= 
+        '<b>Date</b>: %{x}<br>'+
+        '<b>Precipitation Total</b>: %{y}',
+    )
     return fig
 
 
@@ -234,7 +252,7 @@ def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
         data = filter_df(df, v, time_freq)
         if len(data) == 0:
             continue
-        plots.append(plot_func(data, color_mapper[v]))
+        plots.append(plot_func(data, color=color_mapper[v], variable=v))
 
     sub = px_to_subplot(*plots, shared_xaxes=False)
     for row in range(1, len(plots) + 1):
