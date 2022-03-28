@@ -583,7 +583,7 @@ def station_popup(clickData, is_open):
             #### {name}
             **Latitude, Longitude**: {lat}, {lon}
 
-            **Elevation**: {elevation},
+            **Elevation (m)**: {elevation}
 
             ###### View Station Dashboard
             {href}
