@@ -8,13 +8,13 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-from .libs.get_data import get_sites, clean_format
-from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from .libs.tables import make_latest_table, make_metadata_table
+# from .libs.get_data import get_sites, clean_format
+# from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from .libs.tables import make_latest_table, make_metadata_table
 
-# from libs.get_data import get_sites, clean_format
-# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from libs.tables import make_latest_table, make_metadata_table
+from libs.get_data import get_sites, clean_format
+from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from libs.tables import make_latest_table, make_metadata_table
 
 
 app = Dash(
@@ -22,7 +22,7 @@ app = Dash(
     title="Montana Mesonet",
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    requests_pathname_prefix='/dash/'
+    # requests_pathname_prefix='/dash/'
 )
 
 app._favicon = "MCO_logo.svg"
@@ -85,21 +85,34 @@ def build_banner():
                     dbc.Row(
                         [
                             dbc.Col(
-                                html.Img(
-                                    src=app.get_asset_url("MCO_logo.svg"), height="50px"
+                                html.A(
+                                    href="https://climate.umt.edu/",
+                                    children=[
+                                        html.Img(
+                                            src=app.get_asset_url("MCO_logo.svg"), 
+                                            height="50px",
+                                            alt="MCO Logo"
+                                        )
+                                    ]
                                 )
                             ),
-                            dbc.Col(
-                                dbc.NavbarBrand(
-                                    "Montana Mesonet Dashboard", className="ms-1"
-                                )
-                            ),
+                            # dbc.Col(
+                            #     dbc.NavbarBrand(
+                            #         "Montana Mesonet Dashboard", className="ms-5"
+                            #     )
+                            # ),
                         ],
                         align="center",
                         className="g-0",
                     ),
-                    href="https://climate.umt.edu/",
                     style={"textDecoration": "none"},
+                ),
+                html.Div(
+                    html.P(
+                        'The Montana Mesonet Dashboard',
+                        id='banner-title',
+                        className='bannertxt'
+                    )
                 ),
                 html.Div(
                     [
@@ -125,7 +138,7 @@ def build_banner():
             ],
             fluid=True,
         ),
-        color="light",
+        color="#E9ECEF",
         dark=False,
     )
 
@@ -351,7 +364,7 @@ app.layout = dbc.Container(
         ),
     ],
     fluid=True,
-    style={"height": "92vh"},
+    style={"height": "92vh", "backgroundColor": "#E9ECEF"},
 )
 
 
@@ -372,6 +385,9 @@ def make_nodata_figure():
     )
     return fig
 
+@app.callback(Output("banner-title", "children"), [Input("station-dropdown", "value"), Input("station-dropdown", "options")])
+def update_banner_text(station, options):
+    return f"The Montana Mesonet Dashboard: {options[station]}" if station else "The Montana Mesonet Dashboard"
 
 @app.callback(
     Output("temp-station-data", "data"),
