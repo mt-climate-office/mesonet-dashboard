@@ -8,13 +8,13 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-# from .libs.get_data import get_sites, clean_format
-# from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from .libs.tables import make_latest_table, make_metadata_table
+from .libs.get_data import get_sites, clean_format
+from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from .libs.tables import make_latest_table, make_metadata_table
 
-from libs.get_data import get_sites, clean_format
-from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from libs.tables import make_latest_table, make_metadata_table
+# from libs.get_data import get_sites, clean_format
+# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from libs.tables import make_latest_table, make_metadata_table
 
 
 app = Dash(
@@ -22,7 +22,7 @@ app = Dash(
     title="Montana Mesonet",
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    # requests_pathname_prefix='/dash/'
+    requests_pathname_prefix='/dash/'
 )
 
 app._favicon = "MCO_logo.svg"
