@@ -364,7 +364,7 @@ app.layout = dbc.Container(
         ),
     ],
     fluid=True,
-    style={"height": "92vh", "backgroundColor": "#E9ECEF"},
+    style={"height": "100vh", "backgroundColor": "#E9ECEF"},
 )
 
 
