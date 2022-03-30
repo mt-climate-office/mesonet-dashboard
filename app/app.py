@@ -341,6 +341,7 @@ app.layout = dbc.Container(
                         ),
                     ],
                     width=4,
+                    style={"maxHeight": "92vh", "overflow": "scroll"},
                 ),
                 dbc.Col(
                     html.Div(
