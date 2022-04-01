@@ -131,6 +131,10 @@ def clean_format(
     end_time=None,
 ):
 
+    # TODO: Make endtime = now if end date is today.
+    # if end_time == dt.date.today():
+    #     end_time = dt.datetime.now()
+
     dat = get_station_record(station, start_time, end_time)
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
     dat = dat.set_index("datetime")
