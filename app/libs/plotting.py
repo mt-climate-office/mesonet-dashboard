@@ -118,7 +118,7 @@ def plot_wind(wind_data):
         .reset_index(drop=True)
     )
 
-    #  wind_data = pd.read_csv('~/misc/mco/wind_example.csv').rename(columns={'wind_spd': 'Wind Speed', 'wind_dir': 'Wind Direction'})
+    # wind_data = pd.read_csv('~/misc/mco/wind_example.csv').rename(columns={'wind_spd': 'Wind Speed', 'wind_dir': 'Wind Direction'})
     wind_data = wind_data.dropna()
     wind_data["Wind Direction"] = wind_data["Wind Direction"].apply(deg_to_compass)
     wind_data["Wind Speed"] = round(wind_data["Wind Speed"])
@@ -128,19 +128,21 @@ def plot_wind(wind_data):
         .size()
         .reset_index(name="Frequency")
     )
+
+    unq_wind = set(out['Wind Direction'])
+    missing_dirs = [x for x in wind_directions if x not in unq_wind]
+    rows = [{'Wind Direction': x, 'Wind Speed': '(-0.001, 1.0]', 'Frequency': 0} for x in missing_dirs]
+    rows = pd.DataFrame(rows)
+
+    out = pd.concat([out, rows], ignore_index=True)
     out["Wind Direction"] = pd.Categorical(
         out["Wind Direction"],
         wind_directions,
     )
-
-    # TODO: Add valyues here if they are missing across the time period.
-    # Pretty much done, just need to add rows to out and make sure wind speed col is cast as string instead of categorical. 
-    # unq_wind = set(out['Wind Direction'])
-    # missing_dirs = [x for x in wind_directions if x not in unq_wind]
-    # rows = [{'Wind Direction': x, 'Wind Speed': '(-0.001, 1.0]', 'Frequency': 0} for x in missing_dirs]
-
     out = out.sort_values(["Wind Direction", "Wind Speed"])
+    out['Wind Speed'] = out['Wind Speed'].astype(str)
     out = out.rename(columns={"Wind Speed": "Wind Speed (mi/h)"})
+
 
     fig = px.bar_polar(
         out,
