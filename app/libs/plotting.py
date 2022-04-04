@@ -29,23 +29,24 @@ axis_mapper = {
 }
 
 wind_directions = [
-        "N",
-        "NNE",
-        "NE",
-        "ENE",
-        "E",
-        "ESE",
-        "SE",
-        "SSE",
-        "S",
-        "SSW",
-        "SW",
-        "WSW",
-        "W",
-        "WNW",
-        "NW",
-        "NNW",
-    ]
+    "N",
+    "NNE",
+    "NE",
+    "ENE",
+    "E",
+    "ESE",
+    "SE",
+    "SSE",
+    "S",
+    "SSW",
+    "SW",
+    "WSW",
+    "W",
+    "WNW",
+    "NW",
+    "NNW",
+]
+
 
 def style_figure(fig, x_ticks):
     fig.update_layout({"plot_bgcolor": "rgba(0, 0, 0, 0)", "showlegend": False})
@@ -129,9 +130,12 @@ def plot_wind(wind_data):
         .reset_index(name="Frequency")
     )
 
-    unq_wind = set(out['Wind Direction'])
+    unq_wind = set(out["Wind Direction"])
     missing_dirs = [x for x in wind_directions if x not in unq_wind]
-    rows = [{'Wind Direction': x, 'Wind Speed': '(-0.001, 1.0]', 'Frequency': 0} for x in missing_dirs]
+    rows = [
+        {"Wind Direction": x, "Wind Speed": "(-0.001, 1.0]", "Frequency": 0}
+        for x in missing_dirs
+    ]
     rows = pd.DataFrame(rows)
 
     out = pd.concat([out, rows], ignore_index=True)
@@ -140,9 +144,8 @@ def plot_wind(wind_data):
         wind_directions,
     )
     out = out.sort_values(["Wind Direction", "Wind Speed"])
-    out['Wind Speed'] = out['Wind Speed'].astype(str)
+    out["Wind Speed"] = out["Wind Speed"].astype(str)
     out = out.rename(columns={"Wind Speed": "Wind Speed (mi/h)"})
-
 
     fig = px.bar_polar(
         out,
@@ -256,7 +259,9 @@ def plot_station(stations):
     stations = stations[["station", "long_name", "elevation", "latitude", "longitude"]]
     stations["url"] = (
         stations["long_name"]
-        + ': [View Latest Data](https://fcfc-mesonet-staging.cfc.umt.edu/dash/'+ stations["station"]+')'
+        + ": [View Latest Data](https://fcfc-mesonet-staging.cfc.umt.edu/dash/"
+        + stations["station"]
+        + ")"
     )
 
     grouped = stations.groupby(["latitude", "longitude"])

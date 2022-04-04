@@ -89,11 +89,11 @@ def build_banner():
                                     href="https://climate.umt.edu/",
                                     children=[
                                         html.Img(
-                                            src=app.get_asset_url("MCO_logo.svg"), 
+                                            src=app.get_asset_url("MCO_logo.svg"),
                                             height="50px",
-                                            alt="MCO Logo"
+                                            alt="MCO Logo",
                                         )
-                                    ]
+                                    ],
                                 )
                             ),
                             # dbc.Col(
@@ -109,9 +109,9 @@ def build_banner():
                 ),
                 html.Div(
                     html.P(
-                        'The Montana Mesonet Dashboard',
-                        id='banner-title',
-                        className='bannertxt'
+                        "The Montana Mesonet Dashboard",
+                        id="banner-title",
+                        className="bannertxt",
                     )
                 ),
                 html.Div(
@@ -218,7 +218,7 @@ def build_dropdowns():
                 )
             ]
         ),
-        className="mb-1",
+        className="mb-3",
         size="lg",
     )
 
@@ -236,7 +236,8 @@ def build_dropdowns():
                             ),
                             id="station-dropdown",
                             placeholder="Select a Mesonet Station...",
-                        )
+                        ),
+                        width={"size": 3},
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -249,7 +250,8 @@ def build_dropdowns():
                                     disabled=True,
                                 ),
                             ]
-                        )
+                        ),
+                        width={"size": 3},
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -262,24 +264,55 @@ def build_dropdowns():
                                     disabled=True,
                                 ),
                             ]
-                        )
+                        ),
+                        width={"size": 3},
                     ),
                     dbc.Col(
-                        dbc.Checklist(
-                            options=[
-                                {"label": "Top of Hour Data", "value": 1},
+                        dbc.InputGroup(
+                            [
+                                dbc.Checklist(
+                                    options=[
+                                        {"label": "Top of Hour Data", "value": 1},
+                                    ],
+                                    inline=True,
+                                    id="hourly-switch",
+                                    switch=True,
+                                    value=[1],
+                                ),
                             ],
-                            inline=True,
-                            id="hourly-switch",
-                            switch=True,
-                            value=[1],
                         ),
+                        width={"size": 3},
                     ),
-                ]
+                ],
+                align="center",
             ),
             html.Br(),
-            dbc.Row(checklist_input),
-        ]
+            dbc.Row(
+                [
+                    dbc.Col(checklist_input, width={"size": 9}),
+                    dbc.Col(
+                        [
+                            dbc.InputGroup(
+                                dbc.Button(
+                                    "Download Data",
+                                    href="#",
+                                    size="lg",
+                                    n_clicks=0,
+                                    id="download-button",
+                                    className="me-md-2",
+                                ),
+                            ),
+                            dcc.Download(id="data-download"),
+                        ],
+                        width={"size": 3},
+                        align="start",
+                    ),
+                ],
+                align="center",
+            ),
+        ],
+        style={"padding": "1rem 0rem 0rem 5rem"},
+        fluid=True,
     )
 
 
@@ -386,9 +419,18 @@ def make_nodata_figure():
     )
     return fig
 
-@app.callback(Output("banner-title", "children"), [Input("station-dropdown", "value"), Input("station-dropdown", "options")])
+
+@app.callback(
+    Output("banner-title", "children"),
+    [Input("station-dropdown", "value"), Input("station-dropdown", "options")],
+)
 def update_banner_text(station, options):
-    return f"The Montana Mesonet Dashboard: {options[station]}" if station else "The Montana Mesonet Dashboard"
+    return (
+        f"The Montana Mesonet Dashboard: {options[station]}"
+        if station
+        else "The Montana Mesonet Dashboard"
+    )
+
 
 @app.callback(
     Output("temp-station-data", "data"),
@@ -561,6 +603,17 @@ def update_photo_direction(station, direction):
 
 
 @app.callback(
+    Output("data-download", "data"),
+    [Input("download-button", "n_clicks"), Input("temp-station-data", "data")],
+    prevent_initial_callback=True,
+)
+def download_called_data(n_clicks, tmp_data):
+    if n_clicks and tmp_data:
+        data = pd.read_json(tmp_data, orient="records")
+        return dcc.send_data_frame(data.to_csv, "MT_mesonet_dash_data.csv")
+
+
+@app.callback(
     Output("bl-content", "children"),
     [
         Input("bl-tabs", "active_tab"),
@@ -594,10 +647,11 @@ def update_bl_card(at, station, tmp_data):
 def station_popup(clickData, is_open):
 
     if clickData:
-        lat, lon, name, elevation, href, _ = clickData['points'][0]['customdata']
-        name = name.replace(',<br>', ', ')
-        text = dbc.ModalBody(dcc.Markdown(
-            f"""
+        lat, lon, name, elevation, href, _ = clickData["points"][0]["customdata"]
+        name = name.replace(",<br>", ", ")
+        text = dbc.ModalBody(
+            dcc.Markdown(
+                f"""
             #### {name}
             **Latitude, Longitude**: {lat}, {lon}
 
@@ -606,12 +660,12 @@ def station_popup(clickData, is_open):
             ###### View Station Dashboard
             {href}
             """
-        ))
-
+            )
+        )
 
     if clickData and text:
         return text, not is_open
-    return '', is_open
+    return "", is_open
 
 
 @app.callback(
