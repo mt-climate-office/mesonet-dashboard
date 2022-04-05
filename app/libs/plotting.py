@@ -65,7 +65,7 @@ def style_figure(fig, x_ticks):
 def plot_soil(dat, **kwargs):
 
     fig = px.line(
-        dat.dropna(),
+        dat,
         x="datetime",
         y="value",
         color="elem_lab",
@@ -155,6 +155,8 @@ def plot_wind(wind_data):
         template="plotly_white",
         color_discrete_sequence=px.colors.sequential.Plasma_r,
     )
+
+    fig.update_layout(height=350)
     return fig
 
 
@@ -230,10 +232,16 @@ def get_plot_func(v):
     return plot_met
 
 
-def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
+def plot_site(
+    *args: List, hourly: pd.DataFrame, ppt: pd.DataFrame, hr_flag: bool = True
+):
 
     station = np.unique(hourly["station"])[0]
-    time_freq = "5min" if station[:3] == "ace" else "15min"
+
+    if hr_flag:
+        time_freq = "60min"
+    else:
+        time_freq = "5min" if station[:3] == "ace" else "15min"
 
     plots = []
 
@@ -249,8 +257,8 @@ def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
     for row in range(1, len(plots) + 1):
         sub.update_yaxes(title_text=axis_mapper[args[row - 1]], row=row, col=1)
 
-    height = 500 if len(plots) == 1 else 250 * len(plots)
-    sub.update_layout(height=height, width=1000)
+    height = 500 if len(plots) == 1 else 200 * len(plots)
+    sub.update_layout(height=height)
     x_ticks = [hourly.datetime.min().date(), hourly.datetime.max().date()]
     return style_figure(sub, x_ticks)
 

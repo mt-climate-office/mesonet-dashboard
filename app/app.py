@@ -22,7 +22,13 @@ app = Dash(
     title="Montana Mesonet",
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    requests_pathname_prefix='/dash/'
+    meta_tags=[
+        {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
+        }
+    ],
+    requests_pathname_prefix="/dash/",
 )
 
 app._favicon = "MCO_logo.svg"
@@ -160,7 +166,7 @@ def build_top_left_card():
                     active_tab="wind-tab",
                 )
             ),
-            dbc.CardBody(html.P(id="ul-content", className="card-text")),
+            dbc.CardBody(html.Div(id="ul-content")),
         ],
         outline=True,
         color="secondary",
@@ -183,7 +189,11 @@ def build_bottom_left_card():
                 )
             ),
             html.Div(
-                dbc.CardBody(id="bl-content", className="card-text"),
+                dbc.CardBody(
+                    id="bl-content",
+                    children=dcc.Graph(id="station-fig", figure=station_fig),
+                    className="card-text",
+                ),
                 style={"overflow": "scroll"},
             ),
         ],
@@ -236,8 +246,13 @@ def build_dropdowns():
                             ),
                             id="station-dropdown",
                             placeholder="Select a Mesonet Station...",
+                            # style={"width": "150%"}
                         ),
-                        width={"size": 3},
+                        xs=10,
+                        sm=10,
+                        md=10,
+                        lg=3,
+                        xl=3,
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -251,7 +266,11 @@ def build_dropdowns():
                                 ),
                             ]
                         ),
-                        width={"size": 3},
+                        xs=6,
+                        sm=6,
+                        md=6,
+                        lg=3,
+                        xl=3,
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -265,7 +284,11 @@ def build_dropdowns():
                                 ),
                             ]
                         ),
-                        width={"size": 3},
+                        xs=6,
+                        sm=6,
+                        md=6,
+                        lg=3,
+                        xl=3,
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -281,7 +304,11 @@ def build_dropdowns():
                                 ),
                             ],
                         ),
-                        width={"size": 3},
+                        xs=10,
+                        sm=10,
+                        md=10,
+                        lg=3,
+                        xl=3,
                     ),
                 ],
                 align="center",
@@ -289,7 +316,14 @@ def build_dropdowns():
             html.Br(),
             dbc.Row(
                 [
-                    dbc.Col(checklist_input, width={"size": 9}),
+                    dbc.Col(
+                        checklist_input,
+                        xs=10,
+                        sm=10,
+                        md=10,
+                        lg=9,
+                        xl=9,
+                    ),
                     dbc.Col(
                         [
                             dbc.InputGroup(
@@ -304,7 +338,11 @@ def build_dropdowns():
                             ),
                             dcc.Download(id="data-download"),
                         ],
-                        width={"size": 3},
+                        xs=0,
+                        sm=0,
+                        md=0,
+                        lg=3,
+                        xl=3,
                         align="start",
                     ),
                 ],
@@ -373,7 +411,11 @@ app.layout = dbc.Container(
                             style={"padding": "0.5rem 0.5rem"},
                         ),
                     ],
-                    width=4,
+                    xs=10,
+                    sm=10,
+                    md=10,
+                    lg=4,
+                    xl=4,
                     style={"maxHeight": "92vh", "overflow": "scroll"},
                 ),
                 dbc.Col(
@@ -381,7 +423,11 @@ app.layout = dbc.Container(
                         build_right_card(),
                         style={"maxHeight": "92vh", "overflow": "scroll"},
                     ),
-                    width=8,
+                    xs=10,
+                    sm=10,
+                    md=10,
+                    lg=8,
+                    xl=8,
                     style={"padding": "0.5rem 0.5rem"},
                 ),
             ],
@@ -398,7 +444,7 @@ app.layout = dbc.Container(
         ),
     ],
     fluid=True,
-    style={"height": "100vh", "backgroundColor": "#E9ECEF"},
+    style={"height": "100%", "backgroundColor": "#E9ECEF"},
 )
 
 
@@ -507,9 +553,13 @@ def enable_date_button(station):
 
 @app.callback(
     Output("station-data", "figure"),
-    [Input("temp-station-data", "data"), Input("select-vars", "value")],
+    [
+        Input("temp-station-data", "data"),
+        Input("select-vars", "value"),
+        Input("hourly-switch", "value"),
+    ],
 )
-def render_station_plot(temp_data, select_vars):
+def render_station_plot(temp_data, select_vars, hourly_sw):
 
     if len(select_vars) == 0:
         return make_nodata_figure()
@@ -519,7 +569,7 @@ def render_station_plot(temp_data, select_vars):
         hourly = data[data["element"] != "ppt_sum"]
         ppt = data[data["element"] == "ppt_sum"]
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
-        return plot_site(*select_vars, hourly=hourly, ppt=ppt)
+        return plot_site(*select_vars, hourly=hourly, ppt=ppt, hr_flag=bool(hourly_sw))
 
     return make_nodata_figure()
 
@@ -567,8 +617,19 @@ def update_ul_card(at, station, tmp_data):
             data = pd.read_json(tmp_data, orient="records")
             data = data[data["element"].str.contains("wind")]
             plt = plot_wind(data)
-            return dcc.Graph(figure=plt)
-        return dcc.Graph(figure=make_nodata_figure())
+            return (
+                html.Div(
+                    dcc.Graph(figure=plt, style={"width": "50vh", "height": "50vh"})
+                ),
+            )
+        return (
+            html.Div(
+                dcc.Graph(
+                    figure=make_nodata_figure(),
+                    style={"width": "25vh", "height": "25vh"},
+                )
+            ),
+        )
 
     elif at == "wx-tab":
         row = stations[stations["station"] == station]
@@ -590,7 +651,7 @@ def update_ul_card(at, station, tmp_data):
             [
                 dbc.Row(buttons, justify="center", align="center", className="h-50"),
                 dcc.Graph(id="photo-figure"),
-            ]
+            ],
         )
 
 
