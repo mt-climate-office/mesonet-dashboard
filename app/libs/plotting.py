@@ -257,7 +257,7 @@ def plot_site(
     for row in range(1, len(plots) + 1):
         sub.update_yaxes(title_text=axis_mapper[args[row - 1]], row=row, col=1)
 
-    height = 500 if len(plots) == 1 else 200 * len(plots)
+    height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height)
     x_ticks = [hourly.datetime.min().date(), hourly.datetime.max().date()]
     return style_figure(sub, x_ticks)
@@ -346,7 +346,7 @@ def plot_latest_ace_image(station, direction="N"):
     # Constants
     img_width = 2048
     img_height = 1446
-    scale_factor = 0.25
+    scale_factor = 0.22
 
     # Add invisible scatter trace.
     # This trace is added to help the autoresize logic work.

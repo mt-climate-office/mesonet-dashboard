@@ -8,13 +8,13 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-from .libs.get_data import get_sites, clean_format
-from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from .libs.tables import make_latest_table, make_metadata_table
+# from .libs.get_data import get_sites, clean_format
+# from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from .libs.tables import make_latest_table, make_metadata_table
 
-# from libs.get_data import get_sites, clean_format
-# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from libs.tables import make_latest_table, make_metadata_table
+from libs.get_data import get_sites, clean_format
+from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from libs.tables import make_latest_table, make_metadata_table
 
 
 app = Dash(
@@ -28,7 +28,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    requests_pathname_prefix="/dash/",
+    # requests_pathname_prefix="/dash/",
 )
 
 app._favicon = "MCO_logo.svg"
@@ -375,6 +375,7 @@ def build_right_card():
         color="secondary",
         outline=True,
         className="h-100",
+        style={"overflow": "scroll"},
     )
 
 
@@ -411,23 +412,23 @@ app.layout = dbc.Container(
                             style={"padding": "0.5rem 0.5rem"},
                         ),
                     ],
-                    xs=10,
-                    sm=10,
-                    md=10,
-                    lg=4,
-                    xl=4,
+                    xs={"size": 10, "order": "last", "offset": 0},
+                    sm={"size": 10, "order": "last", "offset": 0},
+                    md={"size": 10, "order": "last", "offset": 0},
+                    lg={"size": 4, "order": "last", "offset": 0},
+                    xl={"size": 4, "order": "last", "offset": 0},
                     style={"maxHeight": "92vh", "overflow": "scroll"},
                 ),
                 dbc.Col(
                     html.Div(
                         build_right_card(),
-                        style={"maxHeight": "92vh", "overflow": "scroll"},
+                        style={"height": "100%", "maxHeight": "92vh", "overflow": "scroll"},
                     ),
-                    xs=10,
-                    sm=10,
-                    md=10,
-                    lg=8,
-                    xl=8,
+                    xs={"size": 10, "order": "first", "offset": 0},
+                    sm={"size": 10, "order": "first", "offset": 0},
+                    md={"size": 10, "order": "first", "offset": 0},
+                    lg={"size": 8, "order": "first", "offset": 0},
+                    xl={"size": 8, "order": "first", "offset": 0},
                     style={"padding": "0.5rem 0.5rem"},
                 ),
             ],
