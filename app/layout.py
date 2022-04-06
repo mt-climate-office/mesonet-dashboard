@@ -1,3 +1,4 @@
+from audioop import mul
 import datetime as dt
 
 import dash_bootstrap_components as dbc
@@ -182,12 +183,13 @@ def build_dropdowns(stations):
                 dbc.Checklist(
                     options=[
                         {"value": "air_temp", "label": "Air Temp."},
-                        {"value": "ppt", "label": "Precipitation"},
+                        {"value": "ppt", "label": "Precip."},
                         {"value": "soil_vwc", "label": "Soil Moisture"},
                         {"value": "soil_temp", "label": "Soil Temp."},
                         {"value": "sol_rad", "label": "Solar Rad."},
-                        {"value": "rh", "label": "Relative Humidity"},
+                        {"value": "rh", "label": "Rel. Humidity"},
                         {"value": "wind_spd", "label": "Wind Speed"},
+                        {"value": "bp", "label": "Atmos. Pres."},
                     ],
                     inline=True,
                     id="select-vars",
@@ -197,7 +199,8 @@ def build_dropdowns(stations):
                         "air_temp",
                     ],
                 )
-            ]
+            ],
+            style={"overflow": "scroll"},
         ),
         className="mb-3",
         size="lg",
@@ -296,14 +299,14 @@ def build_dropdowns(stations):
                         xs=10,
                         sm=10,
                         md=10,
-                        lg=9,
-                        xl=9,
+                        lg=10,
+                        xl=10,
                     ),
                     dbc.Col(
                         [
                             dbc.InputGroup(
                                 dbc.Button(
-                                    "Download Data",
+                                    "Download",
                                     href="#",
                                     size="lg",
                                     n_clicks=0,
@@ -313,11 +316,11 @@ def build_dropdowns(stations):
                             ),
                             dcc.Download(id="data-download"),
                         ],
-                        xs=0,
-                        sm=0,
-                        md=0,
-                        lg=3,
-                        xl=3,
+                        xs=1,
+                        sm=1,
+                        md=1,
+                        lg=2,
+                        xl=2,
                         align="start",
                     ),
                 ],
@@ -350,7 +353,7 @@ def build_right_card(stations):
         color="secondary",
         outline=True,
         className="h-100",
-        style={"overflow": "scroll"},
+        style={"overflow-y": "scroll", "overflow-x": "clip"},
     )
 
 

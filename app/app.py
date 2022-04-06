@@ -298,7 +298,7 @@ def update_ul_card(at, station, tmp_data, start_date, end_date):
 def update_photo_direction(station, direction):
     return plot_latest_ace_image(station, direction=direction)
 
-
+# TODO: Make download only happen on button click, not after when station changes. 
 @app.callback(
     Output("data-download", "data"),
     [
@@ -312,10 +312,10 @@ def update_photo_direction(station, direction):
 )
 def download_called_data(n_clicks, tmp_data, start: dt.date, end: dt.date, station):
     if n_clicks and tmp_data:
-        data = pd.read_json(tmp_data, orient="records").to_csv
-        data.datetime = data.datetime.dt.tz_convert('America/Denver')
+        data = pd.read_json(tmp_data, orient="records")
+        data = data.assign(datetime=data.datetime.dt.tz_convert('America/Denver'))
         return dcc.send_data_frame(
-            data,
+            data.to_csv,
             f"{station}_MTMesonet_{start.replace('-', '')}_{end.replace('-', '')}.csv",
         )
 

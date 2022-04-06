@@ -12,6 +12,7 @@ import plotly.express as px
 
 AGRIMET_VARS = [
     "air_temp_0244",
+    "bp",
     "ppt",
     "rh",
     "wind_spd_0244",
@@ -28,6 +29,7 @@ AGRIMET_VARS = [
 ]
 HYRDOMET_VARS = [
     "air_temp_0200",
+    "bp",
     "ppt",
     "rh",
     "wind_spd_1000",
@@ -52,6 +54,7 @@ API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 def switch(val):
 
     mapper = {
+        "bp": "Atmospheric Pressure",
         "soil_vwc_0005": "Soil Moisture at 2 in",
         "soil_vwc_0010": "Soil Moisture at 4 in",
         "soil_vwc_0020": "Soil Moisture at 8 in",

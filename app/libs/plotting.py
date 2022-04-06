@@ -14,6 +14,7 @@ color_mapper = {
     "sol_rad": "#c15366",
     "rh": "#a16a5c",
     "wind_spd": "#ec6607",
+    "bp": "#A020F0",
     "soil_temp": None,
     "soil_vwc": None,
     "ppt": None,
@@ -27,6 +28,7 @@ axis_mapper = {
     "sol_rad": "Solar Rad.<br>(W/m<sup>2</sup>)",
     "wind_spd": "Wind Spd.<br>(mph)",
     "soil_temp": "Soil Temp.<br>(°F)",
+    "bp": "Millibar"
 }
 
 wind_directions = [
@@ -61,7 +63,7 @@ def style_figure(fig, x_ticks):
     )
     fig.update_xaxes(showgrid=True, gridcolor="grey")
     fig.update_yaxes(showgrid=True, gridcolor="grey")
-    # fig.update_layout(showlegend=False)
+    fig.update_layout(showlegend=False)
 
     # finish implementing this: https://stackoverflow.com/questions/63213050/plotly-how-to-set-xticks-for-all-subplots
     for ax in fig["layout"]:
@@ -223,7 +225,7 @@ def filter_df(df, v, time_freq):
 
     if "soil" in v or "air_temp" in v or "wind" in v:
         df = df[df["element"].str.contains(v)]
-    elif v == "rh" or v == "sol_rad":
+    elif v in ["rh", "sol_rad", "bp", "etr"]:
         df = df[df["element"] == v]
 
     if len(df) == 0:
