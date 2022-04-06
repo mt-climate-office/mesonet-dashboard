@@ -112,6 +112,7 @@ def deg_to_compass(num):
 
 
 def plot_wind(wind_data):
+
     wind_data = wind_data[["datetime", "value", "elem_lab"]]
     wind_data = (
         wind_data.pivot_table(values="value", columns="elem_lab", index="datetime")
@@ -132,9 +133,10 @@ def plot_wind(wind_data):
 
     unq_wind = set(out["Wind Direction"])
     missing_dirs = [x for x in wind_directions if x not in unq_wind]
+    speeds = set(out['Wind Speed'].values)
     rows = [
-        {"Wind Direction": x, "Wind Speed": "(-0.001, 1.0]", "Frequency": 0}
-        for x in missing_dirs
+        {"Wind Direction": x, "Wind Speed": y, "Frequency": 0}
+        for x in missing_dirs for y in speeds
     ]
     rows = pd.DataFrame(rows)
 
@@ -142,9 +144,10 @@ def plot_wind(wind_data):
     out["Wind Direction"] = pd.Categorical(
         out["Wind Direction"],
         wind_directions,
+        ordered=True
     )
     out = out.sort_values(["Wind Direction", "Wind Speed"])
-    out["Wind Speed"] = out["Wind Speed"].astype(str)
+    # out["Wind Speed"] = out["Wind Speed"].astype(str)
     out = out.rename(columns={"Wind Speed": "Wind Speed (mi/h)"})
 
     fig = px.bar_polar(
@@ -265,8 +268,8 @@ def plot_site(
 
 def plot_station(stations):
     stations = stations[["station", "long_name", "elevation", "latitude", "longitude"]]
-    stations["url"] = (
-        stations["long_name"]
+    stations = stations.assign(
+        url=stations["long_name"]
         + ": [View Latest Data](https://fcfc-mesonet-staging.cfc.umt.edu/dash/"
         + stations["station"]
         + ")"
