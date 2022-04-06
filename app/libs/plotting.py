@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
+from dateutil.relativedelta import relativedelta as rd
 
 
 from typing import List
@@ -49,10 +50,18 @@ wind_directions = [
 
 
 def style_figure(fig, x_ticks):
-    fig.update_layout({"plot_bgcolor": "rgba(0, 0, 0, 0)", "showlegend": False})
+    fig.update_layout(
+        {"plot_bgcolor": "rgba(0, 0, 0, 0)"},
+        # legend=dict(
+        #     yanchor="top",
+        #     y=0.99,
+        #     xanchor="left",
+        #     x=0.01
+        # )
+    )
     fig.update_xaxes(showgrid=True, gridcolor="grey")
     fig.update_yaxes(showgrid=True, gridcolor="grey")
-    fig.update_layout(showlegend=False)
+    # fig.update_layout(showlegend=False)
 
     # finish implementing this: https://stackoverflow.com/questions/63213050/plotly-how-to-set-xticks-for-all-subplots
     for ax in fig["layout"]:
@@ -77,7 +86,9 @@ def plot_soil(dat, **kwargs):
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Soil Moisture</b>: %{y}",
     )
 
-    fig.update_layout(hovermode="closest")
+    fig.update_layout(
+        hovermode="closest",
+    )
 
     return fig
 
@@ -97,6 +108,7 @@ def plot_met(dat, **kwargs):
 
 
 def plot_ppt(dat, **kwargs):
+    dat = dat.assign(datetime = dat.datetime.dt.date)
     fig = px.bar(dat, x="datetime", y="value")
     fig.update_traces(
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Precipitation Total</b>: %{y}",
@@ -133,18 +145,17 @@ def plot_wind(wind_data):
 
     unq_wind = set(out["Wind Direction"])
     missing_dirs = [x for x in wind_directions if x not in unq_wind]
-    speeds = set(out['Wind Speed'].values)
+    speeds = set(out["Wind Speed"].values)
     rows = [
         {"Wind Direction": x, "Wind Speed": y, "Frequency": 0}
-        for x in missing_dirs for y in speeds
+        for x in missing_dirs
+        for y in speeds
     ]
     rows = pd.DataFrame(rows)
 
     out = pd.concat([out, rows], ignore_index=True)
     out["Wind Direction"] = pd.Categorical(
-        out["Wind Direction"],
-        wind_directions,
-        ordered=True
+        out["Wind Direction"], wind_directions, ordered=True
     )
     out = out.sort_values(["Wind Direction", "Wind Speed"])
     # out["Wind Speed"] = out["Wind Speed"].astype(str)
@@ -159,7 +170,9 @@ def plot_wind(wind_data):
         color_discrete_sequence=px.colors.sequential.Plasma_r,
     )
 
-    fig.update_layout(height=350)
+    fig.update_layout(margin={"b": 80},)
+
+    # fig.update_layout(height=350)
     return fig
 
 
@@ -262,8 +275,12 @@ def plot_site(
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height)
-    x_ticks = [hourly.datetime.min().date(), hourly.datetime.max().date()]
-    return style_figure(sub, x_ticks)
+    x_ticks = [hourly.datetime.min().date(), hourly.datetime.max().date()+rd(days=1)]
+    sub = style_figure(sub, x_ticks)
+    sub.update_layout(
+        margin={"r": 0, "t": 20, "l": 0, "b": 0},
+    )
+    return sub
 
 
 def plot_station(stations):

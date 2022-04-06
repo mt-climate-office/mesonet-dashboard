@@ -73,6 +73,34 @@ def update_banner_text(station, options):
 
 
 @app.callback(
+    Output("bl-content", "children"),
+    [
+        Input("bl-tabs", "active_tab"),
+        Input("station-dropdown", "value"),
+        Input("temp-station-data", "data"),
+    ],
+    prevent_initial_callback=True,
+)
+def update_bl_card(at, station, tmp_data):
+    if station is None or tmp_data is None:
+        return html.Div()
+
+    if at == "map-tab":
+        return dcc.Graph(id="station-fig", figure=station_fig)
+    elif at == "meta-tab":
+        table = make_metadata_table(stations, station)
+        return dash_table.DataTable(data=table, **table_styling)
+
+    else:
+        if tmp_data != -1:
+            data = pd.read_json(tmp_data, orient="records")
+            data.datetime = data.datetime.dt.tz_convert('America/Denver')
+            table = make_latest_table(data)
+            return dash_table.DataTable(data=table, **table_styling)
+        return dcc.Graph(figure=make_nodata_figure())
+
+
+@app.callback(
     Output("temp-station-data", "data"),
     [
         Input("station-dropdown", "value"),
@@ -93,7 +121,8 @@ def get_latest_api_data(station, start, end, hourly):
             data = clean_format(
                 station, hourly=len(hourly) == 1, start_time=start, end_time=end
             )
-        except AttributeError:
+        except AttributeError as e:
+            print(e)
             return -1
         return data.to_json(date_format="iso", orient="records")
 
@@ -160,6 +189,7 @@ def render_station_plot(temp_data, select_vars, hourly_sw):
 
     elif temp_data and temp_data != -1:
         data = pd.read_json(temp_data, orient="records")
+        data.datetime = data.datetime.dt.tz_convert('America/Denver')
         hourly = data[data["element"] != "ppt_sum"]
         ppt = data[data["element"] == "ppt_sum"]
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
@@ -200,27 +230,39 @@ def select_default_tab(station):
         Input("ul-tabs", "active_tab"),
         Input("station-dropdown", "value"),
         Input("temp-station-data", "data"),
+        Input("start-date", "date"),
+        Input("end-date", "date"),
     ],
 )
-def update_ul_card(at, station, tmp_data):
+def update_ul_card(at, station, tmp_data, start_date, end_date):
     if station is None or tmp_data is None:
         return html.Div()
 
     if at == "wind-tab":
         if tmp_data != -1:
             data = pd.read_json(tmp_data, orient="records")
+            data.datetime = data.datetime.dt.tz_convert('America/Denver')
             data = data[data["element"].str.contains("wind")]
-            plt = plot_wind(data)
+            fig = plot_wind(data)
+            fig.update_layout(
+            title={
+                'text': f'<b>Wind Data from {start_date} to {end_date}</b>',
+                'x': 0.5,
+                'y': 1,
+                'xanchor': 'center',
+                'yanchor': 'top',
+            }
+        )
+
             return (
                 html.Div(
-                    dcc.Graph(figure=plt, style={"width": "50vh", "height": "50vh"})
+                    children=dcc.Graph(figure=fig, style={"height": "40vh"}),
                 ),
             )
         return (
             html.Div(
                 dcc.Graph(
                     figure=make_nodata_figure(),
-                    style={"width": "25vh", "height": "25vh"},
                 )
             ),
         )
@@ -259,39 +301,23 @@ def update_photo_direction(station, direction):
 
 @app.callback(
     Output("data-download", "data"),
-    [Input("download-button", "n_clicks"), Input("temp-station-data", "data")],
+    [
+        Input("download-button", "n_clicks"),
+        Input("temp-station-data", "data"),
+        Input("start-date", "date"),
+        Input("end-date", "date"),
+        Input("station-dropdown", "value"),
+    ],
     prevent_initial_callback=True,
 )
-def download_called_data(n_clicks, tmp_data):
+def download_called_data(n_clicks, tmp_data, start: dt.date, end: dt.date, station):
     if n_clicks and tmp_data:
-        data = pd.read_json(tmp_data, orient="records")
-        return dcc.send_data_frame(data.to_csv, "MT_mesonet_dash_data.csv")
-
-
-@app.callback(
-    Output("bl-content", "children"),
-    [
-        Input("bl-tabs", "active_tab"),
-        Input("station-dropdown", "value"),
-        Input("temp-station-data", "data"),
-    ],
-)
-def update_bl_card(at, station, tmp_data):
-    if station is None or tmp_data is None:
-        return html.Div()
-
-    if at == "map-tab":
-        return dcc.Graph(id="station-fig", figure=station_fig)
-    elif at == "meta-tab":
-        table = make_metadata_table(stations, station)
-        return dash_table.DataTable(data=table, **table_styling)
-
-    else:
-        if tmp_data != -1:
-            data = pd.read_json(tmp_data, orient="records")
-            table = make_latest_table(data)
-            return dash_table.DataTable(data=table, **table_styling)
-        return dcc.Graph(figure=make_nodata_figure())
+        data = pd.read_json(tmp_data, orient="records").to_csv
+        data.datetime = data.datetime.dt.tz_convert('America/Denver')
+        return dcc.send_data_frame(
+            data,
+            f"{station}_MTMesonet_{start.replace('-', '')}_{end.replace('-', '')}.csv",
+        )
 
 
 @app.callback(

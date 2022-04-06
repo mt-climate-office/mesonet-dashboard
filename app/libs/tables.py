@@ -1,5 +1,5 @@
 import pandas as pd
-
+import numpy as np
 
 def make_metadata_table(station_df, station):
     out = station_df[station_df["station"] == station][
@@ -37,7 +37,7 @@ def make_latest_table(df):
     latest_df = pd.DataFrame.from_dict(
         {"elem_lab": ["Latest Reading"], "value": [latest]}
     )
-
+    out["units"] = np.where(out['units'] == "percent", "%", out["units"])
     out.loc[out.units == "percent", "units"] = "%"
     out["value"] = out["value"].astype(str) + " " + out["units"]
     out = out[["elem_lab", "value"]].reset_index(drop=True)

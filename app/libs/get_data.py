@@ -131,16 +131,13 @@ def clean_format(
     end_time=None,
 ):
 
-    # TODO: Make endtime = now if end date is today.
-    # if end_time == dt.date.today():
-    #     end_time = dt.datetime.now()
-
     dat = get_station_record(station, start_time, end_time)
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
+    dat.datetime = dat.datetime.dt.tz_convert("America/Denver")
     dat = dat.set_index("datetime")
     dat["elem_lab"] = dat["element"].apply(switch)
-
     ppt = dat[dat.element == "ppt"]
+    ppt.index = pd.DatetimeIndex(ppt.index)
     ppt = ppt.groupby(ppt.index.date)["value"].agg("sum").reset_index()
     ppt = ppt.rename(columns={"index": "datetime"})
     ppt["station"] = station

@@ -133,10 +133,14 @@ def build_top_left_card():
                     active_tab="wind-tab",
                 )
             ),
-            dbc.CardBody(html.Div(id="ul-content")),
+            dbc.CardBody(
+                html.Div(id="ul-content"),
+            ),
         ],
         outline=True,
         color="secondary",
+        className="h-100",
+        style={"overflow": "scroll"},
     )
 
 
@@ -269,6 +273,10 @@ def build_dropdowns(stations):
                                     switch=True,
                                     value=[1],
                                 ),
+                                dbc.Tooltip(
+                                    "Leaving top of the hour data switched on will make the figures load faster. If the toggle is switched off, the figures will convey more information, but will take longer to load.",
+                                    target="hourly-switch",
+                                ),
                             ],
                         ),
                         xs=10,
@@ -360,9 +368,10 @@ table_styling = {
     ],
 }
 
+
 def app_layout(app_ref, station_fig, stations):
     return dbc.Container(
-        [ 
+        [
             dcc.Location(id="url", refresh=False),
             build_banner(app_ref),
             dbc.Row(
@@ -372,12 +381,12 @@ def app_layout(app_ref, station_fig, stations):
                             dbc.Row(
                                 build_top_left_card(),
                                 className="h-50",
-                                style={"padding": "0.5rem 0.5rem"},
+                                style={"padding": "0rem 0rem 0.25rem 0rem"},
                             ),
                             dbc.Row(
                                 build_bottom_left_card(station_fig),
                                 className="h-50",
-                                style={"padding": "0.5rem 0.5rem"},
+                                style={"padding": "0.25rem 0rem 0rem 0rem"},
                             ),
                         ],
                         xs={"size": 10, "order": "last", "offset": 0},
@@ -390,19 +399,23 @@ def app_layout(app_ref, station_fig, stations):
                     dbc.Col(
                         html.Div(
                             build_right_card(stations),
-                            style={"height": "100%", "maxHeight": "92vh", "overflow": "scroll"},
+                            style={
+                                "height": "100%",
+                                "maxHeight": "92vh",
+                                "overflow": "scroll",
+                            },
                         ),
                         xs={"size": 10, "order": "first", "offset": 0},
                         sm={"size": 10, "order": "first", "offset": 0},
                         md={"size": 10, "order": "first", "offset": 0},
                         lg={"size": 8, "order": "first", "offset": 0},
                         xl={"size": 8, "order": "first", "offset": 0},
-                        style={"padding": "0.5rem 0.5rem"},
+                        style={"padding": "0rem 0.25rem 0rem 0.5rem"},
                     ),
                 ],
                 className="h-100",
             ),
-            dcc.Store(id="temp-station-data"),
+            dcc.Store(id="temp-station-data", storage_type="session"),
             generate_modal(),
             dbc.Modal(
                 id="station-modal",
