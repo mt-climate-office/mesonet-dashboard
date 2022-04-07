@@ -114,6 +114,32 @@ def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
     return etr
 
 
+data = clean_format("crowagen")
+data = data.assign(datetime=pd.to_datetime(data.datetime, utc=True))
+data.datetime = data.datetime.dt.tz_convert("America/Denver")
+data = data.assign(julian=data.datetime.dt.dayofyear)
+data = data.assign(hour=data.datetime.dt.hour)
+
+stations = get_sites()
+station = stations[stations["station"] == "crowagen"]
+lat = station["latitude"]
+lon = station["longitude"]
+elev = station["elevation"]
+
+# TODO: Finish this
+# TODO: Also, need data to be in wide format. Should change anyways because it will be faster
+data["et"] = data.apply(
+    lambda x: fao_etr_hourly(
+        lat,
+        lon,
+        x["julian"],
+        x["hour"],
+        elev,
+    )
+)
+#
+
+
 def fao_etr_daily(lat, J, z, RH, Temp_C, Rs, P, U):
     ########################################
     ####### Reference ET  from FAO #########

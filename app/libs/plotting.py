@@ -28,7 +28,7 @@ axis_mapper = {
     "sol_rad": "Solar Rad.<br>(W/m<sup>2</sup>)",
     "wind_spd": "Wind Spd.<br>(mph)",
     "soil_temp": "Soil Temp.<br>(°F)",
-    "bp": "Millibar"
+    "bp": "Millibar",
 }
 
 wind_directions = [
@@ -110,7 +110,7 @@ def plot_met(dat, **kwargs):
 
 
 def plot_ppt(dat, **kwargs):
-    dat = dat.assign(datetime = dat.datetime.dt.date)
+    dat = dat.assign(datetime=dat.datetime.dt.date)
     fig = px.bar(dat, x="datetime", y="value")
     fig.update_traces(
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Precipitation Total</b>: %{y}",
@@ -172,7 +172,9 @@ def plot_wind(wind_data):
         color_discrete_sequence=px.colors.sequential.Plasma_r,
     )
 
-    fig.update_layout(margin={"b": 80},)
+    fig.update_layout(
+        margin={"b": 80},
+    )
 
     # fig.update_layout(height=350)
     return fig
@@ -277,7 +279,7 @@ def plot_site(
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height)
-    x_ticks = [hourly.datetime.min().date(), hourly.datetime.max().date()+rd(days=1)]
+    x_ticks = [hourly.datetime.min().date(), hourly.datetime.max().date() + rd(days=1)]
     sub = style_figure(sub, x_ticks)
     sub.update_layout(
         margin={"r": 0, "t": 20, "l": 0, "b": 0},

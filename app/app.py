@@ -94,7 +94,7 @@ def update_bl_card(at, station, tmp_data):
     else:
         if tmp_data != -1:
             data = pd.read_json(tmp_data, orient="records")
-            data.datetime = data.datetime.dt.tz_convert('America/Denver')
+            data.datetime = data.datetime.dt.tz_convert("America/Denver")
             table = make_latest_table(data)
             return dash_table.DataTable(data=table, **table_styling)
         return dcc.Graph(figure=make_nodata_figure())
@@ -189,7 +189,7 @@ def render_station_plot(temp_data, select_vars, hourly_sw):
 
     elif temp_data and temp_data != -1:
         data = pd.read_json(temp_data, orient="records")
-        data.datetime = data.datetime.dt.tz_convert('America/Denver')
+        data.datetime = data.datetime.dt.tz_convert("America/Denver")
         hourly = data[data["element"] != "ppt_sum"]
         ppt = data[data["element"] == "ppt_sum"]
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
@@ -241,18 +241,18 @@ def update_ul_card(at, station, tmp_data, start_date, end_date):
     if at == "wind-tab":
         if tmp_data != -1:
             data = pd.read_json(tmp_data, orient="records")
-            data.datetime = data.datetime.dt.tz_convert('America/Denver')
+            data.datetime = data.datetime.dt.tz_convert("America/Denver")
             data = data[data["element"].str.contains("wind")]
             fig = plot_wind(data)
             fig.update_layout(
-            title={
-                'text': f'<b>Wind Data from {start_date} to {end_date}</b>',
-                'x': 0.5,
-                'y': 1,
-                'xanchor': 'center',
-                'yanchor': 'top',
-            }
-        )
+                title={
+                    "text": f"<b>Wind Data from {start_date} to {end_date}</b>",
+                    "x": 0.5,
+                    "y": 1,
+                    "xanchor": "center",
+                    "yanchor": "top",
+                }
+            )
 
             return (
                 html.Div(
@@ -298,7 +298,8 @@ def update_ul_card(at, station, tmp_data, start_date, end_date):
 def update_photo_direction(station, direction):
     return plot_latest_ace_image(station, direction=direction)
 
-# TODO: Make download only happen on button click, not after when station changes. 
+
+# TODO: Make download only happen on button click, not after when station changes.
 @app.callback(
     Output("data-download", "data"),
     [
@@ -313,7 +314,7 @@ def update_photo_direction(station, direction):
 def download_called_data(n_clicks, tmp_data, start: dt.date, end: dt.date, station):
     if n_clicks and tmp_data:
         data = pd.read_json(tmp_data, orient="records")
-        data = data.assign(datetime=data.datetime.dt.tz_convert('America/Denver'))
+        data = data.assign(datetime=data.datetime.dt.tz_convert("America/Denver"))
         return dcc.send_data_frame(
             data.to_csv,
             f"{station}_MTMesonet_{start.replace('-', '')}_{end.replace('-', '')}.csv",
