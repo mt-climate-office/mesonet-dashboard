@@ -38,9 +38,12 @@ def make_latest_table(df):
     latest_df = pd.DataFrame.from_dict(
         {"elem_lab": ["Latest Reading"], "value": [latest]}
     )
-    out["units"] = np.where(out["units"] == "percent", "%", out["units"])
+
+    units = np.where(out["units"] == "percent", "%", out["units"])
+    out = out.assign(units=units)
     out.loc[out.units == "percent", "units"] = "%"
-    out["value"] = out["value"].astype(str) + " " + out["units"]
+
+    out = out.assign(value=out["value"].astype(str) + " " + out["units"])
     out = out[["elem_lab", "value"]].reset_index(drop=True)
     out = pd.concat([latest_df, out])
     return out.to_dict("records")

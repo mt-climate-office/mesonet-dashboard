@@ -1,4 +1,4 @@
-from dash import Dash, dcc, html, Input, Output, dash_table, State
+from dash import callback_context, Dash, dcc, html, Input, Output, dash_table, State
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
@@ -79,11 +79,10 @@ def update_banner_text(station, options):
         Input("station-dropdown", "value"),
         Input("temp-station-data", "data"),
     ],
-    prevent_initial_callback=True,
 )
 def update_bl_card(at, station, tmp_data):
     if station is None or tmp_data is None:
-        return html.Div()
+        return dcc.Graph(id="station-fig", figure=station_fig)
 
     if at == "map-tab":
         return dcc.Graph(id="station-fig", figure=station_fig)
@@ -248,9 +247,12 @@ def update_ul_card(at, station, tmp_data, start_date, end_date):
                 title={
                     "text": f"<b>Wind Data from {start_date} to {end_date}</b>",
                     "x": 0.5,
-                    "y": 1,
+                    "y": 1.0,
                     "xanchor": "center",
                     "yanchor": "top",
+                    "font": dict(
+                        family="Courier New, monospace", size=15, color="Black"
+                    ),
                 }
             )
 
@@ -286,7 +288,11 @@ def update_ul_card(at, station, tmp_data, start_date, end_date):
         return html.Div(
             [
                 dbc.Row(buttons, justify="center", align="center", className="h-50"),
-                dcc.Graph(id="photo-figure"),
+                html.Div(
+                    dcc.Graph(
+                        id="photo-figure", style={"height": "34vh", "width": "30vw"}
+                    )
+                ),
             ],
         )
 
@@ -312,7 +318,10 @@ def update_photo_direction(station, direction):
     prevent_initial_callback=True,
 )
 def download_called_data(n_clicks, tmp_data, start: dt.date, end: dt.date, station):
-    if n_clicks and tmp_data:
+
+    ctx = callback_context
+    flag = ctx.triggered[0]["prop_id"] == "download-button.n_clicks"
+    if flag and tmp_data:
         data = pd.read_json(tmp_data, orient="records")
         data = data.assign(datetime=data.datetime.dt.tz_convert("America/Denver"))
         return dcc.send_data_frame(

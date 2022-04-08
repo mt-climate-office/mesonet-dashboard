@@ -141,7 +141,7 @@ def build_top_left_card():
         outline=True,
         color="secondary",
         className="h-100",
-        style={"overflow": "scroll"},
+        style={"overflow": "clip"},
     )
 
 
@@ -166,7 +166,7 @@ def build_bottom_left_card(station_fig):
                     children=dcc.Graph(id="station-fig", figure=station_fig),
                     className="card-text",
                 ),
-                style={"overflow": "scroll"},
+                # style={"overflow": "scroll"},
             ),
         ],
         outline=True,
@@ -174,7 +174,6 @@ def build_bottom_left_card(station_fig):
     )
 
 
-# TODO: Make this a dbc.FormGroup instead
 def build_dropdowns(stations):
 
     checklist_input = dbc.InputGroup(
@@ -182,14 +181,14 @@ def build_dropdowns(stations):
             [
                 dbc.Checklist(
                     options=[
-                        {"value": "air_temp", "label": "Air Temp."},
-                        {"value": "ppt", "label": "Precip."},
+                        {"value": "air_temp", "label": "Air Temperature"},
+                        {"value": "ppt", "label": "Precipitation"},
                         {"value": "soil_vwc", "label": "Soil Moisture"},
-                        {"value": "soil_temp", "label": "Soil Temp."},
-                        {"value": "sol_rad", "label": "Solar Rad."},
-                        {"value": "rh", "label": "Rel. Humidity"},
+                        {"value": "soil_temp", "label": "Soil Temperature"},
+                        {"value": "sol_rad", "label": "Solar Radiation"},
+                        {"value": "rh", "label": "Relative Humidity"},
                         {"value": "wind_spd", "label": "Wind Speed"},
-                        {"value": "bp", "label": "Atmos. Pres."},
+                        {"value": "bp", "label": "Atmospheric Pressure"},
                     ],
                     inline=True,
                     id="select-vars",
@@ -200,7 +199,7 @@ def build_dropdowns(stations):
                     ],
                 )
             ],
-            style={"overflow": "scroll"},
+            style={"overflow-x": "scroll"},
         ),
         className="mb-3",
         size="lg",
@@ -245,6 +244,7 @@ def build_dropdowns(stations):
                         md=6,
                         lg=3,
                         xl=3,
+                        style={"padding": "0rem 0rem 0rem 6.5rem"},
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -263,6 +263,7 @@ def build_dropdowns(stations):
                         md=6,
                         lg=3,
                         xl=3,
+                        style={"padding": "0rem 0rem 0rem 6.5rem"},
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -276,10 +277,6 @@ def build_dropdowns(stations):
                                     switch=True,
                                     value=[1],
                                 ),
-                                dbc.Tooltip(
-                                    "Leaving top of the hour data switched on will make the figures load faster. If the toggle is switched off, the figures will convey more information, but will take longer to load.",
-                                    target="hourly-switch",
-                                ),
                             ],
                         ),
                         xs=10,
@@ -287,9 +284,10 @@ def build_dropdowns(stations):
                         md=10,
                         lg=3,
                         xl=3,
+                        style={"padding": "0rem 0rem 0rem 5rem"},
                     ),
                 ],
-                align="center",
+                align="end",
             ),
             html.Br(),
             dbc.Row(
@@ -299,14 +297,14 @@ def build_dropdowns(stations):
                         xs=10,
                         sm=10,
                         md=10,
-                        lg=10,
-                        xl=10,
+                        lg=9,
+                        xl=9,
                     ),
                     dbc.Col(
                         [
                             dbc.InputGroup(
                                 dbc.Button(
-                                    "Download",
+                                    "DOWNLOAD",
                                     href="#",
                                     size="lg",
                                     n_clicks=0,
@@ -316,12 +314,13 @@ def build_dropdowns(stations):
                             ),
                             dcc.Download(id="data-download"),
                         ],
-                        xs=1,
-                        sm=1,
-                        md=1,
-                        lg=2,
-                        xl=2,
+                        xs=0,
+                        sm=0,
+                        md=0,
+                        lg=3,
+                        xl=3,
                         align="start",
+                        style={"padding": "0rem 0rem 0rem 5rem"},
                     ),
                 ],
                 align="center",
@@ -397,7 +396,11 @@ def app_layout(app_ref, station_fig, stations):
                         md={"size": 10, "order": "last", "offset": 0},
                         lg={"size": 4, "order": "last", "offset": 0},
                         xl={"size": 4, "order": "last", "offset": 0},
-                        style={"maxHeight": "92vh", "overflow": "scroll"},
+                        style={
+                            "maxHeight": "92vh",
+                            "overflow-y": "scroll",
+                            "overflow-x": "clip",
+                        },
                     ),
                     dbc.Col(
                         html.Div(
@@ -405,7 +408,7 @@ def app_layout(app_ref, station_fig, stations):
                             style={
                                 "height": "100%",
                                 "maxHeight": "92vh",
-                                "overflow": "scroll",
+                                # "overflow": "scroll",
                             },
                         ),
                         xs={"size": 10, "order": "first", "offset": 0},
@@ -413,7 +416,7 @@ def app_layout(app_ref, station_fig, stations):
                         md={"size": 10, "order": "first", "offset": 0},
                         lg={"size": 8, "order": "first", "offset": 0},
                         xl={"size": 8, "order": "first", "offset": 0},
-                        style={"padding": "0rem 0.25rem 0rem 0.5rem"},
+                        style={"padding": "0rem 0.5rem 0rem 0.5rem"},
                     ),
                 ],
                 className="h-100",

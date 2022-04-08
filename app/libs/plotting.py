@@ -138,7 +138,7 @@ def plot_wind(wind_data):
     wind_data = wind_data.dropna()
     wind_data["Wind Direction"] = wind_data["Wind Direction"].apply(deg_to_compass)
     wind_data["Wind Speed"] = round(wind_data["Wind Speed"])
-    wind_data["Wind Speed"] = pd.qcut(wind_data["Wind Speed"], q=10, duplicates="drop")
+    wind_data["Wind Speed"] = pd.qcut(wind_data["Wind Speed"], q=8, duplicates="drop")
     out = (
         wind_data.groupby(["Wind Direction", "Wind Speed"])
         .size()
@@ -172,11 +172,6 @@ def plot_wind(wind_data):
         color_discrete_sequence=px.colors.sequential.Plasma_r,
     )
 
-    fig.update_layout(
-        margin={"b": 80},
-    )
-
-    # fig.update_layout(height=350)
     return fig
 
 
@@ -411,8 +406,8 @@ def plot_latest_ace_image(station, direction="N"):
 
     # Configure other layout
     fig.update_layout(
-        width=img_width * scale_factor,
-        height=img_height * scale_factor,
+        #     width=img_width * scale_factor,
+        #     height=img_height * scale_factor,
         margin={"l": 0, "r": 0, "t": 0, "b": 0},
     )
 
