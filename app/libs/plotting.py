@@ -10,14 +10,14 @@ from typing import List
 
 
 color_mapper = {
-    "air_temp": "#c42217",
-    "sol_rad": "#c15366",
-    "rh": "#a16a5c",
-    "wind_spd": "#ec6607",
-    "bp": "#A020F0",
-    "soil_temp": None,
-    "soil_vwc": None,
-    "ppt": None,
+    "Air Temperature": "#c42217",
+    "Solar Radiation": "#c15366",
+    "Relative Humidity": "#a16a5c",
+    "Wind Speed": "#ec6607",
+    "Atmospheric Pressure": "#A020F0",
+    "Soil Temperature": None,
+    "Soil VWC": None,
+    "Precipitation": None,
 }
 
 axis_mapper = {
@@ -75,6 +75,11 @@ def style_figure(fig, x_ticks):
 
 def plot_soil(dat, **kwargs):
 
+    cols = dat.columns[1:].tolist()
+    # TODO: Finish pivot for soil data
+    # TODO: Make wind data work.
+    # something like this: [pd.DataFrame({'datetime': asdf, "elem_lab": asdf, "value": asdf}) for x in cols]
+
     fig = px.line(
         dat,
         x="datetime",
@@ -96,11 +101,11 @@ def plot_soil(dat, **kwargs):
 
 
 def plot_met(dat, **kwargs):
-    fig = px.line(dat, x="datetime", y="value", markers=True)
+    variable_text = dat.columns.tolist()[-1]
+    fig = px.line(dat, x="datetime", y=variable_text, markers=True)
 
     fig = fig.update_traces(line_color=kwargs["color"], connectgaps=False)
 
-    variable_text = axis_mapper[kwargs["variable"]]
     variable_text = variable_text.replace("<br>", " ")
 
     fig.update_traces(
@@ -110,8 +115,9 @@ def plot_met(dat, **kwargs):
 
 
 def plot_ppt(dat, **kwargs):
+    variable_text = dat.columns.tolist()[-1]
     dat = dat.assign(datetime=dat.datetime.dt.date)
-    fig = px.bar(dat, x="datetime", y="value")
+    fig = px.bar(dat, x="datetime", y=variable_text)
     fig.update_traces(
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Precipitation Total</b>: %{y}",
     )
@@ -206,11 +212,6 @@ def reindex_by_date(df, time_freq):
     dates = pd.date_range(df.index.min(), df.index.max(), freq=time_freq)
     out = df.reindex(dates)
 
-    out["station"] = np.unique(df["station"])[0]
-    out["element"] = np.unique(df["element"])[0]
-    out["units"] = np.unique(df["units"])[0]
-    out["elem_lab"] = np.unique(df["elem_lab"])[0]
-
     out = (
         out.drop(columns="datetime").reset_index().rename(columns={"index": "datetime"})
     )
@@ -220,29 +221,25 @@ def reindex_by_date(df, time_freq):
 
 def filter_df(df, v, time_freq):
 
-    if "soil" in v or "air_temp" in v or "wind" in v:
-        df = df[df["element"].str.contains(v)]
-    elif v in ["rh", "sol_rad", "bp", "etr"]:
-        df = df[df["element"] == v]
+    var_cols = [x for x in df.columns if v in x]
+    cols = ["datetime"] + var_cols
+
+    df = df[cols]
 
     if len(df) == 0:
         return df
 
     if v != "ppt":
         df.index = pd.DatetimeIndex(df.datetime)
-        df = (
-            df.groupby("element")
-            .apply(reindex_by_date, time_freq=time_freq)
-            .reset_index(0, drop=True)
-        )
+        df = reindex_by_date(df, time_freq)
 
     return df
 
 
 def get_plot_func(v):
-    if "soil" in v:
+    if "Soil" in v:
         return plot_soil
-    elif v == "ppt":
+    elif v == "Precipitation":
         return plot_ppt
     return plot_met
 
@@ -261,12 +258,12 @@ def plot_site(
     plots = []
 
     for v in args:
-        df = ppt if v == "ppt" else hourly
+        df = ppt if v == "Precipitation" else hourly
         plot_func = get_plot_func(v)
         data = filter_df(df, v, time_freq)
         if len(data) == 0:
             continue
-        plots.append(plot_func(data, color=color_mapper[v], variable=v))
+        plots.append(plot_func(data, color=color_mapper[v]))
 
     sub = px_to_subplot(*plots, shared_xaxes=False)
     for row in range(1, len(plots) + 1):
@@ -319,7 +316,7 @@ def plot_station(stations):
     )
 
     fig.update_layout(
-        height=250,
+        height=300,
         mapbox_style="white-bg",
         mapbox_layers=[
             # Hillshade
@@ -406,8 +403,6 @@ def plot_latest_ace_image(station, direction="N"):
 
     # Configure other layout
     fig.update_layout(
-        #     width=img_width * scale_factor,
-        #     height=img_height * scale_factor,
         margin={"l": 0, "r": 0, "t": 0, "b": 0},
     )
 

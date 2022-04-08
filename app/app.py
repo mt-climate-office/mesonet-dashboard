@@ -8,15 +8,15 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-from .libs.get_data import get_sites, clean_format
-from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from .libs.tables import make_latest_table, make_metadata_table
-from .layout import app_layout, table_styling
+# from .libs.get_data import get_sites, clean_format, get_station_latest
+# from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from .libs.tables import make_latest_table, make_metadata_table
+# from .layout import app_layout, table_styling
 
-# from libs.get_data import get_sites, clean_format
-# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from libs.tables import make_latest_table, make_metadata_table
-# from layout import app_layout, table_styling
+from libs.get_data import get_sites, clean_format, get_station_latest
+from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from libs.tables import make_latest_table, make_metadata_table
+from layout import app_layout, table_styling
 
 
 app = Dash(
@@ -30,7 +30,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    requests_pathname_prefix="/dash/",
+    # requests_pathname_prefix="/dash/",
 )
 
 app._favicon = "MCO_logo.svg"
@@ -92,9 +92,7 @@ def update_bl_card(at, station, tmp_data):
 
     else:
         if tmp_data != -1:
-            data = pd.read_json(tmp_data, orient="records")
-            data.datetime = data.datetime.dt.tz_convert("America/Denver")
-            table = make_latest_table(data)
+            table = get_station_latest(station)
             return dash_table.DataTable(data=table, **table_styling)
         return dcc.Graph(figure=make_nodata_figure())
 
@@ -189,8 +187,10 @@ def render_station_plot(temp_data, select_vars, hourly_sw):
     elif temp_data and temp_data != -1:
         data = pd.read_json(temp_data, orient="records")
         data.datetime = data.datetime.dt.tz_convert("America/Denver")
-        hourly = data[data["element"] != "ppt_sum"]
-        ppt = data[data["element"] == "ppt_sum"]
+
+        hourly = data.drop(columns="Precipitation [in]")
+        ppt = data[["datetime", "Precipitation [in]"]]
+        ppt = ppt.dropna()
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
         return plot_site(*select_vars, hourly=hourly, ppt=ppt, hr_flag=bool(hourly_sw))
 
@@ -241,7 +241,7 @@ def update_ul_card(at, station, tmp_data, start_date, end_date):
         if tmp_data != -1:
             data = pd.read_json(tmp_data, orient="records")
             data.datetime = data.datetime.dt.tz_convert("America/Denver")
-            data = data[data["element"].str.contains("wind")]
+            data = data[["Wind Direction [deg]", "Wind Speed [mi/hr]"]]
             fig = plot_wind(data)
             fig.update_layout(
                 title={

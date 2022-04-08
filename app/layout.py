@@ -181,21 +181,24 @@ def build_dropdowns(stations):
             [
                 dbc.Checklist(
                     options=[
-                        {"value": "air_temp", "label": "Air Temperature"},
-                        {"value": "ppt", "label": "Precipitation"},
-                        {"value": "soil_vwc", "label": "Soil Moisture"},
-                        {"value": "soil_temp", "label": "Soil Temperature"},
-                        {"value": "sol_rad", "label": "Solar Radiation"},
-                        {"value": "rh", "label": "Relative Humidity"},
-                        {"value": "wind_spd", "label": "Wind Speed"},
-                        {"value": "bp", "label": "Atmospheric Pressure"},
+                        {"value": "Precipitation", "label": "Precipitation"},
+                        {"value": "Soil VWC", "label": "Soil Moisture"},
+                        {"value": "Soil Temperature", "label": "Soil Temperature"},
+                        {"value": "Air Temperature", "label": "Air Temperature"},
+                        {"value": "Solar Radiation", "label": "Solar Radiation"},
+                        {"value": "Relative Humidity", "label": "Relative Humidity"},
+                        {"value": "Wind Speed", "label": "Wind Speed"},
+                        {
+                            "value": "Atmospheric Pressure",
+                            "label": "Atmospheric Pressure",
+                        },
                     ],
                     inline=True,
                     id="select-vars",
                     value=[
-                        "ppt",
-                        "soil_vwc",
-                        "air_temp",
+                        "Precipitation",
+                        "Soil VWC",
+                        "Air Temperature",
                     ],
                 )
             ],
@@ -276,6 +279,10 @@ def build_dropdowns(stations):
                                     id="hourly-switch",
                                     switch=True,
                                     value=[1],
+                                ),
+                                dbc.Tooltip(
+                                    "Leaving top of the hour data switched on will make the figures load faster. If the toggle is switched off, the figures will convey more information, but will take longer to load.",
+                                    target="hourly-switch",
                                 ),
                             ],
                         ),
