@@ -7,7 +7,7 @@ from typing import Optional, Union
 from urllib import parse
 
 import pandas as pd
-from .globals import globals
+from .params import params
 
 
 def get_sites() -> pd.DataFrame:
@@ -16,7 +16,7 @@ def get_sites() -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame of Montana Mesonet stations.
     """
-    dat = pd.read_csv(f"{globals.API_URL}stations/?type=csv")
+    dat = pd.read_csv(f"{params.API_URL}stations/?type=csv")
     dat["long_name"] = dat["name"] + " (" + dat["sub_network"] + ")"
     dat = dat.sort_values("long_name")
     return dat
@@ -52,9 +52,9 @@ def get_station_record(
         pd.DataFrame: DataFrame of records from 'station' ranging from 'start_date' to 'end_date'
     """
     start_time = format_dt(start_time)
-    e = ",".join(globals.elements)
+    e = ",".join(params.elements)
 
-    params = {
+    q = {
         "stations": station,
         "elements": e,
         "start_time": start_time,
@@ -62,16 +62,16 @@ def get_station_record(
         "type": "csv",
     }
 
-    payload = parse.urlencode(params, safe=",:")
-
     if end_time:
         if end_time == dt.date.today():
             end_time = dt.datetime.now()
         end_time = format_dt(end_time)
-        params.update({"end_time": end_time})
+        q.update({"end_time": end_time})
+
+    payload = parse.urlencode(q, safe=",:")
 
     r = requests.get(
-        url=f"{globals.API_URL}observations",
+        url=f"{params.API_URL}observations",
         params=payload,
     )
 
@@ -81,10 +81,21 @@ def get_station_record(
     return dat
 
 
+def reindex_by_date(df, time_freq):
+    dates = pd.date_range(df.index.min(), df.index.max(), freq=time_freq)
+    out = df.reindex(dates)
+
+    out = (
+        out.drop(columns="datetime").reset_index().rename(columns={"index": "datetime"})
+    )
+
+    return out
+
+
 def clean_format(
     station: str,
     hourly: Optional[bool] = True,
-    start_time: Optional[Union[dt.date, dt.datetime]] = globals.START,
+    start_time: Optional[Union[dt.date, dt.datetime]] = params.START,
     end_time: Optional[Union[dt.date, dt.datetime]] = None,
 ) -> pd.DataFrame:
     """Aggregate and reformat data from a mesonet station.
@@ -98,6 +109,12 @@ def clean_format(
     Returns:
         pd.DataFrame: DataFrame of station records in a cleaned format and with precip aggregated to daily sum.
     """
+
+    if hourly:
+        time_freq = "60min"
+    else:
+        time_freq = "5min" if station[:3] == "ace" else "15min"
+
     dat = get_station_record(station, start_time, end_time)
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
     dat.datetime = dat.datetime.dt.tz_convert("America/Denver")
@@ -113,7 +130,11 @@ def clean_format(
 
     out = out[(out.index.minute == 0)] if hourly else out
     out = out.reset_index()
-    out = out.rename(columns=globals.lab_swap)
+    out = out.rename(columns=params.lab_swap)
+
+    out.index = pd.DatetimeIndex(out.datetime)
+    out = reindex_by_date(out, time_freq)
+    out = out.iloc[1:]
 
     return out
 
@@ -121,14 +142,19 @@ def clean_format(
 def get_station_latest(station):
 
     r = requests.get(
-        url=f"{globals.API_URL}latest",
+        url=f"{params.API_URL}latest",
         params={"stations": station, "type": "csv"},
     )
 
     with io.StringIO(r.text) as text_io:
         dat = pd.read_csv(text_io)
-    dat = dat.loc[:, dat.columns.isin(["datetime"] + globals.elem_labs)]
-    dat = dat.rename(columns=globals.lab_swap)
+    dat = dat.loc[:, dat.columns.isin(["datetime"] + params.elem_labs)]
+    dat = dat.rename(columns=params.lab_swap)
     dat = dat.rename(columns={"datetime": "Timestamp"})
+    dat = dat.T.reset_index()
+    dat.columns = ["value", "name"]
+    dat = dat.dropna()
 
-    return dat.T.reset_index().to_dict("records")
+    print(dat)
+
+    return dat.to_dict("records")

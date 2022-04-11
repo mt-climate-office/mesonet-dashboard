@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-# TODO: Convert from R Code
+
 def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
     ########################################
     ####### Reference ET  from FAO #########
@@ -31,7 +31,7 @@ def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
     t = hour + 0.5
 
     # longitude is negative in our database, invert
-    lon = lon * -1
+    lon = abs(lon)
 
     # inverse relative distance Earth-Sun, dr, and the solar declination, d (delta), are given by
     dr = 1 + 0.033 * np.cos(((2 * np.pi) / 365) * J)
@@ -52,7 +52,7 @@ def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
     w2 = w + ((np.pi * 1) / 24)
 
     # The sunset hour angle, ws, is given by:
-    ws = np.acos((-np.tan(j) * np.tan(d)))
+    ws = np.arccos((-np.tan(j) * np.tan(d)))
 
     # The daylight hours, N, are given by:
     N = (24 / np.pi) * ws
@@ -69,7 +69,7 @@ def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
     )
 
     # Clear-sky solar radiation (Rso)
-    Rso = (0.75 + ((2 * 10 ^ -5) * z)) * Ra
+    Rso = (0.75 + ((2 * 10**-5) * z)) * Ra
 
     # saturation vapour pressure (es)
     es = 0.6108 * np.exp((17.27 * Temp_C) / (Temp_C + 237.3))
@@ -83,11 +83,11 @@ def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
     # 1 W/m2 = 1 J/m2 s -> 1 J/m2 s x 3600s/1hr = 3600 J/m2 hr * 1e-6 (convert to MJ)
     # Stefan Boltzmann = 5.6703*10^-8 W m-2 K-4 -> 2.041308e-10 MJ m-2 K-4 hr-1
     rel_Rs = Rs_MJ / Rso
-    rel_Rs = 1 if rel_Rs > 1 else rel_Rs
+    rel_Rs = 1 if rel_Rs.all() > 1 else rel_Rs
 
     Rnl = (
         2.041308e-10
-        * ((Temp_C + 273.16) ^ 4)
+        * ((Temp_C + 273.16) ** 4)
         * (0.34 - (0.14 * (np.sqrt(ea))))
         * ((1.35 * (rel_Rs)) - 0.35)
     )
@@ -97,7 +97,7 @@ def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
     Rn = Rns - Rnl
     # Slope of saturation vapour pressure curve (Eq. 13)
     D = (4098 * (0.6108 * np.exp((17.27 * Temp_C) / (Temp_C + 237.3)))) / (
-        (Temp_C + 237.3) ^ 2
+        (Temp_C + 237.3) ** 2
     )
     # g psychrometric constant [kPa °C-1]. (Eq. 8)
     # P is the atmospheric pressure [kPa]
@@ -110,34 +110,18 @@ def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
         D + g * (1 + 0.24 * U)
     )
 
+    etr = etr if etr.all() > 0 else 0
+
     # return the result
     return etr
 
 
-data = clean_format("crowagen")
-data = data.assign(datetime=pd.to_datetime(data.datetime, utc=True))
-data.datetime = data.datetime.dt.tz_convert("America/Denver")
-data = data.assign(julian=data.datetime.dt.dayofyear)
-data = data.assign(hour=data.datetime.dt.hour)
-
-stations = get_sites()
-station = stations[stations["station"] == "crowagen"]
-lat = station["latitude"]
-lon = station["longitude"]
-elev = station["elevation"]
-
-# TODO: Finish this
-# TODO: Also, need data to be in wide format. Should change anyways because it will be faster
-data["et"] = data.apply(
-    lambda x: fao_etr_hourly(
-        lat,
-        lon,
-        x["julian"],
-        x["hour"],
-        elev,
-    )
-)
-#
+# Rh = Relative Humidity (%)
+# Temp_C = Temperature (C)
+# Rs = Shortwave Radiation (w m-2)
+# P = Atmospheric Pressure (kPa)
+# U = Wind Speed at 2 m height (m -2)
+# more infomration at:
 
 
 def fao_etr_daily(lat, J, z, RH, Temp_C, Rs, P, U):
@@ -168,7 +152,7 @@ def fao_etr_daily(lat, J, z, RH, Temp_C, Rs, P, U):
     d = 0.409 * np.sin((((2 * np.pi) / 365) * J) - 1.39)
 
     # The sunset hour angle, ws, is given by:
-    ws = np.acos((-np.tan(j) * np.tan(d)))
+    ws = np.arccos((-np.tan(j) * np.tan(d)))
 
     # Extraterrestrial radiation for daily periods (Ra)
     # Gsc solar constant = 0.0820 MJ m-2 min-1
@@ -178,7 +162,7 @@ def fao_etr_daily(lat, J, z, RH, Temp_C, Rs, P, U):
     )
 
     # Clear-sky solar radiation (Rso)
-    Rso = (0.75 + ((2 * 10 ^ -5) * z)) * Ra
+    Rso = (0.75 + ((2 * 10**-5) * z)) * Ra
 
     # saturation vapour pressure (es)
     es = 0.6108 * np.exp((17.27 * Temp_C) / (Temp_C + 237.3))
@@ -192,11 +176,11 @@ def fao_etr_daily(lat, J, z, RH, Temp_C, Rs, P, U):
     # 1 W/m2 = 1 J/m2 s -> 1 J/m2 s x 3600s/1hr = 3600 J/m2 hr * 1e-6 (convert to MJ)
     # Stefan Boltzmann = 5.6703*10^-8 W m-2 K-4 -> 4.903e-9 MJ m-2 K-4 d-1
     rel_Rs = Rs_MJ / Rso
-    rel_Rs = 1 if rel_Rs > 1 else rel_Rs
+    rel_Rs = 1 if rel_Rs.all() > 1 else rel_Rs
 
     Rnl = (
         4.903e-9
-        * ((Temp_C + 273.16) ^ 4)
+        * ((Temp_C + 273.16) ** 4)
         * (0.34 - (0.14 * (np.sqrt(ea))))
         * ((1.35 * (rel_Rs)) - 0.35)
     )
@@ -206,7 +190,7 @@ def fao_etr_daily(lat, J, z, RH, Temp_C, Rs, P, U):
     Rn = Rns - Rnl
     # Slope of saturation vapour pressure curve (Eq. 13)
     D = (4098 * (0.6108 * np.exp((17.27 * Temp_C) / (Temp_C + 237.3)))) / (
-        (Temp_C + 237.3) ^ 2
+        (Temp_C + 237.3) ** 2
     )
     # g psychrometric constant [kPa °C-1]. (Eq. 8)
     # P is the atmospheric pressure [kPa]
@@ -217,5 +201,7 @@ def fao_etr_daily(lat, J, z, RH, Temp_C, Rs, P, U):
     etr = ((0.408 * D * (Rn - G)) + (g * (900 / (Temp_C + 273))) * (U * (es - ea))) / (
         D + g * (1 + 0.34 * U)
     )
+
+    etr = etr if etr.any() > 0 else 0
     # return the result
     return etr

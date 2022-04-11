@@ -227,8 +227,8 @@ def build_dropdowns(stations):
                         xs=10,
                         sm=10,
                         md=10,
-                        lg=3,
-                        xl=3,
+                        lg=4,
+                        xl=4,
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -245,9 +245,9 @@ def build_dropdowns(stations):
                         xs=6,
                         sm=6,
                         md=6,
-                        lg=3,
-                        xl=3,
-                        style={"padding": "0rem 0rem 0rem 6.5rem"},
+                        lg=2,
+                        xl=2,
+                        # style={"padding": "0rem 0rem 0rem 6.5rem"},
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -264,16 +264,16 @@ def build_dropdowns(stations):
                         xs=6,
                         sm=6,
                         md=6,
-                        lg=3,
-                        xl=3,
-                        style={"padding": "0rem 0rem 0rem 6.5rem"},
+                        lg=2,
+                        xl=2,
+                        # style={"padding": "0rem 0rem 0rem 6.5rem"},
                     ),
                     dbc.Col(
                         dbc.InputGroup(
                             [
                                 dbc.Checklist(
                                     options=[
-                                        {"label": "Top of Hour Data", "value": 1},
+                                        {"label": "Top of Hour", "value": 1},
                                     ],
                                     inline=True,
                                     id="hourly-switch",
@@ -289,9 +289,37 @@ def build_dropdowns(stations):
                         xs=10,
                         sm=10,
                         md=10,
-                        lg=3,
-                        xl=3,
-                        style={"padding": "0rem 0rem 0rem 5rem"},
+                        lg=2,
+                        xl=2,
+                        # style={"padding": "0rem 0rem 0rem 5rem"},
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.InputGroup(
+                                [
+                                    dbc.Button(
+                                        "DOWNLOAD",
+                                        href="#",
+                                        size="lg",
+                                        n_clicks=0,
+                                        id="download-button",
+                                        className="me-md-2",
+                                    ),
+                                    dbc.Tooltip(
+                                        "Download the data used to create the plots that are displayed. To save the plots, click the photo icon in the top right corner of the plot.",
+                                        target="download-button",
+                                    ),
+                                ]
+                            ),
+                            dcc.Download(id="data-download"),
+                        ],
+                        xs=0,
+                        sm=0,
+                        md=0,
+                        lg=2,
+                        xl=2,
+                        # align="start",
+                        # style={"padding": "0rem 0rem 0rem 5rem"},
                     ),
                 ],
                 align="end",
@@ -304,31 +332,31 @@ def build_dropdowns(stations):
                         xs=10,
                         sm=10,
                         md=10,
-                        lg=9,
-                        xl=9,
+                        lg=12,
+                        xl=12,
                     ),
-                    dbc.Col(
-                        [
-                            dbc.InputGroup(
-                                dbc.Button(
-                                    "DOWNLOAD",
-                                    href="#",
-                                    size="lg",
-                                    n_clicks=0,
-                                    id="download-button",
-                                    className="me-md-2",
-                                ),
-                            ),
-                            dcc.Download(id="data-download"),
-                        ],
-                        xs=0,
-                        sm=0,
-                        md=0,
-                        lg=3,
-                        xl=3,
-                        align="start",
-                        style={"padding": "0rem 0rem 0rem 5rem"},
-                    ),
+                    # dbc.Col(
+                    #     [
+                    #         dbc.InputGroup(
+                    #             dbc.Button(
+                    #                 "DOWNLOAD",
+                    #                 href="#",
+                    #                 size="lg",
+                    #                 n_clicks=0,
+                    #                 id="download-button",
+                    #                 className="me-md-2",
+                    #             ),
+                    #         ),
+                    #         dcc.Download(id="data-download"),
+                    #     ],
+                    #     xs=0,
+                    #     sm=0,
+                    #     md=0,
+                    #     lg=3,
+                    #     xl=3,
+                    #     align="start",
+                    #     style={"padding": "0rem 0rem 0rem 5rem"},
+                    # ),
                 ],
                 align="center",
             ),

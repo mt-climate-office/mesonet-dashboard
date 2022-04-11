@@ -5,50 +5,9 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from dateutil.relativedelta import relativedelta as rd
 
-
+from .et_calc import fao_etr_hourly as et_h, fao_etr_daily as et_d
+from .params import params
 from typing import List
-
-
-color_mapper = {
-    "Air Temperature": "#c42217",
-    "Solar Radiation": "#c15366",
-    "Relative Humidity": "#a16a5c",
-    "Wind Speed": "#ec6607",
-    "Atmospheric Pressure": "#A020F0",
-    "Soil Temperature": None,
-    "Soil VWC": None,
-    "Precipitation": None,
-}
-
-axis_mapper = {
-    "ppt": "Daily<br>Precipitation<br>(in)",
-    "soil_vwc": "Soil VWC.<br>(%)",
-    "air_temp": "Air Temp.<br>(°F)",
-    "rh": "Relative Hum.<br>(%)",
-    "sol_rad": "Solar Rad.<br>(W/m<sup>2</sup>)",
-    "wind_spd": "Wind Spd.<br>(mph)",
-    "soil_temp": "Soil Temp.<br>(°F)",
-    "bp": "Millibar",
-}
-
-wind_directions = [
-    "N",
-    "NNE",
-    "NE",
-    "ENE",
-    "E",
-    "ESE",
-    "SE",
-    "SSE",
-    "S",
-    "SSW",
-    "SW",
-    "WSW",
-    "W",
-    "WNW",
-    "NW",
-    "NNW",
-]
 
 
 def style_figure(fig, x_ticks):
@@ -76,6 +35,12 @@ def style_figure(fig, x_ticks):
 def plot_soil(dat, **kwargs):
 
     cols = dat.columns[1:].tolist()
+    dat = pd.concat(
+        [
+            pd.DataFrame({"datetime": dat["datetime"], "elem_lab": x, "value": dat[x]})
+            for x in cols
+        ]
+    )
     # TODO: Finish pivot for soil data
     # TODO: Make wind data work.
     # something like this: [pd.DataFrame({'datetime': asdf, "elem_lab": asdf, "value": asdf}) for x in cols]
@@ -85,8 +50,6 @@ def plot_soil(dat, **kwargs):
         x="datetime",
         y="value",
         color="elem_lab",
-        # color_discrete_sequence=['yellow', 'blue', 'pink', 'skyblbue'],
-        # TODO: Refine hover data: https://plotly.com/python/hover-text-and-formatting/
     )
     fig.update_traces(
         connectgaps=False,
@@ -94,7 +57,7 @@ def plot_soil(dat, **kwargs):
     )
 
     fig.update_layout(
-        hovermode="closest",
+        hovermode="x unified",
     )
 
     return fig
@@ -127,59 +90,74 @@ def plot_ppt(dat, **kwargs):
 # credit to: https://stackoverflow.com/questions/7490660/converting-wind-direction-in-angles-to-text-words
 def deg_to_compass(num):
     val = int((num / 22.5) + 0.5)
-    arr = wind_directions
+    arr = params.wind_directions
     return arr[(val % 16)]
 
 
 def plot_wind(wind_data):
 
-    wind_data = wind_data[["datetime", "value", "elem_lab"]]
-    wind_data = (
-        wind_data.pivot_table(values="value", columns="elem_lab", index="datetime")
-        .reset_index()[["Wind Direction", "Wind Speed"]]
-        .reset_index(drop=True)
-    )
+    # wind_data = wind_data[["datetime", "value", "elem_lab"]]
+    # wind_data = (
+    #     wind_data.pivot_table(values="value", columns="elem_lab", index="datetime")
+    #     .reset_index()[["Wind Direction", "Wind Speed"]]
+    #     .reset_index(drop=True)
+    # )
 
     # wind_data = pd.read_csv('~/misc/mco/wind_example.csv').rename(columns={'wind_spd': 'Wind Speed', 'wind_dir': 'Wind Direction'})
     wind_data = wind_data.dropna()
-    wind_data["Wind Direction"] = wind_data["Wind Direction"].apply(deg_to_compass)
-    wind_data["Wind Speed"] = round(wind_data["Wind Speed"])
-    wind_data["Wind Speed"] = pd.qcut(wind_data["Wind Speed"], q=8, duplicates="drop")
+    wind_data["Wind Direction [deg]"] = wind_data["Wind Direction [deg]"].apply(
+        deg_to_compass
+    )
+    wind_data["Wind Speed [mi/hr]"] = round(wind_data["Wind Speed [mi/hr]"])
+    wind_data["Wind Speed [mi/hr]"] = pd.qcut(
+        wind_data["Wind Speed [mi/hr]"], q=8, duplicates="drop"
+    )
     out = (
-        wind_data.groupby(["Wind Direction", "Wind Speed"])
+        wind_data.groupby(["Wind Direction [deg]", "Wind Speed [mi/hr]"])
         .size()
         .reset_index(name="Frequency")
     )
 
-    unq_wind = set(out["Wind Direction"])
-    missing_dirs = [x for x in wind_directions if x not in unq_wind]
-    speeds = set(out["Wind Speed"].values)
+    unq_wind = set(out["Wind Direction [deg]"])
+    missing_dirs = [x for x in params.wind_directions if x not in unq_wind]
+    speeds = set(out["Wind Speed [mi/hr]"].values)
     rows = [
-        {"Wind Direction": x, "Wind Speed": y, "Frequency": 0}
+        {"Wind Direction [deg]": x, "Wind Speed [mi/hr]": y, "Frequency": 0}
         for x in missing_dirs
         for y in speeds
     ]
     rows = pd.DataFrame(rows)
 
     out = pd.concat([out, rows], ignore_index=True)
-    out["Wind Direction"] = pd.Categorical(
-        out["Wind Direction"], wind_directions, ordered=True
+    out["Wind Direction [deg]"] = pd.Categorical(
+        out["Wind Direction [deg]"], params.wind_directions, ordered=True
     )
-    out = out.sort_values(["Wind Direction", "Wind Speed"])
-    # out["Wind Speed"] = out["Wind Speed"].astype(str)
-    out = out.rename(columns={"Wind Speed": "Wind Speed (mi/h)"})
+    out = out.sort_values(["Wind Direction [deg]", "Wind Speed [mi/hr]"])
+    # out["Wind Speed [mi/hr]"] = out["Wind Speed [mi/hr]"].astype(str)
+    out = out.rename(columns={"Wind Direction [deg]": "Wind Direction"})
 
     fig = px.bar_polar(
         out,
         r="Frequency",
         theta="Wind Direction",
-        color="Wind Speed (mi/h)",
+        color="Wind Speed [mi/hr]",
         template="plotly_white",
         color_discrete_sequence=px.colors.sequential.Plasma_r,
     )
 
     return fig
 
+
+def plot_etr(hourly):
+    
+    dat = hourly[['datetime', 'Air Temperature [°F]', 'Atmospheric Pressure [mbar]', 'Relative Humidity [%]', 'Solar Radiation [W/m²]', 'Wind Speed [mi/hr]']]
+    
+    dat.index = pd.DatetimeIndex(dat.index)
+    dat = pd.DataFrame(dat.groupby(dat.index.date)["Precipitation [in]"].agg("sum"))
+    ppt.index = pd.DatetimeIndex(ppt.index)
+    ppt.index = ppt.index.tz_localize("America/Denver")
+    out = pd.concat([dat, ppt], axis=1)
+    na_cou
 
 def px_to_subplot(*figs, **kwargs):
     """
@@ -208,18 +186,7 @@ def px_to_subplot(*figs, **kwargs):
     return sub
 
 
-def reindex_by_date(df, time_freq):
-    dates = pd.date_range(df.index.min(), df.index.max(), freq=time_freq)
-    out = df.reindex(dates)
-
-    out = (
-        out.drop(columns="datetime").reset_index().rename(columns={"index": "datetime"})
-    )
-
-    return out
-
-
-def filter_df(df, v, time_freq):
+def filter_df(df, v):
 
     var_cols = [x for x in df.columns if v in x]
     cols = ["datetime"] + var_cols
@@ -228,10 +195,6 @@ def filter_df(df, v, time_freq):
 
     if len(df) == 0:
         return df
-
-    if v != "ppt":
-        df.index = pd.DatetimeIndex(df.datetime)
-        df = reindex_by_date(df, time_freq)
 
     return df
 
@@ -244,30 +207,23 @@ def get_plot_func(v):
     return plot_met
 
 
-def plot_site(
-    *args: List, hourly: pd.DataFrame, ppt: pd.DataFrame, hr_flag: bool = True
-):
+def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame):
 
-    station = np.unique(hourly["station"])[0]
-
-    if hr_flag:
-        time_freq = "60min"
-    else:
-        time_freq = "5min" if station[:3] == "ace" else "15min"
+    # station = np.unique(hourly["station"])[0]
 
     plots = []
 
     for v in args:
         df = ppt if v == "Precipitation" else hourly
         plot_func = get_plot_func(v)
-        data = filter_df(df, v, time_freq)
+        data = filter_df(df, v)
         if len(data) == 0:
             continue
-        plots.append(plot_func(data, color=color_mapper[v]))
+        plots.append(plot_func(data, color=params.color_mapper[v]))
 
     sub = px_to_subplot(*plots, shared_xaxes=False)
     for row in range(1, len(plots) + 1):
-        sub.update_yaxes(title_text=axis_mapper[args[row - 1]], row=row, col=1)
+        sub.update_yaxes(title_text=params.axis_mapper[args[row - 1]], row=row, col=1)
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height)

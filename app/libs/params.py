@@ -4,7 +4,7 @@ import dateutil.relativedelta as rd
 
 
 @dataclass
-class globals:
+class params:
 
     API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 
@@ -106,3 +106,44 @@ class globals:
         "Wind Speed @ 10 m [mi/hr]",
         "Wind Speed @ 8 ft [mi/hr]",
     }
+
+    color_mapper = {
+        "Air Temperature": "#c42217",
+        "Solar Radiation": "#c15366",
+        "Relative Humidity": "#a16a5c",
+        "Wind Speed": "#ec6607",
+        "Atmospheric Pressure": "#A020F0",
+        "Soil Temperature": None,
+        "Soil VWC": None,
+        "Precipitation": None,
+    }
+
+    axis_mapper = {
+        "Precipitation": "Daily<br>Precipitation<br>(in)",
+        "Soil VWC": "Soil VWC.<br>(%)",
+        "Air Temperature": "Air Temp.<br>(°F)",
+        "Relative Humidity": "Relative Hum.<br>(%)",
+        "Solar Radiation": "Solar Rad.<br>(W/m<sup>2</sup>)",
+        "Wind Speed": "Wind Spd.<br>(mph)",
+        "Soil Temperature": "Soil Temp.<br>(°F)",
+        "Atmospheric Pressure": "Millibar",
+    }
+
+    wind_directions = [
+        "N",
+        "NNE",
+        "NE",
+        "ENE",
+        "E",
+        "ESE",
+        "SE",
+        "SSE",
+        "S",
+        "SSW",
+        "SW",
+        "WSW",
+        "W",
+        "WNW",
+        "NW",
+        "NNW",
+    ]
