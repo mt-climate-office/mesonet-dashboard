@@ -19,6 +19,7 @@ def get_sites() -> pd.DataFrame:
     dat = pd.read_csv(f"{params.API_URL}stations/?type=csv")
     dat["long_name"] = dat["name"] + " (" + dat["sub_network"] + ")"
     dat = dat.sort_values("long_name")
+    dat = dat[dat['station'] != 'mcoopsbe']
     return dat
 
 
@@ -154,7 +155,5 @@ def get_station_latest(station):
     dat = dat.T.reset_index()
     dat.columns = ["value", "name"]
     dat = dat.dropna()
-
-    print(dat)
 
     return dat.to_dict("records")

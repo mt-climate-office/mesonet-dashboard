@@ -148,16 +148,16 @@ def plot_wind(wind_data):
     return fig
 
 
-def plot_etr(hourly):
+# def plot_etr(hourly):
     
-    dat = hourly[['datetime', 'Air Temperature [°F]', 'Atmospheric Pressure [mbar]', 'Relative Humidity [%]', 'Solar Radiation [W/m²]', 'Wind Speed [mi/hr]']]
+#     dat = hourly[['datetime', 'Air Temperature [°F]', 'Atmospheric Pressure [mbar]', 'Relative Humidity [%]', 'Solar Radiation [W/m²]', 'Wind Speed [mi/hr]']]
     
-    dat.index = pd.DatetimeIndex(dat.index)
-    dat = pd.DataFrame(dat.groupby(dat.index.date)["Precipitation [in]"].agg("sum"))
-    ppt.index = pd.DatetimeIndex(ppt.index)
-    ppt.index = ppt.index.tz_localize("America/Denver")
-    out = pd.concat([dat, ppt], axis=1)
-    na_cou
+#     dat.index = pd.DatetimeIndex(dat.index)
+#     dat = pd.DataFrame(dat.groupby(dat.index.date)["Precipitation [in]"].agg("sum"))
+#     ppt.index = pd.DatetimeIndex(ppt.index)
+#     ppt.index = ppt.index.tz_localize("America/Denver")
+#     out = pd.concat([dat, ppt], axis=1)
+#     na_cou
 
 def px_to_subplot(*figs, **kwargs):
     """
