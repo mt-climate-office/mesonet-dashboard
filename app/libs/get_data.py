@@ -76,6 +76,8 @@ def get_station_record(
         params=payload,
     )
 
+    print(r.url)
+
     with io.StringIO(r.text) as text_io:
         dat = pd.read_csv(text_io)
 

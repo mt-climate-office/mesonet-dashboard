@@ -126,7 +126,8 @@ class params:
         "Solar Radiation": "Solar Rad.<br>(W/m<sup>2</sup>)",
         "Wind Speed": "Wind Spd.<br>(mph)",
         "Soil Temperature": "Soil Temp.<br>(°F)",
-        "Atmospheric Pressure": "Millibar",
+        "Atmospheric Pressure": "Atmos. Pres. (mbar)",
+        "ET": "Reference ET (in/day)"
     }
 
     wind_directions = [

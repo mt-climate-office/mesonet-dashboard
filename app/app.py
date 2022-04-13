@@ -9,13 +9,11 @@ from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
 from .libs.get_data import get_sites, clean_format, get_station_latest
-from .libs.params import params
 from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
 from .libs.tables import make_metadata_table
 from .layout import app_layout, table_styling
 
 # from libs.get_data import get_sites, clean_format, get_station_latest
-# from libs.params import params
 # from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
 # from libs.tables import make_metadata_table
 # from layout import app_layout, table_styling
@@ -153,19 +151,19 @@ def reset_start_date(value):
     return dt.date.today() - rd(weeks=2)
 
 
-@app.callback(Output("end-date", "min_date_allowed"), [Input("start-date", "date")])
-def adjust_end_date_max(value):
-    d = dt.datetime.strptime(value, "%Y-%m-%d").date()
-    return d
+# @app.callback(Output("end-date", "min_date_allowed"), [Input("start-date", "date")])
+# def adjust_end_date_max(value):
+#     d = dt.datetime.strptime(value, "%Y-%m-%d").date()
+#     return d
 
 
-@app.callback(
-    Output("start-date", "min_date_allowed"), Input("station-dropdown", "value")
-)
-def adjust_start_date(station):
-    if station:
-        d = stations[stations["station"] == station]["date_installed"].values[0]
-        return dt.datetime.strptime(d, "%Y-%m-%d").date()
+# @app.callback(
+#     Output("start-date", "min_date_allowed"), Input("station-dropdown", "value")
+# )
+# def adjust_start_date(station):
+#     if station:
+#         d = stations[stations["station"] == station]["date_installed"].values[0]
+#         return dt.datetime.strptime(d, "%Y-%m-%d").date()
 
 
 @app.callback(Output("date-button", "disabled"), Input("station-dropdown", "value"))
@@ -178,10 +176,10 @@ def enable_date_button(station):
     [
         Input("temp-station-data", "data"),
         Input("select-vars", "value"),
-        Input("hourly-switch", "value"),
+        Input("station-dropdown", "value")  
     ],
 )
-def render_station_plot(tmp_data, select_vars, hourly_sw):
+def render_station_plot(tmp_data, select_vars, station):
 
     if len(select_vars) == 0:
         return make_nodata_figure()
@@ -194,7 +192,8 @@ def render_station_plot(tmp_data, select_vars, hourly_sw):
         ppt = data[["datetime", "Precipitation [in]"]]
         ppt = ppt.dropna()
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
-        return plot_site(*select_vars, hourly=hourly, ppt=ppt)
+        station = stations[stations['station'] == station]
+        return plot_site(*select_vars, hourly=hourly, ppt=ppt, station=station)
 
     return make_nodata_figure()
 

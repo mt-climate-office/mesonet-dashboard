@@ -17,6 +17,7 @@ Pillow = "^9.0.1"
 dash-bootstrap-components = "^1.0.3"
 uvicorn = "^0.17.6"
 waitress = "^2.1.1"
+pyjanitor = "^0.22.0"
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^6.7.0"

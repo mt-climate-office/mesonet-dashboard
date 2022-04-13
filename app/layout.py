@@ -192,6 +192,7 @@ def build_dropdowns(stations):
                             "value": "Atmospheric Pressure",
                             "label": "Atmospheric Pressure",
                         },
+                        {"value": "ET", "label": "Reference ET"},
                     ],
                     inline=True,
                     id="select-vars",
@@ -238,6 +239,7 @@ def build_dropdowns(stations):
                                     id="start-date",
                                     date=dt.date.today() - rd(weeks=2),
                                     max_date_allowed=dt.date.today(),
+                                    min_date_allowed=dt.date(2022, 1, 1),
                                     disabled=True,
                                 ),
                             ]
@@ -257,6 +259,7 @@ def build_dropdowns(stations):
                                     id="end-date",
                                     date=dt.date.today(),
                                     max_date_allowed=dt.date.today(),
+                                    min_date_allowed=dt.date(2022, 1, 1),
                                     disabled=True,
                                 ),
                             ]

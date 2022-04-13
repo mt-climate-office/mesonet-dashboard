@@ -110,7 +110,7 @@ def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
         D + g * (1 + 0.24 * U)
     )
 
-    etr = etr if etr.all() > 0 else 0
+    etr = etr if etr.any() > 0 else 0
 
     # return the result
     return etr
