@@ -611,6 +611,7 @@ there.
 .second-row {position: absolute; top: 15%; left: 0; right: 0; bottom: 0; background-color: rgb(255, 255, 255) }
 .second-row iframe {display: block; width: 100%; height: 100%; border: none;}
 
+
 @keyframes fadein {
   0% {
       opacity: 0;
@@ -654,3 +655,4 @@ background-color: rgb(250, 250, 250);
  text-shadow: 0 1px 0 #fff;
  padding: .5em 0 ;
 }
+

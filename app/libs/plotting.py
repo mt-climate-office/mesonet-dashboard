@@ -146,13 +146,22 @@ def plot_wind(wind_data):
 
 def plot_etr(hourly, station):
 
-    hourly['Solar Radiation [W/m²]'] = hourly['Solar Radiation [W/m²]'].fillna(0)
-    
-    dat = hourly[['datetime', 'Air Temperature [°F]', 'Atmospheric Pressure [mbar]', 'Relative Humidity [%]', 'Solar Radiation [W/m²]', 'Wind Speed [mi/hr]']]
+    hourly["Solar Radiation [W/m²]"] = hourly["Solar Radiation [W/m²]"].fillna(0)
+
+    dat = hourly[
+        [
+            "datetime",
+            "Air Temperature [°F]",
+            "Atmospheric Pressure [mbar]",
+            "Relative Humidity [%]",
+            "Solar Radiation [W/m²]",
+            "Wind Speed [mi/hr]",
+        ]
+    ]
     dat.index = pd.DatetimeIndex(dat.datetime)
     dat = dat.assign(date=dat.index.date)
     dat = dat.dropna()
-    
+
     gaps = dat.groupby(dat.index.date).size()
     dat = dat.reset_index(drop=True)
 
@@ -167,74 +176,74 @@ def plot_etr(hourly, station):
             by="date",
             agg="mean",
             agg_column_name="Air Temperature [°F]",
-            new_column_name="Air Temperature [°F]"
+            new_column_name="Air Temperature [°F]",
         )
         .groupby_agg(
             by="date",
             agg="mean",
             agg_column_name="Atmospheric Pressure [mbar]",
-            new_column_name="Atmospheric Pressure [mbar]"
+            new_column_name="Atmospheric Pressure [mbar]",
         )
         .groupby_agg(
             by="date",
             agg="mean",
             agg_column_name="Relative Humidity [%]",
-            new_column_name="Relative Humidity [%]"
+            new_column_name="Relative Humidity [%]",
         )
         .groupby_agg(
             by="date",
             agg="mean",
             agg_column_name="Solar Radiation [W/m²]",
-            new_column_name="Solar Radiation [W/m²]"
+            new_column_name="Solar Radiation [W/m²]",
         )
         .groupby_agg(
             by="date",
             agg="mean",
             agg_column_name="Wind Speed [mi/hr]",
-            new_column_name="Wind Speed [mi/hr]"
+            new_column_name="Wind Speed [mi/hr]",
         )
-        .select_columns('datetime', invert=True)
+        .select_columns("datetime", invert=True)
         .drop_duplicates()
     )
 
-    calc_daily['et_d'] = calc_daily.apply(
-            lambda x: et_d(
-                lat, 
-                x["julian"],
-                elev,
-                x["Relative Humidity [%]"],
-                (x["Air Temperature [°F]"] - 32) * (5/9),
-                x["Solar Radiation [W/m²]"],
-                x["Atmospheric Pressure [mbar]"]/10,
-                x["Wind Speed [mi/hr]"]*0.44704
-            ) * (1/25.4),
-            axis = 1
+    calc_daily["et_d"] = calc_daily.apply(
+        lambda x: et_d(
+            lat,
+            x["julian"],
+            elev,
+            x["Relative Humidity [%]"],
+            (x["Air Temperature [°F]"] - 32) * (5 / 9),
+            x["Solar Radiation [W/m²]"],
+            x["Atmospheric Pressure [mbar]"] / 10,
+            x["Wind Speed [mi/hr]"] * 0.44704,
+        )
+        * (1 / 25.4),
+        axis=1,
     )
 
     calc_daily = (
-        calc_daily[['date', 'et_d']]
-          .assign(et_d=round(calc_daily.et_d, 3))
-          .drop_duplicates()
-          .rename_column('date', 'datetime')
-          .rename_column('et_d', 'Reference ET [in/day]')
+        calc_daily[["date", "et_d"]]
+        .assign(et_d=round(calc_daily.et_d, 3))
+        .drop_duplicates()
+        .rename_column("date", "datetime")
+        .rename_column("et_d", "Reference ET [in/day]")
     )
 
-    fig = px.bar(calc_daily, x="datetime", y='Reference ET [in/day]')
+    fig = px.bar(calc_daily, x="datetime", y="Reference ET [in/day]")
     fig.update_traces(
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Reference ET Total</b>: %{y}",
-        marker_color="#FF0000"
-
+        marker_color="#FF0000",
     )
     return fig
-    
+
     # dat['et_h'] = (
     #     dat[dat.date.isin(gaps[gaps == 24].index.values)]
     #         .assign(julian=dat.datetime.dt.dayofyear)
     #         .assign(hour=dat.datetime.dt.hour)
     #         .apply(
     #             lambda x: et_h(
-    #                 lat, 
-    #                 lon, 
+    #                 lat,
+    #                 lon,
     #                 x["julian"],
     #                 x["hour"],
     #                 elev,
@@ -307,12 +316,12 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     plots = []
 
     for v in args:
-        if v == 'ET':
-            plt = plot_etr(hourly=dat, station=kwargs['station'])
-        else: 
+        if v == "ET":
+            plt = plot_etr(hourly=dat, station=kwargs["station"])
+        else:
             df = ppt if v == "Precipitation" else dat
             plot_func = get_plot_func(v)
-            data = filter_df(df, v) 
+            data = filter_df(df, v)
             if len(data) == 0:
                 continue
             plt = plot_func(data, color=params.color_mapper[v])
@@ -324,7 +333,10 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height)
-    x_ticks = [dat.datetime.min().date()- rd(days=1), dat.datetime.max().date() + rd(days=1)]
+    x_ticks = [
+        dat.datetime.min().date() - rd(days=1),
+        dat.datetime.max().date() + rd(days=1),
+    ]
     sub = style_figure(sub, x_ticks)
     sub.update_layout(
         margin={"r": 0, "t": 20, "l": 0, "b": 0},

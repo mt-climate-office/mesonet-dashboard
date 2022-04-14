@@ -49,6 +49,38 @@ def generate_modal():
     )
 
 
+def feedback_iframe():
+    return html.Div(
+        dbc.Modal(
+            [
+                dbc.ModalHeader(
+                    dbc.ModalTitle("Provide Feedback to Improve Our Dashboard!")
+                ),
+                dbc.ModalBody(
+                    html.Iframe(
+                        src="https://airtable.com/embed/shrxlaYUu6DcyK98s?",
+                        style={
+                            "backgroundColor": "orange",
+                            "frameborder": "0",
+                            "onmousewheel": "",
+                            "width": "100%",
+                            "height": "90vh",
+                            "background": "transparent",
+                            "border": "2px solid #ccc",
+                        },
+                    ),
+                    style={"overflow": "clip"},
+                ),
+            ],
+            id="feedback-modal",
+            is_open=False,
+            size="xl",
+            scrollable=True,
+            style={"max-height": "none", "height": "100%"},
+        ),
+    )
+
+
 def build_banner(app_ref):
 
     return dbc.Navbar(
@@ -92,9 +124,9 @@ def build_banner(app_ref):
                     [
                         dbc.Button(
                             "GIVE FEEDBACK",
-                            href="https://airtable.com/shrxlaYUu6DcyK98s",
+                            href="#",
                             size="lg",
-                            target="_blank",
+                            n_clicks=0,
                             id="feedback-button",
                             className="me-md-2",
                         ),
@@ -440,6 +472,7 @@ def app_layout(app_ref, station_fig, stations):
             ),
             dcc.Store(id="temp-station-data", storage_type="session"),
             generate_modal(),
+            feedback_iframe(),
             dbc.Modal(
                 id="station-modal",
                 is_open=False,

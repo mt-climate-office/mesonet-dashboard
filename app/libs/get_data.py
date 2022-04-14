@@ -19,7 +19,7 @@ def get_sites() -> pd.DataFrame:
     dat = pd.read_csv(f"{params.API_URL}stations/?type=csv")
     dat["long_name"] = dat["name"] + " (" + dat["sub_network"] + ")"
     dat = dat.sort_values("long_name")
-    dat = dat[dat['station'] != 'mcoopsbe']
+    dat = dat[dat["station"] != "mcoopsbe"]
     return dat
 
 
@@ -76,7 +76,6 @@ def get_station_record(
         params=payload,
     )
 
-
     with io.StringIO(r.text) as text_io:
         dat = pd.read_csv(text_io)
 
@@ -97,7 +96,7 @@ def reindex_by_date(df, time_freq):
 def filter_top_of_hour(df):
 
     df.index = pd.DatetimeIndex(df.datetime)
-    df = df[(df.index.minute == 0)] 
+    df = df[(df.index.minute == 0)]
     df = df.reset_index(drop=True)
     return df
 
@@ -133,7 +132,6 @@ def clean_format(
     ppt.index = pd.DatetimeIndex(ppt.index)
     ppt.index = ppt.index.tz_localize("America/Denver")
     out = pd.concat([dat, ppt], axis=1)
-
 
     out = out.reset_index()
     out = out.rename(columns=params.lab_swap)

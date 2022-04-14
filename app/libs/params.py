@@ -127,7 +127,7 @@ class params:
         "Wind Speed": "Wind Spd.<br>(mph)",
         "Soil Temperature": "Soil Temp.<br>(°F)",
         "Atmospheric Pressure": "Atmos. Pres. (mbar)",
-        "ET": "Reference ET (in/day)"
+        "ET": "Reference ET (in/day)",
     }
 
     wind_directions = [
