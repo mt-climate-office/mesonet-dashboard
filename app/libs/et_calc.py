@@ -172,7 +172,7 @@ def fao_etr_daily(lat, J, z, RH, Temp_C, Rs, P, U):
     # First Net longwave radiation (Rnl) - Computed used Stefan Boltzmann concept (FAO Eq. 39)
     # no need to compute relative Rs because we are measuring Rs (!!! CHECK !!!)
     # Rs needs to be converted to MJ m-2 day-1 from W/m2 using 15 minute readings
-    Rs_MJ = Rs * 900 * 1e-6
+    Rs_MJ = Rs * 3600 * 24 * 1e-6
     # 1 W/m2 = 1 J/m2 s -> 1 J/m2 s x 3600s/1hr = 3600 J/m2 hr * 1e-6 (convert to MJ)
     # Stefan Boltzmann = 5.6703*10^-8 W m-2 K-4 -> 4.903e-9 MJ m-2 K-4 d-1
     rel_Rs = Rs_MJ / Rso

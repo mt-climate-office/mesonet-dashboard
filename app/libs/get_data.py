@@ -76,7 +76,6 @@ def get_station_record(
         params=payload,
     )
 
-    print(r.url)
 
     with io.StringIO(r.text) as text_io:
         dat = pd.read_csv(text_io)
@@ -95,9 +94,16 @@ def reindex_by_date(df, time_freq):
     return out
 
 
+def filter_top_of_hour(df):
+
+    df.index = pd.DatetimeIndex(df.datetime)
+    df = df[(df.index.minute == 0)] 
+    df = df.reset_index(drop=True)
+    return df
+
+
 def clean_format(
     station: str,
-    hourly: Optional[bool] = True,
     start_time: Optional[Union[dt.date, dt.datetime]] = params.START,
     end_time: Optional[Union[dt.date, dt.datetime]] = None,
 ) -> pd.DataFrame:
@@ -113,10 +119,7 @@ def clean_format(
         pd.DataFrame: DataFrame of station records in a cleaned format and with precip aggregated to daily sum.
     """
 
-    if hourly:
-        time_freq = "60min"
-    else:
-        time_freq = "5min" if station[:3] == "ace" else "15min"
+    time_freq = "5min" if station[:3] == "ace" else "15min"
 
     dat = get_station_record(station, start_time, end_time)
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
@@ -131,7 +134,7 @@ def clean_format(
     ppt.index = ppt.index.tz_localize("America/Denver")
     out = pd.concat([dat, ppt], axis=1)
 
-    out = out[(out.index.minute == 0)] if hourly else out
+
     out = out.reset_index()
     out = out.rename(columns=params.lab_swap)
 

@@ -8,16 +8,17 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-from .libs.get_data import get_sites, clean_format, get_station_latest
+from .libs.get_data import get_sites, clean_format, get_station_latest, filter_top_of_hour
 from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
 from .libs.tables import make_metadata_table
 from .layout import app_layout, table_styling
 
-# from libs.get_data import get_sites, clean_format, get_station_latest
+# from libs.get_data import get_sites, clean_format, get_station_latest, filter_top_of_hour
 # from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
 # from libs.tables import make_metadata_table
 # from layout import app_layout, table_styling
 
+pd.options.mode.chained_assignment = None
 
 app = Dash(
     __name__,
@@ -103,12 +104,9 @@ def update_bl_card(at, station, tmp_data):
         Input("station-dropdown", "value"),
         Input("start-date", "date"),
         Input("end-date", "date"),
-        Input("hourly-switch", "value"),
     ],
 )
-def get_latest_api_data(station, start, end, hourly):
-
-    hourly = [hourly] if isinstance(hourly, int) else hourly
+def get_latest_api_data(station, start, end):
 
     if (start or end) and station:
         start = dt.datetime.strptime(start, "%Y-%m-%d").date()
@@ -116,7 +114,7 @@ def get_latest_api_data(station, start, end, hourly):
 
         try:
             data = clean_format(
-                station, hourly=len(hourly) == 1, start_time=start, end_time=end
+                station, start_time=start, end_time=end
             )
         except AttributeError as e:
             print(e)
@@ -176,10 +174,13 @@ def enable_date_button(station):
     [
         Input("temp-station-data", "data"),
         Input("select-vars", "value"),
-        Input("station-dropdown", "value")  
+        Input("station-dropdown", "value"),
+        Input("hourly-switch", "value"),
     ],
 )
-def render_station_plot(tmp_data, select_vars, station):
+def render_station_plot(tmp_data, select_vars, station, hourly):
+
+    hourly = [hourly] if isinstance(hourly, int) else hourly
 
     if len(select_vars) == 0:
         return make_nodata_figure()
@@ -187,13 +188,15 @@ def render_station_plot(tmp_data, select_vars, station):
     elif tmp_data and tmp_data != -1:
         data = pd.read_json(tmp_data, orient="records")
         data.datetime = data.datetime.dt.tz_convert("America/Denver")
+        if len(hourly) == 1:
+            data = filter_top_of_hour(data)
 
-        hourly = data.drop(columns="Precipitation [in]")
+        dat = data.drop(columns="Precipitation [in]")
         ppt = data[["datetime", "Precipitation [in]"]]
         ppt = ppt.dropna()
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
         station = stations[stations['station'] == station]
-        return plot_site(*select_vars, hourly=hourly, ppt=ppt, station=station)
+        return plot_site(*select_vars, dat=dat, ppt=ppt, station=station)
 
     return make_nodata_figure()
 
@@ -366,10 +369,25 @@ def station_popup(clickData, is_open):
     [State("modal", "is_open")],
 )
 def toggle_modal(n1, is_open):
+
     if n1:
         return not is_open
     return is_open
 
+
+# @app.callback(
+#     Output("station-data", "figure"),
+#     Input("station-data", "selectedData"),
+#     State("station-data", "figure")
+# )
+# def test(sel, fig):
+
+#     xs = sel['range']
+#     xs = [v for k, v in xs.items() if k.startswith('x')]
+#     xs = xs[0]
+
+#     fig.update_xaxes(range=xs)
+#     return fig
 
 if __name__ == "__main__":
     app.run_server(debug=True)

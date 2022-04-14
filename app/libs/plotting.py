@@ -15,12 +15,6 @@ from typing import List
 def style_figure(fig, x_ticks):
     fig.update_layout(
         {"plot_bgcolor": "rgba(0, 0, 0, 0)"},
-        # legend=dict(
-        #     yanchor="top",
-        #     y=0.99,
-        #     xanchor="left",
-        #     x=0.01
-        # )
     )
     fig.update_xaxes(showgrid=True, gridcolor="grey")
     fig.update_yaxes(showgrid=True, gridcolor="grey")
@@ -151,6 +145,8 @@ def plot_wind(wind_data):
 
 
 def plot_etr(hourly, station):
+
+    hourly['Solar Radiation [W/m²]'] = hourly['Solar Radiation [W/m²]'].fillna(0)
     
     dat = hourly[['datetime', 'Air Temperature [°F]', 'Atmospheric Pressure [mbar]', 'Relative Humidity [%]', 'Solar Radiation [W/m²]', 'Wind Speed [mi/hr]']]
     dat.index = pd.DatetimeIndex(dat.datetime)
@@ -187,7 +183,7 @@ def plot_etr(hourly, station):
         )
         .groupby_agg(
             by="date",
-            agg="sum",
+            agg="mean",
             agg_column_name="Solar Radiation [W/m²]",
             new_column_name="Solar Radiation [W/m²]"
         )
@@ -306,15 +302,15 @@ def get_plot_func(v):
     return plot_met
 
 
-def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
+def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
     plots = []
 
     for v in args:
         if v == 'ET':
-            plt = plot_etr(hourly=hourly, station=kwargs['station'])
+            plt = plot_etr(hourly=dat, station=kwargs['station'])
         else: 
-            df = ppt if v == "Precipitation" else hourly
+            df = ppt if v == "Precipitation" else dat
             plot_func = get_plot_func(v)
             data = filter_df(df, v) 
             if len(data) == 0:
@@ -328,10 +324,11 @@ def plot_site(*args: List, hourly: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height)
-    x_ticks = [hourly.datetime.min().date()- rd(days=1), hourly.datetime.max().date() + rd(days=1)]
+    x_ticks = [dat.datetime.min().date()- rd(days=1), dat.datetime.max().date() + rd(days=1)]
     sub = style_figure(sub, x_ticks)
     sub.update_layout(
         margin={"r": 0, "t": 20, "l": 0, "b": 0},
+        # dragmode='select'
     )
     return sub
 
