@@ -368,14 +368,15 @@ def station_popup(clickData, is_open):
 
 @app.callback(
     Output("modal", "is_open"),
-    [Input("help-button", "n_clicks")],
+    [Input("help-button", "n_clicks"),
+     Input("station-dropdown", "value")],
     [State("modal", "is_open")],
 )
-def toggle_modal(n1, is_open):
+def toggle_modal(n1, is_open, station):
 
-    if n1:
+    if n1 or not station:
         return not is_open
-    return is_open
+    return is_open 
 
 
 @app.callback(

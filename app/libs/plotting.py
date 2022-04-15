@@ -92,14 +92,6 @@ def deg_to_compass(num):
 
 def plot_wind(wind_data):
 
-    # wind_data = wind_data[["datetime", "value", "elem_lab"]]
-    # wind_data = (
-    #     wind_data.pivot_table(values="value", columns="elem_lab", index="datetime")
-    #     .reset_index()[["Wind Direction", "Wind Speed"]]
-    #     .reset_index(drop=True)
-    # )
-
-    # wind_data = pd.read_csv('~/misc/mco/wind_example.csv').rename(columns={'wind_spd': 'Wind Speed', 'wind_dir': 'Wind Direction'})
     wind_data = wind_data.dropna()
     wind_data["Wind Direction [deg]"] = wind_data["Wind Direction [deg]"].apply(
         deg_to_compass
@@ -340,7 +332,6 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     sub = style_figure(sub, x_ticks)
     sub.update_layout(
         margin={"r": 0, "t": 20, "l": 0, "b": 0},
-        # dragmode='select'
     )
     return sub
 

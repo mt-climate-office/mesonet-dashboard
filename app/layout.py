@@ -1,4 +1,3 @@
-from audioop import mul
 import datetime as dt
 
 import dash_bootstrap_components as dbc
@@ -10,10 +9,20 @@ def generate_modal():
     return html.Div(
         dbc.Modal(
             [
-                dbc.ModalHeader(dbc.ModalTitle("The Montana Mesonet Dashboard")),
+                dbc.ModalHeader(dbc.ModalTitle("")),
                 dbc.ModalBody(
                     dcc.Markdown(
                         """
+                        #### The Montana Mesonet Dashboard
+                        Welcome to the Montana Mesonet Dashboard! This dashboard visualizes historical data from all stations that are a part of the Montana Mesonet.
+                        To visualize data from a station, either select a station from the dropdown on the top left, click a station on the locator map, or add a station name to the URL path (e.g. [https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen](https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen)).
+                        If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, please:
+                        - Email [colin.brust@mso.umt.edu](mailto:colin.brust@mso.umt.edu),
+                        - Fill out our [feedback form](https://airtable.com/shrxlaYUu6DcyK98s),
+                        - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
+
+                        For questions about the Mesonet itself, please contact our Mesonet Director (Kevin Hyde) at [kevin.hyde@umontana.edu](mailto:kevin.hyde@umontana.edu).
+
                         #### Montana Mesonet Background
 
                         The Montana Climate Office (MCO) is leading the development of a cooperative statewide soil moisture and meteorological information system.
@@ -24,16 +33,6 @@ def generate_modal():
                         - Combine information from existing data networks
                         - Establish a minimum of 100 new soil moisture recording sites through partnerships with cooperators.
                         - Provide an information system for accessing and visualizing historic, real-time and forecasted data.
-
-                        #### The Montana Mesonet Dashboard
-                        This dashboard visualizes historical data from all stations that are a part of the Montana Mesonet.
-                        Data from a given station can either be visualized by selecting a station from the dropdown, click a station on the locator map, or adding a station name to the URL path (e.g. [https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen](https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen)).
-                        If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, either:
-                        - Email [colin.brust@mso.umt.edu](mailto:colin.brust@mso.umt.edu),
-                        - Fill out our [feedback form](https://airtable.com/shrxlaYUu6DcyK98s),
-                        - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
-
-                        For questions about the Mesonet itself, please contact our Mesonet Director (Kevin Hyde) at [kevin.hyde@umontana.edu](mailto:kevin.hyde@umontana.edu).
 
                         #### Source Code
                         See how we built this application at our [GitHub repository](https://github.com/mt-climate-office/mesonet-dashboard/tree/develop).
