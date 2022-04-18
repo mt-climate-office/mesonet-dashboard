@@ -28,6 +28,38 @@ def style_figure(fig, x_ticks):
     return fig
 
 
+def merge_normal_data(v, df, station):
+    v_short = params.short_name_mapper.get(v, None)
+    if v_short:
+        print()
+        norm = [pd.read_csv(f"/app/normals/{station}_{x}.csv") for x in v_short]
+        norm_l = len(norm)
+        norm = pd.concat(norm, axis=0)
+        norm = norm[norm["type"] == "daily"]
+        if norm_l == 2:
+            norm = (
+                norm.select_columns("month", "day", "median", "variable")
+                .pivot_wider(
+                    index=["month", "day"], names_from="variable", values_from="median"
+                )
+                .dropna()
+            )
+            norm.columns = ["month", "day", "mn", "mx"]
+            norm = norm.assign(avg=(norm.mn + norm.mx) / 2)
+        else:
+            norm = norm.select_columns("month", "day", "q25", "q75", "median")
+            norm.columns = ["month", "day", "mn", "mx", "avg"]
+        df = df.assign(month=df.datetime.dt.month)
+        df = df.assign(day=df.datetime.dt.day)
+        df = df.merge(norm, on=["month", "day"])
+        df = df.assign(mn=np.where(df.datetime.dt.hour != 0, np.nan, df.mn))
+        df = df.assign(mx=np.where(df.datetime.dt.hour != 0, np.nan, df.mx))
+        df = df.assign(avg=np.where(df.datetime.dt.hour != 0, np.nan, df.avg))
+        return df
+
+    return None
+
+
 def plot_soil(dat, **kwargs):
 
     cols = dat.columns[1:].tolist()
@@ -60,7 +92,12 @@ def plot_soil(dat, **kwargs):
 
 
 def plot_met(dat, **kwargs):
+
     variable_text = dat.columns.tolist()[-1]
+
+    if "norm" in kwargs:
+        dat = merge_normal_data(variable_text, dat, kwargs["station"])
+
     fig = px.line(dat, x="datetime", y=variable_text, markers=True)
 
     fig = fig.update_traces(line_color=kwargs["color"], connectgaps=False)
@@ -70,6 +107,17 @@ def plot_met(dat, **kwargs):
     fig.update_traces(
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>" + variable_text + "</b>: %{y}",
     )
+
+    if "norm" in kwargs:
+        tmp = dat[["datetime", "mn", "mx", "avg"]].dropna()
+        reference_line = go.Scatter(
+            x=tmp.datetime,
+            y=tmp.mx,
+            mode="lines",
+            line=go.scatter.Line(color="yellow"),
+            showlegend=False,
+        )
+        fig.add_trace(reference_line)
     return fig
 
 
@@ -306,7 +354,6 @@ def get_plot_func(v):
 def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
     plots = []
-
     for v in args:
         if v == "ET":
             plt = plot_etr(hourly=dat, station=kwargs["station"])
@@ -316,7 +363,9 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
             data = filter_df(df, v)
             if len(data) == 0:
                 continue
-            plt = plot_func(data, color=params.color_mapper[v])
+            plt = plot_func(
+                data, color=params.color_mapper[v], station=kwargs["station"]
+            )
         plots.append(plt)
 
     sub = px_to_subplot(*plots, shared_xaxes=False)

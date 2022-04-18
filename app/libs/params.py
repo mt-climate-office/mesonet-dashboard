@@ -130,6 +130,15 @@ class params:
         "ET": "Reference ET (in/day)",
     }
 
+    short_name_mapper = {
+        "Precipitation [in]": ["pr"],
+        "Air Temperature [°F]": ["tmmn", "tmmx"],
+        "Relative Humidity [%]": ["rmin", "rmax"],
+        "Solar Radiation [W/m²]": ["srad"],
+        "Wind Speed [mi/hr]": ["vs"],
+        "ET": ["pet"],
+    }
+
     wind_directions = [
         "N",
         "NNE",
