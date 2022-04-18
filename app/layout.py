@@ -21,7 +21,7 @@ def generate_modal():
                         - Fill out our [feedback form](https://airtable.com/shrxlaYUu6DcyK98s),
                         - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
 
-                        For questions about the Mesonet itself, please contact our Mesonet Director (Kevin Hyde) at [kevin.hyde@umontana.edu](mailto:kevin.hyde@umontana.edu).
+                        For questions about the Mesonet itself, please contact our Mesonet Manager (Kevin Hyde) at [kevin.hyde@umontana.edu](mailto:kevin.hyde@umontana.edu).
 
                         #### Montana Mesonet Background
 
@@ -259,8 +259,8 @@ def build_dropdowns(stations):
                         xs=10,
                         sm=10,
                         md=10,
-                        lg=4,
-                        xl=4,
+                        lg=3,
+                        xl=3,
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -303,28 +303,52 @@ def build_dropdowns(stations):
                         # style={"padding": "0rem 0rem 0rem 6.5rem"},
                     ),
                     dbc.Col(
-                        dbc.InputGroup(
+                        dbc.Row(
                             [
-                                dbc.Checklist(
-                                    options=[
-                                        {"label": "Top of Hour", "value": 1},
+                                dbc.InputGroup(
+                                    [
+                                        dbc.Checklist(
+                                            options=[
+                                                {"label": "Top of Hour", "value": 1},
+                                            ],
+                                            inline=True,
+                                            id="hourly-switch",
+                                            switch=True,
+                                            value=[1],
+                                        ),
+                                        dbc.Tooltip(
+                                            "Leaving top of the hour data switched on will make the figures load faster. If the toggle is switched off, the figures will convey more information, but will take longer to load.",
+                                            target="hourly-switch",
+                                        ),
                                     ],
-                                    inline=True,
-                                    id="hourly-switch",
-                                    switch=True,
-                                    value=[1],
                                 ),
-                                dbc.Tooltip(
-                                    "Leaving top of the hour data switched on will make the figures load faster. If the toggle is switched off, the figures will convey more information, but will take longer to load.",
-                                    target="hourly-switch",
+                                dbc.InputGroup(
+                                    [
+                                        dbc.Checklist(
+                                            options=[
+                                                {
+                                                    "label": "gridMET Normals",
+                                                    "value": 1,
+                                                },
+                                            ],
+                                            inline=True,
+                                            id="gridmet-switch",
+                                            switch=True,
+                                            value=[1],
+                                        ),
+                                        dbc.Tooltip(
+                                            "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions.",
+                                            target="gridmet-switch",
+                                        ),
+                                    ],
                                 ),
-                            ],
+                            ]
                         ),
                         xs=10,
                         sm=10,
                         md=10,
-                        lg=2,
-                        xl=2,
+                        lg=3,
+                        xl=3,
                         # style={"padding": "0rem 0rem 0rem 5rem"},
                     ),
                     dbc.Col(
@@ -350,10 +374,10 @@ def build_dropdowns(stations):
                         xs=0,
                         sm=0,
                         md=0,
-                        lg=2,
-                        xl=2,
+                        lg=1,
+                        xl=1,
                         # align="start",
-                        # style={"padding": "0rem 0rem 0rem 5rem"},
+                        # style={"padding": "0rem 0rem 0rem -10rem"},
                     ),
                 ],
                 align="end",

@@ -8,20 +8,25 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-from .libs.get_data import get_sites, clean_format, get_station_latest, filter_top_of_hour
-from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from .libs.tables import make_metadata_table
-from .layout import app_layout, table_styling
-
-# from libs.get_data import (
+# from .libs.get_data import (
 #     get_sites,
 #     clean_format,
 #     get_station_latest,
 #     filter_top_of_hour,
 # )
-# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from libs.tables import make_metadata_table
-# from layout import app_layout, table_styling
+# from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from .libs.tables import make_metadata_table
+# from .layout import app_layout, table_styling
+
+from libs.get_data import (
+    get_sites,
+    clean_format,
+    get_station_latest,
+    filter_top_of_hour,
+)
+from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from libs.tables import make_metadata_table
+from layout import app_layout, table_styling
 
 pd.options.mode.chained_assignment = None
 
@@ -36,7 +41,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    requests_pathname_prefix="/dash/",
+    # requests_pathname_prefix="/dash/",
 )
 
 app._favicon = "MCO_logo.svg"
@@ -368,15 +373,14 @@ def station_popup(clickData, is_open):
 
 @app.callback(
     Output("modal", "is_open"),
-    [Input("help-button", "n_clicks"),
-     Input("station-dropdown", "value")],
+    [Input("help-button", "n_clicks"), Input("station-dropdown", "value")],
     [State("modal", "is_open")],
 )
 def toggle_modal(n1, is_open, station):
 
     if n1 or not station:
         return not is_open
-    return is_open 
+    return is_open
 
 
 @app.callback(
