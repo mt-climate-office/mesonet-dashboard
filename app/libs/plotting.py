@@ -113,7 +113,7 @@ def plot_met(dat, **kwargs):
         reference_line = go.Scatter(
             x=tmp.datetime,
             y=tmp.mx,
-            mode="lines",
+            mode="lines+markers",
             line=go.scatter.Line(color="yellow"),
             showlegend=False,
         )
