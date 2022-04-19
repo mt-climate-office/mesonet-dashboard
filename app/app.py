@@ -8,25 +8,25 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-from .libs.get_data import (
-    get_sites,
-    clean_format,
-    get_station_latest,
-    filter_top_of_hour,
-)
-from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from .libs.tables import make_metadata_table
-from .layout import app_layout, table_styling
-
-# from libs.get_data import (
+# from .libs.get_data import (
 #     get_sites,
 #     clean_format,
 #     get_station_latest,
 #     filter_top_of_hour,
 # )
-# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from libs.tables import make_metadata_table
-# from layout import app_layout, table_styling
+# from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from .libs.tables import make_metadata_table
+# from .layout import app_layout, table_styling
+
+from libs.get_data import (
+    get_sites,
+    clean_format,
+    get_station_latest,
+    filter_top_of_hour,
+)
+from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from libs.tables import make_metadata_table
+from layout import app_layout, table_styling
 
 pd.options.mode.chained_assignment = None
 
@@ -192,7 +192,6 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
     hourly = [hourly] if isinstance(hourly, int) else hourly
     norm = [norm] if isinstance(norm, int) else norm
 
-    print(norm)
     if len(select_vars) == 0:
         return make_nodata_figure()
 
@@ -207,7 +206,14 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
         ppt = ppt.dropna()
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
         station = stations[stations["station"] == station]
-        return plot_site(*select_vars, dat=dat, ppt=ppt, station=station, norm=len(norm) == 1)
+        return plot_site(
+            *select_vars,
+            dat=dat,
+            ppt=ppt,
+            station=station,
+            norm=len(norm) == 1,
+            top_of_hour=len(hourly) == 1,
+        )
 
     return make_nodata_figure()
 
@@ -376,12 +382,12 @@ def station_popup(clickData, is_open):
 
 @app.callback(
     Output("modal", "is_open"),
-    [Input("help-button", "n_clicks"), Input("station-dropdown", "value")],
-    [State("modal", "is_open")],
+    [Input("help-button", "n_clicks")],
+    [State("modal", "is_open"), Input("station-dropdown", "value")],
 )
 def toggle_modal(n1, is_open, station):
-
-    if n1 or not station:
+    
+    if n1 and station is not None:
         return not is_open
     return is_open
 

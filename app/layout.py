@@ -41,7 +41,7 @@ def generate_modal():
                 ),
             ],
             id="modal",
-            is_open=False,
+            is_open=True,
             size="xl",
             scrollable=True,
         )
@@ -334,7 +334,7 @@ def build_dropdowns(stations):
                                             inline=True,
                                             id="gridmet-switch",
                                             switch=True,
-                                            value=[1],
+                                            value=[],
                                         ),
                                         dbc.Tooltip(
                                             "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions.",

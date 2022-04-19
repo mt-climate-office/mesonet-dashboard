@@ -134,8 +134,8 @@ class params:
         "Precipitation [in]": ["pr"],
         "Air Temperature [°F]": ["tmmn", "tmmx"],
         "Relative Humidity [%]": ["rmin", "rmax"],
-        "Solar Radiation [W/m²]": ["srad"],
-        "Wind Speed [mi/hr]": ["vs"],
+        # "Solar Radiation [W/m²]": ["srad"],
+        # "Wind Speed [mi/hr]": ["vs"],
         "ET": ["pet"],
     }
 
