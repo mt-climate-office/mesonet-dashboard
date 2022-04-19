@@ -31,24 +31,23 @@ def style_figure(fig, x_ticks):
 def merge_normal_data(v, df, station):
     v_short = params.short_name_mapper.get(v, None)
     if v_short:
-        print()
         norm = [pd.read_csv(f"/app/normals/{station}_{x}.csv") for x in v_short]
         norm_l = len(norm)
         norm = pd.concat(norm, axis=0)
         norm = norm[norm["type"] == "daily"]
         if norm_l == 2:
-            norm = (
-                norm.select_columns("month", "day", "median", "variable")
-                .pivot_wider(
-                    index=["month", "day"], names_from="variable", values_from="median"
-                )
-                .dropna()
-            )
-            norm.columns = ["month", "day", "mn", "mx"]
+            filt_25, filt_75 = ['tmmn', 'rmin'], ['tmmx', 'rmax']
+            norm['mn'] = np.where(norm.variable.isin(filt_25), norm.q25, np.nan)
+            norm['mx'] = np.where(norm.variable.isin(filt_75), norm.q75, np.nan)
+            mn = norm[['month', 'day', 'mn']].dropna()
+            mx = norm[['month', 'day', 'mx']].dropna()
+
+            norm = mn.merge(mx, how='left', on=['month', 'day'])
             norm = norm.assign(avg=(norm.mn + norm.mx) / 2)
         else:
             norm = norm.select_columns("month", "day", "q25", "q75", "median")
             norm.columns = ["month", "day", "mn", "mx", "avg"]
+
         df = df.assign(month=df.datetime.dt.month)
         df = df.assign(day=df.datetime.dt.day)
         df = df.merge(norm, on=["month", "day"])
@@ -69,9 +68,6 @@ def plot_soil(dat, **kwargs):
             for x in cols
         ]
     )
-    # TODO: Finish pivot for soil data
-    # TODO: Make wind data work.
-    # something like this: [pd.DataFrame({'datetime': asdf, "elem_lab": asdf, "value": asdf}) for x in cols]
 
     fig = px.line(
         dat,
@@ -95,9 +91,6 @@ def plot_met(dat, **kwargs):
 
     variable_text = dat.columns.tolist()[-1]
 
-    if "norm" in kwargs:
-        dat = merge_normal_data(variable_text, dat, kwargs["station"])
-
     fig = px.line(dat, x="datetime", y=variable_text, markers=True)
 
     fig = fig.update_traces(line_color=kwargs["color"], connectgaps=False)
@@ -109,15 +102,81 @@ def plot_met(dat, **kwargs):
     )
 
     if "norm" in kwargs:
+        dat = merge_normal_data(variable_text, dat, kwargs["station"])
         tmp = dat[["datetime", "mn", "mx", "avg"]].dropna()
-        reference_line = go.Scatter(
+        mx_line = go.Scatter(
             x=tmp.datetime,
             y=tmp.mx,
-            mode="lines+markers",
-            line=go.scatter.Line(color="yellow"),
+            mode="lines",
+            line={'dash': 'dash', 'color': 'black'},
             showlegend=False,
+            name="Average Max.<br>"+variable_text,
         )
-        fig.add_trace(reference_line)
+
+        mn_line = go.Scatter(
+            x=tmp.datetime,
+            y=tmp.mn,
+            mode="lines",
+            line={'dash': 'dash', 'color': 'black'},
+            showlegend=False,
+            name="Average Min.<br>"+variable_text,
+            fil='tonexty',
+
+        )
+
+        fig.add_trace(mx_line)
+        fig.add_trace(mn_line)
+    return fig
+
+def add_boxplot_normals(fig, norms):
+
+    norm_upper = go.Scatter(
+        x=norms.datetime,
+        y=norms.mx, 
+        mode="markers",
+        showlegend=False,
+        marker_symbol='triangle-down',
+        marker_color='black',
+        name="75th Percentile"
+    )
+
+    norm_mid = go.Scatter(
+        x=norms.datetime,
+        y=norms.avg, 
+        mode="markers",
+        showlegend=False,
+        marker_symbol='circle',
+        marker_color='black',
+        name="Median",
+    )
+
+    norm_lower = go.Scatter(
+        x=norms.datetime,
+        y=norms.mn, 
+        mode="markers",
+        showlegend=False,
+        marker_symbol='triangle-up',
+        marker_color='black',
+        name="25th Percentile",
+    )
+
+    fig.add_trace(norm_upper)
+    fig.add_trace(norm_mid)
+    fig.add_trace(norm_lower)
+
+    fig.update_layout(
+        legend=dict(
+            x=0,
+            y=1,
+            traceorder="normal",
+            font=dict(
+                family="sans-serif",
+                size=12,
+                color="black"
+            ),
+        )
+    )
+
     return fig
 
 
@@ -128,6 +187,12 @@ def plot_ppt(dat, **kwargs):
     fig.update_traces(
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Precipitation Total</b>: %{y}",
     )
+
+    if "norm" in kwargs:
+        dat['datetime'] = pd.to_datetime(dat.datetime)
+        norms = merge_normal_data(variable_text, dat, kwargs['station'])
+        fig = add_boxplot_normals(fig, norms)
+
     return fig
 
 
@@ -184,8 +249,11 @@ def plot_wind(wind_data):
     return fig
 
 
-def plot_etr(hourly, station):
+def plot_etr(hourly, station, **kwargs):
 
+    station_name = station['station'].values[0]
+    drop_thresh = 12*20 if station_name[:3] == 'ace' else 4*20
+    
     hourly["Solar Radiation [W/m²]"] = hourly["Solar Radiation [W/m²]"].fillna(0)
 
     dat = hourly[
@@ -210,7 +278,7 @@ def plot_etr(hourly, station):
     elev = station["elevation"]
 
     calc_daily = (
-        dat[dat.date.isin(gaps[gaps >= 20].index.values)]
+        dat[dat.date.isin(gaps[gaps >= drop_thresh].index.values)]
         .assign(julian=dat.datetime.dt.dayofyear)
         .groupby_agg(
             by="date",
@@ -274,6 +342,12 @@ def plot_etr(hourly, station):
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Reference ET Total</b>: %{y}",
         marker_color="#FF0000",
     )
+
+    if "norm" in kwargs:
+        calc_daily['datetime'] = pd.to_datetime(calc_daily.datetime)
+        norms = merge_normal_data("ET", calc_daily, station_name)
+        fig = add_boxplot_normals(fig, norms)
+
     return fig
 
     # dat['et_h'] = (
@@ -356,7 +430,7 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     plots = []
     for v in args:
         if v == "ET":
-            plt = plot_etr(hourly=dat, station=kwargs["station"])
+            plt = plot_etr(hourly=dat, station=kwargs["station"], norm=kwargs['norm'])
         else:
             df = ppt if v == "Precipitation" else dat
             plot_func = get_plot_func(v)
@@ -364,7 +438,7 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
             if len(data) == 0:
                 continue
             plt = plot_func(
-                data, color=params.color_mapper[v], station=kwargs["station"]
+                data, color=params.color_mapper[v], station=kwargs["station"], norm=kwargs['norm']
             )
         plots.append(plt)
 
