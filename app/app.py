@@ -41,7 +41,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    requests_pathname_prefix="/dash/",
+    # requests_pathname_prefix="/dash/",
 )
 
 app._favicon = "MCO_logo.svg"
@@ -184,12 +184,15 @@ def enable_date_button(station):
         Input("select-vars", "value"),
         Input("station-dropdown", "value"),
         Input("hourly-switch", "value"),
+        Input("gridmet-switch", "value"),
     ],
 )
-def render_station_plot(tmp_data, select_vars, station, hourly):
+def render_station_plot(tmp_data, select_vars, station, hourly, norm):
 
     hourly = [hourly] if isinstance(hourly, int) else hourly
+    norm = [norm] if isinstance(norm, int) else norm
 
+    print(norm)
     if len(select_vars) == 0:
         return make_nodata_figure()
 
@@ -204,7 +207,7 @@ def render_station_plot(tmp_data, select_vars, station, hourly):
         ppt = ppt.dropna()
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
         station = stations[stations["station"] == station]
-        return plot_site(*select_vars, dat=dat, ppt=ppt, station=station)
+        return plot_site(*select_vars, dat=dat, ppt=ppt, station=station, norm=len(norm) == 1)
 
     return make_nodata_figure()
 
