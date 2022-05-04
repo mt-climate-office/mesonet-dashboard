@@ -456,7 +456,7 @@ def get_plot_func(v):
 
 
 def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
-    
+
     plots = {}
     for v in args:
         if v == "ET":
@@ -472,7 +472,9 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
     sub = px_to_subplot(*list(plots.values()), shared_xaxes=False)
     for row in range(1, len(plots) + 1):
-        sub.update_yaxes(title_text=params.axis_mapper[list(plots.keys())[row - 1]], row=row, col=1)
+        sub.update_yaxes(
+            title_text=params.axis_mapper[list(plots.keys())[row - 1]], row=row, col=1
+        )
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height)
