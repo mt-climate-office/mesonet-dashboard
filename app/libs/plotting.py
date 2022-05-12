@@ -1,15 +1,17 @@
-import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
-from dateutil.relativedelta import relativedelta as rd
+from typing import List
+
 import janitor
 import janitor.timeseries
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from dateutil.relativedelta import relativedelta as rd
+from plotly.subplots import make_subplots
 
-from .et_calc import fao_etr_hourly as et_h, fao_etr_daily as et_d
+from .et_calc import fao_etr_daily as et_d
+from .et_calc import fao_etr_hourly as et_h
 from .params import params
-from typing import List
 
 
 def style_figure(fig, x_ticks):
@@ -36,13 +38,13 @@ def merge_normal_data(v, df, station):
         norm = pd.concat(norm, axis=0)
         norm = norm[norm["type"] == "daily"]
         if norm_l == 2:
-            filt_25, filt_75 = ['tmmn', 'rmin'], ['tmmx', 'rmax']
-            norm['mn'] = np.where(norm.variable.isin(filt_25), norm.q25, np.nan)
-            norm['mx'] = np.where(norm.variable.isin(filt_75), norm.q75, np.nan)
-            mn = norm[['month', 'day', 'mn']].dropna()
-            mx = norm[['month', 'day', 'mx']].dropna()
+            filt_25, filt_75 = ["tmmn", "rmin"], ["tmmx", "rmax"]
+            norm["mn"] = np.where(norm.variable.isin(filt_25), norm.q25, np.nan)
+            norm["mx"] = np.where(norm.variable.isin(filt_75), norm.q75, np.nan)
+            mn = norm[["month", "day", "mn"]].dropna()
+            mx = norm[["month", "day", "mx"]].dropna()
 
-            norm = mn.merge(mx, how='left', on=['month', 'day'])
+            norm = mn.merge(mx, how="left", on=["month", "day"])
             norm = norm.assign(avg=(norm.mn + norm.mx) / 2)
         else:
             norm = norm.select_columns("month", "day", "q25", "q75", "median")
@@ -51,9 +53,33 @@ def merge_normal_data(v, df, station):
         df = df.assign(month=df.datetime.dt.month)
         df = df.assign(day=df.datetime.dt.day)
         df = df.merge(norm, on=["month", "day"])
-        df = df.assign(mn=np.where(df.datetime.dt.hour != 0, np.nan, df.mn))
-        df = df.assign(mx=np.where(df.datetime.dt.hour != 0, np.nan, df.mx))
-        df = df.assign(avg=np.where(df.datetime.dt.hour != 0, np.nan, df.avg))
+        df = df.assign(
+            mn=np.where(
+                (df.datetime.dt.hour != 0)
+                & (df.datetime != df.datetime.min())
+                & (df.datetime != df.datetime.max()),
+                np.nan,
+                df.mn,
+            )
+        )
+        df = df.assign(
+            mx=np.where(
+                (df.datetime.dt.hour != 0)
+                & (df.datetime != df.datetime.min())
+                & (df.datetime != df.datetime.max()),
+                np.nan,
+                df.mx,
+            )
+        )
+        df = df.assign(
+            avg=np.where(
+                (df.datetime.dt.hour != 0)
+                & (df.datetime != df.datetime.min())
+                & (df.datetime != df.datetime.max()),
+                np.nan,
+                df.avg,
+            )
+        )
         return df
 
     return None
@@ -90,6 +116,7 @@ def plot_soil(dat, **kwargs):
 def plot_met(dat, **kwargs):
 
     variable_text = dat.columns.tolist()[-1]
+    station_name = kwargs["station"]["station"].values[0]
 
     fig = px.line(dat, x="datetime", y=variable_text, markers=True)
 
@@ -101,62 +128,65 @@ def plot_met(dat, **kwargs):
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>" + variable_text + "</b>: %{y}",
     )
 
-    if "norm" in kwargs:
-        dat = merge_normal_data(variable_text, dat, kwargs["station"])
+    if kwargs.get("norm", None):
+        dat = merge_normal_data(variable_text, dat, station_name)
+        if dat is None:
+            return fig
         tmp = dat[["datetime", "mn", "mx", "avg"]].dropna()
         mx_line = go.Scatter(
             x=tmp.datetime,
             y=tmp.mx,
             mode="lines",
-            line={'dash': 'dash', 'color': 'black'},
+            line={"dash": "dash", "color": "black"},
             showlegend=False,
-            name="Average Max.<br>"+variable_text,
+            name="Average Max.<br>" + variable_text,
         )
 
         mn_line = go.Scatter(
             x=tmp.datetime,
             y=tmp.mn,
             mode="lines",
-            line={'dash': 'dash', 'color': 'black'},
+            line={"dash": "dash", "color": "black"},
             showlegend=False,
-            name="Average Min.<br>"+variable_text,
-            fil='tonexty',
-
+            name="Average Min.<br>" + variable_text,
+            fill="tonexty",
+            fillcolor="rgba(107,107,107,0.4)",
         )
 
         fig.add_trace(mx_line)
         fig.add_trace(mn_line)
     return fig
 
+
 def add_boxplot_normals(fig, norms):
 
     norm_upper = go.Scatter(
         x=norms.datetime,
-        y=norms.mx, 
+        y=norms.mx,
         mode="markers",
         showlegend=False,
-        marker_symbol='triangle-down',
-        marker_color='black',
-        name="75th Percentile"
+        marker_symbol="triangle-down",
+        marker_color="black",
+        name="75th Percentile",
     )
 
     norm_mid = go.Scatter(
         x=norms.datetime,
-        y=norms.avg, 
+        y=norms.avg,
         mode="markers",
         showlegend=False,
-        marker_symbol='circle',
-        marker_color='black',
+        marker_symbol="circle",
+        marker_color="black",
         name="Median",
     )
 
     norm_lower = go.Scatter(
         x=norms.datetime,
-        y=norms.mn, 
+        y=norms.mn,
         mode="markers",
         showlegend=False,
-        marker_symbol='triangle-up',
-        marker_color='black',
+        marker_symbol="triangle-up",
+        marker_color="black",
         name="25th Percentile",
     )
 
@@ -169,11 +199,7 @@ def add_boxplot_normals(fig, norms):
             x=0,
             y=1,
             traceorder="normal",
-            font=dict(
-                family="sans-serif",
-                size=12,
-                color="black"
-            ),
+            font=dict(family="sans-serif", size=12, color="black"),
         )
     )
 
@@ -181,6 +207,8 @@ def add_boxplot_normals(fig, norms):
 
 
 def plot_ppt(dat, **kwargs):
+
+    station_name = kwargs["station"]["station"].values[0]
     variable_text = dat.columns.tolist()[-1]
     dat = dat.assign(datetime=dat.datetime.dt.date)
     fig = px.bar(dat, x="datetime", y=variable_text)
@@ -188,9 +216,9 @@ def plot_ppt(dat, **kwargs):
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Precipitation Total</b>: %{y}",
     )
 
-    if "norm" in kwargs:
-        dat['datetime'] = pd.to_datetime(dat.datetime)
-        norms = merge_normal_data(variable_text, dat, kwargs['station'])
+    if kwargs.get("norm", None):
+        dat["datetime"] = pd.to_datetime(dat.datetime)
+        norms = merge_normal_data(variable_text, dat, station_name)
         fig = add_boxplot_normals(fig, norms)
 
     return fig
@@ -251,9 +279,10 @@ def plot_wind(wind_data):
 
 def plot_etr(hourly, station, **kwargs):
 
-    station_name = station['station'].values[0]
-    drop_thresh = 12*20 if station_name[:3] == 'ace' else 4*20
-    
+    station_name = station["station"].values[0]
+    drop_thresh = 12 * 20 if station_name[:3] == "ace" else 4 * 20
+    drop_thresh = 20 if kwargs["top_of_hour"] else drop_thresh
+
     hourly["Solar Radiation [W/m²]"] = hourly["Solar Radiation [W/m²]"].fillna(0)
 
     dat = hourly[
@@ -266,6 +295,7 @@ def plot_etr(hourly, station, **kwargs):
             "Wind Speed [mi/hr]",
         ]
     ]
+
     dat.index = pd.DatetimeIndex(dat.datetime)
     dat = dat.assign(date=dat.index.date)
     dat = dat.dropna()
@@ -343,8 +373,8 @@ def plot_etr(hourly, station, **kwargs):
         marker_color="#FF0000",
     )
 
-    if "norm" in kwargs:
-        calc_daily['datetime'] = pd.to_datetime(calc_daily.datetime)
+    if kwargs.get("norm", None):
+        calc_daily["datetime"] = pd.to_datetime(calc_daily.datetime)
         norms = merge_normal_data("ET", calc_daily, station_name)
         fig = add_boxplot_normals(fig, norms)
 
@@ -427,24 +457,24 @@ def get_plot_func(v):
 
 def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
-    plots = []
+    plots = {}
     for v in args:
         if v == "ET":
-            plt = plot_etr(hourly=dat, station=kwargs["station"], norm=kwargs['norm'])
+            plt = plot_etr(hourly=dat, **kwargs)
         else:
             df = ppt if v == "Precipitation" else dat
             plot_func = get_plot_func(v)
             data = filter_df(df, v)
             if len(data) == 0:
                 continue
-            plt = plot_func(
-                data, color=params.color_mapper[v], station=kwargs["station"], norm=kwargs['norm']
-            )
-        plots.append(plt)
+            plt = plot_func(data, color=params.color_mapper[v], **kwargs)
+        plots[v] = plt
 
-    sub = px_to_subplot(*plots, shared_xaxes=False)
+    sub = px_to_subplot(*list(plots.values()), shared_xaxes=False)
     for row in range(1, len(plots) + 1):
-        sub.update_yaxes(title_text=params.axis_mapper[args[row - 1]], row=row, col=1)
+        sub.update_yaxes(
+            title_text=params.axis_mapper[list(plots.keys())[row - 1]], row=row, col=1
+        )
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height)

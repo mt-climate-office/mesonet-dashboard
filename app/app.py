@@ -41,7 +41,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    # requests_pathname_prefix="/dash/",
+    requests_pathname_prefix="/dash/",
 )
 
 app._favicon = "MCO_logo.svg"
@@ -192,7 +192,6 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
     hourly = [hourly] if isinstance(hourly, int) else hourly
     norm = [norm] if isinstance(norm, int) else norm
 
-    print(norm)
     if len(select_vars) == 0:
         return make_nodata_figure()
 
@@ -207,7 +206,14 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
         ppt = ppt.dropna()
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
         station = stations[stations["station"] == station]
-        return plot_site(*select_vars, dat=dat, ppt=ppt, station=station, norm=len(norm) == 1)
+        return plot_site(
+            *select_vars,
+            dat=dat,
+            ppt=ppt,
+            station=station,
+            norm=len(norm) == 1,
+            top_of_hour=len(hourly) == 1,
+        )
 
     return make_nodata_figure()
 
@@ -376,12 +382,12 @@ def station_popup(clickData, is_open):
 
 @app.callback(
     Output("modal", "is_open"),
-    [Input("help-button", "n_clicks"), Input("station-dropdown", "value")],
+    [Input("help-button", "n_clicks")],
     [State("modal", "is_open")],
 )
-def toggle_modal(n1, is_open, station):
+def toggle_modal(n1, is_open):
 
-    if n1 or not station:
+    if n1:
         return not is_open
     return is_open
 

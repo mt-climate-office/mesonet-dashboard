@@ -21,19 +21,17 @@ def generate_modal():
                         - Fill out our [feedback form](https://airtable.com/shrxlaYUu6DcyK98s),
                         - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
 
-                        For questions about the Mesonet itself, please contact our Mesonet Manager (Kevin Hyde) at [kevin.hyde@umontana.edu](mailto:kevin.hyde@umontana.edu).
+                        For questions or issues related to current Mesonet stations, please contact our Mesonet Manager (Kevin Hyde) at
+                        [kevin.hyde@umontana.edu](mailto:kevin.hyde@umontana.edu). For general questions about the Mesonet and its development,
+                        please contact the state climatologist (Kelsey Jencso) at [kelsey.jencso@umontana.edu](mailto:kelsey.jencso@umontana.edu).
 
                         #### Montana Mesonet Background
-
-                        The Montana Climate Office (MCO) is leading the development of a cooperative statewide soil moisture and meteorological information system.
-                        It is designed to support decision-making in agriculture, range and forested watershed contexts.
-                        This network will add new remote sites and integrate existing cooperator networks to develop the first statewide soil-climate network.
-
-                        The Montana Mesonet will:
-                        - Combine information from existing data networks
-                        - Establish a minimum of 100 new soil moisture recording sites through partnerships with cooperators.
-                        - Provide an information system for accessing and visualizing historic, real-time and forecasted data.
-
+                        The Montana Climate Office (MCO) installed 6 weather and soil moisture monitoring stations in 2016 as part of the Montana Research 
+                        and Economic Development Initiative (MREDI). The Mesonet was designed to support decision-making for statewide drought assessments, 
+                        precision agriculture and rangeland and forested watershed management. Since 2016 the network has grown to 94 stations through support
+                        from private landowners, watershed groups, tribes, state agencies and grants from federal entities. In 2020 the MCO was awarded a contract 
+                        from the U.S. Army Corps to add 205 additional stations. The new stations will be installed every 500 square miles in central and eastern
+                        Montana to improve drought assessments and flood forecasting - in the protection of lives and property.
                         #### Source Code
                         See how we built this application at our [GitHub repository](https://github.com/mt-climate-office/mesonet-dashboard/tree/develop).
                     """
@@ -41,7 +39,7 @@ def generate_modal():
                 ),
             ],
             id="modal",
-            is_open=False,
+            is_open=True,
             size="xl",
             scrollable=True,
         )
@@ -123,7 +121,7 @@ def build_banner(app_ref):
                     [
                         dbc.Button(
                             "GIVE FEEDBACK",
-                            href="#",
+                            # href="#",
                             size="lg",
                             n_clicks=0,
                             id="feedback-button",
@@ -131,7 +129,7 @@ def build_banner(app_ref):
                         ),
                         dbc.Button(
                             "LEARN MORE",
-                            href="#",
+                            # href="#",
                             size="lg",
                             n_clicks=0,
                             id="help-button",
@@ -334,7 +332,7 @@ def build_dropdowns(stations):
                                             inline=True,
                                             id="gridmet-switch",
                                             switch=True,
-                                            value=[1],
+                                            value=[],
                                         ),
                                         dbc.Tooltip(
                                             "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions.",
