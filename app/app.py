@@ -28,13 +28,14 @@ from .layout import app_layout, table_styling
 # from libs.tables import make_metadata_table
 # from layout import app_layout, table_styling
 
-pd.options.mode.chained_assignment = None
+# pd.options.mode.chained_assignment = None
 
 app = Dash(
     __name__,
     title="Montana Mesonet",
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
+    external_scripts=['https://cdn.plot.ly/plotly-2.12.1.min.js'],
     meta_tags=[
         {
             "name": "viewport",
@@ -42,6 +43,7 @@ app = Dash(
         }
     ],
     requests_pathname_prefix="/dash/",
+    serve_locally=True,
 )
 
 app._favicon = "MCO_logo.svg"
