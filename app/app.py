@@ -43,7 +43,7 @@ app = Dash(
         }
     ],
     requests_pathname_prefix="/dash/",
-    serve_locally=False,
+    serve_locally=True,
 )
 
 app._favicon = "MCO_logo.svg"
