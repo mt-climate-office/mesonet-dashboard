@@ -35,7 +35,6 @@ app = Dash(
     title="Montana Mesonet",
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
-    # external_scripts=['https://cdn.plot.ly/plotly-2.12.1.min.js'],
     meta_tags=[
         {
             "name": "viewport",
@@ -43,7 +42,6 @@ app = Dash(
         }
     ],
     requests_pathname_prefix="/dash/",
-    # serve_locally=True,
 )
 
 app._favicon = "MCO_logo.svg"
