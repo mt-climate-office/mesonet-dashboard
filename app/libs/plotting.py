@@ -493,7 +493,7 @@ def plot_station(stations):
     stations = stations[["station", "long_name", "elevation", "latitude", "longitude"]]
     stations = stations.assign(
         url=stations["long_name"]
-        + ": [View Latest Data](https://fcfc-mesonet-staging.cfc.umt.edu/dash/"
+        + ": [View Latest Data](https://mesonet.climate.umt.edu/dash/"
         + stations["station"]
         + ")"
     )
