@@ -28,7 +28,12 @@ from .layout import app_layout, table_styling
 # from libs.tables import make_metadata_table
 # from layout import app_layout, table_styling
 
-# pd.options.mode.chained_assignment = None
+pd.options.mode.chained_assignment = None
+
+external_scripts = [
+'https://www.googletagmanager.com/gtag/js?id=UA-149859729-3',
+'https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/develop/app/assets/gtag.js'
+]
 
 app = Dash(
     __name__,
@@ -42,6 +47,7 @@ app = Dash(
         }
     ],
     requests_pathname_prefix="/dash/",
+    external_scripts=external_scripts
 )
 
 app._favicon = "MCO_logo.svg"
