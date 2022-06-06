@@ -30,6 +30,7 @@ from .layout import app_layout, table_styling
 
 pd.options.mode.chained_assignment = None
 
+
 app = Dash(
     __name__,
     title="Montana Mesonet",
@@ -42,6 +43,10 @@ app = Dash(
         }
     ],
     requests_pathname_prefix="/dash/",
+    external_scripts=[
+        "https://www.googletagmanager.com/gtag/js?id=UA-149859729-3",
+        "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/develop/app/assets/gtag.js",
+    ],
 )
 
 app._favicon = "MCO_logo.svg"
@@ -157,19 +162,19 @@ def reset_start_date(value):
     return dt.date.today() - rd(weeks=2)
 
 
-# @app.callback(Output("end-date", "min_date_allowed"), [Input("start-date", "date")])
-# def adjust_end_date_max(value):
-#     d = dt.datetime.strptime(value, "%Y-%m-%d").date()
-#     return d
+@app.callback(Output("end-date", "min_date_allowed"), [Input("start-date", "date")])
+def adjust_end_date_max(value):
+    d = dt.datetime.strptime(value, "%Y-%m-%d").date()
+    return d
 
 
-# @app.callback(
-#     Output("start-date", "min_date_allowed"), Input("station-dropdown", "value")
-# )
-# def adjust_start_date(station):
-#     if station:
-#         d = stations[stations["station"] == station]["date_installed"].values[0]
-#         return dt.datetime.strptime(d, "%Y-%m-%d").date()
+@app.callback(
+    Output("start-date", "min_date_allowed"), Input("station-dropdown", "value")
+)
+def adjust_start_date(station):
+    if station:
+        d = stations[stations["station"] == station]["date_installed"].values[0]
+        return dt.datetime.strptime(d, "%Y-%m-%d").date()
 
 
 @app.callback(Output("date-button", "disabled"), Input("station-dropdown", "value"))
