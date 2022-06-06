@@ -100,7 +100,16 @@ def plot_soil(dat, **kwargs):
         x="datetime",
         y="value",
         color="elem_lab",
+        color_discrete_map={
+            "Soil VWC @ 2 in [%]": "#636efa",
+            "Soil VWC @ 4 in [%]": "#EF553B",
+            "Soil VWC @ 8 in [%]": "#00cc96",
+            "Soil VWC @ 16 in [%]": "#ab63fa",
+            "Soil VWC @ 36 in [%]": "#FFA15A",
+            "Soil VWC @ 40 in [%]": "#301934",
+        },
     )
+
     fig.update_traces(
         connectgaps=False,
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Soil Moisture</b>: %{y}",
@@ -108,6 +117,19 @@ def plot_soil(dat, **kwargs):
 
     fig.update_layout(
         hovermode="x unified",
+    )
+
+    fig.add_annotation(
+        text="test1", x=0.1, y=0.9, xref="paper", yref="paper", showarrow=False
+    )
+
+    fig.add_annotation(
+        text="Absolutely-positioned annotation",
+        xref="paper",
+        yref="paper",
+        x=0.3,
+        y=0.3,
+        showarrow=False,
     )
 
     return fig
@@ -430,7 +452,6 @@ def px_to_subplot(*figs, **kwargs):
         else:
             sub.add_trace(*traces, row=idx, col=1)
 
-    # return sub
     return sub
 
 
@@ -455,6 +476,13 @@ def get_plot_func(v):
     return plot_met
 
 
+def add_soil_legend(sub, idx):
+    if not idx:
+        return sub
+
+    return sub
+
+
 def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
     plots = {}
@@ -469,6 +497,8 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
                 continue
             plt = plot_func(data, color=params.color_mapper[v], **kwargs)
         plots[v] = plt
+
+    indices = [idx for idx, x in enumerate(list(args)) if "Soil" in x]
 
     sub = px_to_subplot(*list(plots.values()), shared_xaxes=False)
     for row in range(1, len(plots) + 1):
@@ -486,6 +516,10 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     sub.update_layout(
         margin={"r": 0, "t": 20, "l": 0, "b": 0},
     )
+    print(type(args))
+
+    sub = add_soil_legend(sub, indices)
+
     return sub
 
 
