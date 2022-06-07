@@ -94,42 +94,29 @@ def plot_soil(dat, **kwargs):
             for x in cols
         ]
     )
-
+    unit = "%" if "VWC" in kwargs['txt'] else "°F"
     fig = px.line(
         dat,
         x="datetime",
         y="value",
         color="elem_lab",
         color_discrete_map={
-            "Soil VWC @ 2 in [%]": "#636efa",
-            "Soil VWC @ 4 in [%]": "#EF553B",
-            "Soil VWC @ 8 in [%]": "#00cc96",
-            "Soil VWC @ 16 in [%]": "#ab63fa",
-            "Soil VWC @ 36 in [%]": "#FFA15A",
-            "Soil VWC @ 40 in [%]": "#301934",
+            f"{kwargs['txt']} @ 2 in [{unit}]": "#636efa",
+            f"{kwargs['txt']} @ 4 in [{unit}]": "#EF553B",
+            f"{kwargs['txt']} @ 8 in [{unit}]": "#00cc96",
+            f"{kwargs['txt']} @ 16 in [{unit}]": "#ab63fa",
+            f"{kwargs['txt']} @ 36 in [{unit}]": "#FFA15A",
+            f"{kwargs['txt']} @ 40 in [{unit}]": "#301934",
         },
     )
 
     fig.update_traces(
         connectgaps=False,
-        hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Soil Moisture</b>: %{y}",
+        hovertemplate="<b>Date</b>: %{x}<br>" + "<b>"+kwargs['txt']+"</b>: %{y}",
     )
 
     fig.update_layout(
         hovermode="x unified",
-    )
-
-    fig.add_annotation(
-        text="test1", x=0.1, y=0.9, xref="paper", yref="paper", showarrow=False
-    )
-
-    fig.add_annotation(
-        text="Absolutely-positioned annotation",
-        xref="paper",
-        yref="paper",
-        x=0.3,
-        y=0.3,
-        showarrow=False,
     )
 
     return fig
@@ -476,12 +463,57 @@ def get_plot_func(v):
     return plot_met
 
 
-def add_soil_legend(sub, idx):
+def get_soil_legend_loc(dat):
+    tmax = max(dat.iloc[:, dat.columns.str.contains('Soil Temperature')].max(axis=0))
+    vmax = max(dat.iloc[:, dat.columns.str.contains('Soil VWC')].max(axis=0))
+    d = dat.datetime.max() + rd(hours = 12)
+    d = [d - rd(hours = 24*i) for i in range(6)]
+
+    return {
+        'tmp': tmax,
+        'vwc': vmax,
+        'd': d,
+    }
+
+
+def get_soil_depths(dat):
+    cols = dat.columns[dat.columns.str.contains('VWC')].tolist()
+    return [" ".join(x.split()[3:5]) for x in cols]
+
+def add_soil_legend(sub, idx, xs, y, depths):
     if not idx:
         return sub
+    
+    labs = {
+        "40 in": "#301934",
+        "36 in": "#FFA15A",
+        "16 in": "#ab63fa",
+        "8 in": "#00cc96",
+        "4 in": "#EF553B",
+        "2 in": "#636efa",
+    }
 
+    for idx2, d in enumerate(reversed(depths)):
+        sub.add_annotation(
+            x=xs[idx2],
+            y=y,
+            xref="x1",
+            yref=idx[0],
+            text=d,
+            showarrow=False,
+            font=dict(
+                family="Courier New, monospace",
+                size=12,
+                color="#ffffff"
+                ),
+            align="center",
+            bordercolor="#c7c7c7",
+            xanchor="right",
+            yanchor="middle",
+            bgcolor=labs[d],
+            opacity=0.8,
+        )
     return sub
-
 
 def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
@@ -495,10 +527,10 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
             data = filter_df(df, v)
             if len(data) == 0:
                 continue
+            if v == "Soil Temperature" or v == "Soil VWC":
+                kwargs.update({'txt': v})
             plt = plot_func(data, color=params.color_mapper[v], **kwargs)
         plots[v] = plt
-
-    indices = [idx for idx, x in enumerate(list(args)) if "Soil" in x]
 
     sub = px_to_subplot(*list(plots.values()), shared_xaxes=False)
     for row in range(1, len(plots) + 1):
@@ -516,9 +548,12 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     sub.update_layout(
         margin={"r": 0, "t": 20, "l": 0, "b": 0},
     )
-    print(type(args))
+    soil_info = get_soil_legend_loc(dat)
+    tmp_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil Temperature" in x]
+    vwc_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil VWC" in x]
 
-    sub = add_soil_legend(sub, indices)
+    sub = add_soil_legend(sub, tmp_idx, soil_info['d'], soil_info['tmp'], get_soil_depths(dat))
+    sub = add_soil_legend(sub, vwc_idx, soil_info['d'], soil_info['vwc'], get_soil_depths(dat))
 
     return sub
 
