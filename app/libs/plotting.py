@@ -466,7 +466,7 @@ def get_plot_func(v):
 def get_soil_legend_loc(dat):
     tmax = max(dat.iloc[:, dat.columns.str.contains('Soil Temperature')].max(axis=0))
     vmax = max(dat.iloc[:, dat.columns.str.contains('Soil VWC')].max(axis=0))
-    d = dat.datetime.max() + rd(hours = 12)
+    d = dat.datetime.max()
     d = [d - rd(hours = 24*i) for i in range(6)]
 
     return {
@@ -478,7 +478,9 @@ def get_soil_legend_loc(dat):
 
 def get_soil_depths(dat):
     cols = dat.columns[dat.columns.str.contains('VWC')].tolist()
-    return [" ".join(x.split()[3:5]) for x in cols]
+    vals = dat[cols].sum()
+    vals = vals[vals != 0].index.tolist()
+    return [" ".join(x.split()[3:5]) for x in vals]
 
 def add_soil_legend(sub, idx, xs, y, depths):
     if not idx:
@@ -494,6 +496,7 @@ def add_soil_legend(sub, idx, xs, y, depths):
     }
 
     for idx2, d in enumerate(reversed(depths)):
+
         sub.add_annotation(
             x=xs[idx2],
             y=y,
