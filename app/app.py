@@ -409,19 +409,6 @@ def toggle_feedback(n1, is_open):
     return is_open
 
 
-# @app.callback(
-#     Output("station-data", "figure"),
-#     Input("station-data", "selectedData"),
-#     State("station-data", "figure")
-# )
-# def test(sel, fig):
-
-#     xs = sel['range']
-#     xs = [v for k, v in xs.items() if k.startswith('x')]
-#     xs = xs[0]
-
-#     fig.update_xaxes(range=xs)
-#     return fig
 
 if __name__ == "__main__":
     app.run_server(debug=True)

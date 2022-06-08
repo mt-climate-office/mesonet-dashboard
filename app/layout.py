@@ -39,7 +39,7 @@ def generate_modal():
                 ),
             ],
             id="modal",
-            is_open=True,
+            is_open=False,
             size="xl",
             scrollable=True,
         )
