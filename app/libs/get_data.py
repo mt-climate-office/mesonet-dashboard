@@ -6,7 +6,6 @@ from dateutil import relativedelta as rd
 from typing import Optional, Union
 from urllib import parse
 
-import pandas as pd
 from .params import params
 
 
