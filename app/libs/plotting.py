@@ -104,7 +104,7 @@ def plot_soil(dat, **kwargs):
             f"{kwargs['txt']} @ 2 in [{unit}]": "#636efa",
             f"{kwargs['txt']} @ 4 in [{unit}]": "#EF553B",
             f"{kwargs['txt']} @ 8 in [{unit}]": "#00cc96",
-            f"{kwargs['txt']} @ 16 in [{unit}]": "#ab63fa",
+            f"{kwargs['txt']} @ 20 in [{unit}]": "#ab63fa",
             f"{kwargs['txt']} @ 36 in [{unit}]": "#FFA15A",
             f"{kwargs['txt']} @ 40 in [{unit}]": "#301934",
         },
@@ -489,7 +489,7 @@ def add_soil_legend(sub, idx, xs, y, depths):
     labs = {
         "40 in": "#301934",
         "36 in": "#FFA15A",
-        "16 in": "#ab63fa",
+        "20 in": "#ab63fa",
         "8 in": "#00cc96",
         "4 in": "#EF553B",
         "2 in": "#636efa",
