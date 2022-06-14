@@ -15,8 +15,8 @@ def generate_modal():
                         """
                         #### The Montana Mesonet Dashboard
                         Welcome to the Montana Mesonet Dashboard! This dashboard visualizes historical data from all stations that are a part of the Montana Mesonet.
-                        To visualize data from a station, either select a station from the dropdown on the top left, click a station on the locator map, or add a station name to the URL path (e.g. [https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen](https://fcfc-mesonet-staging.cfc.umt.edu/dash/crowagen)).
-                        If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, please:
+                        To visualize data from a station, either select a station from the dropdown on the top left, click a station on the locator map, or add a station name to the URL path (e.g. [https://mesonet.climate.umt.edu/dash/crowagen](https://mesonet.climate.umt.edu/dash/crowagen)).
+                        The station data is aggregated on demand from the [Montana Mesonet API](https://mesonet.climate.umt.edu/api/v2/docs). If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, please:
                         - Email [colin.brust@mso.umt.edu](mailto:colin.brust@mso.umt.edu),
                         - Fill out our [feedback form](https://airtable.com/shrxlaYUu6DcyK98s),
                         - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
@@ -120,8 +120,16 @@ def build_banner(app_ref):
                 html.Div(
                     [
                         dbc.Button(
+                            "MESONET DOWNLOADER",
+                            href="https://shiny.cfc.umt.edu/mesonet-download/",
+                            size="lg",
+                            n_clicks=0,
+                            id="shiny-download-button",
+                            className="me-md-2",
+                        ),
+                        dbc.Button(
                             "GIVE FEEDBACK",
-                            # href="#",
+                            href="#",
                             size="lg",
                             n_clicks=0,
                             id="feedback-button",
@@ -129,7 +137,7 @@ def build_banner(app_ref):
                         ),
                         dbc.Button(
                             "LEARN MORE",
-                            # href="#",
+                            href="#",
                             size="lg",
                             n_clicks=0,
                             id="help-button",
@@ -137,7 +145,7 @@ def build_banner(app_ref):
                         ),
                     ],
                     className="d-inline-flex gap-2",
-                    style={"padding": "0rem 0rem 0rem 7.5rem"},
+                    style={"padding": "0rem 0rem 0rem 0rem"},
                 ),
             ],
             fluid=True,
@@ -279,8 +287,8 @@ def build_dropdowns(stations):
                         xs=5,
                         sm=5,
                         md=5,
-                        lg=2,
-                        xl=2,
+                        lg=3,
+                        xl=3,
                         # style={"padding": "0rem 0rem 0rem 6.5rem"},
                     ),
                     dbc.Col(
@@ -299,8 +307,8 @@ def build_dropdowns(stations):
                         xs=5,
                         sm=5,
                         md=5,
-                        lg=2,
-                        xl=2,
+                        lg=3,
+                        xl=3,
                         # style={"padding": "0rem 0rem 0rem 6.5rem"},
                     ),
                     dbc.Col(
@@ -354,34 +362,6 @@ def build_dropdowns(stations):
                         lg=3,
                         xl=3,
                         # style={"padding": "0rem 0rem 0rem 5rem"},
-                    ),
-                    dbc.Col(
-                        [
-                            dbc.InputGroup(
-                                [
-                                    dbc.Button(
-                                        "DOWNLOAD",
-                                        href="#",
-                                        size="lg",
-                                        n_clicks=0,
-                                        id="download-button",
-                                        className="dlbutton",
-                                    ),
-                                    dbc.Tooltip(
-                                        "Download the data used to create the plots that are displayed. To save the plots, click the photo icon in the top right corner of the plot.",
-                                        target="download-button",
-                                    ),
-                                ]
-                            ),
-                            dcc.Download(id="data-download"),
-                        ],
-                        xs=0,
-                        sm=0,
-                        md=0,
-                        lg=1,
-                        xl=1,
-                        # align="start",
-                        # style={"padding": "0rem 0rem 0rem -10rem"},
                     ),
                 ],
                 align="end",

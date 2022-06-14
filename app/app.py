@@ -332,28 +332,28 @@ def update_photo_direction(station, direction):
 
 
 # TODO: Make download only happen on button click, not after when station changes.
-@app.callback(
-    Output("data-download", "data"),
-    [
-        Input("download-button", "n_clicks"),
-        Input("temp-station-data", "data"),
-        Input("start-date", "date"),
-        Input("end-date", "date"),
-        Input("station-dropdown", "value"),
-    ],
-    prevent_initial_callback=True,
-)
-def download_called_data(n_clicks, tmp_data, start: dt.date, end: dt.date, station):
+# @app.callback(
+#     Output("data-download", "data"),
+#     [
+#         Input("download-button", "n_clicks"),
+#         Input("temp-station-data", "data"),
+#         Input("start-date", "date"),
+#         Input("end-date", "date"),
+#         Input("station-dropdown", "value"),
+#     ],
+#     prevent_initial_callback=True,
+# )
+# def download_called_data(n_clicks, tmp_data, start: dt.date, end: dt.date, station):
 
-    ctx = callback_context
-    flag = ctx.triggered[0]["prop_id"] == "download-button.n_clicks"
-    if flag and tmp_data:
-        data = pd.read_json(tmp_data, orient="records")
-        data = data.assign(datetime=data.datetime.dt.tz_convert("America/Denver"))
-        return dcc.send_data_frame(
-            data.to_csv,
-            f"{station}_MTMesonet_{start.replace('-', '')}_{end.replace('-', '')}.csv",
-        )
+#     ctx = callback_context
+#     flag = ctx.triggered[0]["prop_id"] == "download-button.n_clicks"
+#     if flag and tmp_data:
+#         data = pd.read_json(tmp_data, orient="records")
+#         data = data.assign(datetime=data.datetime.dt.tz_convert("America/Denver"))
+#         return dcc.send_data_frame(
+#             data.to_csv,
+#             f"{station}_MTMesonet_{start.replace('-', '')}_{end.replace('-', '')}.csv",
+#         )
 
 
 @app.callback(
