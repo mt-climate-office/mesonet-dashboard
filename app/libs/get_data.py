@@ -40,6 +40,7 @@ def get_station_record(
     station: str,
     start_time: Union[dt.date, dt.datetime],
     end_time: Union[dt.date, dt.datetime],
+    hourly: Optional[bool] = True
 ) -> pd.DataFrame:
     """Given a Mesonet station name and date range, return a dataframe of climate data.
 
@@ -59,6 +60,7 @@ def get_station_record(
         "elements": e,
         "start_time": start_time,
         "level": 1,
+        "hour": hourly,
         "type": "csv",
     }
 
@@ -77,7 +79,6 @@ def get_station_record(
 
     with io.StringIO(r.text) as text_io:
         dat = pd.read_csv(text_io)
-
     return dat
 
 
@@ -104,6 +105,7 @@ def clean_format(
     station: str,
     start_time: Optional[Union[dt.date, dt.datetime]] = params.START,
     end_time: Optional[Union[dt.date, dt.datetime]] = None,
+    hourly: Optional[bool] = True,
 ) -> pd.DataFrame:
     """Aggregate and reformat data from a mesonet station.
 
@@ -116,10 +118,9 @@ def clean_format(
     Returns:
         pd.DataFrame: DataFrame of station records in a cleaned format and with precip aggregated to daily sum.
     """
-
     time_freq = "5min" if station[:3] == "ace" else "15min"
 
-    dat = get_station_record(station, start_time, end_time)
+    dat = get_station_record(station, start_time, end_time, hourly)
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
     dat.datetime = dat.datetime.dt.tz_convert("America/Denver")
     dat = dat.set_index("datetime")

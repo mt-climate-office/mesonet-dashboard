@@ -8,25 +8,25 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-from .libs.get_data import (
-    get_sites,
-    clean_format,
-    get_station_latest,
-    filter_top_of_hour,
-)
-from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from .libs.tables import make_metadata_table
-from .layout import app_layout, table_styling
-
-# from libs.get_data import (
+# from .libs.get_data import (
 #     get_sites,
 #     clean_format,
 #     get_station_latest,
 #     filter_top_of_hour,
 # )
-# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from libs.tables import make_metadata_table
-# from layout import app_layout, table_styling
+# from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from .libs.tables import make_metadata_table
+# from .layout import app_layout, table_styling
+
+from libs.get_data import (
+    get_sites,
+    clean_format,
+    get_station_latest,
+    filter_top_of_hour,
+)
+from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from libs.tables import make_metadata_table
+from layout import app_layout, table_styling
 
 pd.options.mode.chained_assignment = None
 
@@ -42,7 +42,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    requests_pathname_prefix="/dash/",
+    # requests_pathname_prefix="/dash/",
     external_scripts=[
         "https://www.googletagmanager.com/gtag/js?id=UA-149859729-3",
         "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/develop/app/assets/gtag.js",
@@ -119,16 +119,19 @@ def update_bl_card(at, station, tmp_data):
         Input("station-dropdown", "value"),
         Input("start-date", "date"),
         Input("end-date", "date"),
+        Input("hourly-switch", "value"),
     ],
 )
-def get_latest_api_data(station, start, end):
+def get_latest_api_data(station, start, end, hourly):
 
     if (start or end) and station:
         start = dt.datetime.strptime(start, "%Y-%m-%d").date()
         end = dt.datetime.strptime(end, "%Y-%m-%d").date()
+    
+        hourly = [hourly] if isinstance(hourly, int) else hourly
 
         try:
-            data = clean_format(station, start_time=start, end_time=end)
+            data = clean_format(station, start_time=start, end_time=end, hourly=len(hourly) == 1)
         except AttributeError as e:
             print(e)
             return -1
