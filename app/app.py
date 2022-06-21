@@ -58,20 +58,25 @@ station_fig = plot_station(stations)
 app.layout = app_layout(app_ref=app, station_fig=station_fig, stations=stations)
 
 
-def make_nodata_figure():
+def make_nodata_figure(txt="No data avaliable for selected dates."):
     fig = go.Figure()
     fig.add_annotation(
         dict(
-            font=dict(color="black", size=15),
+            font=dict(color="black", size=18),
             x=0.5,
             y=0.5,
             showarrow=False,
-            text="No data avaliable for selected dates.",
+            text=txt,
             textangle=0,
             xanchor="center",
             xref="paper",
             yref="paper",
         )
+    )
+    fig.update_layout(
+        yaxis_visible=False, yaxis_showticklabels=False,
+        xaxis_visible=False, xaxis_showticklabels=False,
+        paper_bgcolor="white", plot_bgcolor="white",
     )
     return fig
 
@@ -223,7 +228,11 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
             top_of_hour=len(hourly) == 1,
         )
 
-    return make_nodata_figure()
+    return make_nodata_figure("""
+        <b>No station selected!</b> <br><br>
+        
+        To get started, select a station from the dropdown above or the map to the right.
+    """)
 
 
 @app.callback(Output("station-dropdown", "value"), Input("url", "pathname"))

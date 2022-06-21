@@ -126,6 +126,7 @@ def build_banner(app_ref):
                             n_clicks=0,
                             id="shiny-download-button",
                             className="me-md-2",
+                            target="_blank",
                         ),
                         dbc.Button(
                             "GIVE FEEDBACK",
@@ -318,7 +319,7 @@ def build_dropdowns(stations):
                                     [
                                         dbc.Checklist(
                                             options=[
-                                                {"label": "Top of Hour", "value": 1},
+                                                {"label": "Hourly", "value": 1},
                                             ],
                                             inline=True,
                                             id="hourly-switch",
@@ -327,7 +328,9 @@ def build_dropdowns(stations):
                                             # className="toggle",
                                         ),
                                         dbc.Tooltip(
-                                            "Leaving top of the hour data switched on will make the figures load faster. If the toggle is switched off, the figures will convey more information, but will take longer to load.",
+                                            """Leaving this switched on will return hourly averages (totals for precipitation). 
+                                            This significantly cuts down on data transfer and makes the plots render faster.
+                                            If the toggle is switched off, the figures will have higher resolution data, but will take longer to load.""",
                                             target="hourly-switch",
                                         ),
                                     ],

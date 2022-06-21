@@ -1,6 +1,7 @@
 import pandas as pd
 import io
 import requests
+from requests import Request
 import datetime as dt
 from dateutil import relativedelta as rd
 from typing import Optional, Union
@@ -72,13 +73,22 @@ def get_station_record(
 
     payload = parse.urlencode(q, safe=",:")
 
-    r = requests.get(
-        url=f"{params.API_URL}observations",
-        params=payload,
-    )
+    r = Request('GET', 
+            url=f"{params.API_URL}observations",
+            params=payload,
+    ).prepare()
 
-    with io.StringIO(r.text) as text_io:
-        dat = pd.read_csv(text_io)
+    # r = requests.get(
+    #     url=f"{params.API_URL}observations",
+    #     params=payload,
+    #     stream=True
+    # )
+
+    # with io.StringIO(r.text) as text_io:
+    #     dat = pd.read_csv(text_io)
+    # return dat
+
+    dat = pd.read_csv(r.url)
     return dat
 
 

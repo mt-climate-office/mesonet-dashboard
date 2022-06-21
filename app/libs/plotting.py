@@ -521,6 +521,7 @@ def add_soil_legend(sub, idx, xs, y, depths):
 def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
     plots = {}
+    no_data = []
     for v in args:
         if v == "ET":
             plt = plot_etr(hourly=dat, **kwargs)
@@ -528,7 +529,9 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
             df = ppt if v == "Precipitation" else dat
             plot_func = get_plot_func(v)
             data = filter_df(df, v)
-            if len(data) == 0:
+
+            if len(data) == 0 or data.shape[-1] == 1:
+                no_data.append(v)
                 continue
             if v == "Soil Temperature" or v == "Soil VWC":
                 kwargs.update({'txt': v})
@@ -551,6 +554,10 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     sub.update_layout(
         margin={"r": 0, "t": 20, "l": 0, "b": 0},
     )
+
+    if "Soil Temperature" in no_data or "Soil VWC" in no_data:
+        return sub
+
     soil_info = get_soil_legend_loc(dat)
     tmp_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil Temperature" in x]
     vwc_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil VWC" in x]
