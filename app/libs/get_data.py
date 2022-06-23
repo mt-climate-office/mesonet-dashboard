@@ -170,3 +170,8 @@ def get_station_latest(station):
     dat = dat.dropna()
 
     return dat.to_dict("records")
+
+def get_satellite_data(station, source, elements):
+    dat = pd.read_csv(source)
+    dat = dat[dat['ID'] == station]
+    dat = dat[dat['element'].str.contains('|'.join(elements))]

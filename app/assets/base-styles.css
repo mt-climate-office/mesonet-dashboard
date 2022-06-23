@@ -695,3 +695,42 @@ background-color: rgb(250, 250, 250);
     padding: 0rem 0rem 1rem 0rem;
   }
 }
+
+#tabs {
+  width: 95%;
+}
+
+.custom-tabs {
+  background-color: #ffffff;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 14px;
+  height: fit-content;
+  cursor: pointer;
+}
+
+.custom-tab {
+  background-color: #161a28;
+  letter-spacing: 1px;
+  color: inherit;
+  border: 0;
+  border-bottom: #1E2130 solid 4px !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  height: 1px;
+}
+
+.custom-tab--selected {
+  border-bottom: #91dfd2 solid 4px !important;
+}
+
+/* #Specs-tab.custom-tab {
+  margin-right: 3px;
+}
+
+#Control-chart-tab.custom-tab {
+  margin-left: 3px;
+} */

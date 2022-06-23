@@ -249,8 +249,25 @@ def build_dropdowns(stations):
         size="lg",
     )
 
+    tabs_styles = {"height": "44px"}
+    tabs_container_styles = {"width": "95%", "display": "inline-block"}
+
     return dbc.Container(
         [
+        html.Div(
+            children=[
+                dcc.Tabs(
+                    id="tabs-styled-with-inline",
+                    value="tab-1",
+                    children=[
+                        dcc.Tab(label="Page1", value="tab-1"),
+                        dcc.Tab(label="Page2", value="tab-2"),
+                    ],
+                    style=tabs_styles,
+                )
+            ],
+            style=tabs_container_styles,
+        ),
             dbc.Row(
                 [
                     dbc.Col(
