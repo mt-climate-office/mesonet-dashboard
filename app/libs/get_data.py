@@ -6,8 +6,16 @@ import datetime as dt
 from dateutil import relativedelta as rd
 from typing import Optional, Union
 from urllib import parse
+from dotenv import load_dotenv
+import numpy as np
+import os
+
+from mt_mesonet_satellite import MesonetSatelliteDB
 
 from .params import params
+
+
+load_dotenv()
 
 
 def get_sites() -> pd.DataFrame:
@@ -171,7 +179,37 @@ def get_station_latest(station):
 
     return dat.to_dict("records")
 
-def get_satellite_data(station, source, elements):
-    dat = pd.read_csv(source)
-    dat = dat[dat['ID'] == station]
-    dat = dat[dat['element'].str.contains('|'.join(elements))]
+def get_satellite_data(station: str, element: str, start_time: Union[int, dt.date], end_time: Union[int, dt.date]) -> pd.DataFrame:
+    """Gather satellite data at a Mesonet station from the Neo4j database.
+
+    Args:
+        station (str): The name of the station to query. 
+        element (str): The satellite indicator element to query. 
+        start_time (Union[int, dt.date]): The time to begin the query. Can either be a datetime.date object or an int representing seconds since 1970-01-01.
+        end_time (Union[int, dt.date]): The time to end the query. Can either be a datetime.date object or an int representing seconds since 1970-01-01.
+
+    Returns:
+        pd.DataFrame: Pandas dataframe with data generated from the query. 
+    """
+    conn = MesonetSatelliteDB(
+        user=os.getenv('Neo4jUser'),
+        password=os.getenv('Neo4jPassword'),
+        uri=os.getenv('Neo4jURI')
+    )
+
+    if isinstance(start_time, dt.date):
+        start_time = (start_time - dt.date(1970,1,1)).total_seconds()
+    if isinstance(end_time, dt.date):
+        end_time = (end_time - dt.date(1970,1,1)).total_seconds()
+
+    dat = conn.query(
+        station=station,
+        element=element,
+        start_time=start_time,
+        end_time=end_time
+    )
+    conn.close()
+    
+    dat = dat.assign(date = pd.to_datetime(dat.date, unit="s"))
+    dat = dat.sort_values(by=['platform', 'date'])
+    return dat
