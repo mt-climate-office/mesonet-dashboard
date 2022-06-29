@@ -94,7 +94,7 @@ def plot_soil(dat, **kwargs):
             for x in cols
         ]
     )
-    unit = "%" if "VWC" in kwargs['txt'] else "°F"
+    unit = "%" if "VWC" in kwargs["txt"] else "°F"
     fig = px.line(
         dat,
         x="datetime",
@@ -112,7 +112,7 @@ def plot_soil(dat, **kwargs):
 
     fig.update_traces(
         connectgaps=False,
-        hovertemplate="<b>Date</b>: %{x}<br>" + "<b>"+kwargs['txt']+"</b>: %{y}",
+        hovertemplate="<b>Date</b>: %{x}<br>" + "<b>" + kwargs["txt"] + "</b>: %{y}",
     )
 
     fig.update_layout(
@@ -464,28 +464,29 @@ def get_plot_func(v):
 
 
 def get_soil_legend_loc(dat):
-    tmax = max(dat.iloc[:, dat.columns.str.contains('Soil Temperature')].max(axis=0))
-    vmax = max(dat.iloc[:, dat.columns.str.contains('Soil VWC')].max(axis=0))
+    tmax = max(dat.iloc[:, dat.columns.str.contains("Soil Temperature")].max(axis=0))
+    vmax = max(dat.iloc[:, dat.columns.str.contains("Soil VWC")].max(axis=0))
     d = dat.datetime.max()
-    d = [d - rd(hours = 24*i) for i in range(6)]
+    d = [d - rd(hours=24 * i) for i in range(6)]
 
     return {
-        'tmp': tmax,
-        'vwc': vmax,
-        'd': d,
+        "tmp": tmax,
+        "vwc": vmax,
+        "d": d,
     }
 
 
 def get_soil_depths(dat):
-    cols = dat.columns[dat.columns.str.contains('VWC')].tolist()
+    cols = dat.columns[dat.columns.str.contains("VWC")].tolist()
     vals = dat[cols].sum()
     vals = vals[vals != 0].index.tolist()
     return [" ".join(x.split()[3:5]) for x in vals]
 
+
 def add_soil_legend(sub, idx, xs, y, depths):
     if not idx:
         return sub
-    
+
     labs = {
         "40 in": "#301934",
         "36 in": "#FFA15A",
@@ -504,11 +505,7 @@ def add_soil_legend(sub, idx, xs, y, depths):
             yref=idx[0],
             text=d,
             showarrow=False,
-            font=dict(
-                family="Courier New, monospace",
-                size=12,
-                color="#ffffff"
-                ),
+            font=dict(family="Courier New, monospace", size=12, color="#ffffff"),
             align="center",
             bordercolor="#c7c7c7",
             xanchor="right",
@@ -517,6 +514,7 @@ def add_soil_legend(sub, idx, xs, y, depths):
             opacity=0.8,
         )
     return sub
+
 
 def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
@@ -534,7 +532,7 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
                 no_data.append(v)
                 continue
             if v == "Soil Temperature" or v == "Soil VWC":
-                kwargs.update({'txt': v})
+                kwargs.update({"txt": v})
             plt = plot_func(data, color=params.color_mapper[v], **kwargs)
         plots[v] = plt
 
@@ -559,11 +557,17 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
         return sub
 
     soil_info = get_soil_legend_loc(dat)
-    tmp_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil Temperature" in x]
+    tmp_idx = [
+        f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil Temperature" in x
+    ]
     vwc_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil VWC" in x]
 
-    sub = add_soil_legend(sub, tmp_idx, soil_info['d'], soil_info['tmp'], get_soil_depths(dat))
-    sub = add_soil_legend(sub, vwc_idx, soil_info['d'], soil_info['vwc'], get_soil_depths(dat))
+    sub = add_soil_legend(
+        sub, tmp_idx, soil_info["d"], soil_info["tmp"], get_soil_depths(dat)
+    )
+    sub = add_soil_legend(
+        sub, vwc_idx, soil_info["d"], soil_info["vwc"], get_soil_depths(dat)
+    )
 
     return sub
 

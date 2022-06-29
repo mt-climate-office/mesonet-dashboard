@@ -8,7 +8,7 @@ class params:
 
     API_URL = "https://mesonet.climate.umt.edu/api/v2/"
     SAT_PATH = "/home/cbrust/git/mt-mesonet-satellite/data/master_db.csv"
-    
+
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
 
     elements = [
@@ -167,8 +167,7 @@ class params:
         "GPP": "Gross Primary Production",
         "ET": "Evapotranspiration",
         "PET": "Potential Evapotranspiration",
-        "LAI": "LAI",
-        "Fpar": "FPAR"
+        "Fpar": "FPAR",
     }
 
     satellite_product_map = {
@@ -176,11 +175,24 @@ class params:
         "MOD15A2H.061": "MODIS Terra",
         "MOD13A1.061": "MODIS Terra",
         "SPL4CMDL.006": "SMAP Level-4 Carbon",
-        "MYD16A2.061": "MODIS Aqua", 
-        "MOD16A2.061": "MODIS Terra", 
-        "MYD13A1.061": "MODIS Aqua", 
+        "MYD16A2.061": "MODIS Aqua",
+        "MOD16A2.061": "MODIS Terra",
+        "MYD13A1.061": "MODIS Aqua",
         "MOD17A2H.061": "MODIS Terra",
         "MYD15A2H.061": "MODIS Aqua",
-        "SPL4SMGP.006": "SMAP Level-4 Soil Moisture"
+        "SPL4SMGP.006": "SMAP Level-4 Soil Moisture",
     }
 
+    sat_axis_mapper = {
+        "sm_surface": "Soil VWC<br>(%)",
+        "sm_surface_wetness": "Surface<br>Soil Wetness",
+        "sm_rootzone": "Soil VWC<br>(%)",
+        "sm_rootzone_wetness": "Rootzone<br>Soil Wetness",
+        "GPP": "GPP<br>(g C m^-2)",
+        "ET": "ET<br>(mm day^-1)",
+        "PET": "PET<br>(mm day^-1)",
+        "Fpar": "FPAR",
+        "NDVI": "NDVI", 
+        "EVI": "EVI",
+        "LAI": "LAI",
+    }

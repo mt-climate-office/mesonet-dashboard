@@ -23,10 +23,12 @@ from libs.get_data import (
     clean_format,
     get_station_latest,
     filter_top_of_hour,
+    get_satellite_data
 )
 from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
 from libs.tables import make_metadata_table
-from layout import app_layout, table_styling, build_right_card
+from layout import app_layout, table_styling, build_latest_content, build_satellite_content
+from libs.plot_satellite import plot_all
 
 pd.options.mode.chained_assignment = None
 
@@ -55,7 +57,7 @@ server = app.server
 stations = get_sites()
 station_fig = plot_station(stations)
 
-app.layout = app_layout(app_ref=app, station_fig=station_fig, stations=stations)
+app.layout = app_layout(app_ref=app)
 
 
 def make_nodata_figure(txt="No data avaliable for selected dates."):
@@ -74,9 +76,12 @@ def make_nodata_figure(txt="No data avaliable for selected dates."):
         )
     )
     fig.update_layout(
-        yaxis_visible=False, yaxis_showticklabels=False,
-        xaxis_visible=False, xaxis_showticklabels=False,
-        paper_bgcolor="white", plot_bgcolor="white",
+        yaxis_visible=False,
+        yaxis_showticklabels=False,
+        xaxis_visible=False,
+        xaxis_showticklabels=False,
+        paper_bgcolor="white",
+        plot_bgcolor="white",
     )
     return fig
 
@@ -129,11 +134,13 @@ def get_latest_api_data(station, start, end, hourly):
     if (start or end) and station:
         start = dt.datetime.strptime(start, "%Y-%m-%d").date()
         end = dt.datetime.strptime(end, "%Y-%m-%d").date()
-    
+
         hourly = [hourly] if isinstance(hourly, int) else hourly
 
         try:
-            data = clean_format(station, start_time=start, end_time=end, hourly=len(hourly) == 1)
+            data = clean_format(
+                station, start_time=start, end_time=end, hourly=len(hourly) == 1
+            )
         except AttributeError as e:
             print(e)
             return -1
@@ -225,11 +232,13 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
             top_of_hour=len(hourly) == 1,
         )
 
-    return make_nodata_figure("""
+    return make_nodata_figure(
+        """
         <b>No station selected!</b> <br><br>
         
         To get started, select a station from the dropdown above or the map to the right.
-    """)
+    """
+    )
 
 
 @app.callback(Output("station-dropdown", "value"), Input("url", "pathname"))
@@ -398,17 +407,52 @@ def toggle_feedback(n1, is_open):
 
 @app.callback(
     Output("main-content", "children"),
-    [Input("main-display-tabs", "active_tab")],
-    prevent_initial_call=True
+    [Input("main-display-tabs", "value")]
 )
 def toggle_main_tab(sel):
-    
-    if sel == 'station-tab':
-        return build_right_card(stations, which=sel)
-    elif sel == 'satellite-tab':
-        return build_right_card(stations, which=sel)
+
+    if sel == "station-tab":
+        return build_latest_content(station_fig=station_fig, stations=stations)
+    elif sel == "satellite-tab":
+        return build_satellite_content(stations)
     else:
         print(sel)
+
+
+@app.callback(
+    Output("satellite-plot", "figure"),
+    [
+        Input("station-dropdown-satellite", "value"),
+        Input("sat-vars", "value"),
+    ],
+)
+def render_satellite_plot(station, elements):
+
+    if station is None:
+        return make_nodata_figure(
+        """
+        <b>No station selected!</b> <br><br>
+        
+        To get started, select a station from the dropdown.
+        """
+        )
+    
+    if len(elements) == 0:
+        return make_nodata_figure(
+        """
+        <b>No indicators selected!</b> <br><br>
+        
+        Select an indicator from the checkbox to view the plot. 
+        """
+        )
+    
+    start_time = dt.date.today() - rd(years=1)
+    end_time = dt.date.today()
+    dfs = {x:get_satellite_data(station=station, element=x, start_time=start_time, end_time=end_time) for x in elements}
+
+    return plot_all(dfs)
+
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)

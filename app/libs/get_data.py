@@ -49,7 +49,7 @@ def get_station_record(
     station: str,
     start_time: Union[dt.date, dt.datetime],
     end_time: Union[dt.date, dt.datetime],
-    hourly: Optional[bool] = True
+    hourly: Optional[bool] = True,
 ) -> pd.DataFrame:
     """Given a Mesonet station name and date range, return a dataframe of climate data.
 
@@ -81,9 +81,10 @@ def get_station_record(
 
     payload = parse.urlencode(q, safe=",:")
 
-    r = Request('GET', 
-            url=f"{params.API_URL}observations",
-            params=payload,
+    r = Request(
+        "GET",
+        url=f"{params.API_URL}observations",
+        params=payload,
     ).prepare()
 
     # r = requests.get(
@@ -179,37 +180,41 @@ def get_station_latest(station):
 
     return dat.to_dict("records")
 
-def get_satellite_data(station: str, element: str, start_time: Union[int, dt.date], end_time: Union[int, dt.date]) -> pd.DataFrame:
+
+def get_satellite_data(
+    station: str,
+    element: str,
+    start_time: Union[int, dt.date],
+    end_time: Union[int, dt.date],
+) -> pd.DataFrame:
     """Gather satellite data at a Mesonet station from the Neo4j database.
 
     Args:
-        station (str): The name of the station to query. 
-        element (str): The satellite indicator element to query. 
+        station (str): The name of the station to query.
+        element (str): The satellite indicator element to query.
         start_time (Union[int, dt.date]): The time to begin the query. Can either be a datetime.date object or an int representing seconds since 1970-01-01.
         end_time (Union[int, dt.date]): The time to end the query. Can either be a datetime.date object or an int representing seconds since 1970-01-01.
 
     Returns:
-        pd.DataFrame: Pandas dataframe with data generated from the query. 
+        pd.DataFrame: Pandas dataframe with data generated from the query.
     """
     conn = MesonetSatelliteDB(
-        user=os.getenv('Neo4jUser'),
-        password=os.getenv('Neo4jPassword'),
-        uri=os.getenv('Neo4jURI')
+        user=os.getenv("Neo4jUser"),
+        password=os.getenv("Neo4jPassword"),
+        uri=os.getenv("Neo4jURI"),
     )
 
     if isinstance(start_time, dt.date):
-        start_time = (start_time - dt.date(1970,1,1)).total_seconds()
+        start_time = (start_time - dt.date(1970, 1, 1)).total_seconds()
     if isinstance(end_time, dt.date):
-        end_time = (end_time - dt.date(1970,1,1)).total_seconds()
+        end_time = (end_time - dt.date(1970, 1, 1)).total_seconds()
 
     dat = conn.query(
-        station=station,
-        element=element,
-        start_time=start_time,
-        end_time=end_time
+        station=station, element=element, start_time=start_time, end_time=end_time
     )
     conn.close()
-    
-    dat = dat.assign(date = pd.to_datetime(dat.date, unit="s"))
-    dat = dat.sort_values(by=['platform', 'date'])
+
+    dat = dat.assign(date=pd.to_datetime(dat.date, unit="s"))
+    dat = dat.sort_values(by=["platform", "date"])
+    dat = dat.assign(platform = dat.platform.replace(params.satellite_product_map))
     return dat

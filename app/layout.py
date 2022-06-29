@@ -212,7 +212,8 @@ def build_bottom_left_card(station_fig):
         color="secondary",
     )
 
-def make_station_dropdowns(stations):
+
+def make_station_dropdowns(stations, id):
     return dbc.Col(
         dcc.Dropdown(
             dict(
@@ -221,7 +222,7 @@ def make_station_dropdowns(stations):
                     stations["long_name"],
                 )
             ),
-            id="station-dropdown",
+            id=id,
             placeholder="Select a Mesonet Station...",
             className="stationSelect"
             # style={"width": "150%"}
@@ -233,6 +234,7 @@ def make_station_dropdowns(stations):
         xl=3,
     )
 
+
 def build_dropdowns(stations):
 
     checklist_input = dbc.InputGroup(
@@ -241,9 +243,9 @@ def build_dropdowns(stations):
                 dbc.Checklist(
                     options=[
                         {"value": "Precipitation", "label": "Precipitation"},
+                        {"value": "ET", "label": "Reference ET"},
                         {"value": "Soil VWC", "label": "Soil Moisture"},
                         {"value": "Air Temperature", "label": "Air Temperature"},
-                        {"value": "ET", "label": "Reference ET"},
                         {"value": "Solar Radiation", "label": "Solar Radiation"},
                         {"value": "Soil Temperature", "label": "Soil Temperature"},
                         {"value": "Relative Humidity", "label": "Relative Humidity"},
@@ -270,10 +272,10 @@ def build_dropdowns(stations):
     )
 
     return dbc.Container(
-        [   
+        [
             dbc.Row(
                 [
-                    make_station_dropdowns(stations),
+                    make_station_dropdowns(stations, "station-dropdown"),
                     dbc.Col(
                         dbc.InputGroup(
                             [
@@ -392,27 +394,12 @@ def build_dropdowns(stations):
     )
 
 
-def build_right_card(stations, which):
-    
-    if which == 'station-tab':
-        selectors = build_dropdowns(stations)
-    elif which == 'satellite-tab':
-        selectors = make_station_dropdowns(stations)
-    else:
-        selectors = build_dropdowns(stations)
+def build_right_card(stations):
+
+    selectors = build_dropdowns(stations)
 
     return dbc.Card(
         [
-            dbc.CardHeader(
-                dbc.Tabs(
-                    [
-                        dbc.Tab(label="Latest Data", tab_id="station-tab"),
-                        dbc.Tab(label="Satellite Indicators ", tab_id="satellite-tab"),
-                    ],
-                    id="main-display-tabs",
-                    active_tab=which
-                )
-            ),
             selectors,
             dbc.CardBody(
                 html.Div(
@@ -429,6 +416,115 @@ def build_right_card(stations, which):
     )
 
 
+def build_latest_content(station_fig, stations):
+    return [
+        dbc.Col(
+            [
+                dbc.Row(
+                    build_top_left_card(),
+                    className="h-50",
+                    style={"padding": "0rem 0rem 0.25rem 0rem"},
+                ),
+                dbc.Row(
+                    build_bottom_left_card(station_fig),
+                    className="h-50",
+                    style={"padding": "0.25rem 0rem 0rem 0rem"},
+                ),
+            ],
+            xs={"size": 12, "order": "last", "offset": 0},
+            sm={"size": 12, "order": "last", "offset": 0},
+            md={"size": 12, "order": "last", "offset": 0},
+            lg={"size": 4, "order": "last", "offset": 0},
+            xl={"size": 4, "order": "last", "offset": 0},
+            style={
+                "maxHeight": "92vh",
+                "overflow-y": "scroll",
+                "overflow-x": "clip",
+            },
+        ),
+        dbc.Col(
+            html.Div(
+                build_right_card(stations),
+                style={
+                    "height": "100%",
+                    "maxHeight": "92vh",
+                    # "overflow": "scroll",
+                },
+                id="latest-plots",
+            ),
+            xs={"size": 12, "order": "first", "offset": 0},
+            sm={"size": 12, "order": "first", "offset": 0},
+            md={"size": 12, "order": "first", "offset": 0},
+            lg={"size": 8, "order": "first", "offset": 0},
+            xl={"size": 8, "order": "first", "offset": 0},
+            style={"padding": "0rem 0.5rem 0rem 0.5rem"},
+        ),
+    ]
+
+
+def build_satellite_dropdowns(stations):
+
+    return dbc.Container(
+        [
+            dbc.Row(
+                [
+                    dbc.Col(
+                        make_station_dropdowns(stations, "station-dropdown-satellite"),
+                    ),
+                    dbc.Col(
+                        [
+                            dbc.Checklist(
+                                options=[
+                                    {"value": "ET", "label": "ET"},
+                                    {"value": "PET", "label": "PET"},
+                                    {"label": "Surface Soil Moisture", "value": "sm_surface"},
+                                    {"label": "Surface Soil Wetness", "value": "sm_surface_wetness"},
+                                    {"label": "Rootzone Soil Moisture", "value": "sm_rootzone"},
+                                    {"label": "Rootzone Soil Wetness", "value": "sm_rootzone_wetness"},
+                                    {"value": "GPP", "label": "GPP"},
+                                    {"value": "NDVI", "label": "NDVI"},
+                                    {"value": "EVI", "label": "EVI"},
+                                    {"value": "Fpar", "label": "FPAR"},
+                                    {"value": "LAI", "label": "LAI"},
+                                ],
+                                inline=True,
+                                id="sat-vars",
+                                value=[
+                                    "NDVI",
+                                    "ET",
+                                    "GPP",
+                                ],
+                            ),
+                        ]
+                    ),
+                ],
+                align="center",
+            ),
+        ],
+        fluid=True,
+    )
+
+
+def build_satellite_content(stations):
+
+    selectors = build_satellite_dropdowns(stations)
+    return dbc.Card(
+        [
+            selectors,
+            dbc.CardBody(
+                html.Div(
+                    [
+                        dcc.Graph(id="satellite-plot"),
+                    ]
+                )
+            ),
+        ],
+        color="secondary",
+        outline=True,
+        className="h-100",
+        style={"overflow-y": "scroll", "overflow-x": "clip"},
+    )
+
 table_styling = {
     "css": [
         {
@@ -444,57 +540,28 @@ table_styling = {
 }
 
 
-def app_layout(app_ref, station_fig, stations):
+def app_layout(app_ref):
     return dbc.Container(
         [
             dcc.Location(id="url", refresh=False),
             build_banner(app_ref),
-            dbc.Row(
+            dcc.Tabs(
                 [
-                    dbc.Col(
-                        [
-                            dbc.Row(
-                                build_top_left_card(),
-                                className="h-50",
-                                style={"padding": "0rem 0rem 0.25rem 0rem"},
-                            ),
-                            dbc.Row(
-                                build_bottom_left_card(station_fig),
-                                className="h-50",
-                                style={"padding": "0.25rem 0rem 0rem 0rem"},
-                            ),
-                        ],
-                        xs={"size": 12, "order": "last", "offset": 0},
-                        sm={"size": 12, "order": "last", "offset": 0},
-                        md={"size": 12, "order": "last", "offset": 0},
-                        lg={"size": 4, "order": "last", "offset": 0},
-                        xl={"size": 4, "order": "last", "offset": 0},
-                        style={
-                            "maxHeight": "92vh",
-                            "overflow-y": "scroll",
-                            "overflow-x": "clip",
-                        },
+                    dcc.Tab(
+                        label="Latest Data Dashboard",
+                        id="station-tab",
+                        value="station-tab",
                     ),
-                    dbc.Col(
-                        html.Div(
-                            build_right_card(stations, which="station-tab"),
-                            style={
-                                "height": "100%",
-                                "maxHeight": "92vh",
-                                # "overflow": "scroll",
-                            },
-                            id="main-content"
-                        ),
-                        xs={"size": 12, "order": "first", "offset": 0},
-                        sm={"size": 12, "order": "first", "offset": 0},
-                        md={"size": 12, "order": "first", "offset": 0},
-                        lg={"size": 8, "order": "first", "offset": 0},
-                        xl={"size": 8, "order": "first", "offset": 0},
-                        style={"padding": "0rem 0.5rem 0rem 0.5rem"},
+                    dcc.Tab(
+                        label="Satellite Indicators Dashboard",
+                        id="satellite-tab",
+                        value="satellite-tab",
                     ),
                 ],
-                className="h-100",
+                id="main-display-tabs",
+                value="station-tab",
             ),
+            dbc.Row(className="h-100", id="main-content"),
             dcc.Store(id="temp-station-data", storage_type="session"),
             generate_modal(),
             feedback_iframe(),
