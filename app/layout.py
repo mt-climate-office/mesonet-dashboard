@@ -477,10 +477,22 @@ def build_satellite_dropdowns(stations):
                                 options=[
                                     {"value": "ET", "label": "ET"},
                                     {"value": "PET", "label": "PET"},
-                                    {"label": "Surface Soil Moisture", "value": "sm_surface"},
-                                    {"label": "Surface Soil Wetness", "value": "sm_surface_wetness"},
-                                    {"label": "Rootzone Soil Moisture", "value": "sm_rootzone"},
-                                    {"label": "Rootzone Soil Wetness", "value": "sm_rootzone_wetness"},
+                                    {
+                                        "label": "Surface Soil Moisture",
+                                        "value": "sm_surface",
+                                    },
+                                    {
+                                        "label": "Surface Soil Wetness",
+                                        "value": "sm_surface_wetness",
+                                    },
+                                    {
+                                        "label": "Rootzone Soil Moisture",
+                                        "value": "sm_rootzone",
+                                    },
+                                    {
+                                        "label": "Rootzone Soil Wetness",
+                                        "value": "sm_rootzone_wetness",
+                                    },
                                     {"value": "GPP", "label": "GPP"},
                                     {"value": "NDVI", "label": "NDVI"},
                                     {"value": "EVI", "label": "EVI"},
@@ -524,6 +536,7 @@ def build_satellite_content(stations):
         className="h-100",
         style={"overflow-y": "scroll", "overflow-x": "clip"},
     )
+
 
 table_styling = {
     "css": [

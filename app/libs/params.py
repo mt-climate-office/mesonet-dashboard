@@ -192,7 +192,7 @@ class params:
         "ET": "ET<br>(mm day^-1)",
         "PET": "PET<br>(mm day^-1)",
         "Fpar": "FPAR",
-        "NDVI": "NDVI", 
+        "NDVI": "NDVI",
         "EVI": "EVI",
         "LAI": "LAI",
     }

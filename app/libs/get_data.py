@@ -216,5 +216,5 @@ def get_satellite_data(
 
     dat = dat.assign(date=pd.to_datetime(dat.date, unit="s"))
     dat = dat.sort_values(by=["platform", "date"])
-    dat = dat.assign(platform = dat.platform.replace(params.satellite_product_map))
+    dat = dat.assign(platform=dat.platform.replace(params.satellite_product_map))
     return dat

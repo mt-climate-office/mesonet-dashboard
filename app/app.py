@@ -23,11 +23,16 @@ from libs.get_data import (
     clean_format,
     get_station_latest,
     filter_top_of_hour,
-    get_satellite_data
+    get_satellite_data,
 )
 from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
 from libs.tables import make_metadata_table
-from layout import app_layout, table_styling, build_latest_content, build_satellite_content
+from layout import (
+    app_layout,
+    table_styling,
+    build_latest_content,
+    build_satellite_content,
+)
 from libs.plot_satellite import plot_all
 
 pd.options.mode.chained_assignment = None
@@ -405,10 +410,7 @@ def toggle_feedback(n1, is_open):
     return is_open
 
 
-@app.callback(
-    Output("main-content", "children"),
-    [Input("main-display-tabs", "value")]
-)
+@app.callback(Output("main-content", "children"), [Input("main-display-tabs", "value")])
 def toggle_main_tab(sel):
 
     if sel == "station-tab":
@@ -430,28 +432,32 @@ def render_satellite_plot(station, elements):
 
     if station is None:
         return make_nodata_figure(
-        """
+            """
         <b>No station selected!</b> <br><br>
         
         To get started, select a station from the dropdown.
         """
         )
-    
+
     if len(elements) == 0:
         return make_nodata_figure(
-        """
+            """
         <b>No indicators selected!</b> <br><br>
         
         Select an indicator from the checkbox to view the plot. 
         """
         )
-    
+
     start_time = dt.date.today() - rd(years=1)
     end_time = dt.date.today()
-    dfs = {x:get_satellite_data(station=station, element=x, start_time=start_time, end_time=end_time) for x in elements}
+    dfs = {
+        x: get_satellite_data(
+            station=station, element=x, start_time=start_time, end_time=end_time
+        )
+        for x in elements
+    }
 
     return plot_all(dfs)
-
 
 
 if __name__ == "__main__":
