@@ -159,4 +159,28 @@ class params:
         "NNW",
     ]
 
-    
+    satellite_var_mapper = {
+        "sm_surface": "Surface Soil Moisture",
+        "sm_surface_wetness": "Surface Soil Wetness",
+        "sm_rootzone": "Rootzone Soil Moisture",
+        "sm_rootzone_wetness": "Rootzone Soil Wetness",
+        "GPP": "Gross Primary Production",
+        "ET": "Evapotranspiration",
+        "PET": "Potential Evapotranspiration",
+        "LAI": "LAI",
+        "Fpar": "FPAR"
+    }
+
+    satellite_product_map = {
+        "MYD17A2H.061": "MODIS Aqua",
+        "MOD15A2H.061": "MODIS Terra",
+        "MOD13A1.061": "MODIS Terra",
+        "SPL4CMDL.006": "SMAP Level-4 Carbon",
+        "MYD16A2.061": "MODIS Aqua", 
+        "MOD16A2.061": "MODIS Terra", 
+        "MYD13A1.061": "MODIS Aqua", 
+        "MOD17A2H.061": "MODIS Terra",
+        "MYD15A2H.061": "MODIS Aqua",
+        "SPL4SMGP.006": "SMAP Level-4 Soil Moisture"
+    }
+

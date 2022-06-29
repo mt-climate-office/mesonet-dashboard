@@ -212,6 +212,26 @@ def build_bottom_left_card(station_fig):
         color="secondary",
     )
 
+def make_station_dropdowns(stations):
+    return dbc.Col(
+        dcc.Dropdown(
+            dict(
+                zip(
+                    stations["station"],
+                    stations["long_name"],
+                )
+            ),
+            id="station-dropdown",
+            placeholder="Select a Mesonet Station...",
+            className="stationSelect"
+            # style={"width": "150%"}
+        ),
+        xs=10,
+        sm=10,
+        md=10,
+        lg=3,
+        xl=3,
+    )
 
 def build_dropdowns(stations):
 
@@ -249,46 +269,11 @@ def build_dropdowns(stations):
         size="lg",
     )
 
-    tabs_styles = {"height": "44px"}
-    tabs_container_styles = {"width": "95%", "display": "inline-block"}
-
     return dbc.Container(
-        [
-        html.Div(
-            children=[
-                dcc.Tabs(
-                    id="tabs-styled-with-inline",
-                    value="tab-1",
-                    children=[
-                        dcc.Tab(label="Page1", value="tab-1"),
-                        dcc.Tab(label="Page2", value="tab-2"),
-                    ],
-                    style=tabs_styles,
-                )
-            ],
-            style=tabs_container_styles,
-        ),
+        [   
             dbc.Row(
                 [
-                    dbc.Col(
-                        dcc.Dropdown(
-                            dict(
-                                zip(
-                                    stations["station"],
-                                    stations["long_name"],
-                                )
-                            ),
-                            id="station-dropdown",
-                            placeholder="Select a Mesonet Station...",
-                            className="stationSelect"
-                            # style={"width": "150%"}
-                        ),
-                        xs=10,
-                        sm=10,
-                        md=10,
-                        lg=3,
-                        xl=3,
-                    ),
+                    make_station_dropdowns(stations),
                     dbc.Col(
                         dbc.InputGroup(
                             [
@@ -407,19 +392,31 @@ def build_dropdowns(stations):
     )
 
 
-def build_right_card(stations):
+def build_right_card(stations, which):
+    
+    if which == 'station-tab':
+        selectors = build_dropdowns(stations)
+    elif which == 'satellite-tab':
+        selectors = make_station_dropdowns(stations)
+    else:
+        selectors = build_dropdowns(stations)
 
     return dbc.Card(
         [
-            build_dropdowns(stations),
+            dbc.CardHeader(
+                dbc.Tabs(
+                    [
+                        dbc.Tab(label="Latest Data", tab_id="station-tab"),
+                        dbc.Tab(label="Satellite Indicators ", tab_id="satellite-tab"),
+                    ],
+                    id="main-display-tabs",
+                    active_tab=which
+                )
+            ),
+            selectors,
             dbc.CardBody(
                 html.Div(
                     [
-                        # TODO: Create a date range slider as described here: https://community.plotly.com/t/solved-has-anyone-made-a-date-range-slider/6531/8
-                        # dcc.RangeSlider(
-                        #     dt.date.today() - rd(weeks=2),
-                        #     dt.date.today(),
-                        # ),
                         dcc.Graph(id="station-data"),
                     ]
                 )
@@ -480,12 +477,13 @@ def app_layout(app_ref, station_fig, stations):
                     ),
                     dbc.Col(
                         html.Div(
-                            build_right_card(stations),
+                            build_right_card(stations, which="station-tab"),
                             style={
                                 "height": "100%",
                                 "maxHeight": "92vh",
                                 # "overflow": "scroll",
                             },
+                            id="main-content"
                         ),
                         xs={"size": 12, "order": "first", "offset": 0},
                         sm={"size": 12, "order": "first", "offset": 0},

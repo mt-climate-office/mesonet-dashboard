@@ -26,7 +26,7 @@ from libs.get_data import (
 )
 from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
 from libs.tables import make_metadata_table
-from layout import app_layout, table_styling
+from layout import app_layout, table_styling, build_right_card
 
 pd.options.mode.chained_assignment = None
 
@@ -102,9 +102,6 @@ def update_banner_text(station, options):
     ],
 )
 def update_bl_card(at, station, tmp_data):
-    if station is None or tmp_data is None:
-        return dcc.Graph(id="station-fig", figure=station_fig)
-
     if at == "map-tab":
         return dcc.Graph(id="station-fig", figure=station_fig)
     elif at == "meta-tab":
@@ -201,7 +198,7 @@ def enable_date_button(station):
     ],
 )
 def render_station_plot(tmp_data, select_vars, station, hourly, norm):
-
+    print(station)
     hourly = [hourly] if isinstance(hourly, int) else hourly
     norm = [norm] if isinstance(norm, int) else norm
 
@@ -267,18 +264,20 @@ def select_default_tab(station):
         Input("ul-tabs", "active_tab"),
         Input("station-dropdown", "value"),
         Input("temp-station-data", "data"),
-        Input("start-date", "date"),
-        Input("end-date", "date"),
     ],
 )
-def update_ul_card(at, station, tmp_data, start_date, end_date):
-    if station is None or tmp_data is None:
+def update_ul_card(at, station, tmp_data=None):
+    if station is None:
         return html.Div()
-
     if at == "wind-tab":
+        if not tmp_data:
+            return html.Div()
         if tmp_data != -1:
             data = pd.read_json(tmp_data, orient="records")
             data.datetime = data.datetime.dt.tz_convert("America/Denver")
+            start_date = data.datetime.min().date()
+            end_date = data.datetime.max().date()
+
             data = data[["Wind Direction [deg]", "Wind Speed [mi/hr]"]]
             fig = plot_wind(data)
             fig.update_layout(
@@ -311,6 +310,7 @@ def update_ul_card(at, station, tmp_data, start_date, end_date):
         row = stations[stations["station"] == station]
         url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
         return html.Div(html.Iframe(src=url), className="second-row")
+
     else:
         buttons = dbc.RadioItems(
             id="photo-direction",
@@ -341,31 +341,6 @@ def update_ul_card(at, station, tmp_data, start_date, end_date):
 )
 def update_photo_direction(station, direction):
     return plot_latest_ace_image(station, direction=direction)
-
-
-# TODO: Make download only happen on button click, not after when station changes.
-# @app.callback(
-#     Output("data-download", "data"),
-#     [
-#         Input("download-button", "n_clicks"),
-#         Input("temp-station-data", "data"),
-#         Input("start-date", "date"),
-#         Input("end-date", "date"),
-#         Input("station-dropdown", "value"),
-#     ],
-#     prevent_initial_callback=True,
-# )
-# def download_called_data(n_clicks, tmp_data, start: dt.date, end: dt.date, station):
-
-#     ctx = callback_context
-#     flag = ctx.triggered[0]["prop_id"] == "download-button.n_clicks"
-#     if flag and tmp_data:
-#         data = pd.read_json(tmp_data, orient="records")
-#         data = data.assign(datetime=data.datetime.dt.tz_convert("America/Denver"))
-#         return dcc.send_data_frame(
-#             data.to_csv,
-#             f"{station}_MTMesonet_{start.replace('-', '')}_{end.replace('-', '')}.csv",
-#         )
 
 
 @app.callback(
@@ -421,6 +396,19 @@ def toggle_feedback(n1, is_open):
     return is_open
 
 
+@app.callback(
+    Output("main-content", "children"),
+    [Input("main-display-tabs", "active_tab")],
+    prevent_initial_call=True
+)
+def toggle_main_tab(sel):
+    
+    if sel == 'station-tab':
+        return build_right_card(stations, which=sel)
+    elif sel == 'satellite-tab':
+        return build_right_card(stations, which=sel)
+    else:
+        print(sel)
 
 if __name__ == "__main__":
     app.run_server(debug=True)
