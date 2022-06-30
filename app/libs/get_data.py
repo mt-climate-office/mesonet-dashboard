@@ -217,4 +217,12 @@ def get_satellite_data(
     dat = dat.assign(date=pd.to_datetime(dat.date, unit="s"))
     dat = dat.sort_values(by=["platform", "date"])
     dat = dat.assign(platform=dat.platform.replace(params.satellite_product_map))
+    dat = dat.assign(
+        value=np.where(dat.units.str.contains("_sm_"), dat.value * 100, dat.value)
+    )
+    dat = dat.assign(value=np.where(dat.units == "Percent", dat.value * 100, dat.value))
+    #TODO: Change ET code when fixed in DB. 
+    dat = dat.assign(value=np.where(dat.element == "ET", dat.value / 8, dat.value))
+    dat = dat.assign(value=np.where(dat.element == "PET", dat.value / 8, dat.value))
+
     return dat

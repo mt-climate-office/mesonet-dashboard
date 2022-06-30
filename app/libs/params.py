@@ -7,7 +7,6 @@ import dateutil.relativedelta as rd
 class params:
 
     API_URL = "https://mesonet.climate.umt.edu/api/v2/"
-    SAT_PATH = "/home/cbrust/git/mt-mesonet-satellite/data/master_db.csv"
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
 

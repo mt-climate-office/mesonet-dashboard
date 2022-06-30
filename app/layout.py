@@ -214,24 +214,17 @@ def build_bottom_left_card(station_fig):
 
 
 def make_station_dropdowns(stations, id):
-    return dbc.Col(
-        dcc.Dropdown(
-            dict(
-                zip(
-                    stations["station"],
-                    stations["long_name"],
-                )
-            ),
-            id=id,
-            placeholder="Select a Mesonet Station...",
-            className="stationSelect"
-            # style={"width": "150%"}
+    return dcc.Dropdown(
+        dict(
+            zip(
+                stations["station"],
+                stations["long_name"],
+            )
         ),
-        xs=10,
-        sm=10,
-        md=10,
-        lg=3,
-        xl=3,
+        id=id,
+        placeholder="Select a Mesonet Station...",
+        className="stationSelect"
+        # style={"width": "150%"}
     )
 
 
@@ -275,7 +268,14 @@ def build_dropdowns(stations):
         [
             dbc.Row(
                 [
-                    make_station_dropdowns(stations, "station-dropdown"),
+                    dbc.Col(
+                        make_station_dropdowns(stations, "station-dropdown"),
+                        xs=10,
+                        sm=10,
+                        md=10,
+                        lg=3,
+                        xl=3,
+                    ),
                     dbc.Col(
                         dbc.InputGroup(
                             [
@@ -457,7 +457,7 @@ def build_latest_content(station_fig, stations):
             md={"size": 12, "order": "first", "offset": 0},
             lg={"size": 8, "order": "first", "offset": 0},
             xl={"size": 8, "order": "first", "offset": 0},
-            style={"padding": "0rem 0.5rem 0rem 0.5rem"},
+            style={"padding": "0rem 0.5rem 0rem 0rem"},
         ),
     ]
 
@@ -470,47 +470,58 @@ def build_satellite_dropdowns(stations):
                 [
                     dbc.Col(
                         make_station_dropdowns(stations, "station-dropdown-satellite"),
+                        xs=12,
+                        sm=12,
+                        md=3,
+                        lg=3,
+                        xl=3,
                     ),
                     dbc.Col(
                         [
-                            dbc.Checklist(
-                                options=[
-                                    {"value": "ET", "label": "ET"},
-                                    {"value": "PET", "label": "PET"},
-                                    {
-                                        "label": "Surface Soil Moisture",
-                                        "value": "sm_surface",
-                                    },
-                                    {
-                                        "label": "Surface Soil Wetness",
-                                        "value": "sm_surface_wetness",
-                                    },
-                                    {
-                                        "label": "Rootzone Soil Moisture",
-                                        "value": "sm_rootzone",
-                                    },
-                                    {
-                                        "label": "Rootzone Soil Wetness",
-                                        "value": "sm_rootzone_wetness",
-                                    },
-                                    {"value": "GPP", "label": "GPP"},
-                                    {"value": "NDVI", "label": "NDVI"},
-                                    {"value": "EVI", "label": "EVI"},
-                                    {"value": "Fpar", "label": "FPAR"},
-                                    {"value": "LAI", "label": "LAI"},
-                                ],
-                                inline=True,
-                                id="sat-vars",
-                                value=[
-                                    "NDVI",
-                                    "ET",
-                                    "GPP",
-                                ],
-                            ),
-                        ]
+                                    dbc.Checklist(
+                                        options=[
+                                            {"value": "ET", "label": "ET"},
+                                            {"value": "EVI", "label": "EVI"},
+                                            {"value": "Fpar", "label": "FPAR"},
+                                            {"value": "GPP", "label": "GPP"},
+                                            {"value": "LAI", "label": "LAI"},
+                                            {"value": "NDVI", "label": "NDVI"},
+                                            {"value": "PET", "label": "PET"},
+                                            {
+                                                "label": "Rootzone Soil Moisture",
+                                                "value": "sm_rootzone",
+                                            },
+                                            {
+                                                "label": "Rootzone Soil Wetness",
+                                                "value": "sm_rootzone_wetness",
+                                            },
+                                            {
+                                                "label": "Surface Soil Moisture",
+                                                "value": "sm_surface",
+                                            },
+                                            {
+                                                "label": "Surface Soil Wetness",
+                                                "value": "sm_surface_wetness",
+                                            },
+                                        ],
+                                        inline=True,
+                                        id="sat-vars",
+                                        value=[
+                                            "ET",
+                                            "GPP",
+                                            "NDVI",
+                                        ],
+                                    ),
+                        ],
+                        xs=12,
+                        sm=12,
+                        md=9,
+                        lg=9,
+                        xl=9,
                     ),
                 ],
                 align="center",
+                style={"padding": "0.75rem 0rem 0rem 0rem"},
             ),
         ],
         fluid=True,
@@ -534,7 +545,8 @@ def build_satellite_content(stations):
         color="secondary",
         outline=True,
         className="h-100",
-        style={"overflow-y": "scroll", "overflow-x": "clip"},
+        style={"overflow-x": "clip"},
+
     )
 
 
@@ -554,21 +566,27 @@ table_styling = {
 
 
 def app_layout(app_ref):
+    tab_height = "4.5vh"
     return dbc.Container(
         [
             dcc.Location(id="url", refresh=False),
             build_banner(app_ref),
             dcc.Tabs(
-                [
+                style={"width": "100%", "font-size": "100%", "height": tab_height},
+                children=[
                     dcc.Tab(
                         label="Latest Data Dashboard",
                         id="station-tab",
                         value="station-tab",
+                        style={"padding": "0", "line-height": tab_height},
+                        selected_style={"padding": "0", "line-height": tab_height},
                     ),
                     dcc.Tab(
                         label="Satellite Indicators Dashboard",
                         id="satellite-tab",
                         value="satellite-tab",
+                        style={"padding": "0", "line-height": tab_height},
+                        selected_style={"padding": "0", "line-height": tab_height},
                     ),
                 ],
                 id="main-display-tabs",
@@ -587,5 +605,5 @@ def app_layout(app_ref):
             ),
         ],
         fluid=True,
-        style={"height": "100%", "backgroundColor": "#E9ECEF"},
+        style={"height": "100%", "backgroundColor": "#E9ECEF", "padding": "0rem 1.5rem 0rem 1.5rem"},
     )

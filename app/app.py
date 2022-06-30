@@ -210,7 +210,6 @@ def enable_date_button(station):
     ],
 )
 def render_station_plot(tmp_data, select_vars, station, hourly, norm):
-    print(station)
     hourly = [hourly] if isinstance(hourly, int) else hourly
     norm = [norm] if isinstance(norm, int) else norm
 
@@ -418,7 +417,7 @@ def toggle_main_tab(sel):
     elif sel == "satellite-tab":
         return build_satellite_content(stations)
     else:
-        print(sel)
+        return build_latest_content(station_fig=station_fig, stations=stations)
 
 
 @app.callback(
