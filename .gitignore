@@ -9,3 +9,5 @@ v2/app/.maptiler_token
 local_launch.sh
 app/scratch.py
 app/load.py
+.env
+app/libs/.env
