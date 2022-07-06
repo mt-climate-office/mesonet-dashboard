@@ -447,7 +447,7 @@ def render_satellite_plot(station, elements):
         """
         )
 
-    start_time = dt.date.today() - rd(years=1)
+    start_time = dt.date(2000, 1, 1)
     end_time = dt.date.today()
     dfs = {
         x: get_satellite_data(

@@ -195,3 +195,10 @@ class params:
         "EVI": "EVI",
         "LAI": "LAI",
     }
+
+    sat_color_mapper = {
+        "MODIS Aqua": '#1f78b4',
+        "MODIS Terra": '#33a02c',
+        "SMAP Level-4 Carbon": '#e31a1c',
+        "SMAP Level-4 Soil Moisture": '#ff7f00',
+    }

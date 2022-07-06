@@ -224,5 +224,8 @@ def get_satellite_data(
     #TODO: Change ET code when fixed in DB. 
     dat = dat.assign(value=np.where(dat.element == "ET", dat.value / 8, dat.value))
     dat = dat.assign(value=np.where(dat.element == "PET", dat.value / 8, dat.value))
+    dat.reset_index(drop=True, inplace=True)
+    dat = dat.assign(year = dat.date.dt.year)
+
 
     return dat

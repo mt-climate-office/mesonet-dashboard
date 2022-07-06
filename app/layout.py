@@ -14,9 +14,14 @@ def generate_modal():
                     dcc.Markdown(
                         """
                         #### The Montana Mesonet Dashboard
-                        Welcome to the Montana Mesonet Dashboard! This dashboard visualizes historical data from all stations that are a part of the Montana Mesonet.
+                        Welcome to the Montana Mesonet Dashboard! This dashboard visualizes historical data from all stations that are a part of the Montana Mesonet. 
                         To visualize data from a station, either select a station from the dropdown on the top left, click a station on the locator map, or add a station name to the URL path (e.g. [https://mesonet.climate.umt.edu/dash/crowagen](https://mesonet.climate.umt.edu/dash/crowagen)).
-                        The station data is aggregated on demand from the [Montana Mesonet API](https://mesonet.climate.umt.edu/api/v2/docs). If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, please:
+                        The station data is aggregated on demand from the [Montana Mesonet API](https://mesonet.climate.umt.edu/api/v2/docs).
+                        
+                        The "Satellite Indicators" tab uses data from NASA satellites to provide timeseries of relevant indicators at all Mesonet stations. 
+                        To display data on this tab, select a station from the dropdown on the left. Selecting the "Timeseries" button shows a timeseries of a given variable for the current year, with previous years plotted as grey lines in the background for context.
+                        Selecting the "Comparison" button allows you to choose two variable to plot against one another for the current year. 
+                        If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, please:
                         - Email [colin.brust@mso.umt.edu](mailto:colin.brust@mso.umt.edu),
                         - Fill out our [feedback form](https://airtable.com/shrxlaYUu6DcyK98s),
                         - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
@@ -575,14 +580,14 @@ def app_layout(app_ref):
                 style={"width": "100%", "font-size": "100%", "height": tab_height},
                 children=[
                     dcc.Tab(
-                        label="Latest Data Dashboard",
+                        label="Latest Data",
                         id="station-tab",
                         value="station-tab",
                         style={"padding": "0", "line-height": tab_height},
                         selected_style={"padding": "0", "line-height": tab_height},
                     ),
                     dcc.Tab(
-                        label="Satellite Indicators Dashboard",
+                        label="Satellite Indicators",
                         id="satellite-tab",
                         value="satellite-tab",
                         style={"padding": "0", "line-height": tab_height},
