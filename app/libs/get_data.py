@@ -186,6 +186,7 @@ def get_satellite_data(
     element: str,
     start_time: Union[int, dt.date],
     end_time: Union[int, dt.date],
+    platform: Optional[str] = None,
 ) -> pd.DataFrame:
     """Gather satellite data at a Mesonet station from the Neo4j database.
 
@@ -221,11 +222,10 @@ def get_satellite_data(
         value=np.where(dat.units.str.contains("_sm_"), dat.value * 100, dat.value)
     )
     dat = dat.assign(value=np.where(dat.units == "Percent", dat.value * 100, dat.value))
-    #TODO: Change ET code when fixed in DB. 
-    dat = dat.assign(value=np.where(dat.element == "ET", dat.value / 8, dat.value))
-    dat = dat.assign(value=np.where(dat.element == "PET", dat.value / 8, dat.value))
+
     dat.reset_index(drop=True, inplace=True)
-    dat = dat.assign(year = dat.date.dt.year)
+    dat = dat.assign(year=dat.date.dt.year)
 
-
+    if platform:
+        dat = dat[dat["platform"] == params.satellite_product_map[platform]]
     return dat

@@ -14,7 +14,7 @@ from .et_calc import fao_etr_hourly as et_h
 from .params import params
 
 
-def style_figure(fig, x_ticks):
+def style_figure(fig, x_ticks=None):
     fig.update_layout(
         {"plot_bgcolor": "rgba(0, 0, 0, 0)"},
     )
@@ -23,9 +23,10 @@ def style_figure(fig, x_ticks):
     fig.update_layout(showlegend=False)
 
     # finish implementing this: https://stackoverflow.com/questions/63213050/plotly-how-to-set-xticks-for-all-subplots
-    for ax in fig["layout"]:
-        if ax[:5] == "xaxis":
-            fig["layout"][ax]["range"] = x_ticks
+    if x_ticks:
+        for ax in fig["layout"]:
+            if ax[:5] == "xaxis":
+                fig["layout"][ax]["range"] = x_ticks
 
     return fig
 

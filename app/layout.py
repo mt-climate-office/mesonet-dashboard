@@ -4,6 +4,8 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
+from libs.params import params
+
 
 def generate_modal():
     return html.Div(
@@ -218,7 +220,7 @@ def build_bottom_left_card(station_fig):
     )
 
 
-def make_station_dropdowns(stations, id):
+def make_station_dropdowns(stations, id, station):
     return dcc.Dropdown(
         dict(
             zip(
@@ -228,7 +230,8 @@ def make_station_dropdowns(stations, id):
         ),
         id=id,
         placeholder="Select a Mesonet Station...",
-        className="stationSelect"
+        className="stationSelect",
+        value=station,
         # style={"width": "150%"}
     )
 
@@ -274,7 +277,7 @@ def build_dropdowns(stations):
             dbc.Row(
                 [
                     dbc.Col(
-                        make_station_dropdowns(stations, "station-dropdown"),
+                        make_station_dropdowns(stations, "station-dropdown", None),
                         xs=10,
                         sm=10,
                         md=10,
@@ -467,69 +470,123 @@ def build_latest_content(station_fig, stations):
     ]
 
 
-def build_satellite_dropdowns(stations):
+def build_satellite_ts_selector():
+    return (
+        dbc.Col(
+            [
+                dbc.Checklist(
+                    options=[
+                        {"value": "ET", "label": "ET"},
+                        {"value": "EVI", "label": "EVI"},
+                        {"value": "Fpar", "label": "FPAR"},
+                        {"value": "GPP", "label": "GPP"},
+                        {"value": "LAI", "label": "LAI"},
+                        {"value": "NDVI", "label": "NDVI"},
+                        {"value": "PET", "label": "PET"},
+                        {
+                            "label": "Rootzone Soil Moisture",
+                            "value": "sm_rootzone",
+                        },
+                        {
+                            "label": "Rootzone Soil Wetness",
+                            "value": "sm_rootzone_wetness",
+                        },
+                        {
+                            "label": "Surface Soil Moisture",
+                            "value": "sm_surface",
+                        },
+                        {
+                            "label": "Surface Soil Wetness",
+                            "value": "sm_surface_wetness",
+                        },
+                    ],
+                    inline=True,
+                    id="sat-vars",
+                    value=[
+                        "ET",
+                        "GPP",
+                        "NDVI",
+                    ],
+                ),
+            ],
+            xs=12,
+            sm=12,
+            md=6,
+            lg=6,
+            xl=6,
+        ),
+    )
 
-    return dbc.Container(
-        [
-            dbc.Row(
-                [
-                    dbc.Col(
-                        make_station_dropdowns(stations, "station-dropdown-satellite"),
-                        xs=12,
-                        sm=12,
-                        md=3,
-                        lg=3,
-                        xl=3,
-                    ),
-                    dbc.Col(
-                        [
-                                    dbc.Checklist(
-                                        options=[
-                                            {"value": "ET", "label": "ET"},
-                                            {"value": "EVI", "label": "EVI"},
-                                            {"value": "Fpar", "label": "FPAR"},
-                                            {"value": "GPP", "label": "GPP"},
-                                            {"value": "LAI", "label": "LAI"},
-                                            {"value": "NDVI", "label": "NDVI"},
-                                            {"value": "PET", "label": "PET"},
-                                            {
-                                                "label": "Rootzone Soil Moisture",
-                                                "value": "sm_rootzone",
-                                            },
-                                            {
-                                                "label": "Rootzone Soil Wetness",
-                                                "value": "sm_rootzone_wetness",
-                                            },
-                                            {
-                                                "label": "Surface Soil Moisture",
-                                                "value": "sm_surface",
-                                            },
-                                            {
-                                                "label": "Surface Soil Wetness",
-                                                "value": "sm_surface_wetness",
-                                            },
-                                        ],
-                                        inline=True,
-                                        id="sat-vars",
-                                        value=[
-                                            "ET",
-                                            "GPP",
-                                            "NDVI",
-                                        ],
-                                    ),
-                        ],
-                        xs=12,
-                        sm=12,
-                        md=9,
-                        lg=9,
-                        xl=9,
-                    ),
+
+def build_satellite_comp_selector():
+    return [
+        dbc.Col(
+            dcc.Dropdown(
+                options=[
+                    {"label": k, "value": v}
+                    for k, v in params.sat_compare_mapper.items()
                 ],
-                align="center",
-                style={"padding": "0.75rem 0rem 0rem 0rem"},
+                id="compare1",
+                placeholder="Select a Product...",
+                className="stationSelect"
+                # style={"width": "150%"}
+            )
+        ),
+        dbc.Col(
+            dcc.Dropdown(
+                options=[
+                    {"label": k, "value": v}
+                    for k, v in params.sat_compare_mapper.items()
+                ],
+                id="compare2",
+                placeholder="Select a Product...",
+                className="stationSelect"
+                # style={"width": "150%"}
+            )
+        ),
+    ]
+
+
+def build_satellite_dropdowns(stations, timeseries=True, station=None):
+
+    if timeseries:
+        content = build_satellite_ts_selector()
+    else:
+        content = build_satellite_comp_selector()
+
+    children = [
+        dbc.Col(
+            make_station_dropdowns(stations, "station-dropdown-satellite", station),
+            xs=12,
+            sm=12,
+            md=3,
+            lg=3,
+            xl=3,
+        ),
+        dbc.Col(
+            dbc.RadioItems(
+                options=[
+                    {"label": "Timeseries Plot", "value": "timeseries"},
+                    {"label": "Comparison Plot", "value": "compare"},
+                ],
+                value="timeseries" if timeseries else "compare",
+                id="satellite-radio",
+                inline=True,
             ),
-        ],
-        fluid=True,
+            xs=12,
+            sm=12,
+            md=3,
+            lg=3,
+            xl=3,
+        ),
+    ]
+    children += content
+    return (
+        dbc.Row(
+            children=children,
+            align="center",
+            style={"padding": "0.75rem 0rem 0rem 0rem"},
+        ),
     )
 
 
@@ -538,12 +595,17 @@ def build_satellite_content(stations):
     selectors = build_satellite_dropdowns(stations)
     return dbc.Card(
         [
-            selectors,
+            dbc.Container(
+                selectors,
+                fluid=True,
+                id="satellite-selectors",
+            ),
             dbc.CardBody(
                 html.Div(
                     [
                         dcc.Graph(id="satellite-plot"),
-                    ]
+                    ],
+                    id="satellite-graph",
                 )
             ),
         ],
@@ -551,7 +613,6 @@ def build_satellite_content(stations):
         outline=True,
         className="h-100",
         style={"overflow-x": "clip"},
-
     )
 
 
@@ -610,5 +671,9 @@ def app_layout(app_ref):
             ),
         ],
         fluid=True,
-        style={"height": "100%", "backgroundColor": "#E9ECEF", "padding": "0rem 1.5rem 0rem 1.5rem"},
+        style={
+            "height": "100%",
+            "backgroundColor": "#E9ECEF",
+            "padding": "0rem 1.5rem 0rem 1.5rem",
+        },
     )

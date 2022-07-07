@@ -32,8 +32,9 @@ from layout import (
     table_styling,
     build_latest_content,
     build_satellite_content,
+    build_satellite_dropdowns,
 )
-from libs.plot_satellite import plot_all
+from libs.plot_satellite import plot_all, plot_comparison
 
 pd.options.mode.chained_assignment = None
 
@@ -421,6 +422,23 @@ def toggle_main_tab(sel):
 
 
 @app.callback(
+    [Output("satellite-selectors", "children"), Output("satellite-graph", "children")],
+    Input("satellite-radio", "value"),
+    State("station-dropdown-satellite", "value"),
+)
+def update_sat_selectors(sel, station):
+    if sel == "timeseries":
+        graph = dcc.Graph(id="satellite-plot")
+    else:
+        graph = dcc.Graph(id="satellite-compare")
+
+    return (
+        build_satellite_dropdowns(stations, sel == "timeseries", station=station),
+        graph,
+    )
+
+
+@app.callback(
     Output("satellite-plot", "figure"),
     [
         Input("station-dropdown-satellite", "value"),
@@ -457,6 +475,58 @@ def render_satellite_plot(station, elements):
     }
 
     return plot_all(dfs)
+
+
+@app.callback(
+    Output("satellite-compare", "figure"),
+    [
+        Input("station-dropdown-satellite", "value"),
+        Input("compare1", "value"),
+        Input("compare2", "value"),
+    ],
+)
+def render_satellite_plot(station, value1, value2):
+
+    if station is None:
+        return make_nodata_figure(
+            """
+        <b>No station selected!</b> <br><br>
+        
+        To get started, select a station from the dropdown.
+        """
+        )
+
+    if not (value1 and value2):
+        return make_nodata_figure(
+            """
+        <b>No indicators selected!</b> <br><br>
+        
+        Please select two indicators to view the plot. 
+        """
+        )
+
+    element1, platform1 = value1.split("-")
+    element2, platform2 = value2.split("-")
+    end_time = dt.date.today()
+    # start_time = end_time - rd(years=1)
+    start_time = dt.date(2000, 1, 1)
+
+    dat1 = get_satellite_data(
+        station=station,
+        element=element1,
+        start_time=start_time,
+        end_time=end_time,
+        platform=platform1,
+    )
+    dat2 = get_satellite_data(
+        station=station,
+        element=element2,
+        start_time=start_time,
+        end_time=end_time,
+        platform=platform2,
+    )
+
+    return plot_comparison(dat1, dat2)
 
 
 if __name__ == "__main__":
