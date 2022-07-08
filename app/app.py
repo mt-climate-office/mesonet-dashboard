@@ -1,30 +1,30 @@
-from dash import callback_context, Dash, dcc, html, Input, Output, dash_table, State
+import datetime as dt
+from pathlib import Path
+
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-
-import datetime as dt
+from dash import Dash, Input, Output, State, callback_context, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
-from pathlib import Path
 
-from .libs.get_data import (
-    get_sites,
-    clean_format,
-    get_station_latest,
-    filter_top_of_hour,
-    get_satellite_data,
-)
-from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from .libs.tables import make_metadata_table
 from .layout import (
     app_layout,
-    table_styling,
     build_latest_content,
     build_satellite_content,
     build_satellite_dropdowns,
+    table_styling,
+)
+from .libs.get_data import (
+    clean_format,
+    filter_top_of_hour,
+    get_satellite_data,
+    get_sites,
+    get_station_latest,
 )
 from .libs.plot_satellite import plot_all, plot_comparison
+from .libs.plotting import plot_latest_ace_image, plot_site, plot_station, plot_wind
+from .libs.tables import make_metadata_table
 
 # from libs.get_data import (
 #     get_sites,

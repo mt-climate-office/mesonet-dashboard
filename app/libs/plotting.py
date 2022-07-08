@@ -14,13 +14,13 @@ from .et_calc import fao_etr_hourly as et_h
 from .params import params
 
 
-def style_figure(fig, x_ticks=None):
+def style_figure(fig, x_ticks=None, legend=False):
     fig.update_layout(
         {"plot_bgcolor": "rgba(0, 0, 0, 0)"},
     )
     fig.update_xaxes(showgrid=True, gridcolor="grey")
     fig.update_yaxes(showgrid=True, gridcolor="grey")
-    fig.update_layout(showlegend=False)
+    fig.update_layout(showlegend=legend)
 
     # finish implementing this: https://stackoverflow.com/questions/63213050/plotly-how-to-set-xticks-for-all-subplots
     if x_ticks:

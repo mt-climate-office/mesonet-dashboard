@@ -5,6 +5,7 @@ from dash import dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
 # from libs.params import params
+
 from .libs.params import params
 
 
@@ -409,7 +410,7 @@ def build_right_card(stations):
 
     return dbc.Card(
         [
-            selectors,
+            dbc.CardHeader(selectors),
             dbc.CardBody(
                 html.Div(
                     [
@@ -475,39 +476,48 @@ def build_satellite_ts_selector():
     return (
         dbc.Col(
             [
-                dbc.Checklist(
-                    options=[
-                        {"value": "ET", "label": "ET"},
-                        {"value": "EVI", "label": "EVI"},
-                        {"value": "Fpar", "label": "FPAR"},
-                        {"value": "GPP", "label": "GPP"},
-                        {"value": "LAI", "label": "LAI"},
-                        {"value": "NDVI", "label": "NDVI"},
-                        {"value": "PET", "label": "PET"},
-                        {
-                            "label": "Rootzone Soil Moisture",
-                            "value": "sm_rootzone",
-                        },
-                        {
-                            "label": "Rootzone Soil Wetness",
-                            "value": "sm_rootzone_wetness",
-                        },
-                        {
-                            "label": "Surface Soil Moisture",
-                            "value": "sm_surface",
-                        },
-                        {
-                            "label": "Surface Soil Wetness",
-                            "value": "sm_surface_wetness",
-                        },
-                    ],
-                    inline=True,
-                    id="sat-vars",
-                    value=[
-                        "ET",
-                        "GPP",
-                        "NDVI",
-                    ],
+                dbc.InputGroup(
+                    dbc.InputGroupText(
+                        [
+                            dbc.Checklist(
+                                options=[
+                                    {"value": "ET", "label": "ET"},
+                                    {"value": "EVI", "label": "EVI"},
+                                    {"value": "Fpar", "label": "FPAR"},
+                                    {"value": "GPP", "label": "GPP"},
+                                    {"value": "LAI", "label": "LAI"},
+                                    {"value": "NDVI", "label": "NDVI"},
+                                    {"value": "PET", "label": "PET"},
+                                    {
+                                        "label": "Rootzone Soil Moisture",
+                                        "value": "sm_rootzone",
+                                    },
+                                    {
+                                        "label": "Rootzone Soil Wetness",
+                                        "value": "sm_rootzone_wetness",
+                                    },
+                                    {
+                                        "label": "Surface Soil Moisture",
+                                        "value": "sm_surface",
+                                    },
+                                    {
+                                        "label": "Surface Soil Wetness",
+                                        "value": "sm_surface_wetness",
+                                    },
+                                ],
+                                inline=True,
+                                id="sat-vars",
+                                value=[
+                                    "ET",
+                                    "GPP",
+                                    "NDVI",
+                                ],
+                            )
+                        ],
+                        style={"overflow-x": "scroll"},
+                    ),
+                    className="mb-3",
+                    size="lg",
                 ),
             ],
             xs=12,
@@ -573,6 +583,7 @@ def build_satellite_dropdowns(stations, timeseries=True, station=None):
                 value="timeseries" if timeseries else "compare",
                 id="satellite-radio",
                 inline=True,
+                style={"padding": "0rem 0rem 0rem 5rem"},
             ),
             xs=12,
             sm=12,
@@ -596,10 +607,12 @@ def build_satellite_content(stations):
     selectors = build_satellite_dropdowns(stations)
     return dbc.Card(
         [
-            dbc.Container(
-                selectors,
-                fluid=True,
-                id="satellite-selectors",
+            dbc.CardHeader(
+                dbc.Container(
+                    selectors,
+                    fluid=True,
+                    id="satellite-selectors",
+                )
             ),
             dbc.CardBody(
                 html.Div(
