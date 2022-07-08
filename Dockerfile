@@ -1,5 +1,5 @@
 FROM python:3.9-slim
-RUN apt-get update && apt-get -y install curl
+RUN apt-get update && apt-get -y install curl && apt-get -y install git
 
 # Install Poetry
 RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | POETRY_HOME=/opt/poetry python && \

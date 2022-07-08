@@ -8,33 +8,41 @@ import datetime as dt
 from dateutil.relativedelta import relativedelta as rd
 from pathlib import Path
 
-# from .libs.get_data import (
-#     get_sites,
-#     clean_format,
-#     get_station_latest,
-#     filter_top_of_hour,
-# )
-# from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from .libs.tables import make_metadata_table
-# from .layout import app_layout, table_styling
-
-from libs.get_data import (
+from .libs.get_data import (
     get_sites,
     clean_format,
     get_station_latest,
     filter_top_of_hour,
     get_satellite_data,
 )
-from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from libs.tables import make_metadata_table
-from layout import (
+from .libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from .libs.tables import make_metadata_table
+from .layout import (
     app_layout,
     table_styling,
     build_latest_content,
     build_satellite_content,
     build_satellite_dropdowns,
 )
-from libs.plot_satellite import plot_all, plot_comparison
+from .libs.plot_satellite import plot_all, plot_comparison
+
+# from libs.get_data import (
+#     get_sites,
+#     clean_format,
+#     get_station_latest,
+#     filter_top_of_hour,
+#     get_satellite_data,
+# )
+# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from libs.tables import make_metadata_table
+# from layout import (
+#     app_layout,
+#     table_styling,
+#     build_latest_content,
+#     build_satellite_content,
+#     build_satellite_dropdowns,
+# )
+# from libs.plot_satellite import plot_all, plot_comparison
 
 pd.options.mode.chained_assignment = None
 

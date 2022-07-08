@@ -4,7 +4,8 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
-from libs.params import params
+# from libs.params import params
+from .libs.params import params
 
 
 def generate_modal():
