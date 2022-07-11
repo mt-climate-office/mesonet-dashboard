@@ -202,7 +202,7 @@ def build_bottom_left_card(station_fig):
                     [
                         dbc.Tab(label="Locator Map", tab_id="map-tab"),
                         dbc.Tab(label="Station Metadata", tab_id="meta-tab"),
-                        dbc.Tab(label="Latest Data", tab_id="data-tab"),
+                        dbc.Tab(label="Current Conditions", tab_id="data-tab"),
                     ],
                     id="bl-tabs",
                     active_tab="map-tab",
@@ -674,6 +674,8 @@ def app_layout(app_ref):
             ),
             dbc.Row(className="h-100", id="main-content"),
             dcc.Store(id="temp-station-data", storage_type="session"),
+            dcc.Store(id="compare1-data", storage_type="session"),
+            dcc.Store(id="compare2-data", storage_type="session"),
             generate_modal(),
             feedback_iframe(),
             dbc.Modal(

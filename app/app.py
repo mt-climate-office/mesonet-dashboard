@@ -452,7 +452,7 @@ def update_sat_selectors(sel, station):
         Input("sat-vars", "value"),
     ],
 )
-def render_satellite_plot(station, elements):
+def render_satellite_ts_plot(station, elements):
 
     if station is None:
         return make_nodata_figure(
@@ -484,6 +484,27 @@ def render_satellite_plot(station, elements):
     return plot_all(dfs)
 
 
+def parse_compare_data(value):
+    element, platform = parse_compare_data.split("-")
+    
+
+
+@app.callback(
+    Output("compare1-data", "data"),
+    Input("compare1", "value")
+)
+def store_compare1(value):
+    element1, platform1 = value.split("-")
+
+
+@app.callback(
+    Output("compare2-data", "data"),
+    Input("compare2", "value")
+)
+def store_compare1(value):
+    element1, platform1 = value1.split("-")
+    element2, platform2 = value2.split("-")
+
 @app.callback(
     Output("satellite-compare", "figure"),
     [
@@ -492,7 +513,7 @@ def render_satellite_plot(station, elements):
         Input("compare2", "value"),
     ],
 )
-def render_satellite_plot(station, value1, value2):
+def render_satellite_comp_plot(station, value1, value2):
 
     if station is None:
         return make_nodata_figure(

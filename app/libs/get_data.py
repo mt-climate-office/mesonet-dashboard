@@ -1,8 +1,10 @@
+import aiohttp
 import datetime as dt
 import io
 import os
 from typing import Optional, Union
 from urllib import parse
+import asyncio
 
 import numpy as np
 import pandas as pd
@@ -16,6 +18,8 @@ from .params import params
 
 load_dotenv()
 
+
+elements = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements/?type=csv")
 
 def get_sites() -> pd.DataFrame:
     """Pulls station data from the Montana Mesonet V2 API and returns a dataframe.
@@ -229,3 +233,32 @@ def get_satellite_data(
     if platform:
         dat = dat[dat["platform"] == params.satellite_product_map[platform]]
     return dat
+
+async def get_csv_async(client, url):
+    # Send a request.
+    async with client.get(url) as response:
+        # Read entire resposne text and convert to file-like using StringIO().
+        with io.StringIO(await response.text()) as text_io:
+            dat = pd.read_csv(text_io)
+            dat.columns = ['station', 'datetime', 'value']
+            dat = dat.groupby('station').agg({'value': 'mean', 'datetime': 'min'})
+            dat = dat.reset_index(drop=True)
+            return dat
+
+async def get_all_csvs_async(urls):
+    async with aiohttp.ClientSession() as client:
+        # First create all futures at once.
+        futures = [ get_csv_async(client, url) for url in urls ]
+        # Then wait for all the futures to complete.
+        return await asyncio.gather(*futures)
+
+
+def get_async_station_data(dates, station, element):
+    urls = []
+    for d in dates:
+        urls.append(
+            f"{params.API_URL}/?stations={station}&elements={element}&start_time={d}&end_time={d + rd(days=1)}&type=csv&hour=False&wide=False"
+        )
+    csvs = asyncio.run(get_all_csvs_async(urls))
+    csvs = pd.concat(csvs, axis=0)
+    return csvs
