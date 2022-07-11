@@ -3,9 +3,8 @@ from pathlib import Path
 
 import dash_bootstrap_components as dbc
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
-from dash import Dash, Input, Output, State, callback_context, dash_table, dcc, html
+from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
 from .layout import (

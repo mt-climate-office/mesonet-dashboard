@@ -212,6 +212,7 @@ def get_satellite_data(
     dat = conn.query(
         station=station, element=element, start_time=start_time, end_time=end_time
     )
+    dat = dat.assign(value=np.where(dat.value == -9999, np.nan, dat.value))
     conn.close()
 
     dat = dat.assign(date=pd.to_datetime(dat.date, unit="s"))
