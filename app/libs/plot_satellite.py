@@ -2,26 +2,59 @@ import datetime as dt
 from typing import Dict
 
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta as rd
 from plotly.subplots import make_subplots
 
 from .params import params
-from .plotting import px_to_subplot, style_figure
+from .plotting import px_to_subplot, style_figure, add_boxplot_normals
+
+
+def make_satellite_normals(df):
+    df = df.assign(month=df.date.dt.month)
+    df = df.assign(day=df.date.dt.day)
+    cur_year = dt.date.today().year
+
+    df = (
+        df.groupby_agg(
+            by=["month", "day"],
+            new_column_name="avg",
+            agg_column_name="value",
+            agg=np.median,
+        )
+        .groupby_agg(
+            by=["month", "day"],
+            new_column_name="mn",
+            agg_column_name="value",
+            agg="min",
+        )
+        .groupby_agg(
+            by=["month", "day"],
+            new_column_name="mx",
+            agg_column_name="value",
+            agg="max",
+        )
+        .assign(
+            datetime=pd.to_datetime(
+                str(cur_year) + "-" + df.month.astype(str) + "-" + df.day.astype(str)
+            )
+        )
+        .select_columns("datetime", "mn", "mx")
+        .drop_duplicates()
+        .sort_values("datetime")
+        .reset_index(drop=True)
+    )
+
+    return df
 
 
 def plot_indicator(fig, dat, **kwargs):
 
-    dat = dat.assign(
-        date=str(dt.date.today().year)
-        + "-"
-        + dat.date.dt.month.astype(str)
-        + "-"
-        + dat.date.dt.day.astype(str)
-    )
-    dat = dat[dat.date.str.split("-").str[-2:].str.join("-") != "2-29"]
-    dat = dat.assign(date=pd.to_datetime(dat.date))
+    if kwargs["climatology"]:
+        norms = make_satellite_normals(dat)
+
     dat = dat.assign(grp=dat.year.astype(str) + "_" + dat.platform)
     cur_year = dt.date.today().year
     element = params.sat_axis_mapper[kwargs["element"]].replace("<br>", " ")
@@ -48,6 +81,31 @@ def plot_indicator(fig, dat, **kwargs):
             row=kwargs["idx"],
             col=1,
         )
+    if kwargs["climatology"]:
+        mx_line = go.Scatter(
+            x=norms.datetime,
+            y=norms.mx,
+            mode="lines",
+            line={"dash": "dash", "color": "black"},
+            showlegend=False,
+            name="75th Percentile",
+        )
+
+        mn_line = go.Scatter(
+            x=norms.datetime,
+            y=norms.mn,
+            mode="lines",
+            line={"dash": "dash", "color": "black"},
+            showlegend=False,
+            name="25th Percentile",
+            fill="tonexty",
+            fillcolor="rgba(107,107,107,0.4)",
+        )
+
+        fig.add_trace(mx_line,             row=kwargs["idx"],
+        col=1,)
+        fig.add_trace(mn_line,             row=kwargs["idx"],
+        col=1,)
 
     for trace in fig["data"]:
         if trace["name"] is None:
@@ -56,12 +114,12 @@ def plot_indicator(fig, dat, **kwargs):
     return fig
 
 
-def plot_all(dfs: Dict[str, pd.DataFrame], **kwargs):
-
+def plot_all(dfs: Dict[str, pd.DataFrame], climatology, **kwargs):
+    climatology = True
     fig = make_subplots(rows=len(dfs), cols=1)
     for idx, tup in enumerate(dfs.items(), start=1):
         v, df = tup
-        fig = plot_indicator(fig, df, element=v, idx=idx)
+        fig = plot_indicator(fig, df, element=v, idx=idx, climatology=climatology)
 
     for row in range(1, len(dfs) + 1):
         fig.update_yaxes(

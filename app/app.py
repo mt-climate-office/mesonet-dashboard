@@ -7,41 +7,41 @@ import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
-from .layout import (
-    app_layout,
-    build_latest_content,
-    build_satellite_content,
-    build_satellite_dropdowns,
-    table_styling,
-)
-from .libs.get_data import (
-    clean_format,
-    filter_top_of_hour,
-    get_satellite_data,
-    get_sites,
-    get_station_latest,
-)
-from .libs.plot_satellite import plot_all, plot_comparison
-from .libs.plotting import plot_latest_ace_image, plot_site, plot_station, plot_wind
-from .libs.tables import make_metadata_table
-
-# from libs.get_data import (
-#     get_sites,
-#     clean_format,
-#     get_station_latest,
-#     filter_top_of_hour,
-#     get_satellite_data,
-# )
-# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from libs.tables import make_metadata_table
-# from layout import (
+# from .layout import (
 #     app_layout,
-#     table_styling,
 #     build_latest_content,
 #     build_satellite_content,
 #     build_satellite_dropdowns,
+#     table_styling,
 # )
-# from libs.plot_satellite import plot_all, plot_comparison
+# from .libs.get_data import (
+#     clean_format,
+#     filter_top_of_hour,
+#     get_satellite_data,
+#     get_sites,
+#     get_station_latest,
+# )
+# from .libs.plot_satellite import plot_all, plot_comparison
+# from .libs.plotting import plot_latest_ace_image, plot_site, plot_station, plot_wind
+# from .libs.tables import make_metadata_table
+
+from libs.get_data import (
+    get_sites,
+    clean_format,
+    get_station_latest,
+    filter_top_of_hour,
+    get_satellite_data,
+)
+from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+from libs.tables import make_metadata_table
+from layout import (
+    app_layout,
+    table_styling,
+    build_latest_content,
+    build_satellite_content,
+    build_satellite_dropdowns,
+)
+from libs.plot_satellite import plot_all, plot_comparison
 
 pd.options.mode.chained_assignment = None
 
@@ -57,7 +57,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    requests_pathname_prefix="/dash/",
+    # requests_pathname_prefix="/dash/",
     external_scripts=[
         "https://www.googletagmanager.com/gtag/js?id=UA-149859729-3",
         "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/develop/app/assets/gtag.js",
@@ -431,7 +431,7 @@ def toggle_main_tab(sel):
 @app.callback(
     [Output("satellite-selectors", "children"), Output("satellite-graph", "children")],
     Input("satellite-radio", "value"),
-    State("station-dropdown-satellite", "value"),
+    State("station-dropdown", "value"),
 )
 def update_sat_selectors(sel, station):
     if sel == "timeseries":
@@ -448,12 +448,13 @@ def update_sat_selectors(sel, station):
 @app.callback(
     Output("satellite-plot", "figure"),
     [
-        Input("station-dropdown-satellite", "value"),
+        Input("station-dropdown", "value"),
         Input("sat-vars", "value"),
+        Input("climatology-switch", "value"),
     ],
 )
-def render_satellite_ts_plot(station, elements):
-
+def render_satellite_ts_plot(station, elements, climatology):
+    print(climatology)
     if station is None:
         return make_nodata_figure(
             """
@@ -481,34 +482,28 @@ def render_satellite_ts_plot(station, elements):
         for x in elements
     }
 
-    return plot_all(dfs)
+    return plot_all(dfs, climatology=climatology)
 
 
 def parse_compare_data(value):
     element, platform = parse_compare_data.split("-")
-    
 
 
-@app.callback(
-    Output("compare1-data", "data"),
-    Input("compare1", "value")
-)
+@app.callback(Output("compare1-data", "data"), Input("compare1", "value"))
 def store_compare1(value):
     element1, platform1 = value.split("-")
 
 
-@app.callback(
-    Output("compare2-data", "data"),
-    Input("compare2", "value")
-)
+@app.callback(Output("compare2-data", "data"), Input("compare2", "value"))
 def store_compare1(value):
     element1, platform1 = value1.split("-")
     element2, platform2 = value2.split("-")
 
+
 @app.callback(
     Output("satellite-compare", "figure"),
     [
-        Input("station-dropdown-satellite", "value"),
+        Input("station-dropdown", "value"),
         Input("compare1", "value"),
         Input("compare2", "value"),
     ],

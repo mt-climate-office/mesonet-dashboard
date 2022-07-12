@@ -181,7 +181,6 @@ class params:
         "MOD17A2H.061": "MODIS Terra",
         "MYD15A2H.061": "MODIS Aqua",
         "SPL4SMGP.006": "SMAP Level-4 Soil Moisture",
-        "ECO3ETALEXI.001": "ECOSTRESS Alexi",
         "VNP13A1.001": "VIIRS",
     }
 
@@ -204,19 +203,17 @@ class params:
         "MODIS Terra": "#33a02c",
         "SMAP Level-4 Carbon": "#e31a1c",
         "SMAP Level-4 Soil Moisture": "#ff7f00",
-        "ECOSTRESS Alexi": "#6a3d9a",
         "VIIRS": "#b15928",
     }
 
     sat_compare_mapper = {
         "ET (MODIS Aqua)": "ET-MYD16A2.061",
         "ET (MODIS Terra)": "ET-MOD16A2.061",
-        "ET (ECOSTRESS Alexi)": "ECO3ETALEXI.001",
         "PET (MODIS Aqua)": "PET-MYD16A2.061",
         "PET (MODIS Terra)": "PET-MOD16A2.061",
         "GPP (MODIS Aqua)": "GPP-MYD17A2H.061",
         "GPP (MODIS Terra)": "GPP-MOD17A2H.061",
-        "GPP (SMAP Level-4 Carbon)": "GPP-SPL4CMDL.006",
+        "GPP (SMAP L4C)": "GPP-SPL4CMDL.006",
         "FPAR (MODIS Aqua)": "Fpar-MYD15A2H.061",
         "FPAR (MODIS Terra)": "Fpar-MOD15A2H.061",
         "NDVI (MODIS Aqua)": "NDVI-MYD13A1.061",
@@ -227,8 +224,8 @@ class params:
         "EVI (VIIRS)": "EVI-VNP13A1.001",
         "LAI (MODIS Aqua)": "LAI-MYD15A2H.061",
         "LAI (MODIS Terra)": "LAI-MOD15A2H.061",
-        "Surface VWC (SMAP Level-4 Soil Moisture)": "sm_surface-SPL4SMGP.006",
-        "Surface Saturation (SMAP Level-4 Soil Moisture)": "sm_surface_wetness-SPL4SMGP.006",
-        "Rootzone VWC (SMAP Level-4 Soil Moisture)": "sm_rootzone-SPL4SMGP.006",
-        "Rootzone Saturation (SMAP Level-4 Soil Moisture)": "sm_rootzone_wetness-SPL4SMGP.006",
+        "Surface VWC (SMAP L4SM)": "sm_surface-SPL4SMGP.006",
+        "Surface Sat. (SMAP L4SM)": "sm_surface_wetness-SPL4SMGP.006",
+        "Rootzone VWC (SMAP L4SM)": "sm_rootzone-SPL4SMGP.006",
+        "Rootzone Sat. (SMAP L4SM)": "sm_rootzone_wetness-SPL4SMGP.006",
     }

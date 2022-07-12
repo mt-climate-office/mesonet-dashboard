@@ -4,9 +4,9 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
-from .libs.params import params
+# from .libs.params import params
 
-# from libs.params import params
+from libs.params import params
 
 
 def generate_modal():
@@ -475,6 +475,25 @@ def build_latest_content(station_fig, stations):
 def build_satellite_ts_selector():
     return (
         dbc.Col(
+            dbc.Checklist(
+                options=[
+                    {
+                        "label": "Climatology",
+                        "value": 1,
+                    },
+                ],
+                id="climatology-switch",
+                switch=True,
+                value=[],
+                # className="toggle",
+            ),
+            xs=12,
+            sm=12,
+            md=1,
+            lg=1,
+            xl=1,
+        ),
+        dbc.Col(
             [
                 dbc.InputGroup(
                     dbc.InputGroupText(
@@ -532,28 +551,75 @@ def build_satellite_ts_selector():
 def build_satellite_comp_selector():
     return [
         dbc.Col(
-            dcc.Dropdown(
-                options=[
-                    {"label": k, "value": v}
-                    for k, v in params.sat_compare_mapper.items()
-                ],
-                id="compare1",
-                placeholder="Select a Product...",
-                className="stationSelect"
-                # style={"width": "150%"}
-            )
+            dbc.Row(
+                [
+                    dcc.Dropdown(
+                        options=[
+                            {"label": k, "value": v}
+                            for k, v in params.sat_compare_mapper.items()
+                        ],
+                        id="compare1",
+                        placeholder="Select a Product...",
+                        className="stationSelect"
+                        # style={"width": "150%"}
+                    ),
+                    dcc.Dropdown(
+                        options=[
+                            {"label": k, "value": v}
+                            for k, v in params.sat_compare_mapper.items()
+                        ],
+                        id="compare2",
+                        placeholder="Select a Product...",
+                        className="stationSelect"
+                        # style={"width": "150%"}
+                    ),
+                ]
+            ),
+            xs=5,
+            sm=5,
+            md=2,
+            lg=2,
+            xl=2,
         ),
         dbc.Col(
-            dcc.Dropdown(
-                options=[
-                    {"label": k, "value": v}
-                    for k, v in params.sat_compare_mapper.items()
-                ],
-                id="compare2",
-                placeholder="Select a Product...",
-                className="stationSelect"
-                # style={"width": "150%"}
-            )
+            dbc.InputGroup(
+                [
+                    dbc.InputGroupText("Start Date"),
+                    dcc.DatePickerSingle(
+                        id="start-date",
+                        date=dt.date.today() - rd(weeks=2),
+                        max_date_allowed=dt.date.today(),
+                        min_date_allowed=dt.date(2022, 1, 1),
+                        disabled=True,
+                    ),
+                ]
+            ),
+            xs=5,
+            sm=5,
+            md=2,
+            lg=2,
+            xl=2,
+            # style={"padding": "0rem 0rem 0rem 6.5rem"},
+        ),
+        dbc.Col(
+            dbc.InputGroup(
+                [
+                    dbc.InputGroupText("End Date"),
+                    dcc.DatePickerSingle(
+                        id="end-date",
+                        date=dt.date.today(),
+                        max_date_allowed=dt.date.today(),
+                        min_date_allowed=dt.date(2022, 1, 1),
+                        disabled=True,
+                    ),
+                ]
+            ),
+            xs=5,
+            sm=5,
+            md=2,
+            lg=2,
+            xl=2,
+            # style={"padding": "0rem 0rem 0rem 6.5rem"},
         ),
     ]
 
@@ -567,12 +633,12 @@ def build_satellite_dropdowns(stations, timeseries=True, station=None):
 
     children = [
         dbc.Col(
-            make_station_dropdowns(stations, "station-dropdown-satellite", station),
+            make_station_dropdowns(stations, "station-dropdown", station),
             xs=12,
             sm=12,
-            md=3,
-            lg=3,
-            xl=3,
+            md=2,
+            lg=2,
+            xl=2,
         ),
         dbc.Col(
             dbc.RadioItems(
@@ -582,14 +648,14 @@ def build_satellite_dropdowns(stations, timeseries=True, station=None):
                 ],
                 value="timeseries" if timeseries else "compare",
                 id="satellite-radio",
-                inline=True,
-                style={"padding": "0rem 0rem 0rem 5rem"},
+                # inline=True,
+                # style={"padding": "0rem 0rem 0rem 5rem"},
             ),
             xs=12,
             sm=12,
-            md=3,
-            lg=3,
-            xl=3,
+            md=2,
+            lg=2,
+            xl=2,
         ),
     ]
     children += content
@@ -597,7 +663,7 @@ def build_satellite_dropdowns(stations, timeseries=True, station=None):
         dbc.Row(
             children=children,
             align="center",
-            style={"padding": "0.75rem 0rem 0rem 0rem"},
+            # style={"padding": "0.75rem 0rem 0rem 0rem"},
         ),
     )
 

@@ -13,6 +13,7 @@ from dateutil import relativedelta as rd
 from dotenv import load_dotenv
 from mt_mesonet_satellite import MesonetSatelliteDB
 from requests import Request
+import janitor
 
 from .params import params
 
@@ -20,6 +21,7 @@ load_dotenv()
 
 
 elements = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements/?type=csv")
+
 
 def get_sites() -> pd.DataFrame:
     """Pulls station data from the Montana Mesonet V2 API and returns a dataframe.
@@ -229,10 +231,20 @@ def get_satellite_data(
 
     dat.reset_index(drop=True, inplace=True)
     dat = dat.assign(year=dat.date.dt.year)
+    dat = dat.assign(
+        date=str(dt.date.today().year)
+        + "-"
+        + dat.date.dt.month.astype(str)
+        + "-"
+        + dat.date.dt.day.astype(str)
+    )
+    dat = dat[dat.date.str.split("-").str[-2:].str.join("-") != "2-29"]
+    dat = dat.assign(date=pd.to_datetime(dat.date))
 
     if platform:
         dat = dat[dat["platform"] == params.satellite_product_map[platform]]
     return dat
+
 
 async def get_csv_async(client, url):
     # Send a request.
@@ -240,15 +252,16 @@ async def get_csv_async(client, url):
         # Read entire resposne text and convert to file-like using StringIO().
         with io.StringIO(await response.text()) as text_io:
             dat = pd.read_csv(text_io)
-            dat.columns = ['station', 'datetime', 'value']
-            dat = dat.groupby('station').agg({'value': 'mean', 'datetime': 'min'})
+            dat.columns = ["station", "datetime", "value"]
+            dat = dat.groupby("station").agg({"value": "mean", "datetime": "min"})
             dat = dat.reset_index(drop=True)
             return dat
+
 
 async def get_all_csvs_async(urls):
     async with aiohttp.ClientSession() as client:
         # First create all futures at once.
-        futures = [ get_csv_async(client, url) for url in urls ]
+        futures = [get_csv_async(client, url) for url in urls]
         # Then wait for all the futures to complete.
         return await asyncio.gather(*futures)
 
