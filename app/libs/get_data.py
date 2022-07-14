@@ -1,3 +1,4 @@
+from urllib.error import HTTPError
 import aiohttp
 import datetime as dt
 import io
@@ -9,7 +10,7 @@ import asyncio
 import numpy as np
 import pandas as pd
 import requests
-from dateutil import relativedelta as rd
+from dateutil.relativedelta import relativedelta as rd
 from dotenv import load_dotenv
 from mt_mesonet_satellite import MesonetSatelliteDB
 from requests import Request
@@ -192,6 +193,7 @@ def get_satellite_data(
     start_time: Union[int, dt.date],
     end_time: Union[int, dt.date],
     platform: Optional[str] = None,
+    modify_dates: Optional[bool] = True,
 ) -> pd.DataFrame:
     """Gather satellite data at a Mesonet station from the Neo4j database.
 
@@ -200,6 +202,8 @@ def get_satellite_data(
         element (str): The satellite indicator element to query.
         start_time (Union[int, dt.date]): The time to begin the query. Can either be a datetime.date object or an int representing seconds since 1970-01-01.
         end_time (Union[int, dt.date]): The time to end the query. Can either be a datetime.date object or an int representing seconds since 1970-01-01.
+        platform (Optional[str]): The name of a satellite platform to filter the results by.
+        modify_dates (Optional[bool]): Whether to set all dates to the current year (for plotting purposes).
 
     Returns:
         pd.DataFrame: Pandas dataframe with data generated from the query.
@@ -228,34 +232,45 @@ def get_satellite_data(
         value=np.where(dat.units.str.contains("_sm_"), dat.value * 100, dat.value)
     )
     dat = dat.assign(value=np.where(dat.units == "Percent", dat.value * 100, dat.value))
-
     dat.reset_index(drop=True, inplace=True)
     dat = dat.assign(year=dat.date.dt.year)
-    dat = dat.assign(
-        date=str(dt.date.today().year)
-        + "-"
-        + dat.date.dt.month.astype(str)
-        + "-"
-        + dat.date.dt.day.astype(str)
-    )
-    dat = dat[dat.date.str.split("-").str[-2:].str.join("-") != "2-29"]
-    dat = dat.assign(date=pd.to_datetime(dat.date))
+
+    if modify_dates:
+        dat = dat.assign(
+            date=str(dt.date.today().year)
+            + "-"
+            + dat.date.dt.month.astype(str)
+            + "-"
+            + dat.date.dt.day.astype(str)
+        )
+        dat = dat[dat.date.str.split("-").str[-2:].str.join("-") != "2-29"]
+        dat = dat.assign(date=pd.to_datetime(dat.date))
 
     if platform:
         dat = dat[dat["platform"] == params.satellite_product_map[platform]]
+        dat.reset_index(drop=True, inplace=True)
     return dat
 
+
+def parse_async_data(text_io):
+    dat = pd.read_csv(text_io)
+    dat = dat[['station', 'datetime', 'value']]
+    dat.columns = ["station", "datetime", "value"]
+    dat = dat.groupby("station").agg({"value": "mean", "datetime": "min"})
+    dat = dat.reset_index(drop=True)
+    return dat
 
 async def get_csv_async(client, url):
     # Send a request.
     async with client.get(url) as response:
         # Read entire resposne text and convert to file-like using StringIO().
         with io.StringIO(await response.text()) as text_io:
-            dat = pd.read_csv(text_io)
-            dat.columns = ["station", "datetime", "value"]
-            dat = dat.groupby("station").agg({"value": "mean", "datetime": "min"})
-            dat = dat.reset_index(drop=True)
+            try:
+                dat = parse_async_data(text_io)
+            except ValueError:
+                dat = pd.DataFrame()
             return dat
+
 
 
 async def get_all_csvs_async(urls):
@@ -266,12 +281,52 @@ async def get_all_csvs_async(urls):
         return await asyncio.gather(*futures)
 
 
-def get_async_station_data(dates, station, element):
+def build_async_urls(dates, station, element):
     urls = []
     for d in dates:
         urls.append(
-            f"{params.API_URL}/?stations={station}&elements={element}&start_time={d}&end_time={d + rd(days=1)}&type=csv&hour=False&wide=False"
+            f"{params.API_URL}observations/?stations={station}&elements={element}&start_time={d}&end_time={d + rd(days=1)}&type=csv&hour=True&wide=False"
         )
+    return urls
+
+
+def get_async_station_data(dates, station, element):
+    urls = build_async_urls(dates, station, element)
     csvs = asyncio.run(get_all_csvs_async(urls))
     csvs = pd.concat(csvs, axis=0)
     return csvs
+
+
+def get_sat_compare_data(station: str,
+    sat_element: str,
+    station_element: str,
+    start_time: Union[int, dt.date],
+    end_time: Union[int, dt.date],
+    platform: str,
+):
+    sat_data = get_satellite_data(
+        station, sat_element, start_time, end_time, platform, False
+    )
+
+    sat_data = sat_data.assign(
+        date = sat_data.date.dt.date
+    )
+
+    # station_data = get_async_station_data(
+    #     sat_data['date'].to_list(), station, station_element
+    # )
+    # print(station_data)
+    urls = build_async_urls(sat_data['date'].to_list(), station, station_element)
+    csvs = []
+    for x in urls:
+        try:
+            dat = parse_async_data(x)
+        except HTTPError:
+            dat = pd.DataFrame()
+        csvs.append(dat)
+    station_data = pd.concat(csvs, axis=0)
+    station_data = station_data.assign(datetime = pd.to_datetime(station_data.datetime, utc=True))
+    station_data = station_data.assign(datetime = station_data.datetime.dt.tz_convert("America/Denver"))
+    station_data = station_data.assign(date = station_data.datetime.dt.date).groupby('date').agg({"value":"mean"}).reset_index()
+
+    return sat_data, station_data

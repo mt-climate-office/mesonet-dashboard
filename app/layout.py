@@ -223,16 +223,16 @@ def build_bottom_left_card(station_fig):
 
 
 def make_station_dropdowns(stations, id, station):
-    return dcc.Dropdown(
-        dict(
-            zip(
-                stations["station"],
+    return dbc.Select(
+        options=[
+                            {"label": k, "value": v}
+                            for k, v in zip(
                 stations["long_name"],
-            )
-        ),
+                stations["station"],
+            )],
         id=id,
         placeholder="Select a Mesonet Station...",
-        className="stationSelect",
+        # className="stationSelect",
         value=station,
         # style={"width": "150%"}
     )
@@ -294,7 +294,7 @@ def build_dropdowns(stations):
                                     id="start-date",
                                     date=dt.date.today() - rd(weeks=2),
                                     max_date_allowed=dt.date.today(),
-                                    min_date_allowed=dt.date(2022, 1, 1),
+                                    # min_date_allowed=dt.date(2022, 1, 1),
                                     disabled=True,
                                 ),
                             ]
@@ -314,7 +314,7 @@ def build_dropdowns(stations):
                                     id="end-date",
                                     date=dt.date.today(),
                                     max_date_allowed=dt.date.today(),
-                                    min_date_allowed=dt.date(2022, 1, 1),
+                                    # min_date_allowed=dt.date(2022, 1, 1),
                                     disabled=True,
                                 ),
                             ]
@@ -553,24 +553,25 @@ def build_satellite_comp_selector():
         dbc.Col(
             dbc.Row(
                 [
-                    dcc.Dropdown(
+                    dbc.Select(
                         options=[
                             {"label": k, "value": v}
                             for k, v in params.sat_compare_mapper.items()
                         ],
                         id="compare1",
-                        placeholder="Select a Product...",
+                        placeholder="Select a X-Axis...",
                         className="stationSelect"
                         # style={"width": "150%"}
                     ),
-                    dcc.Dropdown(
+                    dbc.Select(
                         options=[
                             {"label": k, "value": v}
                             for k, v in params.sat_compare_mapper.items()
                         ],
                         id="compare2",
-                        placeholder="Select a Product...",
-                        className="stationSelect"
+                        placeholder="Select a Y-Axis...",
+                        className="stationSelect",
+                        disabled=True
                         # style={"width": "150%"}
                     ),
                 ]
@@ -586,11 +587,11 @@ def build_satellite_comp_selector():
                 [
                     dbc.InputGroupText("Start Date"),
                     dcc.DatePickerSingle(
-                        id="start-date",
-                        date=dt.date.today() - rd(weeks=2),
+                        id="start-date-satellite",
+                        date=dt.date.today() - rd(years=1),
                         max_date_allowed=dt.date.today(),
-                        min_date_allowed=dt.date(2022, 1, 1),
-                        disabled=True,
+                        # min_date_allowed=dt.date(2022, 1, 1),
+                        disabled=False,
                     ),
                 ]
             ),
@@ -606,11 +607,11 @@ def build_satellite_comp_selector():
                 [
                     dbc.InputGroupText("End Date"),
                     dcc.DatePickerSingle(
-                        id="end-date",
+                        id="end-date-satellite",
                         date=dt.date.today(),
                         max_date_allowed=dt.date.today(),
-                        min_date_allowed=dt.date(2022, 1, 1),
-                        disabled=True,
+                        # min_date_allowed=dt.date(2022, 1, 1),
+                        disabled=False,
                     ),
                 ]
             ),
@@ -633,7 +634,7 @@ def build_satellite_dropdowns(stations, timeseries=True, station=None):
 
     children = [
         dbc.Col(
-            make_station_dropdowns(stations, "station-dropdown", station),
+            make_station_dropdowns(stations, "station-dropdown-satellite", station),
             xs=12,
             sm=12,
             md=2,
@@ -740,8 +741,8 @@ def app_layout(app_ref):
             ),
             dbc.Row(className="h-100", id="main-content"),
             dcc.Store(id="temp-station-data", storage_type="session"),
-            dcc.Store(id="compare1-data", storage_type="session"),
-            dcc.Store(id="compare2-data", storage_type="session"),
+            # dcc.Store(id="compare1-data", storage_type="session"),
+            # dcc.Store(id="compare2-data", storage_type="session"),
             generate_modal(),
             feedback_iframe(),
             dbc.Modal(

@@ -26,6 +26,7 @@ from dateutil.relativedelta import relativedelta as rd
 # from .libs.tables import make_metadata_table
 
 from libs.get_data import (
+    get_sat_compare_data,
     get_sites,
     clean_format,
     get_station_latest,
@@ -41,6 +42,7 @@ from layout import (
     build_satellite_content,
     build_satellite_dropdowns,
 )
+from libs.params import params
 from libs.plot_satellite import plot_all, plot_comparison
 
 pd.options.mode.chained_assignment = None
@@ -101,12 +103,12 @@ def make_nodata_figure(txt="No data avaliable for selected dates."):
 
 @app.callback(
     Output("banner-title", "children"),
-    [Input("station-dropdown", "value"), Input("station-dropdown", "options")],
+    [Input("station-dropdown", "value")],
 )
-def update_banner_text(station, options):
+def update_banner_text(station):
     return (
-        f"The Montana Mesonet Dashboard: {options[station]}"
-        if station
+        f"The Montana Mesonet Dashboard: {stations[stations['station'] == station].station.values[0]}"
+        if station != ''
         else "The Montana Mesonet Dashboard"
     )
 
@@ -431,7 +433,7 @@ def toggle_main_tab(sel):
 @app.callback(
     [Output("satellite-selectors", "children"), Output("satellite-graph", "children")],
     Input("satellite-radio", "value"),
-    State("station-dropdown", "value"),
+    State("station-dropdown-satellite", "value"),
 )
 def update_sat_selectors(sel, station):
     if sel == "timeseries":
@@ -448,13 +450,14 @@ def update_sat_selectors(sel, station):
 @app.callback(
     Output("satellite-plot", "figure"),
     [
-        Input("station-dropdown", "value"),
+        Input("station-dropdown-satellite", "value"),
         Input("sat-vars", "value"),
         Input("climatology-switch", "value"),
     ],
+    prevent_initial_callback=True,
 )
 def render_satellite_ts_plot(station, elements, climatology):
-    print(climatology)
+
     if station is None:
         return make_nodata_figure(
             """
@@ -485,30 +488,46 @@ def render_satellite_ts_plot(station, elements, climatology):
     return plot_all(dfs, climatology=climatology)
 
 
-def parse_compare_data(value):
-    element, platform = parse_compare_data.split("-")
+@app.callback(
+    Output("compare2", "disabled"),
+    Input("compare1", "value")
+)
+def enable_compare2(val):
+    return val is None
 
 
-@app.callback(Output("compare1-data", "data"), Input("compare1", "value"))
-def store_compare1(value):
-    element1, platform1 = value.split("-")
-
-
-@app.callback(Output("compare2-data", "data"), Input("compare2", "value"))
-def store_compare1(value):
-    element1, platform1 = value1.split("-")
-    element2, platform2 = value2.split("-")
-
+@app.callback(
+    Output("compare2", "options"),
+    Input("station-dropdown-satellite", "value")
+)
+def update_compare2_options(station):
+    options = [{"label": "SATELLITE VARIABLES", "value": "SATELLITE VARIABLES", "disabled": True},
+    {"label": "-"*30, "value":  "-"*30, "disabled": True}]
+    options += [{"label": k, "value": v} for k, v in params.sat_compare_mapper.items()]
+    if station is None:
+        return options
+    
+    station_elements = pd.read_csv(f"https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/station_elements/{station}/?type=csv")
+    station_elements = station_elements.sort_values("description_short")
+    elements = [{"label": "STATION VARIABLES", "value": "STATION VARIABLES", "disabled": True},
+    {"label":  "-"*32, "value":  "-"*32, "disabled": True}]
+    elements += [{"label": k, "value": v} for k, v in zip(station_elements.description_short, station_elements.element)]
+    elements += options
+    return elements
 
 @app.callback(
     Output("satellite-compare", "figure"),
     [
-        Input("station-dropdown", "value"),
+        Input("station-dropdown-satellite", "value"),
         Input("compare1", "value"),
         Input("compare2", "value"),
+        Input("start-date-satellite", "date"),
+        Input("end-date-satellite", "date"),
     ],
 )
-def render_satellite_comp_plot(station, value1, value2):
+def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
+    start_time = dt.datetime.strptime(start_time, "%Y-%m-%d").date()
+    end_time = dt.datetime.strptime(end_time, "%Y-%m-%d").date()
 
     if station is None:
         return make_nodata_figure(
@@ -518,7 +537,6 @@ def render_satellite_comp_plot(station, value1, value2):
         To get started, select a station from the dropdown.
         """
         )
-
     if not (value1 and value2):
         return make_nodata_figure(
             """
@@ -527,27 +545,43 @@ def render_satellite_comp_plot(station, value1, value2):
         Please select two indicators to view the plot. 
         """
         )
-
+    # end_time = dt.date.today()
+    # start_time = dt.date(2000, 1, 1)
     element1, platform1 = value1.split("-")
-    element2, platform2 = value2.split("-")
-    end_time = dt.date.today()
-    # start_time = end_time - rd(years=1)
-    start_time = dt.date(2000, 1, 1)
+    try:
+        element2, platform2 = value2.split("-")
+        dat1 = get_satellite_data(
+            station=station,
+            element=element1,
+            start_time=start_time,
+            end_time=end_time,
+            platform=platform1,
+            modify_dates=False,
+        )
+        dat2 = get_satellite_data(
+            station=station,
+            element=element2,
+            start_time=start_time,
+            end_time=end_time,
+            platform=platform2,
+            modify_dates=False,
+        )
 
-    dat1 = get_satellite_data(
-        station=station,
-        element=element1,
-        start_time=start_time,
-        end_time=end_time,
-        platform=platform1,
-    )
-    dat2 = get_satellite_data(
-        station=station,
-        element=element2,
-        start_time=start_time,
-        end_time=end_time,
-        platform=platform2,
-    )
+    except ValueError:
+        element2, platform2 = value2, "Station"
+
+        dat1, dat2 = get_sat_compare_data(
+            station=station,
+            sat_element=element1,
+            station_element=element2,
+            start_time=start_time,
+            end_time=end_time,
+            platform=platform1,
+        )
+
+        dat2 = dat2.assign(platform=platform2)
+        dat2 = dat2.assign(element=element2)
+
 
     return plot_comparison(dat1, dat2)
 

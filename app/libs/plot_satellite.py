@@ -154,9 +154,11 @@ def lab_from_df(df):
 
 
 def plot_comparison(dat1, dat2):
-    lab1 = lab_from_df(dat1)
-    lab2 = lab_from_df(dat2)
 
+    lab1 = 'test'
+    lab2 = 'test2'
+    print(dat1)
+    print(dat2)
     dat1 = dat1[["date", "value"]]
     dat2 = dat2[["date", "value"]]
     tol = pd.Timedelta("16 day")
