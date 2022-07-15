@@ -517,6 +517,7 @@ def update_compare2_options(station):
     elements += options
     return elements
 
+
 @app.callback(
     Output("satellite-compare", "figure"),
     [
