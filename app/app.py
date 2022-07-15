@@ -103,12 +103,13 @@ def make_nodata_figure(txt="No data avaliable for selected dates."):
 
 @app.callback(
     Output("banner-title", "children"),
-    [Input("station-dropdown", "value")],
+    [Input("station-dropdown", "value"), Input("main-display-tabs", "value")],
+    prevent_initial_callback=True
 )
-def update_banner_text(station):
+def update_banner_text(station, tab):
     return (
-        f"The Montana Mesonet Dashboard: {stations[stations['station'] == station].station.values[0]}"
-        if station != ''
+        f"The Montana Mesonet Dashboard: {stations[stations['station'] == station].name.values[0]}"
+        if station != '' and tab == 'station-tab'
         else "The Montana Mesonet Dashboard"
     )
 
@@ -501,7 +502,8 @@ def enable_compare2(val):
     Input("station-dropdown-satellite", "value")
 )
 def update_compare2_options(station):
-    options = [{"label": "SATELLITE VARIABLES", "value": "SATELLITE VARIABLES", "disabled": True},
+    options = [{"label": " ", "value": " ", "disabled": True},
+        {"label": "SATELLITE VARIABLES", "value": "SATELLITE VARIABLES", "disabled": True},
     {"label": "-"*30, "value":  "-"*30, "disabled": True}]
     options += [{"label": k, "value": v} for k, v in params.sat_compare_mapper.items()]
     if station is None:
@@ -567,8 +569,11 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
             modify_dates=False,
         )
 
+        plt = plot_comparison(dat1, dat2)
+
+
     except ValueError:
-        element2, platform2 = value2, "Station"
+        element2, platform2 = value2, stations[stations["station"] == station]["name"].values[0]
 
         dat1, dat2 = get_sat_compare_data(
             station=station,
@@ -579,12 +584,13 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
             platform=platform1,
         )
 
+        dat2 = dat2.assign(element=dat2.columns[-1])
         dat2 = dat2.assign(platform=platform2)
-        dat2 = dat2.assign(element=element2)
+        dat2.columns = ["date", "value", "element", "platform"]
 
 
-    return plot_comparison(dat1, dat2)
-
+        plt = plot_comparison(dat1, dat2, station)
+    return plt
 
 if __name__ == "__main__":
     app.run_server(debug=True)

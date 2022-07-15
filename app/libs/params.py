@@ -2,7 +2,10 @@ import datetime as dt
 from dataclasses import dataclass
 
 import dateutil.relativedelta as rd
+import pandas as pd
 
+elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
+elements_df.assign(description = elements_df.description_short + " [" + elements_df.us_units + "]")
 
 @dataclass
 class params:
@@ -83,30 +86,7 @@ class params:
         "Wind Speed @ 8 ft [mi/hr]": "Wind Speed [mi/hr]",
     }
 
-    elem_map = {
-        "Air Temperature @ 2 m [°F]",
-        "Air Temperature @ 8 ft [°F]",
-        "Atmospheric Pressure [mbar]",
-        "Precipitation [in]",
-        "Relative Humidity [%]",
-        "Soil Temperature @ -10 cm [°F]",
-        "Soil Temperature @ -100 cm [°F]",
-        "Soil Temperature @ -20 cm [°F]",
-        "Soil Temperature @ -5 cm [°F]",
-        "Soil Temperature @ -50 cm [°F]",
-        "Soil Temperature @ -91 cm [°F]",
-        "Soil VWC @ -10 cm [%]",
-        "Soil VWC @ -100 cm [%]",
-        "Soil VWC @ -20 cm [%]",
-        "Soil VWC @ -5 cm [%]",
-        "Soil VWC @ -50 cm [%]",
-        "Soil VWC @ -91 cm [%]",
-        "Solar Radiation [W/m²]",
-        "Wind Direction @ 10 m [deg]",
-        "Wind Direction @ 8 ft [deg]",
-        "Wind Speed @ 10 m [mi/hr]",
-        "Wind Speed @ 8 ft [mi/hr]",
-    }
+    elem_map = dict(zip(elements_df.element, elements_df.description_short))
 
     color_mapper = {
         "Air Temperature": "#c42217",

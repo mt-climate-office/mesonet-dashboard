@@ -145,35 +145,34 @@ def plot_all(dfs: Dict[str, pd.DataFrame], climatology, **kwargs):
     return fig
 
 
-def lab_from_df(df):
-    platform = list(set(df.platform.values))[0]
+def lab_from_df(df, station):
     element = list(set(df.element.values))[0]
-    element = params.sat_axis_mapper[element]
+    element = element if station else params.sat_axis_mapper[element]
     element = element.replace("<br>", " ")
-    return f"{platform} {element}"
+    return element
 
 
-def plot_comparison(dat1, dat2):
+def plot_comparison(dat1, dat2, station=None):
+    
 
-    lab1 = 'test'
-    lab2 = 'test2'
-    print(dat1)
-    print(dat2)
+    lab1 = lab_from_df(dat1, None)
+    lab2 = lab_from_df(dat2, station)
+
     dat1 = dat1[["date", "value"]]
     dat2 = dat2[["date", "value"]]
-    tol = pd.Timedelta("16 day")
-    dat1.index = dat1.date
-    dat2.index = dat2.date
+
+    dat1.index = pd.DatetimeIndex(dat1.date)
+    dat2.index = pd.DatetimeIndex(dat2.date)
     out = pd.merge_asof(
         left=dat1,
         right=dat2,
         right_index=True,
         left_index=True,
         direction="nearest",
-        tolerance=tol,
+        tolerance=pd.Timedelta("16 day"),
     )
 
-    fig = px.scatter(out, x="value_x", y="value_y")
+    fig = px.scatter(out, x="value_x", y="value_y", custom_data=["date_x"])
 
     fig = style_figure(fig, None)
     fig.update_layout(
@@ -183,7 +182,7 @@ def plot_comparison(dat1, dat2):
         height=600,
     )
     fig.update_traces(
-        hovertemplate="<b>" + lab1 + "</b>: %{x}<br><b><b>" + lab2 + "</b>: %{y}"
+        hovertemplate="<b>" + lab1 + "</b>: %{x}<br><b>" + lab2 + "</b>: %{y}<br><b>Date</b>: %{customdata[0]}"
     )
 
     return fig

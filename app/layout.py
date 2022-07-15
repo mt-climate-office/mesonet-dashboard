@@ -758,5 +758,6 @@ def app_layout(app_ref):
             "height": "100%",
             "backgroundColor": "#E9ECEF",
             "padding": "0rem 1.5rem 0rem 1.5rem",
+            "overflow-y": "clip",
         },
     )

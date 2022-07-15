@@ -93,16 +93,6 @@ def get_station_record(
         params=payload,
     ).prepare()
 
-    # r = requests.get(
-    #     url=f"{params.API_URL}observations",
-    #     params=payload,
-    #     stream=True
-    # )
-
-    # with io.StringIO(r.text) as text_io:
-    #     dat = pd.read_csv(text_io)
-    # return dat
-
     dat = pd.read_csv(r.url)
     return dat
 
@@ -254,9 +244,7 @@ def get_satellite_data(
 
 def parse_async_data(text_io):
     dat = pd.read_csv(text_io)
-    dat = dat[['station', 'datetime', 'value']]
-    dat.columns = ["station", "datetime", "value"]
-    dat = dat.groupby("station").agg({"value": "mean", "datetime": "min"})
+    dat = dat.groupby("station").agg({dat.columns[-1]: "mean", "datetime": "min"})
     dat = dat.reset_index(drop=True)
     return dat
 
@@ -285,7 +273,7 @@ def build_async_urls(dates, station, element):
     urls = []
     for d in dates:
         urls.append(
-            f"{params.API_URL}observations/?stations={station}&elements={element}&start_time={d}&end_time={d + rd(days=1)}&type=csv&hour=True&wide=False"
+            f"{params.API_URL}observations/?stations={station}&elements={element}&start_time={d}&end_time={d + rd(days=1)}&type=csv&hour=True&wide=True"
         )
     return urls
 
@@ -325,8 +313,9 @@ def get_sat_compare_data(station: str,
             dat = pd.DataFrame()
         csvs.append(dat)
     station_data = pd.concat(csvs, axis=0)
+    colname = station_data.columns[0]
     station_data = station_data.assign(datetime = pd.to_datetime(station_data.datetime, utc=True))
     station_data = station_data.assign(datetime = station_data.datetime.dt.tz_convert("America/Denver"))
-    station_data = station_data.assign(date = station_data.datetime.dt.date).groupby('date').agg({"value":"mean"}).reset_index()
+    station_data = station_data.assign(date = station_data.datetime.dt.date).groupby('date').agg({colname:"mean"}).reset_index()
 
     return sat_data, station_data
