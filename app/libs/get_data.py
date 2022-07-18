@@ -248,6 +248,7 @@ def parse_async_data(text_io):
     dat = dat.reset_index(drop=True)
     return dat
 
+
 async def get_csv_async(client, url):
     # Send a request.
     async with client.get(url) as response:
@@ -258,7 +259,6 @@ async def get_csv_async(client, url):
             except ValueError:
                 dat = pd.DataFrame()
             return dat
-
 
 
 async def get_all_csvs_async(urls):
@@ -285,7 +285,8 @@ def get_async_station_data(dates, station, element):
     return csvs
 
 
-def get_sat_compare_data(station: str,
+def get_sat_compare_data(
+    station: str,
     sat_element: str,
     station_element: str,
     start_time: Union[int, dt.date],
@@ -296,15 +297,13 @@ def get_sat_compare_data(station: str,
         station, sat_element, start_time, end_time, platform, False
     )
 
-    sat_data = sat_data.assign(
-        date = sat_data.date.dt.date
-    )
+    sat_data = sat_data.assign(date=sat_data.date.dt.date)
 
     # station_data = get_async_station_data(
     #     sat_data['date'].to_list(), station, station_element
     # )
     # print(station_data)
-    urls = build_async_urls(sat_data['date'].to_list(), station, station_element)
+    urls = build_async_urls(sat_data["date"].to_list(), station, station_element)
     csvs = []
     for x in urls:
         try:
@@ -314,8 +313,17 @@ def get_sat_compare_data(station: str,
         csvs.append(dat)
     station_data = pd.concat(csvs, axis=0)
     colname = station_data.columns[0]
-    station_data = station_data.assign(datetime = pd.to_datetime(station_data.datetime, utc=True))
-    station_data = station_data.assign(datetime = station_data.datetime.dt.tz_convert("America/Denver"))
-    station_data = station_data.assign(date = station_data.datetime.dt.date).groupby('date').agg({colname:"mean"}).reset_index()
+    station_data = station_data.assign(
+        datetime=pd.to_datetime(station_data.datetime, utc=True)
+    )
+    station_data = station_data.assign(
+        datetime=station_data.datetime.dt.tz_convert("America/Denver")
+    )
+    station_data = (
+        station_data.assign(date=station_data.datetime.dt.date)
+        .groupby("date")
+        .agg({colname: "mean"})
+        .reset_index()
+    )
 
     return sat_data, station_data

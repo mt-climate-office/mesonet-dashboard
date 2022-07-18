@@ -16,6 +16,8 @@ def make_satellite_normals(df):
     df = df.assign(month=df.date.dt.month)
     df = df.assign(day=df.date.dt.day)
     cur_year = dt.date.today().year
+    cur = df[df.year == cur_year]
+    cur = cur[["platform", "element", "month", "day"]]
 
     df = (
         df.groupby_agg(
@@ -28,13 +30,13 @@ def make_satellite_normals(df):
             by=["month", "day"],
             new_column_name="mn",
             agg_column_name="value",
-            agg="min",
+            agg=lambda x: np.quantile(x, 0.05),
         )
         .groupby_agg(
             by=["month", "day"],
             new_column_name="mx",
             agg_column_name="value",
-            agg="max",
+            agg=lambda x: np.quantile(x, 0.95),
         )
         .assign(
             datetime=pd.to_datetime(
@@ -47,6 +49,9 @@ def make_satellite_normals(df):
         .reset_index(drop=True)
     )
 
+    df = df.assign(mn=df.mn.rolling(5, min_periods=1).mean())
+    df = df.assign(mx=df.mx.rolling(5, min_periods=1).mean())
+
     return df
 
 
@@ -57,6 +62,7 @@ def plot_indicator(fig, dat, **kwargs):
 
     dat = dat.assign(grp=dat.year.astype(str) + "_" + dat.platform)
     cur_year = dt.date.today().year
+    dat = dat[dat.year == cur_year]
     element = params.sat_axis_mapper[kwargs["element"]].replace("<br>", " ")
     for grp in dat.grp.drop_duplicates():
         year, platform = grp.split("_")
@@ -82,14 +88,6 @@ def plot_indicator(fig, dat, **kwargs):
             col=1,
         )
     if kwargs["climatology"]:
-        mx_line = go.Scatter(
-            x=norms.datetime,
-            y=norms.mx,
-            mode="lines",
-            line={"dash": "dash", "color": "black"},
-            showlegend=False,
-            name="75th Percentile",
-        )
 
         mn_line = go.Scatter(
             x=norms.datetime,
@@ -97,15 +95,30 @@ def plot_indicator(fig, dat, **kwargs):
             mode="lines",
             line={"dash": "dash", "color": "black"},
             showlegend=False,
-            name="25th Percentile",
+            name="5th Percentile",
+        )
+
+        mx_line = go.Scatter(
+            x=norms.datetime,
+            y=norms.mx,
+            mode="lines",
+            line={"dash": "dash", "color": "black"},
+            showlegend=False,
+            name="95th Percentile",
             fill="tonexty",
             fillcolor="rgba(107,107,107,0.4)",
         )
 
-        fig.add_trace(mx_line,             row=kwargs["idx"],
-        col=1,)
-        fig.add_trace(mn_line,             row=kwargs["idx"],
-        col=1,)
+        fig.add_trace(
+            mn_line,
+            row=kwargs["idx"],
+            col=1,
+        )
+        fig.add_trace(
+            mx_line,
+            row=kwargs["idx"],
+            col=1,
+        )
 
     for trace in fig["data"]:
         if trace["name"] is None:
@@ -153,7 +166,6 @@ def lab_from_df(df, station):
 
 
 def plot_comparison(dat1, dat2, station=None):
-    
 
     lab1 = lab_from_df(dat1, None)
     lab2 = lab_from_df(dat2, station)
@@ -182,7 +194,11 @@ def plot_comparison(dat1, dat2, station=None):
         height=600,
     )
     fig.update_traces(
-        hovertemplate="<b>" + lab1 + "</b>: %{x}<br><b>" + lab2 + "</b>: %{y}<br><b>Date</b>: %{customdata[0]}"
+        hovertemplate="<b>"
+        + lab1
+        + "</b>: %{x}<br><b>"
+        + lab2
+        + "</b>: %{y}<br><b>Date</b>: %{customdata[0]}"
     )
 
     return fig

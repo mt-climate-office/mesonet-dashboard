@@ -104,12 +104,12 @@ def make_nodata_figure(txt="No data avaliable for selected dates."):
 @app.callback(
     Output("banner-title", "children"),
     [Input("station-dropdown", "value"), Input("main-display-tabs", "value")],
-    prevent_initial_callback=True
+    prevent_initial_callback=True,
 )
 def update_banner_text(station, tab):
     return (
         f"The Montana Mesonet Dashboard: {stations[stations['station'] == station].name.values[0]}"
-        if station != '' and tab == 'station-tab'
+        if station != "" and tab == "station-tab"
         else "The Montana Mesonet Dashboard"
     )
 
@@ -489,31 +489,40 @@ def render_satellite_ts_plot(station, elements, climatology):
     return plot_all(dfs, climatology=climatology)
 
 
-@app.callback(
-    Output("compare2", "disabled"),
-    Input("compare1", "value")
-)
+@app.callback(Output("compare2", "disabled"), Input("compare1", "value"))
 def enable_compare2(val):
     return val is None
 
 
 @app.callback(
-    Output("compare2", "options"),
-    Input("station-dropdown-satellite", "value")
+    Output("compare2", "options"), Input("station-dropdown-satellite", "value")
 )
 def update_compare2_options(station):
-    options = [{"label": " ", "value": " ", "disabled": True},
-        {"label": "SATELLITE VARIABLES", "value": "SATELLITE VARIABLES", "disabled": True},
-    {"label": "-"*30, "value":  "-"*30, "disabled": True}]
+    options = [
+        {"label": " ", "value": " ", "disabled": True},
+        {
+            "label": "SATELLITE VARIABLES",
+            "value": "SATELLITE VARIABLES",
+            "disabled": True,
+        },
+        {"label": "-" * 30, "value": "-" * 30, "disabled": True},
+    ]
     options += [{"label": k, "value": v} for k, v in params.sat_compare_mapper.items()]
     if station is None:
         return options
-    
-    station_elements = pd.read_csv(f"https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/station_elements/{station}/?type=csv")
+
+    station_elements = pd.read_csv(
+        f"https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/station_elements/{station}/?type=csv"
+    )
     station_elements = station_elements.sort_values("description_short")
-    elements = [{"label": "STATION VARIABLES", "value": "STATION VARIABLES", "disabled": True},
-    {"label":  "-"*32, "value":  "-"*32, "disabled": True}]
-    elements += [{"label": k, "value": v} for k, v in zip(station_elements.description_short, station_elements.element)]
+    elements = [
+        {"label": "STATION VARIABLES", "value": "STATION VARIABLES", "disabled": True},
+        {"label": "-" * 32, "value": "-" * 32, "disabled": True},
+    ]
+    elements += [
+        {"label": k, "value": v}
+        for k, v in zip(station_elements.description_short, station_elements.element)
+    ]
     elements += options
     return elements
 
@@ -572,9 +581,11 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
 
         plt = plot_comparison(dat1, dat2)
 
-
     except ValueError:
-        element2, platform2 = value2, stations[stations["station"] == station]["name"].values[0]
+        element2, platform2 = (
+            value2,
+            stations[stations["station"] == station]["name"].values[0],
+        )
 
         dat1, dat2 = get_sat_compare_data(
             station=station,
@@ -589,9 +600,9 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
         dat2 = dat2.assign(platform=platform2)
         dat2.columns = ["date", "value", "element", "platform"]
 
-
         plt = plot_comparison(dat1, dat2, station)
     return plt
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)

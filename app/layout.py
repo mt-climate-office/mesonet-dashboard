@@ -225,11 +225,12 @@ def build_bottom_left_card(station_fig):
 def make_station_dropdowns(stations, id, station):
     return dbc.Select(
         options=[
-                            {"label": k, "value": v}
-                            for k, v in zip(
+            {"label": k, "value": v}
+            for k, v in zip(
                 stations["long_name"],
                 stations["station"],
-            )],
+            )
+        ],
         id=id,
         placeholder="Select a Mesonet Station...",
         # className="stationSelect",

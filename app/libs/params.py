@@ -5,7 +5,10 @@ import dateutil.relativedelta as rd
 import pandas as pd
 
 elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
-elements_df.assign(description = elements_df.description_short + " [" + elements_df.us_units + "]")
+elements_df.assign(
+    description=elements_df.description_short + " [" + elements_df.us_units + "]"
+)
+
 
 @dataclass
 class params:
