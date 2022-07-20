@@ -7,43 +7,43 @@ import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
-# from .layout import (
-#     app_layout,
-#     build_latest_content,
-#     build_satellite_content,
-#     build_satellite_dropdowns,
-#     table_styling,
-# )
-# from .libs.get_data import (
-#     clean_format,
-#     filter_top_of_hour,
-#     get_satellite_data,
-#     get_sites,
-#     get_station_latest,
-# )
-# from .libs.plot_satellite import plot_all, plot_comparison
-# from .libs.plotting import plot_latest_ace_image, plot_site, plot_station, plot_wind
-# from .libs.tables import make_metadata_table
-
-from libs.get_data import (
-    get_sat_compare_data,
-    get_sites,
-    clean_format,
-    get_station_latest,
-    filter_top_of_hour,
-    get_satellite_data,
-)
-from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-from libs.tables import make_metadata_table
-from layout import (
+from .layout import (
     app_layout,
-    table_styling,
     build_latest_content,
     build_satellite_content,
     build_satellite_dropdowns,
+    table_styling,
 )
-from libs.params import params
-from libs.plot_satellite import plot_all, plot_comparison
+from .libs.get_data import (
+    clean_format,
+    filter_top_of_hour,
+    get_satellite_data,
+    get_sites,
+    get_station_latest,
+)
+from .libs.plot_satellite import plot_all, plot_comparison
+from .libs.plotting import plot_latest_ace_image, plot_site, plot_station, plot_wind
+from .libs.tables import make_metadata_table
+
+# from libs.get_data import (
+#     get_sat_compare_data,
+#     get_sites,
+#     clean_format,
+#     get_station_latest,
+#     filter_top_of_hour,
+#     get_satellite_data,
+# )
+# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
+# from libs.tables import make_metadata_table
+# from layout import (
+#     app_layout,
+#     table_styling,
+#     build_latest_content,
+#     build_satellite_content,
+#     build_satellite_dropdowns,
+# )
+# from libs.params import params
+# from libs.plot_satellite import plot_all, plot_comparison
 
 pd.options.mode.chained_assignment = None
 
@@ -59,7 +59,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    # requests_pathname_prefix="/dash/",
+    requests_pathname_prefix="/dash/",
     external_scripts=[
         "https://www.googletagmanager.com/gtag/js?id=UA-149859729-3",
         "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/develop/app/assets/gtag.js",
@@ -512,7 +512,7 @@ def update_compare2_options(station):
         return options
 
     station_elements = pd.read_csv(
-        f"https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/station_elements/{station}/?type=csv"
+        f"https://mesonet.climate.umt.edu/api/v2/elements/{station}/?type=csv"
     )
     station_elements = station_elements.sort_values("description_short")
     elements = [
@@ -596,9 +596,9 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
             platform=platform1,
         )
 
-        dat2 = dat2.assign(element=dat2.columns[-1])
+        dat2 = dat2.assign(element=dat2.columns[0])
         dat2 = dat2.assign(platform=platform2)
-        dat2.columns = ["date", "value", "element", "platform"]
+        dat2.columns = ["value", "date", "element", "platform"]
 
         plt = plot_comparison(dat1, dat2, station)
     return plt

@@ -1,11 +1,9 @@
 from urllib.error import HTTPError
-import aiohttp
 import datetime as dt
 import io
 import os
 from typing import Optional, Union
 from urllib import parse
-import asyncio
 
 import numpy as np
 import pandas as pd
@@ -242,47 +240,13 @@ def get_satellite_data(
     return dat
 
 
-def parse_async_data(text_io):
-    dat = pd.read_csv(text_io)
-    dat = dat.groupby("station").agg({dat.columns[-1]: "mean", "datetime": "min"})
+def summarise_station_to_daily(dat, colname):
+    dat.datetime = pd.to_datetime(dat.datetime, utc=True)
+    dat.datetime = dat.datetime.dt.tz_convert("America/Denver")
+    dat = dat.assign(date = dat.datetime.dt.date)
+    dat = dat.groupby(["station", "date"]).agg({colname: "mean", "date": "min"})
     dat = dat.reset_index(drop=True)
     return dat
-
-
-async def get_csv_async(client, url):
-    # Send a request.
-    async with client.get(url) as response:
-        # Read entire resposne text and convert to file-like using StringIO().
-        with io.StringIO(await response.text()) as text_io:
-            try:
-                dat = parse_async_data(text_io)
-            except ValueError:
-                dat = pd.DataFrame()
-            return dat
-
-
-async def get_all_csvs_async(urls):
-    async with aiohttp.ClientSession() as client:
-        # First create all futures at once.
-        futures = [get_csv_async(client, url) for url in urls]
-        # Then wait for all the futures to complete.
-        return await asyncio.gather(*futures)
-
-
-def build_async_urls(dates, station, element):
-    urls = []
-    for d in dates:
-        urls.append(
-            f"{params.API_URL}observations/?stations={station}&elements={element}&start_time={d}&end_time={d + rd(days=1)}&type=csv&hour=True&wide=True"
-        )
-    return urls
-
-
-def get_async_station_data(dates, station, element):
-    urls = build_async_urls(dates, station, element)
-    csvs = asyncio.run(get_all_csvs_async(urls))
-    csvs = pd.concat(csvs, axis=0)
-    return csvs
 
 
 def get_sat_compare_data(
@@ -296,34 +260,15 @@ def get_sat_compare_data(
     sat_data = get_satellite_data(
         station, sat_element, start_time, end_time, platform, False
     )
+    
+    if platform in ["SPL4CMDL.006", "SPL4SMGP.006"]:
+        sat_data = sat_data.iloc[::8, :]
+    
+    dates = ",".join(set(sat_data.date.astype(str).values.tolist()))
 
-    sat_data = sat_data.assign(date=sat_data.date.dt.date)
-
-    # station_data = get_async_station_data(
-    #     sat_data['date'].to_list(), station, station_element
-    # )
-    # print(station_data)
-    urls = build_async_urls(sat_data["date"].to_list(), station, station_element)
-    csvs = []
-    for x in urls:
-        try:
-            dat = parse_async_data(x)
-        except HTTPError:
-            dat = pd.DataFrame()
-        csvs.append(dat)
-    station_data = pd.concat(csvs, axis=0)
-    colname = station_data.columns[0]
-    station_data = station_data.assign(
-        datetime=pd.to_datetime(station_data.datetime, utc=True)
-    )
-    station_data = station_data.assign(
-        datetime=station_data.datetime.dt.tz_convert("America/Denver")
-    )
-    station_data = (
-        station_data.assign(date=station_data.datetime.dt.date)
-        .groupby("date")
-        .agg({colname: "mean"})
-        .reset_index()
-    )
+    url= f"{params.API_URL}observations/?stations={station}&elements={station_element}&dates={dates}&type=csv&hour=True&wide=True"
+    station_data = pd.read_csv(url)
+    colname = station_data.columns[-1]
+    station_data = summarise_station_to_daily(station_data, colname)
 
     return sat_data, station_data

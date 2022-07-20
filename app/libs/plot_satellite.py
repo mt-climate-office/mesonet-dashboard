@@ -128,7 +128,7 @@ def plot_indicator(fig, dat, **kwargs):
 
 
 def plot_all(dfs: Dict[str, pd.DataFrame], climatology, **kwargs):
-    climatology = True
+
     fig = make_subplots(rows=len(dfs), cols=1)
     for idx, tup in enumerate(dfs.items(), start=1):
         v, df = tup

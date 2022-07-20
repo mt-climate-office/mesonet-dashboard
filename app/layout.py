@@ -4,9 +4,9 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
-# from .libs.params import params
+from .libs.params import params
 
-from libs.params import params
+# from libs.params import params
 
 
 def generate_modal():
@@ -476,23 +476,29 @@ def build_latest_content(station_fig, stations):
 def build_satellite_ts_selector():
     return (
         dbc.Col(
-            dbc.Checklist(
+            [dbc.Checklist(
                 options=[
                     {
-                        "label": "Climatology",
+                        "label": "Percentiles",
                         "value": 1,
                     },
                 ],
                 id="climatology-switch",
                 switch=True,
-                value=[],
+                value=[1],
                 # className="toggle",
             ),
+            dbc.Tooltip(
+                """
+                Show the 5th and 95th percentile of observations for the period of record.
+                """,
+                target="climatology-switch",
+            )],
             xs=12,
             sm=12,
-            md=1,
-            lg=1,
-            xl=1,
+            md=2,
+            lg=2,
+            xl=2,
         ),
         dbc.Col(
             [
@@ -536,7 +542,7 @@ def build_satellite_ts_selector():
                         ],
                         style={"overflow-x": "scroll"},
                     ),
-                    className="mb-3",
+                    # className="mb-3",
                     size="lg",
                 ),
             ],
@@ -598,9 +604,9 @@ def build_satellite_comp_selector():
             ),
             xs=5,
             sm=5,
-            md=2,
-            lg=2,
-            xl=2,
+            md=3,
+            lg=3,
+            xl=3,
             # style={"padding": "0rem 0rem 0rem 6.5rem"},
         ),
         dbc.Col(
@@ -618,9 +624,9 @@ def build_satellite_comp_selector():
             ),
             xs=5,
             sm=5,
-            md=2,
-            lg=2,
-            xl=2,
+            md=3,
+            lg=3,
+            xl=3,
             # style={"padding": "0rem 0rem 0rem 6.5rem"},
         ),
     ]

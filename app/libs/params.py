@@ -168,9 +168,9 @@ class params:
     }
 
     sat_axis_mapper = {
-        "sm_surface": "Soil VWC<br>(%)",
+        "sm_surface": "Surface Soil<br>VWC (%)",
         "sm_surface_wetness": "Surface<br>Soil Saturation",
-        "sm_rootzone": "Soil VWC<br>(%)",
+        "sm_rootzone": "Rootzone Soil<br>VWC (%)",
         "sm_rootzone_wetness": "Rootzone<br>Soil Saturation",
         "GPP": "GPP<br>(g C m^-2)",
         "ET": "ET<br>(mm day^-1)",
