@@ -19,9 +19,6 @@ from .params import params
 load_dotenv()
 
 
-elements = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements/?type=csv")
-
-
 def get_sites() -> pd.DataFrame:
     """Pulls station data from the Montana Mesonet V2 API and returns a dataframe.
 
