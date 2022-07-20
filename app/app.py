@@ -110,11 +110,14 @@ def make_nodata_figure(txt="No data avaliable for selected dates."):
     prevent_initial_callback=True,
 )
 def update_banner_text(station, tab):
-    return (
-        f"The Montana Mesonet Dashboard: {stations[stations['station'] == station].name.values[0]}"
-        if station != "" and tab == "station-tab"
-        else "The Montana Mesonet Dashboard"
-    )
+    try:
+        return (
+            f"The Montana Mesonet Dashboard: {stations[stations['station'] == station].name.values[0]}"
+            if station != "" and tab == "station-tab"
+            else "The Montana Mesonet Dashboard"
+        )
+    except IndexError:
+        return "The Montana Mesonet Dashboard"
 
 
 @app.callback(
