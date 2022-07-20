@@ -15,6 +15,7 @@ from .layout import (
     table_styling,
 )
 from .libs.get_data import (
+    get_sat_compare_data,
     clean_format,
     filter_top_of_hour,
     get_satellite_data,
@@ -24,6 +25,8 @@ from .libs.get_data import (
 from .libs.plot_satellite import plot_all, plot_comparison
 from .libs.plotting import plot_latest_ace_image, plot_site, plot_station, plot_wind
 from .libs.tables import make_metadata_table
+from .libs.params import params
+
 
 # from libs.get_data import (
 #     get_sat_compare_data,

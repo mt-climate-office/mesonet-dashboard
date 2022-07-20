@@ -243,7 +243,7 @@ def get_satellite_data(
 def summarise_station_to_daily(dat, colname):
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
     dat.datetime = dat.datetime.dt.tz_convert("America/Denver")
-    dat = dat.assign(date = dat.datetime.dt.date)
+    dat = dat.assign(date=dat.datetime.dt.date)
     dat = dat.groupby(["station", "date"]).agg({colname: "mean", "date": "min"})
     dat = dat.reset_index(drop=True)
     return dat
@@ -260,13 +260,13 @@ def get_sat_compare_data(
     sat_data = get_satellite_data(
         station, sat_element, start_time, end_time, platform, False
     )
-    
+
     if platform in ["SPL4CMDL.006", "SPL4SMGP.006"]:
         sat_data = sat_data.iloc[::8, :]
-    
+
     dates = ",".join(set(sat_data.date.astype(str).values.tolist()))
 
-    url= f"{params.API_URL}observations/?stations={station}&elements={station_element}&dates={dates}&type=csv&hour=True&wide=True"
+    url = f"{params.API_URL}observations/?stations={station}&elements={station_element}&dates={dates}&type=csv&hour=True&wide=True"
     station_data = pd.read_csv(url)
     colname = station_data.columns[-1]
     station_data = summarise_station_to_daily(station_data, colname)

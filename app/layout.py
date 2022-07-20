@@ -476,24 +476,26 @@ def build_latest_content(station_fig, stations):
 def build_satellite_ts_selector():
     return (
         dbc.Col(
-            [dbc.Checklist(
-                options=[
-                    {
-                        "label": "Percentiles",
-                        "value": 1,
-                    },
-                ],
-                id="climatology-switch",
-                switch=True,
-                value=[1],
-                # className="toggle",
-            ),
-            dbc.Tooltip(
-                """
+            [
+                dbc.Checklist(
+                    options=[
+                        {
+                            "label": "Percentiles",
+                            "value": 1,
+                        },
+                    ],
+                    id="climatology-switch",
+                    switch=True,
+                    value=[1],
+                    # className="toggle",
+                ),
+                dbc.Tooltip(
+                    """
                 Show the 5th and 95th percentile of observations for the period of record.
                 """,
-                target="climatology-switch",
-            )],
+                    target="climatology-switch",
+                ),
+            ],
             xs=12,
             sm=12,
             md=2,
