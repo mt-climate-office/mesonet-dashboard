@@ -438,6 +438,8 @@ def px_to_subplot(*figs, **kwargs):
             for trace in traces:
                 sub.append_trace(trace, row=idx, col=1)
         else:
+            print('asdfuahsdpfiouashdfpoiuashfiouashfoaiusdhfaosiudfhaosidufhasoiufh')
+            print(traces)
             sub.add_trace(*traces, row=idx, col=1)
 
     return sub
@@ -521,20 +523,41 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
     plots = {}
     no_data = []
-    for v in args:
-        if v == "ET":
-            plt = plot_etr(hourly=dat, **kwargs)
-        else:
-            df = ppt if v == "Precipitation" else dat
-            plot_func = get_plot_func(v)
-            data = filter_df(df, v)
+    no_data_df = dat[['datetime']].drop_duplicates()
+    no_data_df = no_data_df.assign(data = None)
+    for idx, v in enumerate(args, 1):
+        try:
+            if v == "ET":
+                plt = plot_etr(hourly=dat, **kwargs)
+            else:
+                df = ppt if v == "Precipitation" else dat
+                plot_func = get_plot_func(v)
+                data = filter_df(df, v)
 
-            if len(data) == 0 or data.shape[-1] == 1:
-                no_data.append(v)
-                continue
-            if v == "Soil Temperature" or v == "Soil VWC":
-                kwargs.update({"txt": v})
-            plt = plot_func(data, color=params.color_mapper[v], **kwargs)
+                if len(data) == 0 or data.shape[-1] == 1:
+                    no_data.append(v)
+                    continue
+                if v == "Soil Temperature" or v == "Soil VWC":
+                    kwargs.update({"txt": v})
+                plt = plot_func(data, color=params.color_mapper[v], **kwargs)
+        except (KeyError, ValueError):
+            txt = f"{v} data are not available for this time period."
+            plt = px.line(no_data_df, x="datetime", y="data", markers=True)
+            yref = f"y{idx}"
+            plt.add_annotation(
+                dict(
+                    font=dict(color="black", size=18),
+                    x=no_data_df.datetime.mean(),
+                    y=2,
+                    showarrow=False,
+                    text=txt,
+                    textangle=0,
+                    xanchor="center",
+                    xref="x1",
+                    yref=yref,
+                )
+            )
+                    
         plots[v] = plt
 
     sub = px_to_subplot(*list(plots.values()), shared_xaxes=False)
@@ -553,7 +576,6 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     sub.update_layout(
         margin={"r": 0, "t": 20, "l": 0, "b": 0},
     )
-
     if "Soil Temperature" in no_data or "Soil VWC" in no_data:
         return sub
 

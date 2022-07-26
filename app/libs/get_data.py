@@ -129,6 +129,7 @@ def clean_format(
         pd.DataFrame: DataFrame of station records in a cleaned format and with precip aggregated to daily sum.
     """
     time_freq = "5min" if station[:3] == "ace" else "15min"
+    time_freq = "60min" if hourly else time_freq
 
     dat = get_station_record(station, start_time, end_time, hourly)
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
@@ -259,6 +260,8 @@ def get_sat_compare_data(
     )
 
     if platform in ["SPL4CMDL.006", "SPL4SMGP.006"]:
+        # Take every 8th observation from SMAP data. The API query takes too long
+        # if using all the daily data. 
         sat_data = sat_data.iloc[::8, :]
 
     dates = ",".join(set(sat_data.date.astype(str).values.tolist()))
