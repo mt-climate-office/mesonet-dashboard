@@ -6,6 +6,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
+from urllib.error import HTTPError
 
 # from .layout import (
 #     app_layout,
@@ -100,6 +101,7 @@ def make_nodata_figure(txt="No data avaliable for selected dates."):
         xaxis_showticklabels=False,
         paper_bgcolor="white",
         plot_bgcolor="white",
+        height=500
     )
     return fig
 
@@ -163,7 +165,7 @@ def get_latest_api_data(station, start, end, hourly):
             data = clean_format(
                 station, start_time=start, end_time=end, hourly=len(hourly) == 1
             )
-        except AttributeError as e:
+        except (AttributeError, HTTPError) as e:
             print(e)
             return -1
         return data.to_json(date_format="iso", orient="records")
@@ -231,7 +233,7 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
     norm = [norm] if isinstance(norm, int) else norm
 
     if len(select_vars) == 0:
-        return make_nodata_figure()
+        return make_nodata_figure("No variables selected")
     elif tmp_data and tmp_data != -1:
         data = pd.read_json(tmp_data, orient="records")
         data.datetime = data.datetime.dt.tz_convert("America/Denver")
@@ -252,13 +254,21 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
             norm=len(norm) == 1,
             top_of_hour=len(hourly) == 1,
         )
+    elif tmp_data == -1:
+        return make_nodata_figure(
+            """
+            <b>No data available for selected station and dates!</b> <br><br>
+            
+            Either change the date range or select a new station.
+            """
+        )
 
     return make_nodata_figure(
         """
         <b>No station selected!</b> <br><br>
         
         To get started, select a station from the dropdown above or the map to the right.
-    """
+        """
     )
 
 
@@ -331,7 +341,8 @@ def update_ul_card(at, station, tmp_data=None):
         return (
             html.Div(
                 dcc.Graph(
-                    figure=make_nodata_figure(),
+                    figure=make_nodata_figure("<b>No data available for selected dates.</b>"),
+                    style={"height": "40vh"},
                 )
             ),
         )

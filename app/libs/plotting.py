@@ -438,8 +438,6 @@ def px_to_subplot(*figs, **kwargs):
             for trace in traces:
                 sub.append_trace(trace, row=idx, col=1)
         else:
-            print('asdfuahsdpfiouashdfpoiuashfiouashfoaiusdhfaosiudfhaosidufhasoiufh')
-            print(traces)
             sub.add_trace(*traces, row=idx, col=1)
 
     return sub
@@ -500,7 +498,6 @@ def add_soil_legend(sub, idx, xs, y, depths):
     }
 
     for idx2, d in enumerate(reversed(depths)):
-
         sub.add_annotation(
             x=xs[idx2],
             y=y,
@@ -519,10 +516,37 @@ def add_soil_legend(sub, idx, xs, y, depths):
     return sub
 
 
+def add_nodata_lab(sub, d, idx, v):
+
+    txt = f"{v} data are not available for this time period."
+
+    yref = f"y{idx}"
+    
+    sub.add_annotation(
+        dict(
+            x=d,
+            y=2,
+            xref="x1",
+            yref=yref,
+            text=txt,
+            showarrow=False,
+            font=dict(color="black", size=18),
+            align="center",
+            bordercolor="#c7c7c7",
+            xanchor="center",
+            yanchor="middle",
+            bgcolor="white",
+            opacity=1,
+        )
+    )
+
+    return sub
+
+
 def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
     plots = {}
-    no_data = []
+    no_data = {}
     no_data_df = dat[['datetime']].drop_duplicates()
     no_data_df = no_data_df.assign(data = None)
     for idx, v in enumerate(args, 1):
@@ -541,23 +565,9 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
                     kwargs.update({"txt": v})
                 plt = plot_func(data, color=params.color_mapper[v], **kwargs)
         except (KeyError, ValueError):
-            txt = f"{v} data are not available for this time period."
             plt = px.line(no_data_df, x="datetime", y="data", markers=True)
-            yref = f"y{idx}"
-            plt.add_annotation(
-                dict(
-                    font=dict(color="black", size=18),
-                    x=no_data_df.datetime.mean(),
-                    y=2,
-                    showarrow=False,
-                    text=txt,
-                    textangle=0,
-                    xanchor="center",
-                    xref="x1",
-                    yref=yref,
-                )
-            )
-                    
+            no_data[idx] = v
+
         plots[v] = plt
 
     sub = px_to_subplot(*list(plots.values()), shared_xaxes=False)
@@ -586,12 +596,13 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     vwc_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil VWC" in x]
 
     sub = add_soil_legend(
-        sub, tmp_idx, soil_info["d"], soil_info["tmp"], get_soil_depths(dat)
+        sub=sub, idx=tmp_idx, xs=soil_info["d"], y=soil_info["tmp"], depths=get_soil_depths(dat)
     )
     sub = add_soil_legend(
-        sub, vwc_idx, soil_info["d"], soil_info["vwc"], get_soil_depths(dat)
+        sub=sub, idx=vwc_idx, xs=soil_info["d"], y=soil_info["vwc"], depths=get_soil_depths(dat)
     )
-
+    for idx, v in no_data.items():
+        sub = add_nodata_lab(sub=sub, d=no_data_df.datetime.mean(), idx=idx, v=v)
     return sub
 
 
@@ -639,7 +650,7 @@ def plot_station(stations):
             {
                 "below": "traces",
                 "sourcetype": "raster",
-                "sourceattribution": "MapTiler API Hillshades",
+                "sourceattribution": "USGS Map Tiles",
                 "source": [
                     "https://basemap.nationalmap.gov/arcgis/rest/services/USGSShadedReliefOnly/MapServer/tile/{z}/{y}/{x}"
                 ],
