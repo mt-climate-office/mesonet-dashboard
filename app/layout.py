@@ -521,7 +521,7 @@ def build_satellite_ts_selector():
                                         "value": "sm_rootzone",
                                     },
                                     {
-                                        "label": "Rootzone Soil Wetness",
+                                        "label": "Rootzone Soil Saturation",
                                         "value": "sm_rootzone_wetness",
                                     },
                                     {
@@ -529,7 +529,7 @@ def build_satellite_ts_selector():
                                         "value": "sm_surface",
                                     },
                                     {
-                                        "label": "Surface Soil Wetness",
+                                        "label": "Surface Soil Saturation",
                                         "value": "sm_surface_wetness",
                                     },
                                 ],
@@ -568,7 +568,7 @@ def build_satellite_comp_selector():
                             for k, v in params.sat_compare_mapper.items()
                         ],
                         id="compare1",
-                        placeholder="Select a X-Axis...",
+                        placeholder="Select an X-Axis...",
                         className="stationSelect"
                         # style={"width": "150%"}
                     ),
@@ -580,7 +580,6 @@ def build_satellite_comp_selector():
                         id="compare2",
                         placeholder="Select a Y-Axis...",
                         className="stationSelect",
-                        disabled=True
                         # style={"width": "150%"}
                     ),
                 ]
@@ -723,6 +722,30 @@ table_styling = {
 
 def app_layout(app_ref):
     tab_height = "4.5vh"
+
+    TAB_STYLE = {
+        'width': 'inherit',
+        'borderTop': '1px black solid',
+        # 'borderBottom': '1px black solid',
+        'background': 'white',
+        'paddingTop': 0,
+        'paddingBottom': 0,
+        # 'height': '100px',
+        'line-height': tab_height,
+    }
+
+    SELECTED_STYLE = {
+        'width': 'inherit',
+        'boxShadow': 'none',
+        'borderTop': '3px #0B5ED7 solid',
+        # 'borderBottom': '1px black solid',
+        'boxShadow': 'inset 0px -1px 0px 0px lightgrey',
+        'background': '#E9ECEF',
+        'paddingTop': 0,
+        'paddingBottom': 0,
+        # 'height': '42px',
+        'line-height': tab_height,
+    }
     return dbc.Container(
         [
             dcc.Location(id="url", refresh=False),
@@ -734,15 +757,31 @@ def app_layout(app_ref):
                         label="Latest Data",
                         id="station-tab",
                         value="station-tab",
-                        style={"padding": "0", "line-height": tab_height},
-                        selected_style={"padding": "0", "line-height": tab_height},
+                        style=dict(
+                            borderLeft='1px black solid', 
+                            borderRight='0px black solid',
+                            **TAB_STYLE
+                        ),
+                        selected_style=dict(
+                            borderLeft='1px black solid', 
+                            borderRight='0.5px black solid',
+                            **SELECTED_STYLE
+                        ),
                     ),
                     dcc.Tab(
                         label="Satellite Indicators",
                         id="satellite-tab",
                         value="satellite-tab",
-                        style={"padding": "0", "line-height": tab_height},
-                        selected_style={"padding": "0", "line-height": tab_height},
+                        style=dict(
+                            borderLeft='0px black solid', 
+                            borderRight='1px black solid',
+                            **TAB_STYLE
+                        ),
+                        selected_style=dict(
+                            borderLeft='0.5px black solid', 
+                            borderRight='1px black solid',
+                            **SELECTED_STYLE
+                        ),
                     ),
                 ],
                 id="main-display-tabs",

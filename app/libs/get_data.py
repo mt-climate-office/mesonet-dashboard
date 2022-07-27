@@ -255,6 +255,8 @@ def get_sat_compare_data(
     end_time: Union[int, dt.date],
     platform: str,
 ):
+    from time import perf_counter
+
     sat_data = get_satellite_data(
         station, sat_element, start_time, end_time, platform, False
     )

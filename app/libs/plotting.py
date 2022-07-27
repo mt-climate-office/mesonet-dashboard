@@ -518,10 +518,10 @@ def add_soil_legend(sub, idx, xs, y, depths):
 
 def add_nodata_lab(sub, d, idx, v):
 
-    txt = f"{v} data are not available for this time period."
+    txt = f"<b>{v} data are not available for this time period.</b>"
 
     yref = f"y{idx}"
-    
+
     sub.add_annotation(
         dict(
             x=d,
@@ -610,9 +610,7 @@ def plot_station(stations):
     stations = stations[["station", "long_name", "elevation", "latitude", "longitude"]]
     stations = stations.assign(
         url=stations["long_name"]
-        + ": [View Latest Data](https://mesonet.climate.umt.edu/dash/"
-        + stations["station"]
-        + ")"
+        + ": [View Latest Data](/" + stations["station"] + ")"
     )
 
     grouped = stations.groupby(["latitude", "longitude"])

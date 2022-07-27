@@ -506,13 +506,9 @@ def render_satellite_ts_plot(station, elements, climatology):
     return plot_all(dfs, climatology=climatology)
 
 
-@app.callback(Output("compare2", "disabled"), Input("compare1", "value"))
-def enable_compare2(val):
-    return val is None
-
 
 @app.callback(
-    Output("compare2", "options"), Input("station-dropdown-satellite", "value")
+    Output("compare1", "options"), Input("station-dropdown-satellite", "value")
 )
 def update_compare2_options(station):
     options = [
@@ -548,8 +544,8 @@ def update_compare2_options(station):
     Output("satellite-compare", "figure"),
     [
         Input("station-dropdown-satellite", "value"),
-        Input("compare1", "value"),
         Input("compare2", "value"),
+        Input("compare1", "value"),
         Input("start-date-satellite", "date"),
         Input("end-date-satellite", "date"),
     ],
@@ -596,14 +592,17 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
             modify_dates=False,
         )
 
-        plt = plot_comparison(dat1, dat2)
+        plt = plot_comparison(dat1, dat2, flip=False)
 
     except ValueError:
         element2, platform2 = (
             value2,
             stations[stations["station"] == station]["name"].values[0],
         )
-
+        print(start_time, end_time)
+        print(element1)
+        print(element2)
+        print(platform1)
         dat1, dat2 = get_sat_compare_data(
             station=station,
             sat_element=element1,
@@ -616,8 +615,8 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
         dat2 = dat2.assign(element=dat2.columns[0])
         dat2 = dat2.assign(platform=platform2)
         dat2.columns = ["value", "date", "element", "platform"]
-
-        plt = plot_comparison(dat1, dat2, station)
+        
+        plt = plot_comparison(dat1, dat2, station, flip=True)
     return plt
 
 

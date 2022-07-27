@@ -165,7 +165,7 @@ def lab_from_df(df, station):
     return element
 
 
-def plot_comparison(dat1, dat2, station=None):
+def plot_comparison(dat1, dat2, station=None, flip=False):
 
     lab1 = lab_from_df(dat1, None)
     lab2 = lab_from_df(dat2, station)
@@ -184,13 +184,14 @@ def plot_comparison(dat1, dat2, station=None):
         tolerance=pd.Timedelta("16 day"),
     )
 
-    fig = px.scatter(out, x="value_x", y="value_y", custom_data=["date_x"])
+    
+    fig = px.scatter(out, x="value_y" if flip else "value_x", y="value_x" if flip else "value_y", custom_data=["date_x"])
 
     fig = style_figure(fig, None)
     fig.update_layout(
         margin={"r": 0, "t": 20, "l": 0, "b": 0},
-        xaxis_title=lab1,
-        yaxis_title=lab2,
+        xaxis_title=lab2 if flip else lab1,
+        yaxis_title=lab1 if flip else lab2,
         height=600,
     )
     fig.update_traces(
