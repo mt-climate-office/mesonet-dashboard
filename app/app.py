@@ -595,28 +595,35 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
         plt = plot_comparison(dat1, dat2, flip=False)
 
     except ValueError:
-        element2, platform2 = (
-            value2,
-            stations[stations["station"] == station]["name"].values[0],
-        )
-        print(start_time, end_time)
-        print(element1)
-        print(element2)
-        print(platform1)
-        dat1, dat2 = get_sat_compare_data(
-            station=station,
-            sat_element=element1,
-            station_element=element2,
-            start_time=start_time,
-            end_time=end_time,
-            platform=platform1,
-        )
-
-        dat2 = dat2.assign(element=dat2.columns[0])
-        dat2 = dat2.assign(platform=platform2)
-        dat2.columns = ["value", "date", "element", "platform"]
+        try:
+            element2, platform2 = (
+                value2,
+                stations[stations["station"] == station]["name"].values[0],
+            )
         
-        plt = plot_comparison(dat1, dat2, station, flip=True)
+            dat1, dat2 = get_sat_compare_data(
+                station=station,
+                sat_element=element1,
+                station_element=element2,
+                start_time=start_time,
+                end_time=end_time,
+                platform=platform1,
+            )
+
+            dat2 = dat2.assign(element=dat2.columns[0])
+            dat2 = dat2.assign(platform=platform2)
+            dat2.columns = ["value", "date", "element", "platform"]
+            
+            plt = plot_comparison(dat1, dat2, station, flip=True)
+        
+        except HTTPError:
+            plt = make_nodata_figure(
+                    """
+                <b>No Station Data Available!</b> <br><br>
+                
+                Please select a new station variable.
+                """
+            )
     return plt
 
 

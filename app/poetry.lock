@@ -272,6 +272,17 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "dash-loading-spinners"
+version = "1.0.0"
+description = "Fun and funky loading spinners for your Dash apps"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+dash = "*"
+
+[[package]]
 name = "dash-table"
 version = "5.0.0"
 description = "Dash table"
@@ -1344,7 +1355,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "76a87b36d686b465ec8388fa050cae3a4c370a3c3afa16e447f5abb37e7c538e"
+content-hash = "507cfe5bae176cd8024f0d98f81ae5a2843c327161b4887ca222d2a2eb3e81aa"
 
 [metadata.files]
 aiohttp = [
@@ -1596,6 +1607,7 @@ dash-daq = [
 dash-html-components = [
     {file = "dash_html_components-2.0.0.tar.gz", hash = "sha256:8703a601080f02619a6390998e0b3da4a5daabe97a1fd7a9cebc09d015f26e50"},
 ]
+dash-loading-spinners = []
 dash-table = [
     {file = "dash_table-5.0.0.tar.gz", hash = "sha256:18624d693d4c8ef2ddec99a6f167593437a7ea0bf153aa20f318c170c5bc7308"},
 ]

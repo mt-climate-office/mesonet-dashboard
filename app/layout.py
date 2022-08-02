@@ -2,6 +2,7 @@ import datetime as dt
 
 import dash_bootstrap_components as dbc
 from dash import dcc, html
+import dash_loading_spinners as dls
 from dateutil.relativedelta import relativedelta as rd
 
 # from .libs.params import params
@@ -415,7 +416,7 @@ def build_right_card(stations):
             dbc.CardBody(
                 html.Div(
                     [
-                        dcc.Graph(id="station-data"),
+                        dls.Bars(dcc.Graph(id="station-data"), speed_multiplier=2),
                     ]
                 )
             ),
