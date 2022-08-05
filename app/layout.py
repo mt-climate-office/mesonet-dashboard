@@ -5,9 +5,9 @@ from dash import dcc, html
 import dash_loading_spinners as dls
 from dateutil.relativedelta import relativedelta as rd
 
-# from .libs.params import params
+from .libs.params import params
 
-from libs.params import params
+# from libs.params import params
 
 
 def generate_modal():
@@ -416,7 +416,10 @@ def build_right_card(stations):
             dbc.CardBody(
                 html.Div(
                     [
-                        dls.Bars(dcc.Graph(id="station-data"), speed_multiplier=2),
+                        dls.Bars(children = [
+                            dcc.Store(id="temp-station-data", storage_type="session"),
+                            dcc.Graph(id="station-data")
+                        ]),
                     ]
                 )
             ),
@@ -693,7 +696,7 @@ def build_satellite_content(stations):
             dbc.CardBody(
                 html.Div(
                     [
-                        dcc.Graph(id="satellite-plot"),
+                            dcc.Graph(id="satellite-plot"),
                     ],
                     id="satellite-graph",
                 )
@@ -722,7 +725,7 @@ table_styling = {
 
 
 def app_layout(app_ref):
-    tab_height = "4.5vh"
+    tab_height = "4.5vh" 
 
     TAB_STYLE = {
         'width': 'inherit',
@@ -789,9 +792,6 @@ def app_layout(app_ref):
                 value="station-tab",
             ),
             dbc.Row(className="h-100", id="main-content"),
-            dcc.Store(id="temp-station-data", storage_type="session"),
-            # dcc.Store(id="compare1-data", storage_type="session"),
-            # dcc.Store(id="compare2-data", storage_type="session"),
             generate_modal(),
             feedback_iframe(),
             dbc.Modal(
