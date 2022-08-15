@@ -2,52 +2,26 @@ import datetime as dt
 from pathlib import Path
 
 import dash_bootstrap_components as dbc
+import dash_loading_spinners as dls
 import pandas as pd
-import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
 from urllib.error import HTTPError
 
-from .layout import (
-    app_layout,
-    build_latest_content,
-    build_satellite_content,
-    build_satellite_dropdowns,
-    table_styling,
-)
-from .libs.get_data import (
-    get_sat_compare_data,
-    clean_format,
-    filter_top_of_hour,
-    get_satellite_data,
-    get_sites,
-    get_station_latest,
-)
-from .libs.plot_satellite import plot_all, plot_comparison
-from .libs.plotting import plot_latest_ace_image, plot_site, plot_station, plot_wind
-from .libs.tables import make_metadata_table
+from .libs import get_data as get
+from .libs import plotting as plt
+from .libs import tables as tab
 from .libs.params import params
+from .libs import plot_satellite as plt_sat
+from . import layout as lay
 
-
-# from libs.get_data import (
-#     get_sat_compare_data,
-#     get_sites,
-#     clean_format,
-#     get_station_latest,
-#     filter_top_of_hour,
-#     get_satellite_data,
-# )
-# from libs.plotting import plot_site, plot_station, plot_wind, plot_latest_ace_image
-# from libs.tables import make_metadata_table
-# from layout import (
-#     app_layout,
-#     table_styling,
-#     build_latest_content,
-#     build_satellite_content,
-#     build_satellite_dropdowns,
-# )
+# import libs.get_data as get
+# import libs.plotting as plt
+# import libs.tables as tab
+# import layout as lay
 # from libs.params import params
-# from libs.plot_satellite import plot_all, plot_comparison
+# import libs.plot_satellite as plt_sat
+
 
 pd.options.mode.chained_assignment = None
 
@@ -73,36 +47,8 @@ app = Dash(
 app._favicon = "MCO_logo.svg"
 server = app.server
 
-stations = get_sites()
-
-app.layout = app_layout(app_ref=app)
-
-
-def make_nodata_figure(txt="No data avaliable for selected dates."):
-    fig = go.Figure()
-    fig.add_annotation(
-        dict(
-            font=dict(color="black", size=18),
-            x=0.5,
-            y=0.5,
-            showarrow=False,
-            text=txt,
-            textangle=0,
-            xanchor="center",
-            xref="paper",
-            yref="paper",
-        )
-    )
-    fig.update_layout(
-        yaxis_visible=False,
-        yaxis_showticklabels=False,
-        xaxis_visible=False,
-        xaxis_showticklabels=False,
-        paper_bgcolor="white",
-        plot_bgcolor="white",
-        height=500
-    )
-    return fig
+stations = get.get_sites()
+app.layout = lay.app_layout(app_ref=app)
 
 
 @app.callback(
@@ -131,17 +77,17 @@ def update_banner_text(station, tab):
 )
 def update_bl_card(at, station, tmp_data):
     if at == "map-tab":
-        station_fig = plot_station(stations, station=station)
+        station_fig = plt.plot_station(stations, station=station)
         return dcc.Graph(id="station-fig", figure=station_fig)
     elif at == "meta-tab":
-        table = make_metadata_table(stations, station)
-        return dash_table.DataTable(data=table, **table_styling)
+        table = tab.make_metadata_table(stations, station)
+        return dash_table.DataTable(data=table, **lay.TABLE_STYLING)
 
     else:
         if tmp_data != -1:
-            table = get_station_latest(station)
-            return dash_table.DataTable(data=table, **table_styling)
-        return dcc.Graph(figure=make_nodata_figure())
+            table = get.get_station_latest(station)
+            return dash_table.DataTable(data=table, **lay.TABLE_STYLING)
+        return dcc.Graph(figure=plt.make_nodata_figure())
 
 
 @app.callback(
@@ -162,7 +108,7 @@ def get_latest_api_data(station, start, end, hourly):
         hourly = [hourly] if isinstance(hourly, int) else hourly
 
         try:
-            data = clean_format(
+            data = get.clean_format(
                 station, start_time=start, end_time=end, hourly=len(hourly) == 1
             )
         except (AttributeError, HTTPError) as e:
@@ -233,12 +179,12 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
     norm = [norm] if isinstance(norm, int) else norm
 
     if len(select_vars) == 0:
-        return make_nodata_figure("No variables selected")
+        return plt.make_nodata_figure("No variables selected")
     elif tmp_data and tmp_data != -1:
         data = pd.read_json(tmp_data, orient="records")
         data.datetime = data.datetime.dt.tz_convert("America/Denver")
         if len(hourly) == 1:
-            data = filter_top_of_hour(data)
+            data = get.filter_top_of_hour(data)
 
         dat = data.drop(columns="Precipitation [in]")
         ppt = data[["datetime", "Precipitation [in]"]]
@@ -246,7 +192,7 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
         station = stations[stations["station"] == station]
 
-        return plot_site(
+        return plt.plot_site(
             *select_vars,
             dat=dat,
             ppt=ppt,
@@ -255,7 +201,7 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
             top_of_hour=len(hourly) == 1,
         )
     elif tmp_data == -1:
-        return make_nodata_figure(
+        return plt.make_nodata_figure(
             """
             <b>No data available for selected station and dates!</b> <br><br>
             
@@ -263,7 +209,7 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
             """
         )
 
-    return make_nodata_figure(
+    return plt.make_nodata_figure(
         """
         <b>No station selected!</b> <br><br>
         
@@ -319,7 +265,7 @@ def update_ul_card(at, station, tmp_data=None):
             end_date = data.datetime.max().date()
 
             data = data[["Wind Direction [deg]", "Wind Speed [mi/hr]"]]
-            fig = plot_wind(data)
+            fig = plt.plot_wind(data)
             fig.update_layout(
                 title={
                     "text": f"<b>Wind Data from {start_date} to {end_date}</b>",
@@ -333,15 +279,13 @@ def update_ul_card(at, station, tmp_data=None):
                 }
             )
 
-            return (
-                html.Div(
-                    children=dcc.Graph(figure=fig, style={"height": "40vh"}),
-                ),
-            )
+            return (html.Div(children=dcc.Graph(figure=fig, style={"height": "40vh"})),)
         return (
             html.Div(
                 dcc.Graph(
-                    figure=make_nodata_figure("<b>No data available for selected dates.</b>"),
+                    figure=plt.make_nodata_figure(
+                        "<b>No data available for selected dates.</b>"
+                    ),
                     style={"height": "40vh"},
                 )
             ),
@@ -372,7 +316,7 @@ def update_ul_card(at, station, tmp_data=None):
                         id="photo-figure", style={"height": "34vh", "width": "30vw"}
                     )
                 ),
-            ],
+            ]
         )
 
 
@@ -381,7 +325,7 @@ def update_ul_card(at, station, tmp_data=None):
     [Input("station-dropdown", "value"), Input("photo-direction", "value")],
 )
 def update_photo_direction(station, direction):
-    return plot_latest_ace_image(station, direction=direction)
+    return plt.plot_latest_ace_image(station, direction=direction)
 
 
 @app.callback(
@@ -440,13 +384,13 @@ def toggle_feedback(n1, is_open):
 def toggle_main_tab(sel):
 
     if sel == "station-tab":
-        station_fig = plot_station(stations)
-        return build_latest_content(station_fig=station_fig, stations=stations)
+        station_fig = plt.plot_station(stations)
+        return lay.build_latest_content(station_fig=station_fig, stations=stations)
     elif sel == "satellite-tab":
-        return build_satellite_content(stations)
+        return lay.build_satellite_content(stations)
     else:
-        station_fig = plot_station(stations)
-        return build_latest_content(station_fig=station_fig, stations=stations)
+        station_fig = plt.plot_station(stations)
+        return lay.build_latest_content(station_fig=station_fig, stations=stations)
 
 
 @app.callback(
@@ -456,12 +400,12 @@ def toggle_main_tab(sel):
 )
 def update_sat_selectors(sel, station):
     if sel == "timeseries":
-        graph = dcc.Graph(id="satellite-plot")
+        graph = dls.Bars(dcc.Graph(id="satellite-plot"))
     else:
-        graph = dcc.Graph(id="satellite-compare")
+        graph = dls.Bars(dcc.Graph(id="satellite-compare"))
 
     return (
-        build_satellite_dropdowns(stations, sel == "timeseries", station=station),
+        lay.build_satellite_dropdowns(stations, sel == "timeseries", station=station),
         graph,
     )
 
@@ -478,7 +422,7 @@ def update_sat_selectors(sel, station):
 def render_satellite_ts_plot(station, elements, climatology):
 
     if station is None:
-        return make_nodata_figure(
+        return plt.make_nodata_figure(
             """
         <b>No station selected!</b> <br><br>
         
@@ -487,7 +431,7 @@ def render_satellite_ts_plot(station, elements, climatology):
         )
 
     if len(elements) == 0:
-        return make_nodata_figure(
+        return plt.make_nodata_figure(
             """
         <b>No indicators selected!</b> <br><br>
         
@@ -498,14 +442,13 @@ def render_satellite_ts_plot(station, elements, climatology):
     start_time = dt.date(2000, 1, 1)
     end_time = dt.date.today()
     dfs = {
-        x: get_satellite_data(
+        x: get.get_satellite_data(
             station=station, element=x, start_time=start_time, end_time=end_time
         )
         for x in elements
     }
 
-    return plot_all(dfs, climatology=climatology)
-
+    return plt_sat.plot_all(dfs, climatology=climatology)
 
 
 @app.callback(
@@ -552,11 +495,12 @@ def update_compare2_options(station):
     ],
 )
 def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
+
     start_time = dt.datetime.strptime(start_time, "%Y-%m-%d").date()
     end_time = dt.datetime.strptime(end_time, "%Y-%m-%d").date()
 
     if station is None:
-        return make_nodata_figure(
+        return plt.make_nodata_figure(
             """
         <b>No station selected!</b> <br><br>
         
@@ -564,7 +508,7 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
         """
         )
     if not (value1 and value2):
-        return make_nodata_figure(
+        return plt.make_nodata_figure(
             """
         <b>No indicators selected!</b> <br><br>
         
@@ -576,7 +520,7 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
     element1, platform1 = value1.split("-")
     try:
         element2, platform2 = value2.split("-")
-        dat1 = get_satellite_data(
+        dat1 = get.get_satellite_data(
             station=station,
             element=element1,
             start_time=start_time,
@@ -584,7 +528,7 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
             platform=platform1,
             modify_dates=False,
         )
-        dat2 = get_satellite_data(
+        dat2 = get.get_satellite_data(
             station=station,
             element=element2,
             start_time=start_time,
@@ -593,7 +537,7 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
             modify_dates=False,
         )
 
-        plt = plot_comparison(dat1, dat2, flip=False)
+        plt_out = plt_sat.plot_comparison(dat1, dat2, flip=False)
 
     except ValueError:
         try:
@@ -601,8 +545,8 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
                 value2,
                 stations[stations["station"] == station]["name"].values[0],
             )
-        
-            dat1, dat2 = get_sat_compare_data(
+
+            dat1, dat2 = get.get_sat_compare_data(
                 station=station,
                 sat_element=element1,
                 station_element=element2,
@@ -614,18 +558,18 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
             dat2 = dat2.assign(element=dat2.columns[0])
             dat2 = dat2.assign(platform=platform2)
             dat2.columns = ["value", "date", "element", "platform"]
-            
-            plt = plot_comparison(dat1, dat2, station, flip=True)
-        
+
+            plt_out = plt_sat.plot_comparison(dat1, dat2, station, flip=True)
+
         except HTTPError:
-            plt = make_nodata_figure(
-                    """
+            plt_out = plt.make_nodata_figure(
+                """
                 <b>No Station Data Available!</b> <br><br>
                 
                 Please select a new station variable.
                 """
             )
-    return plt
+    return plt_out
 
 
 if __name__ == "__main__":

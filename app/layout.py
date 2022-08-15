@@ -10,6 +10,40 @@ from .libs.params import params
 # from libs.params import params
 
 
+TABLE_STYLING = {
+    "css": [{"selector": "tr:first-child", "rule": "display: none"}],
+    "style_cell": {"textAlign": "left"},
+    "style_data": {"color": "black", "backgroundColor": "white"},
+    "style_data_conditional": [
+        {"if": {"row_index": "odd"}, "backgroundColor": "rgb(220, 220, 220)"}
+    ],
+}
+
+TAB_STYLE = {
+    "width": "inherit",
+    "borderTop": "1px black solid",
+    # 'borderBottom': '1px black solid',
+    "background": "white",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    # 'height': '100px',
+    "line-height": "4.5vh",
+}
+
+SELECTED_STYLE = {
+    "width": "inherit",
+    "boxShadow": "none",
+    "borderTop": "3px #0B5ED7 solid",
+    # 'borderBottom': '1px black solid',
+    "boxShadow": "inset 0px -1px 0px 0px lightgrey",
+    "background": "#E9ECEF",
+    "paddingTop": 0,
+    "paddingBottom": 0,
+    # 'height': '42px',
+    "line-height": "4.5vh",
+}
+
+
 def generate_modal():
     return html.Div(
         dbc.Modal(
@@ -84,7 +118,7 @@ def feedback_iframe():
             size="xl",
             scrollable=True,
             style={"max-height": "none", "height": "100%"},
-        ),
+        )
     )
 
 
@@ -183,9 +217,7 @@ def build_top_left_card():
                     active_tab="wind-tab",
                 )
             ),
-            dbc.CardBody(
-                html.Div(id="ul-content"),
-            ),
+            dbc.CardBody(html.Div(id="ul-content")),
         ],
         outline=True,
         color="secondary",
@@ -227,10 +259,7 @@ def make_station_dropdowns(stations, id, station):
     return dbc.Select(
         options=[
             {"label": k, "value": v}
-            for k, v in zip(
-                stations["long_name"],
-                stations["station"],
-            )
+            for k, v in zip(stations["long_name"], stations["station"])
         ],
         id=id,
         placeholder="Select a Mesonet Station...",
@@ -262,12 +291,7 @@ def build_dropdowns(stations):
                     ],
                     inline=True,
                     id="select-vars",
-                    value=[
-                        "Precipitation",
-                        "ET",
-                        "Soil VWC",
-                        "Air Temperature",
-                    ],
+                    value=["Precipitation", "ET", "Soil VWC", "Air Temperature"],
                 )
             ],
             style={"overflow-x": "scroll"},
@@ -334,9 +358,7 @@ def build_dropdowns(stations):
                                 dbc.InputGroup(
                                     [
                                         dbc.Checklist(
-                                            options=[
-                                                {"label": "Hourly", "value": 1},
-                                            ],
+                                            options=[{"label": "Hourly", "value": 1}],
                                             inline=True,
                                             id="hourly-switch",
                                             switch=True,
@@ -349,16 +371,13 @@ def build_dropdowns(stations):
                                             If the toggle is switched off, the figures will have higher resolution data, but will take longer to load.""",
                                             target="hourly-switch",
                                         ),
-                                    ],
+                                    ]
                                 ),
                                 dbc.InputGroup(
                                     [
                                         dbc.Checklist(
                                             options=[
-                                                {
-                                                    "label": "gridMET Normals",
-                                                    "value": 1,
-                                                },
+                                                {"label": "gridMET Normals", "value": 1}
                                             ],
                                             inline=True,
                                             id="gridmet-switch",
@@ -370,7 +389,7 @@ def build_dropdowns(stations):
                                             "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions.",
                                             target="gridmet-switch",
                                         ),
-                                    ],
+                                    ]
                                 ),
                             ],
                             align="center",
@@ -387,16 +406,7 @@ def build_dropdowns(stations):
             ),
             html.Br(),
             dbc.Row(
-                [
-                    dbc.Col(
-                        checklist_input,
-                        xs=12,
-                        sm=12,
-                        md=12,
-                        lg=12,
-                        xl=12,
-                    ),
-                ],
+                [dbc.Col(checklist_input, xs=12, sm=12, md=12, lg=12, xl=12)],
                 align="center",
                 style={"padding": "0rem 6.5rem 0rem 0rem"},
             ),
@@ -416,10 +426,14 @@ def build_right_card(stations):
             dbc.CardBody(
                 html.Div(
                     [
-                        dls.Bars(children = [
-                            dcc.Store(id="temp-station-data", storage_type="session"),
-                            dcc.Graph(id="station-data")
-                        ]),
+                        dls.Bars(
+                            children=[
+                                dcc.Store(
+                                    id="temp-station-data", storage_type="session"
+                                ),
+                                dcc.Graph(id="station-data"),
+                            ]
+                        )
                     ]
                 )
             ),
@@ -451,11 +465,7 @@ def build_latest_content(station_fig, stations):
             md={"size": 12, "order": "last", "offset": 0},
             lg={"size": 4, "order": "last", "offset": 0},
             xl={"size": 4, "order": "last", "offset": 0},
-            style={
-                "maxHeight": "92vh",
-                "overflow-y": "scroll",
-                "overflow-x": "clip",
-            },
+            style={"maxHeight": "92vh", "overflow-y": "scroll", "overflow-x": "clip"},
         ),
         dbc.Col(
             html.Div(
@@ -482,12 +492,7 @@ def build_satellite_ts_selector():
         dbc.Col(
             [
                 dbc.Checklist(
-                    options=[
-                        {
-                            "label": "Percentiles",
-                            "value": 1,
-                        },
-                    ],
+                    options=[{"label": "Percentiles", "value": 1}],
                     id="climatology-switch",
                     switch=True,
                     value=[1],
@@ -539,18 +544,14 @@ def build_satellite_ts_selector():
                                 ],
                                 inline=True,
                                 id="sat-vars",
-                                value=[
-                                    "ET",
-                                    "GPP",
-                                    "NDVI",
-                                ],
+                                value=["ET", "GPP", "NDVI"],
                             )
                         ],
                         style={"overflow-x": "scroll"},
                     ),
                     # className="mb-3",
                     size="lg",
-                ),
+                )
             ],
             xs=12,
             sm=12,
@@ -687,19 +688,10 @@ def build_satellite_content(stations):
     return dbc.Card(
         [
             dbc.CardHeader(
-                dbc.Container(
-                    selectors,
-                    fluid=True,
-                    id="satellite-selectors",
-                )
+                dbc.Container(selectors, fluid=True, id="satellite-selectors")
             ),
             dbc.CardBody(
-                html.Div(
-                    [
-                            dcc.Graph(id="satellite-plot"),
-                    ],
-                    id="satellite-graph",
-                )
+                html.Div([dcc.Graph(id="satellite-plot")], id="satellite-graph")
             ),
         ],
         color="secondary",
@@ -709,66 +701,27 @@ def build_satellite_content(stations):
     )
 
 
-table_styling = {
-    "css": [
-        {
-            "selector": "tr:first-child",
-            "rule": "display: none",
-        },
-    ],
-    "style_cell": {"textAlign": "left"},
-    "style_data": {"color": "black", "backgroundColor": "white"},
-    "style_data_conditional": [
-        {"if": {"row_index": "odd"}, "backgroundColor": "rgb(220, 220, 220)"}
-    ],
-}
-
-
 def app_layout(app_ref):
-    tab_height = "4.5vh" 
 
-    TAB_STYLE = {
-        'width': 'inherit',
-        'borderTop': '1px black solid',
-        # 'borderBottom': '1px black solid',
-        'background': 'white',
-        'paddingTop': 0,
-        'paddingBottom': 0,
-        # 'height': '100px',
-        'line-height': tab_height,
-    }
-
-    SELECTED_STYLE = {
-        'width': 'inherit',
-        'boxShadow': 'none',
-        'borderTop': '3px #0B5ED7 solid',
-        # 'borderBottom': '1px black solid',
-        'boxShadow': 'inset 0px -1px 0px 0px lightgrey',
-        'background': '#E9ECEF',
-        'paddingTop': 0,
-        'paddingBottom': 0,
-        # 'height': '42px',
-        'line-height': tab_height,
-    }
     return dbc.Container(
         [
             dcc.Location(id="url", refresh=False),
             build_banner(app_ref),
             dcc.Tabs(
-                style={"width": "100%", "font-size": "100%", "height": tab_height},
+                style={"width": "100%", "font-size": "100%", "height": "4.5vh"},
                 children=[
                     dcc.Tab(
                         label="Latest Data",
                         id="station-tab",
                         value="station-tab",
                         style=dict(
-                            borderLeft='1px black solid', 
-                            borderRight='0px black solid',
+                            borderLeft="1px black solid",
+                            borderRight="0px black solid",
                             **TAB_STYLE
                         ),
                         selected_style=dict(
-                            borderLeft='1px black solid', 
-                            borderRight='0.5px black solid',
+                            borderLeft="1px black solid",
+                            borderRight="0.5px black solid",
                             **SELECTED_STYLE
                         ),
                     ),
@@ -777,13 +730,13 @@ def app_layout(app_ref):
                         id="satellite-tab",
                         value="satellite-tab",
                         style=dict(
-                            borderLeft='0px black solid', 
-                            borderRight='1px black solid',
+                            borderLeft="0px black solid",
+                            borderRight="1px black solid",
                             **TAB_STYLE
                         ),
                         selected_style=dict(
-                            borderLeft='0.5px black solid', 
-                            borderRight='1px black solid',
+                            borderLeft="0.5px black solid",
+                            borderRight="1px black solid",
                             **SELECTED_STYLE
                         ),
                     ),

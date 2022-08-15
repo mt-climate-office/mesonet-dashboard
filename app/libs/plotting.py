@@ -15,9 +15,7 @@ from .params import params
 
 
 def style_figure(fig, x_ticks=None, legend=False):
-    fig.update_layout(
-        {"plot_bgcolor": "rgba(0, 0, 0, 0)"},
-    )
+    fig.update_layout({"plot_bgcolor": "rgba(0, 0, 0, 0)"})
     fig.update_xaxes(showgrid=True, gridcolor="grey")
     fig.update_yaxes(showgrid=True, gridcolor="grey")
     fig.update_layout(showlegend=legend)
@@ -116,9 +114,7 @@ def plot_soil(dat, **kwargs):
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>" + kwargs["txt"] + "</b>: %{y}",
     )
 
-    fig.update_layout(
-        hovermode="x unified",
-    )
+    fig.update_layout(hovermode="x unified")
 
     return fig
 
@@ -135,7 +131,7 @@ def plot_met(dat, **kwargs):
     variable_text = variable_text.replace("<br>", " ")
 
     fig.update_traces(
-        hovertemplate="<b>Date</b>: %{x}<br>" + "<b>" + variable_text + "</b>: %{y}",
+        hovertemplate="<b>Date</b>: %{x}<br>" + "<b>" + variable_text + "</b>: %{y}"
     )
 
     if kwargs.get("norm", None):
@@ -223,7 +219,7 @@ def plot_ppt(dat, **kwargs):
     dat = dat.assign(datetime=dat.datetime.dt.date)
     fig = px.bar(dat, x="datetime", y=variable_text)
     fig.update_traces(
-        hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Precipitation Total</b>: %{y}",
+        hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Precipitation Total</b>: %{y}"
     )
 
     if kwargs.get("norm", None):
@@ -470,11 +466,7 @@ def get_soil_legend_loc(dat):
     d = dat.datetime.max()
     d = [d - rd(hours=24 * i) for i in range(6)]
 
-    return {
-        "tmp": tmax,
-        "vwc": vmax,
-        "d": d,
-    }
+    return {"tmp": tmax, "vwc": vmax, "d": d}
 
 
 def get_soil_depths(dat):
@@ -547,8 +539,8 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
 
     plots = {}
     no_data = {}
-    no_data_df = dat[['datetime']].drop_duplicates()
-    no_data_df = no_data_df.assign(data = None)
+    no_data_df = dat[["datetime"]].drop_duplicates()
+    no_data_df = no_data_df.assign(data=None)
     for idx, v in enumerate(args, 1):
         try:
             if v == "ET":
@@ -583,9 +575,7 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
         dat.datetime.max().date() + rd(days=1),
     ]
     sub = style_figure(sub, x_ticks)
-    sub.update_layout(
-        margin={"r": 0, "t": 20, "l": 0, "b": 0},
-    )
+    sub.update_layout(margin={"r": 0, "t": 20, "l": 0, "b": 0})
     if "Soil Temperature" in no_data or "Soil VWC" in no_data:
         return sub
 
@@ -596,10 +586,18 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     vwc_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil VWC" in x]
 
     sub = add_soil_legend(
-        sub=sub, idx=tmp_idx, xs=soil_info["d"], y=soil_info["tmp"], depths=get_soil_depths(dat)
+        sub=sub,
+        idx=tmp_idx,
+        xs=soil_info["d"],
+        y=soil_info["tmp"],
+        depths=get_soil_depths(dat),
     )
     sub = add_soil_legend(
-        sub=sub, idx=vwc_idx, xs=soil_info["d"], y=soil_info["vwc"], depths=get_soil_depths(dat)
+        sub=sub,
+        idx=vwc_idx,
+        xs=soil_info["d"],
+        y=soil_info["vwc"],
+        depths=get_soil_depths(dat),
     )
     for idx, v in no_data.items():
         sub = add_nodata_lab(sub=sub, d=no_data_df.datetime.mean(), idx=idx, v=v)
@@ -610,7 +608,9 @@ def plot_station(stations, station=None):
     stations = stations[["station", "long_name", "elevation", "latitude", "longitude"]]
     stations = stations.assign(
         url=stations["long_name"]
-        + ": [View Latest Data](/dash/" + stations["station"] + "/)"
+        + ": [View Latest Data](/dash/"
+        + stations["station"]
+        + "/)"
     )
 
     grouped = stations.groupby(["latitude", "longitude"])
@@ -619,7 +619,7 @@ def plot_station(stations, station=None):
             "long_name": lambda x: ",<br>".join(x),
             "elevation": lambda x: round(np.unique(x)[0]),
             "url": lambda x: ", ".join(x),
-            "station": lambda x: ",".join(np.unique(x))
+            "station": lambda x: ",".join(np.unique(x)),
         }
     ).reset_index()
 
@@ -629,10 +629,12 @@ def plot_station(stations, station=None):
 
     if station:
         stations = stations.assign(
-            color = np.where(stations['station'].str.contains(station), "#FFD700", stations['color'])
+            color=np.where(
+                stations["station"].str.contains(station), "#FFD700", stations["color"]
+            )
         )
 
-    stations = stations.sort_values(by=['color'])
+    stations = stations.sort_values(by=["color"])
     fig = go.Figure(
         go.Scattermapbox(
             mode="markers",
@@ -669,13 +671,7 @@ def plot_station(stations, station=None):
                 ],
             },
         ],
-        mapbox={
-            "center": {
-                "lon": -109.5,
-                "lat": 47,
-            },
-            "zoom": 4,
-        },
+        mapbox={"center": {"lon": -109.5, "lat": 47}, "zoom": 4},
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
         autosize=True,
         hoverlabel_align="right",
@@ -733,8 +729,33 @@ def plot_latest_ace_image(station, direction="N"):
     )
 
     # Configure other layout
-    fig.update_layout(
-        margin={"l": 0, "r": 0, "t": 0, "b": 0},
-    )
+    fig.update_layout(margin={"l": 0, "r": 0, "t": 0, "b": 0})
 
+    return fig
+
+
+def make_nodata_figure(txt="No data avaliable for selected dates."):
+    fig = go.Figure()
+    fig.add_annotation(
+        dict(
+            font=dict(color="black", size=18),
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+            text=txt,
+            textangle=0,
+            xanchor="center",
+            xref="paper",
+            yref="paper",
+        )
+    )
+    fig.update_layout(
+        yaxis_visible=False,
+        yaxis_showticklabels=False,
+        xaxis_visible=False,
+        xaxis_showticklabels=False,
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        height=500,
+    )
     return fig

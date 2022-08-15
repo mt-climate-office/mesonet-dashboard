@@ -82,11 +82,7 @@ def get_station_record(
 
     payload = parse.urlencode(q, safe=",:")
 
-    r = Request(
-        "GET",
-        url=f"{params.API_URL}observations",
-        params=payload,
-    ).prepare()
+    r = Request("GET", url=f"{params.API_URL}observations", params=payload).prepare()
 
     dat = pd.read_csv(r.url)
     return dat
@@ -157,8 +153,7 @@ def clean_format(
 def get_station_latest(station):
 
     r = requests.get(
-        url=f"{params.API_URL}latest",
-        params={"stations": station, "type": "csv"},
+        url=f"{params.API_URL}latest", params={"stations": station, "type": "csv"}
     )
 
     with io.StringIO(r.text) as text_io:
@@ -263,7 +258,7 @@ def get_sat_compare_data(
 
     if platform in ["SPL4CMDL.006", "SPL4SMGP.006"]:
         # Take every 8th observation from SMAP data. The API query takes too long
-        # if using all the daily data. 
+        # if using all the daily data.
         sat_data = sat_data.iloc[::8, :]
 
     dates = ",".join(set(sat_data.date.astype(str).values.tolist()))

@@ -69,7 +69,7 @@ def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
     )
 
     # Clear-sky solar radiation (Rso)
-    Rso = (0.75 + ((2 * 10**-5) * z)) * Ra
+    Rso = (0.75 + ((2 * 10 ** -5) * z)) * Ra
 
     # saturation vapour pressure (es)
     es = 0.6108 * np.exp((17.27 * Temp_C) / (Temp_C + 237.3))
@@ -162,7 +162,7 @@ def fao_etr_daily(lat, J, z, RH, Temp_C, Rs, P, U):
     )
 
     # Clear-sky solar radiation (Rso)
-    Rso = (0.75 + ((2 * 10**-5) * z)) * Ra
+    Rso = (0.75 + ((2 * 10 ** -5) * z)) * Ra
 
     # saturation vapour pressure (es)
     es = 0.6108 * np.exp((17.27 * Temp_C) / (Temp_C + 237.3))

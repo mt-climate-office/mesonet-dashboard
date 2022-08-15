@@ -109,16 +109,8 @@ def plot_indicator(fig, dat, **kwargs):
             fillcolor="rgba(107,107,107,0.4)",
         )
 
-        fig.add_trace(
-            mn_line,
-            row=kwargs["idx"],
-            col=1,
-        )
-        fig.add_trace(
-            mx_line,
-            row=kwargs["idx"],
-            col=1,
-        )
+        fig.add_trace(mn_line, row=kwargs["idx"], col=1)
+        fig.add_trace(mx_line, row=kwargs["idx"], col=1)
 
     for trace in fig["data"]:
         if trace["name"] is None:
@@ -136,9 +128,7 @@ def plot_all(dfs: Dict[str, pd.DataFrame], climatology, **kwargs):
 
     for row in range(1, len(dfs) + 1):
         fig.update_yaxes(
-            title_text=params.sat_axis_mapper[list(dfs.keys())[row - 1]],
-            row=row,
-            col=1,
+            title_text=params.sat_axis_mapper[list(dfs.keys())[row - 1]], row=row, col=1
         )
 
     height = 500 if len(dfs) == 1 else 250 * len(dfs)
@@ -184,8 +174,12 @@ def plot_comparison(dat1, dat2, station=None, flip=False):
         tolerance=pd.Timedelta("16 day"),
     )
 
-    
-    fig = px.scatter(out, x="value_y" if flip else "value_x", y="value_x" if flip else "value_y", custom_data=["date_x"])
+    fig = px.scatter(
+        out,
+        x="value_y" if flip else "value_x",
+        y="value_x" if flip else "value_y",
+        custom_data=["date_x"],
+    )
 
     fig = style_figure(fig, None)
     fig.update_layout(
