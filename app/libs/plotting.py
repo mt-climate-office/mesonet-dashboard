@@ -610,7 +610,7 @@ def plot_station(stations, station=None):
     stations = stations[["station", "long_name", "elevation", "latitude", "longitude"]]
     stations = stations.assign(
         url=stations["long_name"]
-        + ": [View Latest Data](/" + stations["station"] + ")"
+        + ": [View Latest Data](/dash/" + stations["station"] + "/)"
     )
 
     grouped = stations.groupby(["latitude", "longitude"])
