@@ -7,7 +7,6 @@ import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
 from urllib.error import HTTPError
-import dash_loading_spinners as dls
 
 from .layout import (
     app_layout,
@@ -75,7 +74,6 @@ app._favicon = "MCO_logo.svg"
 server = app.server
 
 stations = get_sites()
-station_fig = plot_station(stations)
 
 app.layout = app_layout(app_ref=app)
 
@@ -133,6 +131,7 @@ def update_banner_text(station, tab):
 )
 def update_bl_card(at, station, tmp_data):
     if at == "map-tab":
+        station_fig = plot_station(stations, station=station)
         return dcc.Graph(id="station-fig", figure=station_fig)
     elif at == "meta-tab":
         table = make_metadata_table(stations, station)
@@ -391,9 +390,8 @@ def update_photo_direction(station, direction):
     [State("station-modal", "is_open")],
 )
 def station_popup(clickData, is_open):
-
     if clickData:
-        lat, lon, name, elevation, href, _ = clickData["points"][0]["customdata"]
+        lat, lon, name, elevation, href, _, _ = clickData["points"][0]["customdata"]
         name = name.replace(",<br>", ", ")
         text = dbc.ModalBody(
             dcc.Markdown(
@@ -442,10 +440,12 @@ def toggle_feedback(n1, is_open):
 def toggle_main_tab(sel):
 
     if sel == "station-tab":
+        station_fig = plot_station(stations)
         return build_latest_content(station_fig=station_fig, stations=stations)
     elif sel == "satellite-tab":
         return build_satellite_content(stations)
     else:
+        station_fig = plot_station(stations)
         return build_latest_content(station_fig=station_fig, stations=stations)
 
 

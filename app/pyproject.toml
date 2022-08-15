@@ -21,6 +21,8 @@ pyjanitor = "^0.23.1"
 python-dotenv = "^0.20.0"
 mt-mesonet-satellite = {git = "https://github.com/colinbrust/mt-mesonet-satellite.git", rev = "main"}
 dash-loading-spinners = "^1.0.0"
+neo4j-driver = "^4.4.5"
+importlib-resources = "^5.9.0"
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^6.7.0"

@@ -606,7 +606,7 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     return sub
 
 
-def plot_station(stations):
+def plot_station(stations, station=None):
     stations = stations[["station", "long_name", "elevation", "latitude", "longitude"]]
     stations = stations.assign(
         url=stations["long_name"]
@@ -619,6 +619,7 @@ def plot_station(stations):
             "long_name": lambda x: ",<br>".join(x),
             "elevation": lambda x: round(np.unique(x)[0]),
             "url": lambda x: ", ".join(x),
+            "station": lambda x: ",".join(np.unique(x))
         }
     ).reset_index()
 
@@ -626,6 +627,12 @@ def plot_station(stations):
         stations["long_name"].str.contains(",<br>"), "#FB7A7A", "#7A7AFB"
     )
 
+    if station:
+        stations = stations.assign(
+            color = np.where(stations['station'].str.contains(station), "#FFD700", stations['color'])
+        )
+
+    stations = stations.sort_values(by=['color'])
     fig = go.Figure(
         go.Scattermapbox(
             mode="markers",
@@ -639,7 +646,6 @@ def plot_station(stations):
             hoverinfo="none",
         )
     )
-
     fig.update_layout(
         height=300,
         mapbox_style="white-bg",
