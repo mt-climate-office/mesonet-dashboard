@@ -268,4 +268,4 @@ def get_sat_compare_data(
     colname = station_data.columns[-1]
     station_data = summarise_station_to_daily(station_data, colname)
 
-    return sat_data, station_data
+    return station_data, sat_data

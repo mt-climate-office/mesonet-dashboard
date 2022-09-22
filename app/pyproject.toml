@@ -5,7 +5,7 @@ description = "Version 2 of the Montana Mesonet Dashboard"
 authors = ["colinbrust <colin.brust@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.10,<3.12"
 dash = "^2.0.0"
 pandas = "^1.4.0"
 dash-daq = "^0.5.0"
@@ -23,6 +23,7 @@ mt-mesonet-satellite = {git = "https://github.com/colinbrust/mt-mesonet-satellit
 dash-loading-spinners = "^1.0.0"
 neo4j-driver = "^4.4.5"
 importlib-resources = "^5.9.0"
+scipy = "^1.9.1"
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^6.7.0"

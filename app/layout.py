@@ -5,10 +5,6 @@ from dash import dcc, html
 import dash_loading_spinners as dls
 from dateutil.relativedelta import relativedelta as rd
 
-from .libs.params import params
-
-# from libs.params import params
-
 
 TABLE_STYLING = {
     "css": [{"selector": "tr:first-child", "rule": "display: none"}],
@@ -562,7 +558,7 @@ def build_satellite_ts_selector():
     )
 
 
-def build_satellite_comp_selector():
+def build_satellite_comp_selector(sat_compare_mapper):
     return [
         dbc.Col(
             dbc.Row(
@@ -570,7 +566,7 @@ def build_satellite_comp_selector():
                     dbc.Select(
                         options=[
                             {"label": k, "value": v}
-                            for k, v in params.sat_compare_mapper.items()
+                            for k, v in sat_compare_mapper.items()
                         ],
                         id="compare1",
                         placeholder="Select an X-Axis...",
@@ -580,7 +576,7 @@ def build_satellite_comp_selector():
                     dbc.Select(
                         options=[
                             {"label": k, "value": v}
-                            for k, v in params.sat_compare_mapper.items()
+                            for k, v in sat_compare_mapper.items()
                         ],
                         id="compare2",
                         placeholder="Select a Y-Axis...",
@@ -638,12 +634,12 @@ def build_satellite_comp_selector():
     ]
 
 
-def build_satellite_dropdowns(stations, timeseries=True, station=None):
+def build_satellite_dropdowns(stations, timeseries=True, station=None, sat_compare_mapper=None):
 
     if timeseries:
         content = build_satellite_ts_selector()
     else:
-        content = build_satellite_comp_selector()
+        content = build_satellite_comp_selector(sat_compare_mapper)
 
     children = [
         dbc.Col(

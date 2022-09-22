@@ -1,5 +1,6 @@
 import datetime as dt
 from pathlib import Path
+from typing import Union
 
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
@@ -56,7 +57,16 @@ app.layout = lay.app_layout(app_ref=app)
     [Input("station-dropdown", "value"), Input("main-display-tabs", "value")],
     prevent_initial_callback=True,
 )
-def update_banner_text(station, tab):
+def update_banner_text(station: str, tab: str) -> str:
+    """Update the text of the banner to contain selected station's name.
+
+    Args:
+        station (str): The name of the station
+        tab (str): The name of the tab selected.
+
+    Returns:
+        str: The banner title for the page. 
+    """
     try:
         return (
             f"The Montana Mesonet Dashboard: {stations[stations['station'] == station].name.values[0]}"
@@ -75,7 +85,17 @@ def update_banner_text(station, tab):
         Input("temp-station-data", "data"),
     ],
 )
-def update_bl_card(at, station, tmp_data):
+def update_br_card(at: str, station: str, tmp_data: Union[int, str]) -> Union[dcc.Graph, dash_table.DataTable]:
+    """Update the card at the bottom right of the page. 
+
+    Args:
+        at (str): The unique identifier of the tab that is selected.
+        station (str): The station shortname that is selected.
+        tmp_data (Union[int, str]): The Mesonet API data used to render plots. 
+
+    Returns:
+        Union[dcc.Graph, dash_table.DataTable]: Depending on this selected tab, this is either a figure or a table.
+    """
     if at == "map-tab":
         station_fig = plt.plot_station(stations, station=station)
         return dcc.Graph(id="station-fig", figure=station_fig)
@@ -99,7 +119,7 @@ def update_bl_card(at, station, tmp_data):
         Input("hourly-switch", "value"),
     ],
 )
-def get_latest_api_data(station, start, end, hourly):
+def get_latest_api_data(station: str, start, end, hourly):
 
     if (start or end) and station:
         start = dt.datetime.strptime(start, "%Y-%m-%d").date()
@@ -405,7 +425,7 @@ def update_sat_selectors(sel, station):
         graph = dls.Bars(dcc.Graph(id="satellite-compare"))
 
     return (
-        lay.build_satellite_dropdowns(stations, sel == "timeseries", station=station),
+        lay.build_satellite_dropdowns(stations, sel == "timeseries", station=station, sat_compare_mapper=params.sat_compare_mapper),
         graph,
     )
 
@@ -477,7 +497,7 @@ def update_compare2_options(station):
         {"label": "-" * 32, "value": "-" * 32, "disabled": True},
     ]
     elements += [
-        {"label": k, "value": v}
+        {"label": k, "value": f"{v}-station"}
         for k, v in zip(station_elements.description_short, station_elements.element)
     ]
     elements += options
@@ -488,13 +508,13 @@ def update_compare2_options(station):
     Output("satellite-compare", "figure"),
     [
         Input("station-dropdown-satellite", "value"),
-        Input("compare2", "value"),
         Input("compare1", "value"),
+        Input("compare2", "value"),
         Input("start-date-satellite", "date"),
         Input("end-date-satellite", "date"),
     ],
 )
-def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
+def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
 
     start_time = dt.datetime.strptime(start_time, "%Y-%m-%d").date()
     end_time = dt.datetime.strptime(end_time, "%Y-%m-%d").date()
@@ -507,7 +527,7 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
         To get started, select a station from the dropdown.
         """
         )
-    if not (value1 and value2):
+    if not (x_var and y_var):
         return plt.make_nodata_figure(
             """
         <b>No indicators selected!</b> <br><br>
@@ -515,61 +535,52 @@ def render_satellite_comp_plot(station, value1, value2, start_time, end_time):
         Please select two indicators to view the plot. 
         """
         )
-    # end_time = dt.date.today()
-    # start_time = dt.date(2000, 1, 1)
-    element1, platform1 = value1.split("-")
-    try:
-        element2, platform2 = value2.split("-")
-        dat1 = get.get_satellite_data(
-            station=station,
-            element=element1,
-            start_time=start_time,
-            end_time=end_time,
-            platform=platform1,
-            modify_dates=False,
-        )
-        dat2 = get.get_satellite_data(
-            station=station,
-            element=element2,
-            start_time=start_time,
-            end_time=end_time,
-            platform=platform2,
-            modify_dates=False,
-        )
 
-        plt_out = plt_sat.plot_comparison(dat1, dat2, flip=False)
+    element_x, platform_x = x_var.split("-")
+    element_y, platform_y = y_var.split("-")
 
-    except ValueError:
-        try:
-            element2, platform2 = (
-                value2,
-                stations[stations["station"] == station]["name"].values[0],
-            )
+    try: 
+        if platform_x == "station":
 
-            dat1, dat2 = get.get_sat_compare_data(
+            dat_x, dat_y = get.get_sat_compare_data(
                 station=station,
-                sat_element=element1,
-                station_element=element2,
+                sat_element=element_y,
+                station_element=element_x,
                 start_time=start_time,
                 end_time=end_time,
-                platform=platform1,
+                platform=platform_y,
+            )
+            dat_x = dat_x.assign(element=dat_x.columns[0])
+            dat_x = dat_x.assign(platform=platform_x)
+            dat_x.columns = ["value", "date", "element", "platform"]
+
+        else: 
+            dat_x = get.get_satellite_data(
+                station=station,
+                element=element_x,
+                start_time=start_time,
+                end_time=end_time,
+                platform=platform_x,
+                modify_dates=False,
+            )
+            dat_y = get.get_satellite_data(
+                station=station,
+                element=element_y,
+                start_time=start_time,
+                end_time=end_time,
+                platform=platform_y,
+                modify_dates=False,
             )
 
-            dat2 = dat2.assign(element=dat2.columns[0])
-            dat2 = dat2.assign(platform=platform2)
-            dat2.columns = ["value", "date", "element", "platform"]
-
-            plt_out = plt_sat.plot_comparison(dat1, dat2, station, flip=True)
-
-        except HTTPError:
-            plt_out = plt.make_nodata_figure(
-                """
-                <b>No Station Data Available!</b> <br><br>
-                
-                Please select a new station variable.
-                """
-            )
-    return plt_out
+    except HTTPError:
+        return plt.make_nodata_figure(
+            """
+            <b>No Station Data Available!</b> <br><br>
+            
+            Please select a new station variable.
+            """
+        )
+    return plt_sat.plot_comparison(dat_x, dat_y, platform_x == "station")
 
 
 if __name__ == "__main__":

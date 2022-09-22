@@ -120,7 +120,6 @@ def plot_indicator(fig, dat, **kwargs):
 
 
 def plot_all(dfs: Dict[str, pd.DataFrame], climatology, **kwargs):
-
     fig = make_subplots(rows=len(dfs), cols=1)
     for idx, tup in enumerate(dfs.items(), start=1):
         v, df = tup
@@ -155,19 +154,19 @@ def lab_from_df(df, station):
     return element
 
 
-def plot_comparison(dat1, dat2, station=None, flip=False):
+def plot_comparison(dat_x, dat_y, station=None):
 
-    lab1 = lab_from_df(dat1, None)
-    lab2 = lab_from_df(dat2, station)
+    lab_x = lab_from_df(dat_x, station)
+    lab_y = lab_from_df(dat_y, None)
 
-    dat1 = dat1[["date", "value"]]
-    dat2 = dat2[["date", "value"]]
+    dat_x = dat_x[["date", "value"]]
+    dat_y = dat_y[["date", "value"]]
 
-    dat1.index = pd.DatetimeIndex(dat1.date)
-    dat2.index = pd.DatetimeIndex(dat2.date)
+    dat_x.index = pd.DatetimeIndex(dat_x.date)
+    dat_y.index = pd.DatetimeIndex(dat_y.date)
     out = pd.merge_asof(
-        left=dat1,
-        right=dat2,
+        left=dat_x,
+        right=dat_y,
         right_index=True,
         left_index=True,
         direction="nearest",
@@ -176,23 +175,23 @@ def plot_comparison(dat1, dat2, station=None, flip=False):
 
     fig = px.scatter(
         out,
-        x="value_y" if flip else "value_x",
-        y="value_x" if flip else "value_y",
+        x="value_x",
+        y="value_y",
         custom_data=["date_x"],
     )
 
     fig = style_figure(fig, None)
     fig.update_layout(
         margin={"r": 0, "t": 20, "l": 0, "b": 0},
-        xaxis_title=lab2 if flip else lab1,
-        yaxis_title=lab1 if flip else lab2,
+        xaxis_title=lab_x,
+        yaxis_title=lab_y,
         height=600,
     )
     fig.update_traces(
         hovertemplate="<b>"
-        + lab1
+        + lab_x
         + "</b>: %{x}<br><b>"
-        + lab2
+        + lab_y
         + "</b>: %{y}<br><b>Date</b>: %{customdata[0]}"
     )
 
