@@ -3,3 +3,4 @@
 .RData
 .Ruserdata
 *.pyc
+.DS_Store

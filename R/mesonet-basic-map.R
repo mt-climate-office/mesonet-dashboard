@@ -12,14 +12,14 @@ git.dir = '/home/zhoylman/mesonet-dashboard'
 
 row_to_popup <- function(name, station, sub_network) {
   paste0(
-    '<div style="text-align:center"> <font size="3"> Station: ' ,
+    '<div style="text-align:center"> <font size="3"> Station: ',
     name,
     " (",
     sub_network,
     ")",
-    "<br> <a href='https://mco.cfc.umt.edu/mesonet_data/station_page/",
+    "<br> <a href='https://mesonet.climate.umt.edu/dash/",
     station,
-    ".html' target='blank'>View Current Data</a> <br> <a href='https://shiny.cfc.umt.edu/mesonet-download/' target='blank'>Mesonet Data Downloader</a> </font>"
+    "' target='blank'>View Current Data</a> <br> <a href='https://shiny.cfc.umt.edu/mesonet-download/' target='blank'>Mesonet Data Downloader</a> </font>"
   ) %>%
     paste(collapse = '<hr>')
 }
@@ -36,7 +36,7 @@ stations <- stations_raw %>%
     name = list(name),
     station = list(station),
     sub_network = list(sub_network),
-    colocated = ifelse(dplyr::n() > 1, TRUE, FALSE)
+    collocated = ifelse(dplyr::n() > 1, TRUE, FALSE)
   ) %>%
   dplyr::rowwise() %>%
   dplyr::transmute(
@@ -46,10 +46,10 @@ stations <- stations_raw %>%
     name = paste0(unlist(name), ' (', unlist(sub_network), ')', collapse = ', '),
     # Still need to figure out how to replace the html.
     # name = ifelse(length(name) > 1, stringr::str_replace(stringr::fixed("<br> <a href='https://shiny.cfc.umt.edu/mesonet-download/' target='blank'>Mesonet Data Downloader</a>"), ''), name),
-    sub_network = ifelse(colocated, 'colocated', unlist(sub_network)),
+    sub_network = ifelse(collocated, 'collocated', unlist(sub_network)),
     color = dplyr::case_when(
       sub_network == 'AgriMet' ~ "blue",
-      sub_network == 'colocated' ~ "red",
+      sub_network == 'collocated' ~ "red",
       sub_network == 'HydroMet' ~ "green"
     )
   )
@@ -99,10 +99,11 @@ add_leaflet_legend <- function(map_layer) {
   map_layer %>%
     addLegend(
       position = 'topright',
-      colors = c('blue', 'red'),
+      colors = c('blue', 'green', 'red'),
       labels = c(
         'AgriMet',
-        'Colocated<br>&emsp;&ensp;&nbsp;(AgriMet/HydroMet)'
+        "HydroMet",
+        'Collocated<br>&emsp;&ensp;&nbsp;(AgriMet/HydroMet)'
       )
     )
 }
@@ -123,9 +124,8 @@ station_list <- stations_raw %>%
   dplyr::transmute(
     lname = paste0(name, ' (', sub_network, ')'),
     href = paste0(
-      'https://mco.cfc.umt.edu/mesonet_data/station_page/',
-      station,
-      '.html'
+      'https://mesonet.climate.umt.edu/dash/',
+      station
     )
   ) %>% 
   dplyr::arrange(lname)
