@@ -36,7 +36,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    requests_pathname_prefix="/dash-mobile/",
+    requests_pathname_prefix="/dash_mobile/",
     external_scripts=[
         "https://www.googletagmanager.com/gtag/js?id=UA-149859729-3",
         "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/develop/app/assets/gtag.js",
