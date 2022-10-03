@@ -13,7 +13,6 @@ from .libs import get_data as get
 from .libs import plotting as plt
 from .libs import tables as tab
 from .libs.params import params
-from .libs import plot_satellite as plt_sat
 from . import layout as lay
 
 # import libs.get_data as get

@@ -10,7 +10,6 @@ import pandas as pd
 import requests
 from dateutil.relativedelta import relativedelta as rd
 from dotenv import load_dotenv
-from mt_mesonet_satellite import MesonetSatelliteDB
 from requests import Request
 import janitor
 
@@ -170,71 +169,6 @@ def get_station_latest(station):
     return title, dat.to_dict("records")
 
 
-def get_satellite_data(
-    station: str,
-    element: str,
-    start_time: Union[int, dt.date],
-    end_time: Union[int, dt.date],
-    platform: Optional[str] = None,
-    modify_dates: Optional[bool] = True,
-) -> pd.DataFrame:
-    """Gather satellite data at a Mesonet station from the Neo4j database.
-
-    Args:
-        station (str): The name of the station to query.
-        element (str): The satellite indicator element to query.
-        start_time (Union[int, dt.date]): The time to begin the query. Can either be a datetime.date object or an int representing seconds since 1970-01-01.
-        end_time (Union[int, dt.date]): The time to end the query. Can either be a datetime.date object or an int representing seconds since 1970-01-01.
-        platform (Optional[str]): The name of a satellite platform to filter the results by.
-        modify_dates (Optional[bool]): Whether to set all dates to the current year (for plotting purposes).
-
-    Returns:
-        pd.DataFrame: Pandas dataframe with data generated from the query.
-    """
-    conn = MesonetSatelliteDB(
-        user=os.getenv("Neo4jUser"),
-        password=os.getenv("Neo4jPassword"),
-        uri=os.getenv("Neo4jURI"),
-    )
-
-    if isinstance(start_time, dt.date):
-        start_time = (start_time - dt.date(1970, 1, 1)).total_seconds()
-    if isinstance(end_time, dt.date):
-        end_time = (end_time - dt.date(1970, 1, 1)).total_seconds()
-
-    dat = conn.query(
-        station=station, element=element, start_time=start_time, end_time=end_time
-    )
-    dat = dat.assign(value=np.where(dat.value == -9999, np.nan, dat.value))
-    conn.close()
-
-    dat = dat.assign(date=pd.to_datetime(dat.date, unit="s"))
-    dat = dat.sort_values(by=["platform", "date"])
-    dat = dat.assign(platform=dat.platform.replace(params.satellite_product_map))
-    dat = dat.assign(
-        value=np.where(dat.units.str.contains("_sm_"), dat.value * 100, dat.value)
-    )
-    dat = dat.assign(value=np.where(dat.units == "Percent", dat.value * 100, dat.value))
-    dat.reset_index(drop=True, inplace=True)
-    dat = dat.assign(year=dat.date.dt.year)
-
-    if modify_dates:
-        dat = dat.assign(
-            date=str(dt.date.today().year)
-            + "-"
-            + dat.date.dt.month.astype(str)
-            + "-"
-            + dat.date.dt.day.astype(str)
-        )
-        dat = dat[dat.date.str.split("-").str[-2:].str.join("-") != "2-29"]
-        dat = dat.assign(date=pd.to_datetime(dat.date))
-
-    if platform:
-        dat = dat[dat["platform"] == params.satellite_product_map[platform]]
-        dat.reset_index(drop=True, inplace=True)
-    return dat
-
-
 def summarise_station_to_daily(dat, colname):
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
     dat.datetime = dat.datetime.dt.tz_convert("America/Denver")
@@ -243,31 +177,3 @@ def summarise_station_to_daily(dat, colname):
     dat = dat.reset_index(drop=True)
     return dat
 
-
-def get_sat_compare_data(
-    station: str,
-    sat_element: str,
-    station_element: str,
-    start_time: Union[int, dt.date],
-    end_time: Union[int, dt.date],
-    platform: str,
-):
-    from time import perf_counter
-
-    sat_data = get_satellite_data(
-        station, sat_element, start_time, end_time, platform, False
-    )
-
-    if platform in ["SPL4CMDL.006", "SPL4SMGP.006"]:
-        # Take every 8th observation from SMAP data. The API query takes too long
-        # if using all the daily data.
-        sat_data = sat_data.iloc[::8, :]
-
-    dates = ",".join(set(sat_data.date.astype(str).values.tolist()))
-
-    url = f"{params.API_URL}observations/?stations={station}&elements={station_element}&dates={dates}&type=csv&hour=True&wide=True"
-    station_data = pd.read_csv(url)
-    colname = station_data.columns[-1]
-    station_data = summarise_station_to_daily(station_data, colname)
-
-    return station_data, sat_data
