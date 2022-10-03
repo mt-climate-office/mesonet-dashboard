@@ -461,12 +461,11 @@ def get_plot_func(v):
 
 
 def get_soil_legend_loc(dat):
-    tmax = max(dat.iloc[:, dat.columns.str.contains("Soil Temperature")].max(axis=0))
     vmax = max(dat.iloc[:, dat.columns.str.contains("Soil VWC")].max(axis=0))
     d = dat.datetime.max()
-    d = [d - rd(hours=24 * i) for i in range(6)]
+    d = [d - rd(hours=36 * i) for i in range(6)]
 
-    return {"tmp": tmax, "vwc": vmax, "d": d}
+    return {"vwc": vmax, "d": d}
 
 
 def get_soil_depths(dat):
@@ -580,18 +579,8 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
         return sub
 
     soil_info = get_soil_legend_loc(dat)
-    tmp_idx = [
-        f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil Temperature" in x
-    ]
     vwc_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil VWC" in x]
 
-    sub = add_soil_legend(
-        sub=sub,
-        idx=tmp_idx,
-        xs=soil_info["d"],
-        y=soil_info["tmp"],
-        depths=get_soil_depths(dat),
-    )
     sub = add_soil_legend(
         sub=sub,
         idx=vwc_idx,
@@ -756,6 +745,6 @@ def make_nodata_figure(txt="No data avaliable for selected dates."):
         xaxis_showticklabels=False,
         paper_bgcolor="white",
         plot_bgcolor="white",
-        height=500,
+        # height=500,
     )
     return fig

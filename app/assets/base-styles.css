@@ -613,13 +613,13 @@ there.
 
 
 .bannertxt { 
- width: 100%; margin:0 auto; 
- text-align:center; /*centers-text for all child elements!*/
- padding:0;
- font: bold 150% "Helvetica Neue", Arial, Helvetica, sans-serif;
- /* background:rgb(199, 198, 198); */
- text-shadow: 0 1px 0 #fff;
- padding: .5em 0 ;
+  width: 100%; margin:0 auto; 
+  text-align:center; /*centers-text for all child elements!*/
+  padding:0;
+  font: bold 150% "Helvetica Neue", Arial, Helvetica, sans-serif;
+  /* background:rgb(199, 198, 198); */
+  text-shadow: 0 1px 0 #fff;
+  padding: .5em 0 ;
 }
 
 .dlbutton {

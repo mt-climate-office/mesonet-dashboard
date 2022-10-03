@@ -160,12 +160,14 @@ def get_station_latest(station):
         dat = pd.read_csv(text_io)
     dat = dat.loc[:, dat.columns.isin(["datetime"] + params.elem_labs)]
     dat = dat.rename(columns=params.lab_swap)
-    dat = dat.rename(columns={"datetime": "Timestamp"})
+    title = dat.datetime.values[0]
+    dat = dat.drop(columns="datetime")
+
     dat = dat.T.reset_index()
     dat.columns = ["value", "name"]
     dat = dat.dropna()
 
-    return dat.to_dict("records")
+    return title, dat.to_dict("records")
 
 
 def get_satellite_data(

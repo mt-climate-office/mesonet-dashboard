@@ -15,30 +15,6 @@ TABLE_STYLING = {
     ],
 }
 
-TAB_STYLE = {
-    "width": "inherit",
-    "borderTop": "1px black solid",
-    # 'borderBottom': '1px black solid',
-    "background": "white",
-    "paddingTop": 0,
-    "paddingBottom": 0,
-    # 'height': '100px',
-    "line-height": "4.5vh",
-}
-
-SELECTED_STYLE = {
-    "width": "inherit",
-    "boxShadow": "none",
-    "borderTop": "3px #0B5ED7 solid",
-    # 'borderBottom': '1px black solid',
-    "boxShadow": "inset 0px -1px 0px 0px lightgrey",
-    "background": "#E9ECEF",
-    "paddingTop": 0,
-    "paddingBottom": 0,
-    # 'height': '42px',
-    "line-height": "4.5vh",
-}
-
 
 def generate_modal():
     return html.Div(
@@ -53,9 +29,6 @@ def generate_modal():
                         To visualize data from a station, either select a station from the dropdown on the top left, click a station on the locator map, or add a station name to the URL path (e.g. [https://mesonet.climate.umt.edu/dash/crowagen](https://mesonet.climate.umt.edu/dash/crowagen)).
                         The station data is aggregated on demand from the [Montana Mesonet API](https://mesonet.climate.umt.edu/api/v2/docs).
                         
-                        The "Satellite Indicators" tab uses data from NASA satellites to provide timeseries of relevant indicators at all Mesonet stations. 
-                        To display data on this tab, select a station from the dropdown on the left. Selecting the "Timeseries" button shows a timeseries of a given variable for the current year, with previous years plotted as grey lines in the background for context.
-                        Selecting the "Comparison" button allows you to choose two variable to plot against one another for the current year. 
                         If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, please:
                         - Email [colin.brust@mso.umt.edu](mailto:colin.brust@mso.umt.edu),
                         - Fill out our [feedback form](https://airtable.com/shrxlaYUu6DcyK98s),
@@ -86,38 +59,6 @@ def generate_modal():
     )
 
 
-def feedback_iframe():
-    return html.Div(
-        dbc.Modal(
-            [
-                dbc.ModalHeader(
-                    dbc.ModalTitle("Provide Feedback to Improve Our Dashboard!")
-                ),
-                dbc.ModalBody(
-                    html.Iframe(
-                        src="https://airtable.com/embed/shrxlaYUu6DcyK98s?",
-                        style={
-                            "backgroundColor": "orange",
-                            "frameborder": "0",
-                            "onmousewheel": "",
-                            "width": "100%",
-                            "height": "90vh",
-                            "background": "transparent",
-                            "border": "2px solid #ccc",
-                        },
-                    ),
-                    style={"overflow": "clip"},
-                ),
-            ],
-            id="feedback-modal",
-            is_open=False,
-            size="xl",
-            scrollable=True,
-            style={"max-height": "none", "height": "100%"},
-        )
-    )
-
-
 def build_banner(app_ref):
 
     return dbc.Navbar(
@@ -139,42 +80,29 @@ def build_banner(app_ref):
                                     ],
                                 )
                             ),
-                            # dbc.Col(
-                            #     dbc.NavbarBrand(
-                            #         "Montana Mesonet Dashboard", className="ms-5"
-                            #     )
-                            # ),
                         ],
                         align="center",
                         className="g-0",
                     ),
                     style={"textDecoration": "none"},
                 ),
-                html.Div(
+                dbc.Col(
                     html.P(
                         "The Montana Mesonet Dashboard",
                         id="banner-title",
                         className="bannertxt",
                     )
                 ),
-                html.Div(
+                dbc.Col(
                     [
                         dbc.Button(
-                            "MESONET DOWNLOADER",
-                            href="https://shiny.cfc.umt.edu/mesonet-download/",
-                            size="lg",
-                            n_clicks=0,
-                            id="shiny-download-button",
-                            className="me-md-2",
-                            target="_blank",
-                        ),
-                        dbc.Button(
                             "GIVE FEEDBACK",
-                            href="#",
+                            href="https://airtable.com/embed/shrxlaYUu6DcyK98s?",
                             size="lg",
                             n_clicks=0,
                             id="feedback-button",
                             className="me-md-2",
+                            target="_blank",
                         ),
                         dbc.Button(
                             "LEARN MORE",
@@ -186,68 +114,13 @@ def build_banner(app_ref):
                         ),
                     ],
                     className="d-inline-flex gap-2",
-                    style={"padding": "0rem 0rem 0rem 0rem"},
+                    style={"padding": "0rem 0rem 0rem 0rem", "align-items": "center", "justify-content": "center"},
                 ),
             ],
             fluid=True,
         ),
         color="#E9ECEF",
         dark=False,
-    )
-
-
-def build_top_left_card():
-
-    return dbc.Card(
-        [
-            dbc.CardHeader(
-                dbc.Tabs(
-                    [
-                        dbc.Tab(label="Wind Rose", tab_id="wind-tab"),
-                        dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
-                        dbc.Tab(
-                            label="Latest Photo", tab_id="photo-tab", disabled=True
-                        ),
-                    ],
-                    id="ul-tabs",
-                    active_tab="wind-tab",
-                )
-            ),
-            dbc.CardBody(html.Div(id="ul-content")),
-        ],
-        outline=True,
-        color="secondary",
-        className="h-100",
-        style={"overflow": "clip"},
-    )
-
-
-def build_bottom_left_card(station_fig):
-
-    return dbc.Card(
-        [
-            dbc.CardHeader(
-                dbc.Tabs(
-                    [
-                        dbc.Tab(label="Locator Map", tab_id="map-tab"),
-                        dbc.Tab(label="Station Metadata", tab_id="meta-tab"),
-                        dbc.Tab(label="Current Conditions", tab_id="data-tab"),
-                    ],
-                    id="bl-tabs",
-                    active_tab="map-tab",
-                )
-            ),
-            html.Div(
-                dbc.CardBody(
-                    id="bl-content",
-                    children=dcc.Graph(id="station-fig", figure=station_fig),
-                    className="card-text",
-                ),
-                # style={"overflow": "scroll"},
-            ),
-        ],
-        outline=True,
-        color="secondary",
     )
 
 
@@ -267,482 +140,56 @@ def make_station_dropdowns(stations, id, station):
 
 def build_dropdowns(stations):
 
-    checklist_input = dbc.InputGroup(
-        dbc.InputGroupText(
-            [
-                dbc.Checklist(
-                    options=[
-                        {"value": "Precipitation", "label": "Precipitation"},
-                        {"value": "ET", "label": "Reference ET"},
-                        {"value": "Soil VWC", "label": "Soil Moisture"},
-                        {"value": "Air Temperature", "label": "Air Temperature"},
-                        {"value": "Solar Radiation", "label": "Solar Radiation"},
-                        {"value": "Soil Temperature", "label": "Soil Temperature"},
-                        {"value": "Relative Humidity", "label": "Relative Humidity"},
-                        {"value": "Wind Speed", "label": "Wind Speed"},
-                        {
-                            "value": "Atmospheric Pressure",
-                            "label": "Atmospheric Pressure",
-                        },
-                    ],
-                    inline=True,
-                    id="select-vars",
-                    value=["Precipitation", "ET", "Soil VWC", "Air Temperature"],
-                )
-            ],
-            style={"overflow-x": "scroll"},
-        ),
-        className="mb-3",
-        size="lg",
-    )
-
-    return dbc.Container(
-        [
-            dbc.Row(
-                [
-                    dbc.Col(
-                        make_station_dropdowns(stations, "station-dropdown", None),
-                        xs=10,
-                        sm=10,
-                        md=10,
-                        lg=3,
-                        xl=3,
-                    ),
-                    dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dbc.InputGroupText("Start Date"),
-                                dcc.DatePickerSingle(
-                                    id="start-date",
-                                    date=dt.date.today() - rd(weeks=2),
-                                    max_date_allowed=dt.date.today(),
-                                    # min_date_allowed=dt.date(2022, 1, 1),
-                                    disabled=True,
-                                ),
-                            ]
-                        ),
-                        xs=5,
-                        sm=5,
-                        md=5,
-                        lg=3,
-                        xl=3,
-                        # style={"padding": "0rem 0rem 0rem 6.5rem"},
-                    ),
-                    dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dbc.InputGroupText("End Date"),
-                                dcc.DatePickerSingle(
-                                    id="end-date",
-                                    date=dt.date.today(),
-                                    max_date_allowed=dt.date.today(),
-                                    # min_date_allowed=dt.date(2022, 1, 1),
-                                    disabled=True,
-                                ),
-                            ]
-                        ),
-                        xs=5,
-                        sm=5,
-                        md=5,
-                        lg=3,
-                        xl=3,
-                        # style={"padding": "0rem 0rem 0rem 6.5rem"},
-                    ),
-                    dbc.Col(
-                        dbc.Row(
-                            [
-                                dbc.InputGroup(
-                                    [
-                                        dbc.Checklist(
-                                            options=[{"label": "Hourly", "value": 1}],
-                                            inline=True,
-                                            id="hourly-switch",
-                                            switch=True,
-                                            value=[1],
-                                            # className="toggle",
-                                        ),
-                                        dbc.Tooltip(
-                                            """Leaving this switched on will return hourly averages (totals for precipitation). 
-                                            This significantly cuts down on data transfer and makes the plots render faster.
-                                            If the toggle is switched off, the figures will have higher resolution data, but will take longer to load.""",
-                                            target="hourly-switch",
-                                        ),
-                                    ]
-                                ),
-                                dbc.InputGroup(
-                                    [
-                                        dbc.Checklist(
-                                            options=[
-                                                {"label": "gridMET Normals", "value": 1}
-                                            ],
-                                            inline=True,
-                                            id="gridmet-switch",
-                                            switch=True,
-                                            value=[],
-                                            # className="toggle",
-                                        ),
-                                        dbc.Tooltip(
-                                            "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions.",
-                                            target="gridmet-switch",
-                                        ),
-                                    ]
-                                ),
-                            ],
-                            align="center",
-                        ),
-                        xs=10,
-                        sm=10,
-                        md=10,
-                        lg=3,
-                        xl=3,
-                        # style={"padding": "0rem 0rem 0rem 5rem"},
-                    ),
-                ],
-                align="end",
-            ),
-            html.Br(),
-            dbc.Row(
-                [dbc.Col(checklist_input, xs=12, sm=12, md=12, lg=12, xl=12)],
-                align="center",
-                style={"padding": "0rem 6.5rem 0rem 0rem"},
-            ),
-        ],
-        style={"padding": "1rem 0rem 0rem 5rem"},
-        fluid=True,
+    return dbc.Row(
+        make_station_dropdowns(stations, "station-dropdown", None),
+        style={"padding": "1rem 5rem 1rem 5rem"},
+        align="center",
     )
 
 
-def build_right_card(stations):
+def build_content(stations):
 
-    selectors = build_dropdowns(stations)
-
-    return dbc.Card(
-        [
-            dbc.CardHeader(selectors),
-            dbc.CardBody(
-                html.Div(
-                    [
-                        dls.Bars(
-                            children=[
-                                dcc.Store(
-                                    id="temp-station-data", storage_type="session"
-                                ),
-                                dcc.Graph(id="station-data"),
-                            ]
-                        )
-                    ]
-                )
-            ),
-        ],
-        color="secondary",
-        outline=True,
-        className="h-100",
-        style={"overflow-y": "scroll", "overflow-x": "clip"},
-    )
-
-
-def build_latest_content(station_fig, stations):
-    return [
-        dbc.Col(
-            [
-                dbc.Row(
-                    build_top_left_card(),
-                    className="h-50",
-                    style={"padding": "0rem 0rem 0.25rem 0rem"},
-                ),
-                dbc.Row(
-                    build_bottom_left_card(station_fig),
-                    className="h-50",
-                    style={"padding": "0.25rem 0rem 0rem 0rem"},
-                ),
-            ],
-            xs={"size": 12, "order": "last", "offset": 0},
-            sm={"size": 12, "order": "last", "offset": 0},
-            md={"size": 12, "order": "last", "offset": 0},
-            lg={"size": 4, "order": "last", "offset": 0},
-            xl={"size": 4, "order": "last", "offset": 0},
-            style={"maxHeight": "92vh", "overflow-y": "scroll", "overflow-x": "clip"},
-        ),
-        dbc.Col(
-            html.Div(
-                build_right_card(stations),
-                style={
-                    "height": "100%",
-                    "maxHeight": "92vh",
-                    # "overflow": "scroll",
-                },
-                id="latest-plots",
-            ),
-            xs={"size": 12, "order": "first", "offset": 0},
-            sm={"size": 12, "order": "first", "offset": 0},
-            md={"size": 12, "order": "first", "offset": 0},
-            lg={"size": 8, "order": "first", "offset": 0},
-            xl={"size": 8, "order": "first", "offset": 0},
-            style={"padding": "0rem 0.5rem 0rem 0rem"},
-        ),
-    ]
-
-
-def build_satellite_ts_selector():
-    return (
-        dbc.Col(
-            [
-                dbc.Checklist(
-                    options=[{"label": "Percentiles", "value": 1}],
-                    id="climatology-switch",
-                    switch=True,
-                    value=[1],
-                    # className="toggle",
-                ),
-                dbc.Tooltip(
-                    """
-                Show the 5th and 95th percentile of observations for the period of record.
-                """,
-                    target="climatology-switch",
-                ),
-            ],
-            xs=12,
-            sm=12,
-            md=2,
-            lg=2,
-            xl=2,
-        ),
-        dbc.Col(
-            [
-                dbc.InputGroup(
-                    dbc.InputGroupText(
-                        [
-                            dbc.Checklist(
-                                options=[
-                                    {"value": "ET", "label": "ET"},
-                                    {"value": "EVI", "label": "EVI"},
-                                    {"value": "Fpar", "label": "FPAR"},
-                                    {"value": "GPP", "label": "GPP"},
-                                    {"value": "LAI", "label": "LAI"},
-                                    {"value": "NDVI", "label": "NDVI"},
-                                    {"value": "PET", "label": "PET"},
-                                    {
-                                        "label": "Rootzone Soil Moisture",
-                                        "value": "sm_rootzone",
-                                    },
-                                    {
-                                        "label": "Rootzone Soil Saturation",
-                                        "value": "sm_rootzone_wetness",
-                                    },
-                                    {
-                                        "label": "Surface Soil Moisture",
-                                        "value": "sm_surface",
-                                    },
-                                    {
-                                        "label": "Surface Soil Saturation",
-                                        "value": "sm_surface_wetness",
-                                    },
-                                ],
-                                inline=True,
-                                id="sat-vars",
-                                value=["ET", "GPP", "NDVI"],
-                            )
-                        ],
-                        style={"overflow-x": "scroll"},
-                    ),
-                    # className="mb-3",
-                    size="lg",
-                )
-            ],
-            xs=12,
-            sm=12,
-            md=6,
-            lg=6,
-            xl=6,
-        ),
-    )
-
-
-def build_satellite_comp_selector(sat_compare_mapper):
-    return [
-        dbc.Col(
-            dbc.Row(
-                [
-                    dbc.Select(
-                        options=[
-                            {"label": k, "value": v}
-                            for k, v in sat_compare_mapper.items()
-                        ],
-                        id="compare1",
-                        placeholder="Select an X-Axis...",
-                        className="stationSelect"
-                        # style={"width": "150%"}
-                    ),
-                    dbc.Select(
-                        options=[
-                            {"label": k, "value": v}
-                            for k, v in sat_compare_mapper.items()
-                        ],
-                        id="compare2",
-                        placeholder="Select a Y-Axis...",
-                        className="stationSelect",
-                        # style={"width": "150%"}
-                    ),
-                ]
-            ),
-            xs=5,
-            sm=5,
-            md=2,
-            lg=2,
-            xl=2,
-        ),
-        dbc.Col(
-            dbc.InputGroup(
-                [
-                    dbc.InputGroupText("Start Date"),
-                    dcc.DatePickerSingle(
-                        id="start-date-satellite",
-                        date=dt.date.today() - rd(years=1),
-                        max_date_allowed=dt.date.today(),
-                        # min_date_allowed=dt.date(2022, 1, 1),
-                        disabled=False,
-                    ),
-                ]
-            ),
-            xs=5,
-            sm=5,
-            md=3,
-            lg=3,
-            xl=3,
-            # style={"padding": "0rem 0rem 0rem 6.5rem"},
-        ),
-        dbc.Col(
-            dbc.InputGroup(
-                [
-                    dbc.InputGroupText("End Date"),
-                    dcc.DatePickerSingle(
-                        id="end-date-satellite",
-                        date=dt.date.today(),
-                        max_date_allowed=dt.date.today(),
-                        # min_date_allowed=dt.date(2022, 1, 1),
-                        disabled=False,
-                    ),
-                ]
-            ),
-            xs=5,
-            sm=5,
-            md=3,
-            lg=3,
-            xl=3,
-            # style={"padding": "0rem 0rem 0rem 6.5rem"},
-        ),
-    ]
-
-
-def build_satellite_dropdowns(stations, timeseries=True, station=None, sat_compare_mapper=None):
-
-    if timeseries:
-        content = build_satellite_ts_selector()
-    else:
-        content = build_satellite_comp_selector(sat_compare_mapper)
-
-    children = [
-        dbc.Col(
-            make_station_dropdowns(stations, "station-dropdown-satellite", station),
-            xs=12,
-            sm=12,
-            md=2,
-            lg=2,
-            xl=2,
-        ),
-        dbc.Col(
-            dbc.RadioItems(
-                options=[
-                    {"label": "Timeseries Plot", "value": "timeseries"},
-                    {"label": "Comparison Plot", "value": "compare"},
-                ],
-                value="timeseries" if timeseries else "compare",
-                id="satellite-radio",
-                # inline=True,
-                # style={"padding": "0rem 0rem 0rem 5rem"},
-            ),
-            xs=12,
-            sm=12,
-            md=2,
-            lg=2,
-            xl=2,
-        ),
-    ]
-    children += content
-    return (
-        dbc.Row(
-            children=children,
-            align="center",
-            # style={"padding": "0.75rem 0rem 0rem 0rem"},
-        ),
-    )
-
-
-def build_satellite_content(stations):
-
-    selectors = build_satellite_dropdowns(stations)
     return dbc.Card(
         [
             dbc.CardHeader(
-                dbc.Container(selectors, fluid=True, id="satellite-selectors")
+                [
+                    dbc.Tabs(
+                        [
+                            dbc.Tab(label="Current Conditions", tab_id="current"),
+                            dbc.Tab(label="Station Plot", tab_id="plot"),
+                            dbc.Tab(label="Weather Forecast", tab_id="forecast"),
+                            dbc.Tab(label="Mesonet Map", tab_id="map"),
+                        ],
+                        id="tabs",
+                        active_tab="current",
+                        style={"align-items": "center", "justify-content": "center"},
+                    ),
+                    build_dropdowns(stations),
+                ]
             ),
-            dbc.CardBody(
-                html.Div([dcc.Graph(id="satellite-plot")], id="satellite-graph")
-            ),
+            dbc.CardBody(html.Div(id="main-content")),
         ],
-        color="secondary",
         outline=True,
+        color="secondary",
         className="h-100",
-        style={"overflow-x": "clip"},
+        style={"overflow": "clip"},
     )
 
 
-def app_layout(app_ref):
+def app_layout(app_ref, stations):
 
     return dbc.Container(
         [
             dcc.Location(id="url", refresh=False),
             build_banner(app_ref),
-            dcc.Tabs(
-                style={"width": "100%", "font-size": "100%", "height": "4.5vh"},
-                children=[
-                    dcc.Tab(
-                        label="Latest Data",
-                        id="station-tab",
-                        value="station-tab",
-                        style=dict(
-                            borderLeft="1px black solid",
-                            borderRight="0px black solid",
-                            **TAB_STYLE
-                        ),
-                        selected_style=dict(
-                            borderLeft="1px black solid",
-                            borderRight="0.5px black solid",
-                            **SELECTED_STYLE
-                        ),
-                    ),
-                    dcc.Tab(
-                        label="Satellite Indicators",
-                        id="satellite-tab",
-                        value="satellite-tab",
-                        style=dict(
-                            borderLeft="0px black solid",
-                            borderRight="1px black solid",
-                            **TAB_STYLE
-                        ),
-                        selected_style=dict(
-                            borderLeft="0.5px black solid",
-                            borderRight="1px black solid",
-                            **SELECTED_STYLE
-                        ),
-                    ),
-                ],
-                id="main-display-tabs",
-                value="station-tab",
+            dbc.Col(
+                build_content(stations),
+                style={
+                    "height": "100%",
+                    "overflow-y": "scroll",
+                },
             ),
-            dbc.Row(className="h-100", id="main-content"),
             generate_modal(),
-            feedback_iframe(),
             dbc.Modal(
                 id="station-modal",
                 is_open=False,
@@ -751,11 +198,11 @@ def app_layout(app_ref):
                 scrollable=True,
             ),
         ],
-        fluid=True,
+        fluid=False,
         style={
             "height": "100%",
             "backgroundColor": "#E9ECEF",
-            "padding": "0rem 1.5rem 0rem 1.5rem",
+            "padding": "1rem 1rem 1rem 1rem",
             "overflow-y": "clip",
         },
     )
