@@ -132,20 +132,51 @@ def make_station_dropdowns(stations, id, station):
         ],
         id=id,
         placeholder="Select a Mesonet Station...",
-        # className="stationSelect",
         value=station,
-        # style={"width": "150%"}
     )
 
 
 def build_dropdowns(stations):
 
-    return dbc.Row(
-        make_station_dropdowns(stations, "station-dropdown", None),
-        style={"padding": "1rem 5rem 1rem 5rem"},
-        align="center",
-    )
-
+    return dbc.Col([
+        dbc.Row(
+            make_station_dropdowns(stations, "station-dropdown", None),
+            style={"padding": "1rem 5rem 1rem 5rem"},
+            align="center",
+        ), 
+        dbc.Row(
+            dbc.InputGroup(
+                dbc.InputGroupText(
+                    [
+                        dbc.Checklist(
+                            options=[
+                                {"value": "Precipitation", "label": "Precipitation"},
+                                {"value": "ET", "label": "Reference ET"},
+                                {"value": "Soil VWC", "label": "Soil Moisture"},
+                                {"value": "Air Temperature", "label": "Air Temperature"},
+                                {"value": "Solar Radiation", "label": "Solar Radiation"},
+                                {"value": "Soil Temperature", "label": "Soil Temperature"},
+                                {"value": "Relative Humidity", "label": "Relative Humidity"},
+                                {"value": "Wind Speed", "label": "Wind Speed"},
+                                {
+                                    "value": "Atmospheric Pressure",
+                                    "label": "Atmospheric Pressure",
+                                },
+                            ],
+                            inline=True,
+                            id="select",
+                            value=["Air Temperature", "Precipitation", "Soil VWC", "Solar Radiation"],
+                        )
+                    ],
+                    style={"overflow-x": "scroll"},
+                ),
+                className="mb-3",
+                size="lg",
+            ),
+            id="to-hide",
+            style={"visibility": "hidden", "height": "50px"}
+        )
+    ])
 
 def build_content(stations):
 
@@ -156,7 +187,7 @@ def build_content(stations):
                     dbc.Tabs(
                         [
                             dbc.Tab(label="Current Conditions", tab_id="current"),
-                            dbc.Tab(label="Station Plot", tab_id="plot"),
+                            dbc.Tab(label="1-Week Summary", tab_id="plot"),
                             dbc.Tab(label="Weather Forecast", tab_id="forecast"),
                             dbc.Tab(label="Mesonet Map", tab_id="map"),
                         ],
@@ -181,6 +212,7 @@ def app_layout(app_ref, stations):
     return dbc.Container(
         [
             dcc.Location(id="url", refresh=False),
+            dcc.Store("data", storage_type="session"),
             build_banner(app_ref),
             dbc.Col(
                 build_content(stations),
@@ -198,7 +230,7 @@ def app_layout(app_ref, stations):
                 scrollable=True,
             ),
         ],
-        fluid=False,
+        fluid=True,
         style={
             "height": "100%",
             "backgroundColor": "#E9ECEF",

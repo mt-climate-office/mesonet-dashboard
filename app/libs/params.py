@@ -4,11 +4,6 @@ from dataclasses import dataclass
 import dateutil.relativedelta as rd
 import pandas as pd
 
-elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
-elements_df.assign(
-    description=elements_df.description_short + " [" + elements_df.us_units + "]"
-)
-
 
 @dataclass
 class params:
@@ -20,15 +15,15 @@ class params:
     elements = [
         "air_temp_0200",
         "air_temp_0244",
-        # "bp",
+        "bp",
         "ppt",
-        # "rh",
-        # "soil_temp_0005",
-        # "soil_temp_0010",
-        # "soil_temp_0020",
-        # "soil_temp_0050",
-        # "soil_temp_0091",
-        # "soil_temp_0100",
+        "rh",
+        "soil_temp_0005",
+        "soil_temp_0010",
+        "soil_temp_0020",
+        "soil_temp_0050",
+        "soil_temp_0091",
+        "soil_temp_0100",
         "soil_vwc_0005",
         "soil_vwc_0010",
         "soil_vwc_0020",
@@ -36,11 +31,62 @@ class params:
         "soil_vwc_0091",
         "soil_vwc_0100",
         "sol_rad",
-        # "wind_dir_0244",
-        # "wind_dir_1000",
+        "wind_dir_0244",
+        "wind_dir_1000",
         "wind_spd_0244",
         "wind_spd_1000",
     ]
+
+    elem_map = {
+        "Precipitation": ["ppt"],
+        "ET": ["rh", "bp", "sol_rad", "air_temp", "wind_spd"],
+        "Soil VWC": ["soil_vwc"],
+        "Air Temperature": ["air_temp"],
+        "Solar Radiation": ["sol_rad"],
+        "Soil Temperature": ["soil_temp"],
+        "Relative Humidity": ["rh"],
+        "Wind Speed": ["wind_spd"],
+        "Atmospheric Pressure": ["bp"],
+    }
+
+    description_to_element = {
+        "Air Temperature @ 2 m": "air_temp_0200",
+        "Air Temperature @ 8 ft": "air_temp_0244",
+        "Atmospheric Pressure": "bp",
+        "Precipitation": "ppt",
+        "Max Precip Rate": "ppt_max_rate",
+        "Relative Humidity": "rh",
+        "Snow Depth": "snow_depth",
+        "Bulk EC @ -5 cm": "soil_ec_blk_0005",
+        "Bulk EC @ -10 cm": "soil_ec_blk_0010",
+        "Bulk EC @ -20 cm": "soil_ec_blk_0020",
+        "Bulk EC @ -50 cm": "soil_ec_blk_0050",
+        "Bulk EC @ -91 cm": "soil_ec_blk_0091",
+        "Bulk EC @ -100 cm": "soil_ec_blk_0100",
+        "Soil Temperature @ -5 cm": "soil_temp_0005",
+        "Soil Temperature @ -10 cm": "soil_temp_0010",
+        "Soil Temperature @ -20 cm": "soil_temp_0020",
+        "Soil Temperature @ -50 cm": "soil_temp_0050",
+        "Soil Temperature @ -91 cm": "soil_temp_0091",
+        "Soil Temperature @ -100 cm": "soil_temp_0100",
+        "Soil VWC @ -5 cm": "soil_vwc_0005",
+        "Soil VWC @ -10 cm": "soil_vwc_0010",
+        "Soil VWC @ -20 cm": "soil_vwc_0020",
+        "Soil VWC @ -50 cm": "soil_vwc_0050",
+        "Soil VWC @ -91 cm": "soil_vwc_0091",
+        "Soil VWC @ -100 cm": "soil_vwc_0100",
+        "Solar Radiation": "sol_rad",
+        "VPD": "vpd_atmo",
+        "Well EC": "well_eco",
+        "Well Water Level": "well_lvl",
+        "Well Water Temperature": "well_tmp",
+        "Wind Direction @ 8 ft": "wind_dir_0244",
+        "Wind Direction @ 10 m": "wind_dir_1000",
+        "Gust Speed @ 8 ft": "windgust_0244",
+        "Gust Speed @ 10 m": "windgust_1000",
+        "Wind Speed @ 8 ft": "wind_spd_0244",
+        "Wind Speed @ 10 m": "wind_spd_1000",
+    }
 
     elem_labs = [
         "Air Temperature @ 2 m [°F]",
@@ -88,8 +134,6 @@ class params:
         "Wind Speed @ 10 m [mi/hr]": "Wind Speed [mi/hr]",
         "Wind Speed @ 8 ft [mi/hr]": "Wind Speed [mi/hr]",
     }
-
-    elem_map = dict(zip(elements_df.element, elements_df.description_short))
 
     color_mapper = {
         "Air Temperature": "#c42217",

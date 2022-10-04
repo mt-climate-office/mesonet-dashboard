@@ -570,8 +570,8 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height)
     x_ticks = [
-        dat.datetime.min().date() - rd(days=1),
-        dat.datetime.max().date() + rd(days=1),
+        dat.datetime.min() - rd(hours=4),
+        dat.datetime.max() + rd(hours=4),
     ]
     sub = style_figure(sub, x_ticks)
     sub.update_layout(margin={"r": 0, "t": 20, "l": 0, "b": 0})

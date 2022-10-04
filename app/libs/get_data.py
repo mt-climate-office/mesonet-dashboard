@@ -2,7 +2,7 @@ from urllib.error import HTTPError
 import datetime as dt
 import io
 import os
-from typing import Optional, Union
+from typing import List, Optional, Union
 from urllib import parse
 
 import numpy as np
@@ -50,6 +50,7 @@ def get_station_record(
     start_time: Union[dt.date, dt.datetime],
     end_time: Union[dt.date, dt.datetime],
     hourly: Optional[bool] = True,
+    e: None | str = None,
 ) -> pd.DataFrame:
     """Given a Mesonet station name and date range, return a dataframe of climate data.
 
@@ -62,7 +63,7 @@ def get_station_record(
         pd.DataFrame: DataFrame of records from 'station' ranging from 'start_date' to 'end_date'
     """
     start_time = format_dt(start_time)
-    e = ",".join(params.elements)
+    e = e or ",".join(params.elements)
 
     q = {
         "stations": station,
@@ -123,8 +124,7 @@ def clean_format(
     Returns:
         pd.DataFrame: DataFrame of station records in a cleaned format and with precip aggregated to daily sum.
     """
-    time_freq = "5min" if station[:3] == "ace" else "15min"
-    time_freq = "60min" if hourly else time_freq
+    time_freq = "60min"
 
     dat = get_station_record(station, start_time, end_time, hourly)
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
