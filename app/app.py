@@ -8,18 +8,20 @@ import pandas as pd
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
 from urllib.error import HTTPError
+from itertools import chain
+import re
 
-from .libs import get_data as get
-from .libs import plotting as plt
-from .libs import tables as tab
-from .libs.params import params
-from . import layout as lay
+# from .libs import get_data as get
+# from .libs import plotting as plt
+# from .libs import tables as tab
+# from .libs.params import params
+# from . import layout as lay
 
-# import libs.get_data as get
-# import libs.plotting as plt
-# import libs.tables as tab
-# import layout as lay
-# from libs.params import params
+import libs.get_data as get
+import libs.plotting as plt
+import libs.tables as tab
+import layout as lay
+from libs.params import params
 
 
 pd.options.mode.chained_assignment = None
@@ -36,7 +38,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    requests_pathname_prefix="/dash_mobile/",
+    # requests_pathname_prefix="/dash_mobile/",
     external_scripts=[
         "https://www.googletagmanager.com/gtag/js?id=UA-149859729-3",
         "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/develop/app/assets/gtag.js",
@@ -50,21 +52,9 @@ stations = get.get_sites()
 app.layout = lay.app_layout(app_ref=app, stations=stations)
 
 
-def render_station_plot(station):
+def render_station_plot(station, data):
 
-    end = dt.date.today()
-    start = end - rd(days=7)
-
-    data = get.clean_format(station, start_time=start, end_time=end, hourly=True)
-
-    data.datetime = data.datetime.dt.tz_convert("America/Denver")
-    data = get.filter_top_of_hour(data)
-
-    dat = data.drop(columns="Precipitation [in]")
-    ppt = data[["datetime", "Precipitation [in]"]]
-    ppt = ppt.dropna()
-    select_vars = ["Air Temperature", "Precipitation", "Soil VWC", "Solar Radiation"]
-    station = stations[stations["station"] == station]
+    
 
     return plt.plot_site(
         *select_vars,
@@ -79,16 +69,17 @@ def render_station_plot(station):
 def weather_iframe(station):
     row = stations[stations["station"] == station]
     url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
-    return html.Iframe(
-            src=url, 
-        style={
-            "flex-grow": "1",
-            "border": "none",
-            "margin": "0",
-            "padding": "0", 
-        }
+    return (
+        html.Iframe(
+            src=url,
+            style={
+                "flex-grow": "1",
+                "border": "none",
+                "margin": "0",
+                "padding": "0",
+            },
         ),
-
+    )
 
 
 @app.callback(
@@ -96,9 +87,10 @@ def weather_iframe(station):
     [
         Input("station-dropdown", "value"),
         Input("tabs", "active_tab"),
+        Input("data", "data")
     ],
 )
-def toggle_main_tab(station, tab):
+def toggle_main_tab(station, tab, data):
 
     if not station and tab != "map":
         return dcc.Graph(figure=plt.make_nodata_figure("<b>No Station Selected!</b>"))
@@ -113,7 +105,7 @@ def toggle_main_tab(station, tab):
             )
 
         case "plot":
-            out = render_station_plot(station=station)
+            out = render_station_plot(station=station, data=data)
             return dcc.Graph(figure=out)
         case "forecast":
             return weather_iframe(station)
@@ -122,6 +114,70 @@ def toggle_main_tab(station, tab):
             return dcc.Graph(id="station-fig", figure=station_fig)
         case _:
             return html.Div("uh oh!")
+
+def get_data(station, elements):
+
+    end = dt.date.today()
+    start = end - rd(days=7)
+
+    return get.get_station_record(station, start, end, True, ",".join(elements))
+
+@app.callback(
+    Output("data", "data"),
+    Input("station-dropdown", "value"),
+    Input("select", "value"),
+    State("data", "data"),
+)
+def update_station_data(station, vars, tmp):
+
+    if not station or not vars:
+        return None
+
+    elements = set(chain(*[params.elem_map[x] for x in vars]))
+    elements = list(set([y for y in params.elements for x in elements if x in y]))
+    if not tmp:
+        out = get_data(station, elements)
+        return out.to_json(date_format="iso", orient="records")
+    
+    tmp = pd.read_json(tmp, orient="records")
+
+    if tmp.station.values[0] != station:
+        out = get_data(station, elements)
+        return out.to_json(date_format="iso", orient="records")
+
+    existing_elements = set()
+    for x in tmp.columns:
+        x = re.sub("[\(\[].*?[\)\]]", "", x).strip()
+        x = params.description_to_element.get(x, None)
+        if x:
+            existing_elements.update([x])
+
+    elements = set(elements)
+    new_elements = elements - existing_elements
+    if new_elements:
+        try:
+            out = get_data(station, new_elements)
+        except HTTPError:
+            return tmp.to_json(date_format="iso", orient="records")
+    else:
+        return tmp.to_json(date_format="iso", orient="records")
+    
+    tmp.datetime = pd.to_datetime(tmp.datetime)
+    out.datetime = pd.to_datetime(out.datetime)
+
+    out = tmp.merge(out, on=["station", "datetime"])
+    return out.to_json(date_format="iso", orient="records")
+
+
+@app.callback(
+    Output("to-hide", "style"),
+    Input("tabs", "active_tab"),
+    prevent_initial_callback=True,
+)
+def hide_select(tab):
+    vis = "visible" if tab == "plot" else "hidden"
+    height = "50px" if tab == "plot" else "0px"
+    return {"visibility": vis, "height": height}
 
 
 @app.callback(
