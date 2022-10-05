@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Union
 
 import dash_bootstrap_components as dbc
-import dash_loading_spinners as dls
 import pandas as pd
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
@@ -52,10 +51,35 @@ stations = get.get_sites()
 app.layout = lay.app_layout(app_ref=app, stations=stations)
 
 
-def render_station_plot(station, data):
+def render_station_plot(station, dat, select_vars):
 
-    
+    dat = pd.read_json(dat, orient="records")
 
+    dat.datetime = pd.to_datetime(dat.datetime, utc=True)
+    dat.datetime = dat.datetime.dt.tz_convert("America/Denver")
+    dat = dat.set_index("datetime")
+
+    try:
+        ppt = dat[["Precipitation [in]"]]
+        dat = dat.drop(columns="Precipitation [in]")
+        ppt.index = pd.DatetimeIndex(ppt.index)
+        ppt = pd.DataFrame(ppt.groupby(ppt.index.date)["Precipitation [in]"].agg("sum"))
+        ppt.index = pd.DatetimeIndex(ppt.index)
+        ppt.index = ppt.index.tz_localize("America/Denver")
+        ppt = ppt.reset_index().rename(columns={"index": "datetime"})
+    except KeyError:
+        ppt = pd.DataFrame()
+    dat = dat.rename(columns=params.lab_swap)   
+    dat = dat.reset_index()
+
+    dat.index = pd.DatetimeIndex(dat.datetime)
+    dat = get.reindex_by_date(dat, "60min")
+    dat = dat.iloc[1:]
+
+    station = stations[stations["station"] == station]
+    print(dat)
+
+    print(ppt)
     return plt.plot_site(
         *select_vars,
         dat=dat,
@@ -87,33 +111,38 @@ def weather_iframe(station):
     [
         Input("station-dropdown", "value"),
         Input("tabs", "active_tab"),
-        Input("data", "data")
+        Input("data", "data"), 
+        Input("select", "value")
     ],
 )
-def toggle_main_tab(station, tab, data):
+def toggle_main_tab(station, tab, data, select_vars):
 
     if not station and tab != "map":
         return dcc.Graph(figure=plt.make_nodata_figure("<b>No Station Selected!</b>"))
-    match tab:
-        case "current":
-            title, table = get.get_station_latest(station)
-            return html.Div(
-                [
-                    html.Label(f"Data from {title}"),
-                    dash_table.DataTable(data=table, **lay.TABLE_STYLING),
-                ]
-            )
 
-        case "plot":
-            out = render_station_plot(station=station, data=data)
-            return dcc.Graph(figure=out)
-        case "forecast":
-            return weather_iframe(station)
-        case "map":
-            station_fig = plt.plot_station(stations, station=station)
-            return dcc.Graph(id="station-fig", figure=station_fig)
-        case _:
-            return html.Div("uh oh!")
+    if tab == "current":
+        title, table = get.get_station_latest(station)
+        return html.Div(
+            [
+                html.Label(f"Data from {title}"),
+                dash_table.DataTable(data=table, **lay.TABLE_STYLING),
+            ]
+        )
+
+    elif tab == "plot":
+        out = render_station_plot(
+            station=station, 
+            dat=data,
+            select_vars=select_vars
+        )
+        return dcc.Graph(figure=out)
+    elif tab == "forecast":
+        return weather_iframe(station)
+    elif tab == "map":
+        station_fig = plt.plot_station(stations, station=station)
+        return dcc.Graph(id="station-fig", figure=station_fig)
+    else:
+        return html.Div("Uh oh, something went wrong! Please try again!")
 
 def get_data(station, elements):
 
