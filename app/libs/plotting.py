@@ -597,7 +597,7 @@ def plot_station(stations, station=None):
     stations = stations[["station", "long_name", "elevation", "latitude", "longitude"]]
     stations = stations.assign(
         url=stations["long_name"]
-        + ": [View Latest Data](/dash/"
+        + ": [View Latest Data](/dash_mobile/"
         + stations["station"]
         + "/)"
     )
