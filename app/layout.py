@@ -164,7 +164,7 @@ def build_dropdowns(stations):
                             ],
                             inline=True,
                             id="select",
-                            value=["Air Temperature", "Precipitation", "Soil VWC", "Solar Radiation"],
+                            value=["Air Temperature", "Precipitation", "Soil VWC", "Soil Temperature", "Solar Radiation"],
                         )
                     ],
                     style={"overflow-x": "scroll"},
