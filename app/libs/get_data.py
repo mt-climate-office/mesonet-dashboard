@@ -1,17 +1,17 @@
-from urllib.error import HTTPError
 import datetime as dt
 import io
 import os
 from typing import List, Optional, Union
 from urllib import parse
+from urllib.error import HTTPError
 
+import janitor
 import numpy as np
 import pandas as pd
 import requests
 from dateutil.relativedelta import relativedelta as rd
 from dotenv import load_dotenv
 from requests import Request
-import janitor
 
 from .params import params
 
@@ -176,4 +176,3 @@ def summarise_station_to_daily(dat, colname):
     dat = dat.groupby(["station", "date"]).agg({colname: "mean", "date": "min"})
     dat = dat.reset_index(drop=True)
     return dat
-

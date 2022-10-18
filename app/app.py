@@ -1,24 +1,24 @@
 import datetime as dt
+import re
+from itertools import chain
 from pathlib import Path
 from typing import Union
+from urllib.error import HTTPError
 
 import dash_bootstrap_components as dbc
+import dash_loading_spinners as dls
 import pandas as pd
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
-from urllib.error import HTTPError
-from itertools import chain
-import re
 
+from . import layout as lay
 from .libs import get_data as get
 from .libs import plotting as plt
 from .libs import tables as tab
 from .libs.params import params
-from . import layout as lay
 
 # import libs.get_data as get
 # import libs.plotting as plt
-# import libs.tables as tab
 # import layout as lay
 # from libs.params import params
 
@@ -69,7 +69,7 @@ def render_station_plot(station, dat, select_vars):
         ppt = ppt.reset_index().rename(columns={"index": "datetime"})
     except KeyError:
         ppt = pd.DataFrame()
-    dat = dat.rename(columns=params.lab_swap)   
+    dat = dat.rename(columns=params.lab_swap)
     dat = dat.reset_index()
 
     dat.index = pd.DatetimeIndex(dat.datetime)
@@ -77,9 +77,7 @@ def render_station_plot(station, dat, select_vars):
     dat = dat.iloc[1:]
 
     station = stations[stations["station"] == station]
-    print(dat)
 
-    print(ppt)
     return plt.plot_site(
         *select_vars,
         dat=dat,
@@ -93,16 +91,17 @@ def render_station_plot(station, dat, select_vars):
 def weather_iframe(station):
     row = stations[stations["station"] == station]
     url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
-    return (
+    return html.Div(
         html.Iframe(
             src=url,
-            style={
-                "flex-grow": "1",
-                "border": "none",
-                "margin": "0",
-                "padding": "0",
-            },
+            # style={
+            #     "flex-grow": "1",
+            #     "border": "none",
+            #     "margin": "0",
+            #     "padding": "0",
+            # },
         ),
+        className="second-row",
     )
 
 
@@ -111,8 +110,8 @@ def weather_iframe(station):
     [
         Input("station-dropdown", "value"),
         Input("tabs", "active_tab"),
-        Input("data", "data"), 
-        Input("select", "value")
+        Input("data", "data"),
+        Input("select", "value"),
     ],
 )
 def toggle_main_tab(station, tab, data, select_vars):
@@ -122,27 +121,26 @@ def toggle_main_tab(station, tab, data, select_vars):
 
     if tab == "current":
         title, table = get.get_station_latest(station)
-        return html.Div(
-            [
-                html.Label(f"Data from {title}"),
-                dash_table.DataTable(data=table, **lay.TABLE_STYLING),
-            ]
+        return dls.Bars(
+            html.Div(
+                [
+                    html.Label(f"Data from {title}"),
+                    dash_table.DataTable(data=table, **lay.TABLE_STYLING),
+                ]
+            )
         )
 
     elif tab == "plot":
-        out = render_station_plot(
-            station=station, 
-            dat=data,
-            select_vars=select_vars
-        )
-        return dcc.Graph(figure=out)
+        out = render_station_plot(station=station, dat=data, select_vars=select_vars)
+        return dls.Bars(dcc.Graph(figure=out))
     elif tab == "forecast":
         return weather_iframe(station)
     elif tab == "map":
         station_fig = plt.plot_station(stations, station=station)
-        return dcc.Graph(id="station-fig", figure=station_fig)
+        return dls.Bars(dcc.Graph(id="station-fig", figure=station_fig))
     else:
         return html.Div("Uh oh, something went wrong! Please try again!")
+
 
 def get_data(station, elements):
 
@@ -150,6 +148,7 @@ def get_data(station, elements):
     start = end - rd(days=7)
 
     return get.get_station_record(station, start, end, True, ",".join(elements))
+
 
 @app.callback(
     Output("data", "data"),
@@ -167,9 +166,8 @@ def update_station_data(station, vars, tmp):
     if not tmp:
         out = get_data(station, elements)
         return out.to_json(date_format="iso", orient="records")
-    
-    tmp = pd.read_json(tmp, orient="records")
 
+    tmp = pd.read_json(tmp, orient="records")
     if tmp.station.values[0] != station:
         out = get_data(station, elements)
         return out.to_json(date_format="iso", orient="records")
@@ -190,7 +188,7 @@ def update_station_data(station, vars, tmp):
             return tmp.to_json(date_format="iso", orient="records")
     else:
         return tmp.to_json(date_format="iso", orient="records")
-    
+
     tmp.datetime = pd.to_datetime(tmp.datetime)
     out.datetime = pd.to_datetime(out.datetime)
 

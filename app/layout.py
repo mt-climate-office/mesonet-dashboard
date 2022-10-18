@@ -1,9 +1,9 @@
 import datetime as dt
 
 import dash_bootstrap_components as dbc
+import dash_loading_spinners as dls
 from dash import dcc, html
 from dateutil.relativedelta import relativedelta as rd
-
 
 TABLE_STYLING = {
     "css": [{"selector": "tr:first-child", "rule": "display: none"}],
@@ -113,7 +113,11 @@ def build_banner(app_ref):
                         ),
                     ],
                     className="d-inline-flex gap-2",
-                    style={"padding": "0rem 0rem 0rem 0rem", "align-items": "center", "justify-content": "center"},
+                    style={
+                        "padding": "0rem 0rem 0rem 0rem",
+                        "align-items": "center",
+                        "justify-content": "center",
+                    },
                 ),
             ],
             fluid=True,
@@ -137,45 +141,68 @@ def make_station_dropdowns(stations, id, station):
 
 def build_dropdowns(stations):
 
-    return dbc.Col([
-        dbc.Row(
-            make_station_dropdowns(stations, "station-dropdown", None),
-            style={"padding": "1rem 5rem 1rem 5rem"},
-            align="center",
-        ), 
-        dbc.Row(
-            dbc.InputGroup(
-                dbc.InputGroupText(
-                    [
-                        dbc.Checklist(
-                            options=[
-                                {"value": "Precipitation", "label": "Precipitation"},
-                                {"value": "ET", "label": "Reference ET"},
-                                {"value": "Soil VWC", "label": "Soil Moisture"},
-                                {"value": "Air Temperature", "label": "Air Temperature"},
-                                {"value": "Solar Radiation", "label": "Solar Radiation"},
-                                {"value": "Soil Temperature", "label": "Soil Temperature"},
-                                {"value": "Relative Humidity", "label": "Relative Humidity"},
-                                {"value": "Wind Speed", "label": "Wind Speed"},
-                                {
-                                    "value": "Atmospheric Pressure",
-                                    "label": "Atmospheric Pressure",
-                                },
-                            ],
-                            inline=True,
-                            id="select",
-                            value=["Air Temperature", "Precipitation", "Soil VWC", "Soil Temperature"],
-                        )
-                    ],
-                    style={"overflow-x": "scroll"},
-                ),
-                className="mb-3",
-                size="lg",
+    return dbc.Col(
+        [
+            dbc.Row(
+                make_station_dropdowns(stations, "station-dropdown", None),
+                style={"padding": "1rem 5rem 1rem 5rem"},
+                align="center",
             ),
-            id="to-hide",
-            style={"visibility": "hidden", "height": "50px"}
-        )
-    ])
+            dbc.Row(
+                dbc.InputGroup(
+                    dbc.InputGroupText(
+                        [
+                            dbc.Checklist(
+                                options=[
+                                    {
+                                        "value": "Precipitation",
+                                        "label": "Precipitation",
+                                    },
+                                    {"value": "ET", "label": "Reference ET"},
+                                    {"value": "Soil VWC", "label": "Soil Moisture"},
+                                    {
+                                        "value": "Air Temperature",
+                                        "label": "Air Temperature",
+                                    },
+                                    {
+                                        "value": "Solar Radiation",
+                                        "label": "Solar Radiation",
+                                    },
+                                    {
+                                        "value": "Soil Temperature",
+                                        "label": "Soil Temperature",
+                                    },
+                                    {
+                                        "value": "Relative Humidity",
+                                        "label": "Relative Humidity",
+                                    },
+                                    {"value": "Wind Speed", "label": "Wind Speed"},
+                                    {
+                                        "value": "Atmospheric Pressure",
+                                        "label": "Atmospheric Pressure",
+                                    },
+                                ],
+                                inline=True,
+                                id="select",
+                                value=[
+                                    "Air Temperature",
+                                    "Precipitation",
+                                    "Soil VWC",
+                                    "Soil Temperature",
+                                ],
+                            )
+                        ],
+                        style={"overflow-x": "scroll"},
+                    ),
+                    className="mb-3",
+                    size="lg",
+                ),
+                id="to-hide",
+                style={"visibility": "hidden", "height": "50px"},
+            ),
+        ]
+    )
+
 
 def build_content(stations):
 
@@ -197,7 +224,7 @@ def build_content(stations):
                     build_dropdowns(stations),
                 ]
             ),
-            dbc.CardBody(html.Div(id="main-content")),
+            dbc.CardBody(dls.Bars(html.Div(id="main-content"))),
         ],
         outline=True,
         color="secondary",
