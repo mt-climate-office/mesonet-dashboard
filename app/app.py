@@ -117,7 +117,7 @@ def weather_iframe(station):
 def toggle_main_tab(station, tab, data, select_vars):
 
     if not station and tab != "map":
-        return dcc.Graph(figure=plt.make_nodata_figure("<b>No Station Selected!</b>"))
+        return dcc.Graph(figure=plt.make_nodata_figure("<b>No Station Selected!</b> <br> Select a station above."))
 
     if tab == "current":
         title, table = get.get_station_latest(station)

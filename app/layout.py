@@ -136,6 +136,7 @@ def make_station_dropdowns(stations, id, station):
         id=id,
         placeholder="Select a Mesonet Station...",
         value=station,
+        style={"font-size": "1.5rem"}
     )
 
 
