@@ -111,6 +111,8 @@ class params:
         "Wind Direction @ 8 ft [deg]",
         "Wind Speed @ 10 m [mi/hr]",
         "Wind Speed @ 8 ft [mi/hr]",
+        "Gust Speed @ 8 ft [mi/hr]",
+        "Gust Speed @ 10 m [mi/hr]",
     ]
 
     lab_swap = {
@@ -133,6 +135,8 @@ class params:
         "Wind Direction @ 8 ft [deg]": "Wind Direction [deg]",
         "Wind Speed @ 10 m [mi/hr]": "Wind Speed [mi/hr]",
         "Wind Speed @ 8 ft [mi/hr]": "Wind Speed [mi/hr]",
+        "Gust Speed @ 8 ft [mi/hr]": "Wind Gust [mi/hr]",
+        "Gust Speed @ 10 m [mi/hr]": "Wind Gust [mi/hr]",
     }
 
     color_mapper = {
