@@ -234,7 +234,7 @@ def build_bottom_left_card(station_fig):
                         dbc.Tab(label="Current Conditions", tab_id="data-tab"),
                     ],
                     id="bl-tabs",
-                    active_tab="map-tab",
+                    active_tab="data-tab",
                 )
             ),
             html.Div(

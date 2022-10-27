@@ -15,6 +15,7 @@ from requests import Request
 import janitor
 
 from .params import params
+from .plotting import deg_to_compass
 
 load_dotenv()
 
@@ -160,6 +161,7 @@ def get_station_latest(station):
         dat = pd.read_csv(text_io)
     dat = dat.loc[:, dat.columns.isin(["datetime"] + params.elem_labs)]
     dat = dat.rename(columns=params.lab_swap)
+    dat["Wind Direction [deg]"] = deg_to_compass(dat["Wind Direction [deg]"])
     dat = dat.rename(columns={"datetime": "Timestamp"})
     dat = dat.T.reset_index()
     dat.columns = ["value", "name"]
