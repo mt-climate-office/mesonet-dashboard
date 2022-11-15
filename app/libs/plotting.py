@@ -93,7 +93,13 @@ def plot_soil(dat, **kwargs):
             for x in cols
         ]
     )
-    unit = "%" if "VWC" in kwargs["txt"] else "°F"
+    unit = {
+        "Soil VWC": "%",
+        "Soil Temperature": "°F",
+        "Bulk EC": "mS/cm"
+    }
+
+    unit = unit[kwargs["txt"]]
     fig = px.line(
         dat,
         x="datetime",
@@ -386,32 +392,6 @@ def plot_etr(hourly, station, **kwargs):
 
     return fig
 
-    # dat['et_h'] = (
-    #     dat[dat.date.isin(gaps[gaps == 24].index.values)]
-    #         .assign(julian=dat.datetime.dt.dayofyear)
-    #         .assign(hour=dat.datetime.dt.hour)
-    #         .apply(
-    #             lambda x: et_h(
-    #                 lat,
-    #                 lon,
-    #                 x["julian"],
-    #                 x["hour"],
-    #                 elev,
-    #                 x["Relative Humidity [%]"],
-    #                 (x["Air Temperature [°F]"] - 32) * (5/9),
-    #                 x["Solar Radiation [W/m²]"],
-    #                 x["Atmospheric Pressure [mbar]"]/10,
-    #                 x["Wind Speed [mi/hr]"]*0.44704
-    #             ) * (1/25.4),
-    #             axis = 1
-    #         )
-    # )
-
-    # dat = dat.assign(et_h=np.where(dat.et_h < 0, 0, dat.et_h))
-    # calc_hourly = pd.DataFrame(
-    #     dat.groupby(dat.date)["et_h"].agg("sum")
-    # ).reset_index()
-
 
 def px_to_subplot(*figs, **kwargs):
     """
@@ -440,20 +420,17 @@ def px_to_subplot(*figs, **kwargs):
 
 
 def filter_df(df, v):
-
+    if v == "Well Water Level":
+        print(df.columns)
+        print(df)
     var_cols = [x for x in df.columns if v in x]
     cols = ["datetime"] + var_cols
-
     df = df[cols]
-
-    if len(df) == 0:
-        return df
-
     return df
 
 
 def get_plot_func(v):
-    if "Soil" in v:
+    if "Soil" in v or "Bulk" in v:
         return plot_soil
     elif v == "Precipitation":
         return plot_ppt
@@ -463,10 +440,11 @@ def get_plot_func(v):
 def get_soil_legend_loc(dat):
     tmax = max(dat.iloc[:, dat.columns.str.contains("Soil Temperature")].max(axis=0))
     vmax = max(dat.iloc[:, dat.columns.str.contains("Soil VWC")].max(axis=0))
+    ecmax = max(dat.iloc[:, dat.columns.str.contains("Bulk EC")].max(axis=0))
     d = dat.datetime.max()
     d = [d - rd(hours=24 * i) for i in range(6)]
 
-    return {"tmp": tmax, "vwc": vmax, "d": d}
+    return {"tmp": tmax, "vwc": vmax, "ec": ecmax, "d": d}
 
 
 def get_soil_depths(dat):
@@ -551,10 +529,13 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
                 data = filter_df(df, v)
 
                 if len(data) == 0 or data.shape[-1] == 1:
-                    no_data.append(v)
-                    continue
-                if v == "Soil Temperature" or v == "Soil VWC":
+                    raise ValueError("No Data Available.")
+                if v in ["Soil Temperature", "Soil VWC", "Bulk EC"]:
                     kwargs.update({"txt": v})
+                if v == "Bulk EC":
+                    print(plot_func)
+                    print(data)
+
                 plt = plot_func(data, color=params.color_mapper[v], **kwargs)
         except (KeyError, ValueError):
             plt = px.line(no_data_df, x="datetime", y="data", markers=True)
@@ -576,7 +557,7 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     ]
     sub = style_figure(sub, x_ticks)
     sub.update_layout(margin={"r": 0, "t": 20, "l": 0, "b": 0})
-    if "Soil Temperature" in no_data or "Soil VWC" in no_data:
+    if "Soil Temperature" in no_data or "Soil VWC" in no_data or "Bulk EC" in no_data:
         return sub
 
     soil_info = get_soil_legend_loc(dat)
@@ -584,6 +565,8 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
         f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil Temperature" in x
     ]
     vwc_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil VWC" in x]
+    ec_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Bulk EC" in x]
+
 
     sub = add_soil_legend(
         sub=sub,
@@ -597,6 +580,13 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
         idx=vwc_idx,
         xs=soil_info["d"],
         y=soil_info["vwc"],
+        depths=get_soil_depths(dat),
+    )
+    sub = add_soil_legend(
+        sub=sub,
+        idx=ec_idx,
+        xs=soil_info["d"],
+        y=soil_info["ec"],
         depths=get_soil_depths(dat),
     )
     for idx, v in no_data.items():

@@ -5,9 +5,9 @@ import dateutil.relativedelta as rd
 import pandas as pd
 
 elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
-elements_df.assign(
-    description=elements_df.description_short + " [" + elements_df.us_units + "]"
-)
+# elements_df.assign(
+#     description=elements_df.description_short + " [" + elements_df.us_units + "]"
+# )
 
 
 @dataclass
@@ -35,7 +35,14 @@ class params:
         "soil_vwc_0050",
         "soil_vwc_0091",
         "soil_vwc_0100",
+        "soil_ec_blk_0005",
+        "soil_ec_blk_0010",
+        "soil_ec_blk_0020",
+        "soil_ec_blk_0050",
+        "soil_ec_blk_0091",
+        "soil_ec_blk_0100",
         "sol_rad",
+        "well_lvl",
         "wind_dir_0244",
         "wind_dir_1000",
         "wind_spd_0244",
@@ -60,6 +67,12 @@ class params:
         "Soil VWC @ -5 cm [%]",
         "Soil VWC @ -50 cm [%]",
         "Soil VWC @ -91 cm [%]",
+        "Bulk EC @ -10 cm [mS/cm]",
+        "Bulk EC @ -100 cm [mS/cm]",
+        "Bulk EC @ -20 cm [mS/cm]",
+        "Bulk EC @ -5 cm [mS/cm]",
+        "Bulk EC @ -50 cm [mS/cm]",
+        "Bulk EC @ -91 cm [mS/cm]",
         "Solar Radiation [W/m²]",
         "Wind Direction @ 10 m [deg]",
         "Wind Direction @ 8 ft [deg]",
@@ -67,6 +80,7 @@ class params:
         "Wind Speed @ 8 ft [mi/hr]",
         "Gust Speed @ 8 ft [mi/hr]",
         "Gust Speed @ 10 m [mi/hr]",
+        "Well Water Level [in]",
     ]
 
     lab_swap = {
@@ -85,6 +99,12 @@ class params:
         "Soil VWC @ -5 cm [%]": "Soil VWC @ 2 in [%]",
         "Soil VWC @ -50 cm [%]": "Soil VWC @ 20 in [%]",
         "Soil VWC @ -91 cm [%]": "Soil VWC @ 36 in [%]",
+        "Bulk EC @ -10 cm [mS/cm]": "Bulk EC @ 4 in [mS/cm]",
+        "Bulk EC @ -100 cm [mS/cm]": "Bulk EC @ 40 in [mS/cm]",
+        "Bulk EC @ -20 cm [mS/cm]": "Bulk EC @ 8 in [mS/cm]",
+        "Bulk EC @ -5 cm [mS/cm]": "Bulk EC @ 2 in [mS/cm]",
+        "Bulk EC @ -50 cm [mS/cm]": "Bulk EC @ 20 in [mS/cm]",
+        "Bulk EC @ -91 cm [mS/cm]": "Bulk EC @ 36 in [mS/cm]",
         "Wind Direction @ 10 m [deg]": "Wind Direction [deg]",
         "Wind Direction @ 8 ft [deg]": "Wind Direction [deg]",
         "Wind Speed @ 10 m [mi/hr]": "Wind Speed [mi/hr]",
@@ -101,14 +121,17 @@ class params:
         "Relative Humidity": "#a16a5c",
         "Wind Speed": "#ec6607",
         "Atmospheric Pressure": "#A020F0",
+        "Well Water Level": "#0000FF",
         "Soil Temperature": None,
         "Soil VWC": None,
+        "Bulk EC": None,
         "Precipitation": None,
     }
 
     axis_mapper = {
         "Precipitation": "Daily<br>Precipitation<br>(in)",
         "Soil VWC": "Soil VWC.<br>(%)",
+        "Bulk EC": "Soil Bulk<br>EC (mS cm<sup>-1</sup>)",
         "Air Temperature": "Air Temp.<br>(°F)",
         "Relative Humidity": "Relative Hum.<br>(%)",
         "Solar Radiation": "Solar Rad.<br>(W/m<sup>2</sup>)",
@@ -116,6 +139,7 @@ class params:
         "Soil Temperature": "Soil Temp.<br>(°F)",
         "Atmospheric Pressure": "Atmos. Pres. (mbar)",
         "ET": "Reference ET (in/day)",
+        "Well Water Level": "Well Depth<br>(in.)",
     }
 
     short_name_mapper = {

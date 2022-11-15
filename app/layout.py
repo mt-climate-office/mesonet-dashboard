@@ -203,10 +203,10 @@ def build_top_left_card():
             dbc.CardHeader(
                 dbc.Tabs(
                     [
-                        dbc.Tab(label="Wind Rose", tab_id="wind-tab"),
-                        dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
+                        dbc.Tab(label="Wind Rose", id="wind-tab"),
+                        dbc.Tab(label="Weather Forecast", id="wx-tab"),
                         dbc.Tab(
-                            label="Latest Photo", tab_id="photo-tab", disabled=True
+                            label="Latest Photo", id="photo-tab", disabled=True
                         ),
                     ],
                     id="ul-tabs",
@@ -214,6 +214,13 @@ def build_top_left_card():
                 )
             ),
             dbc.CardBody(html.Div(id="ul-content")),
+            # dbc.Tooltip(
+            #     """ A wind rose shows the aggregated wind conditions over the selected time period. 
+            #     The size of the colored boxes shows how frequently a range of wind speeds occurred, 
+            #     the color of the box shows how fast those wind speeds were and the orientation of 
+            #     the boxes on the wind rose shows which direction that wind was coming from.""",
+            #     target="wind-tab",
+            # ),
         ],
         outline=True,
         color="secondary",
@@ -284,6 +291,8 @@ def build_dropdowns(stations):
                             "value": "Atmospheric Pressure",
                             "label": "Atmospheric Pressure",
                         },
+                        {"value": "Bulk EC", "label": "Soil Bulk EC"},
+                        {"value": "Well Water Level", "label": "Well Water Level"}
                     ],
                     inline=True,
                     id="select-vars",
@@ -365,7 +374,7 @@ def build_dropdowns(stations):
                                             """Leaving this switched on will return hourly averages (totals for precipitation). 
                                             This significantly cuts down on data transfer and makes the plots render faster.
                                             If the toggle is switched off, the figures will have higher resolution data, but will take longer to load.""",
-                                            target="hourly-switch",
+                                            target="houjrly-switch",
                                         ),
                                     ]
                                 ),
