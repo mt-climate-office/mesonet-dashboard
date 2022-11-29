@@ -414,6 +414,24 @@ def toggle_main_tab(sel):
 
 
 @app.callback(
+    Output("station-dropdown", "options"),
+    Input("network-options", "value"),
+)
+def subset_stations(opts):
+    
+    if len(opts) == 0:
+       sub = stations
+    else: 
+        sub = stations[stations["sub_network"].str.contains("|".join(opts))]
+    options=[
+        {"label": k, "value": v}
+        for k, v in zip(sub["long_name"], sub["station"])
+    ]
+
+    return options
+
+
+@app.callback(
     [Output("satellite-selectors", "children"), Output("satellite-graph", "children")],
     Input("satellite-radio", "value"),
     State("station-dropdown-satellite", "value"),

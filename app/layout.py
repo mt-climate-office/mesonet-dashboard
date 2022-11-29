@@ -374,7 +374,7 @@ def build_dropdowns(stations):
                                             """Leaving this switched on will return hourly averages (totals for precipitation). 
                                             This significantly cuts down on data transfer and makes the plots render faster.
                                             If the toggle is switched off, the figures will have higher resolution data, but will take longer to load.""",
-                                            target="houjrly-switch",
+                                            target="hourly-switch",
                                         ),
                                     ]
                                 ),
@@ -396,6 +396,26 @@ def build_dropdowns(stations):
                                         ),
                                     ]
                                 ),
+                                dbc.InputGroup(
+                                    [
+                                        dbc.Checklist(
+                                            options=[
+                                                {"label": "HydroMet", "value": "HydroMet"},
+                                                {"label": "AgriMet", "value": "AgriMet"},
+                                            ],
+                                            inline=True,
+                                            id="network-options",
+                                            value=["HydroMet", "AgriMet"],
+                                            # className="toggle",
+                                        ),
+                                        dbc.Tooltip(
+                                            """These checkboxes allow you to subset the stations listed in the dropdown. 
+                                            Leaving both boxes checked shows all possible stations. Checking either HydroMet or
+                                            AgriMet subsets selectable stations to only the respective network.""",
+                                            target="network-options",
+                                        ),
+                                    ]
+                                ),
                             ],
                             align="center",
                         ),
@@ -407,7 +427,7 @@ def build_dropdowns(stations):
                         # style={"padding": "0rem 0rem 0rem 5rem"},
                     ),
                 ],
-                align="end",
+                align="center",
             ),
             html.Br(),
             dbc.Row(
