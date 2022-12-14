@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import dateutil.relativedelta as rd
 import pandas as pd
 
-elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
+elements_df = pd.read_csv("http://apiv2/elements?type=csv")
 # elements_df.assign(
 #     description=elements_df.description_short + " [" + elements_df.us_units + "]"
 # )
@@ -13,7 +13,7 @@ elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=
 @dataclass
 class params:
 
-    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
+    API_URL = "http://apiv2/"
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
 
