@@ -8,7 +8,7 @@ import pandas as pd
 @dataclass
 class params:
 
-    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
+    API_URL = "http://apiv2/"
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
 
