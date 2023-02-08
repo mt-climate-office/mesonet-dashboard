@@ -4,7 +4,8 @@ from dataclasses import dataclass
 import dateutil.relativedelta as rd
 import pandas as pd
 
-elements_df = pd.read_csv("http://apiv2/elements?type=csv")
+# elements_df = pd.read_csv("http://apiv2/elements?type=csv")
+elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
 # elements_df.assign(
 #     description=elements_df.description_short + " [" + elements_df.us_units + "]"
 # )
@@ -13,7 +14,7 @@ elements_df = pd.read_csv("http://apiv2/elements?type=csv")
 @dataclass
 class params:
 
-    API_URL = "http://apiv2/"
+    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
 
@@ -43,6 +44,7 @@ class params:
         "soil_ec_blk_0100",
         "sol_rad",
         "well_lvl",
+        "snow_depth",
         "wind_dir_0244",
         "wind_dir_1000",
         "wind_spd_0244",
@@ -73,6 +75,7 @@ class params:
         "Bulk EC @ -5 cm [mS/cm]",
         "Bulk EC @ -50 cm [mS/cm]",
         "Bulk EC @ -91 cm [mS/cm]",
+        "Snow Depth [in.]",
         "Solar Radiation [W/m²]",
         "Wind Direction @ 10 m [deg]",
         "Wind Direction @ 8 ft [deg]",
@@ -119,6 +122,7 @@ class params:
         "Air Temperature": "#c42217",
         "Solar Radiation": "#c15366",
         "Relative Humidity": "#a16a5c",
+        "Snow Depth": "#A020F0",
         "Wind Speed": "#ec6607",
         "Atmospheric Pressure": "#A020F0",
         "Well Water Level": "#0000FF",
@@ -140,6 +144,7 @@ class params:
         "Atmospheric Pressure": "Atmos. Pres. (mbar)",
         "ET": "Reference ET (in/day)",
         "Well Water Level": "Well Depth<br>(in.)",
+        "Snow Depth": "Snow Depth<br>(in.)"
     }
 
     short_name_mapper = {
