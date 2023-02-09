@@ -286,7 +286,7 @@ def build_dropdowns(stations):
                         {"value": "Solar Radiation", "label": "Solar Radiation"},
                         {"value": "Soil Temperature", "label": "Soil Temperature"},
                         {"value": "Relative Humidity", "label": "Relative Humidity"},
-                        {"value": "Snow Depth", "label": "Snow Depth"},
+                        # {"value": "Snow Depth", "label": "Snow Depth"},
                         {"value": "Wind Speed", "label": "Wind Speed"},
                         {
                             "value": "Atmospheric Pressure",
