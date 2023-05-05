@@ -126,10 +126,11 @@ def get_latest_api_data(station: str, start, end, hourly):
         end = dt.datetime.strptime(end, "%Y-%m-%d").date()
 
         hourly = [hourly] if isinstance(hourly, int) else hourly
+        network = stations[stations['station'] == station]['sub_network'].values[0]
 
         try:
             data = get.clean_format(
-                station, start_time=start, end_time=end, hourly=len(hourly) == 1
+                station, network, start_time=start, end_time=end, hourly=len(hourly) == 1
             )
         except (AttributeError, HTTPError) as e:
             print(e)
@@ -252,6 +253,9 @@ def enable_photo_tab(station):
         dbc.Tab(label="Wind Rose", tab_id="wind-tab"),
         dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
     ]
+    
+    # TODO: Enable this after bison range photos come online. 
+    network = stations[stations['station'] == station]['sub_network'].values[0]
 
     if station and station[:3] == "ace":
         tabs.append(dbc.Tab(label="Latest Photo", tab_id="photo-tab"))

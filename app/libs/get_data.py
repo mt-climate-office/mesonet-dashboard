@@ -110,6 +110,7 @@ def filter_top_of_hour(df):
 
 def clean_format(
     station: str,
+    network: str,
     start_time: Optional[Union[dt.date, dt.datetime]] = params.START,
     end_time: Optional[Union[dt.date, dt.datetime]] = None,
     hourly: Optional[bool] = True,
@@ -125,7 +126,7 @@ def clean_format(
     Returns:
         pd.DataFrame: DataFrame of station records in a cleaned format and with precip aggregated to daily sum.
     """
-    time_freq = "5min" if station[:3] == "ace" else "15min"
+    time_freq = "5min" if network == "HydroMet" else "15min"
     time_freq = "60min" if hourly else time_freq
 
     dat = get_station_record(station, start_time, end_time, hourly)
