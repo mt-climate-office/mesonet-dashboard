@@ -73,7 +73,7 @@ def generate_modal():
                         from the U.S. Army Corps to add 205 additional stations. The new stations will be installed every 500 square miles in central and eastern
                         Montana to improve drought assessments and flood forecasting - in the protection of lives and property.
                         #### Source Code
-                        See how we built this application at our [GitHub repository](https://github.com/mt-climate-office/mesonet-dashboard/tree/develop).
+                        See how we built this application at our [GitHub repository](https://github.com/mt-climate-office/mesonet-dashboard/tree/main).
                     """
                     )
                 ),
