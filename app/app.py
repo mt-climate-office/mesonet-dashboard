@@ -257,7 +257,7 @@ def enable_photo_tab(station):
     # TODO: Enable this after bison range photos come online. 
     network = stations[stations['station'] == station]['sub_network'].values[0]
 
-    if station and station[:3] == "ace":
+    if station and network == "HydroMet":
         tabs.append(dbc.Tab(label="Latest Photo", tab_id="photo-tab"))
 
     return tabs
@@ -265,7 +265,10 @@ def enable_photo_tab(station):
 
 @app.callback(Output("ul-tabs", "active_tab"), Input("station-dropdown", "value"))
 def select_default_tab(station):
-    return "photo-tab" if station and station[:3] == "ace" else "wind-tab"
+    
+    network = stations[stations['station'] == station]['sub_network'].values[0]
+
+    return "photo-tab" if station and network == "HydroMet" else "wind-tab"
 
 
 @app.callback(
@@ -326,7 +329,6 @@ def update_ul_card(at, station, tmp_data=None):
             options=[
                 {"value": "n", "label": "North"},
                 {"value": "s", "label": "South"},
-                {"value": "g", "label": "Ground"},
             ],
             inline=True,
             value="n",
