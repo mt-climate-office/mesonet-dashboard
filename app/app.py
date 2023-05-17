@@ -324,12 +324,37 @@ def update_ul_card(at, station, tmp_data=None):
         return html.Div(html.Iframe(src=url), className="second-row")
 
     else:
-        buttons = dbc.RadioItems(
-            id="photo-direction",
-            options=[
+
+        tmp = pd.read_csv(f"https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/deployments/{station}/?type=csv")
+        tmp = tmp[tmp['type'] == "IP Camera"]
+
+        if len(tmp) == 0:
+            options = [
                 {"value": "n", "label": "North"},
                 {"value": "s", "label": "South"},
-            ],
+                {"value": "g", "label": "Ground"}
+            ]
+        else: 
+            cam = tmp.model.values[0]
+            if cam == "EC-ScoutIP":
+                options = [
+                    {"value": "n", "label": "North"},
+                    {"value": "s", "label": "South"},
+                    {"value": "e", "label": "East"},
+                    {"value": "w", "label": "West"},
+                    {"value": "snow", "label": "Snow"},
+                ]
+            else: 
+                options = [
+                    {"value": "n", "label": "North"},
+                    {"value": "s", "label": "South"},
+                    {"value": "ns", "label": "North Sky"},
+                    {"value": "ss", "label": "South Sky"},
+                ]
+
+        buttons = dbc.RadioItems(
+            id="photo-direction",
+            options=options,
             inline=True,
             value="n",
         )
