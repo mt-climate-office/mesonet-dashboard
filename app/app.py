@@ -361,7 +361,11 @@ def update_ul_card(at, station, tmp_data=None):
 
         if len(tmp) != 0:
             start = pd.to_datetime(tmp['date_start'].values[0])
-            dts = pd.date_range(start, pd.Timestamp.today()).strftime("%Y-%m-%d").to_list()
+            now = pd.Timestamp.utcnow().tz_convert("America/Denver")
+            if now.strftime("%H%M") < "0930":
+                # If it's before 930 there are no new photos yet.
+                now -= pd.Timedelta(days=1)
+            dts = pd.date_range(start.tz_localize("America/Denver"), now).strftime("%Y-%m-%d").to_list()
             dts = sorted(dts + dts)
             options = list(zip(
                 dts, 
@@ -370,6 +374,10 @@ def update_ul_card(at, station, tmp_data=None):
 
             options = [x[0] + ' ' + x[1] for x in options]
             options = options[::-1]
+
+            if now.strftime("%H%M") > "0930" and now.strftime("%H%M") < '1530':
+                #Between 930 and 1530 only the morning photos are available.
+                options = options[1:]
             values = [x.replace(" Morning", "T9:00").replace(" Afternoon", "T15:00") for x in options]
             sel = dbc.Select(
                 options=[
