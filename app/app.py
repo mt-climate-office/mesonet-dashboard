@@ -1,6 +1,7 @@
 import datetime as dt
 from pathlib import Path
 from typing import Union
+from itertools import cycle
 
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
@@ -325,9 +326,8 @@ def update_ul_card(at, station, tmp_data=None):
 
     else:
 
-        tmp = pd.read_csv(f"https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/deployments/{station}/?type=csv")
+        tmp = pd.read_csv(f"https://mesonet.climate.umt.edu/api/v2/deployments/{station}/?type=csv")
         tmp = tmp[tmp['type'] == "IP Camera"]
-
         if len(tmp) == 0:
             options = [
                 {"value": "n", "label": "North"},
@@ -359,9 +359,45 @@ def update_ul_card(at, station, tmp_data=None):
             value="n",
         )
 
+        if len(tmp) != 0:
+            start = pd.to_datetime(tmp['date_start'].values[0])
+            dts = pd.date_range(start, pd.Timestamp.today()).strftime("%Y-%m-%d").to_list()
+            dts = sorted(dts + dts)
+            options = list(zip(
+                dts, 
+                cycle(["Morning", "Afternoon"])
+            ))
+
+            options = [x[0] + ' ' + x[1] for x in options]
+            options = options[::-1]
+            values = [x.replace(" Morning", "T9:00").replace(" Afternoon", "T15:00") for x in options]
+            sel = dbc.Select(
+                options=[
+                    {"label": k, "value": v}
+                    for k, v in zip(options, values)
+                ],
+                id="photo-time", 
+                value=values[0]
+            )
+        else:
+            val = pd.Timestamp.today().strftime("%Y-%m-%d")
+            sel = dbc.Select(
+                options=[
+                    {"label": val, "value": val}
+                ],
+                id="photo-time", 
+                value=val
+            ),
+
         return html.Div(
             [
-                dbc.Row(buttons, justify="center", align="center", className="h-50"),
+                dbc.Row(
+                    [dbc.Col(buttons), dbc.Col(sel, width=4)], 
+                    justify="center", 
+                    align="center", 
+                    className="h-50",
+                    style={"padding": "0rem 0rem 1rem 0rem"},
+                ),
                 html.Div(
                     dcc.Graph(
                         id="photo-figure", style={"height": "34vh", "width": "30vw"}
@@ -373,10 +409,10 @@ def update_ul_card(at, station, tmp_data=None):
 
 @app.callback(
     Output("photo-figure", "figure"),
-    [Input("station-dropdown", "value"), Input("photo-direction", "value")],
+    [Input("station-dropdown", "value"), Input("photo-direction", "value"), Input("photo-time", "value")],
 )
-def update_photo_direction(station, direction):
-    return plt.plot_latest_ace_image(station, direction=direction)
+def update_photo_direction(station, direction, dt):
+    return plt.plot_latest_ace_image(station, direction=direction, dt=dt)
 
 
 @app.callback(

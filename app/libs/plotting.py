@@ -671,7 +671,7 @@ def plot_station(stations, station=None):
 
 
 # Credit to https://plotly.com/python/images/#zoom-on-static-images
-def plot_latest_ace_image(station, direction="N"):
+def plot_latest_ace_image(station, direction="N", dt=None):
 
     # Create figure
     fig = go.Figure()
@@ -701,7 +701,10 @@ def plot_latest_ace_image(station, direction="N"):
         # the scaleanchor attribute ensures that the aspect ratio stays constant
         scaleanchor="x",
     )
-
+    if dt:
+        source=f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True&dt={dt}"
+    else:
+        source=f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True"
     # Add image
     fig.add_layout_image(
         dict(
@@ -714,7 +717,7 @@ def plot_latest_ace_image(station, direction="N"):
             opacity=1.0,
             layer="below",
             sizing="stretch",
-            source=f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True",
+            source=source,
         )
     )
 
