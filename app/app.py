@@ -259,7 +259,7 @@ def enable_photo_tab(station):
     network = stations[stations['station'] == station]['sub_network'].values[0]
 
     if station and network == "HydroMet":
-        tabs.append(dbc.Tab(label="Latest Photo", tab_id="photo-tab"))
+        tabs.append(dbc.Tab(label="Photos", tab_id="photo-tab"))
 
     return tabs
 
