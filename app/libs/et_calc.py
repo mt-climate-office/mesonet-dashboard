@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 
 def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
@@ -55,7 +54,7 @@ def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
     ws = np.arccos((-np.tan(j) * np.tan(d)))
 
     # The daylight hours, N, are given by:
-    N = (24 / np.pi) * ws
+    (24 / np.pi) * ws
 
     # Extraterrestrial radiation for hourly or shorter periods (Ra)
     Gsc = 0.0820
@@ -69,7 +68,7 @@ def fao_etr_hourly(lat, lon, J, hour, z, RH, Temp_C, Rs, P, U):
     )
 
     # Clear-sky solar radiation (Rso)
-    Rso = (0.75 + ((2 * 10 ** -5) * z)) * Ra
+    Rso = (0.75 + ((2 * 10**-5) * z)) * Ra
 
     # saturation vapour pressure (es)
     es = 0.6108 * np.exp((17.27 * Temp_C) / (Temp_C + 237.3))
@@ -148,7 +147,7 @@ def fao_etr_daily(lat, J, z, RH, Temp_C, Rs, P, U):
     j = (np.pi / 180) * lat
 
     # inverse relative distance Earth-Sun, dr, and the solar declination, d (delta), are given by
-    dr = 1 + 0.033 * np.cos(((2 * np.pi) / 365) * J)
+    1 + 0.033 * np.cos(((2 * np.pi) / 365) * J)
     d = 0.409 * np.sin((((2 * np.pi) / 365) * J) - 1.39)
 
     # The sunset hour angle, ws, is given by:
@@ -162,7 +161,7 @@ def fao_etr_daily(lat, J, z, RH, Temp_C, Rs, P, U):
     )
 
     # Clear-sky solar radiation (Rso)
-    Rso = (0.75 + ((2 * 10 ** -5) * z)) * Ra
+    Rso = (0.75 + ((2 * 10**-5) * z)) * Ra
 
     # saturation vapour pressure (es)
     es = 0.6108 * np.exp((17.27 * Temp_C) / (Temp_C + 237.3))

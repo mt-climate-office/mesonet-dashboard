@@ -1,7 +1,8 @@
 import datetime as dt
 from pathlib import Path
 from typing import Union
-from itertools import cycle
+from itertools import chain, cycle
+import re
 
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
@@ -66,7 +67,7 @@ def update_banner_text(station: str, tab: str) -> str:
         tab (str): The name of the tab selected.
 
     Returns:
-        str: The banner title for the page. 
+        str: The banner title for the page.
     """
     try:
         return (
@@ -86,13 +87,15 @@ def update_banner_text(station: str, tab: str) -> str:
         Input("temp-station-data", "data"),
     ],
 )
-def update_br_card(at: str, station: str, tmp_data: Union[int, str]) -> Union[dcc.Graph, dash_table.DataTable]:
-    """Update the card at the bottom right of the page. 
+def update_br_card(
+    at: str, station: str, tmp_data: Union[int, str]
+) -> Union[dcc.Graph, dash_table.DataTable]:
+    """Update the card at the bottom right of the page.
 
     Args:
         at (str): The unique identifier of the tab that is selected.
         station (str): The station shortname that is selected.
-        tmp_data (Union[int, str]): The Mesonet API data used to render plots. 
+        tmp_data (Union[int, str]): The Mesonet API data used to render plots.
 
     Returns:
         Union[dcc.Graph, dash_table.DataTable]: Depending on this selected tab, this is either a figure or a table.
@@ -112,31 +115,109 @@ def update_br_card(at: str, station: str, tmp_data: Union[int, str]) -> Union[dc
 
 
 @app.callback(
+    [
+        Output("select-vars", "options"),
+        Output("select-vars", "value"),
+    ],
+    [Input("station-dropdown", "value"), State("select-vars", "value")],
+)
+def update_select_vars(station: str, selected):
+
+    if not station:
+        options = [{"value": x, "label": x} for x in sorted(params.default_vars)]
+        values = [
+            "Precipitation",
+            "Reference ET",
+            "Soil VWC",
+            "Soil Temperature",
+            "Air Temperature",
+        ]
+        return options, values
+
+    elems = pd.read_csv(f"{params.API_URL}/elements/{station}?type=csv")
+    elems = elems["description_short"].tolist()
+    elems = list(set([x.split("@")[0].strip() for x in elems]))
+    elems.append("Reference ET")
+
+    selected = [x for x in selected if x in elems]
+
+    return [{"value": x, "label": x} for x in sorted(elems)], selected
+
+
+@app.callback(
     Output("temp-station-data", "data"),
     [
         Input("station-dropdown", "value"),
         Input("start-date", "date"),
         Input("end-date", "date"),
         Input("hourly-switch", "value"),
+        Input("select-vars", "value"),
+        State("temp-station-data", "data"),
     ],
 )
-def get_latest_api_data(station: str, start, end, hourly):
+def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
+    if not station:
+        return None
 
-    if (start or end) and station:
-        start = dt.datetime.strptime(start, "%Y-%m-%d").date()
-        end = dt.datetime.strptime(end, "%Y-%m-%d").date()
+    start = dt.datetime.strptime(start, "%Y-%m-%d").date()
+    end = dt.datetime.strptime(end, "%Y-%m-%d").date()
 
-        hourly = [hourly] if isinstance(hourly, int) else hourly
-        network = stations[stations['station'] == station]['sub_network'].values[0]
+    hourly = [hourly] if isinstance(hourly, int) else hourly
+    select_vars += ["Wind Speed", "Wind Direction"]
+    elements = set(chain(*[params.elem_map[x] for x in select_vars]))
+    elements = list(set([y for y in params.elements for x in elements if x in y]))
+    elements.append("wind_spd")
+    elements = ",".join(elements)
 
+    if not tmp:
+        out = get.get_station_record(
+            station, start_time=start, end_time=end, hourly=len(hourly) == 1, e=elements
+        )
+        return out.to_json(date_format="iso", orient="records")
+
+    tmp = pd.read_json(tmp, orient="records")
+    if tmp.station.values[0] != station:
+        out = get.get_station_record(
+            station, start_time=start, end_time=end, hourly=len(hourly) == 1, e=elements
+        )
+        return out.to_json(date_format="iso", orient="records")
+    existing_elements = set()
+    for x in tmp.columns:
+        x = re.sub("[\(\[].*?[\)\]]", "", x).strip()
+        x = params.description_to_element.get(x, None)
+        if x:
+            existing_elements.update([x])
+
+    elements = set(elements)
+    new_elements = elements - existing_elements
+    print(tmp.columns)
+
+    if new_elements:
         try:
-            data = get.clean_format(
-                station, network, start_time=start, end_time=end, hourly=len(hourly) == 1
+            out = get.get_station_record(
+                station,
+                start_time=start,
+                end_time=end,
+                hourly=len(hourly) == 1,
+                e=elements,
             )
-        except (AttributeError, HTTPError) as e:
-            print(e)
-            return -1
-        return data.to_json(date_format="iso", orient="records")
+        except HTTPError:
+            return tmp.to_json(date_format="iso", orient="records")
+    else:
+        return tmp.to_json(date_format="iso", orient="records")
+    tmp.datetime = pd.to_datetime(tmp.datetime)
+    out.datetime = pd.to_datetime(out.datetime)
+
+    out = tmp.merge(out, on=["station", "datetime"])
+    return out.to_json(date_format="iso", orient="records")
+    # try:
+    #     out = get.get_station_record(
+    #         station, start_time=start, end_time=end, hourly=len(hourly) == 1
+    #     )
+    # except (AttributeError, HTTPError) as e:
+    #     print(e)
+    #     return -1
+    # return data.to_json(date_format="iso", orient="records")
 
 
 @app.callback(Output("start-date", "disabled"), Input("station-dropdown", "value"))
@@ -167,7 +248,7 @@ def reset_start_date(value):
 
 
 @app.callback(Output("end-date", "min_date_allowed"), [Input("start-date", "date")])
-def adjust_end_date_max(value):
+def adjust_end_date_min(value):
     d = dt.datetime.strptime(value, "%Y-%m-%d").date()
     return d
 
@@ -199,14 +280,12 @@ def enable_date_button(station):
 def render_station_plot(tmp_data, select_vars, station, hourly, norm):
     hourly = [hourly] if isinstance(hourly, int) else hourly
     norm = [norm] if isinstance(norm, int) else norm
-
     if len(select_vars) == 0:
         return plt.make_nodata_figure("No variables selected")
     elif tmp_data and tmp_data != -1:
         data = pd.read_json(tmp_data, orient="records")
         data.datetime = data.datetime.dt.tz_convert("America/Denver")
-        if len(hourly) == 1:
-            data = get.filter_top_of_hour(data)
+        data = get.clean_format(data)
 
         dat = data.drop(columns="Precipitation [in]")
         ppt = data[["datetime", "Precipitation [in]"]]
@@ -254,9 +333,9 @@ def enable_photo_tab(station):
         dbc.Tab(label="Wind Rose", tab_id="wind-tab"),
         dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
     ]
-    
-    # TODO: Enable this after bison range photos come online. 
-    network = stations[stations['station'] == station]['sub_network'].values[0]
+
+    # TODO: Enable this after bison range photos come online.
+    network = stations[stations["station"] == station]["sub_network"].values[0]
 
     if station and network == "HydroMet":
         tabs.append(dbc.Tab(label="Photos", tab_id="photo-tab"))
@@ -266,8 +345,8 @@ def enable_photo_tab(station):
 
 @app.callback(Output("ul-tabs", "active_tab"), Input("station-dropdown", "value"))
 def select_default_tab(station):
-    
-    network = stations[stations['station'] == station]['sub_network'].values[0]
+
+    network = stations[stations["station"] == station]["sub_network"].values[0]
 
     return "photo-tab" if station and network == "HydroMet" else "wind-tab"
 
@@ -288,11 +367,12 @@ def update_ul_card(at, station, tmp_data=None):
             return html.Div()
         if tmp_data != -1:
             data = pd.read_json(tmp_data, orient="records")
+            data = data.rename(columns=params.lab_swap)
             data.datetime = data.datetime.dt.tz_convert("America/Denver")
             start_date = data.datetime.min().date()
             end_date = data.datetime.max().date()
-
             data = data[["Wind Direction [deg]", "Wind Speed [mi/hr]"]]
+
             fig = plt.plot_wind(data)
             fig.update_layout(
                 title={
@@ -326,15 +406,17 @@ def update_ul_card(at, station, tmp_data=None):
 
     else:
 
-        tmp = pd.read_csv(f"https://mesonet.climate.umt.edu/api/v2/deployments/{station}/?type=csv")
-        tmp = tmp[tmp['type'] == "IP Camera"]
+        tmp = pd.read_csv(
+            f"https://mesonet.climate.umt.edu/api/v2/deployments/{station}/?type=csv"
+        )
+        tmp = tmp[tmp["type"] == "IP Camera"]
         if len(tmp) == 0:
             options = [
                 {"value": "n", "label": "North"},
                 {"value": "s", "label": "South"},
-                {"value": "g", "label": "Ground"}
+                {"value": "g", "label": "Ground"},
             ]
-        else: 
+        else:
             cam = tmp.model.values[0]
             if cam == "EC-ScoutIP":
                 options = [
@@ -344,7 +426,7 @@ def update_ul_card(at, station, tmp_data=None):
                     {"value": "w", "label": "West"},
                     {"value": "snow", "label": "Snow"},
                 ]
-            else: 
+            else:
                 options = [
                     {"value": "n", "label": "North"},
                     {"value": "s", "label": "South"},
@@ -360,49 +442,48 @@ def update_ul_card(at, station, tmp_data=None):
         )
 
         if len(tmp) != 0:
-            start = pd.to_datetime(tmp['date_start'].values[0])
+            start = pd.to_datetime(tmp["date_start"].values[0])
             now = pd.Timestamp.utcnow().tz_convert("America/Denver")
             if now.strftime("%H%M") < "0930":
                 # If it's before 930 there are no new photos yet.
                 now -= pd.Timedelta(days=1)
-            dts = pd.date_range(start.tz_localize("America/Denver"), now).strftime("%Y-%m-%d").to_list()
+            dts = (
+                pd.date_range(start.tz_localize("America/Denver"), now)
+                .strftime("%Y-%m-%d")
+                .to_list()
+            )
             dts = sorted(dts + dts)
-            options = list(zip(
-                dts, 
-                cycle(["Morning", "Afternoon"])
-            ))
+            options = list(zip(dts, cycle(["Morning", "Afternoon"])))
 
-            options = [x[0] + ' ' + x[1] for x in options]
+            options = [x[0] + " " + x[1] for x in options]
             options = options[::-1]
 
-            if now.strftime("%H%M") > "0930" and now.strftime("%H%M") < '1530':
-                #Between 930 and 1530 only the morning photos are available.
+            if now.strftime("%H%M") > "0930" and now.strftime("%H%M") < "1530":
+                # Between 930 and 1530 only the morning photos are available.
                 options = options[1:]
-            values = [x.replace(" Morning", "T9:00").replace(" Afternoon", "T15:00") for x in options]
+            values = [
+                x.replace(" Morning", "T9:00").replace(" Afternoon", "T15:00")
+                for x in options
+            ]
             sel = dbc.Select(
-                options=[
-                    {"label": k, "value": v}
-                    for k, v in zip(options, values)
-                ],
-                id="photo-time", 
-                value=values[0]
+                options=[{"label": k, "value": v} for k, v in zip(options, values)],
+                id="photo-time",
+                value=values[0],
             )
         else:
             val = pd.Timestamp.today().strftime("%Y-%m-%d")
-            sel = dbc.Select(
-                options=[
-                    {"label": val, "value": val}
-                ],
-                id="photo-time", 
-                value=val
-            ),
+            sel = (
+                dbc.Select(
+                    options=[{"label": val, "value": val}], id="photo-time", value=val
+                ),
+            )
 
         return html.Div(
             [
                 dbc.Row(
-                    [dbc.Col(buttons), dbc.Col(sel, width=4)], 
-                    justify="center", 
-                    align="center", 
+                    [dbc.Col(buttons), dbc.Col(sel, width=4)],
+                    justify="center",
+                    align="center",
                     className="h-50",
                     style={"padding": "0rem 0rem 1rem 0rem"},
                 ),
@@ -417,7 +498,11 @@ def update_ul_card(at, station, tmp_data=None):
 
 @app.callback(
     Output("photo-figure", "figure"),
-    [Input("station-dropdown", "value"), Input("photo-direction", "value"), Input("photo-time", "value")],
+    [
+        Input("station-dropdown", "value"),
+        Input("photo-direction", "value"),
+        Input("photo-time", "value"),
+    ],
 )
 def update_photo_direction(station, direction, dt):
     return plt.plot_latest_ace_image(station, direction=direction, dt=dt)
@@ -493,14 +578,13 @@ def toggle_main_tab(sel):
     Input("network-options", "value"),
 )
 def subset_stations(opts):
-    
+
     if len(opts) == 0:
-       sub = stations
-    else: 
+        sub = stations
+    else:
         sub = stations[stations["sub_network"].str.contains("|".join(opts))]
-    options=[
-        {"label": k, "value": v}
-        for k, v in zip(sub["long_name"], sub["station"])
+    options = [
+        {"label": k, "value": v} for k, v in zip(sub["long_name"], sub["station"])
     ]
 
     return options
@@ -518,7 +602,12 @@ def update_sat_selectors(sel, station):
         graph = dls.Bars(dcc.Graph(id="satellite-compare"))
 
     return (
-        lay.build_satellite_dropdowns(stations, sel == "timeseries", station=station, sat_compare_mapper=params.sat_compare_mapper),
+        lay.build_satellite_dropdowns(
+            stations,
+            sel == "timeseries",
+            station=station,
+            sat_compare_mapper=params.sat_compare_mapper,
+        ),
         graph,
     )
 
@@ -632,7 +721,7 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
     element_x, platform_x = x_var.split("-")
     element_y, platform_y = y_var.split("-")
 
-    try: 
+    try:
         if platform_x == "station":
 
             dat_x, dat_y = get.get_sat_compare_data(
@@ -647,7 +736,7 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
             dat_x = dat_x.assign(platform=platform_x)
             dat_x.columns = ["value", "date", "element", "platform"]
 
-        else: 
+        else:
             dat_x = get.get_satellite_data(
                 station=station,
                 element=element_x,

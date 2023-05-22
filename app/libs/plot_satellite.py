@@ -9,7 +9,7 @@ from dateutil.relativedelta import relativedelta as rd
 from plotly.subplots import make_subplots
 
 from .params import params
-from .plotting import px_to_subplot, style_figure, add_boxplot_normals
+from .plotting import style_figure
 
 
 def make_satellite_normals(df):

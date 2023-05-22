@@ -205,9 +205,7 @@ def build_top_left_card():
                     [
                         dbc.Tab(label="Wind Rose", id="wind-tab"),
                         dbc.Tab(label="Weather Forecast", id="wx-tab"),
-                        dbc.Tab(
-                            label="Latest Photo", id="photo-tab", disabled=True
-                        ),
+                        dbc.Tab(label="Latest Photo", id="photo-tab", disabled=True),
                     ],
                     id="ul-tabs",
                     active_tab="wind-tab",
@@ -215,9 +213,9 @@ def build_top_left_card():
             ),
             dbc.CardBody(html.Div(id="ul-content")),
             # dbc.Tooltip(
-            #     """ A wind rose shows the aggregated wind conditions over the selected time period. 
-            #     The size of the colored boxes shows how frequently a range of wind speeds occurred, 
-            #     the color of the box shows how fast those wind speeds were and the orientation of 
+            #     """ A wind rose shows the aggregated wind conditions over the selected time period.
+            #     The size of the colored boxes shows how frequently a range of wind speeds occurred,
+            #     the color of the box shows how fast those wind speeds were and the orientation of
             #     the boxes on the wind rose shows which direction that wind was coming from.""",
             #     target="wind-tab",
             # ),
@@ -278,26 +276,8 @@ def build_dropdowns(stations):
         dbc.InputGroupText(
             [
                 dbc.Checklist(
-                    options=[
-                        {"value": "Precipitation", "label": "Precipitation"},
-                        {"value": "ET", "label": "Reference ET"},
-                        {"value": "Soil VWC", "label": "Soil Moisture"},
-                        {"value": "Air Temperature", "label": "Air Temperature"},
-                        {"value": "Solar Radiation", "label": "Solar Radiation"},
-                        {"value": "Soil Temperature", "label": "Soil Temperature"},
-                        {"value": "Relative Humidity", "label": "Relative Humidity"},
-                        # {"value": "Snow Depth", "label": "Snow Depth"},
-                        {"value": "Wind Speed", "label": "Wind Speed"},
-                        {
-                            "value": "Atmospheric Pressure",
-                            "label": "Atmospheric Pressure",
-                        },
-                        {"value": "Bulk EC", "label": "Soil Bulk EC"},
-                        {"value": "Well Water Level", "label": "Well Water Level"}
-                    ],
                     inline=True,
                     id="select-vars",
-                    value=["Precipitation", "ET", "Soil VWC", "Soil Temperature", "Air Temperature"],
                 )
             ],
             style={"overflow-x": "scroll"},
@@ -401,8 +381,14 @@ def build_dropdowns(stations):
                                     [
                                         dbc.Checklist(
                                             options=[
-                                                {"label": "HydroMet", "value": "HydroMet"},
-                                                {"label": "AgriMet", "value": "AgriMet"},
+                                                {
+                                                    "label": "HydroMet",
+                                                    "value": "HydroMet",
+                                                },
+                                                {
+                                                    "label": "AgriMet",
+                                                    "value": "AgriMet",
+                                                },
                                             ],
                                             inline=True,
                                             id="network-options",
@@ -664,7 +650,9 @@ def build_satellite_comp_selector(sat_compare_mapper):
     ]
 
 
-def build_satellite_dropdowns(stations, timeseries=True, station=None, sat_compare_mapper=None):
+def build_satellite_dropdowns(
+    stations, timeseries=True, station=None, sat_compare_mapper=None
+):
 
     if timeseries:
         content = build_satellite_ts_selector()

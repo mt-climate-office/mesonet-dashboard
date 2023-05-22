@@ -1,4 +1,3 @@
-from urllib.error import HTTPError
 import datetime as dt
 import io
 import os
@@ -8,11 +7,9 @@ from urllib import parse
 import numpy as np
 import pandas as pd
 import requests
-from dateutil.relativedelta import relativedelta as rd
 from dotenv import load_dotenv
 from mt_mesonet_satellite import MesonetSatelliteDB
 from requests import Request
-import janitor
 
 from .params import params
 from .plotting import deg_to_compass
@@ -52,6 +49,7 @@ def get_station_record(
     start_time: Union[dt.date, dt.datetime],
     end_time: Union[dt.date, dt.datetime],
     hourly: Optional[bool] = True,
+    e: Optional[str] = None,
 ) -> pd.DataFrame:
     """Given a Mesonet station name and date range, return a dataframe of climate data.
 
@@ -64,7 +62,7 @@ def get_station_record(
         pd.DataFrame: DataFrame of records from 'station' ranging from 'start_date' to 'end_date'
     """
     start_time = format_dt(start_time)
-    e = ",".join(params.elements)
+    e = e or ",".join(params.elements)
 
     q = {
         "stations": station,
@@ -89,32 +87,7 @@ def get_station_record(
     return dat
 
 
-def reindex_by_date(df, time_freq):
-    dates = pd.date_range(df.index.min(), df.index.max(), freq=time_freq)
-    out = df.reindex(dates)
-
-    out = (
-        out.drop(columns="datetime").reset_index().rename(columns={"index": "datetime"})
-    )
-
-    return out
-
-
-def filter_top_of_hour(df):
-
-    df.index = pd.DatetimeIndex(df.datetime)
-    df = df[(df.index.minute == 0)]
-    df = df.reset_index(drop=True)
-    return df
-
-
-def clean_format(
-    station: str,
-    network: str,
-    start_time: Optional[Union[dt.date, dt.datetime]] = params.START,
-    end_time: Optional[Union[dt.date, dt.datetime]] = None,
-    hourly: Optional[bool] = True,
-) -> pd.DataFrame:
+def clean_format(dat: pd.DataFrame) -> pd.DataFrame:
     """Aggregate and reformat data from a mesonet station.
 
     Args:
@@ -126,10 +99,7 @@ def clean_format(
     Returns:
         pd.DataFrame: DataFrame of station records in a cleaned format and with precip aggregated to daily sum.
     """
-    time_freq = "5min" if network == "HydroMet" else "15min"
-    time_freq = "60min" if hourly else time_freq
 
-    dat = get_station_record(station, start_time, end_time, hourly)
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
     dat.datetime = dat.datetime.dt.tz_convert("America/Denver")
     dat = dat.set_index("datetime")
@@ -144,10 +114,6 @@ def clean_format(
 
     out = out.reset_index()
     out = out.rename(columns=params.lab_swap)
-
-    out.index = pd.DatetimeIndex(out.datetime)
-    out = reindex_by_date(out, time_freq)
-    out = out.iloc[1:]
 
     return out
 
@@ -164,10 +130,15 @@ def get_station_latest(station):
     dat = dat.rename(columns=params.lab_swap)
 
     dat["Wind Chill [°F]"] = round(
-        35.74 + (0.6215 * dat["Air Temperature [°F]"]) - (35.75* (dat["Wind Speed [mi/hr]"] ** 0.16)) + (0.4275 * dat["Air Temperature [°F]"] * (dat["Wind Speed [mi/hr]"]**0.16)),
-        2
+        35.74
+        + (0.6215 * dat["Air Temperature [°F]"])
+        - (35.75 * (dat["Wind Speed [mi/hr]"] ** 0.16))
+        + (0.4275 * dat["Air Temperature [°F]"] * (dat["Wind Speed [mi/hr]"] ** 0.16)),
+        2,
     )
-    dat["Wind Direction [deg]"] = f'{deg_to_compass(dat["Wind Direction [deg]"])} ({dat["Wind Direction [deg]"].values[0]} deg)'
+    dat[
+        "Wind Direction [deg]"
+    ] = f'{deg_to_compass(dat["Wind Direction [deg]"])} ({dat["Wind Direction [deg]"].values[0]} deg)'
     dat = dat.rename(columns={"datetime": "Timestamp"})
     dat = dat.T.reset_index()
     dat.columns = ["value", "name"]
@@ -258,7 +229,6 @@ def get_sat_compare_data(
     end_time: Union[int, dt.date],
     platform: str,
 ):
-    from time import perf_counter
 
     sat_data = get_satellite_data(
         station, sat_element, start_time, end_time, platform, False

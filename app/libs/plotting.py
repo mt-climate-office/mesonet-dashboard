@@ -1,7 +1,5 @@
 from typing import List
 
-import janitor
-import janitor.timeseries
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -10,7 +8,6 @@ from dateutil.relativedelta import relativedelta as rd
 from plotly.subplots import make_subplots
 
 from .et_calc import fao_etr_daily as et_d
-from .et_calc import fao_etr_hourly as et_h
 from .params import params
 
 
@@ -93,11 +90,7 @@ def plot_soil(dat, **kwargs):
             for x in cols
         ]
     )
-    unit = {
-        "Soil VWC": "%",
-        "Soil Temperature": "°F",
-        "Bulk EC": "mS/cm"
-    }
+    unit = {"Soil VWC": "%", "Soil Temperature": "°F", "Bulk EC": "mS/cm"}
 
     unit = unit[kwargs["txt"]]
     fig = px.line(
@@ -316,7 +309,7 @@ def plot_etr(hourly, station, **kwargs):
     dat = dat.reset_index(drop=True)
 
     lat = station["latitude"]
-    lon = station["longitude"]
+    station["longitude"]
     elev = station["elevation"]
 
     calc_daily = (
@@ -420,9 +413,6 @@ def px_to_subplot(*figs, **kwargs):
 
 
 def filter_df(df, v):
-    if v == "Well Water Level":
-        print(df.columns)
-        print(df)
     var_cols = [x for x in df.columns if v in x]
     cols = ["datetime"] + var_cols
     df = df[cols]
@@ -438,13 +428,24 @@ def get_plot_func(v):
 
 
 def get_soil_legend_loc(dat):
-    tmax = max(dat.iloc[:, dat.columns.str.contains("Soil Temperature")].max(axis=0))
-    vmax = max(dat.iloc[:, dat.columns.str.contains("Soil VWC")].max(axis=0))
-    ecmax = max(dat.iloc[:, dat.columns.str.contains("Bulk EC")].max(axis=0))
+    try:
+        tmax = max(
+            dat.iloc[:, dat.columns.str.contains("Soil Temperature")].max(axis=0)
+        )
+    except ValueError:
+        tmax = None
+    try:
+        vmax = max(dat.iloc[:, dat.columns.str.contains("Soil VWC")].max(axis=0))
+    except ValueError:
+        vmax = None
+    try:
+        ecmax = max(dat.iloc[:, dat.columns.str.contains("Bulk EC")].max(axis=0))
+    except ValueError:
+        ecmax = None
     d = dat.datetime.max()
     d = [d - rd(hours=24 * i) for i in range(6)]
 
-    return {"tmp": tmax, "vwc": vmax, "ec": ecmax, "d": d}
+    return {"Soil Temperature": tmax, "Soil VWC": vmax, "Bulk EC": ecmax, "d": d}
 
 
 def get_soil_depths(dat):
@@ -521,7 +522,7 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     no_data_df = no_data_df.assign(data=None)
     for idx, v in enumerate(args, 1):
         try:
-            if v == "ET":
+            if v == "Reference ET":
                 plt = plot_etr(hourly=dat, **kwargs)
             else:
                 df = ppt if v == "Precipitation" else dat
@@ -532,9 +533,6 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
                     raise ValueError("No Data Available.")
                 if v in ["Soil Temperature", "Soil VWC", "Bulk EC"]:
                     kwargs.update({"txt": v})
-                if v == "Bulk EC":
-                    print(plot_func)
-                    print(data)
 
                 plt = plot_func(data, color=params.color_mapper[v], **kwargs)
         except (KeyError, ValueError):
@@ -561,34 +559,19 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
         return sub
 
     soil_info = get_soil_legend_loc(dat)
-    tmp_idx = [
-        f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil Temperature" in x
-    ]
-    vwc_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Soil VWC" in x]
-    ec_idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if "Bulk EC" in x]
 
+    for v in "Soil Temperature", "Soil VWC", "Bulk EC":
+        if v in list(args):
+            idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if v in x]
 
-    sub = add_soil_legend(
-        sub=sub,
-        idx=tmp_idx,
-        xs=soil_info["d"],
-        y=soil_info["tmp"],
-        depths=get_soil_depths(dat),
-    )
-    sub = add_soil_legend(
-        sub=sub,
-        idx=vwc_idx,
-        xs=soil_info["d"],
-        y=soil_info["vwc"],
-        depths=get_soil_depths(dat),
-    )
-    sub = add_soil_legend(
-        sub=sub,
-        idx=ec_idx,
-        xs=soil_info["d"],
-        y=soil_info["ec"],
-        depths=get_soil_depths(dat),
-    )
+            sub = add_soil_legend(
+                sub=sub,
+                idx=idx,
+                xs=soil_info["d"],
+                y=soil_info[v],
+                depths=get_soil_depths(dat),
+            )
+
     for idx, v in no_data.items():
         sub = add_nodata_lab(sub=sub, d=no_data_df.datetime.mean(), idx=idx, v=v)
     return sub
@@ -702,9 +685,9 @@ def plot_latest_ace_image(station, direction="N", dt=None):
         scaleanchor="x",
     )
     if dt:
-        source=f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True&dt={dt}"
+        source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True&dt={dt}"
     else:
-        source=f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True"
+        source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True"
     # Add image
     fig.add_layout_image(
         dict(

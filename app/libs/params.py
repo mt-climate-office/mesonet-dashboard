@@ -19,38 +19,31 @@ class params:
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
 
-    elements = [
-        "air_temp_0200",
-        "air_temp_0244",
-        "bp",
-        "ppt",
-        "rh",
-        "soil_temp_0005",
-        "soil_temp_0010",
-        "soil_temp_0020",
-        "soil_temp_0050",
-        "soil_temp_0091",
-        "soil_temp_0100",
-        "soil_vwc_0005",
-        "soil_vwc_0010",
-        "soil_vwc_0020",
-        "soil_vwc_0050",
-        "soil_vwc_0091",
-        "soil_vwc_0100",
-        "soil_ec_blk_0005",
-        "soil_ec_blk_0010",
-        "soil_ec_blk_0020",
-        "soil_ec_blk_0050",
-        "soil_ec_blk_0091",
-        "soil_ec_blk_0100",
-        "sol_rad",
-        "well_lvl",
-        "snow_depth",
-        "wind_dir_0244",
-        "wind_dir_1000",
-        "wind_spd_0244",
-        "wind_spd_1000",
+    default_vars = [
+        "Precipitation",
+        "Reference ET",
+        "Soil VWC",
+        "Air Temperature",
+        "Solar Radiation",
+        "Soil Temperature",
+        "Relative Humidity",
+        "Wind Speed",
+        "Atmospheric Pressure",
     ]
+
+    selected_vars = [
+        "Precipitation",
+        "Reference ET",
+        "Soil VWC",
+        "Soil Temperature",
+        "Air Temperature",
+    ]
+
+    description_to_element = dict(
+        zip(elements_df["description_short"], elements_df["element"])
+    )
+
+    elements = elements_df["element"].tolist()
 
     elem_labs = [
         "Air Temperature @ 2 m [°F]",
@@ -113,12 +106,30 @@ class params:
         "Wind Direction @ 8 ft [deg]": "Wind Direction [deg]",
         "Wind Speed @ 10 m [mi/hr]": "Wind Speed [mi/hr]",
         "Wind Speed @ 8 ft [mi/hr]": "Wind Speed [mi/hr]",
-        "Gust Speed @ 8 ft [mi/hr]": "Wind Gust [mi/hr]",
-        "Gust Speed @ 10 m [mi/hr]": "Wind Gust [mi/hr]",
+        "Gust Speed @ 8 ft [mi/hr]": "Gust Speed [mi/hr]",
+        "Gust Speed @ 10 m [mi/hr]": "Gust Speed [mi/hr]",
     }
 
-    elem_map = dict(zip(elements_df.element, elements_df.description_short))
-
+    elem_map = {
+        "Precipitation": ["ppt"],
+        "Reference ET": ["rh", "bp", "sol_rad", "air_temp", "wind_spd"],
+        "Soil VWC": ["soil_vwc"],
+        "Air Temperature": ["air_temp"],
+        "Solar Radiation": ["sol_rad"],
+        "Soil Temperature": ["soil_temp"],
+        "Relative Humidity": ["rh"],
+        "Wind Speed": ["wind_spd", "wind_dir"],
+        "Atmospheric Pressure": ["bp"],
+        "Bulk EC": ["soil_ec_blk"],
+        "Gust Speed": ["windgust"],
+        "Well EC": ["well_eco"],
+        "Well Water Level": ["well_lvl"],
+        "Well Water Temperature": ["well_tmp"],
+        "VPD": ["vpd_atmo"],
+        "Snow Depth": ["snow_depth"],
+        "Max Precip Rate": ["ppt_max_rate"],
+        "Wind Direction": ["wind_dir"],
+    }
     color_mapper = {
         "Air Temperature": "#c42217",
         "Solar Radiation": "#c15366",
@@ -127,6 +138,12 @@ class params:
         "Wind Speed": "#ec6607",
         "Atmospheric Pressure": "#A020F0",
         "Well Water Level": "#0000FF",
+        "Well Water Temperature": "#c42217",
+        "Well Water EC": "#AEF359",
+        "Gust Speed": "#FEC20C",
+        "Max Precip Rate": "#000080",
+        "VPD": "#32612D",
+        "Wind Direction": "#607D3B",
         "Soil Temperature": None,
         "Soil VWC": None,
         "Bulk EC": None,
@@ -143,9 +160,15 @@ class params:
         "Wind Speed": "Wind Spd.<br>(mph)",
         "Soil Temperature": "Soil Temp.<br>(°F)",
         "Atmospheric Pressure": "Atmos. Pres. (mbar)",
-        "ET": "Reference ET (in/day)",
+        "Reference ET": "Reference ET<br>(in/day)",
+        "Snow Depth": "Snow Depth<br>(in.)",
+        "Gust Speed": "Gust Speed<br>(mi/hr)",
+        "Max Precip Rate": "Max Precip Rate<br>(in/hr)",
+        "VPD": "VPD (mbar)",
         "Well Water Level": "Well Depth<br>(in.)",
-        "Snow Depth": "Snow Depth<br>(in.)"
+        "Well Water Temperature": "Well Temperature<br>(°F)",
+        "Well EC": "Well EC<br>(mS cm<sup>-1</sup>)",
+        "Wind Direction": "Wind Direction<br>(deg)",
     }
 
     short_name_mapper = {
