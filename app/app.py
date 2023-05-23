@@ -349,12 +349,12 @@ def select_default_tab(station):
         Input("ul-tabs", "active_tab"),
         Input("station-dropdown", "value"),
         Input("temp-station-data", "data"),
-        State("ul-content", "children"),
+        # State("ul-content", "children"),
     ],
 )
-def update_ul_card(at, station, tmp_data, cur_content):
-    if at == "photo-tab" and ctx.triggered_id == "temp-station-data":
-        return cur_content
+def update_ul_card(at, station, tmp_data):
+    # if at == "photo-tab" and ctx.triggered_id == "temp-station-data":
+    #     return cur_content
     if station is None:
         return html.Div()
     if at == "wind-tab":
