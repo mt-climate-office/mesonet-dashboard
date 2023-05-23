@@ -82,7 +82,6 @@ def merge_normal_data(v, df, station):
 
 
 def plot_soil(dat, **kwargs):
-
     cols = dat.columns[1:].tolist()
     dat = pd.concat(
         [
@@ -119,7 +118,6 @@ def plot_soil(dat, **kwargs):
 
 
 def plot_met(dat, **kwargs):
-
     variable_text = dat.columns.tolist()[-1]
     station_name = kwargs["station"]["station"].values[0]
 
@@ -164,7 +162,6 @@ def plot_met(dat, **kwargs):
 
 
 def add_boxplot_normals(fig, norms):
-
     norm_upper = go.Scatter(
         x=norms.datetime,
         y=norms.mx,
@@ -212,7 +209,6 @@ def add_boxplot_normals(fig, norms):
 
 
 def plot_ppt(dat, **kwargs):
-
     station_name = kwargs["station"]["station"].values[0]
     variable_text = dat.columns.tolist()[-1]
     dat = dat.assign(datetime=dat.datetime.dt.date)
@@ -237,7 +233,6 @@ def deg_to_compass(num):
 
 
 def plot_wind(wind_data):
-
     wind_data = wind_data.dropna()
     wind_data["Wind Direction [deg]"] = wind_data["Wind Direction [deg]"].apply(
         deg_to_compass
@@ -283,7 +278,6 @@ def plot_wind(wind_data):
 
 
 def plot_etr(hourly, station, **kwargs):
-
     station_name = station["station"].values[0]
     drop_thresh = 12 * 20 if station_name[:3] == "ace" else 4 * 20
     drop_thresh = 20 if kwargs["top_of_hour"] else drop_thresh
@@ -488,7 +482,6 @@ def add_soil_legend(sub, idx, xs, y, depths):
 
 
 def add_nodata_lab(sub, d, idx, v):
-
     txt = f"<b>{v} data are not available for this time period.</b>"
 
     yref = f"y{idx}"
@@ -515,7 +508,6 @@ def add_nodata_lab(sub, d, idx, v):
 
 
 def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
-
     plots = {}
     no_data = {}
     no_data_df = dat[["datetime"]].drop_duplicates()
@@ -655,7 +647,6 @@ def plot_station(stations, station=None):
 
 # Credit to https://plotly.com/python/images/#zoom-on-static-images
 def plot_latest_ace_image(station, direction="N", dt=None):
-
     # Create figure
     fig = go.Figure()
 

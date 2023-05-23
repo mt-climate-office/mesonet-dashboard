@@ -1,8 +1,8 @@
 import datetime as dt
 from typing import Dict
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta as rd
@@ -56,7 +56,6 @@ def make_satellite_normals(df):
 
 
 def plot_indicator(fig, dat, **kwargs):
-
     if kwargs["climatology"]:
         norms = make_satellite_normals(dat)
 
@@ -88,7 +87,6 @@ def plot_indicator(fig, dat, **kwargs):
             col=1,
         )
     if kwargs["climatology"]:
-
         mn_line = go.Scatter(
             x=norms.datetime,
             y=norms.mn,
@@ -155,7 +153,6 @@ def lab_from_df(df, station):
 
 
 def plot_comparison(dat_x, dat_y, station=None):
-
     lab_x = lab_from_df(dat_x, station)
     lab_y = lab_from_df(dat_y, None)
 

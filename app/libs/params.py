@@ -13,7 +13,6 @@ elements_df = pd.read_csv("http://apiv2/elements?type=csv")
 
 @dataclass
 class params:
-
     # API_URL = "https://mesonet.climate.umt.edu/api/v2/"
     API_URL = "http://apiv2/"
 
@@ -139,7 +138,7 @@ class params:
         "Atmospheric Pressure": "#A020F0",
         "Well Water Level": "#0000FF",
         "Well Water Temperature": "#c42217",
-        "Well Water EC": "#AEF359",
+        "Well EC": "#AEF359",
         "Gust Speed": "#FEC20C",
         "Max Precip Rate": "#000080",
         "VPD": "#32612D",

@@ -119,7 +119,6 @@ def clean_format(dat: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_station_latest(station):
-
     r = requests.get(
         url=f"{params.API_URL}latest", params={"stations": station, "type": "csv"}
     )
@@ -229,7 +228,6 @@ def get_sat_compare_data(
     end_time: Union[int, dt.date],
     platform: str,
 ):
-
     sat_data = get_satellite_data(
         station, sat_element, start_time, end_time, platform, False
     )

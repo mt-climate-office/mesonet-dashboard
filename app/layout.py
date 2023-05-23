@@ -1,10 +1,9 @@
 import datetime as dt
 
 import dash_bootstrap_components as dbc
-from dash import dcc, html
 import dash_loading_spinners as dls
+from dash import dcc, html
 from dateutil.relativedelta import relativedelta as rd
-
 
 TABLE_STYLING = {
     "css": [{"selector": "tr:first-child", "rule": "display: none"}],
@@ -28,7 +27,7 @@ TAB_STYLE = {
 
 SELECTED_STYLE = {
     "width": "inherit",
-    "boxShadow": "none",
+    # "boxShadow": "none",
     "borderTop": "3px #0B5ED7 solid",
     # 'borderBottom': '1px black solid',
     "boxShadow": "inset 0px -1px 0px 0px lightgrey",
@@ -119,7 +118,6 @@ def feedback_iframe():
 
 
 def build_banner(app_ref):
-
     return dbc.Navbar(
         dbc.Container(
             [
@@ -197,7 +195,6 @@ def build_banner(app_ref):
 
 
 def build_top_left_card():
-
     return dbc.Card(
         [
             dbc.CardHeader(
@@ -228,7 +225,6 @@ def build_top_left_card():
 
 
 def build_bottom_left_card(station_fig):
-
     return dbc.Card(
         [
             dbc.CardHeader(
@@ -271,7 +267,6 @@ def make_station_dropdowns(stations, id, station):
 
 
 def build_dropdowns(stations):
-
     checklist_input = dbc.InputGroup(
         dbc.InputGroupText(
             [
@@ -429,7 +424,6 @@ def build_dropdowns(stations):
 
 
 def build_right_card(stations):
-
     selectors = build_dropdowns(stations)
 
     return dbc.Card(
@@ -653,7 +647,6 @@ def build_satellite_comp_selector(sat_compare_mapper):
 def build_satellite_dropdowns(
     stations, timeseries=True, station=None, sat_compare_mapper=None
 ):
-
     if timeseries:
         content = build_satellite_ts_selector()
     else:
@@ -697,7 +690,6 @@ def build_satellite_dropdowns(
 
 
 def build_satellite_content(stations):
-
     selectors = build_satellite_dropdowns(stations)
     return dbc.Card(
         [
@@ -716,7 +708,6 @@ def build_satellite_content(stations):
 
 
 def app_layout(app_ref):
-
     return dbc.Container(
         [
             dcc.Location(id="url", refresh=False),

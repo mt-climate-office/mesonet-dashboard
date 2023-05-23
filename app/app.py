@@ -1,30 +1,29 @@
 import datetime as dt
+import re
+from itertools import chain, cycle
 from pathlib import Path
 from typing import Union
-from itertools import chain, cycle
-import re
+from urllib.error import HTTPError
 
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
 import pandas as pd
-from dash import Dash, Input, Output, State, dash_table, dcc, html
+from dash import Dash, Input, Output, State, ctx, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
-from urllib.error import HTTPError
 
+from . import layout as lay
 from .libs import get_data as get
+from .libs import plot_satellite as plt_sat
 from .libs import plotting as plt
 from .libs import tables as tab
 from .libs.params import params
-from .libs import plot_satellite as plt_sat
-from . import layout as lay
 
 # import libs.get_data as get
+# import libs.plot_satellite as plt_sat
 # import libs.plotting as plt
 # import libs.tables as tab
-# import layout as lay
 # from libs.params import params
-# import libs.plot_satellite as plt_sat
-
+# import layout as lay
 
 pd.options.mode.chained_assignment = None
 
@@ -122,7 +121,6 @@ def update_br_card(
     [Input("station-dropdown", "value"), State("select-vars", "value")],
 )
 def update_select_vars(station: str, selected):
-
     if not station:
         options = [{"value": x, "label": x} for x in sorted(params.default_vars)]
         values = [
@@ -162,23 +160,29 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     start = dt.datetime.strptime(start, "%Y-%m-%d").date()
     end = dt.datetime.strptime(end, "%Y-%m-%d").date()
 
-    hourly = [hourly] if isinstance(hourly, int) else hourly
     select_vars += ["Wind Speed", "Wind Direction"]
     elements = set(chain(*[params.elem_map[x] for x in select_vars]))
     elements = list(set([y for y in params.elements for x in elements if x in y]))
-    elements.append("wind_spd")
-    elements = ",".join(elements)
 
-    if not tmp:
+    if not tmp or ctx.triggered_id == "hourly-switch":
         out = get.get_station_record(
-            station, start_time=start, end_time=end, hourly=len(hourly) == 1, e=elements
+            station,
+            start_time=start,
+            end_time=end,
+            hourly=len(hourly) == 1,
+            e=",".join(elements),
         )
         return out.to_json(date_format="iso", orient="records")
 
     tmp = pd.read_json(tmp, orient="records")
+    print(tmp.columns)
     if tmp.station.values[0] != station:
         out = get.get_station_record(
-            station, start_time=start, end_time=end, hourly=len(hourly) == 1, e=elements
+            station,
+            start_time=start,
+            end_time=end,
+            hourly=len(hourly) == 1,
+            e=",".join(elements),
         )
         return out.to_json(date_format="iso", orient="records")
     existing_elements = set()
@@ -190,8 +194,6 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
 
     elements = set(elements)
     new_elements = elements - existing_elements
-    print(tmp.columns)
-
     if new_elements:
         try:
             out = get.get_station_record(
@@ -199,7 +201,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 start_time=start,
                 end_time=end,
                 hourly=len(hourly) == 1,
-                e=elements,
+                e=",".join(new_elements),
             )
         except HTTPError:
             return tmp.to_json(date_format="iso", orient="records")
@@ -210,14 +212,6 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
 
     out = tmp.merge(out, on=["station", "datetime"])
     return out.to_json(date_format="iso", orient="records")
-    # try:
-    #     out = get.get_station_record(
-    #         station, start_time=start, end_time=end, hourly=len(hourly) == 1
-    #     )
-    # except (AttributeError, HTTPError) as e:
-    #     print(e)
-    #     return -1
-    # return data.to_json(date_format="iso", orient="records")
 
 
 @app.callback(Output("start-date", "disabled"), Input("station-dropdown", "value"))
@@ -345,7 +339,6 @@ def enable_photo_tab(station):
 
 @app.callback(Output("ul-tabs", "active_tab"), Input("station-dropdown", "value"))
 def select_default_tab(station):
-
     network = stations[stations["station"] == station]["sub_network"].values[0]
 
     return "photo-tab" if station and network == "HydroMet" else "wind-tab"
@@ -405,7 +398,6 @@ def update_ul_card(at, station, tmp_data=None):
         return html.Div(html.Iframe(src=url), className="second-row")
 
     else:
-
         tmp = pd.read_csv(
             f"https://mesonet.climate.umt.edu/api/v2/deployments/{station}/?type=csv"
         )
@@ -542,7 +534,6 @@ def station_popup(clickData, is_open):
     [State("modal", "is_open")],
 )
 def toggle_modal(n1, is_open):
-
     if n1:
         return not is_open
     return is_open
@@ -554,7 +545,6 @@ def toggle_modal(n1, is_open):
     [State("feedback-modal", "is_open")],
 )
 def toggle_feedback(n1, is_open):
-
     if n1:
         return not is_open
     return is_open
@@ -562,7 +552,6 @@ def toggle_feedback(n1, is_open):
 
 @app.callback(Output("main-content", "children"), [Input("main-display-tabs", "value")])
 def toggle_main_tab(sel):
-
     if sel == "station-tab":
         station_fig = plt.plot_station(stations)
         return lay.build_latest_content(station_fig=station_fig, stations=stations)
@@ -578,7 +567,6 @@ def toggle_main_tab(sel):
     Input("network-options", "value"),
 )
 def subset_stations(opts):
-
     if len(opts) == 0:
         sub = stations
     else:
@@ -622,7 +610,6 @@ def update_sat_selectors(sel, station):
     prevent_initial_callback=True,
 )
 def render_satellite_ts_plot(station, elements, climatology):
-
     if station is None:
         return plt.make_nodata_figure(
             """
@@ -697,7 +684,6 @@ def update_compare2_options(station):
     ],
 )
 def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
-
     start_time = dt.datetime.strptime(start_time, "%Y-%m-%d").date()
     end_time = dt.datetime.strptime(end_time, "%Y-%m-%d").date()
 
@@ -723,7 +709,6 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
 
     try:
         if platform_x == "station":
-
             dat_x, dat_y = get.get_sat_compare_data(
                 station=station,
                 sat_element=element_y,
