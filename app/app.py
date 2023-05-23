@@ -121,7 +121,7 @@ def update_br_card(
     [Input("station-dropdown", "value"), State("select-vars", "value")],
 )
 def update_select_vars(station: str, selected):
-    if not station:
+    if not station or not selected:
         options = [{"value": x, "label": x} for x in sorted(params.default_vars)]
         values = [
             "Precipitation",
@@ -131,14 +131,12 @@ def update_select_vars(station: str, selected):
             "Air Temperature",
         ]
         return options, values
-
     elems = pd.read_csv(f"{params.API_URL}/elements/{station}?type=csv")
     elems = elems["description_short"].tolist()
     elems = list(set([x.split("@")[0].strip() for x in elems]))
     elems.append("Reference ET")
 
     selected = [x for x in selected if x in elems]
-
     return [{"value": x, "label": x} for x in sorted(elems)], selected
 
 
