@@ -175,7 +175,6 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
         return out.to_json(date_format="iso", orient="records")
 
     tmp = pd.read_json(tmp, orient="records")
-    print(tmp.columns)
     if tmp.station.values[0] != station:
         out = get.get_station_record(
             station,
@@ -350,9 +349,12 @@ def select_default_tab(station):
         Input("ul-tabs", "active_tab"),
         Input("station-dropdown", "value"),
         Input("temp-station-data", "data"),
+        State("ul-content", "children"),
     ],
 )
-def update_ul_card(at, station, tmp_data=None):
+def update_ul_card(at, station, tmp_data, cur_content):
+    if at == "photo-tab" and ctx.triggered_id == "temp-station-data":
+        return cur_content
     if station is None:
         return html.Div()
     if at == "wind-tab":
