@@ -162,7 +162,8 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     elements = set(chain(*[params.elem_map[x] for x in select_vars]))
     elements = list(set([y for y in params.elements for x in elements if x in y]))
 
-    if not tmp or ctx.triggered_id == "hourly-switch":
+    if not tmp or ctx.triggered_id in ["hourly-switch", "start-date"]:
+        print('doing this')
         out = get.get_station_record(
             station,
             start_time=start,
