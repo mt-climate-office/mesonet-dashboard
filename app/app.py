@@ -296,7 +296,7 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
     elif tmp_data == -1:
         return plt.make_nodata_figure(
             """
-            <b>No data available for selected station and dates!</b> <br><br>
+            <b>No data available for selected station and dates</b> <br><br>
             
             Either change the date range or select a new station.
             """
@@ -304,7 +304,7 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm):
 
     return plt.make_nodata_figure(
         """
-        <b>No station selected!</b> <br><br>
+        <b>Select Station</b> <br><br>
         
         To get started, select a station from the dropdown above or the map to the right.
         """
@@ -614,7 +614,7 @@ def render_satellite_ts_plot(station, elements, climatology):
     if station is None:
         return plt.make_nodata_figure(
             """
-        <b>No station selected!</b> <br><br>
+        <b>Select Station</b> <br><br>
         
         To get started, select a station from the dropdown.
         """
@@ -623,7 +623,7 @@ def render_satellite_ts_plot(station, elements, climatology):
     if len(elements) == 0:
         return plt.make_nodata_figure(
             """
-        <b>No indicators selected!</b> <br><br>
+        <b>Select Indicator</b> <br><br>
         
         Select an indicator from the checkbox to view the plot. 
         """
@@ -691,7 +691,7 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
     if station is None:
         return plt.make_nodata_figure(
             """
-        <b>No station selected!</b> <br><br>
+        <b>Select Station</b> <br><br>
         
         To get started, select a station from the dropdown.
         """
@@ -699,7 +699,7 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
     if not (x_var and y_var):
         return plt.make_nodata_figure(
             """
-        <b>No indicators selected!</b> <br><br>
+        <b>Select Indicators</b> <br><br>
         
         Please select two indicators to view the plot. 
         """
@@ -743,7 +743,7 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
     except HTTPError:
         return plt.make_nodata_figure(
             """
-            <b>No Station Data Available!</b> <br><br>
+            <b>No Station Data Available</b> <br><br>
             
             Please select a new station variable.
             """
