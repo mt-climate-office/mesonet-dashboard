@@ -707,10 +707,17 @@ def build_satellite_content(stations):
     )
 
 
-def app_layout(app_ref):
+def app_layout(app_ref, stations):
+    stations = stations.to_json(orient="records")
     return dbc.Container(
         [
             dcc.Location(id="url", refresh=False),
+            dcc.Interval(
+                id="interval",
+                interval=5000,  # 300000, # miliseconds = 5 mins
+                n_intervals=0,
+            ),
+            dcc.Store(data=stations, id="mesonet-stations", storage_type="memory"),
             build_banner(app_ref),
             dcc.Tabs(
                 style={"width": "100%", "font-size": "100%", "height": "4.5vh"},

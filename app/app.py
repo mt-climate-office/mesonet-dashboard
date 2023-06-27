@@ -49,16 +49,20 @@ app = Dash(
 app._favicon = "MCO_logo.svg"
 server = app.server
 
-stations = get.get_sites()
-app.layout = lay.app_layout(app_ref=app)
+# Make this a function so that it is refreshed on page load. 
+app.layout = lambda: lay.app_layout(app, get.get_sites())
 
 
 @app.callback(
     Output("banner-title", "children"),
-    [Input("station-dropdown", "value"), Input("main-display-tabs", "value")],
+    [
+        Input("station-dropdown", "value"),
+        Input("main-display-tabs", "value"),
+        State("mesonet-stations", "data"),
+    ],
     prevent_initial_callback=True,
 )
-def update_banner_text(station: str, tab: str) -> str:
+def update_banner_text(station: str, tab: str, stations) -> str:
     """Update the text of the banner to contain selected station's name.
 
     Args:
@@ -68,6 +72,7 @@ def update_banner_text(station: str, tab: str) -> str:
     Returns:
         str: The banner title for the page.
     """
+    stations = pd.read_json(stations, orient="records")
     try:
         return (
             f"The Montana Mesonet Dashboard: {stations[stations['station'] == station].name.values[0]}"
@@ -84,10 +89,11 @@ def update_banner_text(station: str, tab: str) -> str:
         Input("bl-tabs", "active_tab"),
         Input("station-dropdown", "value"),
         Input("temp-station-data", "data"),
+        State("mesonet-stations", "data"),
     ],
 )
 def update_br_card(
-    at: str, station: str, tmp_data: Union[int, str]
+    at: str, station: str, tmp_data: Union[int, str], stations: str
 ) -> Union[dcc.Graph, dash_table.DataTable]:
     """Update the card at the bottom right of the page.
 
@@ -99,6 +105,8 @@ def update_br_card(
     Returns:
         Union[dcc.Graph, dash_table.DataTable]: Depending on this selected tab, this is either a figure or a table.
     """
+    stations = pd.read_json(stations, orient="records")
+
     if at == "map-tab":
         station_fig = plt.plot_station(stations, station=station)
         return dcc.Graph(id="station-fig", figure=station_fig)
@@ -245,9 +253,13 @@ def adjust_end_date_min(value):
 
 
 @app.callback(
-    Output("start-date", "min_date_allowed"), Input("station-dropdown", "value")
+    Output("start-date", "min_date_allowed"),
+    Input("station-dropdown", "value"),
+    State("mesonet-stations", "data"),
 )
-def adjust_start_date(station):
+def adjust_start_date(station, stations):
+    stations = pd.read_json(stations, orient="records")
+
     if station:
         d = stations[stations["station"] == station]["date_installed"].values[0]
         return dt.datetime.strptime(d, "%Y-%m-%d").date()
@@ -266,14 +278,16 @@ def enable_date_button(station):
         Input("station-dropdown", "value"),
         Input("hourly-switch", "value"),
         Input("gridmet-switch", "value"),
+        State("mesonet-stations", "data"),
     ],
 )
-def render_station_plot(tmp_data, select_vars, station, hourly, norm):
+def render_station_plot(tmp_data, select_vars, station, hourly, norm, stations):
     hourly = [hourly] if isinstance(hourly, int) else hourly
     norm = [norm] if isinstance(norm, int) else norm
     if len(select_vars) == 0:
         return plt.make_nodata_figure("No variables selected")
     elif tmp_data and tmp_data != -1:
+        stations = pd.read_json(stations, orient="records")
         data = pd.read_json(tmp_data, orient="records")
         data.datetime = data.datetime.dt.tz_convert("America/Denver")
         data = get.clean_format(data)
@@ -318,14 +332,17 @@ def update_dropdown_from_url(pth):
     return stem
 
 
-@app.callback(Output("ul-tabs", "children"), Input("station-dropdown", "value"))
-def enable_photo_tab(station):
+@app.callback(
+    Output("ul-tabs", "children"),
+    Input("station-dropdown", "value"),
+    State("mesonet-stations", "data"),
+)
+def enable_photo_tab(station, stations):
     tabs = [
         dbc.Tab(label="Wind Rose", tab_id="wind-tab"),
         dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
     ]
-
-    # TODO: Enable this after bison range photos come online.
+    stations = pd.read_json(stations, orient="records")
     network = stations[stations["station"] == station]["sub_network"].values[0]
 
     if station and network == "HydroMet":
@@ -334,8 +351,13 @@ def enable_photo_tab(station):
     return tabs
 
 
-@app.callback(Output("ul-tabs", "active_tab"), Input("station-dropdown", "value"))
-def select_default_tab(station):
+@app.callback(
+    Output("ul-tabs", "active_tab"),
+    Input("station-dropdown", "value"),
+    State("mesonet-stations", "data"),
+)
+def select_default_tab(station, stations):
+    stations = pd.read_json(stations, orient="records")
     network = stations[stations["station"] == station]["sub_network"].values[0]
 
     return "photo-tab" if station and network == "HydroMet" else "wind-tab"
@@ -347,10 +369,11 @@ def select_default_tab(station):
         Input("ul-tabs", "active_tab"),
         Input("station-dropdown", "value"),
         Input("temp-station-data", "data"),
+        State("mesonet-stations", "data"),
         # State("ul-content", "children"),
     ],
 )
-def update_ul_card(at, station, tmp_data):
+def update_ul_card(at, station, tmp_data, stations):
     # if at == "photo-tab" and ctx.triggered_id == "temp-station-data":
     #     return cur_content
     if station is None:
@@ -393,6 +416,8 @@ def update_ul_card(at, station, tmp_data):
         )
 
     elif at == "wx-tab":
+        stations = pd.read_json(stations, orient="records")
+
         row = stations[stations["station"] == station]
         url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
         return html.Div(html.Iframe(src=url), className="second-row")
@@ -550,8 +575,14 @@ def toggle_feedback(n1, is_open):
     return is_open
 
 
-@app.callback(Output("main-content", "children"), [Input("main-display-tabs", "value")])
-def toggle_main_tab(sel):
+@app.callback(
+    Output("main-content", "children"),
+    Input("main-display-tabs", "value"),
+    State("mesonet-stations", "data"),
+)
+def toggle_main_tab(sel, stations):
+    stations = pd.read_json(stations, orient="records")
+
     if sel == "station-tab":
         station_fig = plt.plot_station(stations)
         return lay.build_latest_content(station_fig=station_fig, stations=stations)
@@ -565,8 +596,11 @@ def toggle_main_tab(sel):
 @app.callback(
     Output("station-dropdown", "options"),
     Input("network-options", "value"),
+    State("mesonet-stations", "data"),
 )
-def subset_stations(opts):
+def subset_stations(opts, stations):
+    stations = pd.read_json(stations, orient="records")
+
     if len(opts) == 0:
         sub = stations
     else:
@@ -581,13 +615,15 @@ def subset_stations(opts):
 @app.callback(
     [Output("satellite-selectors", "children"), Output("satellite-graph", "children")],
     Input("satellite-radio", "value"),
+    State("mesonet-stations", "data"),
     State("station-dropdown-satellite", "value"),
 )
-def update_sat_selectors(sel, station):
+def update_sat_selectors(sel, stations, station):
     if sel == "timeseries":
         graph = dls.Bars(dcc.Graph(id="satellite-plot"))
     else:
         graph = dls.Bars(dcc.Graph(id="satellite-compare"))
+    stations = pd.read_json(stations, orient="records")
 
     return (
         lay.build_satellite_dropdowns(
