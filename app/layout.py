@@ -90,7 +90,7 @@ def feedback_iframe():
         dbc.Modal(
             [
                 dbc.ModalHeader(
-                    dbc.ModalTitle("Provide Feedback to Improve Our Dashboard!")
+                    dbc.ModalTitle("Provide Feedback to Improve Our Dashboard")
                 ),
                 dbc.ModalBody(
                     html.Iframe(
