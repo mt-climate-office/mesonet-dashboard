@@ -1,4 +1,5 @@
 import datetime as dt
+import os
 import re
 from itertools import chain, cycle
 from pathlib import Path
@@ -11,22 +12,18 @@ import pandas as pd
 from dash import Dash, Input, Output, State, ctx, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
-from . import layout as lay
-from .libs import get_data as get
-from .libs import plot_satellite as plt_sat
-from .libs import plotting as plt
-from .libs import tables as tab
-from .libs.params import params
-
-# import libs.get_data as get
-# import libs.plot_satellite as plt_sat
-# import libs.plotting as plt
-# import libs.tables as tab
-# from libs.params import params
-# import layout as lay
+from mdb import layout as lay
+from mdb.utils import get_data as get
+from mdb.utils import plot_satellite as plt_sat
+from mdb.utils import plotting as plt
+from mdb.utils import tables as tab
+from mdb.utils.params import params
 
 pd.options.mode.chained_assignment = None
 
+on_server = os.getenv("ON_SERVER")
+
+prefix = "/" if on_server is None or not on_server else "/dash/"
 
 app = Dash(
     __name__,
@@ -39,7 +36,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    requests_pathname_prefix="/dash/",
+    requests_pathname_prefix=prefix,
     external_scripts=[
         "https://www.googletagmanager.com/gtag/js?id=UA-149859729-3",
         "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/develop/app/assets/gtag.js",
@@ -49,7 +46,7 @@ app = Dash(
 app._favicon = "MCO_logo.svg"
 server = app.server
 
-# Make this a function so that it is refreshed on page load. 
+# Make this a function so that it is refreshed on page load.
 app.layout = lambda: lay.app_layout(app, get.get_sites())
 
 
@@ -171,7 +168,6 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     elements = list(set([y for y in params.elements for x in elements if x in y]))
 
     if not tmp or ctx.triggered_id in ["hourly-switch", "start-date"]:
-        print('doing this')
         out = get.get_station_record(
             station,
             start_time=start,

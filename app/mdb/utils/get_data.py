@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 from mt_mesonet_satellite import MesonetSatelliteDB
 from requests import Request
 
-from .params import params
-from .plotting import deg_to_compass
+from mdb.utils.params import params
+from mdb.utils.plotting import deg_to_compass
 
 load_dotenv()
 

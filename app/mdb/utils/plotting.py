@@ -7,8 +7,8 @@ import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta as rd
 from plotly.subplots import make_subplots
 
-from .et_calc import fao_etr_daily as et_d
-from .params import params
+from mdb.utils.et_calc import fao_etr_daily as et_d
+from mdb.utils.params import params
 
 
 def style_figure(fig, x_ticks=None, legend=False):

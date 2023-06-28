@@ -8,8 +8,8 @@ import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta as rd
 from plotly.subplots import make_subplots
 
-from .params import params
-from .plotting import style_figure
+from mdb.utils.params import params
+from mdb.utils.plotting import style_figure
 
 
 def make_satellite_normals(df):
