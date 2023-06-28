@@ -1,4 +1,4 @@
-![MCO Logo](./app/assets/MCO_logo.svg)
+![MCO Logo](./app/mdb/assets/MCO_logo.svg)
 # The Montana Mesonet Dashboard
 
 
