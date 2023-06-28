@@ -2,13 +2,12 @@ import datetime as dt
 from dataclasses import dataclass
 
 import dateutil.relativedelta as rd
-import pandas as pd
 
 
 @dataclass
 class params:
-
-    API_URL = "http://apiv2/"
+    # API_URL = "http://apiv2/"
+    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
 

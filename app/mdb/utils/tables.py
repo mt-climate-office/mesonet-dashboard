@@ -1,7 +1,3 @@
-import numpy as np
-import pandas as pd
-
-
 def make_metadata_table(station_df, station):
     out = station_df[station_df["station"] == station][
         [

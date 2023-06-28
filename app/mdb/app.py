@@ -1,8 +1,8 @@
 import datetime as dt
+import os
 import re
 from itertools import chain
 from pathlib import Path
-from typing import Union
 from urllib.error import HTTPError
 
 import dash_bootstrap_components as dbc
@@ -11,19 +11,16 @@ import pandas as pd
 from dash import Dash, Input, Output, State, dash_table, dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
-from . import layout as lay
-from .libs import get_data as get
-from .libs import plotting as plt
-from .libs import tables as tab
-from .libs.params import params
-
-# import libs.get_data as get
-# import libs.plotting as plt
-# import layout as lay
-# from libs.params import params
-
+from mdb import layout as lay
+from mdb.utils import get_data as get
+from mdb.utils import plotting as plt
+from mdb.utils.params import params
 
 pd.options.mode.chained_assignment = None
+
+on_server = os.getenv("ON_SERVER")
+
+prefix = "/" if on_server is None or not on_server else "/dash_mobile/"
 
 
 app = Dash(
@@ -37,7 +34,7 @@ app = Dash(
             "content": "width=device-width, initial-scale=1.0, maximum-scale=1.2, minimum-scale=0.5,",
         }
     ],
-    requests_pathname_prefix="/dash_mobile/",
+    requests_pathname_prefix=prefix,
     external_scripts=[
         "https://www.googletagmanager.com/gtag/js?id=UA-149859729-3",
         "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/develop/app/assets/gtag.js",
@@ -47,12 +44,10 @@ app = Dash(
 app._favicon = "MCO_logo.svg"
 server = app.server
 
-stations = get.get_sites()
-app.layout = lay.app_layout(app_ref=app, stations=stations)
+app.layout = lambda: lay.app_layout(app, get.get_sites())
 
 
-def render_station_plot(station, dat, select_vars):
-
+def render_station_plot(station, dat, select_vars, stations):
     dat = pd.read_json(dat, orient="records")
 
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
@@ -88,7 +83,7 @@ def render_station_plot(station, dat, select_vars):
     )
 
 
-def weather_iframe(station):
+def weather_iframe(station, stations):
     row = stations[stations["station"] == station]
     url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
     return html.Div(
@@ -113,11 +108,17 @@ def weather_iframe(station):
         Input("data", "data"),
         Input("select", "value"),
     ],
+    State("mesonet-stations", "data"),
 )
-def toggle_main_tab(station, tab, data, select_vars):
-
+def toggle_main_tab(station, tab, data, select_vars, stations):
     if not station and tab != "map":
-        return dcc.Graph(figure=plt.make_nodata_figure("<b>No Station Selected!</b> <br> Select a station above."))
+        return dcc.Graph(
+            figure=plt.make_nodata_figure(
+                "<b>No Station Selected!</b> <br> Select a station above."
+            )
+        )
+
+    stations = pd.read_json(stations, orient="records")
 
     if tab == "current":
         title, table = get.get_station_latest(station)
@@ -131,10 +132,12 @@ def toggle_main_tab(station, tab, data, select_vars):
         )
 
     elif tab == "plot":
-        out = render_station_plot(station=station, dat=data, select_vars=select_vars)
+        out = render_station_plot(
+            station=station, dat=data, select_vars=select_vars, stations=stations
+        )
         return dls.Bars(dcc.Graph(figure=out))
     elif tab == "forecast":
-        return weather_iframe(station)
+        return weather_iframe(station, stations=stations)
     elif tab == "map":
         station_fig = plt.plot_station(stations, station=station)
         return dls.Bars(dcc.Graph(id="station-fig", figure=station_fig))
@@ -143,7 +146,6 @@ def toggle_main_tab(station, tab, data, select_vars):
 
 
 def get_data(station, elements):
-
     end = dt.date.today()
     start = end - rd(days=7)
 
@@ -157,7 +159,6 @@ def get_data(station, elements):
     State("data", "data"),
 )
 def update_station_data(station, vars, tmp):
-
     if not station or not vars:
         return None
 
@@ -210,9 +211,10 @@ def hide_select(tab):
 @app.callback(
     Output("banner-title", "children"),
     [Input("station-dropdown", "value")],
+    State("mesonet-stations", "data"),
     prevent_initial_callback=True,
 )
-def update_banner_text(station: str) -> str:
+def update_banner_text(station: str, stations: str) -> str:
     """Update the text of the banner to contain selected station's name.
 
     Args:
@@ -221,6 +223,8 @@ def update_banner_text(station: str) -> str:
     Returns:
         str: The banner title for the page.
     """
+    stations = pd.read_json(stations, orient="records")
+
     try:
         return (
             f"Mesonet Dashboard: {stations[stations['station'] == station].name.values[0]}"
@@ -273,7 +277,6 @@ def station_popup(clickData, is_open):
     [State("modal", "is_open")],
 )
 def toggle_modal(n1, is_open):
-
     if n1:
         return not is_open
     return is_open

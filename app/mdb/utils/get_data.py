@@ -1,22 +1,14 @@
 import datetime as dt
 import io
-import os
-from typing import List, Optional, Union
+from typing import Optional, Union
 from urllib import parse
-from urllib.error import HTTPError
 
-import janitor
-import numpy as np
 import pandas as pd
 import requests
-from dateutil.relativedelta import relativedelta as rd
-from dotenv import load_dotenv
 from requests import Request
 
-from .params import params
-from .plotting import deg_to_compass
-
-load_dotenv()
+from mdb.utils.params import params
+from mdb.utils.plotting import deg_to_compass
 
 
 def get_sites() -> pd.DataFrame:
@@ -101,7 +93,6 @@ def reindex_by_date(df, time_freq):
 
 
 def filter_top_of_hour(df):
-
     df.index = pd.DatetimeIndex(df.datetime)
     df = df[(df.index.minute == 0)]
     df = df.reset_index(drop=True)
@@ -151,7 +142,6 @@ def clean_format(
 
 
 def get_station_latest(station):
-
     r = requests.get(
         url=f"{params.API_URL}latest", params={"stations": station, "type": "csv"}
     )

@@ -1,9 +1,6 @@
-import datetime as dt
-
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
 from dash import dcc, html
-from dateutil.relativedelta import relativedelta as rd
 
 TABLE_STYLING = {
     "css": [{"selector": "tr:first-child", "rule": "display: none"}],
@@ -59,7 +56,6 @@ def generate_modal():
 
 
 def build_banner(app_ref):
-
     return dbc.Navbar(
         dbc.Container(
             [
@@ -136,12 +132,11 @@ def make_station_dropdowns(stations, id, station):
         id=id,
         placeholder="Select a Mesonet Station...",
         value=station,
-        style={"font-size": "1.5rem"}
+        style={"font-size": "1.5rem"},
     )
 
 
 def build_dropdowns(stations):
-
     return dbc.Col(
         [
             dbc.Row(
@@ -206,7 +201,6 @@ def build_dropdowns(stations):
 
 
 def build_content(stations):
-
     return dbc.Card(
         [
             dbc.CardHeader(
@@ -235,11 +229,15 @@ def build_content(stations):
 
 
 def app_layout(app_ref, stations):
-
     return dbc.Container(
         [
             dcc.Location(id="url", refresh=False),
             dcc.Store("data", storage_type="session"),
+            dcc.Store(
+                data=stations.to_json(orient="records"),
+                id="mesonet-stations",
+                storage_type="memory",
+            ),
             build_banner(app_ref),
             dbc.Col(
                 build_content(stations),
