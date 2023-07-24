@@ -167,26 +167,33 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     elements = set(chain(*[params.elem_map[x] for x in select_vars]))
     elements = list(set([y for y in params.elements for x in elements if x in y]))
 
-    if not tmp or ctx.triggered_id in ["hourly-switch", "start-date"]:
-        out = get.get_station_record(
-            station,
-            start_time=start,
-            end_time=end,
-            hourly=len(hourly) == 1,
-            e=",".join(elements),
-        )
-        return out.to_json(date_format="iso", orient="records")
-
+    if tmp == -1 or not tmp or ctx.triggered_id in ["hourly-switch", "start-date"]:
+        try:
+            out = get.get_station_record(
+                station,
+                start_time=start,
+                end_time=end,
+                hourly=len(hourly) == 1,
+                e=",".join(elements),
+            )
+            out = out.to_json(date_format="iso", orient="records")
+        except HTTPError:
+            out = -1
+        return out
     tmp = pd.read_json(tmp, orient="records")
     if tmp.station.values[0] != station:
-        out = get.get_station_record(
-            station,
-            start_time=start,
-            end_time=end,
-            hourly=len(hourly) == 1,
-            e=",".join(elements),
-        )
-        return out.to_json(date_format="iso", orient="records")
+        try:
+            out = get.get_station_record(
+                station,
+                start_time=start,
+                end_time=end,
+                hourly=len(hourly) == 1,
+                e=",".join(elements),
+            )
+            out =  out.to_json(date_format="iso", orient="records")
+        except HTTPError:
+            out = -1
+        return out
     existing_elements = set()
     for x in tmp.columns:
         x = re.sub("[\(\[].*?[\)\]]", "", x).strip()
