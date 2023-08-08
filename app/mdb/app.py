@@ -114,7 +114,9 @@ def update_br_card(
     else:
         if tmp_data != -1:
             table = get.get_station_latest(station)
-            return dash_table.DataTable(data=table, **lay.TABLE_STYLING)
+            ppt = get.get_ppt_summary(station)
+            ppt += table
+            return dash_table.DataTable(data=ppt, **lay.TABLE_STYLING)
         return dcc.Graph(figure=plt.make_nodata_figure())
 
 
@@ -190,7 +192,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 hourly=len(hourly) == 1,
                 e=",".join(elements),
             )
-            out =  out.to_json(date_format="iso", orient="records")
+            out = out.to_json(date_format="iso", orient="records")
         except HTTPError:
             out = -1
         return out
