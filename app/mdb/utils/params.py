@@ -7,7 +7,7 @@ import dateutil.relativedelta as rd
 @dataclass
 class params:
     # API_URL = "http://apiv2/"
-    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
+    API_URL = "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/"
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
 

@@ -122,14 +122,21 @@ def toggle_main_tab(station, tab, data, select_vars, stations):
 
     if tab == "current":
         title, table = get.get_station_latest(station)
-        return dls.Bars(
-            html.Div(
-                [
-                    html.Label(f"Data from {title}"),
-                    dash_table.DataTable(data=table, **lay.TABLE_STYLING),
-                ]
-            )
-        )
+        table = get.get_station_latest(station)
+        ppt = get.get_ppt_summary(station)
+        print(table)
+        print(ppt)
+        out = dbc.Col([
+            dbc.Row([
+                dbc.Label(html.B("Precipitation Summary"), style={'text-align': 'center'}),
+                dash_table.DataTable(ppt[0], **lay.TABLE_STYLING),
+            ], justify="center", className="h-50"),
+            dbc.Row([
+                dbc.Label(html.B(title), style={'text-align': 'center'}),
+                dash_table.DataTable(table[0], **lay.TABLE_STYLING),
+            ], justify="center", className="h-50 mt-3",)
+        ], align="center")
+        return dls.Bars(out)
 
     elif tab == "plot":
         out = render_station_plot(

@@ -168,3 +168,16 @@ def summarise_station_to_daily(dat, colname):
     dat = dat.groupby(["station", "date"]).agg({colname: "mean", "date": "min"})
     dat = dat.reset_index(drop=True)
     return dat
+
+
+
+def get_ppt_summary(station):
+    r = requests.get(
+        url=f"{params.API_URL}derived/ppt/{station}", params={"type": "csv"}
+    )
+
+    with io.StringIO(r.text) as text_io:
+        dat = pd.read_csv(text_io)
+    dat = dat[["time", "value"]]
+    dat = dat.rename(columns={"time": "name"})
+    return dat.to_dict("records")
