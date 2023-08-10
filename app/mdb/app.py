@@ -115,8 +115,17 @@ def update_br_card(
         if tmp_data != -1:
             table = get.get_station_latest(station)
             ppt = get.get_ppt_summary(station)
-            ppt += table
-            return dash_table.DataTable(data=ppt, **lay.TABLE_STYLING)
+            out = dbc.Col([
+                dbc.Row([
+                    dbc.Label(html.B("Precipitation Summary"), style={'text-align': 'center'}),
+                    dash_table.DataTable(ppt, **lay.TABLE_STYLING),
+                ], justify="center", className="h-50"),
+                dbc.Row([
+                    dbc.Label(html.B("Latest Data Summary"), style={'text-align': 'center'}),
+                    dash_table.DataTable(table, **lay.TABLE_STYLING),
+                ], justify="center", className="h-50 mt-3",)
+            ], align="center")
+            return out
         return dcc.Graph(figure=plt.make_nodata_figure())
 
 
