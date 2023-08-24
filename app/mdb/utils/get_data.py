@@ -71,6 +71,7 @@ def get_station_record(
         "level": 1,
         "hour": hourly,
         "type": "csv",
+        "rm_na": True,
     }
 
     if end_time:
@@ -239,7 +240,7 @@ def get_sat_compare_data(
 
     dates = ",".join(set(sat_data.date.astype(str).values.tolist()))
 
-    url = f"{params.API_URL}observations/?stations={station}&elements={station_element}&dates={dates}&type=csv&hour=True&wide=True"
+    url = f"{params.API_URL}observations/?stations={station}&elements={station_element}&dates={dates}&type=csv&hour=True&wide=True&rm_na=True"
     station_data = pd.read_csv(url)
     colname = station_data.columns[-1]
     station_data = summarise_station_to_daily(station_data, colname)
