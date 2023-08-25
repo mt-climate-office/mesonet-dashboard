@@ -69,9 +69,9 @@ def get_station_record(
         "elements": e,
         "start_time": start_time,
         "level": 1,
-        "hour": hourly,
         "type": "csv",
         "rm_na": True,
+        "premade": True,
     }
 
     if end_time:
@@ -80,9 +80,10 @@ def get_station_record(
         end_time = format_dt(end_time)
         q.update({"end_time": end_time})
 
+    endpoint = "observations/hourly" if hourly else "observations"
     payload = parse.urlencode(q, safe=",:")
 
-    r = Request("GET", url=f"{params.API_URL}observations", params=payload).prepare()
+    r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
 
     dat = pd.read_csv(r.url)
     return dat
