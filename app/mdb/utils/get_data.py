@@ -48,7 +48,7 @@ def get_station_record(
     station: str,
     start_time: Union[dt.date, dt.datetime],
     end_time: Union[dt.date, dt.datetime],
-    hourly: Optional[bool] = True,
+    hourly: Optional[str] = "hourly",
     e: Optional[str] = None,
 ) -> pd.DataFrame:
     """Given a Mesonet station name and date range, return a dataframe of climate data.
@@ -80,7 +80,7 @@ def get_station_record(
         end_time = format_dt(end_time)
         q.update({"end_time": end_time})
 
-    endpoint = "observations/hourly" if hourly else "observations"
+    endpoint = params.endpoints[hourly]
     payload = parse.urlencode(q, safe=",:")
 
     r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()

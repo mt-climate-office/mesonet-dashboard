@@ -338,12 +338,16 @@ def build_dropdowns(stations):
                             [
                                 dbc.InputGroup(
                                     [
-                                        dbc.Checklist(
-                                            options=[{"label": "Hourly", "value": 1}],
+                                        dbc.RadioItems(
+                                            options=[
+                                                {"label": "Hourly", "value": 'hourly'},
+                                                {"label": "Daily", "value": "daily"},
+                                                {"label": "Raw", "value": "raw"},
+                                            ],
                                             inline=True,
                                             id="hourly-switch",
-                                            switch=True,
-                                            value=[1],
+                                            # switch=True,
+                                            value="hourly",
                                             # className="toggle",
                                         ),
                                         dbc.Tooltip(

@@ -159,7 +159,7 @@ def update_select_vars(station: str, selected):
 def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     if not station:
         return None
-
+    print(hourly)
     start = dt.datetime.strptime(start, "%Y-%m-%d").date()
     end = dt.datetime.strptime(end, "%Y-%m-%d").date()
 
@@ -173,7 +173,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 station,
                 start_time=start,
                 end_time=end,
-                hourly=len(hourly) == 1,
+                hourly=hourly,
                 e=",".join(elements),
             )
             out = out.to_json(date_format="iso", orient="records")
@@ -187,7 +187,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 station,
                 start_time=start,
                 end_time=end,
-                hourly=len(hourly) == 1,
+                hourly=hourly,
                 e=",".join(elements),
             )
             out =  out.to_json(date_format="iso", orient="records")
@@ -209,7 +209,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 station,
                 start_time=start,
                 end_time=end,
-                hourly=len(hourly) == 1,
+                hourly=hourly,
                 e=",".join(new_elements),
             )
         except HTTPError:
@@ -233,16 +233,16 @@ def enable_end_date(station):
     return station is None
 
 
-@app.callback(Output("end-date", "max_date_allowed"), [Input("start-date", "date")])
-def adjust_end_date_max(value):
-    d = dt.datetime.strptime(value, "%Y-%m-%d").date()
-    return d + rd(weeks=2)
+# @app.callback(Output("end-date", "max_date_allowed"), [Input("start-date", "date")])
+# def adjust_end_date_max(value):
+#     d = dt.datetime.strptime(value, "%Y-%m-%d").date()
+#     return d + rd(weeks=2)
 
 
-@app.callback(Output("end-date", "date"), [Input("start-date", "date")])
-def adjust_end_date_select(value):
-    d = dt.datetime.strptime(value, "%Y-%m-%d").date()
-    return d + rd(weeks=2)
+# @app.callback(Output("end-date", "date"), [Input("start-date", "date")])
+# def adjust_end_date_select(value):
+#     d = dt.datetime.strptime(value, "%Y-%m-%d").date()
+#     return d + rd(weeks=2)
 
 
 @app.callback(Output("start-date", "date"), Input("station-dropdown", "value"))
@@ -286,7 +286,6 @@ def enable_date_button(station):
     ],
 )
 def render_station_plot(tmp_data, select_vars, station, hourly, norm, stations):
-    hourly = [hourly] if isinstance(hourly, int) else hourly
     norm = [norm] if isinstance(norm, int) else norm
     if len(select_vars) == 0:
         return plt.make_nodata_figure("No variables selected")
@@ -308,7 +307,7 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm, stations):
             ppt=ppt,
             station=station,
             norm=len(norm) == 1,
-            top_of_hour=len(hourly) == 1,
+            top_of_hour=hourly != "raw",
         )
     elif tmp_data == -1:
         return plt.make_nodata_figure(
