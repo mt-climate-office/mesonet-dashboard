@@ -50,6 +50,7 @@ def get_station_record(
     end_time: Union[dt.date, dt.datetime],
     hourly: Optional[str] = "hourly",
     e: Optional[str] = None,
+    has_etr: Optional[bool] = True,
 ) -> pd.DataFrame:
     """Given a Mesonet station name and date range, return a dataframe of climate data.
 
@@ -86,6 +87,16 @@ def get_station_record(
     r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
 
     dat = pd.read_csv(r.url)
+    if has_etr:
+        q['elements'] = "etr"
+        endpoint = params.derived_endpoints[hourly]
+        payload = parse.urlencode(q, safe=",:")
+
+        r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
+
+        etr = pd.read_csv(r.url)
+        dat = dat.merge(etr, how='left', on=['station', 'datetime'])        
+
     return dat
 
 
@@ -104,20 +115,20 @@ def clean_format(dat: pd.DataFrame) -> pd.DataFrame:
 
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
     dat.datetime = dat.datetime.dt.tz_convert("America/Denver")
-    dat = dat.set_index("datetime")
+#     dat = dat.set_index("datetime")
 
-    ppt = dat[["Precipitation [in]"]]
-    dat = dat.drop(columns="Precipitation [in]")
-    ppt.index = pd.DatetimeIndex(ppt.index)
-    ppt = pd.DataFrame(ppt.groupby(ppt.index.date)["Precipitation [in]"].agg("sum"))
-    ppt.index = pd.DatetimeIndex(ppt.index)
-    ppt.index = ppt.index.tz_localize("America/Denver")
-    out = pd.concat([dat, ppt], axis=1)
+        # ppt = dat[["Precipitation [in]"]]
+        # dat = dat.drop(columns="Precipitation [in]")
+        # ppt.index = pd.DatetimeIndex(ppt.index)
+        # ppt = pd.DataFrame(ppt.groupby(ppt.index.date)["Precipitation [in]"].agg("sum"))
+        # ppt.index = pd.DatetimeIndex(ppt.index)
+        # ppt.index = ppt.index.tz_localize("America/Denver")
+        # out = pd.concat([dat, ppt], axis=1)
 
-    out = out.reset_index()
-    out = out.rename(columns=params.lab_swap)
+ #   out = out.reset_index()
+    dat = dat.rename(columns=params.lab_swap)
 
-    return out
+    return dat
 
 
 def get_station_latest(station):

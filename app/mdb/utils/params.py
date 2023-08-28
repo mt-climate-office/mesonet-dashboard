@@ -40,6 +40,7 @@ class params:
     )
 
     elements = elements_df["element"].tolist()
+    elements.append("etr")
 
     elem_labs = [
         "Air Temperature @ 2 m [°F]",
@@ -108,7 +109,7 @@ class params:
 
     elem_map = {
         "Precipitation": ["ppt"],
-        "Reference ET": ["rh", "bp", "sol_rad", "air_temp", "wind_spd"],
+        "Reference ET": ["etr"],
         "Soil VWC": ["soil_vwc"],
         "Air Temperature": ["air_temp"],
         "Solar Radiation": ["sol_rad"],
@@ -171,6 +172,12 @@ class params:
         "hourly": "observations/hourly",
         "daily": "observations/daily",
         "raw": "observations",
+    }
+
+    derived_endpoints = {
+        "hourly": "derived/hourly",
+        "daily": "derived/daily",
+        "raw": "derived/daily",
     }
 
     short_name_mapper = {

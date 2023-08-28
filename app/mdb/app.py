@@ -159,13 +159,18 @@ def update_select_vars(station: str, selected):
 def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     if not station:
         return None
-    print(hourly)
     start = dt.datetime.strptime(start, "%Y-%m-%d").date()
     end = dt.datetime.strptime(end, "%Y-%m-%d").date()
 
     select_vars += ["Wind Speed", "Wind Direction"]
     elements = set(chain(*[params.elem_map[x] for x in select_vars]))
     elements = list(set([y for y in params.elements for x in elements if x in y]))
+
+    if "etr" in elements:
+        has_etr = True
+        elements.remove("etr")
+    else: 
+        has_etr = False
 
     if tmp == -1 or not tmp or ctx.triggered_id in ["hourly-switch", "start-date"]:
         try:
@@ -175,6 +180,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 end_time=end,
                 hourly=hourly,
                 e=",".join(elements),
+                has_etr=has_etr
             )
             out = out.to_json(date_format="iso", orient="records")
         except HTTPError:
