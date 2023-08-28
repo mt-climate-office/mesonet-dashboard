@@ -351,9 +351,9 @@ def build_dropdowns(stations):
                                             # className="toggle",
                                         ),
                                         dbc.Tooltip(
-                                            """Leaving this switched on will return hourly averages (totals for precipitation). 
-                                            This significantly cuts down on data transfer and makes the plots render faster.
-                                            If the toggle is switched off, the figures will have higher resolution data, but will take longer to load.""",
+                                            """Hourly and daily averages are pre-computed and will take much less time to render plots. 
+                                            It is not recommended to select a time period longer than 1 year for daily data, 3 months for hourly
+                                            data, or 2 weeks for raw data. Longer time selections could take up to a few minutes to load.""",
                                             target="hourly-switch",
                                         ),
                                     ]

@@ -292,7 +292,9 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm, stations):
     elif tmp_data and tmp_data != -1:
         stations = pd.read_json(stations, orient="records")
         data = pd.read_json(tmp_data, orient="records")
-        data.datetime = data.datetime.dt.tz_convert("America/Denver")
+        data = data.assign(
+            datetime=pd.to_datetime(data['datetime'], utc=True).dt.tz_convert("America/Denver")
+        )
         data = get.clean_format(data)
 
         dat = data.drop(columns="Precipitation [in]")
