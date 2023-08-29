@@ -7,7 +7,6 @@ import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta as rd
 from plotly.subplots import make_subplots
 
-from mdb.utils.et_calc import fao_etr_daily as et_d
 from mdb.utils.params import params
 
 
@@ -121,7 +120,7 @@ def plot_met(dat, **kwargs):
     variable_text = dat.columns.tolist()[-1]
     station_name = kwargs["station"]["station"].values[0]
 
-    fig = px.line(dat, x="datetime", y=variable_text, markers=True)
+    fig = px.line(dat, x="datetime", y=variable_text, markers=False)
 
     fig = fig.update_traces(line_color=kwargs["color"], connectgaps=False)
 
@@ -211,7 +210,7 @@ def add_boxplot_normals(fig, norms):
 def plot_ppt(dat, **kwargs):
     station_name = kwargs["station"]["station"].values[0]
     variable_text = dat.columns.tolist()[-1]
-    dat = dat.assign(datetime=dat.datetime.dt.date)
+    # dat = dat.assign(datetime=dat.datetime.dt.date)
     fig = px.bar(dat, x="datetime", y=variable_text)
     fig.update_traces(
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Precipitation Total</b>: %{y}"
@@ -277,104 +276,18 @@ def plot_wind(wind_data):
     return fig
 
 
-def plot_etr(hourly, station, **kwargs):
+def plot_etr(dat, station, **kwargs):
     station_name = station["station"].values[0]
-    drop_thresh = 12 * 20 if station_name[:3] == "ace" else 4 * 20
-    drop_thresh = 20 if kwargs["top_of_hour"] else drop_thresh
 
-    hourly["Solar Radiation [W/m²]"] = hourly["Solar Radiation [W/m²]"].fillna(0)
-
-    dat = hourly[
-        [
-            "datetime",
-            "Air Temperature [°F]",
-            "Atmospheric Pressure [mbar]",
-            "Relative Humidity [%]",
-            "Solar Radiation [W/m²]",
-            "Wind Speed [mi/hr]",
-        ]
-    ]
-
-    dat.index = pd.DatetimeIndex(dat.datetime)
-    dat = dat.assign(date=dat.index.date)
-    dat = dat.dropna()
-
-    gaps = dat.groupby(dat.index.date).size()
-    dat = dat.reset_index(drop=True)
-
-    lat = station["latitude"]
-    station["longitude"]
-    elev = station["elevation"]
-
-    calc_daily = (
-        dat[dat.date.isin(gaps[gaps >= drop_thresh].index.values)]
-        .assign(julian=dat.datetime.dt.dayofyear)
-        .groupby_agg(
-            by="date",
-            agg="mean",
-            agg_column_name="Air Temperature [°F]",
-            new_column_name="Air Temperature [°F]",
-        )
-        .groupby_agg(
-            by="date",
-            agg="mean",
-            agg_column_name="Atmospheric Pressure [mbar]",
-            new_column_name="Atmospheric Pressure [mbar]",
-        )
-        .groupby_agg(
-            by="date",
-            agg="mean",
-            agg_column_name="Relative Humidity [%]",
-            new_column_name="Relative Humidity [%]",
-        )
-        .groupby_agg(
-            by="date",
-            agg="mean",
-            agg_column_name="Solar Radiation [W/m²]",
-            new_column_name="Solar Radiation [W/m²]",
-        )
-        .groupby_agg(
-            by="date",
-            agg="mean",
-            agg_column_name="Wind Speed [mi/hr]",
-            new_column_name="Wind Speed [mi/hr]",
-        )
-        .select_columns("datetime", invert=True)
-        .drop_duplicates()
-    )
-
-    calc_daily["et_d"] = calc_daily.apply(
-        lambda x: et_d(
-            lat,
-            x["julian"],
-            elev,
-            x["Relative Humidity [%]"],
-            (x["Air Temperature [°F]"] - 32) * (5 / 9),
-            x["Solar Radiation [W/m²]"],
-            x["Atmospheric Pressure [mbar]"] / 10,
-            x["Wind Speed [mi/hr]"] * 0.44704,
-        )
-        * (1 / 25.4),
-        axis=1,
-    )
-
-    calc_daily = (
-        calc_daily[["date", "et_d"]]
-        .assign(et_d=round(calc_daily.et_d, 3))
-        .drop_duplicates()
-        .rename_column("date", "datetime")
-        .rename_column("et_d", "Reference ET [in/day]")
-    )
-
-    fig = px.bar(calc_daily, x="datetime", y="Reference ET [in/day]")
+    fig = px.bar(dat, x="datetime", y="Reference ET (a=0.23) [in]")
     fig.update_traces(
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Reference ET Total</b>: %{y}",
         marker_color="#FF0000",
     )
 
     if kwargs.get("norm", None):
-        calc_daily["datetime"] = pd.to_datetime(calc_daily.datetime)
-        norms = merge_normal_data("ET", calc_daily, station_name)
+        dat["datetime"] = pd.to_datetime(dat.datetime)
+        norms = merge_normal_data("ET", dat, station_name)
         fig = add_boxplot_normals(fig, norms)
 
     return fig
@@ -507,7 +420,7 @@ def add_nodata_lab(sub, d, idx, v):
     return sub
 
 
-def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
+def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
     plots = {}
     no_data = {}
     no_data_df = dat[["datetime"]].drop_duplicates()
@@ -515,11 +428,10 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
     for idx, v in enumerate(args, 1):
         try:
             if v == "Reference ET":
-                plt = plot_etr(hourly=dat, **kwargs)
+                plt = plot_etr(dat=dat, **kwargs)
             else:
-                df = ppt if v == "Precipitation" else dat
                 plot_func = get_plot_func(v)
-                data = filter_df(df, v)
+                data = filter_df(dat, v)
 
                 if len(data) == 0 or data.shape[-1] == 1:
                     raise ValueError("No Data Available.")

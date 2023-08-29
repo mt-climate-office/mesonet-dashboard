@@ -4,15 +4,15 @@ from dataclasses import dataclass
 import dateutil.relativedelta as rd
 import pandas as pd
 
-# elements_df = pd.read_csv("http://apiv2/elements?type=csv")
-elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
+
+# elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
+elements_df = pd.read_csv("http://apiv2/elements?type=csv")
 
 
 @dataclass
 class params:
-    # API_URL = "http://apiv2/"
-    API_URL = "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/"
     # API_URL = "https://mesonet.climate.umt.edu/api/v2/"
+    API_URL = "http://apiv2/"
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
 
@@ -41,6 +41,7 @@ class params:
     )
 
     elements = elements_df["element"].tolist()
+    elements.append("etr")
 
     elem_labs = [
         "Air Temperature @ 2 m [°F]",
@@ -109,7 +110,7 @@ class params:
 
     elem_map = {
         "Precipitation": ["ppt"],
-        "Reference ET": ["rh", "bp", "sol_rad", "air_temp", "wind_spd"],
+        "Reference ET": ["etr"],
         "Soil VWC": ["soil_vwc"],
         "Air Temperature": ["air_temp"],
         "Solar Radiation": ["sol_rad"],
@@ -157,7 +158,7 @@ class params:
         "Wind Speed": "Wind Spd.<br>(mph)",
         "Soil Temperature": "Soil Temp.<br>(°F)",
         "Atmospheric Pressure": "Atmos. Pres. (mbar)",
-        "Reference ET": "Reference ET<br>(in/day)",
+        "Reference ET": "Reference ET<br>(inches)",
         "Snow Depth": "Snow Depth<br>(in.)",
         "Gust Speed": "Gust Speed<br>(mi/hr)",
         "Max Precip Rate": "Max Precip Rate<br>(in/hr)",
@@ -166,6 +167,18 @@ class params:
         "Well Water Temperature": "Well Temperature<br>(°F)",
         "Well EC": "Well EC<br>(mS cm<sup>-1</sup>)",
         "Wind Direction": "Wind Direction<br>(deg)",
+    }
+
+    endpoints = {
+        "hourly": "observations/hourly",
+        "daily": "observations/daily",
+        "raw": "observations",
+    }
+
+    derived_endpoints = {
+        "hourly": "derived/hourly",
+        "daily": "derived/daily",
+        "raw": "derived/hourly",
     }
 
     short_name_mapper = {
