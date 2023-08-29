@@ -112,9 +112,23 @@ def update_br_card(
         return dash_table.DataTable(data=table, **lay.TABLE_STYLING)
 
     else:
+        network = stations[stations["station"] == station]["sub_network"].values[0]
+
         if tmp_data != -1:
+            out = []
             table = get.get_station_latest(station)
-            return dash_table.DataTable(data=table, **lay.TABLE_STYLING)
+            out.append(                dbc.Row([
+                    dbc.Label(html.B("Latest Data Summary"), style={'text-align': 'center'}),
+                    dash_table.DataTable(table, **lay.TABLE_STYLING),
+                ], justify="center", className="h-50 mt-3",))
+            if network == "HydroMet":
+                ppt = get.get_ppt_summary(station)
+                out.append(                dbc.Row([
+                    dbc.Label(html.B("Precipitation Summary"), style={'text-align': 'center'}),
+                    dash_table.DataTable(ppt, **lay.TABLE_STYLING),
+                ], justify="center", className="h-50"))
+            out = dbc.Col(out, align="center")
+            return out
         return dcc.Graph(figure=plt.make_nodata_figure())
 
 
@@ -196,7 +210,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 hourly=hourly,
                 e=",".join(elements),
             )
-            out =  out.to_json(date_format="iso", orient="records")
+            out = out.to_json(date_format="iso", orient="records")
         except HTTPError:
             out = -1
         return out
