@@ -112,19 +112,22 @@ def update_br_card(
         return dash_table.DataTable(data=table, **lay.TABLE_STYLING)
 
     else:
+        network = stations[stations["station"] == station]["sub_network"].values[0]
+
         if tmp_data != -1:
+            out = []
             table = get.get_station_latest(station)
-            ppt = get.get_ppt_summary(station)
-            out = dbc.Col([
-                dbc.Row([
-                    dbc.Label(html.B("Precipitation Summary"), style={'text-align': 'center'}),
-                    dash_table.DataTable(ppt, **lay.TABLE_STYLING),
-                ], justify="center", className="h-50"),
-                dbc.Row([
+            out.append(                dbc.Row([
                     dbc.Label(html.B("Latest Data Summary"), style={'text-align': 'center'}),
                     dash_table.DataTable(table, **lay.TABLE_STYLING),
-                ], justify="center", className="h-50 mt-3",)
-            ], align="center")
+                ], justify="center", className="h-50 mt-3",))
+            if network == "HydroMet":
+                ppt = get.get_ppt_summary(station)
+                out.append(                dbc.Row([
+                    dbc.Label(html.B("Precipitation Summary"), style={'text-align': 'center'}),
+                    dash_table.DataTable(ppt, **lay.TABLE_STYLING),
+                ], justify="center", className="h-50"))
+            out = dbc.Col(out, align="center")
             return out
         return dcc.Graph(figure=plt.make_nodata_figure())
 
