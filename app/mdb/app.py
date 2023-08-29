@@ -303,16 +303,12 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm, stations):
         )
         data = get.clean_format(data)
 
-        dat = data.drop(columns="Precipitation [in]")
-        ppt = data[["datetime", "Precipitation [in]"]]
-        ppt = ppt.dropna()
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
         station = stations[stations["station"] == station]
 
         return plt.plot_site(
             *select_vars,
-            dat=dat,
-            ppt=ppt,
+            dat=data,
             station=station,
             norm=len(norm) == 1,
             top_of_hour=hourly != "raw",

@@ -120,7 +120,7 @@ def plot_met(dat, **kwargs):
     variable_text = dat.columns.tolist()[-1]
     station_name = kwargs["station"]["station"].values[0]
 
-    fig = px.line(dat, x="datetime", y=variable_text, markers=True)
+    fig = px.line(dat, x="datetime", y=variable_text, markers=False)
 
     fig = fig.update_traces(line_color=kwargs["color"], connectgaps=False)
 
@@ -420,7 +420,7 @@ def add_nodata_lab(sub, d, idx, v):
     return sub
 
 
-def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
+def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
     plots = {}
     no_data = {}
     no_data_df = dat[["datetime"]].drop_duplicates()
@@ -430,9 +430,8 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
             if v == "Reference ET":
                 plt = plot_etr(dat=dat, **kwargs)
             else:
-                df = ppt if v == "Precipitation" else dat
                 plot_func = get_plot_func(v)
-                data = filter_df(df, v)
+                data = filter_df(dat, v)
 
                 if len(data) == 0 or data.shape[-1] == 1:
                     raise ValueError("No Data Available.")

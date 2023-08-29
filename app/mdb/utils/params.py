@@ -157,7 +157,7 @@ class params:
         "Wind Speed": "Wind Spd.<br>(mph)",
         "Soil Temperature": "Soil Temp.<br>(°F)",
         "Atmospheric Pressure": "Atmos. Pres. (mbar)",
-        "Reference ET": "Reference ET<br>(in/day)",
+        "Reference ET": "Reference ET<br>(inches)",
         "Snow Depth": "Snow Depth<br>(in.)",
         "Gust Speed": "Gust Speed<br>(mi/hr)",
         "Max Precip Rate": "Max Precip Rate<br>(in/hr)",
@@ -177,7 +177,7 @@ class params:
     derived_endpoints = {
         "hourly": "derived/hourly",
         "daily": "derived/daily",
-        "raw": "derived/daily",
+        "raw": "derived/hourly",
     }
 
     short_name_mapper = {

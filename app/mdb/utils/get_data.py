@@ -115,17 +115,7 @@ def clean_format(dat: pd.DataFrame) -> pd.DataFrame:
 
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
     dat.datetime = dat.datetime.dt.tz_convert("America/Denver")
-#     dat = dat.set_index("datetime")
 
-        # ppt = dat[["Precipitation [in]"]]
-        # dat = dat.drop(columns="Precipitation [in]")
-        # ppt.index = pd.DatetimeIndex(ppt.index)
-        # ppt = pd.DataFrame(ppt.groupby(ppt.index.date)["Precipitation [in]"].agg("sum"))
-        # ppt.index = pd.DatetimeIndex(ppt.index)
-        # ppt.index = ppt.index.tz_localize("America/Denver")
-        # out = pd.concat([dat, ppt], axis=1)
-
- #   out = out.reset_index()
     dat = dat.rename(columns=params.lab_swap)
 
     return dat
