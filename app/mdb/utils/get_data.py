@@ -63,8 +63,8 @@ def get_station_record(
         "elements": e,
         "start_time": start_time,
         "level": 1,
-        "hour": hourly,
         "type": "csv",
+        "premade": "TRUE",
     }
 
     if end_time:
@@ -75,7 +75,9 @@ def get_station_record(
 
     payload = parse.urlencode(q, safe=",:")
 
-    r = Request("GET", url=f"{params.API_URL}observations", params=payload).prepare()
+    r = Request(
+        "GET", url=f"{params.API_URL}observations/hourly", params=payload
+    ).prepare()
 
     dat = pd.read_csv(r.url)
     return dat
@@ -168,7 +170,6 @@ def summarise_station_to_daily(dat, colname):
     dat = dat.groupby(["station", "date"]).agg({colname: "mean", "date": "min"})
     dat = dat.reset_index(drop=True)
     return dat
-
 
 
 def get_ppt_summary(station):

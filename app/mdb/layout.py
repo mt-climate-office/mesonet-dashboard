@@ -219,7 +219,7 @@ def build_content(stations):
                     build_dropdowns(stations),
                 ]
             ),
-            dbc.CardBody(dls.Bars(html.Div(id="main-content"))),
+            dls.Bars(dbc.CardBody(dls.Bars(html.Div(id="main-content")))),
         ],
         outline=True,
         color="secondary",
@@ -232,7 +232,7 @@ def app_layout(app_ref, stations):
     return dbc.Container(
         [
             dcc.Location(id="url", refresh=False),
-            dcc.Store("data", storage_type="session"),
+            dls.Bars(dcc.Store("data", storage_type="session")),
             dcc.Store(
                 data=stations.to_json(orient="records"),
                 id="mesonet-stations",

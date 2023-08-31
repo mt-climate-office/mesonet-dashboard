@@ -111,6 +111,7 @@ def weather_iframe(station, stations):
     State("mesonet-stations", "data"),
 )
 def toggle_main_tab(station, tab, data, select_vars, stations):
+    stations = pd.read_json(stations, orient="records")
     if not station and tab != "map":
         return dcc.Graph(
             figure=plt.make_nodata_figure(
@@ -118,24 +119,39 @@ def toggle_main_tab(station, tab, data, select_vars, stations):
             )
         )
 
-    stations = pd.read_json(stations, orient="records")
-
+    network = stations[stations["station"] == station]["sub_network"].values[0]
     if tab == "current":
         title, table = get.get_station_latest(station)
-        table = get.get_station_latest(station)
-        ppt = get.get_ppt_summary(station)
-        print(table)
-        print(ppt)
-        out = dbc.Col([
-            dbc.Row([
-                dbc.Label(html.B("Precipitation Summary"), style={'text-align': 'center'}),
-                dash_table.DataTable(ppt[0], **lay.TABLE_STYLING),
-            ], justify="center", className="h-50"),
-            dbc.Row([
-                dbc.Label(html.B(title), style={'text-align': 'center'}),
-                dash_table.DataTable(table[0], **lay.TABLE_STYLING),
-            ], justify="center", className="h-50 mt-3",)
-        ], align="center")
+        out = [
+            dbc.Row(
+                [
+                    dbc.Label(
+                        html.B(f"Conditions as of {title}"),
+                        style={"text-align": "center"},
+                    ),
+                    dash_table.DataTable(table, **lay.TABLE_STYLING),
+                ],
+                justify="center",
+                className="h-50 mt-3",
+            )
+        ]
+        if network == "HydroMet":
+            ppt = get.get_ppt_summary(station)
+            out.insert(
+                0,
+                dbc.Row(
+                    [
+                        dbc.Label(
+                            html.B("Precipitation Summary"),
+                            style={"text-align": "center"},
+                        ),
+                        dash_table.DataTable(ppt, **lay.TABLE_STYLING),
+                    ],
+                    justify="center",
+                    className="h-50",
+                ),
+            )
+        out = dbc.Col(out, align="center")
         return dls.Bars(out)
 
     elif tab == "plot":
