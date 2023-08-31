@@ -340,7 +340,7 @@ def build_dropdowns(stations):
                                     [
                                         dbc.RadioItems(
                                             options=[
-                                                {"label": "Hourly", "value": 'hourly'},
+                                                {"label": "Hourly", "value": "hourly"},
                                                 {"label": "Daily", "value": "daily"},
                                                 {"label": "Raw", "value": "raw"},
                                             ],

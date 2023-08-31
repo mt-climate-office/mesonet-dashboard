@@ -117,16 +117,34 @@ def update_br_card(
         if tmp_data != -1:
             out = []
             table = get.get_station_latest(station)
-            out.append(                dbc.Row([
-                    dbc.Label(html.B("Latest Data Summary"), style={'text-align': 'center'}),
-                    dash_table.DataTable(table, **lay.TABLE_STYLING),
-                ], justify="center", className="h-50 mt-3",))
+            out.append(
+                dbc.Row(
+                    [
+                        dbc.Label(
+                            html.B("Latest Data Summary"),
+                            style={"text-align": "center"},
+                        ),
+                        dash_table.DataTable(table, **lay.TABLE_STYLING),
+                    ],
+                    justify="center",
+                    className="h-50 mt-3",
+                )
+            )
             if network == "HydroMet":
                 ppt = get.get_ppt_summary(station)
-                out.append(                dbc.Row([
-                    dbc.Label(html.B("Precipitation Summary"), style={'text-align': 'center'}),
-                    dash_table.DataTable(ppt, **lay.TABLE_STYLING),
-                ], justify="center", className="h-50"))
+                out.append(
+                    dbc.Row(
+                        [
+                            dbc.Label(
+                                html.B("Precipitation Summary"),
+                                style={"text-align": "center"},
+                            ),
+                            dash_table.DataTable(ppt, **lay.TABLE_STYLING),
+                        ],
+                        justify="center",
+                        className="h-50",
+                    )
+                )
             out = dbc.Col(out, align="center")
             return out
         return dcc.Graph(figure=plt.make_nodata_figure())
@@ -180,13 +198,12 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     elements = set(chain(*[params.elem_map[x] for x in select_vars]))
     elements = list(set([y for y in params.elements for x in elements if x in y]))
 
-    if "etr" in elements:
-        has_etr = True
-        elements.remove("etr")
-    else: 
-        has_etr = False
-
     if tmp == -1 or not tmp or ctx.triggered_id in ["hourly-switch", "start-date"]:
+        if "etr" in elements:
+            has_etr = True
+            elements.remove("etr")
+        else:
+            has_etr = False
         try:
             out = get.get_station_record(
                 station,
@@ -194,7 +211,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 end_time=end,
                 hourly=hourly,
                 e=",".join(elements),
-                has_etr=has_etr
+                has_etr=has_etr,
             )
             out = out.to_json(date_format="iso", orient="records")
         except HTTPError:
@@ -202,6 +219,11 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
         return out
     tmp = pd.read_json(tmp, orient="records")
     if tmp.station.values[0] != station:
+        if "etr" in elements:
+            has_etr = True
+            elements.remove("etr")
+        else:
+            has_etr = False
         try:
             out = get.get_station_record(
                 station,
@@ -209,6 +231,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 end_time=end,
                 hourly=hourly,
                 e=",".join(elements),
+                has_etr=has_etr,
             )
             out = out.to_json(date_format="iso", orient="records")
         except HTTPError:
@@ -223,6 +246,16 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
 
     elements = set(elements)
     new_elements = elements - existing_elements
+
+    if "etr" in new_elements and "Reference ET (a=0.23) [in]" not in tmp.columns:
+        has_etr = True
+        new_elements.remove("etr")
+    elif "etr" in new_elements and "Reference ET (a=0.23) [in]" in tmp.columns:
+        has_etr = False
+        new_elements.remove("etr")
+    else:
+        has_etr = False
+
     if new_elements:
         try:
             out = get.get_station_record(
@@ -231,6 +264,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 end_time=end,
                 hourly=hourly,
                 e=",".join(new_elements),
+                has_etr=has_etr,
             )
         except HTTPError:
             return tmp.to_json(date_format="iso", orient="records")
@@ -313,7 +347,9 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm, stations):
         stations = pd.read_json(stations, orient="records")
         data = pd.read_json(tmp_data, orient="records")
         data = data.assign(
-            datetime=pd.to_datetime(data['datetime'], utc=True).dt.tz_convert("America/Denver")
+            datetime=pd.to_datetime(data["datetime"], utc=True).dt.tz_convert(
+                "America/Denver"
+            )
         )
         data = get.clean_format(data)
 

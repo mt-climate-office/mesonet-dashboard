@@ -3,6 +3,7 @@ import io
 import os
 from typing import Optional, Union
 from urllib import parse
+from urllib.error import HTTPError
 
 import numpy as np
 import pandas as pd
@@ -86,16 +87,25 @@ def get_station_record(
 
     r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
 
-    dat = pd.read_csv(r.url)
+    try:
+        dat = pd.read_csv(r.url)
+    except HTTPError:
+        if has_etr:
+            dat = pd.DataFrame()
+        else:
+            raise HTTPError(r.url, 404, "No data found.", None, None)
     if has_etr:
-        q['elements'] = "etr"
+        q["elements"] = "etr"
         endpoint = params.derived_endpoints[hourly]
         payload = parse.urlencode(q, safe=",:")
 
         r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
 
         etr = pd.read_csv(r.url)
-        dat = dat.merge(etr, how='left', on=['station', 'datetime'])        
+        if not dat.empty:
+            dat = dat.merge(etr, how="left", on=["station", "datetime"])
+        else:
+            dat = etr
 
     return dat
 
