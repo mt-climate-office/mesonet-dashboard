@@ -287,142 +287,129 @@ def build_dropdowns(stations):
                 [
                     dbc.Col(
                         make_station_dropdowns(stations, "station-dropdown", None),
-                        xs=10,
-                        sm=10,
-                        md=10,
-                        lg=3,
-                        xl=3,
+                        xs=12, sm=12, md=6, lg=4, xl=3,  # Adjust column width
                     ),
                     dbc.Col(
                         dbc.InputGroup(
                             [
-                                dbc.InputGroupText("Start Date"),
-                                dcc.DatePickerSingle(
-                                    id="start-date",
-                                    date=dt.date.today() - rd(weeks=2),
+                                dcc.DatePickerRange(
+                                    id="dates",
+                                    month_format='MMMM Y',
+                                    start_date=dt.date.today() - rd(days=14),
+                                    end_date=dt.date.today(),
+                                    clearable=False,
                                     max_date_allowed=dt.date.today(),
-                                    # min_date_allowed=dt.date(2022, 1, 1),
-                                    disabled=True,
-                                ),
+                                    stay_open_on_select=False,
+                                )
                             ]
                         ),
-                        xs=5,
-                        sm=5,
-                        md=5,
-                        lg=3,
-                        xl=3,
-                        # style={"padding": "0rem 0rem 0rem 6.5rem"},
+                        xs=12, sm=12, md=12, lg=8, xl=6,  # Adjust column width
                     ),
                     dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dbc.InputGroupText("End Date"),
-                                dcc.DatePickerSingle(
-                                    id="end-date",
-                                    date=dt.date.today(),
-                                    max_date_allowed=dt.date.today(),
-                                    # min_date_allowed=dt.date(2022, 1, 1),
-                                    disabled=True,
-                                ),
-                            ]
+                        dbc.InputGroup([
+
+                            dbc.Button(
+                                "Download Data",
+                                href="#",
+                                size="lg",
+                                n_clicks=0,
+                                id="download-button",
+                                className="me-md-2",
+                            ),
+                            dcc.Download(id="data-download"),
+                        ],
+                        className="justify-content-end", 
                         ),
-                        xs=5,
-                        sm=5,
-                        md=5,
-                        lg=3,
-                        xl=3,
-                        # style={"padding": "0rem 0rem 0rem 6.5rem"},
-                    ),
-                    dbc.Col(
-                        dbc.Row(
-                            [
-                                dbc.InputGroup(
-                                    [
-                                        dbc.RadioItems(
-                                            options=[
-                                                {"label": "Hourly", "value": "hourly"},
-                                                {"label": "Daily", "value": "daily"},
-                                                {"label": "Raw", "value": "raw"},
-                                            ],
-                                            inline=True,
-                                            id="hourly-switch",
-                                            # switch=True,
-                                            value="hourly",
-                                            # className="toggle",
-                                        ),
-                                        dbc.Tooltip(
-                                            """Hourly and daily averages are pre-computed and will take much less time to render plots. 
-                                            It is not recommended to select a time period longer than 1 year for daily data, 3 months for hourly
-                                            data, or 2 weeks for raw data. Longer time selections could take up to a few minutes to load.""",
-                                            target="hourly-switch",
-                                        ),
-                                    ]
-                                ),
-                                dbc.InputGroup(
-                                    [
-                                        dbc.Checklist(
-                                            options=[
-                                                {"label": "gridMET Normals", "value": 1}
-                                            ],
-                                            inline=True,
-                                            id="gridmet-switch",
-                                            switch=True,
-                                            value=[],
-                                            # className="toggle",
-                                        ),
-                                        dbc.Tooltip(
-                                            "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions.",
-                                            target="gridmet-switch",
-                                        ),
-                                    ]
-                                ),
-                                dbc.InputGroup(
-                                    [
-                                        dbc.Checklist(
-                                            options=[
-                                                {
-                                                    "label": "HydroMet",
-                                                    "value": "HydroMet",
-                                                },
-                                                {
-                                                    "label": "AgriMet",
-                                                    "value": "AgriMet",
-                                                },
-                                            ],
-                                            inline=True,
-                                            id="network-options",
-                                            value=["HydroMet", "AgriMet"],
-                                            # className="toggle",
-                                        ),
-                                        dbc.Tooltip(
-                                            """These checkboxes allow you to subset the stations listed in the dropdown. 
-                                            Leaving both boxes checked shows all possible stations. Checking either HydroMet or
-                                            AgriMet subsets selectable stations to only the respective network.""",
-                                            target="network-options",
-                                        ),
-                                    ]
-                                ),
-                            ],
-                            align="center",
-                        ),
-                        xs=10,
-                        sm=10,
-                        md=10,
-                        lg=3,
-                        xl=3,
-                        # style={"padding": "0rem 0rem 0rem 5rem"},
+                        xs=12, sm=12, md=6, lg=4, xl=3,  # Adjust column width
+                        align="center",  # Center the button
                     ),
                 ],
-                align="center",
+                style={"padding": "0.5rem"},  # Add some padding to the row
+                justify="center",
             ),
-            html.Br(),
+            # html.Br(),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dbc.InputGroup(
+                            [
+                                dbc.RadioItems(
+                                    options=[
+                                        {"label": "Hourly", "value": "hourly"},
+                                        {"label": "Daily", "value": "daily"},
+                                        {"label": "Raw", "value": "raw"},
+                                    ],
+                                    inline=True,
+                                    id="hourly-switch",
+                                    value="hourly",
+                                ),
+                                dbc.Tooltip(
+                                    """Hourly and daily averages are pre-computed and will take much less time to render plots. 
+                                        It is not recommended to select a time period longer than 1 year for daily data, 3 months for hourly
+                                        data, or 2 weeks for raw data. Longer time selections could take up to a few minutes to load.""",
+                                    target="hourly-switch",
+                                ),
+                            ]
+                        ),
+                        xs=12, sm=12, md=6, lg=4, xl=3,  # Adjust column width
+                    ),
+                    dbc.Col(
+                        dbc.InputGroup(
+                            [
+                                dbc.Checklist(
+                                    options=[{"label": "gridMET Normals", "value": 1}],
+                                    inline=True,
+                                    id="gridmet-switch",
+                                    switch=True,
+                                    value=[],
+                                ),
+                                dbc.Tooltip(
+                                    "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions.",
+                                    target="gridmet-switch",
+                                ),
+                            ]
+                        ),
+                        xs=12, sm=12, md=6, lg=4, xl=3,  # Adjust column width
+                    ),
+                    dbc.Col(
+                        dbc.InputGroup(
+                            [
+                                dbc.Checklist(
+                                    options=[
+                                        {
+                                            "label": "HydroMet",
+                                            "value": "HydroMet",
+                                        },
+                                        {
+                                            "label": "AgriMet",
+                                            "value": "AgriMet",
+                                        },
+                                    ],
+                                    inline=True,
+                                    id="network-options",
+                                    value=["HydroMet", "AgriMet"],
+                                ),
+                                dbc.Tooltip(
+                                    """These checkboxes allow you to subset the stations listed in the dropdown. 
+                                        Leaving both boxes checked shows all possible stations. Checking either HydroMet or
+                                        AgriMet subsets selectable stations to only the respective network.""",
+                                    target="network-options",
+                                ),
+                            ]
+                        ),
+                        xs=12, sm=12, md=6, lg=4, xl=3,  # Adjust column width
+                    ),
+                ],
+                style={"padding": "0.5rem"},  # Add some padding to the row
+                justify="center",
+            ),
             dbc.Row(
                 [dbc.Col(checklist_input, xs=12, sm=12, md=12, lg=12, xl=12)],
-                align="center",
-                style={"padding": "0rem 6.5rem 0rem 0rem"},
+                style={"padding": "0.5rem"},  # Add some padding to the row
+                justify="center",
             ),
         ],
-        style={"padding": "1rem 0rem 0rem 5rem"},
+        style={"padding": "0rem"},  # Adjust overall padding
         fluid=True,
     )
 

@@ -141,16 +141,23 @@ def get_station_latest(station):
     dat = dat.loc[:, dat.columns.isin(["datetime"] + params.elem_labs)]
     dat = dat.rename(columns=params.lab_swap)
 
-    dat["Wind Chill [°F]"] = round(
-        35.74
-        + (0.6215 * dat["Air Temperature [°F]"])
-        - (35.75 * (dat["Wind Speed [mi/hr]"] ** 0.16))
-        + (0.4275 * dat["Air Temperature [°F]"] * (dat["Wind Speed [mi/hr]"] ** 0.16)),
-        2,
-    )
-    dat[
-        "Wind Direction [deg]"
-    ] = f'{deg_to_compass(dat["Wind Direction [deg]"])} ({dat["Wind Direction [deg]"].values[0]} deg)'
+    try:
+        dat["Wind Chill [°F]"] = round(
+            35.74
+            + (0.6215 * dat["Air Temperature [°F]"])
+            - (35.75 * (dat["Wind Speed [mi/hr]"] ** 0.16))
+            + (0.4275 * dat["Air Temperature [°F]"] * (dat["Wind Speed [mi/hr]"] ** 0.16)),
+            2,
+        )
+    except ValueError:
+        pass
+    
+    try:
+        dat[
+            "Wind Direction [deg]"
+        ] = f'{deg_to_compass(dat["Wind Direction [deg]"])} ({dat["Wind Direction [deg]"].values[0]} deg)'
+    except ValueError:
+        pass
     dat = dat.rename(columns={"datetime": "Timestamp"})
     dat = dat.T.reset_index()
     dat.columns = ["value", "name"]

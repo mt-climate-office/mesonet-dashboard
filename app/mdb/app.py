@@ -151,6 +151,23 @@ def update_br_card(
 
 
 @app.callback(
+    Output("data-download", "data"),
+    Input("download-button", "n_clicks"),
+    State("temp-station-data", "data"),
+    State("station-dropdown", "value"),
+    State("hourly-switch", "value"),
+    State("dates", "start_date"),
+    State("dates", "end_date"),
+    prevent_initial_callback=True,
+)
+def download_called_data(n_clicks, tmp_data, station, time, start, end):
+    if n_clicks and tmp_data:
+        data = pd.read_json(tmp_data, orient="records")
+        name = f"{station}_{time}_{start.replace('-', '')}_to_{end.replace('-', '')}.csv"
+        return dcc.send_data_frame(data.to_csv, name)
+
+
+@app.callback(
     [
         Output("select-vars", "options"),
         Output("select-vars", "value"),
@@ -181,8 +198,8 @@ def update_select_vars(station: str, selected):
     Output("temp-station-data", "data"),
     [
         Input("station-dropdown", "value"),
-        Input("start-date", "date"),
-        Input("end-date", "date"),
+        Input("dates", "start_date"),
+        Input("dates", "end_date"),
         Input("hourly-switch", "value"),
         Input("select-vars", "value"),
         State("temp-station-data", "data"),
@@ -198,7 +215,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     elements = set(chain(*[params.elem_map[x] for x in select_vars]))
     elements = list(set([y for y in params.elements for x in elements if x in y]))
 
-    if tmp == -1 or not tmp or ctx.triggered_id in ["hourly-switch", "start-date"]:
+    if tmp == -1 or not tmp or ctx.triggered_id in ["hourly-switch", "dates"]:
         if "etr" in elements:
             has_etr = True
             elements.remove("etr")
@@ -277,14 +294,14 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     return out.to_json(date_format="iso", orient="records")
 
 
-@app.callback(Output("start-date", "disabled"), Input("station-dropdown", "value"))
-def enable_start_date(station):
-    return station is None
+# @app.callback(Output("start-date", "disabled"), Input("station-dropdown", "value"))
+# def enable_start_date(station):
+#     return station is None
 
 
-@app.callback(Output("end-date", "disabled"), Input("station-dropdown", "value"))
-def enable_end_date(station):
-    return station is None
+# @app.callback(Output("end-date", "disabled"), Input("station-dropdown", "value"))
+# def enable_end_date(station):
+#     return station is None
 
 
 # @app.callback(Output("end-date", "max_date_allowed"), [Input("start-date", "date")])
@@ -299,19 +316,19 @@ def enable_end_date(station):
 #     return d + rd(weeks=2)
 
 
-@app.callback(Output("start-date", "date"), Input("station-dropdown", "value"))
-def reset_start_date(value):
-    return dt.date.today() - rd(weeks=2)
+# @app.callback(Output("dates", "start_date"), Input("station-dropdown", "value"))
+# def reset_start_date(value):
+#     return dt.date.today() - rd(weeks=2)
 
 
-@app.callback(Output("end-date", "min_date_allowed"), [Input("start-date", "date")])
-def adjust_end_date_min(value):
-    d = dt.datetime.strptime(value, "%Y-%m-%d").date()
-    return d
+# @app.callback(Output("dates", "max_date_allowed"), [Input("start-date", "date")])
+# def adjust_end_date_min(value):
+#     d = dt.datetime.strptime(value, "%Y-%m-%d").date()
+#     return d
 
 
 @app.callback(
-    Output("start-date", "min_date_allowed"),
+    Output("dates", "min_date_allowed"),
     Input("station-dropdown", "value"),
     State("mesonet-stations", "data"),
 )
@@ -441,7 +458,11 @@ def update_ul_card(at, station, tmp_data, stations):
         if tmp_data != -1:
             data = pd.read_json(tmp_data, orient="records")
             data = data.rename(columns=params.lab_swap)
-            data.datetime = data.datetime.dt.tz_convert("America/Denver")
+            data = data.assign(
+                datetime=pd.to_datetime(data["datetime"], utc=True).dt.tz_convert(
+                    "America/Denver"
+                )
+            )            
             start_date = data.datetime.min().date()
             end_date = data.datetime.max().date()
             data = data[["Wind Direction [deg]", "Wind Speed [mi/hr]"]]
