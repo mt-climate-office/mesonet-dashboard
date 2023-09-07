@@ -481,7 +481,7 @@ def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
     return sub
 
 
-def plot_station(stations, station=None):
+def plot_station(stations, station=None, zoom=4):
     stations = stations[["station", "long_name", "elevation", "latitude", "longitude"]]
     stations = stations.assign(
         url=stations["long_name"]
@@ -548,7 +548,7 @@ def plot_station(stations, station=None):
                 ],
             },
         ],
-        mapbox={"center": {"lon": -109.5, "lat": 47}, "zoom": 4},
+        mapbox={"center": {"lon": -109.5, "lat": 47}, "zoom": zoom},
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
         autosize=True,
         hoverlabel_align="right",
@@ -563,9 +563,9 @@ def plot_latest_ace_image(station, direction="N", dt=None):
     fig = go.Figure()
 
     # Constants
-    img_width = 2048
-    img_height = 1446
-    scale_factor = 0.22
+    img_width = 1920
+    img_height = 1080
+    scale_factor = 0.26
 
     # Add invisible scatter trace.
     # This trace is added to help the autoresize logic work.
@@ -608,7 +608,11 @@ def plot_latest_ace_image(station, direction="N", dt=None):
     )
 
     # Configure other layout
-    fig.update_layout(margin={"l": 0, "r": 0, "t": 0, "b": 0})
+    fig.update_layout(
+        width=img_width * scale_factor,
+        height=img_height * scale_factor,
+        margin={"l": 0, "r": 0, "t": 0, "b": 0},
+    )
 
     return fig
 

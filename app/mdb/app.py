@@ -10,7 +10,6 @@ import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
 import pandas as pd
 from dash import Dash, Input, Output, State, ctx, dash_table, dcc, html
-from dateutil.relativedelta import relativedelta as rd
 
 from mdb import layout as lay
 from mdb.utils import get_data as get
@@ -82,6 +81,7 @@ def update_banner_text(station: str, tab: str, stations) -> str:
 
 @app.callback(
     Output("bl-content", "children"),
+    Output("bl-tabs", "active_tab"),
     [
         Input("bl-tabs", "active_tab"),
         Input("station-dropdown", "value"),
@@ -104,13 +104,18 @@ def update_br_card(
     """
     stations = pd.read_json(stations, orient="records")
 
-    if at == "map-tab":
-        station_fig = plt.plot_station(stations, station=station)
-        return dcc.Graph(id="station-fig", figure=station_fig)
-    elif at == "meta-tab":
-        table = tab.make_metadata_table(stations, station)
-        return dash_table.DataTable(data=table, **lay.TABLE_STYLING)
+    if station == '' and at == "data-tab":
+        at = "map-tab"
+        switch_to_current = False
+    else:
+        switch_to_current = ctx.triggered_id == "station-dropdown"
 
+    if at == "map-tab" and not switch_to_current:
+        station_fig = plt.plot_station(stations, station=station)
+        return dcc.Graph(id="station-fig", figure=station_fig), "map-tab"
+    elif at == "meta-tab" and not switch_to_current:
+        table = tab.make_metadata_table(stations, station)
+        return dash_table.DataTable(data=table, **lay.TABLE_STYLING), "meta-tab"
     else:
         network = stations[stations["station"] == station]["sub_network"].values[0]
 
@@ -145,9 +150,9 @@ def update_br_card(
                         className="h-50",
                     )
                 )
-            out = dbc.Col(out, align="center")
+            out = dbc.Col(out, align="center"), "data-tab"
             return out
-        return dcc.Graph(figure=plt.make_nodata_figure())
+        return dcc.Graph(figure=plt.make_nodata_figure()),"meta-tab"
 
 
 @app.callback(
@@ -417,8 +422,10 @@ def enable_photo_tab(station, stations):
         dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
     ]
     stations = pd.read_json(stations, orient="records")
-    network = stations[stations["station"] == station]["sub_network"].values[0]
-
+    try:
+        network = stations[stations["station"] == station]["sub_network"].values[0]
+    except IndexError:
+        return tabs
     if station and network == "HydroMet":
         tabs.append(dbc.Tab(label="Photos", tab_id="photo-tab"))
 
@@ -432,8 +439,10 @@ def enable_photo_tab(station, stations):
 )
 def select_default_tab(station, stations):
     stations = pd.read_json(stations, orient="records")
-    network = stations[stations["station"] == station]["sub_network"].values[0]
-
+    try:
+        network = stations[stations["station"] == station]["sub_network"].values[0]
+    except IndexError:
+        return "wind-tab"
     return "photo-tab" if station and network == "HydroMet" else "wind-tab"
 
 
@@ -584,7 +593,7 @@ def update_ul_card(at, station, tmp_data, stations):
                 ),
                 html.Div(
                     dcc.Graph(
-                        id="photo-figure", style={"height": "34vh", "width": "30vw"}
+                        id="photo-figure", # style={"height": "34vh", "width": "30vw"}
                     )
                 ),
             ]
@@ -666,6 +675,9 @@ def toggle_main_tab(sel, stations):
         return lay.build_latest_content(station_fig=station_fig, stations=stations)
     elif sel == "satellite-tab":
         return lay.build_satellite_content(stations)
+    elif sel == "download-tab":
+        station_fig = plt.plot_station(stations, zoom=5)
+        return lay.build_downloader_content(station_fig, stations)
     else:
         station_fig = plt.plot_station(stations)
         return lay.build_latest_content(station_fig=station_fig, stations=stations)

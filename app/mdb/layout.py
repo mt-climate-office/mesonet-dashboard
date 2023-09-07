@@ -157,15 +157,15 @@ def build_banner(app_ref):
                 ),
                 html.Div(
                     [
-                        dbc.Button(
-                            "MESONET DOWNLOADER",
-                            href="https://shiny.cfc.umt.edu/mesonet-download/",
-                            size="lg",
-                            n_clicks=0,
-                            id="shiny-download-button",
-                            className="me-md-2",
-                            target="_blank",
-                        ),
+                        # dbc.Button(
+                        #     "MESONET DOWNLOADER",
+                        #     href="https://shiny.cfc.umt.edu/mesonet-download/",
+                        #     size="lg",
+                        #     n_clicks=0,
+                        #     id="shiny-download-button",
+                        #     className="me-md-2",
+                        #     target="_blank",
+                        # ),
                         dbc.Button(
                             "GIVE FEEDBACK",
                             href="#",
@@ -266,6 +266,9 @@ def make_station_dropdowns(stations, id, station):
     )
 
 
+def make_elements_selector():
+    pass
+
 def build_dropdowns(stations):
     checklist_input = dbc.InputGroup(
         dbc.InputGroupText(
@@ -287,7 +290,7 @@ def build_dropdowns(stations):
                 [
                     dbc.Col(
                         make_station_dropdowns(stations, "station-dropdown", None),
-                        xs=12, sm=12, md=6, lg=4, xl=3,  # Adjust column width
+                        width="auto"
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -303,11 +306,10 @@ def build_dropdowns(stations):
                                 )
                             ]
                         ),
-                        xs=12, sm=12, md=12, lg=8, xl=6,  # Adjust column width
+                        width="auto"
                     ),
                     dbc.Col(
                         dbc.InputGroup([
-
                             dbc.Button(
                                 "Download Data",
                                 href="#",
@@ -316,16 +318,22 @@ def build_dropdowns(stations):
                                 id="download-button",
                                 className="me-md-2",
                             ),
+                            dbc.Tooltip(
+                                """Download the data seen in the plots. For a more detailed interface to download data,
+                                please click on the 'Data Downloader' tab.
+                                """,
+                                target="download-button"
+                            ),
                             dcc.Download(id="data-download"),
                         ],
                         className="justify-content-end", 
                         ),
-                        xs=12, sm=12, md=6, lg=4, xl=3,  # Adjust column width
+                        width="auto",
                         align="center",  # Center the button
                     ),
                 ],
                 style={"padding": "0.5rem"},  # Add some padding to the row
-                justify="center",
+                justify="around",
             ),
             # html.Br(),
             dbc.Row(
@@ -351,7 +359,7 @@ def build_dropdowns(stations):
                                 ),
                             ]
                         ),
-                        xs=12, sm=12, md=6, lg=4, xl=3,  # Adjust column width
+                        width="auto",  # Adjust column width
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -369,7 +377,7 @@ def build_dropdowns(stations):
                                 ),
                             ]
                         ),
-                        xs=12, sm=12, md=6, lg=4, xl=3,  # Adjust column width
+                        width='auto',  # Adjust column width
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -397,16 +405,16 @@ def build_dropdowns(stations):
                                 ),
                             ]
                         ),
-                        xs=12, sm=12, md=6, lg=4, xl=3,  # Adjust column width
+                        width='auto'
                     ),
                 ],
                 style={"padding": "0.5rem"},  # Add some padding to the row
-                justify="center",
+                justify="around",
             ),
             dbc.Row(
-                [dbc.Col(checklist_input, xs=12, sm=12, md=12, lg=12, xl=12)],
+                [dbc.Col(checklist_input, width='auto')],
                 style={"padding": "0.5rem"},  # Add some padding to the row
-                justify="center",
+                justify="around",
             ),
         ],
         style={"padding": "0rem"},  # Adjust overall padding
@@ -480,6 +488,36 @@ def build_latest_content(station_fig, stations):
             lg={"size": 8, "order": "first", "offset": 0},
             xl={"size": 8, "order": "first", "offset": 0},
             style={"padding": "0rem 0.5rem 0rem 0rem"},
+        ),
+    ]
+
+def build_downloader_content(station_fig, stations):
+    station_dd = make_station_dropdowns(
+        stations, 
+        "station-dropdown-dl", 
+        stations['station'].values[0]
+    )
+    # station, variable(s) Aggregation Interval, Start Date, End Date
+    return [
+        dbc.Row([
+            dbc.Col(
+            dbc.Card(
+                "Selectors"
+            )),
+            dbc.Col(
+            dbc.Card(
+                        html.Div(
+                dbc.CardBody(
+                    id="bl-content",
+                    children=dcc.Graph(id="download-map", figure=station_fig),
+                    className="card-text",
+                ),
+                # style={"overflow": "scroll"},
+            )),
+            )
+        ]),
+        dbc.Row(
+            html.Div("Some stuff")
         ),
     ]
 
@@ -720,6 +758,21 @@ def app_layout(app_ref, stations):
                         style=dict(
                             borderLeft="1px black solid",
                             borderRight="0px black solid",
+                            **TAB_STYLE
+                        ),
+                        selected_style=dict(
+                            borderLeft="1px black solid",
+                            borderRight="0.5px black solid",
+                            **SELECTED_STYLE
+                        ),
+                    ),
+                    dcc.Tab(
+                        label="Data Downloader",
+                        id="download-tab",
+                        value="download-tab",
+                        style=dict(
+                            borderLeft="0.5px black solid",
+                            borderRight="0.5px black solid",
                             **TAB_STYLE
                         ),
                         selected_style=dict(
