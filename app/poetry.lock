@@ -681,6 +681,18 @@ files = [
 dash = "*"
 
 [[package]]
+name = "dash-mantine-components"
+version = "0.12.1"
+description = "Plotly Dash Components based on Mantine"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "dash_mantine_components-0.12.1-py3-none-any.whl", hash = "sha256:2630bca31cb96d96fb2c4f986e639b9f92d6319aba8cba02f76da6c0d8f5ca48"},
+    {file = "dash_mantine_components-0.12.1.tar.gz", hash = "sha256:c3dcbfd89813a1539654b8d016eb953dc5f67aafe1a77d45b5ec9faa6f25d3e7"},
+]
+
+[[package]]
 name = "dash-table"
 version = "5.0.0"
 description = "Dash table"
@@ -2841,4 +2853,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "99cd197f159f53e11031c27245eb820a16d07d96fe2b924605195836ee1dbf32"
+content-hash = "a1c508848384dbd11c693d2e2bbcb41257fda7d61670906f23c2dd5aa99a1928"

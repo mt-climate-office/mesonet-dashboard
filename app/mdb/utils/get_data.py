@@ -146,12 +146,16 @@ def get_station_latest(station):
             35.74
             + (0.6215 * dat["Air Temperature [°F]"])
             - (35.75 * (dat["Wind Speed [mi/hr]"] ** 0.16))
-            + (0.4275 * dat["Air Temperature [°F]"] * (dat["Wind Speed [mi/hr]"] ** 0.16)),
+            + (
+                0.4275
+                * dat["Air Temperature [°F]"]
+                * (dat["Wind Speed [mi/hr]"] ** 0.16)
+            ),
             2,
         )
     except ValueError:
         pass
-    
+
     try:
         dat[
             "Wind Direction [deg]"

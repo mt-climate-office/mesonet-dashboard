@@ -107,6 +107,17 @@ class params:
         "Gust Speed @ 10 m [mi/hr]": "Gust Speed [mi/hr]",
     }
 
+    dist_swap = {
+        "-10 cm": "4 in",
+        "-100 cm": "40 in",
+        "-20 cm": "8 in",
+        "-5 cm": "2 in",
+        "-50 cm": "20 in",
+        "-91 cm": "36 in",
+        "10 m": "33 ft",
+        "2 m": "6.6 ft",
+    }
+
     elem_map = {
         "Precipitation": ["ppt"],
         "Reference ET": ["etr"],

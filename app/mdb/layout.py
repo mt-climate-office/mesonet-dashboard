@@ -2,6 +2,7 @@ import datetime as dt
 
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
+import dash_mantine_components as dmc
 from dash import dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
@@ -266,9 +267,6 @@ def make_station_dropdowns(stations, id, station):
     )
 
 
-def make_elements_selector():
-    pass
-
 def build_dropdowns(stations):
     checklist_input = dbc.InputGroup(
         dbc.InputGroupText(
@@ -290,14 +288,14 @@ def build_dropdowns(stations):
                 [
                     dbc.Col(
                         make_station_dropdowns(stations, "station-dropdown", None),
-                        width="auto"
+                        width="auto",
                     ),
                     dbc.Col(
                         dbc.InputGroup(
                             [
                                 dcc.DatePickerRange(
                                     id="dates",
-                                    month_format='MMMM Y',
+                                    month_format="MMMM Y",
                                     start_date=dt.date.today() - rd(days=14),
                                     end_date=dt.date.today(),
                                     clearable=False,
@@ -306,27 +304,28 @@ def build_dropdowns(stations):
                                 )
                             ]
                         ),
-                        width="auto"
+                        width="auto",
                     ),
                     dbc.Col(
-                        dbc.InputGroup([
-                            dbc.Button(
-                                "Download Data",
-                                href="#",
-                                size="lg",
-                                n_clicks=0,
-                                id="download-button",
-                                className="me-md-2",
-                            ),
-                            dbc.Tooltip(
-                                """Download the data seen in the plots. For a more detailed interface to download data,
+                        dbc.InputGroup(
+                            [
+                                dbc.Button(
+                                    "Download Data",
+                                    href="#",
+                                    size="lg",
+                                    n_clicks=0,
+                                    id="download-button",
+                                    className="me-md-2",
+                                ),
+                                dbc.Tooltip(
+                                    """Download the data seen in the plots. For a more detailed interface to download data,
                                 please click on the 'Data Downloader' tab.
                                 """,
-                                target="download-button"
-                            ),
-                            dcc.Download(id="data-download"),
-                        ],
-                        className="justify-content-end", 
+                                    target="download-button",
+                                ),
+                                dcc.Download(id="data-download"),
+                            ],
+                            className="justify-content-end",
                         ),
                         width="auto",
                         align="center",  # Center the button
@@ -377,7 +376,7 @@ def build_dropdowns(stations):
                                 ),
                             ]
                         ),
-                        width='auto',  # Adjust column width
+                        width="auto",  # Adjust column width
                     ),
                     dbc.Col(
                         dbc.InputGroup(
@@ -405,14 +404,14 @@ def build_dropdowns(stations):
                                 ),
                             ]
                         ),
-                        width='auto'
+                        width="auto",
                     ),
                 ],
                 style={"padding": "0.5rem"},  # Add some padding to the row
                 justify="around",
             ),
             dbc.Row(
-                [dbc.Col(checklist_input, width='auto')],
+                [dbc.Col(checklist_input, width="auto")],
                 style={"padding": "0.5rem"},  # Add some padding to the row
                 justify="around",
             ),
@@ -491,33 +490,84 @@ def build_latest_content(station_fig, stations):
         ),
     ]
 
-def build_downloader_content(station_fig, stations):
-    station_dd = make_station_dropdowns(
-        stations, 
-        "station-dropdown-dl", 
-        stations['station'].values[0]
+
+def build_downloader_content(station_fig, stations, elements, station=None):
+    station_dd = dmc.Select(
+        data=[
+            {"label": k, "value": v}
+            for k, v in zip(stations["long_name"], stations["station"])
+        ],
+        id="station-dropdown-dl",
+        placeholder="Select a Mesonet Station...",
+        value=station,
+        label="Select Station"
+        # style={"width": "150%"}
     )
+    element_dd = dmc.MultiSelect(
+        data=elements,
+        id="download-elements",
+        clearable=True,
+        value=None,
+        label="Select Variable(s)",
+        # style={"width": 400, "marginBottom": 10},
+    )
+
     # station, variable(s) Aggregation Interval, Start Date, End Date
     return [
-        dbc.Row([
-            dbc.Col(
-            dbc.Card(
-                "Selectors"
-            )),
-            dbc.Col(
-            dbc.Card(
-                        html.Div(
-                dbc.CardBody(
-                    id="bl-content",
-                    children=dcc.Graph(id="download-map", figure=station_fig),
-                    className="card-text",
+        dmc.Stack(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dmc.Stack(
+                                [
+                                    station_dd,
+                                    element_dd,
+                                    dmc.Switch(
+                                        size="md",
+                                        radius="xl",
+                                        label="Include all variables.",
+                                        checked=False,
+                                        disabled=False,
+                                    ),
+                                    dmc.SegmentedControl(
+                                        data=[
+                                            {"value": "daily", "label": "Daily"},
+                                            {"value": "hourly", "label": "Hourly"},
+                                            {"value": "raw", "label": "Raw"},
+                                        ],
+                                        id="download-timeperiod",
+                                        value="daily",
+                                    ),
+                                ],
+                                align="left",
+                                justify="center",
+                            )
+                        ),
+                        dbc.Col(
+                            dbc.Card(
+                                html.Div(
+                                    dbc.CardBody(
+                                        id="bl-content",
+                                        children=dcc.Graph(
+                                            id="download-map", figure=station_fig
+                                        ),
+                                        className="card-text",
+                                    ),
+                                    # style={"overflow": "scroll"},
+                                )
+                            ),
+                        ),
+                    ]
                 ),
-                # style={"overflow": "scroll"},
-            )),
-            )
-        ]),
-        dbc.Row(
-            html.Div("Some stuff")
+                dbc.Row(html.Div("Some stuff")),
+            ]
+        ),
+        dmc.Footer(
+            height=60,
+            fixed=True,
+            children=[dmc.Text("This project was funded by BLM grant XXX")],
+            style={"backgroundColor": "#9c86e2"},
         ),
     ]
 

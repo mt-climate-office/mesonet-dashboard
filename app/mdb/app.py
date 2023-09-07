@@ -104,7 +104,7 @@ def update_br_card(
     """
     stations = pd.read_json(stations, orient="records")
 
-    if station == '' and at == "data-tab":
+    if station == "" and at == "data-tab":
         at = "map-tab"
         switch_to_current = False
     else:
@@ -152,7 +152,7 @@ def update_br_card(
                 )
             out = dbc.Col(out, align="center"), "data-tab"
             return out
-        return dcc.Graph(figure=plt.make_nodata_figure()),"meta-tab"
+        return dcc.Graph(figure=plt.make_nodata_figure()), "meta-tab"
 
 
 @app.callback(
@@ -168,7 +168,9 @@ def update_br_card(
 def download_called_data(n_clicks, tmp_data, station, time, start, end):
     if n_clicks and tmp_data:
         data = pd.read_json(tmp_data, orient="records")
-        name = f"{station}_{time}_{start.replace('-', '')}_to_{end.replace('-', '')}.csv"
+        name = (
+            f"{station}_{time}_{start.replace('-', '')}_to_{end.replace('-', '')}.csv"
+        )
         return dcc.send_data_frame(data.to_csv, name)
 
 
@@ -471,7 +473,7 @@ def update_ul_card(at, station, tmp_data, stations):
                 datetime=pd.to_datetime(data["datetime"], utc=True).dt.tz_convert(
                     "America/Denver"
                 )
-            )            
+            )
             start_date = data.datetime.min().date()
             end_date = data.datetime.max().date()
             data = data[["Wind Direction [deg]", "Wind Speed [mi/hr]"]]
@@ -593,7 +595,7 @@ def update_ul_card(at, station, tmp_data, stations):
                 ),
                 html.Div(
                     dcc.Graph(
-                        id="photo-figure", # style={"height": "34vh", "width": "30vw"}
+                        id="photo-figure",  # style={"height": "34vh", "width": "30vw"}
                     )
                 ),
             ]
@@ -677,7 +679,21 @@ def toggle_main_tab(sel, stations):
         return lay.build_satellite_content(stations)
     elif sel == "download-tab":
         station_fig = plt.plot_station(stations, zoom=5)
-        return lay.build_downloader_content(station_fig, stations)
+        station = stations["station"].values[0]
+        station_elements = pd.read_csv(
+            f"https://mesonet.climate.umt.edu/api/v2/elements/{station}/?type=csv"
+        )
+        station_elements = station_elements.assign(
+            description_short=station_elements["description_short"].replace(
+                params.dist_swap, regex=True
+            )
+        )[["element", "description_short"]]
+        station_elements.columns = ["value", "label"]
+        station_elements = station_elements.sort_values("label")
+        station_elements = station_elements.to_dict(orient="records")
+        return lay.build_downloader_content(
+            station_fig, elements=station_elements, stations=stations, station=station
+        )
     else:
         station_fig = plt.plot_station(stations)
         return lay.build_latest_content(station_fig=station_fig, stations=stations)
