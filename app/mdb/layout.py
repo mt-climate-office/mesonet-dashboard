@@ -491,16 +491,20 @@ def build_latest_content(station_fig, stations):
     ]
 
 
-def build_downloader_content(station_fig, stations, elements, station=None, min_date=None):
+def build_downloader_content(
+    station_fig, stations, elements, station=None, min_date=None
+):
     station_dd = dmc.Select(
         data=[
             {"label": k, "value": v}
             for k, v in zip(stations["long_name"], stations["station"])
         ],
         id="station-dropdown-dl",
-        placeholder="Select a Mesonet Station...",
+        placeholder="Select a Mesonet Station from the Map or Dropdown...",
         value=station,
-        label="Select Station"
+        label="Select Station",
+        searchable=True,
+        clearable=True
         # style={"width": "150%"}
     )
     element_dd = dmc.MultiSelect(
@@ -523,70 +527,74 @@ def build_downloader_content(station_fig, stations, elements, station=None, min_
             [
                 dmc.Group(
                     [
-                            dmc.Stack(
-                                [
-                                    station_dd,
-                                    element_dd,
-                                    dmc.Group(
-                                        [
-                                            dmc.Switch(
-                                                size="md",
-                                                id="dl-public",
-                                                radius="xl",
-                                                label="Show Uncommon Variables",
-                                                checked=False,
-                                                disabled=False,
-                                            ),
-                                            dmc.Stack(
-                                                [
-                                                    dmc.Text(
-                                                        "Time Aggregation",
-                                                        size="sm",
-                                                        weight=500,
-                                                    ),
-                                                    dmc.ChipGroup(
-                                                        [
-                                                            dmc.Chip(
-                                                                x["label"],
-                                                                value=x["value"],
-                                                            )
-                                                            for x in times
-                                                        ],
-                                                        id="dl-timeperiod",
-                                                        value="daily",
-                                                    ),
-                                                ],
-                                                justify="center",
-                                            ),
-                                        ],
-                                        position="center",
-                                        grow=True,
-                                    ),
-                                    dmc.Group(
-                                        [
-                                            dmc.DatePicker(
-                                                id="dl-start",
-                                                label="Start Date",
-                                                minDate=min_date,
-                                                maxDate=dt.date.today(),
-                                                value=min_date
-                                            ),
-                                            dmc.DatePicker(
-                                                id="dl-end",
-                                                label="End Date",
-                                                minDate=min_date,
-                                                maxDate=dt.date.today(),
-                                                value=dt.date.today()
-                                            )
-                                        ],
-                                        position='center',
-                                        grow=True,
-                                    ),
-                                    dbc.Button("Run Request", id="run-dl-request"),#, variant="gradient"),
-                                    dcc.Download(id="downloader-data"),
-                                ],
-                                align="left",
-                                justify="center",
+                        dmc.Stack(
+                            [
+                                station_dd,
+                                element_dd,
+                                dmc.Group(
+                                    [
+                                        dmc.Switch(
+                                            size="md",
+                                            id="dl-public",
+                                            radius="xl",
+                                            label="Show Uncommon Variables",
+                                            checked=False,
+                                            disabled=False,
+                                        ),
+                                        dmc.Stack(
+                                            [
+                                                dmc.Text(
+                                                    "Time Aggregation",
+                                                    size="sm",
+                                                    weight=500,
+                                                ),
+                                                dmc.ChipGroup(
+                                                    [
+                                                        dmc.Chip(
+                                                            x["label"],
+                                                            value=x["value"],
+                                                        )
+                                                        for x in times
+                                                    ],
+                                                    id="dl-timeperiod",
+                                                    value="daily",
+                                                ),
+                                            ],
+                                            justify="center",
+                                        ),
+                                    ],
+                                    position="center",
+                                    grow=True,
+                                ),
+                                dmc.Group(
+                                    [
+                                        dmc.DatePicker(
+                                            id="dl-start",
+                                            label="Start Date",
+                                            minDate=min_date,
+                                            maxDate=dt.date.today(),
+                                            value=min_date,
+                                        ),
+                                        dmc.DatePicker(
+                                            id="dl-end",
+                                            label="End Date",
+                                            minDate=min_date,
+                                            maxDate=dt.date.today(),
+                                            value=dt.date.today(),
+                                        ),
+                                    ],
+                                    position="center",
+                                    grow=True,
+                                ),
+                                dmc.Button(
+                                    "Run Request",
+                                    id="run-dl-request",
+                                    variant="gradient",
+                                ),
+                                dcc.Download(id="downloader-data"),
+                            ],
+                            align="left",
+                            justify="center",
                         ),
                         dbc.Col(
                             dbc.Card(
@@ -605,18 +613,32 @@ def build_downloader_content(station_fig, stations, elements, station=None, min_
                     ],
                     grow=True,
                 ),
-                dbc.Row(html.Div("Some stuff")),
+                dmc.Stack(
+                    [
+                        html.Div(
+                            children=[
+                                dcc.Store("dl-data", storage_type="memory"),
+                                dmc.Stack(
+                                    id="dl-plots", align="strech", justify="center"
+                                ),
+                            ]
+                        )
+                    ],
+                    align="strech",
+                    justify="center",
+                ),
             ]
         ),
         dmc.Footer(
-            height=60,
+            height=40,
             fixed=True,
             children=[
                 dmc.Text(
-                    "Supported by Bureau of Land Management (RM-CESU Award L16AC00359)"
+                    "Supported by Bureau of Land Management (RM-CESU Award L16AC00359)",
+                    weight=800,
                 )
             ],
-            style={"backgroundColor": "#0B5ED7"},
+            style={"backgroundColor": "#129dff"},
         ),
     ]
 

@@ -9,7 +9,18 @@ from urllib.error import HTTPError
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
 import pandas as pd
-from dash import Dash, Input, Output, State, ctx, dash_table, dcc, html
+from dash import (
+    Dash,
+    Input,
+    Output,
+    State,
+    clientside_callback,
+    ctx,
+    dash_table,
+    dcc,
+    html,
+    no_update,
+)
 
 from mdb import layout as lay
 from mdb.utils import get_data as get
@@ -299,39 +310,6 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
 
     out = tmp.merge(out, on=["station", "datetime"])
     return out.to_json(date_format="iso", orient="records")
-
-
-# @app.callback(Output("start-date", "disabled"), Input("station-dropdown", "value"))
-# def enable_start_date(station):
-#     return station is None
-
-
-# @app.callback(Output("end-date", "disabled"), Input("station-dropdown", "value"))
-# def enable_end_date(station):
-#     return station is None
-
-
-# @app.callback(Output("end-date", "max_date_allowed"), [Input("start-date", "date")])
-# def adjust_end_date_max(value):
-#     d = dt.datetime.strptime(value, "%Y-%m-%d").date()
-#     return d + rd(weeks=2)
-
-
-# @app.callback(Output("end-date", "date"), [Input("start-date", "date")])
-# def adjust_end_date_select(value):
-#     d = dt.datetime.strptime(value, "%Y-%m-%d").date()
-#     return d + rd(weeks=2)
-
-
-# @app.callback(Output("dates", "start_date"), Input("station-dropdown", "value"))
-# def reset_start_date(value):
-#     return dt.date.today() - rd(weeks=2)
-
-
-# @app.callback(Output("dates", "max_date_allowed"), [Input("start-date", "date")])
-# def adjust_end_date_min(value):
-#     d = dt.datetime.strptime(value, "%Y-%m-%d").date()
-#     return d
 
 
 @app.callback(
@@ -885,17 +863,19 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
 @app.callback(
     Output("download-elements", "data"),
     Input("station-dropdown-dl", "value"),
-    Input("dl-public", "checked")
+    Input("dl-public", "checked"),
 )
 def update_downloader_elements(station, public):
+    if station is None:
+        return []
     return get.get_station_elements(station, public)
 
+
 @app.callback(
-    Output("download-elements", "value"),
-    Input("station-dropdown-dl", "value")
+    Output("download-elements", "value"), Input("station-dropdown-dl", "value")
 )
 def reset_selected_elements(station):
-    return None
+    return []
 
 
 @app.callback(
@@ -906,24 +886,40 @@ def reset_selected_elements(station):
     State("mesonet-stations", "data"),
 )
 def set_downloader_start_date(station, stations):
+    if station is None:
+        return no_update, no_update, no_update
     stations = pd.read_json(stations, orient="records")
-    start = stations[stations['station'] == station]['date_installed'].values[0]
+    start = stations[stations["station"] == station]["date_installed"].values[0]
     return start, start, start
+
+
+clientside_callback(
+    """
+    function updateLoadingState(n_clicks) {
+        return true
+    }
+    """,
+    Output("run-dl-request", "loading", allow_duplicate=True),
+    Input("run-dl-request", "n_clicks"),
+    prevent_initial_call=True,
+)
 
 
 @app.callback(
     Output("downloader-data", "data"),
+    Output("dl-data", "data"),
+    Output("run-dl-request", "loading"),
     Input("run-dl-request", "n_clicks"),
     State("station-dropdown-dl", "value"),
     State("download-elements", "value"),
     State("dl-start", "value"),
     State("dl-end", "value"),
     State("dl-timeperiod", "value"),
-    prevent_initial_callback=True,
+    prevent_initial_call=True,
 )
 def downloader_data(n_clicks, station, elements, start, end, period):
-    if start is None:
-        return
+    if start is None or station is None:
+        return no_update, no_update, no_update
     start = dt.datetime.strptime(start, "%Y-%m-%d").date()
     end = dt.datetime.strptime(end, "%Y-%m-%d").date()
     if n_clicks:
@@ -935,11 +931,56 @@ def downloader_data(n_clicks, station, elements, start, end, period):
             ",".join(elements),
             has_etr=False,
             na_info=True,
+            public=False,
         )
-        name = (
-            f"{station}_{period}_{str(start).replace('-', '')}_to_{str(end).replace('-', '')}.csv"
+        name = f"{station}_{period}_{str(start).replace('-', '')}_to_{str(end).replace('-', '')}.csv"
+        data = data.rename(columns={"has_na": "Contains Missing Data"})
+        if "bp_logger_0244" not in elements:
+            try:
+                data = data.drop(columns=["Logger Reference Pressure [mbar]"])
+            except KeyError:
+                pass
+        return (
+            dcc.send_data_frame(data.to_csv, name),
+            data.to_json(date_format="iso", orient="records"),
+            False,
         )
-        data = data.rename(columns={"na_info": "Contains Missing Data"})
-        return dcc.send_data_frame(data.to_csv, name)
+
+
+@app.callback(
+    Output("station-dropdown-dl", "value"),
+    Input("download-map", "clickData"),
+)
+def select_station_from_map(clickData):
+    if clickData:
+        lat, lon, name, elevation, href, station, color = clickData["points"][0][
+            "customdata"
+        ]
+        station = station.split(",")[0]
+        return station
+
+
+@app.callback(
+    Output("dl-plots", "children"),
+    Input("dl-data", "data"),
+)
+def plot_downloaded_data(data):
+    if data is None:
+        return no_update
+
+    rm_cols = ["station", "datetime", "Contains Missing Data"]
+
+    data = pd.read_json(data, orient="records")
+    use_cols = [x for x in data.columns if x not in rm_cols]
+    out = []
+    for col in use_cols:
+        tmp = data[["datetime", col]]
+        tmp_plot = dcc.Graph(figure=plt.make_single_plot(tmp))
+
+        out.append(tmp_plot)
+
+    return out
+
+
 if __name__ == "__main__":
     app.run_server(debug=True)

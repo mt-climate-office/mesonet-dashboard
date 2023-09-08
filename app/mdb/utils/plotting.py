@@ -501,9 +501,11 @@ def plot_station(stations, station=None, zoom=4):
     ).reset_index()
 
     stations["color"] = np.where(
-        stations["long_name"].str.contains(",<br>"), "#FB7A7A", "#7A7AFB"
+        stations["long_name"].str.contains("AgriMet"), "#00cc96", "#7A7AFB"
     )
-
+    stations["color"] = np.where(
+        stations["long_name"].str.contains(",<br>"), "#FB7A7A", stations["color"]
+    )
     if station:
         stations = stations.assign(
             color=np.where(
@@ -642,3 +644,11 @@ def make_nodata_figure(txt="No data avaliable for selected dates."):
         height=500,
     )
     return fig
+
+
+def make_single_plot(dat):
+    x, y = dat.columns
+    fig = px.line(dat, x=x, y=y, markers=False)
+    fig = fig.update_traces(line_color="black", connectgaps=False)
+    fig.update_layout(xaxis_title=None)
+    return style_figure(fig)
