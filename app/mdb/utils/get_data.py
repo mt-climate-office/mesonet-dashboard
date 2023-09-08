@@ -52,6 +52,7 @@ def get_station_record(
     hourly: Optional[str] = "hourly",
     e: Optional[str] = None,
     has_etr: Optional[bool] = True,
+    na_info: Optional[bool] = False,
 ) -> pd.DataFrame:
     """Given a Mesonet station name and date range, return a dataframe of climate data.
 
@@ -74,6 +75,7 @@ def get_station_record(
         "type": "csv",
         "rm_na": True,
         "premade": True,
+        "na_info": na_info
     }
 
     if end_time:
@@ -281,3 +283,17 @@ def get_sat_compare_data(
     station_data = summarise_station_to_daily(station_data, colname)
 
     return station_data, sat_data
+
+def get_station_elements(station, public=False):
+    station_elements = pd.read_csv(
+        f"{params.API_URL}elements/{station}/?type=csv&public={not public}"
+    )
+    station_elements = station_elements.assign(
+        description_short=station_elements["description_short"].replace(
+            params.dist_swap, regex=True
+        )
+    )[["element", "description_short"]]
+    station_elements.columns = ["value", "label"]
+    station_elements = station_elements.sort_values("label")
+    station_elements = station_elements.to_dict(orient="records")
+    return station_elements

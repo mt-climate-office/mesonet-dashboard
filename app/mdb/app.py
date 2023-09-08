@@ -680,17 +680,7 @@ def toggle_main_tab(sel, stations):
     elif sel == "download-tab":
         station_fig = plt.plot_station(stations, zoom=5)
         station = stations["station"].values[0]
-        station_elements = pd.read_csv(
-            f"https://mesonet.climate.umt.edu/api/v2/elements/{station}/?type=csv"
-        )
-        station_elements = station_elements.assign(
-            description_short=station_elements["description_short"].replace(
-                params.dist_swap, regex=True
-            )
-        )[["element", "description_short"]]
-        station_elements.columns = ["value", "label"]
-        station_elements = station_elements.sort_values("label")
-        station_elements = station_elements.to_dict(orient="records")
+        station_elements = get.get_station_elements(station)
         return lay.build_downloader_content(
             station_fig, elements=station_elements, stations=stations, station=station
         )
@@ -892,5 +882,64 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
     return plt_sat.plot_comparison(dat_x, dat_y, platform_x == "station")
 
 
+@app.callback(
+    Output("download-elements", "data"),
+    Input("station-dropdown-dl", "value"),
+    Input("dl-public", "checked")
+)
+def update_downloader_elements(station, public):
+    return get.get_station_elements(station, public)
+
+@app.callback(
+    Output("download-elements", "value"),
+    Input("station-dropdown-dl", "value")
+)
+def reset_selected_elements(station):
+    return None
+
+
+@app.callback(
+    Output("dl-start", "value"),
+    Output("dl-start", "minDate"),
+    Output("dl-end", "minDate"),
+    Input("station-dropdown-dl", "value"),
+    State("mesonet-stations", "data"),
+)
+def set_downloader_start_date(station, stations):
+    stations = pd.read_json(stations, orient="records")
+    start = stations[stations['station'] == station]['date_installed'].values[0]
+    return start, start, start
+
+
+@app.callback(
+    Output("downloader-data", "data"),
+    Input("run-dl-request", "n_clicks"),
+    State("station-dropdown-dl", "value"),
+    State("download-elements", "value"),
+    State("dl-start", "value"),
+    State("dl-end", "value"),
+    State("dl-timeperiod", "value"),
+    prevent_initial_callback=True,
+)
+def downloader_data(n_clicks, station, elements, start, end, period):
+    if start is None:
+        return
+    start = dt.datetime.strptime(start, "%Y-%m-%d").date()
+    end = dt.datetime.strptime(end, "%Y-%m-%d").date()
+    if n_clicks:
+        data = get.get_station_record(
+            station,
+            start,
+            end,
+            period,
+            ",".join(elements),
+            has_etr=False,
+            na_info=True,
+        )
+        name = (
+            f"{station}_{period}_{str(start).replace('-', '')}_to_{str(end).replace('-', '')}.csv"
+        )
+        data = data.rename(columns={"na_info": "Contains Missing Data"})
+        return dcc.send_data_frame(data.to_csv, name)
 if __name__ == "__main__":
     app.run_server(debug=True)

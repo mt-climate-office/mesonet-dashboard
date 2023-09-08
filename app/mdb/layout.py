@@ -491,7 +491,7 @@ def build_latest_content(station_fig, stations):
     ]
 
 
-def build_downloader_content(station_fig, stations, elements, station=None):
+def build_downloader_content(station_fig, stations, elements, station=None, min_date=None):
     station_dd = dmc.Select(
         data=[
             {"label": k, "value": v}
@@ -509,40 +509,84 @@ def build_downloader_content(station_fig, stations, elements, station=None):
         clearable=True,
         value=None,
         label="Select Variable(s)",
+        searchable=True
         # style={"width": 400, "marginBottom": 10},
     )
-
+    times = [
+        {"value": "daily", "label": "Daily"},
+        {"value": "hourly", "label": "Hourly"},
+        {"value": "raw", "label": "Raw"},
+    ]
     # station, variable(s) Aggregation Interval, Start Date, End Date
     return [
         dmc.Stack(
             [
-                dbc.Row(
+                dmc.Group(
                     [
-                        dbc.Col(
                             dmc.Stack(
                                 [
                                     station_dd,
                                     element_dd,
-                                    dmc.Switch(
-                                        size="md",
-                                        radius="xl",
-                                        label="Include all variables.",
-                                        checked=False,
-                                        disabled=False,
-                                    ),
-                                    dmc.SegmentedControl(
-                                        data=[
-                                            {"value": "daily", "label": "Daily"},
-                                            {"value": "hourly", "label": "Hourly"},
-                                            {"value": "raw", "label": "Raw"},
+                                    dmc.Group(
+                                        [
+                                            dmc.Switch(
+                                                size="md",
+                                                id="dl-public",
+                                                radius="xl",
+                                                label="Show Uncommon Variables",
+                                                checked=False,
+                                                disabled=False,
+                                            ),
+                                            dmc.Stack(
+                                                [
+                                                    dmc.Text(
+                                                        "Time Aggregation",
+                                                        size="sm",
+                                                        weight=500,
+                                                    ),
+                                                    dmc.ChipGroup(
+                                                        [
+                                                            dmc.Chip(
+                                                                x["label"],
+                                                                value=x["value"],
+                                                            )
+                                                            for x in times
+                                                        ],
+                                                        id="dl-timeperiod",
+                                                        value="daily",
+                                                    ),
+                                                ],
+                                                justify="center",
+                                            ),
                                         ],
-                                        id="download-timeperiod",
-                                        value="daily",
+                                        position="center",
+                                        grow=True,
                                     ),
+                                    dmc.Group(
+                                        [
+                                            dmc.DatePicker(
+                                                id="dl-start",
+                                                label="Start Date",
+                                                minDate=min_date,
+                                                maxDate=dt.date.today(),
+                                                value=min_date
+                                            ),
+                                            dmc.DatePicker(
+                                                id="dl-end",
+                                                label="End Date",
+                                                minDate=min_date,
+                                                maxDate=dt.date.today(),
+                                                value=dt.date.today()
+                                            )
+                                        ],
+                                        position='center',
+                                        grow=True,
+                                    ),
+                                    dbc.Button("Run Request", id="run-dl-request"),#, variant="gradient"),
+                                    dcc.Download(id="downloader-data"),
                                 ],
                                 align="left",
                                 justify="center",
-                            )
                         ),
                         dbc.Col(
                             dbc.Card(
@@ -558,7 +602,8 @@ def build_downloader_content(station_fig, stations, elements, station=None):
                                 )
                             ),
                         ),
-                    ]
+                    ],
+                    grow=True,
                 ),
                 dbc.Row(html.Div("Some stuff")),
             ]
@@ -566,8 +611,12 @@ def build_downloader_content(station_fig, stations, elements, station=None):
         dmc.Footer(
             height=60,
             fixed=True,
-            children=[dmc.Text("This project was funded by BLM grant XXX")],
-            style={"backgroundColor": "#9c86e2"},
+            children=[
+                dmc.Text(
+                    "Supported by Bureau of Land Management (RM-CESU Award L16AC00359)"
+                )
+            ],
+            style={"backgroundColor": "#0B5ED7"},
         ),
     ]
 
