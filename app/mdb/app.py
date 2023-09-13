@@ -865,7 +865,7 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
     Output("download-elements", "value"),
     Input("station-dropdown-dl", "value"),
     Input("dl-public", "checked"),
-    State("download-elements", "value")
+    State("download-elements", "value"),
 )
 def update_downloader_elements(station, public, elements):
     if station is None:
@@ -874,8 +874,8 @@ def update_downloader_elements(station, public, elements):
     elems_out = get.get_station_elements(station, public)
     if not elements:
         return elems_out, []
-    
-    poss_elems = [x['value'] for x in elems_out]
+
+    poss_elems = [x["value"] for x in elems_out]
     elements = [x for x in elements if x in poss_elems]
     return elems_out, elements
 
@@ -908,9 +908,9 @@ clientside_callback(
 
 
 @app.callback(
-    Output("downloader-data", "data"),
     Output("dl-data", "data"),
     Output("run-dl-request", "loading"),
+    Output("dl-alert", "hide", allow_duplicate=True),
     Input("run-dl-request", "n_clicks"),
     State("station-dropdown-dl", "value"),
     State("download-elements", "value"),
@@ -920,8 +920,11 @@ clientside_callback(
     prevent_initial_call=True,
 )
 def downloader_data(n_clicks, station, elements, start, end, period):
+    if n_clicks and (not station or not elements):
+        return no_update, False, False
     if start is None or station is None:
-        return no_update, no_update, no_update
+        return no_update, no_update, True
+
     start = dt.datetime.strptime(start, "%Y-%m-%d").date()
     end = dt.datetime.strptime(end, "%Y-%m-%d").date()
     if n_clicks:
@@ -935,7 +938,6 @@ def downloader_data(n_clicks, station, elements, start, end, period):
             na_info=True,
             public=False,
         )
-        name = f"{station}_{period}_{str(start).replace('-', '')}_to_{str(end).replace('-', '')}.csv"
         data = data.rename(columns={"has_na": "Contains Missing Data"})
         if "bp_logger_0244" not in elements:
             try:
@@ -943,10 +945,54 @@ def downloader_data(n_clicks, station, elements, start, end, period):
             except KeyError:
                 pass
         return (
-            dcc.send_data_frame(data.to_csv, name),
             data.to_json(date_format="iso", orient="records"),
             False,
+            True,
         )
+
+
+clientside_callback(
+    """
+    function updateLoadingState(n_clicks) {
+        return true
+    }
+    """,
+    Output("dl-data-button", "loading", allow_duplicate=True),
+    Input("dl-data-button", "n_clicks"),
+    prevent_initial_call=True,
+)
+
+
+@app.callback(
+    Output("downloader-data", "data"),
+    Output("dl-alert", "hide", allow_duplicate=True),
+    Output("dl-data-button", "loading"),
+    Input("dl-data-button", "n_clicks"),
+    State("dl-data", "data"),
+    State("station-dropdown-dl", "value"),
+    State("dl-start", "value"),
+    State("dl-end", "value"),
+    State("dl-timeperiod", "value"),
+    prevent_initial_call=True,
+)
+def download_data(n_clicks, data, station, start, end, period):
+    if n_clicks and not data:
+        return no_update, False, False
+    if n_clicks:
+        data = pd.read_json(data, orient="records")
+        name = f"{station}_{period}_{str(start).replace('-', '')}_to_{str(end).replace('-', '')}.csv"
+        return dcc.send_data_frame(data.to_csv, name), True, False
+
+
+@app.callback(
+    Output("dl-alert", "children"),
+    Input("dl-data-button", "n_clicks"),
+    Input("run-dl-request", "n_clicks"),
+)
+def change_alert_text(dl_button, req_button):
+    if ctx.triggered_id == "dl-data-button":
+        return "Please 'Run Request' before attempting to download."
+    return "Please select a station and variable first!"
 
 
 @app.callback(

@@ -586,10 +586,29 @@ def build_downloader_content(
                                     position="center",
                                     grow=True,
                                 ),
-                                dmc.Button(
-                                    "Run Request",
-                                    id="run-dl-request",
-                                    variant="gradient",
+                                dmc.Group(
+                                    [
+                                        dmc.Button(
+                                            "Run Request",
+                                            id="run-dl-request",
+                                            variant="gradient",
+                                        ),
+                                        dmc.Button(
+                                            "Download Data",
+                                            id="dl-data-button",
+                                            variant="gradient",
+                                        ),
+                                        dmc.Alert(
+                                            "Please select a station and variable first!",
+                                            color="red",
+                                            withCloseButton=True,
+                                            variant="filled",
+                                            id="dl-alert",
+                                            hide=True,
+                                        ),
+                                    ],
+                                    position="center",
+                                    grow=True,
                                 ),
                                 dcc.Download(id="downloader-data"),
                             ],
