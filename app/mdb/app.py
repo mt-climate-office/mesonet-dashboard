@@ -862,20 +862,22 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
 
 @app.callback(
     Output("download-elements", "data"),
+    Output("download-elements", "value"),
     Input("station-dropdown-dl", "value"),
     Input("dl-public", "checked"),
+    State("download-elements", "value")
 )
-def update_downloader_elements(station, public):
+def update_downloader_elements(station, public, elements):
     if station is None:
-        return []
-    return get.get_station_elements(station, public)
+        return [], []
 
-
-@app.callback(
-    Output("download-elements", "value"), Input("station-dropdown-dl", "value")
-)
-def reset_selected_elements(station):
-    return []
+    elems_out = get.get_station_elements(station, public)
+    if not elements:
+        return elems_out, []
+    
+    poss_elems = [x['value'] for x in elems_out]
+    elements = [x for x in elements if x in poss_elems]
+    return elems_out, elements
 
 
 @app.callback(
