@@ -7,9 +7,11 @@ RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python
     ln -s /opt/poetry/bin/poetry && \
     poetry config virtualenvs.create false
 
-COPY ./app /app
+COPY ./app/pyproject.toml ./app/poetry.lock* /app/
 WORKDIR /app
-RUN rm -rf ./.venv
 RUN poetry install --no-root --no-dev
+
+COPY ./app /app
+RUN rm -rf ./.venv
 
 CMD gunicorn -b 0.0.0.0:80 --workers 10 --threads 10 mdb.app:server
