@@ -349,8 +349,11 @@ def get_soil_legend_loc(dat):
         ecmax = max(dat.iloc[:, dat.columns.str.contains("Bulk EC")].max(axis=0))
     except ValueError:
         ecmax = None
-    d = dat.datetime.max()
-    d = [d - rd(hours=24 * i) for i in range(6)]
+    
+    # We want dates to range ~35% of the x axiss
+    dmax, dmin = dat.datetime.max(), dat.datetime.min()
+    delta = ((dmax - dmin)*0.35)/5
+    d = [dmax - (delta * i) for i in range(6)]
 
     return {"Soil Temperature": tmax, "Soil VWC": vmax, "Bulk EC": ecmax, "d": d}
 
