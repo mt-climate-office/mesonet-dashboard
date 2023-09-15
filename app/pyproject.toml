@@ -22,6 +22,7 @@ dash-loading-spinners = "^1.0.0"
 neo4j-driver = "^4.4.5"
 importlib-resources = "^5.9.0"
 scipy = "^1.9.1"
+dash-mantine-components = "^0.12.1"
 
 [tool.poetry.dev-dependencies]
 ipykernel = "^6.7.0"

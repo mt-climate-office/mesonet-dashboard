@@ -350,8 +350,11 @@ def get_soil_legend_loc(dat):
         ecmax = max(dat.iloc[:, dat.columns.str.contains("Bulk EC")].max(axis=0))
     except ValueError:
         ecmax = None
-    d = dat.datetime.max()
-    d = [d - rd(hours=24 * i) for i in range(6)]
+    
+    # We want dates to range ~35% of the x axiss
+    dmax, dmin = dat.datetime.max(), dat.datetime.min()
+    delta = ((dmax - dmin)*0.35)/5
+    d = [dmax - (delta * i) for i in range(6)]
 
     return {"Soil Temperature": tmax, "Soil VWC": vmax, "Bulk EC": ecmax, "d": d}
 
@@ -483,7 +486,7 @@ def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
     return sub
 
 
-def plot_station(stations, station=None):
+def plot_station(stations, station=None, zoom=4):
     stations = stations[["station", "long_name", "elevation", "latitude", "longitude"]]
     stations = stations.assign(
         url=stations["long_name"]
@@ -503,9 +506,11 @@ def plot_station(stations, station=None):
     ).reset_index()
 
     stations["color"] = np.where(
-        stations["long_name"].str.contains(",<br>"), "#FB7A7A", "#7A7AFB"
+        stations["long_name"].str.contains("AgriMet"), "#00cc96", "#7A7AFB"
     )
-
+    stations["color"] = np.where(
+        stations["long_name"].str.contains(",<br>"), "#FB7A7A", stations["color"]
+    )
     if station:
         stations = stations.assign(
             color=np.where(
@@ -550,7 +555,7 @@ def plot_station(stations, station=None):
                 ],
             },
         ],
-        mapbox={"center": {"lon": -109.5, "lat": 47}, "zoom": 4},
+        mapbox={"center": {"lon": -109.5, "lat": 47}, "zoom": zoom},
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
         autosize=True,
         hoverlabel_align="right",
@@ -565,9 +570,9 @@ def plot_latest_ace_image(station, direction="N", dt=None):
     fig = go.Figure()
 
     # Constants
-    img_width = 2048
-    img_height = 1446
-    scale_factor = 0.22
+    img_width = 1920
+    img_height = 1080
+    scale_factor = 0.26
 
     # Add invisible scatter trace.
     # This trace is added to help the autoresize logic work.
@@ -610,7 +615,11 @@ def plot_latest_ace_image(station, direction="N", dt=None):
     )
 
     # Configure other layout
-    fig.update_layout(margin={"l": 0, "r": 0, "t": 0, "b": 0})
+    fig.update_layout(
+        width=img_width * scale_factor,
+        height=img_height * scale_factor,
+        margin={"l": 0, "r": 0, "t": 0, "b": 0},
+    )
 
     return fig
 
@@ -640,3 +649,11 @@ def make_nodata_figure(txt="No data avaliable for selected dates."):
         height=500,
     )
     return fig
+
+
+def make_single_plot(dat):
+    x, y = dat.columns
+    fig = px.line(dat, x=x, y=y, markers=False)
+    fig = fig.update_traces(line_color="black", connectgaps=False)
+    fig.update_layout(xaxis_title=None)
+    return style_figure(fig)

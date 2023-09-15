@@ -9,8 +9,18 @@ from urllib.error import HTTPError
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
 import pandas as pd
-from dash import Dash, Input, Output, State, ctx, dash_table, dcc, html
-from dateutil.relativedelta import relativedelta as rd
+from dash import (
+    Dash,
+    Input,
+    Output,
+    State,
+    clientside_callback,
+    ctx,
+    dash_table,
+    dcc,
+    html,
+    no_update,
+)
 
 from mdb import layout as lay
 from mdb.utils import get_data as get
@@ -50,6 +60,7 @@ server = app.server
 app.layout = lambda: lay.app_layout(app, get.get_sites())
 
 
+# Test Dockerfile change.
 @app.callback(
     Output("banner-title", "children"),
     [
@@ -82,6 +93,7 @@ def update_banner_text(station: str, tab: str, stations) -> str:
 
 @app.callback(
     Output("bl-content", "children"),
+    Output("bl-tabs", "active_tab"),
     [
         Input("bl-tabs", "active_tab"),
         Input("station-dropdown", "value"),
@@ -104,13 +116,18 @@ def update_br_card(
     """
     stations = pd.read_json(stations, orient="records")
 
-    if at == "map-tab":
-        station_fig = plt.plot_station(stations, station=station)
-        return dcc.Graph(id="station-fig", figure=station_fig)
-    elif at == "meta-tab":
-        table = tab.make_metadata_table(stations, station)
-        return dash_table.DataTable(data=table, **lay.TABLE_STYLING)
+    if station == "" and at == "data-tab":
+        at = "map-tab"
+        switch_to_current = False
+    else:
+        switch_to_current = ctx.triggered_id == "station-dropdown"
 
+    if at == "map-tab" and not switch_to_current:
+        station_fig = plt.plot_station(stations, station=station)
+        return dcc.Graph(id="station-fig", figure=station_fig), "map-tab"
+    elif at == "meta-tab" and not switch_to_current:
+        table = tab.make_metadata_table(stations, station)
+        return dash_table.DataTable(data=table, **lay.TABLE_STYLING), "meta-tab"
     else:
         network = stations[stations["station"] == station]["sub_network"].values[0]
 
@@ -145,9 +162,28 @@ def update_br_card(
                         className="h-50",
                     )
                 )
-            out = dbc.Col(out, align="center")
+            out = dbc.Col(out, align="center"), "data-tab"
             return out
-        return dcc.Graph(figure=plt.make_nodata_figure())
+        return dcc.Graph(figure=plt.make_nodata_figure()), "meta-tab"
+
+
+@app.callback(
+    Output("data-download", "data"),
+    Input("download-button", "n_clicks"),
+    State("temp-station-data", "data"),
+    State("station-dropdown", "value"),
+    State("hourly-switch", "value"),
+    State("dates", "start_date"),
+    State("dates", "end_date"),
+    prevent_initial_callback=True,
+)
+def download_called_data(n_clicks, tmp_data, station, time, start, end):
+    if n_clicks and tmp_data:
+        data = pd.read_json(tmp_data, orient="records")
+        name = (
+            f"{station}_{time}_{start.replace('-', '')}_to_{end.replace('-', '')}.csv"
+        )
+        return dcc.send_data_frame(data.to_csv, name)
 
 
 @app.callback(
@@ -181,8 +217,8 @@ def update_select_vars(station: str, selected):
     Output("temp-station-data", "data"),
     [
         Input("station-dropdown", "value"),
-        Input("start-date", "date"),
-        Input("end-date", "date"),
+        Input("dates", "start_date"),
+        Input("dates", "end_date"),
         Input("hourly-switch", "value"),
         Input("select-vars", "value"),
         State("temp-station-data", "data"),
@@ -198,7 +234,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     elements = set(chain(*[params.elem_map[x] for x in select_vars]))
     elements = list(set([y for y in params.elements for x in elements if x in y]))
 
-    if tmp == -1 or not tmp or ctx.triggered_id in ["hourly-switch", "start-date"]:
+    if tmp == -1 or not tmp or ctx.triggered_id in ["hourly-switch", "dates"]:
         if "etr" in elements:
             has_etr = True
             elements.remove("etr")
@@ -277,41 +313,8 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     return out.to_json(date_format="iso", orient="records")
 
 
-@app.callback(Output("start-date", "disabled"), Input("station-dropdown", "value"))
-def enable_start_date(station):
-    return station is None
-
-
-@app.callback(Output("end-date", "disabled"), Input("station-dropdown", "value"))
-def enable_end_date(station):
-    return station is None
-
-
-# @app.callback(Output("end-date", "max_date_allowed"), [Input("start-date", "date")])
-# def adjust_end_date_max(value):
-#     d = dt.datetime.strptime(value, "%Y-%m-%d").date()
-#     return d + rd(weeks=2)
-
-
-# @app.callback(Output("end-date", "date"), [Input("start-date", "date")])
-# def adjust_end_date_select(value):
-#     d = dt.datetime.strptime(value, "%Y-%m-%d").date()
-#     return d + rd(weeks=2)
-
-
-@app.callback(Output("start-date", "date"), Input("station-dropdown", "value"))
-def reset_start_date(value):
-    return dt.date.today() - rd(weeks=2)
-
-
-@app.callback(Output("end-date", "min_date_allowed"), [Input("start-date", "date")])
-def adjust_end_date_min(value):
-    d = dt.datetime.strptime(value, "%Y-%m-%d").date()
-    return d
-
-
 @app.callback(
-    Output("start-date", "min_date_allowed"),
+    Output("dates", "min_date_allowed"),
     Input("station-dropdown", "value"),
     State("mesonet-stations", "data"),
 )
@@ -400,8 +403,10 @@ def enable_photo_tab(station, stations):
         dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
     ]
     stations = pd.read_json(stations, orient="records")
-    network = stations[stations["station"] == station]["sub_network"].values[0]
-
+    try:
+        network = stations[stations["station"] == station]["sub_network"].values[0]
+    except IndexError:
+        return tabs
     if station and network == "HydroMet":
         tabs.append(dbc.Tab(label="Photos", tab_id="photo-tab"))
 
@@ -415,8 +420,10 @@ def enable_photo_tab(station, stations):
 )
 def select_default_tab(station, stations):
     stations = pd.read_json(stations, orient="records")
-    network = stations[stations["station"] == station]["sub_network"].values[0]
-
+    try:
+        network = stations[stations["station"] == station]["sub_network"].values[0]
+    except IndexError:
+        return "wind-tab"
     return "photo-tab" if station and network == "HydroMet" else "wind-tab"
 
 
@@ -441,7 +448,11 @@ def update_ul_card(at, station, tmp_data, stations):
         if tmp_data != -1:
             data = pd.read_json(tmp_data, orient="records")
             data = data.rename(columns=params.lab_swap)
-            data.datetime = data.datetime.dt.tz_convert("America/Denver")
+            data = data.assign(
+                datetime=pd.to_datetime(data["datetime"], utc=True).dt.tz_convert(
+                    "America/Denver"
+                )
+            )
             start_date = data.datetime.min().date()
             end_date = data.datetime.max().date()
             data = data[["Wind Direction [deg]", "Wind Speed [mi/hr]"]]
@@ -563,7 +574,7 @@ def update_ul_card(at, station, tmp_data, stations):
                 ),
                 html.Div(
                     dcc.Graph(
-                        id="photo-figure", style={"height": "34vh", "width": "30vw"}
+                        id="photo-figure",  # style={"height": "34vh", "width": "30vw"}
                     )
                 ),
             ]
@@ -645,6 +656,13 @@ def toggle_main_tab(sel, stations):
         return lay.build_latest_content(station_fig=station_fig, stations=stations)
     elif sel == "satellite-tab":
         return lay.build_satellite_content(stations)
+    elif sel == "download-tab":
+        station_fig = plt.plot_station(stations, zoom=5)
+        station = stations["station"].values[0]
+        station_elements = get.get_station_elements(station)
+        return lay.build_downloader_content(
+            station_fig, elements=station_elements, stations=stations, station=station
+        )
     else:
         station_fig = plt.plot_station(stations)
         return lay.build_latest_content(station_fig=station_fig, stations=stations)
@@ -841,6 +859,176 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
             """
         )
     return plt_sat.plot_comparison(dat_x, dat_y, platform_x == "station")
+
+
+@app.callback(
+    Output("download-elements", "data"),
+    Output("download-elements", "value"),
+    Input("station-dropdown-dl", "value"),
+    Input("dl-public", "checked"),
+    State("download-elements", "value"),
+)
+def update_downloader_elements(station, public, elements):
+    if station is None:
+        return [], []
+
+    elems_out = get.get_station_elements(station, public)
+    if not elements:
+        return elems_out, []
+
+    poss_elems = [x["value"] for x in elems_out]
+    elements = [x for x in elements if x in poss_elems]
+    return elems_out, elements
+
+
+@app.callback(
+    Output("dl-start", "value"),
+    Output("dl-start", "minDate"),
+    Output("dl-end", "minDate"),
+    Input("station-dropdown-dl", "value"),
+    State("mesonet-stations", "data"),
+)
+def set_downloader_start_date(station, stations):
+    if station is None:
+        return no_update, no_update, no_update
+    stations = pd.read_json(stations, orient="records")
+    start = stations[stations["station"] == station]["date_installed"].values[0]
+    return start, start, start
+
+
+clientside_callback(
+    """
+    function updateLoadingState(n_clicks) {
+        return true
+    }
+    """,
+    Output("run-dl-request", "loading", allow_duplicate=True),
+    Input("run-dl-request", "n_clicks"),
+    prevent_initial_call=True,
+)
+
+
+@app.callback(
+    Output("dl-data", "data"),
+    Output("run-dl-request", "loading"),
+    Output("dl-alert", "hide", allow_duplicate=True),
+    Input("run-dl-request", "n_clicks"),
+    State("station-dropdown-dl", "value"),
+    State("download-elements", "value"),
+    State("dl-start", "value"),
+    State("dl-end", "value"),
+    State("dl-timeperiod", "value"),
+    prevent_initial_call=True,
+)
+def downloader_data(n_clicks, station, elements, start, end, period):
+    if n_clicks and (not station or not elements):
+        return no_update, False, False
+    if start is None or station is None:
+        return no_update, no_update, True
+
+    start = dt.datetime.strptime(start, "%Y-%m-%d").date()
+    end = dt.datetime.strptime(end, "%Y-%m-%d").date()
+    if n_clicks:
+        data = get.get_station_record(
+            station,
+            start,
+            end,
+            period,
+            ",".join(elements),
+            has_etr=False,
+            na_info=True,
+            public=False,
+        )
+        data = data.rename(columns={"has_na": "Contains Missing Data"})
+        if "bp_logger_0244" not in elements:
+            try:
+                data = data.drop(columns=["Logger Reference Pressure [mbar]"])
+            except KeyError:
+                pass
+        return (
+            data.to_json(date_format="iso", orient="records"),
+            False,
+            True,
+        )
+
+
+clientside_callback(
+    """
+    function updateLoadingState(n_clicks) {
+        return true
+    }
+    """,
+    Output("dl-data-button", "loading", allow_duplicate=True),
+    Input("dl-data-button", "n_clicks"),
+    prevent_initial_call=True,
+)
+
+
+@app.callback(
+    Output("downloader-data", "data"),
+    Output("dl-alert", "hide", allow_duplicate=True),
+    Output("dl-data-button", "loading"),
+    Input("dl-data-button", "n_clicks"),
+    State("dl-data", "data"),
+    State("station-dropdown-dl", "value"),
+    State("dl-start", "value"),
+    State("dl-end", "value"),
+    State("dl-timeperiod", "value"),
+    prevent_initial_call=True,
+)
+def download_data(n_clicks, data, station, start, end, period):
+    if n_clicks and not data:
+        return no_update, False, False
+    if n_clicks:
+        data = pd.read_json(data, orient="records")
+        name = f"{station}_{period}_{str(start).replace('-', '')}_to_{str(end).replace('-', '')}.csv"
+        return dcc.send_data_frame(data.to_csv, name), True, False
+
+
+@app.callback(
+    Output("dl-alert", "children"),
+    Input("dl-data-button", "n_clicks"),
+    Input("run-dl-request", "n_clicks"),
+)
+def change_alert_text(dl_button, req_button):
+    if ctx.triggered_id == "dl-data-button":
+        return "Please 'Run Request' before attempting to download."
+    return "Please select a station and variable first!"
+
+
+@app.callback(
+    Output("station-dropdown-dl", "value"),
+    Input("download-map", "clickData"),
+)
+def select_station_from_map(clickData):
+    if clickData:
+        lat, lon, name, elevation, href, station, color = clickData["points"][0][
+            "customdata"
+        ]
+        station = station.split(",")[0]
+        return station
+
+
+@app.callback(
+    Output("dl-plots", "children"),
+    Input("dl-data", "data"),
+)
+def plot_downloaded_data(data):
+    if data is None:
+        return no_update
+
+    rm_cols = ["station", "datetime", "Contains Missing Data"]
+
+    data = pd.read_json(data, orient="records")
+    use_cols = [x for x in data.columns if x not in rm_cols]
+    out = []
+    for col in use_cols:
+        tmp = data[["datetime", col]]
+        tmp_plot = dcc.Graph(figure=plt.make_single_plot(tmp))
+
+        out.append(tmp_plot)
+
+    return out
 
 
 if __name__ == "__main__":

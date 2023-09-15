@@ -2,6 +2,7 @@ import datetime as dt
 
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
+import dash_mantine_components as dmc
 from dash import dcc, html
 from dateutil.relativedelta import relativedelta as rd
 
@@ -157,15 +158,15 @@ def build_banner(app_ref):
                 ),
                 html.Div(
                     [
-                        dbc.Button(
-                            "MESONET DOWNLOADER",
-                            href="https://shiny.cfc.umt.edu/mesonet-download/",
-                            size="lg",
-                            n_clicks=0,
-                            id="shiny-download-button",
-                            className="me-md-2",
-                            target="_blank",
-                        ),
+                        # dbc.Button(
+                        #     "MESONET DOWNLOADER",
+                        #     href="https://shiny.cfc.umt.edu/mesonet-download/",
+                        #     size="lg",
+                        #     n_clicks=0,
+                        #     id="shiny-download-button",
+                        #     className="me-md-2",
+                        #     target="_blank",
+                        # ),
                         dbc.Button(
                             "GIVE FEEDBACK",
                             href="#",
@@ -287,142 +288,135 @@ def build_dropdowns(stations):
                 [
                     dbc.Col(
                         make_station_dropdowns(stations, "station-dropdown", None),
-                        xs=10,
-                        sm=10,
-                        md=10,
-                        lg=3,
-                        xl=3,
+                        width="auto",
                     ),
                     dbc.Col(
                         dbc.InputGroup(
                             [
-                                dbc.InputGroupText("Start Date"),
-                                dcc.DatePickerSingle(
-                                    id="start-date",
-                                    date=dt.date.today() - rd(weeks=2),
+                                dcc.DatePickerRange(
+                                    id="dates",
+                                    month_format="MMMM Y",
+                                    start_date=dt.date.today() - rd(days=14),
+                                    end_date=dt.date.today(),
+                                    clearable=False,
                                     max_date_allowed=dt.date.today(),
-                                    # min_date_allowed=dt.date(2022, 1, 1),
-                                    disabled=True,
-                                ),
+                                    stay_open_on_select=False,
+                                )
                             ]
                         ),
-                        xs=5,
-                        sm=5,
-                        md=5,
-                        lg=3,
-                        xl=3,
-                        # style={"padding": "0rem 0rem 0rem 6.5rem"},
+                        width="auto",
                     ),
                     dbc.Col(
                         dbc.InputGroup(
                             [
-                                dbc.InputGroupText("End Date"),
-                                dcc.DatePickerSingle(
-                                    id="end-date",
-                                    date=dt.date.today(),
-                                    max_date_allowed=dt.date.today(),
-                                    # min_date_allowed=dt.date(2022, 1, 1),
-                                    disabled=True,
+                                dbc.Button(
+                                    "Download Data",
+                                    href="#",
+                                    size="lg",
+                                    n_clicks=0,
+                                    id="download-button",
+                                    className="me-md-2",
                                 ),
-                            ]
-                        ),
-                        xs=5,
-                        sm=5,
-                        md=5,
-                        lg=3,
-                        xl=3,
-                        # style={"padding": "0rem 0rem 0rem 6.5rem"},
-                    ),
-                    dbc.Col(
-                        dbc.Row(
-                            [
-                                dbc.InputGroup(
-                                    [
-                                        dbc.RadioItems(
-                                            options=[
-                                                {"label": "Hourly", "value": "hourly"},
-                                                {"label": "Daily", "value": "daily"},
-                                                {"label": "Raw", "value": "raw"},
-                                            ],
-                                            inline=True,
-                                            id="hourly-switch",
-                                            # switch=True,
-                                            value="hourly",
-                                            # className="toggle",
-                                        ),
-                                        dbc.Tooltip(
-                                            """Hourly and daily averages are pre-computed and will take much less time to render plots. 
-                                            It is not recommended to select a time period longer than 1 year for daily data, 3 months for hourly
-                                            data, or 2 weeks for raw data. Longer time selections could take up to a few minutes to load.""",
-                                            target="hourly-switch",
-                                        ),
-                                    ]
+                                dbc.Tooltip(
+                                    """Download the data seen in the plots. For a more detailed interface to download data,
+                                please click on the 'Data Downloader' tab.
+                                """,
+                                    target="download-button",
                                 ),
-                                dbc.InputGroup(
-                                    [
-                                        dbc.Checklist(
-                                            options=[
-                                                {"label": "gridMET Normals", "value": 1}
-                                            ],
-                                            inline=True,
-                                            id="gridmet-switch",
-                                            switch=True,
-                                            value=[],
-                                            # className="toggle",
-                                        ),
-                                        dbc.Tooltip(
-                                            "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions.",
-                                            target="gridmet-switch",
-                                        ),
-                                    ]
-                                ),
-                                dbc.InputGroup(
-                                    [
-                                        dbc.Checklist(
-                                            options=[
-                                                {
-                                                    "label": "HydroMet",
-                                                    "value": "HydroMet",
-                                                },
-                                                {
-                                                    "label": "AgriMet",
-                                                    "value": "AgriMet",
-                                                },
-                                            ],
-                                            inline=True,
-                                            id="network-options",
-                                            value=["HydroMet", "AgriMet"],
-                                            # className="toggle",
-                                        ),
-                                        dbc.Tooltip(
-                                            """These checkboxes allow you to subset the stations listed in the dropdown. 
-                                            Leaving both boxes checked shows all possible stations. Checking either HydroMet or
-                                            AgriMet subsets selectable stations to only the respective network.""",
-                                            target="network-options",
-                                        ),
-                                    ]
-                                ),
+                                dcc.Download(id="data-download"),
                             ],
-                            align="center",
+                            className="justify-content-end",
                         ),
-                        xs=10,
-                        sm=10,
-                        md=10,
-                        lg=3,
-                        xl=3,
-                        # style={"padding": "0rem 0rem 0rem 5rem"},
+                        width="auto",
+                        align="center",  # Center the button
                     ),
                 ],
-                align="center",
+                style={"padding": "0.5rem"},  # Add some padding to the row
+                justify="around",
             ),
-            html.Br(),
+            # html.Br(),
             dbc.Row(
-                [dbc.Col(checklist_input, xs=12, sm=12, md=12, lg=12, xl=12)],
-                align="center",
-                style={"padding": "0rem 6.5rem 0rem 0rem"},
+                [
+                    dbc.Col(
+                        dbc.InputGroup(
+                            [
+                                dbc.RadioItems(
+                                    options=[
+                                        {"label": "Hourly", "value": "hourly"},
+                                        {"label": "Daily", "value": "daily"},
+                                        {"label": "Raw", "value": "raw"},
+                                    ],
+                                    inline=True,
+                                    id="hourly-switch",
+                                    value="hourly",
+                                ),
+                                dbc.Tooltip(
+                                    """Hourly and daily averages are pre-computed and will take much less time to render plots. 
+                                        It is not recommended to select a time period longer than 1 year for daily data, 3 months for hourly
+                                        data, or 2 weeks for raw data. Longer time selections could take up to a few minutes to load.""",
+                                    target="hourly-switch",
+                                ),
+                            ]
+                        ),
+                        width="auto",  # Adjust column width
+                    ),
+                    dbc.Col(
+                        dbc.InputGroup(
+                            [
+                                dbc.Checklist(
+                                    options=[{"label": "gridMET Normals", "value": 1}],
+                                    inline=True,
+                                    id="gridmet-switch",
+                                    switch=True,
+                                    value=[],
+                                ),
+                                dbc.Tooltip(
+                                    "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions.",
+                                    target="gridmet-switch",
+                                ),
+                            ]
+                        ),
+                        width="auto",  # Adjust column width
+                    ),
+                    dbc.Col(
+                        dbc.InputGroup(
+                            [
+                                dbc.Checklist(
+                                    options=[
+                                        {
+                                            "label": "HydroMet",
+                                            "value": "HydroMet",
+                                        },
+                                        {
+                                            "label": "AgriMet",
+                                            "value": "AgriMet",
+                                        },
+                                    ],
+                                    inline=True,
+                                    id="network-options",
+                                    value=["HydroMet", "AgriMet"],
+                                ),
+                                dbc.Tooltip(
+                                    """These checkboxes allow you to subset the stations listed in the dropdown. 
+                                        Leaving both boxes checked shows all possible stations. Checking either HydroMet or
+                                        AgriMet subsets selectable stations to only the respective network.""",
+                                    target="network-options",
+                                ),
+                            ]
+                        ),
+                        width="auto",
+                    ),
+                ],
+                style={"padding": "0.5rem"},  # Add some padding to the row
+                justify="around",
+            ),
+            dbc.Row(
+                [dbc.Col(checklist_input, width="auto")],
+                style={"padding": "0.5rem"},  # Add some padding to the row
+                justify="around",
             ),
         ],
-        style={"padding": "1rem 0rem 0rem 5rem"},
+        style={"padding": "0rem"},  # Adjust overall padding
         fluid=True,
     )
 
@@ -493,6 +487,177 @@ def build_latest_content(station_fig, stations):
             lg={"size": 8, "order": "first", "offset": 0},
             xl={"size": 8, "order": "first", "offset": 0},
             style={"padding": "0rem 0.5rem 0rem 0rem"},
+        ),
+    ]
+
+
+def build_downloader_content(
+    station_fig, stations, elements, station=None, min_date=None
+):
+    station_dd = dmc.Select(
+        data=[
+            {"label": k, "value": v}
+            for k, v in zip(stations["long_name"], stations["station"])
+        ],
+        id="station-dropdown-dl",
+        placeholder="Select a Mesonet Station from the Map or Dropdown...",
+        value=station,
+        label="Select Station",
+        searchable=True,
+        clearable=True
+        # style={"width": "150%"}
+    )
+    element_dd = dmc.MultiSelect(
+        data=elements,
+        id="download-elements",
+        clearable=True,
+        value=None,
+        label="Select Variable(s)",
+        searchable=True
+        # style={"width": 400, "marginBottom": 10},
+    )
+    times = [
+        {"value": "daily", "label": "Daily"},
+        {"value": "hourly", "label": "Hourly"},
+        {"value": "raw", "label": "Raw"},
+    ]
+    # station, variable(s) Aggregation Interval, Start Date, End Date
+    return [
+        dmc.Stack(
+            [
+                dmc.Group(
+                    [
+                        dmc.Stack(
+                            [
+                                station_dd,
+                                element_dd,
+                                dmc.Group(
+                                    [
+                                        dmc.Switch(
+                                            size="md",
+                                            id="dl-public",
+                                            radius="xl",
+                                            label="Show Uncommon Variables",
+                                            checked=False,
+                                            disabled=False,
+                                        ),
+                                        dmc.Stack(
+                                            [
+                                                dmc.Text(
+                                                    "Time Aggregation",
+                                                    size="sm",
+                                                    weight=500,
+                                                ),
+                                                dmc.ChipGroup(
+                                                    [
+                                                        dmc.Chip(
+                                                            x["label"],
+                                                            value=x["value"],
+                                                        )
+                                                        for x in times
+                                                    ],
+                                                    id="dl-timeperiod",
+                                                    value="daily",
+                                                ),
+                                            ],
+                                            justify="center",
+                                        ),
+                                    ],
+                                    position="center",
+                                    grow=True,
+                                ),
+                                dmc.Group(
+                                    [
+                                        dmc.DatePicker(
+                                            id="dl-start",
+                                            label="Start Date",
+                                            minDate=min_date,
+                                            maxDate=dt.date.today(),
+                                            value=min_date,
+                                        ),
+                                        dmc.DatePicker(
+                                            id="dl-end",
+                                            label="End Date",
+                                            minDate=min_date,
+                                            maxDate=dt.date.today(),
+                                            value=dt.date.today(),
+                                        ),
+                                    ],
+                                    position="center",
+                                    grow=True,
+                                ),
+                                dmc.Group(
+                                    [
+                                        dmc.Button(
+                                            "Run Request",
+                                            id="run-dl-request",
+                                            variant="gradient",
+                                        ),
+                                        dmc.Button(
+                                            "Download Data",
+                                            id="dl-data-button",
+                                            variant="gradient",
+                                        ),
+                                        dmc.Alert(
+                                            "Please select a station and variable first!",
+                                            color="red",
+                                            withCloseButton=True,
+                                            variant="filled",
+                                            id="dl-alert",
+                                            hide=True,
+                                        ),
+                                    ],
+                                    position="center",
+                                    grow=True,
+                                ),
+                                dcc.Download(id="downloader-data"),
+                            ],
+                            align="left",
+                            justify="center",
+                        ),
+                        dbc.Col(
+                            dbc.Card(
+                                html.Div(
+                                    dbc.CardBody(
+                                        id="bl-content",
+                                        children=dcc.Graph(
+                                            id="download-map", figure=station_fig
+                                        ),
+                                        className="card-text",
+                                    ),
+                                    # style={"overflow": "scroll"},
+                                )
+                            ),
+                        ),
+                    ],
+                    grow=True,
+                ),
+                dmc.Stack(
+                    [
+                        html.Div(
+                            children=[
+                                dcc.Store("dl-data", storage_type="memory"),
+                                dmc.Stack(
+                                    id="dl-plots", align="strech", justify="center"
+                                ),
+                            ]
+                        )
+                    ],
+                    align="strech",
+                    justify="center",
+                ),
+            ]
+        ),
+        dmc.Footer(
+            height=40,
+            fixed=True,
+            children=[
+                dmc.Text(
+                    "Supported by Bureau of Land Management (RM-CESU Award L16AC00359)",
+                    weight=800,
+                )
+            ],
+            style={"backgroundColor": "#129dff"},
         ),
     ]
 
@@ -733,6 +898,21 @@ def app_layout(app_ref, stations):
                         style=dict(
                             borderLeft="1px black solid",
                             borderRight="0px black solid",
+                            **TAB_STYLE
+                        ),
+                        selected_style=dict(
+                            borderLeft="1px black solid",
+                            borderRight="0.5px black solid",
+                            **SELECTED_STYLE
+                        ),
+                    ),
+                    dcc.Tab(
+                        label="Data Downloader",
+                        id="download-tab",
+                        value="download-tab",
+                        style=dict(
+                            borderLeft="0.5px black solid",
+                            borderRight="0.5px black solid",
                             **TAB_STYLE
                         ),
                         selected_style=dict(

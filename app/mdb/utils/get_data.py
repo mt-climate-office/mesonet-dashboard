@@ -52,6 +52,8 @@ def get_station_record(
     hourly: Optional[str] = "hourly",
     e: Optional[str] = None,
     has_etr: Optional[bool] = True,
+    na_info: Optional[bool] = False,
+    public: Optional[bool] = True,
 ) -> pd.DataFrame:
     """Given a Mesonet station name and date range, return a dataframe of climate data.
 
@@ -74,6 +76,8 @@ def get_station_record(
         "type": "csv",
         "rm_na": True,
         "premade": True,
+        "na_info": na_info,
+        "public": public,
     }
 
     if end_time:
@@ -141,16 +145,27 @@ def get_station_latest(station):
     dat = dat.loc[:, dat.columns.isin(["datetime"] + params.elem_labs)]
     dat = dat.rename(columns=params.lab_swap)
 
-    dat["Wind Chill [°F]"] = round(
-        35.74
-        + (0.6215 * dat["Air Temperature [°F]"])
-        - (35.75 * (dat["Wind Speed [mi/hr]"] ** 0.16))
-        + (0.4275 * dat["Air Temperature [°F]"] * (dat["Wind Speed [mi/hr]"] ** 0.16)),
-        2,
-    )
-    dat[
-        "Wind Direction [deg]"
-    ] = f'{deg_to_compass(dat["Wind Direction [deg]"])} ({dat["Wind Direction [deg]"].values[0]} deg)'
+    try:
+        dat["Wind Chill [°F]"] = round(
+            35.74
+            + (0.6215 * dat["Air Temperature [°F]"])
+            - (35.75 * (dat["Wind Speed [mi/hr]"] ** 0.16))
+            + (
+                0.4275
+                * dat["Air Temperature [°F]"]
+                * (dat["Wind Speed [mi/hr]"] ** 0.16)
+            ),
+            2,
+        )
+    except ValueError:
+        pass
+
+    try:
+        dat[
+            "Wind Direction [deg]"
+        ] = f'{deg_to_compass(dat["Wind Direction [deg]"])} ({dat["Wind Direction [deg]"].values[0]} deg)'
+    except ValueError:
+        pass
     dat = dat.rename(columns={"datetime": "Timestamp"})
     dat = dat.T.reset_index()
     dat.columns = ["value", "name"]
@@ -270,3 +285,18 @@ def get_sat_compare_data(
     station_data = summarise_station_to_daily(station_data, colname)
 
     return station_data, sat_data
+
+
+def get_station_elements(station, public=False):
+    station_elements = pd.read_csv(
+        f"{params.API_URL}elements/{station}/?type=csv&public={not public}"
+    )
+    station_elements = station_elements.assign(
+        description_short=station_elements["description_short"].replace(
+            params.dist_swap, regex=True
+        )
+    )[["element", "description_short"]]
+    station_elements.columns = ["value", "label"]
+    station_elements = station_elements.sort_values("label")
+    station_elements = station_elements.to_dict(orient="records")
+    return station_elements
