@@ -1,17 +1,25 @@
 import datetime as dt
+import os
 from dataclasses import dataclass
 
 import dateutil.relativedelta as rd
 import pandas as pd
 
-elements_df = pd.read_csv("http://apiv2/elements?type=csv")
-# elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
+on_server = os.getenv("ON_SERVER")
+
+if on_server is None or not on_server:
+    elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
+    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
+
+else:
+    elements_df = pd.read_csv("http://apiv2/elements?type=csv")
+    API_URL = "http://apiv2/"
 
 
 @dataclass
 class params:
-    API_URL = "http://apiv2/"
-    # API_URL = "https://mesonet.climate.umt.edu/api/v2/"
+
+    API_URL = API_URL
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
 
