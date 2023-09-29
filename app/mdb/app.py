@@ -203,7 +203,7 @@ def update_select_vars(station: str, selected):
             "Air Temperature",
         ]
         return options, values
-    elems = pd.read_csv(f"{params.API_URL}/elements/{station}?type=csv")
+    elems = pd.read_csv(f"{params.API_URL}elements/{station}?type=csv")
     elems = elems["description_short"].tolist()
     elems = list(set([x.split("@")[0].strip() for x in elems]))
     elems.append("Reference ET")
