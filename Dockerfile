@@ -8,6 +8,8 @@ RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python
     poetry config virtualenvs.create false
 
 COPY ./app/pyproject.toml ./app/poetry.lock* /app/
+COPY ./normals/* /app/normals/
+
 WORKDIR /app
 RUN poetry install --no-root --no-dev
 
