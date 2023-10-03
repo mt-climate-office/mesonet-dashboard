@@ -17,7 +17,6 @@ from mdb.utils.plotting import deg_to_compass
 
 load_dotenv()
 
-
 def get_sites() -> pd.DataFrame:
     """Pulls station data from the Montana Mesonet V2 API and returns a dataframe.
 
@@ -289,14 +288,14 @@ def get_sat_compare_data(
         station, sat_element, start_time, end_time, platform, False
     )
 
-    if platform in ["SPL4CMDL.006", "SPL4SMGP.006"]:
-        # Take every 8th observation from SMAP data. The API query takes too long
-        # if using all the daily data.
-        sat_data = sat_data.iloc[::8, :]
+    # if platform in ["SPL4CMDL.006", "SPL4SMGP.006"]:
+    #     # Take every 8th observation from SMAP data. The API query takes too long
+    #     # if using all the daily data.
+    #     sat_data = sat_data.iloc[::8, :]
 
     dates = ",".join(set(sat_data.date.astype(str).values.tolist()))
 
-    url = f"{params.API_URL}observations/?stations={station}&elements={station_element}&dates={dates}&type=csv&hour=True&wide=True&rm_na=True"
+    url = f"{params.API_URL}observations/daily/?stations={station}&elements={station_element}&dates={dates}&type=csv&wide=True&rm_na=True&premade=True"
     station_data = pd.read_csv(url)
     colname = station_data.columns[-1]
     station_data = summarise_station_to_daily(station_data, colname)
