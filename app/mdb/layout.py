@@ -364,14 +364,20 @@ def build_dropdowns(stations):
                         dbc.InputGroup(
                             [
                                 dbc.Checklist(
-                                    options=[{"label": "gridMET Normals", "value": 1}],
+                                    options=[
+                                        {
+                                            "label": "gridMET Normals",
+                                            "value": 1,
+                                            "disabled": True,
+                                        }
+                                    ],
                                     inline=True,
                                     id="gridmet-switch",
                                     switch=True,
                                     value=[],
                                 ),
                                 dbc.Tooltip(
-                                    "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions.",
+                                    "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions. **Note** This is only available on daily data.",
                                     target="gridmet-switch",
                                 ),
                             ]

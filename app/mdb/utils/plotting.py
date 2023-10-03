@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import numpy as np
@@ -9,6 +10,7 @@ from plotly.subplots import make_subplots
 
 from mdb.utils.params import params
 
+on_server = os.getenv("ON_SERVER")
 
 def style_figure(fig, x_ticks=None, legend=False):
     fig.update_layout({"plot_bgcolor": "rgba(0, 0, 0, 0)"})
@@ -28,7 +30,11 @@ def style_figure(fig, x_ticks=None, legend=False):
 def merge_normal_data(v, df, station):
     v_short = params.short_name_mapper.get(v, None)
     if v_short:
-        norm = [pd.read_csv(f"/app/normals/{station}_{x}.csv") for x in v_short]
+        if on_server is None or not on_server:
+            norm = [pd.read_csv(f"~/git/mesonet-dashboard/app/mdb/normals/{station}_{x}.csv") for x in v_short]
+        else:
+            norm = [pd.read_csv(f"/app/normals/{station}_{x}.csv") for x in v_short]
+
         norm_l = len(norm)
         norm = pd.concat(norm, axis=0)
         norm = norm[norm["type"] == "daily"]
@@ -136,6 +142,7 @@ def plot_met(dat, **kwargs):
         if dat is None:
             return fig
         tmp = dat[["datetime", "mn", "mx", "avg"]].dropna()
+        tmp = tmp.sort_values("datetime")
         mx_line = go.Scatter(
             x=tmp.datetime,
             y=tmp.mx,
@@ -350,10 +357,10 @@ def get_soil_legend_loc(dat):
         ecmax = max(dat.iloc[:, dat.columns.str.contains("Bulk EC")].max(axis=0))
     except ValueError:
         ecmax = None
-    
+
     # We want dates to range ~35% of the x axiss
     dmax, dmin = dat.datetime.max(), dat.datetime.min()
-    delta = ((dmax - dmin)*0.35)/5
+    delta = ((dmax - dmin) * 0.35) / 5
     d = [dmax - (delta * i) for i in range(6)]
 
     return {"Soil Temperature": tmax, "Soil VWC": vmax, "Bulk EC": ecmax, "d": d}

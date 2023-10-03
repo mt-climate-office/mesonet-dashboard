@@ -8,7 +8,9 @@ import pandas as pd
 on_server = os.getenv("ON_SERVER")
 
 if on_server is None or not on_server:
-    elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
+    elements_df = pd.read_csv(
+        "https://mesonet.climate.umt.edu/api/v2/elements?type=csv"
+    )
     API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 
 else:
@@ -85,8 +87,10 @@ class params:
         "Gust Speed @ 10 m [mi/hr]",
         "Well Water Level [in]",
     ]
-    
-    agg_funcs = {item: "sum" if item == "Precipitation [in]" else "mean" for item in elem_labs}
+
+    agg_funcs = {
+        item: "sum" if item == "Precipitation [in]" else "mean" for item in elem_labs
+    }
 
     lab_swap = {
         "index": "datetime",

@@ -341,7 +341,7 @@ def enable_date_button(station):
         State("mesonet-stations", "data"),
     ],
 )
-def render_station_plot(tmp_data, select_vars, station, hourly, norm, stations):
+def render_station_plot(tmp_data, select_vars, station, period, norm, stations):
     norm = [norm] if isinstance(norm, int) else norm
     if len(select_vars) == 0:
         return plt.make_nodata_figure("No variables selected")
@@ -362,8 +362,8 @@ def render_station_plot(tmp_data, select_vars, station, hourly, norm, stations):
             *select_vars,
             dat=data,
             station=station,
-            norm=len(norm) == 1,
-            top_of_hour=hourly != "raw",
+            norm=(len(norm) == 1) and (period == "daily"),
+            top_of_hour=period != "raw",
         )
     elif tmp_data == -1:
         return plt.make_nodata_figure(
@@ -578,6 +578,13 @@ def update_ul_card(at, station, tmp_data, stations):
                 ),
             ]
         )
+
+
+@app.callback(Output("gridmet-switch", "options"), Input("hourly-switch", "value"))
+def disable_gridmet_switch(period):
+    if period != "daily": 
+        return [{"label": "gridMET Normals", "value": 1, "disabled": True}]
+    return [{"label": "gridMET Normals", "value": 1, "disabled": False}]
 
 
 @app.callback(

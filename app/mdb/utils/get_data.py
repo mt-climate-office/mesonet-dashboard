@@ -87,7 +87,6 @@ def get_station_record(
         q.update({"end_time": end_time})
 
     endpoint = params.endpoints[period]
-    print(endpoint)
     payload = parse.urlencode(q, safe=",:")
 
     r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
@@ -118,14 +117,14 @@ def get_station_record(
                 "America/Denver"
             )
         )
-        dat['month'] = dat['datetime'].dt.month
-        dat['year'] = dat['datetime'].dt.year
+        dat["month"] = dat["datetime"].dt.month
+        dat["year"] = dat["datetime"].dt.year
 
         cols = {k: v for k, v in params.agg_funcs.items() if k in dat.columns}
         cols.update({"has_na": any})
 
-        out = dat.groupby(['year', 'month']).agg(cols).reset_index()
-        out['datetime'] = pd.to_datetime(out[['year', 'month']].assign(day=1))
+        out = dat.groupby(["year", "month"]).agg(cols).reset_index()
+        out["datetime"] = pd.to_datetime(out[["year", "month"]].assign(day=1))
         out = out.drop(columns=["year", "month"])
         return out
 
