@@ -49,7 +49,7 @@ def get_station_record(
     station: str,
     start_time: Union[dt.date, dt.datetime],
     end_time: Union[dt.date, dt.datetime],
-    hourly: Optional[str] = "hourly",
+    period: Optional[str] = "hourly",
     e: Optional[str] = None,
     has_etr: Optional[bool] = True,
     na_info: Optional[bool] = False,
@@ -86,7 +86,8 @@ def get_station_record(
         end_time = format_dt(end_time)
         q.update({"end_time": end_time})
 
-    endpoint = params.endpoints[hourly]
+    endpoint = params.endpoints[period]
+    print(endpoint)
     payload = parse.urlencode(q, safe=",:")
 
     r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
@@ -100,7 +101,7 @@ def get_station_record(
             raise HTTPError(r.url, 404, "No data found.", None, None)
     if has_etr:
         q["elements"] = "etr"
-        endpoint = params.derived_endpoints[hourly]
+        endpoint = params.derived_endpoints[period]
         payload = parse.urlencode(q, safe=",:")
 
         r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
@@ -110,6 +111,23 @@ def get_station_record(
             dat = dat.merge(etr, how="left", on=["station", "datetime"])
         else:
             dat = etr
+
+    if period == "monthly":
+        dat = dat.assign(
+            datetime=pd.to_datetime(dat["datetime"], utc=True).dt.tz_convert(
+                "America/Denver"
+            )
+        )
+        dat['month'] = dat['datetime'].dt.month
+        dat['year'] = dat['datetime'].dt.year
+
+        cols = {k: v for k, v in params.agg_funcs.items() if k in dat.columns}
+        cols.update({"has_na": any})
+
+        out = dat.groupby(['year', 'month']).agg(cols).reset_index()
+        out['datetime'] = pd.to_datetime(out[['year', 'month']].assign(day=1))
+        out = out.drop(columns=["year", "month"])
+        return out
 
     return dat
 

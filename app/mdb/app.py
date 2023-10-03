@@ -244,7 +244,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 station,
                 start_time=start,
                 end_time=end,
-                hourly=hourly,
+                period=hourly,
                 e=",".join(elements),
                 has_etr=has_etr,
             )
@@ -264,7 +264,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 station,
                 start_time=start,
                 end_time=end,
-                hourly=hourly,
+                period=hourly,
                 e=",".join(elements),
                 has_etr=has_etr,
             )
@@ -297,7 +297,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 station,
                 start_time=start,
                 end_time=end,
-                hourly=hourly,
+                period=hourly,
                 e=",".join(new_elements),
                 has_etr=has_etr,
             )

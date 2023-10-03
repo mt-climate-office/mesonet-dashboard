@@ -55,6 +55,7 @@ class params:
         "Air Temperature @ 8 ft [°F]",
         "Atmospheric Pressure [mbar]",
         "Precipitation [in]",
+        "Max Precip Rate [in/hr]",
         "Relative Humidity [%]",
         "Soil Temperature @ -10 cm [°F]",
         "Soil Temperature @ -100 cm [°F]",
@@ -84,6 +85,8 @@ class params:
         "Gust Speed @ 10 m [mi/hr]",
         "Well Water Level [in]",
     ]
+    
+    agg_funcs = {item: "sum" if item == "Precipitation [in]" else "mean" for item in elem_labs}
 
     lab_swap = {
         "index": "datetime",
@@ -193,12 +196,14 @@ class params:
     endpoints = {
         "hourly": "observations/hourly",
         "daily": "observations/daily",
+        "monthly": "observations/daily",
         "raw": "observations",
     }
 
     derived_endpoints = {
         "hourly": "derived/hourly",
         "daily": "derived/daily",
+        "monthly": "derived/daily",
         "raw": "derived/hourly",
     }
 
