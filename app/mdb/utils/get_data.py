@@ -23,7 +23,7 @@ def get_sites() -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame of Montana Mesonet stations.
     """
-    dat = pd.read_csv(f"{params.API_URL}stations/?type=csv")
+    dat = pd.read_csv(f"{params.API_URL}stations?type=csv")
     dat["long_name"] = dat["name"] + " (" + dat["sub_network"] + ")"
     dat = dat.sort_values("long_name")
     dat = dat[dat["station"] != "mcoopsbe"]
