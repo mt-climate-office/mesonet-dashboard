@@ -8,7 +8,9 @@ import pandas as pd
 on_server = os.getenv("ON_SERVER")
 
 if on_server is None or not on_server:
-    elements_df = pd.read_csv("https://mesonet.climate.umt.edu/api/v2/elements?type=csv")
+    elements_df = pd.read_csv(
+        "https://mesonet.climate.umt.edu/api/v2/elements?type=csv"
+    )
     API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 
 else:
@@ -55,6 +57,7 @@ class params:
         "Air Temperature @ 8 ft [°F]",
         "Atmospheric Pressure [mbar]",
         "Precipitation [in]",
+        "Max Precip Rate [in/hr]",
         "Relative Humidity [%]",
         "Soil Temperature @ -10 cm [°F]",
         "Soil Temperature @ -100 cm [°F]",
@@ -84,6 +87,10 @@ class params:
         "Gust Speed @ 10 m [mi/hr]",
         "Well Water Level [in]",
     ]
+
+    agg_funcs = {
+        item: "sum" if item == "Precipitation [in]" else "mean" for item in elem_labs
+    }
 
     lab_swap = {
         "index": "datetime",
@@ -193,12 +200,14 @@ class params:
     endpoints = {
         "hourly": "observations/hourly",
         "daily": "observations/daily",
+        "monthly": "observations/daily",
         "raw": "observations",
     }
 
     derived_endpoints = {
         "hourly": "derived/hourly",
         "daily": "derived/daily",
+        "monthly": "derived/daily",
         "raw": "derived/hourly",
     }
 

@@ -306,30 +306,30 @@ def build_dropdowns(stations):
                         ),
                         width="auto",
                     ),
-                    dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dbc.Button(
-                                    "Download Data",
-                                    href="#",
-                                    size="lg",
-                                    n_clicks=0,
-                                    id="download-button",
-                                    className="me-md-2",
-                                ),
-                                dbc.Tooltip(
-                                    """Download the data seen in the plots. For a more detailed interface to download data,
-                                please click on the 'Data Downloader' tab.
-                                """,
-                                    target="download-button",
-                                ),
-                                dcc.Download(id="data-download"),
-                            ],
-                            className="justify-content-end",
-                        ),
-                        width="auto",
-                        align="center",  # Center the button
-                    ),
+                    # dbc.Col(
+                    #     dbc.InputGroup(
+                    #         [
+                    #             dbc.Button(
+                    #                 "Download Data",
+                    #                 href="#",
+                    #                 size="lg",
+                    #                 n_clicks=0,
+                    #                 id="download-button",
+                    #                 className="me-md-2",
+                    #             ),
+                    #             dbc.Tooltip(
+                    #                 """Download the data seen in the plots. For a more detailed interface to download data,
+                    #             please click on the 'Data Downloader' tab.
+                    #             """,
+                    #                 target="download-button",
+                    #             ),
+                    #             dcc.Download(id="data-download"),
+                    #         ],
+                    #         className="justify-content-end",
+                    #     ),
+                    #     width="auto",
+                    #     align="center",  # Center the button
+                    # ),
                 ],
                 style={"padding": "0.5rem"},  # Add some padding to the row
                 justify="around",
@@ -364,14 +364,20 @@ def build_dropdowns(stations):
                         dbc.InputGroup(
                             [
                                 dbc.Checklist(
-                                    options=[{"label": "gridMET Normals", "value": 1}],
+                                    options=[
+                                        {
+                                            "label": "gridMET Normals",
+                                            "value": 1,
+                                            "disabled": True,
+                                        }
+                                    ],
                                     inline=True,
                                     id="gridmet-switch",
                                     switch=True,
                                     value=[],
                                 ),
                                 dbc.Tooltip(
-                                    "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions.",
+                                    "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions. **Note** This is only available on daily data.",
                                     target="gridmet-switch",
                                 ),
                             ]
@@ -517,9 +523,10 @@ def build_downloader_content(
         # style={"width": 400, "marginBottom": 10},
     )
     times = [
+        {"value": "monthly", "label": "Monthly"},
         {"value": "daily", "label": "Daily"},
         {"value": "hourly", "label": "Hourly"},
-        {"value": "raw", "label": "Raw"},
+        # {"value": "raw", "label": "Raw"},
     ]
     # station, variable(s) Aggregation Interval, Start Date, End Date
     return [
