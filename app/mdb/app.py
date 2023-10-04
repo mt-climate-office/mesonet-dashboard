@@ -128,8 +128,11 @@ def update_br_card(
         table = tab.make_metadata_table(stations, station)
         return dash_table.DataTable(data=table, **lay.TABLE_STYLING), "meta-tab"
     else:
-        network = stations[stations["station"] == station]["sub_network"].values[0]
-
+        print(station)
+        try:
+            network = stations[stations["station"] == station]["sub_network"].values[0]
+        except IndexError:
+            return no_update
         if tmp_data != -1:
             out = []
             table = get.get_station_latest(station)
