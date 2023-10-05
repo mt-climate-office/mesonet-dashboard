@@ -17,6 +17,7 @@ from mdb.utils.plotting import deg_to_compass
 
 load_dotenv()
 
+
 def get_sites() -> pd.DataFrame:
     """Pulls station data from the Montana Mesonet V2 API and returns a dataframe.
 

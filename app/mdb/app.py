@@ -585,7 +585,7 @@ def update_ul_card(at, station, tmp_data, stations):
 
 @app.callback(Output("gridmet-switch", "options"), Input("hourly-switch", "value"))
 def disable_gridmet_switch(period):
-    if period != "daily": 
+    if period != "daily":
         return [{"label": "gridMET Normals", "value": 1, "disabled": True}]
     return [{"label": "gridMET Normals", "value": 1, "disabled": False}]
 

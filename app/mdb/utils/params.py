@@ -20,7 +20,6 @@ else:
 
 @dataclass
 class params:
-
     API_URL = API_URL
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
