@@ -128,7 +128,6 @@ def update_br_card(
         table = tab.make_metadata_table(stations, station)
         return dash_table.DataTable(data=table, **lay.TABLE_STYLING), "meta-tab"
     else:
-        print(station)
         try:
             network = stations[stations["station"] == station]["sub_network"].values[0]
         except IndexError:
@@ -367,6 +366,7 @@ def render_station_plot(tmp_data, select_vars, station, period, norm, stations):
             station=station,
             norm=(len(norm) == 1) and (period == "daily"),
             top_of_hour=period != "raw",
+            period="hourly" if period == "raw" else period,
         )
     elif tmp_data == -1:
         return plt.make_nodata_figure(

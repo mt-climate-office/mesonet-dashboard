@@ -291,7 +291,7 @@ def plot_wind(wind_data):
     return fig
 
 
-def plot_etr(dat, station, **kwargs):
+def plot_etr(dat: pd.DataFrame, station: pd.DataFrame, **kwargs):
     station_name = station["station"].values[0]
 
     fig = px.bar(dat, x="datetime", y="Reference ET (a=0.23) [in]")
@@ -466,8 +466,17 @@ def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
 
     sub = px_to_subplot(*list(plots.values()), shared_xaxes=False)
     for row in range(1, len(plots) + 1):
+        ylab = list(plots.keys())[row - 1]
+        title_text = params.axis_mapper[ylab]
+        if ylab in ['Precipitation', 'Reference ET']:
+            if kwargs['period'] == 'daily':
+                title_text = title_text.replace("(inches)", "(inches/day)")
+            elif kwargs['period'] == 'hourly': 
+                title_text = title_text.replace("(inches)", "(inches/hour)")
+            elif kwargs['period'] == 'raw': 
+                pass # don't update label.
         sub.update_yaxes(
-            title_text=params.axis_mapper[list(plots.keys())[row - 1]], row=row, col=1
+            title_text=title_text, row=row, col=1
         )
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
@@ -548,7 +557,7 @@ def plot_station(stations, station=None, zoom=4):
     )
 
     county_pth = (
-        "~/git/mesonet-dashboard/mt_counties.geojson"
+        "/home/cbrust/git/mesonet-dashboard/mt_counties.geojson"
         if on_server is None or not on_server
         else "/app/mt_counties.geojson"
     )

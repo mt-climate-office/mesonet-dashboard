@@ -176,7 +176,7 @@ class params:
     }
 
     axis_mapper = {
-        "Precipitation": "Daily<br>Precipitation<br>(in)",
+        "Precipitation": "Daily<br>Precipitation<br>(inches)",
         "Soil VWC": "Soil VWC.<br>(%)",
         "Bulk EC": "Soil Bulk<br>EC (mS cm<sup>-1</sup>)",
         "Air Temperature": "Air Temp.<br>(°F)",
