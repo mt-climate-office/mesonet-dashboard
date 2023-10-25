@@ -1,6 +1,7 @@
 import os
 from typing import List
 
+import geojson
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -11,6 +12,7 @@ from plotly.subplots import make_subplots
 from mdb.utils.params import params
 
 on_server = os.getenv("ON_SERVER")
+
 
 def style_figure(fig, x_ticks=None, legend=False):
     fig.update_layout({"plot_bgcolor": "rgba(0, 0, 0, 0)"})
@@ -31,7 +33,12 @@ def merge_normal_data(v, df, station):
     v_short = params.short_name_mapper.get(v, None)
     if v_short:
         if on_server is None or not on_server:
-            norm = [pd.read_csv(f"~/git/mesonet-dashboard/app/mdb/normals/{station}_{x}.csv") for x in v_short]
+            norm = [
+                pd.read_csv(
+                    f"~/git/mesonet-dashboard/app/mdb/normals/{station}_{x}.csv"
+                )
+                for x in v_short
+            ]
         else:
             norm = [pd.read_csv(f"/app/normals/{station}_{x}.csv") for x in v_short]
 
@@ -284,7 +291,7 @@ def plot_wind(wind_data):
     return fig
 
 
-def plot_etr(dat, station, **kwargs):
+def plot_etr(dat: pd.DataFrame, station: pd.DataFrame, **kwargs):
     station_name = station["station"].values[0]
 
     fig = px.bar(dat, x="datetime", y="Reference ET (a=0.23) [in]")
@@ -459,8 +466,17 @@ def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
 
     sub = px_to_subplot(*list(plots.values()), shared_xaxes=False)
     for row in range(1, len(plots) + 1):
+        ylab = list(plots.keys())[row - 1]
+        title_text = params.axis_mapper[ylab]
+        if ylab in ['Precipitation', 'Reference ET']:
+            if kwargs['period'] == 'daily':
+                title_text = title_text.replace("(inches)", "(inches/day)")
+            elif kwargs['period'] == 'hourly': 
+                title_text = title_text.replace("(inches)", "(inches/hour)")
+            elif kwargs['period'] == 'raw': 
+                pass # don't update label.
         sub.update_yaxes(
-            title_text=params.axis_mapper[list(plots.keys())[row - 1]], row=row, col=1
+            title_text=title_text, row=row, col=1
         )
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
@@ -539,6 +555,15 @@ def plot_station(stations, station=None, zoom=4):
             hoverinfo="none",
         )
     )
+
+    county_pth = (
+        "/home/cbrust/git/mesonet-dashboard/mt_counties.geojson"
+        if on_server is None or not on_server
+        else "/app/mt_counties.geojson"
+    )
+    with open(county_pth) as f:
+        counties = geojson.load(f)
+
     fig.update_layout(
         height=300,
         mapbox_style="white-bg",
@@ -560,6 +585,15 @@ def plot_station(stations, station=None, zoom=4):
                 "source": [
                     "https://stamen-tiles.a.ssl.fastly.net/toner-hybrid/{z}/{x}/{y}.png"
                 ],
+            },
+            {
+                "below": "traces",
+                "name": "test",
+                "sourcetype": "geojson",
+                "sourceattribution": "",
+                "type": "fill",
+                "color": "rgba(0, 0, 0, 0)",
+                "source": counties,
             },
         ],
         mapbox={"center": {"lon": -109.5, "lat": 47}, "zoom": zoom},
