@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": false,
-            "cwd": "/Users/Colin.Brust/git/mesonet-dashboard/app/mdb"
+            "cwd": "${workspaceFolder}/app/mdb"
         }
     ]
 }
