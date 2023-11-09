@@ -468,16 +468,14 @@ def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
     for row in range(1, len(plots) + 1):
         ylab = list(plots.keys())[row - 1]
         title_text = params.axis_mapper[ylab]
-        if ylab in ['Precipitation', 'Reference ET']:
-            if kwargs['period'] == 'daily':
+        if ylab in ["Precipitation", "Reference ET"]:
+            if kwargs["period"] == "daily":
                 title_text = title_text.replace("(inches)", "(inches/day)")
-            elif kwargs['period'] == 'hourly': 
+            elif kwargs["period"] == "hourly":
                 title_text = title_text.replace("(inches)", "(inches/hour)")
-            elif kwargs['period'] == 'raw': 
-                pass # don't update label.
-        sub.update_yaxes(
-            title_text=title_text, row=row, col=1
-        )
+            elif kwargs["period"] == "raw":
+                pass  # don't update label.
+        sub.update_yaxes(title_text=title_text, row=row, col=1)
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height)
@@ -607,13 +605,17 @@ def plot_station(stations, station=None, zoom=4):
 
 # Credit to https://plotly.com/python/images/#zoom-on-static-images
 def plot_latest_ace_image(station, direction="N", dt=None):
+    if dt:
+        source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True&dt={dt}"
+    else:
+        source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True"
     # Create figure
     fig = go.Figure()
 
     # Constants
     img_width = 1920
     img_height = 1080
-    scale_factor = 0.26
+    scale_factor = 0.25
 
     # Add invisible scatter trace.
     # This trace is added to help the autoresize logic work.
@@ -635,10 +637,7 @@ def plot_latest_ace_image(station, direction="N", dt=None):
         # the scaleanchor attribute ensures that the aspect ratio stays constant
         scaleanchor="x",
     )
-    if dt:
-        source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True&dt={dt}"
-    else:
-        source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True"
+
     # Add image
     fig.add_layout_image(
         dict(

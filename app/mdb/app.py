@@ -206,7 +206,7 @@ def update_select_vars(station: str, selected):
     if not station:
         options = [{"value": x, "label": x} for x in sorted(params.default_vars)]
         return options, selected
-    
+
     elems = pd.read_csv(f"{params.API_URL}elements/{station}?type=csv")
     elems = elems["description_short"].tolist()
     elems = list(set([x.split("@")[0].strip() for x in elems]))
@@ -579,7 +579,12 @@ def update_ul_card(at, station, tmp_data, stations):
                 html.Div(
                     dcc.Graph(
                         id="photo-figure",  # style={"height": "34vh", "width": "30vw"}
-                    )
+                    ),
+                    style={
+                        "display": "flex",
+                        "justify-content": "center",
+                        "align-items": "center",
+                    },
                 ),
             ]
         )

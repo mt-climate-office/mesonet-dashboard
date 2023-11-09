@@ -198,7 +198,7 @@ def get_ppt_summary(station):
 
     with io.StringIO(r.text) as text_io:
         dat = pd.read_csv(text_io)
-    dat = pd.melt(dat, id_vars=['station'], var_name= 'time', value_name = 'value')
+    dat = pd.melt(dat, id_vars=["station"], var_name="time", value_name="value")
     dat = dat[["time", "value"]]
     dat = dat.sort_values("value")
     dat = dat.rename(columns={"time": "name"})
