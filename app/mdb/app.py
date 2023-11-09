@@ -195,16 +195,18 @@ def download_called_data(n_clicks, tmp_data, station, time, start, end):
     [Input("station-dropdown", "value"), State("select-vars", "value")],
 )
 def update_select_vars(station: str, selected):
-    if not station or not selected:
-        options = [{"value": x, "label": x} for x in sorted(params.default_vars)]
-        values = [
+    if not selected:
+        selected = [
             "Precipitation",
             "Reference ET",
             "Soil VWC",
             "Soil Temperature",
             "Air Temperature",
         ]
-        return options, values
+    if not station:
+        options = [{"value": x, "label": x} for x in sorted(params.default_vars)]
+        return options, selected
+    
     elems = pd.read_csv(f"{params.API_URL}elements/{station}?type=csv")
     elems = elems["description_short"].tolist()
     elems = list(set([x.split("@")[0].strip() for x in elems]))
