@@ -48,6 +48,14 @@ app.layout = lambda: lay.app_layout(app, get.get_sites())
 
 
 def render_station_plot(station, dat, select_vars, stations):
+    if dat == -1:
+        return plt.make_nodata_figure(
+            """
+            <b>No data available for selected station in the last week.</b> <br><br>
+            
+            Please change the selected station. 
+            """
+        )
     dat = pd.read_json(dat, orient="records")
 
     dat.datetime = pd.to_datetime(dat.datetime, utc=True)
@@ -187,13 +195,19 @@ def update_station_data(station, vars, tmp):
 
     elements = set(chain(*[params.elem_map[x] for x in vars]))
     elements = list(set([y for y in params.elements for x in elements if x in y]))
-    if not tmp:
-        out = get_data(station, elements)
+    if tmp == -1 or not tmp:
+        try:
+            out = get_data(station, elements)
+        except HTTPError:
+            return -1
         return out.to_json(date_format="iso", orient="records")
 
     tmp = pd.read_json(tmp, orient="records")
     if tmp.station.values[0] != station:
-        out = get_data(station, elements)
+        try:
+            out = get_data(station, elements)
+        except HTTPError:
+            return -1
         return out.to_json(date_format="iso", orient="records")
 
     existing_elements = set()
