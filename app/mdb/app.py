@@ -150,19 +150,20 @@ def update_br_card(
             )
             if network == "HydroMet":
                 ppt = get.get_ppt_summary(station)
-                out.append(
-                    dbc.Row(
-                        [
-                            dbc.Label(
-                                html.B("Precipitation Summary"),
-                                style={"text-align": "center"},
-                            ),
-                            dash_table.DataTable(ppt, **lay.TABLE_STYLING),
-                        ],
-                        justify="center",
-                        className="h-50",
+                if ppt:
+                    out.append(
+                        dbc.Row(
+                            [
+                                dbc.Label(
+                                    html.B("Precipitation Summary"),
+                                    style={"text-align": "center"},
+                                ),
+                                dash_table.DataTable(ppt, **lay.TABLE_STYLING),
+                            ],
+                            justify="center",
+                            className="h-50",
+                        )
                     )
-                )
             out = dbc.Col(out, align="center"), "data-tab"
             return out
         return dcc.Graph(figure=plt.make_nodata_figure()), "meta-tab"

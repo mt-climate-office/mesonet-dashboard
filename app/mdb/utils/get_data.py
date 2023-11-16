@@ -196,6 +196,9 @@ def get_ppt_summary(station):
         url=f"{params.API_URL}derived/ppt/?stations={station}", params={"type": "csv"}
     )
 
+    if not r.ok:
+        return {}
+
     with io.StringIO(r.text) as text_io:
         dat = pd.read_csv(text_io)
     dat = pd.melt(dat, id_vars=["station"], var_name="time", value_name="value")

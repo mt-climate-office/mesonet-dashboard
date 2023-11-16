@@ -555,7 +555,7 @@ def plot_station(stations, station=None, zoom=4):
     )
 
     county_pth = (
-        "/home/cbrust/git/mesonet-dashboard/mt_counties.geojson"
+        "/Users/Colin.Brust/git/mesonet-dashboard/mt_counties.geojson"
         if on_server is None or not on_server
         else "/app/mt_counties.geojson"
     )
