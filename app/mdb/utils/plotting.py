@@ -639,15 +639,6 @@ def plot_station(stations, station=None):
                     "https://basemap.nationalmap.gov/arcgis/rest/services/USGSShadedReliefOnly/MapServer/tile/{z}/{y}/{x}"
                 ],
             },
-            # State outlines and labels
-            {
-                "below": "traces",
-                "sourcetype": "raster",
-                "sourceattribution": 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>; Map data; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                "source": [
-                    "https://stamen-tiles.a.ssl.fastly.net/toner-hybrid/{z}/{x}/{y}.png"
-                ],
-            },
         ],
         mapbox={"center": {"lon": -109.5, "lat": 47}, "zoom": 4},
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
