@@ -555,7 +555,7 @@ def plot_station(stations, station=None, zoom=4):
     )
 
     county_pth = (
-        "/Users/Colin.Brust/git/mesonet-dashboard/mt_counties.geojson"
+        "/home/cbrust/git/mesonet-dashboard/mt_counties.geojson"
         if on_server is None or not on_server
         else "/app/mt_counties.geojson"
     )
@@ -576,14 +576,6 @@ def plot_station(stations, station=None, zoom=4):
                 ],
             },
             # State outlines and labels
-            {
-                "below": "traces",
-                "sourcetype": "raster",
-                "sourceattribution": 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>; Map data; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                "source": [
-                    "https://stamen-tiles.a.ssl.fastly.net/toner-hybrid/{z}/{x}/{y}.png"
-                ],
-            },
             {
                 "below": "traces",
                 "name": "test",
