@@ -24,6 +24,7 @@ from dash import (
 
 from mdb import layout as lay
 from mdb.utils import get_data as get
+from mdb.utils import plot_derived as plt_der
 from mdb.utils import plot_satellite as plt_sat
 from mdb.utils import plotting as plt
 from mdb.utils import tables as tab
@@ -215,6 +216,26 @@ def update_select_vars(station: str, selected):
 
     selected = [x for x in selected if x in elems]
     return [{"value": x, "label": x} for x in sorted(elems)], selected
+
+
+@app.callback(
+    Output("temp-derived-data", "data"),
+    [
+        Input("station-dropdown-derived", "value"),
+        Input("start-date-derived", "value"),
+        Input("end-date-derived", "value"),
+        Input("gdd-slider", "value"),
+    ],
+)
+def get_derived_data(station: str, start, end, slider):
+    if not station:
+        return None
+
+    dat = pd.read_csv(
+        f"https://mesonet.climate.umt.edu/api/v2/derived/daily/?stations={station}&start_time={start}&end_time={end}&type=csv&low={slider[0]}&high={slider[1]}&premade=True&rm_na=True"
+    )
+    dat = dat.to_json(date_format="iso", orient="records")
+    return dat
 
 
 @app.callback(
@@ -673,6 +694,8 @@ def toggle_main_tab(sel, stations):
         return lay.build_latest_content(station_fig=station_fig, stations=stations)
     elif sel == "satellite-tab":
         return lay.build_satellite_content(stations)
+    elif sel == "derived-tab":
+        return lay.build_derived_content(stations)
     elif sel == "download-tab":
         station_fig = plt.plot_station(stations, zoom=5)
         station = stations["station"].values[0]
@@ -766,6 +789,36 @@ def render_satellite_ts_plot(station, elements, climatology):
     }
 
     return plt_sat.plot_all(dfs, climatology=climatology)
+
+
+@app.callback(
+    Output("derived-plot", "figure"),
+    [
+        Input("temp-derived-data", "data"),
+        Input("station-dropdown-derived", "value"),
+        Input("derived-vars", "value"),
+    ],
+    prevent_initial_callback=True,
+)
+def render_derived_plot(data, station, select_vars):
+    if station is None:
+        return plt.make_nodata_figure(
+            """
+        <b>Select Station</b> <br><br>
+        
+        To get started, select a station from the dropdown.
+        """
+        )
+
+    if len(select_vars) == 0:
+        return plt.make_nodata_figure("No variables selected")
+    elif data and data != -1:
+        data = pd.read_json(data, orient="records")
+        data["datetime"] = pd.to_datetime(data["datetime"], utc=True).dt.tz_convert(
+            "America/Denver"
+        )
+
+    return plt_der.plot_derived(data, select_vars)
 
 
 @app.callback(

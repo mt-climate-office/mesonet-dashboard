@@ -14,8 +14,10 @@ if on_server is None or not on_server:
     API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 
 else:
-    elements_df = pd.read_csv("http://apiv2/elements?type=csv")
-    API_URL = "http://apiv2/"
+    elements_df = pd.read_csv(
+        "https://mesonet.climate.umt.edu/api/v2/elements?type=csv"
+    )
+    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 
 
 @dataclass

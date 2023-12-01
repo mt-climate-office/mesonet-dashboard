@@ -669,6 +669,92 @@ def build_downloader_content(
     ]
 
 
+def build_derived_selector():
+    return [
+        dmc.Stack(
+            [
+                dmc.Text(
+                    "GDD Temperature Cutoffs",
+                    size="sm",
+                    weight=500,
+                ),
+                dmc.RangeSlider(
+                    id="gdd-slider",
+                    value=[50, 86],
+                    marks=[
+                        {"value": 40, "label": "40°F"},
+                        {"value": 50, "label": "50°F"},
+                        {"value": 60, "label": "60°F"},
+                        {"value": 70, "label": "70°F"},
+                        {"value": 80, "label": "80°F"},
+                        {"value": 90, "label": "90°F"},
+                    ],
+                    min=40,
+                    max=90,
+                    step=1,
+                    minRange=1,
+                    maxRange=100,
+                ),
+            ]
+        )
+    ]
+
+
+def build_derived_dropdowns(
+    stations,
+    station=None,
+):
+    content = build_derived_selector()
+
+    children = [
+        dmc.Stack(
+            [
+                make_station_dropdowns(stations, "station-dropdown-derived", station),
+                dmc.MultiSelect(
+                    data=[
+                        {"value": "etr", "label": "Reference ET"},
+                        {"value": "feels_like", "label": "Feels Like"},
+                        {"value": "gdd", "label": "Growing Degree Days"},
+                    ],
+                    id="derived-vars",
+                    clearable=True,
+                    value=["etr", "gdd"],
+                    label="Select Variable(s)",
+                    searchable=True
+                    # style={"width": 400, "marginBottom": 10},
+                ),
+            ]
+        ),
+        dmc.Stack(
+            [
+                dmc.DatePicker(
+                    id="start-date-derived",
+                    label="Start Date",
+                    # minDate=min_date,
+                    maxDate=dt.date.today(),
+                    value=dt.date(dt.datetime.now().year, 1, 1),
+                ),
+                dmc.DatePicker(
+                    id="end-date-derived",
+                    value=dt.date.today(),
+                    maxDate=dt.date.today(),
+                    label="End Date",
+                ),
+            ],
+        ),
+    ]
+    children += content
+    return (
+        dmc.Group(
+            children=children,
+            position="center",
+            spacing="sm",
+            grow=True
+            # style={"padding": "0.75rem 0rem 0rem 0rem"},
+        ),
+    )
+
+
 def build_satellite_ts_selector():
     return (
         dbc.Col(
@@ -865,6 +951,35 @@ def build_satellite_dropdowns(
     )
 
 
+def build_derived_content(station):
+    selectors = build_derived_dropdowns(station)
+    return dbc.Card(
+        [
+            dbc.CardHeader(
+                dbc.Container(selectors, fluid=True, id="derived-selectors")
+            ),
+            dbc.CardBody(
+                html.Div(
+                    [
+                        dls.Bars(
+                            children=[
+                                dcc.Store(
+                                    id="temp-derived-data", storage_type="session"
+                                ),
+                                dcc.Graph(id="derived-plot"),
+                            ]
+                        )
+                    ]
+                )
+            ),
+        ],
+        color="secondary",
+        outline=True,
+        className="h-100",
+        style={"overflow-x": "clip"},
+    )
+
+
 def build_satellite_content(stations):
     selectors = build_satellite_dropdowns(stations)
     return dbc.Card(
@@ -914,6 +1029,21 @@ def app_layout(app_ref, stations):
                         ),
                     ),
                     dcc.Tab(
+                        label="Ag Tools",
+                        id="derived-tab",
+                        value="derived-tab",
+                        style=dict(
+                            borderLeft="0.5px black solid",
+                            borderRight="0.5px black solid",
+                            **TAB_STYLE
+                        ),
+                        selected_style=dict(
+                            borderLeft="0.5px black solid",
+                            borderRight="0.5px black solid",
+                            **SELECTED_STYLE
+                        ),
+                    ),
+                    dcc.Tab(
                         label="Data Downloader",
                         id="download-tab",
                         value="download-tab",
@@ -923,7 +1053,7 @@ def app_layout(app_ref, stations):
                             **TAB_STYLE
                         ),
                         selected_style=dict(
-                            borderLeft="1px black solid",
+                            borderLeft="0.5px black solid",
                             borderRight="0.5px black solid",
                             **SELECTED_STYLE
                         ),
