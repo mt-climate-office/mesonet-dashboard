@@ -1,3 +1,4 @@
+import numpy as np
 import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta as rd
 from plotly.subplots import make_subplots
@@ -52,6 +53,61 @@ def add_feels_like_trace(fig, dat, idx):
         col=1,
     )
     return fig
+
+
+# Define a function to update the 'value' column based on conditions
+def update_value(group):
+    if "Soil Temperature" in group["variable"].values:
+        soil_temp_value = group.loc[
+            group["variable"] == "Soil Temperature", "value"
+        ].values[0]
+        if soil_temp_value <= 32:
+            group.loc[group["variable"] == "Soil VWC", "value"] = np.nan
+    return group
+
+
+def plot_soil_heatmap(dat):
+    dat = dat.melt(id_vars=["station", "datetime"])
+    dat["variable"], dat["depth"] = dat["variable"].str.split("@", 1).str
+    dat["variable"] = dat["variable"].str.strip()
+    dat["depth"] = dat["depth"].str.replace(r"\[.*\]", "")
+    dat["depth"] = dat["depth"].str.strip()
+
+    out = dat.groupby(["depth", "station", "datetime"]).apply(update_value)
+    out = out[out["variable"] == "Soil VWC"]
+    ticks = (
+        ((out["value"] / 10).round() * 10)
+        .drop_duplicates()
+        .dropna()
+        .astype(int)
+        .values.tolist()
+    )
+    if 0 not in ticks:
+        ticks.append(0)
+
+    labs = [str(x) + "%" for x in ticks]
+    plt = go.Figure(
+        go.Heatmap(
+            x=out["datetime"],
+            y=out["depth"],
+            z=out["value"],
+            colorscale="Viridis", 
+            colorbar=dict(
+                tickmode="array",
+                tickvals=ticks, 
+                ticktext=labs,
+            ),
+            zmin=0,
+            zmax=max(out["value"]),
+        )
+    )
+    plt = plt.update_layout(
+        yaxis={
+            "title": "Soil Depth",
+            "categoryarray": ["-100 cm", "-50 cm", "-20 cm", "-10 cm", "-5 cm"],
+        }
+    )
+    return plt
 
 
 _match_case = {

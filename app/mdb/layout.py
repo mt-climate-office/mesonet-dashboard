@@ -715,6 +715,7 @@ def build_derived_dropdowns(
                         {"value": "etr", "label": "Reference ET"},
                         {"value": "feels_like", "label": "Feels Like"},
                         {"value": "gdd", "label": "Growing Degree Days"},
+                        {"value": "soil_vwc,soil_temp", "label": "Soil Heat Map"}
                     ],
                     id="derived-vars",
                     clearable=True,
