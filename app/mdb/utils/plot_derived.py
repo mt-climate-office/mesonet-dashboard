@@ -15,8 +15,8 @@ def add_etr_trace(fig, dat, idx):
             name="ETr",
             hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Reference ET Total</b>: %{y}",
         ),
-        row=idx,
-        col=1,
+        # row=idx,
+        # col=1,
     )
     return fig
 
@@ -32,25 +32,50 @@ def add_gdd_trace(fig, dat, idx):
             hovertemplate="<b>Date</b>: %{x}<br>"
             + "<b>Cumulative Degree Days</b>: %{y}",
         ),
-        row=idx,
-        col=1,
+        # row=idx,
+        # col=1,
+    )
+    fig.update_layout(
+        hovermode='x',
+        xaxis=dict(
+            showspikes = True,
+            spikemode  = 'across+toaxis',
+            spikesnap = 'cursor',
+            showline=True,
+            showgrid=True,
+        ),
+        spikedistance =  -1,
     )
     return fig
 
 
 def add_feels_like_trace(fig, dat, idx):
+    dat = dat.assign(
+        index_used = np.where(~dat['Heat Index [°F]'].isna(), 'heat', 'temp'),
+    )
+    dat = dat.assign(
+        index_used = np.where(~dat['Wind Chill [°F]'].isna(), 'chill', dat['index_used'])
+    )
+    col_map = {
+        "chill": "blue", 
+        "heat": "red",
+        "temp": "green",
+    }
     fig.add_trace(
         go.Scatter(
             x=dat["datetime"],
             y=dat["Feels Like Temperature [°F]"],
             mode="lines+markers",
-            line=dict(color="blue", width=2),
+            marker={
+                "color": dat["index_used"].apply(lambda x: col_map[x]),
+            },
+            line=dict(color="black", width=1),
             name="Feels Like Temperature",
             hovertemplate="<b>Date</b>: %{x}<br>"
             + "<b>Feels Like Temperature</b>: %{y}",
         ),
-        row=idx,
-        col=1,
+        # row=idx,
+        # col=1,
     )
     return fig
 
@@ -124,17 +149,17 @@ _axis_labeller = {
 
 
 def plot_derived(dat, selected):
-    fig = make_subplots(rows=len(selected), cols=1)
+    fig = go.Figure()
+    print(selected)
 
-    for idx, arg in enumerate(selected, 1):
-        fig = _match_case[arg](fig, dat, idx)
-        fig.update_yaxes(title_text=_axis_labeller[arg], row=idx, col=1)
+    fig = _match_case[selected](fig, dat, 1)
+    fig.update_yaxes(title_text=_axis_labeller[selected])
 
     x_ticks = [
         dat["datetime"].min() - rd(days=1),
         dat["datetime"].max() + rd(days=1),
     ]
     fig = style_figure(fig, x_ticks, legend=False)
-    fig.update_layout(height=max(500, 250 * len(selected)))
+    fig.update_layout(height=500)
 
     return fig

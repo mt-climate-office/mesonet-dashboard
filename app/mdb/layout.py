@@ -689,7 +689,7 @@ def build_derived_selector():
                         {"value": 80, "label": "80°F"},
                         {"value": 90, "label": "90°F"},
                     ],
-                    min=40,
+                    min=32,
                     max=90,
                     step=1,
                     minRange=1,
@@ -709,8 +709,20 @@ def build_derived_dropdowns(
     children = [
         dmc.Stack(
             [
-                make_station_dropdowns(stations, "station-dropdown-derived", station),
-                dmc.MultiSelect(
+                dmc.Select(
+                    data=[
+                        {"label": k, "value": v}
+                        for k, v in zip(stations["long_name"], stations["station"])
+                    ],
+                    id="station-dropdown-derived",
+                    placeholder="Select a Mesonet Station Dropdown...",
+                    value=station,
+                    label="Select Station",
+                    searchable=True,
+                    clearable=True
+                    # style={"width": "150%"}
+                ),
+                dmc.Select(
                     data=[
                         {"value": "etr", "label": "Reference ET"},
                         {"value": "feels_like", "label": "Feels Like"},
@@ -718,9 +730,8 @@ def build_derived_dropdowns(
                         {"value": "soil_vwc,soil_temp", "label": "Soil Heat Map"}
                     ],
                     id="derived-vars",
-                    clearable=True,
-                    value=["etr", "gdd"],
-                    label="Select Variable(s)",
+                    value="gdd",
+                    label="Select Variable",
                     searchable=True
                     # style={"width": 400, "marginBottom": 10},
                 ),

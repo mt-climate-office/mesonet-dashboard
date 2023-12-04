@@ -228,11 +228,12 @@ def update_select_vars(station: str, selected):
     ],
 )
 def get_derived_data(station: str, start, end, slider):
+    print(station)
     if not station:
         return None
 
     dat = pd.read_csv(
-        f"https://mesonet.climate.umt.edu/api/v2/derived/daily/?stations={station}&start_time={start}&end_time={end}&type=csv&low={slider[0]}&high={slider[1]}&premade=True&rm_na=True"
+        f"https://mesonet.climate.umt.edu/api/v2/derived/daily/?stations={station}&start_time={start}&end_time={end}&type=csv&low={slider[0]}&high={slider[1]}&premade=True&rm_na=True&keep=True"
     )
     dat = dat.to_json(date_format="iso", orient="records")
     return dat
