@@ -9,7 +9,7 @@ _axis_labeller = {
     "etr": "<b>Reference ET<br>(a=0.23) [in]</b>",
     "gdd": "<b>Cumulative GDDs<br>[GDD °F]</b>",
     "feels_like": "<b>Feels Like Temperature<br>[°F]</b>",
-    "soil_vwc,soil_temp": "<b>Soil Depth [cm]</b>",
+    "soil_vwc,soil_temp,soil_ec_blk": "<b>Soil Depth [cm]</b>",
 }
 
 
@@ -171,7 +171,7 @@ def plot_soil_heatmap(dat):
             ),
         }
     )
-    fig = add_styling(fig, dat, "soil_vwc,soil_temp", True)
+    fig = add_styling(fig, dat, "soil_vwc,soil_temp,soil_ec_blk", True)
 
     return fig
 
@@ -180,7 +180,7 @@ _match_case = {
     "etr": add_etr_trace,
     "gdd": add_gdd_trace,
     "feels_like": add_feels_like_trace,
-    "soil_vwc,soil_temp": plot_soil_heatmap,
+    "soil_vwc,soil_temp,soil_ec_blk": plot_soil_heatmap,
 }
 
 

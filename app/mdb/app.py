@@ -39,7 +39,6 @@ prefix = "/" if on_server is None or not on_server else "/dash/"
 app = Dash(
     __name__,
     title="Montana Mesonet",
-    suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
     meta_tags=[
         {
@@ -55,6 +54,7 @@ app = Dash(
 )
 
 app._favicon = "MCO_logo.svg"
+app.config['suppress_callback_exceptions'] = True
 server = app.server
 
 # Make this a function so that it is refreshed on page load.
@@ -226,16 +226,70 @@ def update_select_vars(station: str, selected):
         Input("start-date-derived", "value"),
         Input("end-date-derived", "value"),
         Input("gdd-slider", "value"),
+        Input("derived-timeagg", "value")
     ],
 )
-def get_derived_data(station: str, variable, start, end, slider):
-    print(station)
+def get_derived_data(station: str, variable, start, end, slider, time):
+
     if not station:
         return None
 
-    dat = get.get_derived(station, variable, start, end, slider[0], slider[1])
+    dat = get.get_derived(station, variable, start, end, slider[0], slider[1], time)
     dat = dat.to_json(date_format="iso", orient="records")
     return dat
+
+@app.callback(
+    Output("gdd-slider", "value", allow_duplicate=True),
+    Output("gdd-selection", "value"),
+    Output("derived-timeagg", "value"),
+    Input("derived-vars", "value"),
+    prevent_initial_call=True
+)
+def reset_derived_selectors_on_var_update(variable):
+
+    return [50, 86], None, "daily"
+
+
+@app.callback(
+    Output("derived-gdd-panel", "style"),
+    Output("derived-soil-panel", "style"),
+    Output("derived-timeagg-panel", "style"),
+    Input("derived-vars", "value")
+)
+def unhide_selected_panel(variable):
+
+    if variable in ['etr', 'feels_like']:
+        return {"display": "None"}, {"display": "None"}, {}
+    elif variable == 'gdd':
+        return {}, {"display": "None"}, {"display": "None"}
+    else:
+        return {"display": "None"}, {}, {"display": "None"}
+
+
+@app.callback(
+    Output("gdd-slider", "value", allow_duplicate=True),
+    Input("gdd-selection", "value"),
+    prevent_initial_call=True
+)
+def update_gdd_slider(sel):
+    mapper = {
+        "canola": [41, 100],
+        "corn": [50, 86],
+        "sunflower": [44, 100],
+        "wheat1": [32, 70],
+        "wheat2": [32, 95],
+    }
+    if sel is None:
+        return no_update
+    return mapper[sel]
+
+
+@app.callback(Output("derived-right-panel", "children"), Input("derived-vars", "value"))
+def update_derived_control_panel(variable):
+    if variable == "gdd":
+        return lay.build_gdd_selector()
+    else:
+        return []
 
 
 @app.callback(

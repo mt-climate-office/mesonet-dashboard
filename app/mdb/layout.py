@@ -669,34 +669,51 @@ def build_downloader_content(
     ]
 
 
-def build_derived_selector():
+def build_gdd_selector():
+    gdd_items = [
+        ("wheat1", "Barley/Wheat (Haun <2)"),
+        ("wheat2", "Barley/Wheat (Haun >2)"),
+        ("canola", "Canola"),
+        ("corn", "Corn"),
+        # ("sunflower", "Sunflower"),
+    ]
     return [
-        dmc.Stack(
-            [
-                dmc.Text(
-                    "GDD Temperature Cutoffs",
-                    size="sm",
-                    weight=500,
-                ),
-                dmc.RangeSlider(
-                    id="gdd-slider",
-                    value=[50, 86],
-                    marks=[
-                        {"value": 40, "label": "40°F"},
-                        {"value": 50, "label": "50°F"},
-                        {"value": 60, "label": "60°F"},
-                        {"value": 70, "label": "70°F"},
-                        {"value": 80, "label": "80°F"},
-                        {"value": 90, "label": "90°F"},
-                    ],
-                    min=32,
-                    max=90,
-                    step=1,
-                    minRange=1,
-                    maxRange=100,
-                ),
-            ]
-        )
+        dmc.Center(
+            dmc.Text(
+                "GDD Temperature Cutoffs",
+                size="sm",
+                weight=500,
+            )
+        ),
+        dmc.Center(
+            dmc.ChipGroup(
+                [dmc.Chip(v, value=k, size="xs") for k, v in gdd_items],
+                id="gdd-selection",
+                value=None,
+                style={"text-align": "center"},
+                # mt=10,
+            )
+        ),
+        dmc.RangeSlider(
+            id="gdd-slider",
+            value=[50, 86],
+            marks=[
+                {"value": 30, "label": "30°F"},
+                # {"value": 40, "label": "40°F"},
+                {"value": 50, "label": "50°F"},
+                # {"value": 60, "label": "60°F"},
+                {"value": 70, "label": "70°F"},
+                # {"value": 80, "label": "80°F"},
+                {"value": 90, "label": "90°F"},
+                # {"value": 100, "label": "100°F"},
+            ],
+            min=30,
+            max=100,
+            step=1,
+            minRange=1,
+            maxRange=100,
+            mb=35,
+        ),
     ]
 
 
@@ -704,65 +721,93 @@ def build_derived_dropdowns(
     stations,
     station=None,
 ):
-    content = build_derived_selector()
-
-    children = [
-        dmc.Stack(
-            [
-                dmc.Select(
-                    data=[
-                        {"label": k, "value": v}
-                        for k, v in zip(stations["long_name"], stations["station"])
-                    ],
-                    id="station-dropdown-derived",
-                    placeholder="Select a Mesonet Station Dropdown...",
-                    value=station,
-                    label="Select Station",
-                    searchable=True,
-                    # style={"width": "150%"}
-                ),
-                dmc.Select(
-                    data=[
-                        {"value": "etr", "label": "Reference ET"},
-                        {"value": "feels_like", "label": "Feels Like"},
-                        {"value": "gdd", "label": "Growing Degree Days"},
-                        {"value": "soil_vwc,soil_temp", "label": "Soil Heat Map"},
-                    ],
-                    id="derived-vars",
-                    value="gdd",
-                    label="Select Variable",
-                    searchable=True
-                    # style={"width": 400, "marginBottom": 10},
-                ),
-            ]
-        ),
-        dmc.Stack(
-            [
-                dmc.DatePicker(
-                    id="start-date-derived",
-                    label="Start Date",
-                    # minDate=min_date,
-                    maxDate=dt.date.today(),
-                    value=dt.date(dt.datetime.now().year, 1, 1),
-                ),
-                dmc.DatePicker(
-                    id="end-date-derived",
-                    value=dt.date.today(),
-                    maxDate=dt.date.today(),
-                    label="End Date",
-                ),
-            ],
-        ),
-    ]
-    children += content
-    return (
-        dmc.Group(
-            children=children,
-            position="center",
-            spacing="sm",
-            grow=True
-            # style={"padding": "0.75rem 0rem 0rem 0rem"},
-        ),
+    
+    return dmc.Grid(
+        children=[
+            dmc.Col(
+                dmc.Stack([
+                    dmc.Select(
+                        data=[
+                            {"label": k, "value": v}
+                            for k, v in zip(stations["long_name"], stations["station"])
+                        ],
+                        id="station-dropdown-derived",
+                        placeholder="Select a Mesonet Station Dropdown...",
+                        value=station,
+                        label="Select Station",
+                        searchable=True,
+                        # style={"width": "150%"}
+                    ),
+                    dmc.Select(
+                        data=[
+                            {"value": "etr", "label": "Reference ET"},
+                            {"value": "feels_like", "label": "Feels Like"},
+                            {"value": "gdd", "label": "Growing Degree Days"},
+                            {"value": "soil_vwc,soil_temp,soil_ec_blk", "label": "Soil Profile Map"},
+                        ],
+                        id="derived-vars",
+                        value="gdd",
+                        label="Select Variable",
+                        searchable=True
+                        # style={"width": 400, "marginBottom": 10},
+                    ),
+                ]),
+                span=4
+            ),
+            dmc.Col(
+                dmc.Stack(
+                [
+                    dmc.DatePicker(
+                        id="start-date-derived",
+                        label="Start Date",
+                        # minDate=min_date,
+                        maxDate=dt.date.today(),
+                        value=dt.date(dt.datetime.now().year, 1, 1),
+                    ),
+                    dmc.DatePicker(
+                        id="end-date-derived",
+                        value=dt.date.today(),
+                        maxDate=dt.date.today(),
+                        label="End Date",
+                    ),
+                ]),
+                span=4,
+            ),
+            dmc.Col(
+                id="derived-gdd-panel",
+                children=dmc.Stack(build_gdd_selector()),
+                span=4,
+            ),
+            dmc.Col(
+                id="derived-timeagg-panel",
+                children=dmc.Stack(dmc.Center([
+                    dmc.Text("Time Aggregation:"),
+                    dmc.ChipGroup(
+                        [dmc.Chip(v, value=k, size="xs") for k, v in [('hourly', 'Hourly'), ('daily', 'Daily')]],
+                        id="derived-timeagg",
+                        value='daily',
+                        style={"text-align": "center"},
+                        # mt=10,
+                    )
+                ])),
+                span=4,
+                style={"display": 'none'}
+            ),
+            dmc.Col(
+                id="derived-soil-panel",
+                children=dmc.Stack([
+                    dmc.Text("soil"),
+                    dmc.NumberInput("test")
+                ]),
+                span=4,
+                style={"display": 'none'}
+            ),
+        ],
+        # position="center",
+        # spacing="sm",
+        grow=True,
+        justify="space-around",
+        align="center"
     )
 
 
