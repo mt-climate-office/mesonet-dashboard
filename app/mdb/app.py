@@ -222,19 +222,18 @@ def update_select_vars(station: str, selected):
     Output("temp-derived-data", "data"),
     [
         Input("station-dropdown-derived", "value"),
+        Input("derived-vars", "value"),
         Input("start-date-derived", "value"),
         Input("end-date-derived", "value"),
         Input("gdd-slider", "value"),
     ],
 )
-def get_derived_data(station: str, start, end, slider):
+def get_derived_data(station: str, variable, start, end, slider):
     print(station)
     if not station:
         return None
 
-    dat = pd.read_csv(
-        f"https://mesonet.climate.umt.edu/api/v2/derived/daily/?stations={station}&start_time={start}&end_time={end}&type=csv&low={slider[0]}&high={slider[1]}&premade=True&rm_na=True&keep=True"
-    )
+    dat = get.get_derived(station, variable, start, end, slider[0], slider[1])
     dat = dat.to_json(date_format="iso", orient="records")
     return dat
 

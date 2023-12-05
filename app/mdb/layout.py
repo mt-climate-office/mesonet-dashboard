@@ -719,7 +719,6 @@ def build_derived_dropdowns(
                     value=station,
                     label="Select Station",
                     searchable=True,
-                    clearable=True
                     # style={"width": "150%"}
                 ),
                 dmc.Select(
@@ -727,7 +726,7 @@ def build_derived_dropdowns(
                         {"value": "etr", "label": "Reference ET"},
                         {"value": "feels_like", "label": "Feels Like"},
                         {"value": "gdd", "label": "Growing Degree Days"},
-                        {"value": "soil_vwc,soil_temp", "label": "Soil Heat Map"}
+                        {"value": "soil_vwc,soil_temp", "label": "Soil Heat Map"},
                     ],
                     id="derived-vars",
                     value="gdd",

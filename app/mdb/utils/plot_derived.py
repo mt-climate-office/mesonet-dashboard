@@ -1,12 +1,32 @@
 import numpy as np
+import plotly.express as px
 import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta as rd
-from plotly.subplots import make_subplots
 
 from mdb.utils.plotting import style_figure
 
+_axis_labeller = {
+    "etr": "<b>Reference ET<br>(a=0.23) [in]</b>",
+    "gdd": "<b>Cumulative GDDs<br>[GDD °F]</b>",
+    "feels_like": "<b>Feels Like Temperature<br>[°F]</b>",
+    "soil_vwc,soil_temp": "<b>Soil Depth [cm]</b>",
+}
 
-def add_etr_trace(fig, dat, idx):
+
+def add_styling(fig, dat, selected, legend=False):
+    fig.update_yaxes(title_text=_axis_labeller[selected])
+
+    x_ticks = [
+        dat["datetime"].min() - rd(days=1),
+        dat["datetime"].max() + rd(days=1),
+    ]
+    fig = style_figure(fig, x_ticks, legend=legend)
+    fig.update_layout(height=500)
+    return fig
+
+
+def add_etr_trace(dat):
+    fig = go.Figure()
     fig.add_trace(
         go.Bar(
             x=dat["datetime"],
@@ -18,10 +38,12 @@ def add_etr_trace(fig, dat, idx):
         # row=idx,
         # col=1,
     )
+    fig = add_styling(fig, dat, "etr", False)
     return fig
 
 
-def add_gdd_trace(fig, dat, idx):
+def add_gdd_trace(dat):
+    fig = go.Figure()
     fig.add_trace(
         go.Scatter(
             x=dat["datetime"],
@@ -36,47 +58,60 @@ def add_gdd_trace(fig, dat, idx):
         # col=1,
     )
     fig.update_layout(
-        hovermode='x',
+        hovermode="x",
         xaxis=dict(
-            showspikes = True,
-            spikemode  = 'across+toaxis',
-            spikesnap = 'cursor',
+            showspikes=True,
+            spikemode="across+toaxis",
+            spikesnap="cursor",
             showline=True,
             showgrid=True,
         ),
-        spikedistance =  -1,
+        spikedistance=-1,
     )
+    fig = add_styling(fig, dat, "gdd", False)
+
     return fig
 
 
-def add_feels_like_trace(fig, dat, idx):
+def add_feels_like_trace(dat):
     dat = dat.assign(
-        index_used = np.where(~dat['Heat Index [°F]'].isna(), 'heat', 'temp'),
+        index_used=np.where(
+            ~dat["Heat Index [°F]"].isna(), "Heat Index", "Average Temperature"
+        ),
     )
     dat = dat.assign(
-        index_used = np.where(~dat['Wind Chill [°F]'].isna(), 'chill', dat['index_used'])
+        index_used=np.where(
+            ~dat["Wind Chill [°F]"].isna(), "Wind Chill", dat["index_used"]
+        )
     )
-    col_map = {
-        "chill": "blue", 
-        "heat": "red",
-        "temp": "green",
-    }
-    fig.add_trace(
-        go.Scatter(
+    dat = dat.rename(columns={"index_used": "Index Used"})
+
+    fig = px.scatter(
+        dat,
+        x="datetime",
+        y="Feels Like Temperature [°F]",
+        color="Index Used",
+        color_discrete_map={
+            "Wind Chill": "blue",
+            "Heat Index": "red",
+            "Average Temperature": "green",
+        },
+        labels={"feels_like": "Feels Like", "datetime": "Datetime"},
+    ).add_trace(
+        go.Line(
             x=dat["datetime"],
             y=dat["Feels Like Temperature [°F]"],
-            mode="lines+markers",
-            marker={
-                "color": dat["index_used"].apply(lambda x: col_map[x]),
-            },
-            line=dict(color="black", width=1),
-            name="Feels Like Temperature",
-            hovertemplate="<b>Date</b>: %{x}<br>"
-            + "<b>Feels Like Temperature</b>: %{y}",
-        ),
-        # row=idx,
-        # col=1,
+            mode="lines",
+            line=dict(color="#000000"),
+            showlegend=False,
+        )
     )
+
+    # Reverse trace order so black line is on the bottom
+    fig.data = fig.data[::-1]
+
+    fig = add_styling(fig, dat, "feels_like", True)
+
     return fig
 
 
@@ -111,55 +146,46 @@ def plot_soil_heatmap(dat):
         ticks.append(0)
 
     labs = [str(x) + "%" for x in ticks]
-    plt = go.Figure(
+    fig = go.Figure(
         go.Heatmap(
             x=out["datetime"],
             y=out["depth"],
             z=out["value"],
-            colorscale="Viridis", 
+            colorscale="Viridis",
             colorbar=dict(
                 tickmode="array",
-                tickvals=ticks, 
+                tickvals=ticks,
                 ticktext=labs,
             ),
             zmin=0,
             zmax=max(out["value"]),
         )
     )
-    plt = plt.update_layout(
+
+    fig = fig.update_layout(
         yaxis={
             "title": "Soil Depth",
-            "categoryarray": ["-100 cm", "-50 cm", "-20 cm", "-10 cm", "-5 cm"],
+            "categoryarray": sorted(
+                dat["depth"].drop_duplicates().values.tolist(),
+                key=lambda x: int(x.split(" ")[0]),
+            ),
         }
     )
-    return plt
+    fig = add_styling(fig, dat, "soil_vwc,soil_temp", True)
+
+    return fig
 
 
 _match_case = {
     "etr": add_etr_trace,
     "gdd": add_gdd_trace,
     "feels_like": add_feels_like_trace,
-}
-
-_axis_labeller = {
-    "etr": "<b>Reference ET<br>(a=0.23) [in]</b>",
-    "gdd": "<b>Cumulative GDDs<br>[GDD °F]</b>",
-    "feels_like": "<b>Feels Like Temperature<br>[°F]</b>",
+    "soil_vwc,soil_temp": plot_soil_heatmap,
 }
 
 
 def plot_derived(dat, selected):
-    fig = go.Figure()
-    print(selected)
 
-    fig = _match_case[selected](fig, dat, 1)
-    fig.update_yaxes(title_text=_axis_labeller[selected])
-
-    x_ticks = [
-        dat["datetime"].min() - rd(days=1),
-        dat["datetime"].max() + rd(days=1),
-    ]
-    fig = style_figure(fig, x_ticks, legend=False)
-    fig.update_layout(height=500)
+    fig = _match_case[selected](dat)
 
     return fig

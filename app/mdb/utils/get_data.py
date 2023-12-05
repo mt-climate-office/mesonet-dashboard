@@ -322,3 +322,26 @@ def get_station_elements(station, public=False):
     station_elements = station_elements.sort_values("label")
     station_elements = station_elements.to_dict(orient="records")
     return station_elements
+
+
+def get_derived(station, variable, start, end, low, high, alpha=0.23):
+
+    endpoint = "observations/daily" if "soil_vwc" in variable else "derived/daily"
+
+    q = {
+        "stations": station,
+        "start_time": start,
+        "end_time": end,
+        "low": low,
+        "high": high,
+        "alpha": alpha,
+        "elements": variable,
+        "type": "csv",
+        "premade": True,
+        "rm_na": True,
+        "keep": True,
+    }
+    payload = parse.urlencode(q, safe=",:")
+    r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
+    print(r.url)
+    return pd.read_csv(r.url)
