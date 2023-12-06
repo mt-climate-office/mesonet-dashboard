@@ -26,8 +26,10 @@ def add_styling(fig, dat, selected, legend=False):
 
 
 def add_etr_trace(dat):
-    fig = go.Figure()
-    fig.add_trace(
+    dat = dat.sort_values("datetime")
+    dat["et_cumulative"] = dat["Reference ET (a=0.23) [in]"].cumsum()
+
+    fig = go.Figure(
         go.Bar(
             x=dat["datetime"],
             y=dat["Reference ET (a=0.23) [in]"],
@@ -35,10 +37,33 @@ def add_etr_trace(dat):
             name="ETr",
             hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Reference ET Total</b>: %{y}",
         ),
-        # row=idx,
-        # col=1,
     )
-    fig = add_styling(fig, dat, "etr", False)
+    fig.add_trace(
+        go.Scatter(
+            x=dat["datetime"],
+            y=dat["et_cumulative"],
+            yaxis="y2",
+            name="Cumulative ETr",
+            hovertemplate="<b>Date</b>: %{x}<br>"
+            + "<b>Cumulative Reference ET</b>: %{y}",
+        ),
+    )
+    fig = add_styling(fig, dat, "etr", True)
+    fig.update_layout(
+        legend=dict(orientation="h"),
+        yaxis=dict(
+            title=dict(text="<b>Reference ET<br>(a=0.23) [in]</b>"),
+            side="left",
+            range=[0, dat["Reference ET (a=0.23) [in]"].max()],
+        ),
+        yaxis2=dict(
+            title=dict(text="<b>Cumulative Reference ET<br>(a=0.23) [in]</b>"),
+            side="right",
+            overlaying="y",
+            tickmode="sync",
+            range=[0, dat["et_cumulative"].max()],
+        ),
+    )
     return fig
 
 
@@ -112,7 +137,7 @@ def add_feels_like_trace(dat):
 
     fig = add_styling(fig, dat, "feels_like", True)
 
-    return fig
+    return go.Figure(fig)
 
 
 # Define a function to update the 'value' column based on conditions
@@ -122,56 +147,74 @@ def update_value(group):
             group["variable"] == "Soil Temperature", "value"
         ].values[0]
         if soil_temp_value <= 32:
-            group.loc[group["variable"] == "Soil VWC", "value"] = np.nan
+            group.loc[
+                group["variable"].str.contains("Soil VWC|Bulk EC"), "value"
+            ] = np.nan
     return group
 
 
-def plot_soil_heatmap(dat):
-    dat = dat.melt(id_vars=["station", "datetime"])
-    dat["variable"], dat["depth"] = dat["variable"].str.split("@", 1).str
-    dat["variable"] = dat["variable"].str.strip()
-    dat["depth"] = dat["depth"].str.replace(r"\[.*\]", "")
-    dat["depth"] = dat["depth"].str.strip()
+def plot_soil_heatmap(dat, variable):
+    out = dat.melt(id_vars=["station", "datetime"])
+    out["variable"], out["depth"] = out["variable"].str.split("@", 1).str
+    out["variable"] = out["variable"].str.strip()
+    out["depth"] = out["depth"].str.replace(r"\[.*\]", "")
+    out["depth"] = out["depth"].str.strip()
 
-    out = dat.groupby(["depth", "station", "datetime"]).apply(update_value)
-    out = out[out["variable"] == "Soil VWC"]
+    if variable != "soil_temp":
+        out = out.groupby(["depth", "station", "datetime"]).apply(update_value)
+
+    if variable == "soil_vwc":
+        out = out[out["variable"] == "Soil VWC"]
+    elif variable == "soil_temp":
+        out = out[out["variable"] == "Soil Temperature"]
+    else:
+        out = out[out["variable"] == "Bulk EC"]
+
+    if variable != "soil_blk_ec":
+        ticks = (out["value"] / 10).round() * 10
+    else:
+        ticks = out["value"].round(1)
+
     ticks = (
-        ((out["value"] / 10).round() * 10)
-        .drop_duplicates()
+        ticks.drop_duplicates()
         .dropna()
-        .astype(int)
+        .astype(int if variable != "soil_blk_ec" else float)
         .values.tolist()
     )
-    if 0 not in ticks:
-        ticks.append(0)
+    # if 0 not in ticks and variable != "soil_temp":
+    #     ticks.append(0)
 
-    labs = [str(x) + "%" for x in ticks]
-    fig = go.Figure(
-        go.Heatmap(
-            x=out["datetime"],
-            y=out["depth"],
-            z=out["value"],
-            colorscale="Viridis",
-            colorbar=dict(
-                tickmode="array",
-                tickvals=ticks,
-                ticktext=labs,
-            ),
-            zmin=0,
-            zmax=max(out["value"]),
-        )
-    )
+    lab_map = {
+        "soil_vwc": "Soil VWC [%]",
+        "soil_temp": "Soil Temperature [degF]",
+        "soil_blk_ec": "Soil Electrical Conductivity [mS/cm]",
+    }
 
-    fig = fig.update_layout(
-        yaxis={
-            "title": "Soil Depth",
-            "categoryarray": sorted(
-                dat["depth"].drop_duplicates().values.tolist(),
-                key=lambda x: int(x.split(" ")[0]),
-            ),
-        }
+    mn = min(out["value"])
+    mx = max(out["value"])
+
+    out = out[["datetime", "depth", "value"]]
+    out = (
+        out.pivot(index="datetime", columns="depth", values="value")
+        .reset_index()
+        .rename_axis(None, axis=1)
     )
-    fig = add_styling(fig, dat, "soil_vwc,soil_temp,soil_ec_blk", True)
+    out = out.sort_values("datetime")
+    xs = out["datetime"]
+    ys = [x for x in out.columns if x != "datetime"]
+    ys = sorted(ys, key=lambda x: int(x.split(" ")[0]))[::-1]
+    out = out.drop(columns="datetime")[ys].T.values
+    fig = px.imshow(
+        out,
+        aspect="auto",
+        y=ys,
+        x=xs,
+        labels=dict(color=lab_map[variable]),
+        color_continuous_scale=px.colors.diverging.RdBu_r
+        if variable == "soil_temp"
+        else px.colors.sequential.Viridis,
+        color_continuous_midpoint=32 if variable == "soil_temp" else (mn / mx) / 2,
+    )
 
     return fig
 
@@ -184,8 +227,13 @@ _match_case = {
 }
 
 
-def plot_derived(dat, selected):
+def plot_derived(dat, selected, soil_var=None):
 
-    fig = _match_case[selected](dat)
-
-    return fig
+    if selected == "etr":
+        return add_etr_trace(dat)
+    elif selected == "gdd":
+        return add_gdd_trace(dat)
+    elif selected == "feels_like":
+        return add_feels_like_trace(dat)
+    else:
+        return plot_soil_heatmap(dat, soil_var)

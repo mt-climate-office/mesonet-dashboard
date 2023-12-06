@@ -54,7 +54,7 @@ app = Dash(
 )
 
 app._favicon = "MCO_logo.svg"
-app.config['suppress_callback_exceptions'] = True
+app.config["suppress_callback_exceptions"] = True
 server = app.server
 
 # Make this a function so that it is refreshed on page load.
@@ -226,7 +226,7 @@ def update_select_vars(station: str, selected):
         Input("start-date-derived", "value"),
         Input("end-date-derived", "value"),
         Input("gdd-slider", "value"),
-        Input("derived-timeagg", "value")
+        Input("derived-timeagg", "value"),
     ],
 )
 def get_derived_data(station: str, variable, start, end, slider, time):
@@ -238,29 +238,31 @@ def get_derived_data(station: str, variable, start, end, slider, time):
     dat = dat.to_json(date_format="iso", orient="records")
     return dat
 
+
 @app.callback(
     Output("gdd-slider", "value", allow_duplicate=True),
     Output("gdd-selection", "value"),
     Output("derived-timeagg", "value"),
+    Output("derived-soil-var", "value"),
     Input("derived-vars", "value"),
-    prevent_initial_call=True
+    prevent_initial_call=True,
 )
 def reset_derived_selectors_on_var_update(variable):
 
-    return [50, 86], None, "daily"
+    return [50, 86], None, "daily", "soil_vwc"
 
 
 @app.callback(
     Output("derived-gdd-panel", "style"),
     Output("derived-soil-panel", "style"),
     Output("derived-timeagg-panel", "style"),
-    Input("derived-vars", "value")
+    Input("derived-vars", "value"),
 )
 def unhide_selected_panel(variable):
 
-    if variable in ['etr', 'feels_like']:
+    if variable in ["etr", "feels_like"]:
         return {"display": "None"}, {"display": "None"}, {}
-    elif variable == 'gdd':
+    elif variable == "gdd":
         return {}, {"display": "None"}, {"display": "None"}
     else:
         return {"display": "None"}, {}, {"display": "None"}
@@ -269,7 +271,7 @@ def unhide_selected_panel(variable):
 @app.callback(
     Output("gdd-slider", "value", allow_duplicate=True),
     Input("gdd-selection", "value"),
-    prevent_initial_call=True
+    prevent_initial_call=True,
 )
 def update_gdd_slider(sel):
     mapper = {
@@ -851,10 +853,11 @@ def render_satellite_ts_plot(station, elements, climatology):
         Input("temp-derived-data", "data"),
         Input("station-dropdown-derived", "value"),
         Input("derived-vars", "value"),
+        Input("derived-soil-var", "value"),
     ],
     prevent_initial_callback=True,
 )
-def render_derived_plot(data, station, select_vars):
+def render_derived_plot(data, station, select_vars, soil_var):
     if station is None:
         return plt.make_nodata_figure(
             """
@@ -872,7 +875,8 @@ def render_derived_plot(data, station, select_vars):
             "America/Denver"
         )
 
-    return plt_der.plot_derived(data, select_vars)
+    plt = plt_der.plot_derived(data, select_vars, soil_var)
+    return plt
 
 
 @app.callback(

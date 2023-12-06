@@ -721,56 +721,64 @@ def build_derived_dropdowns(
     stations,
     station=None,
 ):
-    
+
     return dmc.Grid(
         children=[
             dmc.Col(
-                dmc.Stack([
-                    dmc.Select(
-                        data=[
-                            {"label": k, "value": v}
-                            for k, v in zip(stations["long_name"], stations["station"])
-                        ],
-                        id="station-dropdown-derived",
-                        placeholder="Select a Mesonet Station Dropdown...",
-                        value=station,
-                        label="Select Station",
-                        searchable=True,
-                        # style={"width": "150%"}
-                    ),
-                    dmc.Select(
-                        data=[
-                            {"value": "etr", "label": "Reference ET"},
-                            {"value": "feels_like", "label": "Feels Like"},
-                            {"value": "gdd", "label": "Growing Degree Days"},
-                            {"value": "soil_vwc,soil_temp,soil_ec_blk", "label": "Soil Profile Map"},
-                        ],
-                        id="derived-vars",
-                        value="gdd",
-                        label="Select Variable",
-                        searchable=True
-                        # style={"width": 400, "marginBottom": 10},
-                    ),
-                ]),
-                span=4
+                dmc.Stack(
+                    [
+                        dmc.Select(
+                            data=[
+                                {"label": k, "value": v}
+                                for k, v in zip(
+                                    stations["long_name"], stations["station"]
+                                )
+                            ],
+                            id="station-dropdown-derived",
+                            placeholder="Select a Mesonet Station Dropdown...",
+                            value=station,
+                            label="Select Station",
+                            searchable=True,
+                            # style={"width": "150%"}
+                        ),
+                        dmc.Select(
+                            data=[
+                                {"value": "etr", "label": "Reference ET"},
+                                {"value": "feels_like", "label": "Feels Like"},
+                                {"value": "gdd", "label": "Growing Degree Days"},
+                                {
+                                    "value": "soil_vwc,soil_temp,soil_ec_blk",
+                                    "label": "Soil Profile Map",
+                                },
+                            ],
+                            id="derived-vars",
+                            value="gdd",
+                            label="Select Variable",
+                            searchable=True
+                            # style={"width": 400, "marginBottom": 10},
+                        ),
+                    ]
+                ),
+                span=4,
             ),
             dmc.Col(
                 dmc.Stack(
-                [
-                    dmc.DatePicker(
-                        id="start-date-derived",
-                        label="Start Date",
-                        # minDate=min_date,
-                        maxDate=dt.date.today(),
-                        value=dt.date(dt.datetime.now().year, 1, 1),
-                    ),
-                    dmc.DatePicker(
-                        id="end-date-derived",
-                        value=dt.date.today(),
-                        maxDate=dt.date.today(),
-                        label="End Date",
-                    ),
-                ]),
+                    [
+                        dmc.DatePicker(
+                            id="start-date-derived",
+                            label="Start Date",
+                            # minDate=min_date,
+                            maxDate=dt.date.today(),
+                            value=dt.date(dt.datetime.now().year, 1, 1),
+                        ),
+                        dmc.DatePicker(
+                            id="end-date-derived",
+                            value=dt.date.today(),
+                            maxDate=dt.date.today(),
+                            label="End Date",
+                        ),
+                    ]
+                ),
                 span=4,
             ),
             dmc.Col(
@@ -780,34 +788,59 @@ def build_derived_dropdowns(
             ),
             dmc.Col(
                 id="derived-timeagg-panel",
-                children=dmc.Stack(dmc.Center([
-                    dmc.Text("Time Aggregation:"),
-                    dmc.ChipGroup(
-                        [dmc.Chip(v, value=k, size="xs") for k, v in [('hourly', 'Hourly'), ('daily', 'Daily')]],
-                        id="derived-timeagg",
-                        value='daily',
-                        style={"text-align": "center"},
-                        # mt=10,
+                children=dmc.Stack(
+                    dmc.Center(
+                        [
+                            dmc.Text("Time Aggregation:"),
+                            dmc.ChipGroup(
+                                [
+                                    dmc.Chip(v, value=k, size="xs")
+                                    for k, v in [
+                                        ("hourly", "Hourly"),
+                                        ("daily", "Daily"),
+                                    ]
+                                ],
+                                id="derived-timeagg",
+                                value="daily",
+                                style={"text-align": "center"},
+                                # mt=10,
+                            ),
+                        ]
                     )
-                ])),
+                ),
                 span=4,
-                style={"display": 'none'}
+                style={"display": "none"},
             ),
             dmc.Col(
                 id="derived-soil-panel",
-                children=dmc.Stack([
-                    dmc.Text("soil"),
-                    dmc.NumberInput("test")
-                ]),
+                children=dmc.Stack(
+                    [
+                        dmc.Text("Soil Variable to Plot"),
+                        dmc.ChipGroup(
+                            [
+                                dmc.Chip(v, value=k, size="xs")
+                                for k, v in [
+                                    ("soil_blk_ec", "Electrical Conductivity"),
+                                    ("soil_vwc", "Volumetric Water Content"),
+                                    ("soil_temp", "Temperature"),
+                                ]
+                            ],
+                            id="derived-soil-var",
+                            value="soil_vwc",
+                            style={"text-align": "center"},
+                            # mt=10,
+                        ),
+                    ]
+                ),
                 span=4,
-                style={"display": 'none'}
+                style={"display": "none"},
             ),
         ],
         # position="center",
         # spacing="sm",
         grow=True,
         justify="space-around",
-        align="center"
+        align="center",
     )
 
 
