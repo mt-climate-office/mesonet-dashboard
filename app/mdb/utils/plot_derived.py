@@ -10,6 +10,7 @@ _axis_labeller = {
     "gdd": "<b>Cumulative GDDs<br>[GDD °F]</b>",
     "feels_like": "<b>Feels Like Temperature<br>[°F]</b>",
     "soil_vwc,soil_temp,soil_ec_blk": "<b>Soil Depth [cm]</b>",
+    "cci": "<b>Complete Comfort Index [degF]</b>"
 }
 
 
@@ -97,6 +98,17 @@ def add_gdd_trace(dat):
 
     return fig
 
+
+def add_cci_trace(dat):
+
+    fig = px.scatter(
+        dat,
+        x="datetime",
+        y="Complete Comfort Index [°F]"
+    )
+    
+    fig = add_styling(fig, dat, "cci", True)
+    return fig
 
 def add_feels_like_trace(dat):
     dat = dat.assign(
@@ -224,6 +236,7 @@ _match_case = {
     "gdd": add_gdd_trace,
     "feels_like": add_feels_like_trace,
     "soil_vwc,soil_temp,soil_ec_blk": plot_soil_heatmap,
+    "cci": add_cci_trace,
 }
 
 
@@ -235,5 +248,7 @@ def plot_derived(dat, selected, soil_var=None):
         return add_gdd_trace(dat)
     elif selected == "feels_like":
         return add_feels_like_trace(dat)
+    elif selected == "cci":
+        return add_cci_trace(dat)
     else:
         return plot_soil_heatmap(dat, soil_var)

@@ -750,6 +750,7 @@ def build_derived_dropdowns(
                                     "value": "soil_vwc,soil_temp,soil_ec_blk",
                                     "label": "Soil Profile Map",
                                 },
+                                {"value": "cci", "label": "Complete Comfort Index"},
                             ],
                             id="derived-vars",
                             value="gdd",

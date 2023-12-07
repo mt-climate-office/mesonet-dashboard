@@ -260,7 +260,7 @@ def reset_derived_selectors_on_var_update(variable):
 )
 def unhide_selected_panel(variable):
 
-    if variable in ["etr", "feels_like"]:
+    if variable in ["etr", "feels_like", "cci"]:
         return {"display": "None"}, {"display": "None"}, {}
     elif variable == "gdd":
         return {}, {"display": "None"}, {"display": "None"}
@@ -858,6 +858,9 @@ def render_satellite_ts_plot(station, elements, climatology):
     prevent_initial_callback=True,
 )
 def render_derived_plot(data, station, select_vars, soil_var):
+    # For some reason I get a syntax error if this isn't here...
+    from mdb.utils import plotting as plt
+
     if station is None:
         return plt.make_nodata_figure(
             """
