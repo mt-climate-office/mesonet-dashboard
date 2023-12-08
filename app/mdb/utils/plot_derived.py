@@ -10,7 +10,7 @@ _axis_labeller = {
     "gdd": "<b>Cumulative GDDs<br>[GDD °F]</b>",
     "feels_like": "<b>Feels Like Temperature<br>[°F]</b>",
     "soil_vwc,soil_temp,soil_ec_blk": "<b>Soil Depth [cm]</b>",
-    "cci": "<b>Comprehensive Climate Index [degF]</b>"
+    "cci": "<b>Comprehensive Climate Index [degF]</b>",
 }
 
 
@@ -91,8 +91,7 @@ def add_gdd_trace(dat):
             line=dict(color="orange", width=2),
             name="Cumulative GDDs",
             yaxis="y2",
-            hovertemplate="<b>Date</b>: %{x}<br>"
-            + "<b>Cumulative GDDs</b>: %{y}",
+            hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Cumulative GDDs</b>: %{y}",
         ),
         # row=idx,
         # col=1,
@@ -138,7 +137,7 @@ def classify_cci(value, newborn=False):
         return "Moderate"
     if value >= 77 and value < 87:
         return "Mild"
-    
+
     if newborn:
         if value >= 42 and value < 77:
             return "No Stress"
@@ -165,13 +164,14 @@ def classify_cci(value, newborn=False):
             return "Extreme"
         if value < -40:
             return "Extreme Danger"
-        
+
     raise ValueError(f"Value={value} Could not be classified correctly.")
-            
 
 
 def add_cci_trace(dat, newborn=False):
-    dat['Livestock Risk'] = dat["Comprehensive Climate Index [°F]"].apply(lambda x: classify_cci(x, newborn=newborn))
+    dat["Livestock Risk"] = dat["Comprehensive Climate Index [°F]"].apply(
+        lambda x: classify_cci(x, newborn=newborn)
+    )
     fig = px.scatter(
         dat,
         x="datetime",
@@ -197,10 +197,11 @@ def add_cci_trace(dat, newborn=False):
 
     # Reverse trace order so black line is on the bottom
     fig.data = fig.data[::-1]
-    
+
     fig = add_styling(fig, dat, "cci", True)
-    fig.update_layout(xaxis_title='')
+    fig.update_layout(xaxis_title="")
     return fig
+
 
 def add_feels_like_trace(dat):
     dat = dat.assign(

@@ -183,6 +183,14 @@ def build_banner(app_ref):
                             id="help-button",
                             className="me-md-2",
                         ),
+                        dbc.Button(
+                            "SHARE PLOT",
+                            href="#",
+                            size="lg",
+                            n_clicks=0,
+                            id="test-button",
+                            className="me-md-2",
+                        ),
                     ],
                     className="d-inline-flex gap-2",
                     style={"padding": "0rem 0rem 0rem 0rem"},
@@ -750,7 +758,10 @@ def build_derived_dropdowns(
                                     "value": "soil_vwc,soil_temp,soil_ec_blk",
                                     "label": "Soil Profile Map",
                                 },
-                                {"value": "cci", "label": "Comprehensive Climate Index"},
+                                {
+                                    "value": "cci",
+                                    "label": "Comprehensive Climate Index",
+                                },
                             ],
                             id="derived-vars",
                             value="gdd",
@@ -789,45 +800,47 @@ def build_derived_dropdowns(
             ),
             dmc.Col(
                 id="derived-timeagg-panel",
-                children=dmc.Stack([
-                    dmc.Center(
-                        [
-                            dmc.Text("Time Aggregation:"),
-                            dmc.ChipGroup(
-                                [
-                                    dmc.Chip(v, value=k, size="xs")
-                                    for k, v in [
-                                        ("hourly", "Hourly"),
-                                        ("daily", "Daily"),
-                                    ]
-                                ],
-                                id="derived-timeagg",
-                                value="daily",
-                                style={"text-align": "center"},
-                                # mt=10,
-                            ),
-                        ]
-                    ),
-                    dmc.Center(
-                        id="livestock-container",
-                        children=[
-                            dmc.Text("Livestock Type:"),
-                            dmc.ChipGroup(
-                                [
-                                    dmc.Chip(v, value=k, size="xs")
-                                    for k, v in [
-                                        ("adult", "Adult"),
-                                        ("newborn", "Newborn"),
-                                    ]
-                                ],
-                                id="livestock-type",
-                                value="adult",
-                                style={"text-align": "center"},
-                                # mt=10,
-                            ),
-                        ]
-                    )
-        ]),
+                children=dmc.Stack(
+                    [
+                        dmc.Center(
+                            [
+                                dmc.Text("Time Aggregation:"),
+                                dmc.ChipGroup(
+                                    [
+                                        dmc.Chip(v, value=k, size="xs")
+                                        for k, v in [
+                                            ("hourly", "Hourly"),
+                                            ("daily", "Daily"),
+                                        ]
+                                    ],
+                                    id="derived-timeagg",
+                                    value="daily",
+                                    style={"text-align": "center"},
+                                    # mt=10,
+                                ),
+                            ]
+                        ),
+                        dmc.Center(
+                            id="livestock-container",
+                            children=[
+                                dmc.Text("Livestock Type:"),
+                                dmc.ChipGroup(
+                                    [
+                                        dmc.Chip(v, value=k, size="xs")
+                                        for k, v in [
+                                            ("adult", "Adult"),
+                                            ("newborn", "Newborn"),
+                                        ]
+                                    ],
+                                    id="livestock-type",
+                                    value="adult",
+                                    style={"text-align": "center"},
+                                    # mt=10,
+                                ),
+                            ],
+                        ),
+                    ]
+                ),
                 span=4,
                 style={"display": "none"},
             ),
@@ -1110,14 +1123,11 @@ def build_satellite_content(stations):
 def app_layout(app_ref, stations):
     stations = stations.to_json(orient="records")
     return dbc.Container(
-        [
+        id="content-layout",
+        children=[
             dcc.Location(id="url", refresh=False),
-            dcc.Interval(
-                id="interval",
-                interval=5000,  # 300000, # miliseconds = 5 mins
-                n_intervals=0,
-            ),
             dcc.Store(data=stations, id="mesonet-stations", storage_type="memory"),
+            dcc.Store(data="", id="triggered-by", storage_type="memory"),
             build_banner(app_ref),
             dcc.Tabs(
                 style={"width": "100%", "font-size": "100%", "height": "4.5vh"},
