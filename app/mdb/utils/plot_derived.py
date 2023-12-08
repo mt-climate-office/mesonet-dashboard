@@ -10,7 +10,7 @@ _axis_labeller = {
     "gdd": "<b>Cumulative GDDs<br>[GDD °F]</b>",
     "feels_like": "<b>Feels Like Temperature<br>[°F]</b>",
     "soil_vwc,soil_temp,soil_ec_blk": "<b>Soil Depth [cm]</b>",
-    "cci": "<b>Complete Comfort Index [degF]</b>"
+    "cci": "<b>Comprehensive Climate Index [degF]</b>"
 }
 
 
@@ -22,7 +22,11 @@ def add_styling(fig, dat, selected, legend=False):
         dat["datetime"].max() + rd(days=1),
     ]
     fig = style_figure(fig, x_ticks, legend=legend)
-    fig.update_layout(height=500)
+    fig.update_layout(
+        height=500,
+        legend=dict(orientation="h"),
+    )
+
     return fig
 
 
@@ -69,20 +73,32 @@ def add_etr_trace(dat):
 
 
 def add_gdd_trace(dat):
-    fig = go.Figure()
+    fig = go.Figure(
+        go.Bar(
+            x=dat["datetime"],
+            y=dat["GDDs [GDD °F]"],
+            marker=dict(color="orange"),
+            name="Daily GDDs",
+            hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Daily GDDs</b>: %{y}",
+        )
+    )
+
     fig.add_trace(
         go.Scatter(
             x=dat["datetime"],
             y=dat["Cumulative GDDs [GDD °F]"],
             mode="lines+markers",
             line=dict(color="orange", width=2),
-            name="GDDs",
+            name="Cumulative GDDs",
+            yaxis="y2",
             hovertemplate="<b>Date</b>: %{x}<br>"
-            + "<b>Cumulative Degree Days</b>: %{y}",
+            + "<b>Cumulative GDDs</b>: %{y}",
         ),
         # row=idx,
         # col=1,
     )
+    fig = add_styling(fig, dat, "gdd", True)
+
     fig.update_layout(
         hovermode="x",
         xaxis=dict(
@@ -93,21 +109,97 @@ def add_gdd_trace(dat):
             showgrid=True,
         ),
         spikedistance=-1,
+        legend=dict(orientation="h"),
+        yaxis=dict(
+            title=dict(text="<b>Daily GDDs [GDD °F]</b>"),
+            side="left",
+            range=[0, dat["GDDs [GDD °F]"].max()],
+        ),
+        yaxis2=dict(
+            title=dict(text="<b>Cumulative GDDs [GDD °F]</b>"),
+            side="right",
+            overlaying="y",
+            tickmode="sync",
+            range=[0, dat["Cumulative GDDs [GDD °F]"].max()],
+        ),
     )
-    fig = add_styling(fig, dat, "gdd", False)
 
     return fig
 
 
-def add_cci_trace(dat):
+def classify_cci(value, newborn=False):
+    if value >= 113:
+        return "Extreme Danger"
+    if value >= 105 and value < 113:
+        return "Extreme"
+    if value >= 96 and value < 105:
+        return "Severe"
+    if value >= 87 and value < 96:
+        return "Moderate"
+    if value >= 77 and value < 87:
+        return "Mild"
+    
+    if newborn:
+        if value >= 42 and value < 77:
+            return "No Stress"
+        if value >= 32 and value < 42:
+            return "Mild"
+        if value >= 23 and value < 32:
+            return "Moderate"
+        if value >= 14 and value < 23:
+            return "Severe"
+        if value >= 5 and value < 14:
+            return "Extreme"
+        if value < 5:
+            return "Extreme Danger"
+    else:
+        if value >= 33 and value < 77:
+            return "No Stress"
+        if value >= 14 and value < 33:
+            return "Mild"
+        if value >= -4 and value < 14:
+            return "Moderate"
+        if value >= -22 and value < -4:
+            return "Severe"
+        if value >= -40 and value < -22:
+            return "Extreme"
+        if value < -40:
+            return "Extreme Danger"
+        
+    raise ValueError(f"Value={value} Could not be classified correctly.")
+            
 
+
+def add_cci_trace(dat, newborn=False):
+    dat['Livestock Risk'] = dat["Comprehensive Climate Index [°F]"].apply(lambda x: classify_cci(x, newborn=newborn))
     fig = px.scatter(
         dat,
         x="datetime",
-        y="Complete Comfort Index [°F]"
+        y="Comprehensive Climate Index [°F]",
+        color="Livestock Risk",
+        color_discrete_map={
+            "Extreme Danger": "#843094",
+            "Extreme": "#CC0606",
+            "Severe": "#FF4400",
+            "Moderate": "#FFAD00",
+            "Mild": "#FFFF00",
+            "No Stress": "#A5A5A5",
+        },
+    ).add_trace(
+        go.Line(
+            x=dat["datetime"],
+            y=dat["Comprehensive Climate Index [°F]"],
+            mode="lines",
+            line=dict(color="#000000"),
+            showlegend=False,
+        )
     )
+
+    # Reverse trace order so black line is on the bottom
+    fig.data = fig.data[::-1]
     
     fig = add_styling(fig, dat, "cci", True)
+    fig.update_layout(xaxis_title='')
     return fig
 
 def add_feels_like_trace(dat):
@@ -231,16 +323,7 @@ def plot_soil_heatmap(dat, variable):
     return fig
 
 
-_match_case = {
-    "etr": add_etr_trace,
-    "gdd": add_gdd_trace,
-    "feels_like": add_feels_like_trace,
-    "soil_vwc,soil_temp,soil_ec_blk": plot_soil_heatmap,
-    "cci": add_cci_trace,
-}
-
-
-def plot_derived(dat, selected, soil_var=None):
+def plot_derived(dat, selected, soil_var=None, newborn=False):
 
     if selected == "etr":
         return add_etr_trace(dat)
@@ -249,6 +332,6 @@ def plot_derived(dat, selected, soil_var=None):
     elif selected == "feels_like":
         return add_feels_like_trace(dat)
     elif selected == "cci":
-        return add_cci_trace(dat)
+        return add_cci_trace(dat, newborn)
     else:
         return plot_soil_heatmap(dat, soil_var)

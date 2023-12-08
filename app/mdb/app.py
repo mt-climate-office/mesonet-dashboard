@@ -253,6 +253,16 @@ def reset_derived_selectors_on_var_update(variable):
 
 
 @app.callback(
+        Output("livestock-container", "style"),
+        Input("derived-vars", "value"),
+)
+def hide_livestock_type(variable):
+    if variable != "cci":
+        return {"display": "None"}
+    return {}
+
+
+@app.callback(
     Output("derived-gdd-panel", "style"),
     Output("derived-soil-panel", "style"),
     Output("derived-timeagg-panel", "style"),
@@ -854,10 +864,11 @@ def render_satellite_ts_plot(station, elements, climatology):
         Input("station-dropdown-derived", "value"),
         Input("derived-vars", "value"),
         Input("derived-soil-var", "value"),
+        Input("livestock-type", "value"),
     ],
     prevent_initial_callback=True,
 )
-def render_derived_plot(data, station, select_vars, soil_var):
+def render_derived_plot(data, station, select_vars, soil_var, livestock_type):
     # For some reason I get a syntax error if this isn't here...
     from mdb.utils import plotting as plt
 
@@ -878,7 +889,7 @@ def render_derived_plot(data, station, select_vars, soil_var):
             "America/Denver"
         )
 
-    plt = plt_der.plot_derived(data, select_vars, soil_var)
+    plt = plt_der.plot_derived(data, select_vars, soil_var, livestock_type=="newborn")
     return plt
 
 

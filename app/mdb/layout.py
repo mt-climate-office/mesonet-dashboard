@@ -750,7 +750,7 @@ def build_derived_dropdowns(
                                     "value": "soil_vwc,soil_temp,soil_ec_blk",
                                     "label": "Soil Profile Map",
                                 },
-                                {"value": "cci", "label": "Complete Comfort Index"},
+                                {"value": "cci", "label": "Comprehensive Climate Index"},
                             ],
                             id="derived-vars",
                             value="gdd",
@@ -770,12 +770,12 @@ def build_derived_dropdowns(
                             label="Start Date",
                             # minDate=min_date,
                             maxDate=dt.date.today(),
-                            value=dt.date(dt.datetime.now().year, 1, 1),
+                            value=dt.date.today() - rd(days=365),
                         ),
                         dmc.DatePicker(
                             id="end-date-derived",
-                            value=dt.date.today(),
-                            maxDate=dt.date.today(),
+                            value=dt.date.today() + rd(days=1),
+                            maxDate=dt.date.today() + rd(days=1),
                             label="End Date",
                         ),
                     ]
@@ -789,7 +789,7 @@ def build_derived_dropdowns(
             ),
             dmc.Col(
                 id="derived-timeagg-panel",
-                children=dmc.Stack(
+                children=dmc.Stack([
                     dmc.Center(
                         [
                             dmc.Text("Time Aggregation:"),
@@ -807,8 +807,27 @@ def build_derived_dropdowns(
                                 # mt=10,
                             ),
                         ]
+                    ),
+                    dmc.Center(
+                        id="livestock-container",
+                        children=[
+                            dmc.Text("Livestock Type:"),
+                            dmc.ChipGroup(
+                                [
+                                    dmc.Chip(v, value=k, size="xs")
+                                    for k, v in [
+                                        ("adult", "Adult"),
+                                        ("newborn", "Newborn"),
+                                    ]
+                                ],
+                                id="livestock-type",
+                                value="adult",
+                                style={"text-align": "center"},
+                                # mt=10,
+                            ),
+                        ]
                     )
-                ),
+        ]),
                 span=4,
                 style={"display": "none"},
             ),
