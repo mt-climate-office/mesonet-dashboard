@@ -721,10 +721,11 @@ def update_photo_direction(station, direction, dt):
     State("content-layout", "children"),
 )
 def save(n_clicks, item):
-    import pickle
+    import json
 
     if n_clicks is not None and n_clicks > 0:
-        pickle.dump(item, open("./test.pickle", "wb"))
+        with open("./test.json", "w") as json_file:
+            json.dump(item, json_file, indent=4)
     return n_clicks
 
 
@@ -741,13 +742,13 @@ def parse_query_string(query_string):
     State("content-layout", "children"),
 )
 def load_stuff(q, state):
-    import pickle
+    import json
 
     q = parse_query_string(q)
     print(q)
     if "state" in q:
         with open(q["state"], "rb") as file:
-            state = pickle.load(file)
+            state = json.load(file)
     return state
 
 
