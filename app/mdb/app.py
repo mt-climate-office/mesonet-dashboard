@@ -30,6 +30,7 @@ from mdb.utils import plot_satellite as plt_sat
 from mdb.utils import plotting as plt
 from mdb.utils import tables as tab
 from mdb.utils.params import params
+from mdb.utils.update import update_component_state
 
 pd.options.mode.chained_assignment = None
 
@@ -720,12 +721,24 @@ def update_photo_direction(station, direction, dt):
     Input("test-button", "n_clicks"),
     State("content-layout", "children"),
 )
-def save(n_clicks, item):
+def save(n_clicks, layout):
     import json
 
     if n_clicks is not None and n_clicks > 0:
+
+        layout = update_component_state(
+            layout,
+            None,
+            temp_station_data={"data": None},
+            dl_data={"data": None},
+            temp_derived_data={"data": None},
+            station_data={"figure": None},
+            derived_plot={"figure": None},
+            satellite_plot={"figure": None},
+        )
+
         with open("./test.json", "w") as json_file:
-            json.dump(item, json_file, indent=4)
+            json.dump(layout, json_file, indent=4)
     return n_clicks
 
 
