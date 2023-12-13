@@ -1,8 +1,10 @@
-from dataclasses import dataclass
+import json
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from typing import Any
 
-from dash import dcc, html, no_update, Dash
-from dash.dependencies import Component, Input, Output, State
+from dash import Dash, dcc, html, no_update
+from dash.dependencies import Input, Output, State
 
 AppLayout = list[dict[str, Any]]
 
@@ -57,60 +59,114 @@ def update_component_state(
 
 
 @dataclass
-class DashShare:
+class DashShare(ABC):
     app: Dash
-    interval_trigger: tuple
+    load_input: tuple
+    save_input: tuple
+    save_output: tuple
     layout_id: str = "app-layout"
-    store_id: str = "triggered-by"
-    store_value: str = "triggered"
     interval_id: str = "update-timer"
+    interval_delay: int = 5000
+    locked: bool = field(init=False)
 
-    def _make_state_tracker_components(self):
+    def __post_init__(self):
+        self.locked = False
+
+    def _make_state_tracker_components(self, *args):
         return [
-            dcc.Store(id=self.store_id, storage_type="memory", data=""),
             dcc.Interval(
                 id=self.interval_id,
-                interval=5000,
+                interval=self.interval_delay,
                 disabled=True,
                 max_intervals=1,
             ),
+            *args,
         ]
 
-    def update_layout(self, layout):
+    def lock(self):
+        self.locked = True
+
+    def unlock(self):
+        self.locked = False
+
+    def update_layout(self, layout, *args):
         return html.Div(
             id=self.layout_id,
-            children=[layout, *self._make_state_tracker_components()],
+            children=[layout, *self._make_state_tracker_components(*args)],
         )
 
-    def prevent_update(self, func):
+    def pause_update(self, func):
         def inner(*args, **kwargs):
-            if self.store_value in args:
+            if self.locked:
                 return no_update
             return func(*args, **kwargs)
 
         return inner
 
-    def register_callbacks(self):
+    @abstractmethod
+    def save(self, input, state):
+        pass
 
+    @abstractmethod
+    def load(self, input, state):
+        pass
+
+    def register_callbacks(self):
         @self.app.callback(
             Output(self.interval_id, "disabled", allow_duplicate=True),
             Output(self.interval_id, "n_intervals"),
-            Input(*self.interval_trigger),
+            Input(*self.load_input),
             prevent_initial_call=True,
         )
         def enable_interval(trigger):
-            print("enabled")
+            print("locking")
+            self.lock()
             return False, 0
 
-
         @self.app.callback(
-            Output(self.store_id, "data"),
+            Output(self.interval_id, "disabled", allow_duplicate=True),
             Input(self.interval_id, "n_intervals"),
-            State(self.store_id, "data"),
             prevent_initial_call=True,
         )
-        def replace_store(n, store):
+        def replace_store(n):
             if n > 0:
-                print("triggered")
-                return ""
-            return store
+                print("unlocking")
+                self.unlock()
+                return True
+            return False
+
+        @self.app.callback(
+            Output(*self.save_output),
+            Input(*self.save_input),
+            State(self.layout_id, "children"),
+        )
+        def save(input, state):
+            return self.save(input, state)
+
+        @self.app.callback(
+            Output(self.layout_id, "children"),
+            Input(*self.load_input),
+            State(self.layout_id, "children"),
+        )
+        def load(input, state):
+            return self.load(input, state)
+
+
+class FileShare(DashShare):
+    def load(self, input, state):
+        if input:
+            with open("./test.json", "rb") as file:
+                state = json.load(file)
+            return state
+        return state
+
+    def save(self, input, state):
+        if input is not None and input > 0:
+
+            state = update_component_state(
+                state, None, test1={"children": "Surprise!!!!"}
+            )
+
+            with open("./test.json", "w") as json_file:
+                json.dump(state, json_file, indent=4)
+        return input

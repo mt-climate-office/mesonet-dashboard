@@ -6,8 +6,8 @@
                     "props": {
                         "children": "Save",
                         "id": "save",
-                        "n_clicks": 1,
-                        "n_clicks_timestamp": 1702423756069
+                        "n_clicks": 2,
+                        "n_clicks_timestamp": 1702495380076
                     },
                     "type": "Button",
                     "namespace": "dash_html_components"
@@ -24,8 +24,8 @@
                     "props": {
                         "children": "Increment",
                         "id": "inc",
-                        "n_clicks": 5,
-                        "n_clicks_timestamp": 1702423754140
+                        "n_clicks": 1,
+                        "n_clicks_timestamp": 1702495374237
                     },
                     "type": "Button",
                     "namespace": "dash_html_components"
@@ -40,7 +40,7 @@
                 },
                 {
                     "props": {
-                        "children": "Clicked 10 times",
+                        "children": "Clicked 2 times",
                         "id": "test2"
                     },
                     "type": "P",
@@ -54,7 +54,7 @@
                                     "children": [
                                         {
                                             "props": {
-                                                "children": "Clicked 15 times",
+                                                "children": "Clicked 3 times",
                                                 "id": "test3"
                                             },
                                             "type": "P",
@@ -77,20 +77,11 @@
     },
     {
         "props": {
-            "id": "triggered-by",
-            "data": "triggered",
-            "storage_type": "memory",
-            "modified_timestamp": 1702423757788
-        },
-        "type": "Store",
-        "namespace": "dash_core_components"
-    },
-    {
-        "props": {
             "id": "update-timer",
-            "disabled": true,
+            "disabled": false,
             "interval": 5000,
-            "max_intervals": 1
+            "max_intervals": 1,
+            "n_intervals": 0
         },
         "type": "Interval",
         "namespace": "dash_core_components"
