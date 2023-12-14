@@ -77,6 +77,7 @@ class FileShare(DashShare):
             state = update_component_state(
                 state,
                 None,
+                **{self.modal_id: {"is_open": False}}
             )
         return state
 

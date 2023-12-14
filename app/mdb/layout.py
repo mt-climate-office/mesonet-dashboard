@@ -159,15 +159,6 @@ def build_banner(app_ref):
                 ),
                 html.Div(
                     [
-                        # dbc.Button(
-                        #     "MESONET DOWNLOADER",
-                        #     href="https://shiny.cfc.umt.edu/mesonet-download/",
-                        #     size="lg",
-                        #     n_clicks=0,
-                        #     id="shiny-download-button",
-                        #     className="me-md-2",
-                        #     target="_blank",
-                        # ),
                         dbc.Button(
                             "GIVE FEEDBACK",
                             href="#",
@@ -186,7 +177,7 @@ def build_banner(app_ref):
                         ),
                         dbc.Button(
                             "SHARE PLOT",
-                            # href="#",
+                            href="#",
                             size="lg",
                             n_clicks=0,
                             id="test-button",

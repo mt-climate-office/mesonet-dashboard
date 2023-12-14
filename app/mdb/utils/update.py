@@ -1,4 +1,5 @@
 import json
+import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from hashlib import shake_128
@@ -236,5 +237,8 @@ class DashShare(ABC):
 
     @staticmethod
     def get_url_base(url):
+        on_server = os.getenv("ON_SERVER")
+
         parsed_url = urlparse(url)
-        return f"{parsed_url.scheme}://{parsed_url.netloc}"
+        end = "/dash" if on_server is None or not on_server else ""
+        return f"{parsed_url.scheme}://{parsed_url.netloc}{end}"
