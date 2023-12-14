@@ -240,5 +240,5 @@ class DashShare(ABC):
         on_server = os.getenv("ON_SERVER")
 
         parsed_url = urlparse(url)
-        end = "/dash" if on_server is None or not on_server else ""
+        end = "" if on_server is None or not on_server else "/dash"
         return f"{parsed_url.scheme}://{parsed_url.netloc}{end}"
