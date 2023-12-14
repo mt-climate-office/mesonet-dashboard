@@ -186,7 +186,7 @@ def build_banner(app_ref):
                         ),
                         dbc.Button(
                             "SHARE PLOT",
-                            href="#",
+                            # href="#",
                             size="lg",
                             n_clicks=0,
                             id="test-button",
@@ -316,30 +316,6 @@ def build_dropdowns(stations):
                         ),
                         width="auto",
                     ),
-                    # dbc.Col(
-                    #     dbc.InputGroup(
-                    #         [
-                    #             dbc.Button(
-                    #                 "Download Data",
-                    #                 href="#",
-                    #                 size="lg",
-                    #                 n_clicks=0,
-                    #                 id="download-button",
-                    #                 className="me-md-2",
-                    #             ),
-                    #             dbc.Tooltip(
-                    #                 """Download the data seen in the plots. For a more detailed interface to download data,
-                    #             please click on the 'Data Downloader' tab.
-                    #             """,
-                    #                 target="download-button",
-                    #             ),
-                    #             dcc.Download(id="data-download"),
-                    #         ],
-                    #         className="justify-content-end",
-                    #     ),
-                    #     width="auto",
-                    #     align="center",  # Center the button
-                    # ),
                 ],
                 style={"padding": "0.5rem"},  # Add some padding to the row
                 justify="around",
@@ -488,7 +464,7 @@ def build_latest_content(station_fig, stations):
             lg={"size": 4, "order": "last", "offset": 0},
             xl={"size": 4, "order": "last", "offset": 0},
             style={"maxHeight": "92vh", "overflow-y": "scroll", "overflow-x": "clip"},
-            id="sub-cards"
+            id="sub-cards",
         ),
         dbc.Col(
             html.Div(
@@ -639,7 +615,7 @@ def build_downloader_content(
                             dbc.Card(
                                 html.Div(
                                     dbc.CardBody(
-                                        id="bl-content",
+                                        # id="bl-content",
                                         children=dcc.Graph(
                                             id="download-map", figure=station_fig
                                         ),

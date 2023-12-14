@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 import os
 import re
 from itertools import chain, cycle
@@ -6,7 +7,6 @@ from pathlib import Path
 from typing import Union
 from urllib.error import HTTPError
 from urllib.parse import parse_qs
-import json
 
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
@@ -31,7 +31,7 @@ from mdb.utils import plot_satellite as plt_sat
 from mdb.utils import plotting as plt
 from mdb.utils import tables as tab
 from mdb.utils.params import params
-from mdb.utils.update import update_component_state, DashShare
+from mdb.utils.update import DashShare, update_component_state
 
 pd.options.mode.chained_assignment = None
 
@@ -60,6 +60,7 @@ app._favicon = "MCO_logo.svg"
 app.config["suppress_callback_exceptions"] = True
 server = app.server
 
+
 def parse_query_string(query_string):
     query_string = query_string.replace("?", "")
     parsed_data = parse_qs(query_string)
@@ -71,26 +72,36 @@ class FileShare(DashShare):
     def load(self, input, state):
         q = parse_query_string(input)
         if "state" in q:
-            with open(q["state"], "rb") as file:
+            with open(f'./share/{q["state"]}.json', "rb") as file:
                 state = json.load(file)
+            state = update_component_state(
+                state,
+                None,
+            )
         return state
 
-    def save(self, input, state):
+    def save(self, input, state, hash):
+        out_dir = Path("./share")
+        if not out_dir.exists():
+            out_dir.mkdir()
         if input is not None and input > 0:
-
             state = update_component_state(
                 state,
                 None,
                 temp_station_data={"data": -1},
                 dl_data={"data": None},
+                dl_plots={"figure": {}},
                 temp_derived_data={"data": None},
-                station_data={"figure": None},
-                derived_plot={"figure": None},
-                satellite_plot={"figure": None},
-                station_fig={"figure": None}
+                station_data={"figure": {}},
+                derived_plot={"figure": {}},
+                satellite_plot={"figure": {}},
+                satellite_compare={"figure": {}},
+                station_fig={"figure": {}},
+                save_modal={"is_open": False},
+                download_map={"figure": {}},
             )
 
-            with open("./test2.json", "w") as json_file:
+            with open(f"./{out_dir}/{hash}.json", "w") as json_file:
                 json.dump(state, json_file, indent=4)
         return input
 
@@ -100,6 +111,7 @@ tracker = FileShare(
     load_input=("url", "search"),
     save_input=("test-button", "n_clicks"),
     save_output=("test-button", "n_clicks"),
+    url_input="url",
 )
 # Make this a function so that it is refreshed on page load.
 app.layout = lambda: tracker.update_layout(lay.app_layout(app, get.get_sites()))
@@ -359,8 +371,6 @@ def update_derived_control_panel(variable):
     ],
 )
 def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
-    print('temp')
-    print(station)
     if not station:
         return None
     start = dt.datetime.strptime(start, "%Y-%m-%d").date()
@@ -388,7 +398,6 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
             out = out.to_json(date_format="iso", orient="records")
         except HTTPError:
             out = -1
-        print(out)
         return out
     tmp = pd.read_json(tmp, orient="records")
     if tmp.station.values[0] != station:
@@ -410,8 +419,6 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
             out = out.to_json(date_format="iso", orient="records")
         except HTTPError:
             out = -1
-        print(2)
-        print(out)
         return out
     existing_elements = set()
     for x in tmp.columns:
@@ -450,8 +457,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     out.datetime = pd.to_datetime(out.datetime)
 
     out = tmp.merge(out, on=["station", "datetime"])
-    print(3)
-    print(out)
+
     return out.to_json(date_format="iso", orient="records")
 
 
@@ -460,6 +466,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     Input("station-dropdown", "value"),
     State("mesonet-stations", "data"),
 )
+@tracker.pause_update
 def adjust_start_date(station, stations):
     stations = pd.read_json(stations, orient="records")
 
@@ -732,6 +739,7 @@ def update_ul_card(at, station, tmp_data, stations):
 
 
 @app.callback(Output("gridmet-switch", "options"), Input("hourly-switch", "value"))
+@tracker.pause_update
 def disable_gridmet_switch(period):
     if period != "daily":
         return [{"label": "gridMET Normals", "value": 1, "disabled": True}]
@@ -748,7 +756,6 @@ def disable_gridmet_switch(period):
 )
 def update_photo_direction(station, direction, dt):
     return plt.plot_latest_ace_image(station, direction=direction, dt=dt)
-
 
 
 @app.callback(
@@ -834,6 +841,7 @@ def toggle_main_tab(sel, stations):
     Input("network-options", "value"),
     State("mesonet-stations", "data"),
 )
+@tracker.pause_update
 def subset_stations(opts, stations):
     stations = pd.read_json(stations, orient="records")
 
@@ -854,6 +862,7 @@ def subset_stations(opts, stations):
     State("mesonet-stations", "data"),
     State("station-dropdown-satellite", "value"),
 )
+@tracker.pause_update
 def update_sat_selectors(sel, stations, station):
     if sel == "timeseries":
         graph = dls.Bars(dcc.Graph(id="satellite-plot"))
@@ -951,6 +960,7 @@ def render_derived_plot(data, station, select_vars, soil_var, livestock_type):
 @app.callback(
     Output("compare1", "options"), Input("station-dropdown-satellite", "value")
 )
+@tracker.pause_update
 def update_compare2_options(station):
     options = [
         {"label": " ", "value": " ", "disabled": True},
@@ -1065,6 +1075,7 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
     Input("dl-public", "checked"),
     State("download-elements", "value"),
 )
+@tracker.pause_update
 def update_downloader_elements(station, public, elements):
     if station is None:
         return [], []
@@ -1085,6 +1096,7 @@ def update_downloader_elements(station, public, elements):
     Input("station-dropdown-dl", "value"),
     State("mesonet-stations", "data"),
 )
+@tracker.pause_update
 def set_downloader_start_date(station, stations):
     if station is None:
         return no_update, no_update, no_update
@@ -1197,6 +1209,7 @@ def change_alert_text(dl_button, req_button):
     Output("station-dropdown-dl", "value"),
     Input("download-map", "clickData"),
 )
+@tracker.pause_update
 def select_station_from_map(clickData):
     if clickData:
         lat, lon, name, elevation, href, station, color = clickData["points"][0][
@@ -1226,6 +1239,18 @@ def plot_downloaded_data(data):
         out.append(tmp_plot)
 
     return out
+
+
+@app.callback(
+    Output("download-map", "figure"),
+    Input("dl-plots", "figure"),
+    State("mesonet-stations", "data"),
+)
+def update_dl_map(plots, stations):
+    if tracker.locked:
+        stations = pd.read_json(stations, orient="records")
+        return plt.plot_station(stations=stations)
+    return no_update
 
 
 if __name__ == "__main__":

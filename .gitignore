@@ -11,3 +11,4 @@ app/scratch.py
 app/load.py
 .env
 app/libs/.env
+app/mdb/share

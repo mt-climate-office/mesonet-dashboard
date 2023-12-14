@@ -1,9 +1,11 @@
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from hashlib import sha256
+from hashlib import shake_128
 from typing import Any
+from urllib.parse import urlparse
 
+import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html, no_update
 from dash.dependencies import Input, Output, State
 
@@ -13,7 +15,7 @@ AppLayout = list[dict[str, Any]]
 def update_component_state(
     layout: list[dict[str, Any]] | dict[str, Any],
     updated: None | list[dict[str, Any]] = None,
-    **kwargs: dict[str, Any]
+    **kwargs: dict[str, Any],
 ) -> list[dict[str, Any]]:
     """
     Recursively updates values in a Dash app layout.
@@ -40,12 +42,14 @@ def update_component_state(
         updated = [] if isinstance(layout, list) else {}
 
     if isinstance(layout, dict):
-        if 'children' in layout:
-            layout['children'] = update_component_state(layout['children'], None, **kwargs)
-        if 'props' in layout:
-            layout['props'] = update_component_state(layout['props'], None, **kwargs)
-        if 'id' in layout:
-            id = layout['id'].replace("-", "_")
+        if "children" in layout:
+            layout["children"] = update_component_state(
+                layout["children"], None, **kwargs
+            )
+        if "props" in layout:
+            layout["props"] = update_component_state(layout["props"], None, **kwargs)
+        if "id" in layout:
+            id = layout["id"].replace("-", "_")
             if id in kwargs:
                 layout.update(kwargs[id])
 
@@ -59,9 +63,13 @@ def update_component_state(
         children = props.get("children", None)
         if children and isinstance(children, dict):
             if "children" in children.get("props", "") or "props" in children:
-                children['props'] = update_component_state(children['props'], None, **kwargs)
+                children["props"] = update_component_state(
+                    children["props"], None, **kwargs
+                )
             elif "children" in children:
-                children['children'] = update_component_state(children['children'], None, **kwargs)
+                children["children"] = update_component_state(
+                    children["children"], None, **kwargs
+                )
             else:
                 raise ValueError("Not Expected App Structure")
 
@@ -87,9 +95,12 @@ class DashShare(ABC):
     load_input: tuple
     save_input: tuple
     save_output: tuple
+    url_input: str
     layout_id: str = "app-layout"
     interval_id: str = "update-timer"
-    interval_delay: int = 5000
+    modal_id: str = "save-modal"
+    link_id: str = "url-link"
+    interval_delay: int = 1000
     locked: bool = field(init=False)
 
     def __post_init__(self):
@@ -102,6 +113,34 @@ class DashShare(ABC):
                 interval=self.interval_delay,
                 disabled=True,
                 max_intervals=1,
+            ),
+            dbc.Modal(
+                children=[
+                    dbc.ModalTitle("Copy link below to share data:"),
+                    html.Div(
+                        [
+                            dcc.Textarea(
+                                id=self.link_id,
+                                value="",
+                                style={"height": 50},
+                            ),
+                            dcc.Clipboard(
+                                target_id=self.link_id,
+                                title="Copy URL",
+                                style={
+                                    "display": "inline-block",
+                                    "fontSize": 20,
+                                    "verticalAlign": "top",
+                                },
+                            ),
+                        ]
+                    ),
+                ],
+                id=self.modal_id,
+                is_open=False,
+                size="md",
+                centered=True,
+                scrollable=True,
             ),
             *args,
         ]
@@ -127,7 +166,7 @@ class DashShare(ABC):
         return inner
 
     @abstractmethod
-    def save(self, input, state):
+    def save(self, input, state, hash):
         pass
 
     @abstractmethod
@@ -137,32 +176,51 @@ class DashShare(ABC):
     def register_callbacks(self):
         @self.app.callback(
             Output(self.interval_id, "disabled", allow_duplicate=True),
-            Output(self.interval_id, "n_intervals"),
+            Output(self.interval_id, "n_intervals", allow_duplicate=True),
             Input(*self.load_input),
+            State(self.interval_id, "disabled"),
+            State(self.interval_id, "n_intervals"),
             prevent_initial_call=True,
         )
-        def enable_interval(trigger):
-            self.lock()
+        def enable_interval(trigger, dis, n):
+            if trigger:
+                self.lock()
+                return False, 0
+            self.unlock()
             return False, 0
 
         @self.app.callback(
             Output(self.interval_id, "disabled", allow_duplicate=True),
+            Output(self.interval_id, "n_intervals", allow_duplicate=True),
             Input(self.interval_id, "n_intervals"),
             prevent_initial_call=True,
         )
         def replace_store(n):
             if n is not None and n > 0:
                 self.unlock()
-                return True
-            return False
+                return True, 1
+            return False, 0
 
         @self.app.callback(
             Output(*self.save_output),
+            Output(self.modal_id, "is_open"),
+            Output(self.link_id, "value"),
             Input(*self.save_input),
             State(self.layout_id, "children"),
+            State(self.modal_id, "is_open"),
+            State(self.url_input, "href"),
         )
-        def save(input, state):
-            return self.save(input, state)
+        @self.pause_update
+        def save(input, state, is_open, url):
+            hashed_url = self.encode(state)
+            output = self.save(input, state, hash=hashed_url)
+            if input:
+                return (
+                    output,
+                    not is_open,
+                    f"{self.get_url_base(url)}/?state={hashed_url}",
+                )
+            return output, is_open, ""
 
         @self.app.callback(
             Output(self.layout_id, "children"),
@@ -172,8 +230,11 @@ class DashShare(ABC):
         def load(input, state):
             return self.load(input, state)
 
+    @staticmethod
+    def encode(state, n=4):
+        return shake_128(json.dumps(state).encode("utf-8")).hexdigest(n)
 
-
-
-def encode(state):
-    return sha256(json.dumps(state).encode("utf-8")).hexdigest()
+    @staticmethod
+    def get_url_base(url):
+        parsed_url = urlparse(url)
+        return f"{parsed_url.scheme}://{parsed_url.netloc}"
