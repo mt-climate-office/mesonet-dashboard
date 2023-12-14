@@ -131,6 +131,7 @@ def build_banner(app_ref):
                                     href="https://climate.umt.edu/",
                                     children=[
                                         html.Img(
+                                            id="pls-work",
                                             src=app_ref.get_asset_url("MCO_logo.svg"),
                                             height="50px",
                                             alt="MCO Logo",
@@ -248,7 +249,7 @@ def build_bottom_left_card(station_fig):
                 )
             ),
             html.Div(
-                dbc.CardBody(
+                children=dbc.CardBody(
                     id="bl-content",
                     children=dcc.Graph(id="station-fig", figure=station_fig),
                     className="card-text",
@@ -256,6 +257,7 @@ def build_bottom_left_card(station_fig):
                 # style={"overflow": "scroll"},
             ),
         ],
+        id="bl-card",
         outline=True,
         color="secondary",
     )
@@ -471,11 +473,13 @@ def build_latest_content(station_fig, stations):
                     build_top_left_card(),
                     className="h-50",
                     style={"padding": "0rem 0rem 0.25rem 0rem"},
+                    id="top-card",
                 ),
                 dbc.Row(
                     build_bottom_left_card(station_fig),
                     className="h-50",
                     style={"padding": "0.25rem 0rem 0rem 0rem"},
+                    id="bottom-card",
                 ),
             ],
             xs={"size": 12, "order": "last", "offset": 0},
@@ -484,6 +488,7 @@ def build_latest_content(station_fig, stations):
             lg={"size": 4, "order": "last", "offset": 0},
             xl={"size": 4, "order": "last", "offset": 0},
             style={"maxHeight": "92vh", "overflow-y": "scroll", "overflow-x": "clip"},
+            id="sub-cards"
         ),
         dbc.Col(
             html.Div(
@@ -1123,7 +1128,6 @@ def build_satellite_content(stations):
 def app_layout(app_ref, stations):
     stations = stations.to_json(orient="records")
     return dbc.Container(
-        id="content-layout",
         children=[
             dcc.Location(id="url", refresh=False),
             dcc.Store(data=stations, id="mesonet-stations", storage_type="memory"),

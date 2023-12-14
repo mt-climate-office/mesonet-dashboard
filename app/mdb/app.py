@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Union
 from urllib.error import HTTPError
 from urllib.parse import parse_qs
+import json
 
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
@@ -30,7 +31,7 @@ from mdb.utils import plot_satellite as plt_sat
 from mdb.utils import plotting as plt
 from mdb.utils import tables as tab
 from mdb.utils.params import params
-from mdb.utils.update import update_component_state
+from mdb.utils.update import update_component_state, DashShare
 
 pd.options.mode.chained_assignment = None
 
@@ -59,8 +60,50 @@ app._favicon = "MCO_logo.svg"
 app.config["suppress_callback_exceptions"] = True
 server = app.server
 
+def parse_query_string(query_string):
+    query_string = query_string.replace("?", "")
+    parsed_data = parse_qs(query_string)
+    result_dict = {key: value[0] for key, value in parsed_data.items()}
+    return result_dict
+
+
+class FileShare(DashShare):
+    def load(self, input, state):
+        q = parse_query_string(input)
+        if "state" in q:
+            with open(q["state"], "rb") as file:
+                state = json.load(file)
+        return state
+
+    def save(self, input, state):
+        if input is not None and input > 0:
+
+            state = update_component_state(
+                state,
+                None,
+                temp_station_data={"data": -1},
+                dl_data={"data": None},
+                temp_derived_data={"data": None},
+                station_data={"figure": None},
+                derived_plot={"figure": None},
+                satellite_plot={"figure": None},
+                station_fig={"figure": None}
+            )
+
+            with open("./test2.json", "w") as json_file:
+                json.dump(state, json_file, indent=4)
+        return input
+
+
+tracker = FileShare(
+    app=app,
+    load_input=("url", "search"),
+    save_input=("test-button", "n_clicks"),
+    save_output=("test-button", "n_clicks"),
+)
 # Make this a function so that it is refreshed on page load.
-app.layout = lambda: lay.app_layout(app, get.get_sites())
+app.layout = lambda: tracker.update_layout(lay.app_layout(app, get.get_sites()))
+tracker.register_callbacks()
 
 
 @app.callback(
@@ -73,7 +116,6 @@ app.layout = lambda: lay.app_layout(app, get.get_sites())
     prevent_initial_callback=True,
 )
 def update_banner_text(station: str, tab: str, stations) -> str:
-    print("update_banner_text")
     """Update the text of the banner to contain selected station's name.
 
     Args:
@@ -117,7 +159,6 @@ def update_br_card(
     Returns:
         Union[dcc.Graph, dash_table.DataTable]: Depending on this selected tab, this is either a figure or a table.
     """
-    print("br-card")
     stations = pd.read_json(stations, orient="records")
 
     if station == "" and at == "data-tab":
@@ -185,7 +226,6 @@ def update_br_card(
     prevent_initial_callback=True,
 )
 def download_called_data(n_clicks, tmp_data, station, time, start, end):
-    print("dl-called-data")
     if n_clicks and tmp_data:
         data = pd.read_json(tmp_data, orient="records")
         name = (
@@ -201,8 +241,8 @@ def download_called_data(n_clicks, tmp_data, station, time, start, end):
     ],
     [Input("station-dropdown", "value"), State("select-vars", "value")],
 )
+@tracker.pause_update
 def update_select_vars(station: str, selected):
-    print("ud-sel-vars")
     if not selected:
         selected = [
             "Precipitation",
@@ -236,7 +276,6 @@ def update_select_vars(station: str, selected):
     ],
 )
 def get_derived_data(station: str, variable, start, end, slider, time):
-    print("temp-der-data")
     if not station:
         return None
 
@@ -254,7 +293,6 @@ def get_derived_data(station: str, variable, start, end, slider, time):
     prevent_initial_call=True,
 )
 def reset_derived_selectors_on_var_update(variable):
-    print("derioved-reset")
     return [50, 86], None, "daily", "soil_vwc"
 
 
@@ -263,7 +301,6 @@ def reset_derived_selectors_on_var_update(variable):
     Input("derived-vars", "value"),
 )
 def hide_livestock_type(variable):
-    print("livestock-type")
     if variable != "cci":
         return {"display": "None"}
     return {}
@@ -276,7 +313,6 @@ def hide_livestock_type(variable):
     Input("derived-vars", "value"),
 )
 def unhide_selected_panel(variable):
-    print("hide-derived")
     if variable in ["etr", "feels_like", "cci"]:
         return {"display": "None"}, {"display": "None"}, {}
     elif variable == "gdd":
@@ -291,7 +327,6 @@ def unhide_selected_panel(variable):
     prevent_initial_call=True,
 )
 def update_gdd_slider(sel):
-    print("derfived-gdd")
     mapper = {
         "canola": [41, 100],
         "corn": [50, 86],
@@ -306,7 +341,6 @@ def update_gdd_slider(sel):
 
 @app.callback(Output("derived-right-panel", "children"), Input("derived-vars", "value"))
 def update_derived_control_panel(variable):
-    print("derived-right-panel")
     if variable == "gdd":
         return lay.build_gdd_selector()
     else:
@@ -325,7 +359,8 @@ def update_derived_control_panel(variable):
     ],
 )
 def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
-    print("temp-station-data")
+    print('temp')
+    print(station)
     if not station:
         return None
     start = dt.datetime.strptime(start, "%Y-%m-%d").date()
@@ -353,6 +388,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
             out = out.to_json(date_format="iso", orient="records")
         except HTTPError:
             out = -1
+        print(out)
         return out
     tmp = pd.read_json(tmp, orient="records")
     if tmp.station.values[0] != station:
@@ -370,9 +406,12 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 e=",".join(elements),
                 has_etr=has_etr,
             )
+
             out = out.to_json(date_format="iso", orient="records")
         except HTTPError:
             out = -1
+        print(2)
+        print(out)
         return out
     existing_elements = set()
     for x in tmp.columns:
@@ -411,6 +450,8 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     out.datetime = pd.to_datetime(out.datetime)
 
     out = tmp.merge(out, on=["station", "datetime"])
+    print(3)
+    print(out)
     return out.to_json(date_format="iso", orient="records")
 
 
@@ -420,7 +461,6 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     State("mesonet-stations", "data"),
 )
 def adjust_start_date(station, stations):
-    print("start-dates")
     stations = pd.read_json(stations, orient="records")
 
     if station:
@@ -430,7 +470,6 @@ def adjust_start_date(station, stations):
 
 @app.callback(Output("date-button", "disabled"), Input("station-dropdown", "value"))
 def enable_date_button(station):
-    print("enable-date")
     return station is None
 
 
@@ -446,7 +485,6 @@ def enable_date_button(station):
     ],
 )
 def render_station_plot(tmp_data, select_vars, station, period, norm, stations):
-    print("main-plot")
     norm = [norm] if isinstance(norm, int) else norm
     if len(select_vars) == 0:
         return plt.make_nodata_figure("No variables selected")
@@ -490,8 +528,8 @@ def render_station_plot(tmp_data, select_vars, station, period, norm, stations):
 
 
 @app.callback(Output("station-dropdown", "value"), Input("url", "pathname"))
+@tracker.pause_update
 def update_dropdown_from_url(pth):
-    print("url-update")
     stem = Path(pth).stem
     if stem == "/" or "dash" in stem:
         return None
@@ -504,7 +542,6 @@ def update_dropdown_from_url(pth):
     State("mesonet-stations", "data"),
 )
 def enable_photo_tab(station, stations):
-    print("ul-tabs")
     tabs = [
         dbc.Tab(label="Wind Rose", tab_id="wind-tab"),
         dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
@@ -526,7 +563,6 @@ def enable_photo_tab(station, stations):
     State("mesonet-stations", "data"),
 )
 def select_default_tab(station, stations):
-    print("default-tab")
     stations = pd.read_json(stations, orient="records")
     try:
         network = stations[stations["station"] == station]["sub_network"].values[0]
@@ -545,10 +581,10 @@ def select_default_tab(station, stations):
         # State("ul-content", "children"),
     ],
 )
+@tracker.pause_update
 def update_ul_card(at, station, tmp_data, stations):
     # if at == "photo-tab" and ctx.triggered_id == "temp-station-data":
     #     return cur_content
-    print("ul0-card")
     if station is None:
         return html.Div()
     if at == "wind-tab":
@@ -697,7 +733,6 @@ def update_ul_card(at, station, tmp_data, stations):
 
 @app.callback(Output("gridmet-switch", "options"), Input("hourly-switch", "value"))
 def disable_gridmet_switch(period):
-    print("gm-switch")
     if period != "daily":
         return [{"label": "gridMET Normals", "value": 1, "disabled": True}]
     return [{"label": "gridMET Normals", "value": 1, "disabled": False}]
@@ -712,57 +747,8 @@ def disable_gridmet_switch(period):
     ],
 )
 def update_photo_direction(station, direction, dt):
-    print("photo-dir")
     return plt.plot_latest_ace_image(station, direction=direction, dt=dt)
 
-
-@app.callback(
-    Output("test-button", "n_clicks"),
-    Input("test-button", "n_clicks"),
-    State("content-layout", "children"),
-)
-def save(n_clicks, layout):
-    import json
-
-    if n_clicks is not None and n_clicks > 0:
-
-        layout = update_component_state(
-            layout,
-            None,
-            temp_station_data={"data": None},
-            dl_data={"data": None},
-            temp_derived_data={"data": None},
-            station_data={"figure": None},
-            derived_plot={"figure": None},
-            satellite_plot={"figure": None},
-        )
-
-        with open("./test.json", "w") as json_file:
-            json.dump(layout, json_file, indent=4)
-    return n_clicks
-
-
-def parse_query_string(query_string):
-    query_string = query_string.replace("?", "")
-    parsed_data = parse_qs(query_string)
-    result_dict = {key: value[0] for key, value in parsed_data.items()}
-    return result_dict
-
-
-@app.callback(
-    Output("content-layout", "children"),
-    Input("url", "search"),
-    State("content-layout", "children"),
-)
-def load_stuff(q, state):
-    import json
-
-    q = parse_query_string(q)
-    print(q)
-    if "state" in q:
-        with open(q["state"], "rb") as file:
-            state = json.load(file)
-    return state
 
 
 @app.callback(
@@ -820,6 +806,7 @@ def toggle_feedback(n1, is_open):
     Input("main-display-tabs", "value"),
     State("mesonet-stations", "data"),
 )
+@tracker.pause_update
 def toggle_main_tab(sel, stations):
     stations = pd.read_json(stations, orient="records")
 

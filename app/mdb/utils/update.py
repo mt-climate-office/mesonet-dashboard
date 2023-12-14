@@ -1,6 +1,7 @@
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+from hashlib import sha256
 from typing import Any
 
 from dash import Dash, dcc, html, no_update
@@ -10,7 +11,7 @@ AppLayout = list[dict[str, Any]]
 
 
 def update_component_state(
-    layout: list[dict[str, Any]],
+    layout: list[dict[str, Any]] | dict[str, Any],
     updated: None | list[dict[str, Any]] = None,
     **kwargs: dict[str, Any]
 ) -> list[dict[str, Any]]:
@@ -18,7 +19,7 @@ def update_component_state(
     Recursively updates values in a Dash app layout.
 
     Parameters:
-        layout (list[dict[str, Any]]): The Dash app layout to be updated.
+        layout (list[dict[str, Any]] | dict[str, Any]): The Dash app layout to be updated.
         updated (Optional[list[dict[str, Any]]]): A list to store the updated layout.
             Defaults to None, and a new list will be created.
         **kwargs (Dict[str, Union[str, List]]): Keyword arguments where keys are
@@ -36,12 +37,34 @@ def update_component_state(
         )
     """
     if updated is None:
-        updated = []
+        updated = [] if isinstance(layout, list) else {}
+
+    if isinstance(layout, dict):
+        if 'children' in layout:
+            layout['children'] = update_component_state(layout['children'], None, **kwargs)
+        if 'props' in layout:
+            layout['props'] = update_component_state(layout['props'], None, **kwargs)
+        if 'id' in layout:
+            id = layout['id'].replace("-", "_")
+            if id in kwargs:
+                layout.update(kwargs[id])
+
+        return layout
+
+    if isinstance(layout, str) or layout is None:
+        return layout
 
     for item in layout:
         props = item["props"]
-
         children = props.get("children", None)
+        if children and isinstance(children, dict):
+            if "children" in children.get("props", "") or "props" in children:
+                children['props'] = update_component_state(children['props'], None, **kwargs)
+            elif "children" in children:
+                children['children'] = update_component_state(children['children'], None, **kwargs)
+            else:
+                raise ValueError("Not Expected App Structure")
+
         if children and isinstance(children, list):
             props["children"] = update_component_state(children, None, **kwargs)
 
@@ -119,7 +142,6 @@ class DashShare(ABC):
             prevent_initial_call=True,
         )
         def enable_interval(trigger):
-            print("locking")
             self.lock()
             return False, 0
 
@@ -129,8 +151,7 @@ class DashShare(ABC):
             prevent_initial_call=True,
         )
         def replace_store(n):
-            if n > 0:
-                print("unlocking")
+            if n is not None and n > 0:
                 self.unlock()
                 return True
             return False
@@ -152,21 +173,7 @@ class DashShare(ABC):
             return self.load(input, state)
 
 
-class FileShare(DashShare):
-    def load(self, input, state):
-        if input:
-            with open("./test.json", "rb") as file:
-                state = json.load(file)
-            return state
-        return state
 
-    def save(self, input, state):
-        if input is not None and input > 0:
 
-            state = update_component_state(
-                state, None, test1={"children": "Surprise!!!!"}
-            )
-
-            with open("./test.json", "w") as json_file:
-                json.dump(state, json_file, indent=4)
-        return input
+def encode(state):
+    return sha256(json.dumps(state).encode("utf-8")).hexdigest()
