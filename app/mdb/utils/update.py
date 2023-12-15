@@ -101,7 +101,7 @@ class DashShare(ABC):
     interval_id: str = "update-timer"
     modal_id: str = "save-modal"
     link_id: str = "url-link"
-    interval_delay: int = 1000
+    interval_delay: int = 2000
     locked: bool = field(init=False)
 
     def __post_init__(self):
@@ -117,25 +117,34 @@ class DashShare(ABC):
             ),
             dbc.Modal(
                 children=[
-                    dbc.ModalTitle("Copy link below to share data:"),
-                    html.Div(
-                        [
-                            dcc.Textarea(
-                                id=self.link_id,
-                                value="",
-                                style={"height": 50},
-                            ),
-                            dcc.Clipboard(
-                                target_id=self.link_id,
-                                title="Copy URL",
-                                style={
-                                    "display": "inline-block",
-                                    "fontSize": 20,
-                                    "verticalAlign": "top",
-                                },
-                            ),
-                        ]
-                    ),
+                    dbc.ModalHeader(),
+                    dbc.ModalBody(dcc.Markdown(
+                        """
+                        #### Copy link below to share data:
+                        The link will stay active for 90 days.
+                        """
+                    )),
+                html.Div(
+                    [
+                        dcc.Textarea(
+                            id=self.link_id,
+                            value="",
+                            style={"height": 50, "width": "100%"},
+                        ),
+                        dcc.Clipboard(
+                            target_id=self.link_id,
+                            title="Copy URL",
+                            style={
+                                "display": "inline-block",
+                                "fontSize": 20,
+                                "verticalAlign": "center",
+                                "paddingLeft": "5px",  # Adjust the value as needed
+                            },
+                        ),
+                    ],
+                    style={"display": "flex", "justifyContent": "center", "padding": "15px"}
+                )
+
                 ],
                 id=self.modal_id,
                 is_open=False,
