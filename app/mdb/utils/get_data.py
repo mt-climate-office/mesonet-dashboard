@@ -326,7 +326,8 @@ def get_station_elements(station, public=False):
 
 def get_derived(station, variable, start, end, low, high, time):
 
-    endpoint = "observations/" if "soil_vwc" in variable else "derived/"
+
+    endpoint = "observations/" if "soil" in variable else "derived/"
     endpoint = f"{endpoint}{time}"
 
     q = {

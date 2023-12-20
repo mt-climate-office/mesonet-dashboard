@@ -259,8 +259,11 @@ def update_value(group):
 
 
 def plot_soil_heatmap(dat, variable):
+    # Strip metadata columns about whether values had to be clipped.
+    dat = dat.iloc[:,~dat.columns.str.contains("Clipped")]
     out = dat.melt(id_vars=["station", "datetime"])
     out["variable"], out["depth"] = out["variable"].str.split("@", 1).str
+    out = out[~out['variable'].str.contains("Clipped")]
     out["variable"] = out["variable"].str.strip()
     out["depth"] = out["depth"].str.replace(r"\[.*\]", "")
     out["depth"] = out["depth"].str.strip()
@@ -272,9 +275,14 @@ def plot_soil_heatmap(dat, variable):
         out = out[out["variable"] == "Soil VWC"]
     elif variable == "soil_temp":
         out = out[out["variable"] == "Soil Temperature"]
+    elif variable == "swp":
+        out =  out[out["variable"] == "Soil Water Potential"]
     else:
         out = out[out["variable"] == "Bulk EC"]
 
+    out = out.assign(
+        value = out['value'].astype(float)
+    )
     if variable != "soil_blk_ec":
         ticks = (out["value"] / 10).round() * 10
     else:
@@ -293,6 +301,7 @@ def plot_soil_heatmap(dat, variable):
         "soil_vwc": "Soil VWC [%]",
         "soil_temp": "Soil Temperature [degF]",
         "soil_blk_ec": "Soil Electrical Conductivity [mS/cm]",
+        "swp": "Soil Water Potential [kPa]"
     }
 
     mn = min(out["value"])
@@ -318,7 +327,7 @@ def plot_soil_heatmap(dat, variable):
         color_continuous_scale=px.colors.diverging.RdBu_r
         if variable == "soil_temp"
         else px.colors.sequential.Viridis,
-        color_continuous_midpoint=32 if variable == "soil_temp" else (mn / mx) / 2,
+        color_continuous_midpoint=32 if variable == "soil_temp" else (mn + mx) / 2,
     )
 
     return fig

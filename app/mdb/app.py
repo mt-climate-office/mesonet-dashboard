@@ -292,7 +292,12 @@ def get_derived_data(station: str, variable, start, end, slider, time):
     if not station:
         return None
 
-    dat = get.get_derived(station, variable, start, end, slider[0], slider[1], time)
+    if "soil" in variable:
+        dat = get.get_derived(station, variable, start, end, slider[0], slider[1], time)
+        dat2 = get.get_derived(station, "swp", start, end, slider[0], slider[1], time)
+        dat = dat.merge(dat2)
+    else:
+        dat = get.get_derived(station, variable, start, end, slider[0], slider[1], time)
     dat = dat.to_json(date_format="iso", orient="records")
     return dat
 
