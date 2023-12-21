@@ -724,7 +724,10 @@ def build_derived_dropdowns(
                         dmc.Select(
                             data=[
                                 {"value": "etr", "label": "Reference ET"},
-                                {"value": "feels_like", "label": "Feels Like Temperature"},
+                                {
+                                    "value": "feels_like",
+                                    "label": "Feels Like Temperature",
+                                },
                                 {"value": "gdd", "label": "Growing Degree Days"},
                                 {
                                     "value": "soil_temp,soil_ec_blk",
@@ -734,7 +737,7 @@ def build_derived_dropdowns(
                                     "value": "cci",
                                     "label": "Livestock Risk Index",
                                 },
-                                {"value": "swp", "label": "Plant Avaliable Water"}
+                                {"value": "swp", "label": "Soil Water Potential"},
                             ],
                             id="derived-vars",
                             value="gdd",
@@ -829,7 +832,7 @@ def build_derived_dropdowns(
                                     ("soil_blk_ec", "Electrical Conductivity"),
                                     ("soil_vwc", "Volumetric Water Content"),
                                     ("soil_temp", "Temperature"),
-                                    ("swp", "Soil Water Potential")
+                                    ("swp", "Soil Water Potential"),
                                 ]
                             ],
                             id="derived-soil-var",

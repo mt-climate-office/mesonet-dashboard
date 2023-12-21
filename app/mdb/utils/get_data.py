@@ -326,7 +326,6 @@ def get_station_elements(station, public=False):
 
 def get_derived(station, variable, start, end, low, high, time):
 
-
     endpoint = "observations/" if "soil" in variable else "derived/"
     endpoint = f"{endpoint}{time}"
 
@@ -345,4 +344,6 @@ def get_derived(station, variable, start, end, low, high, time):
     }
     payload = parse.urlencode(q, safe=",:")
     r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
-    return pd.read_csv(r.url)
+    dat = pd.read_csv(r.url)
+    dat = dat.rename(columns=params.lab_swap)
+    return dat

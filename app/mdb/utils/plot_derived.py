@@ -260,10 +260,10 @@ def update_value(group):
 
 def plot_soil_heatmap(dat, variable):
     # Strip metadata columns about whether values had to be clipped.
-    dat = dat.iloc[:,~dat.columns.str.contains("Clipped")]
+    dat = dat.iloc[:, ~dat.columns.str.contains("Clipped")]
     out = dat.melt(id_vars=["station", "datetime"])
     out["variable"], out["depth"] = out["variable"].str.split("@", 1).str
-    out = out[~out['variable'].str.contains("Clipped")]
+    out = out[~out["variable"].str.contains("Clipped")]
     out["variable"] = out["variable"].str.strip()
     out["depth"] = out["depth"].str.replace(r"\[.*\]", "")
     out["depth"] = out["depth"].str.strip()
@@ -276,13 +276,11 @@ def plot_soil_heatmap(dat, variable):
     elif variable == "soil_temp":
         out = out[out["variable"] == "Soil Temperature"]
     elif variable == "swp":
-        out =  out[out["variable"] == "Soil Water Potential"]
+        out = out[out["variable"] == "Soil Water Potential"]
     else:
         out = out[out["variable"] == "Bulk EC"]
 
-    out = out.assign(
-        value = out['value'].astype(float)
-    )
+    out = out.assign(value=out["value"].astype(float))
     if variable != "soil_blk_ec":
         ticks = (out["value"] / 10).round() * 10
     else:
@@ -301,7 +299,7 @@ def plot_soil_heatmap(dat, variable):
         "soil_vwc": "Soil VWC [%]",
         "soil_temp": "Soil Temperature [degF]",
         "soil_blk_ec": "Soil Electrical Conductivity [mS/cm]",
-        "swp": "Soil Water Potential [kPa]"
+        "swp": "Soil Water Potential [kPa]",
     }
 
     mn = min(out["value"])
@@ -316,7 +314,7 @@ def plot_soil_heatmap(dat, variable):
     out = out.sort_values("datetime")
     xs = out["datetime"]
     ys = [x for x in out.columns if x != "datetime"]
-    ys = sorted(ys, key=lambda x: int(x.split(" ")[0]))[::-1]
+    ys = sorted(ys, key=lambda x: int(x.split(" ")[0]))
     out = out.drop(columns="datetime")[ys].T.values
     fig = px.imshow(
         out,
@@ -333,6 +331,76 @@ def plot_soil_heatmap(dat, variable):
     return fig
 
 
+def plot_swp(dat):
+    cols = dat.columns[1:].tolist()
+    y_cols = [x for x in cols if "Potential" in x]
+    dat["mx"] = 1500
+    dat["mn"] = 33
+
+    # clipped_cols = [x for x in cols if "Clipped" in x]
+
+    fig = px.line(
+        dat,
+        x="datetime",
+        y=y_cols,
+        color_discrete_map={
+            "Soil Water Potential @ 2 in [kPa]": "#636efa",
+            "Soil Water Potential @ 4 in [kPa]": "#EF553B",
+            "Soil Water Potential @ 8 in [kPa]": "#00cc96",
+            "Soil Water Potential @ 20 in [kPa]": "#ab63fa",
+            "Soil Water Potential @ 28 in [kPa]": "#FFA15A",
+            "Soil Water Potential @ 36 in [kPa]": "#FFA15A",
+            "Soil Water Potential @ 40 in [kPa]": "#301934",
+        },
+    )
+
+    fig.update_layout(
+        yaxis_title="Soil Water Potential [log kPa]",
+        yaxis_type="log",  # Set the y-axis to log scale
+    )
+    max_all = dat[y_cols].max().max()
+    top_line = go.Scatter(
+        x=[min(dat["datetime"]), max(dat["datetime"])],
+        y=[max_all, max_all],
+        mode="lines",
+        line={"dash": "dash", "color": "red"},
+        showlegend=True,
+        fill="tonexty",
+        name="Wilting Point",
+        hovertext="Water Not Plant Available",
+    )
+    mx_line = go.Scatter(
+        x=dat.datetime,
+        y=dat.mx,
+        mode="lines",
+        line={"dash": "dash", "color": "red"},
+        showlegend=False,
+        name="Wilting Point",
+        hovertext="Water Not Plant Available",
+    )
+
+    mn_line = go.Scatter(
+        x=dat.datetime,
+        y=dat.mn,
+        mode="lines",
+        line={"dash": "dash", "color": "green"},
+        showlegend=True,
+        name="Field Capacity",
+        fill="tozeroy",
+        hovertext="Soil Is Saturated",
+    )
+    fig.add_trace(mx_line)
+    fig.add_trace(top_line)
+    fig.add_trace(mn_line)
+    fig = style_figure(fig, legend=True)
+    fig.update_layout(
+        xaxis=dict(title_text=""),
+        legend=dict(title_text=""),
+    )
+
+    return fig
+
+
 def plot_derived(dat, selected, soil_var=None, newborn=False):
 
     if selected == "etr":
@@ -343,5 +411,7 @@ def plot_derived(dat, selected, soil_var=None, newborn=False):
         return add_feels_like_trace(dat)
     elif selected == "cci":
         return add_cci_trace(dat, newborn)
+    elif selected == "swp":
+        return plot_swp(dat)
     else:
         return plot_soil_heatmap(dat, soil_var)

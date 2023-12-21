@@ -118,33 +118,38 @@ class DashShare(ABC):
             dbc.Modal(
                 children=[
                     dbc.ModalHeader(),
-                    dbc.ModalBody(dcc.Markdown(
-                        """
+                    dbc.ModalBody(
+                        dcc.Markdown(
+                            """
                         #### Copy link below to share data:
                         The link will stay active for 90 days.
                         """
-                    )),
-                html.Div(
-                    [
-                        dcc.Textarea(
-                            id=self.link_id,
-                            value="",
-                            style={"height": 50, "width": "100%"},
-                        ),
-                        dcc.Clipboard(
-                            target_id=self.link_id,
-                            title="Copy URL",
-                            style={
-                                "display": "inline-block",
-                                "fontSize": 20,
-                                "verticalAlign": "center",
-                                "paddingLeft": "5px",  # Adjust the value as needed
-                            },
-                        ),
-                    ],
-                    style={"display": "flex", "justifyContent": "center", "padding": "15px"}
-                )
-
+                        )
+                    ),
+                    html.Div(
+                        [
+                            dcc.Textarea(
+                                id=self.link_id,
+                                value="",
+                                style={"height": 50, "width": "100%"},
+                            ),
+                            dcc.Clipboard(
+                                target_id=self.link_id,
+                                title="Copy URL",
+                                style={
+                                    "display": "inline-block",
+                                    "fontSize": 20,
+                                    "verticalAlign": "center",
+                                    "paddingLeft": "5px",  # Adjust the value as needed
+                                },
+                            ),
+                        ],
+                        style={
+                            "display": "flex",
+                            "justifyContent": "center",
+                            "padding": "15px",
+                        },
+                    ),
                 ],
                 id=self.modal_id,
                 is_open=False,
@@ -194,7 +199,7 @@ class DashShare(ABC):
         )
         def enable_interval(trigger, dis, n):
             if trigger:
-                print('locked')
+                print("locked")
                 self.lock()
                 return False, 0
             self.unlock()
@@ -208,7 +213,7 @@ class DashShare(ABC):
         )
         def replace_store(n):
             if n is not None and n > 0:
-                print('unlocked')
+                print("unlocked")
                 self.unlock()
                 return True, 1
             return False, 0

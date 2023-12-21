@@ -10,6 +10,7 @@ from urllib.parse import parse_qs
 
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
+import dash_mantine_components as dmc
 import pandas as pd
 from dash import (
     Dash,
@@ -75,9 +76,7 @@ class FileShare(DashShare):
             with open(f'./share/{q["state"]}.json', "rb") as file:
                 state = json.load(file)
             state = update_component_state(
-                state,
-                None,
-                **{self.modal_id: {"is_open": False}}
+                state, None, **{self.modal_id: {"is_open": False}}
             )
         return state
 
@@ -292,7 +291,7 @@ def get_derived_data(station: str, variable, start, end, slider, time):
     if not station:
         return None
 
-    if "soil" in variable:
+    if "soil" in variable or "swp" in variable:
         dat = get.get_derived(station, variable, start, end, slider[0], slider[1], time)
         dat2 = get.get_derived(station, "swp", start, end, slider[0], slider[1], time)
         dat = dat.merge(dat2)
@@ -306,7 +305,7 @@ def get_derived_data(station: str, variable, start, end, slider, time):
     Output("gdd-slider", "value", allow_duplicate=True),
     Output("gdd-selection", "value"),
     Output("derived-timeagg", "value"),
-    Output("derived-soil-var", "value"),
+    Output("derived-soil-var", "value", allow_duplicate=True),
     Input("derived-vars", "value"),
     prevent_initial_call=True,
 )
@@ -331,7 +330,7 @@ def hide_livestock_type(variable):
     Input("derived-vars", "value"),
 )
 def unhide_selected_panel(variable):
-    if variable in ["etr", "feels_like", "cci"]:
+    if variable in ["etr", "feels_like", "cci", "swp"]:
         return {"display": "None"}, {"display": "None"}, {}
     elif variable == "gdd":
         return {}, {"display": "None"}, {"display": "None"}
@@ -1257,6 +1256,72 @@ def update_dl_map(plots, stations):
         stations = pd.read_json(stations, orient="records")
         return plt.plot_station(stations=stations)
     return no_update
+
+
+@app.callback(
+    Output("derived-soil-var", "children"),
+    Input("station-dropdown-derived", "value"),
+    State("mesonet-stations", "data"),
+    State("derived-soil-var", "children"),
+)
+def update_swp_chips(station, stations, cur):
+    if station is None:
+        return cur
+    stations = pd.read_json(stations, orient="records")
+    children = [
+        dmc.Chip(v, value=k, size="xs")
+        for k, v in [
+            ("soil_blk_ec", "Electrical Conductivity"),
+            ("soil_vwc", "Volumetric Water Content"),
+            ("soil_temp", "Temperature"),
+        ]
+    ]
+
+    if stations[stations["station"] == station]["has_swp"].values[0]:
+        children.append(dmc.Chip("Soil Water Potential", value="swp", size="xs"))
+    return children
+
+
+@app.callback(
+    Output("derived-soil-var", "value", allow_duplicate=True),
+    Input("station-dropdown-derived", "value"),
+    State("derived-soil-var", "value"),
+    State("mesonet-stations", "data"),
+    prevent_initial_call=True,
+)
+def update_swp_if_station_doesnt_have(station, cur, stations):
+    if station is None:
+        return "soil_vwc"
+    stations = pd.read_json(stations, orient="records")
+    has_swp = stations[stations["station"] == station]["has_swp"].values[0]
+
+    if cur == "swp" and has_swp:
+        return "swp"
+    if cur == "swp" and not has_swp:
+        return "soil_vwc"
+    return cur
+
+
+@app.callback(
+    Output("station-dropdown-derived", "data"),
+    Output("station-dropdown-derived", "value"),
+    Input("derived-vars", "value"),
+    State("mesonet-stations", "data"),
+    State("station-dropdown-derived", "value"),
+)
+def filter_to_only_swp_stations(variable, stations, cur_station):
+    stations = pd.read_json(stations, orient="records")
+    if variable == "swp":
+        stations = stations[stations["has_swp"]]
+
+    data = [
+        {"label": k, "value": v}
+        for k, v in zip(stations["long_name"], stations["station"])
+    ]
+
+    if cur_station is not None and cur_station not in stations["station"].values:
+        return data, None
+    return data, cur_station
 
 
 if __name__ == "__main__":
