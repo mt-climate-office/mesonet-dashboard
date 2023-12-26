@@ -199,7 +199,6 @@ class DashShare(ABC):
         )
         def enable_interval(trigger, dis, n):
             if trigger:
-                print("locked")
                 self.lock()
                 return False, 0
             self.unlock()
@@ -213,7 +212,6 @@ class DashShare(ABC):
         )
         def replace_store(n):
             if n is not None and n > 0:
-                print("unlocked")
                 self.unlock()
                 return True, 1
             return False, 0

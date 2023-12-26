@@ -324,7 +324,7 @@ def plot_soil_heatmap(dat, variable):
         labels=dict(color=lab_map[variable]),
         color_continuous_scale=px.colors.diverging.RdBu_r
         if variable == "soil_temp"
-        else px.colors.sequential.Viridis,
+        else px.colors.diverging.BrBG,
         color_continuous_midpoint=32 if variable == "soil_temp" else (mn + mx) / 2,
     )
 
@@ -355,43 +355,50 @@ def plot_swp(dat):
     )
 
     fig.update_layout(
-        yaxis_title="Soil Water Potential [log kPa]",
+        yaxis_title="Soil Water Potential [Negative kPa]",
         yaxis_type="log",  # Set the y-axis to log scale
     )
     max_all = dat[y_cols].max().max()
     top_line = go.Scatter(
-        x=[min(dat["datetime"]), max(dat["datetime"])],
-        y=[max_all, max_all],
+        x=dat['datetime'],
+        y=[max_all] * len(dat['datetime']),
         mode="lines",
-        line={"dash": "dash", "color": "red"},
+        line={"dash": "dash", "color": "rgba(255, 0, 0, 1)"},
+        fillcolor= "rgba(255, 0, 0, 0.2)",
         showlegend=True,
         fill="tonexty",
         name="Wilting Point",
         hovertext="Water Not Plant Available",
+        stackgroup='one' # define stack group
     )
     mx_line = go.Scatter(
         x=dat.datetime,
         y=dat.mx,
         mode="lines",
-        line={"dash": "dash", "color": "red"},
-        showlegend=False,
-        name="Wilting Point",
-        hovertext="Water Not Plant Available",
+        line={"dash": "dash", "color": "rgba(2, 75, 48, 1)"},
+        fillcolor="rgba(2, 75, 48, 0.2)",
+        showlegend=True,
+        name="Plant Available Water",
+        hovertext="Water Is Plant Available",
+        stackgroup='one' # define stack group
     )
 
     mn_line = go.Scatter(
         x=dat.datetime,
         y=dat.mn,
         mode="lines",
-        line={"dash": "dash", "color": "green"},
+        line={"dash": "dash", "color": "rgba(135, 206, 250, 1)"},
+        fillcolor="rgba(135, 206, 250, 0.2)",
         showlegend=True,
         name="Field Capacity",
         fill="tozeroy",
         hovertext="Soil Is Saturated",
+        stackgroup='one' # define stack group
     )
+
+    fig.add_trace(mn_line)
     fig.add_trace(mx_line)
     fig.add_trace(top_line)
-    fig.add_trace(mn_line)
     fig = style_figure(fig, legend=True)
     fig.update_layout(
         xaxis=dict(title_text=""),
