@@ -283,20 +283,26 @@ def update_select_vars(station: str, selected):
         Input("derived-vars", "value"),
         Input("start-date-derived", "value"),
         Input("end-date-derived", "value"),
-        Input("gdd-slider", "value"),
         Input("derived-timeagg", "value"),
+        Input("gdd-selection", "value")
     ],
 )
-def get_derived_data(station: str, variable, start, end, slider, time):
+def get_derived_data(station: str, variable, start, end, time, crop):
     if not station:
         return None
+    
+    if ctx.triggered_id == "gdd-selection":
+        slider = [None, None]
+    
+    if ctx.triggered_id == "gdd-slider":
+        crop = None
 
     if "soil" in variable or "swp" in variable:
-        dat = get.get_derived(station, variable, start, end, slider[0], slider[1], time)
-        dat2 = get.get_derived(station, "swp", start, end, slider[0], slider[1], time)
+        dat = get.get_derived(station, variable, start, end, time)
+        dat2 = get.get_derived(station, "swp", start, end, time)
         dat = dat.merge(dat2)
     else:
-        dat = get.get_derived(station, variable, start, end, slider[0], slider[1], time)
+        dat = get.get_derived(station, variable, start, end, time, crop)
     dat = dat.to_json(date_format="iso", orient="records")
     return dat
 
@@ -348,8 +354,9 @@ def update_gdd_slider(sel):
         "canola": [41, 100],
         "corn": [50, 86],
         "sunflower": [44, 100],
-        "wheat1": [32, 70],
-        "wheat2": [32, 95],
+        "wheat": [32, 95],
+        "barley": [32, 95],
+        "sugarbeet": [34, 86],
     }
     if sel is None:
         return no_update

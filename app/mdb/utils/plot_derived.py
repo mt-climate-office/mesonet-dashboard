@@ -72,6 +72,8 @@ def add_etr_trace(dat):
     return fig
 
 
+_stage_colors = ['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928', '#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f'] * 2
+
 def add_gdd_trace(dat):
     fig = go.Figure(
         go.Bar(
@@ -83,15 +85,21 @@ def add_gdd_trace(dat):
         )
     )
 
+    color_map = dict(zip(dat["Growth Stage"].drop_duplicates().values, _stage_colors))
+
     fig.add_trace(
         go.Scatter(
             x=dat["datetime"],
             y=dat["Cumulative GDDs [GDD °F]"],
             mode="lines+markers",
+            marker={
+                "color": dat["Growth Stage"].apply(lambda x: color_map[x])
+            },
+            customdata=dat["Growth Stage"],
             line=dict(color="orange", width=2),
             name="Cumulative GDDs",
             yaxis="y2",
-            hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Cumulative GDDs</b>: %{y}",
+            hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Cumulative GDDs</b>: %{y}<br>" + "<b>Growth Stage</b>: %{customdata}",
         ),
         # row=idx,
         # col=1,

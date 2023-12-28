@@ -651,16 +651,17 @@ def build_downloader_content(
 
 def build_gdd_selector():
     gdd_items = [
-        ("wheat1", "Barley/Wheat (Haun <2)"),
-        ("wheat2", "Barley/Wheat (Haun >2)"),
+        ("wheat", "Wheat"),
+        ("barley", "Barley"),
         ("canola", "Canola"),
         ("corn", "Corn"),
-        # ("sunflower", "Sunflower"),
+        ("sunflower", "Sunflower"),
+        ("sugarbeet", "Sugarbeet"),
     ]
     return [
         dmc.Center(
             dmc.Text(
-                "GDD Temperature Cutoffs",
+                "GDD Crop Type",
                 size="sm",
                 weight=500,
             )
@@ -669,7 +670,7 @@ def build_gdd_selector():
             dmc.ChipGroup(
                 [dmc.Chip(v, value=k, size="xs") for k, v in gdd_items],
                 id="gdd-selection",
-                value=None,
+                value="wheat",
                 style={"text-align": "center"},
                 # mt=10,
             )
@@ -687,6 +688,7 @@ def build_gdd_selector():
                 {"value": 90, "label": "90°F"},
                 # {"value": 100, "label": "100°F"},
             ],
+            disabled=True,
             min=30,
             max=100,
             step=1,
