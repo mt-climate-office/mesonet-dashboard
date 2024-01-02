@@ -551,6 +551,18 @@ files = [
 ]
 
 [[package]]
+name = "dash-iconify"
+version = "0.1.2"
+description = "Iconify for Plotly Dash"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "dash_iconify-0.1.2-py3-none-any.whl", hash = "sha256:9ab0eda19bb4514e177bf1f8f36947bb9e5b44aba6ce947f22a1cf0f1a45fc14"},
+    {file = "dash_iconify-0.1.2.tar.gz", hash = "sha256:564774be6b11b0ac3a8999b7137c3d17a1d351d69b673aa313c7228eacc9d143"},
+]
+
+[[package]]
 name = "dash-loading-spinners"
 version = "1.0.0"
 description = "Fun and funky loading spinners for your Dash apps"
@@ -2681,4 +2693,4 @@ viz = ["matplotlib", "nc-time-axis", "seaborn"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "3f3a3d542eee768633ce113adfb23ba7992689527d7fa95858a0e9b225c27145"
+content-hash = "f44fb4349b7831c014ae02b211ffb924ab49abdd1ef8e54f0cf76e8f33262295"

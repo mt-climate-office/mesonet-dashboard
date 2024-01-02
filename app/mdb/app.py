@@ -316,7 +316,7 @@ def get_derived_data(station: str, variable, start, end, time, crop):
     prevent_initial_call=True,
 )
 def reset_derived_selectors_on_var_update(variable):
-    return [50, 86], None, "daily", "soil_vwc"
+    return [50, 86], "wheat", "daily", "soil_vwc"
 
 
 @app.callback(

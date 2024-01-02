@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
 import dash_mantine_components as dmc
 from dash import dcc, html
+from dash_iconify import DashIconify
 from dateutil.relativedelta import relativedelta as rd
 
 TABLE_STYLING = {
@@ -719,34 +720,57 @@ def build_derived_dropdowns(
                             id="station-dropdown-derived",
                             placeholder="Select a Mesonet Station Dropdown...",
                             value=station,
-                            label="Select Station",
+                            label=html.P(["Select Station", html.Br()]),
                             searchable=True,
                             # style={"width": "150%"}
                         ),
-                        dmc.Select(
-                            data=[
-                                {"value": "etr", "label": "Reference ET"},
-                                {
-                                    "value": "feels_like",
-                                    "label": "Feels Like Temperature",
-                                },
-                                {"value": "gdd", "label": "Growing Degree Days"},
-                                {
-                                    "value": "soil_temp,soil_ec_blk",
-                                    "label": "Soil Profile Plot",
-                                },
-                                {
-                                    "value": "cci",
-                                    "label": "Livestock Risk Index",
-                                },
-                                {"value": "swp", "label": "Soil Water Potential"},
+                        dmc.Group(
+                            [
+                                dmc.Stack(
+                                    [dmc.Text("Select Variable"),
+                                    dmc.Select(
+                                        data=[
+                                            {"value": "etr", "label": "Reference ET"},
+                                            {
+                                                "value": "feels_like",
+                                                "label": "Feels Like Temperature",
+                                            },
+                                            {"value": "gdd", "label": "Growing Degree Days"},
+                                            {
+                                                "value": "soil_temp,soil_ec_blk",
+                                                "label": "Soil Profile Plot",
+                                            },
+                                            {
+                                                "value": "cci",
+                                                "label": "Livestock Risk Index",
+                                            },
+                                            {"value": "swp", "label": "Soil Water Potential"},
+                                        ],
+                                        id="derived-vars",
+                                        value="gdd",
+                                        searchable=True
+                                        # style={"width": 400, "marginBottom": 10},
+                                    ),
+                                    ]
+                                ),
+                                dmc.Stack(
+                                    [
+                                        dmc.Text(html.Br()),
+                                        dmc.Anchor(
+                                            dmc.Button(
+                                                "Learn More",
+                                                # href="/mesonet/dashboard/ag_tools/"
+                                                leftIcon=DashIconify(icon="feather:info", width=20)
+                                            ),
+                                            href="https://climate.umt.edu/mesonet/dashboard/ag_tools/"
+                                        )
+                                    ]
+                                )
                             ],
-                            id="derived-vars",
-                            value="gdd",
-                            label="Select Variable",
-                            searchable=True
-                            # style={"width": 400, "marginBottom": 10},
-                        ),
+                            grow=True,
+                            spacing="xl",
+                            position="left"
+                        )
                     ]
                 ),
                 span=4,
