@@ -343,6 +343,25 @@ def unhide_selected_panel(variable):
     else:
         return {"display": "None"}, {}, {"display": "None"}
 
+@app.callback(
+    Output("derived-link", "href"),
+    Input("derived-vars", "value"),
+    Input("gdd-selection", "value"),
+)
+def update_derived_learn_link(variable, crop):
+    base = "https://climate.umt.edu/mesonet/ag_tools/"
+    mapper = {
+        "gdd": "gdds",
+        "soil_temp,soil_ec_blk": "soil_profile",
+        "cci": "risk"
+    }    
+
+    variable = mapper.get(variable, variable)
+    url = f"{base}{variable}/"
+    if variable == "gdds":
+        url = f"{url}#{crop}-growing-degree-days"
+    return url
+
 
 @app.callback(
     Output("gdd-slider", "value", allow_duplicate=True),

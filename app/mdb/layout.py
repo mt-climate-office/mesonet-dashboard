@@ -762,7 +762,8 @@ def build_derived_dropdowns(
                                                 # href="/mesonet/dashboard/ag_tools/"
                                                 leftIcon=DashIconify(icon="feather:info", width=20)
                                             ),
-                                            href="https://climate.umt.edu/mesonet/dashboard/ag_tools/"
+                                            href="https://climate.umt.edu/mesonet/dashboard/ag_tools/",
+                                            id="derived-link"
                                         )
                                     ]
                                 )
