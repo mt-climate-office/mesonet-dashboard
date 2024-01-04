@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import List
 
 import geojson
@@ -555,7 +556,7 @@ def plot_station(stations, station=None, zoom=4):
     )
 
     county_pth = (
-        "/home/cbrust/git/mesonet-dashboard/mt_counties.geojson"
+        str(Path("~/git/mesonet-dashboard/mt_counties.geojson").expanduser())
         if on_server is None or not on_server
         else "/app/mt_counties.geojson"
     )

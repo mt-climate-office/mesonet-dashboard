@@ -1,13 +1,16 @@
 import datetime as dt
+import json
 import os
 import re
 from itertools import chain, cycle
 from pathlib import Path
 from typing import Union
 from urllib.error import HTTPError
+from urllib.parse import parse_qs
 
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
+import dash_mantine_components as dmc
 import pandas as pd
 from dash import (
     Dash,
@@ -24,10 +27,12 @@ from dash import (
 
 from mdb import layout as lay
 from mdb.utils import get_data as get
+from mdb.utils import plot_derived as plt_der
 from mdb.utils import plot_satellite as plt_sat
 from mdb.utils import plotting as plt
 from mdb.utils import tables as tab
 from mdb.utils.params import params
+from mdb.utils.update import DashShare, update_component_state
 
 pd.options.mode.chained_assignment = None
 
@@ -38,7 +43,6 @@ prefix = "/" if on_server is None or not on_server else "/dash/"
 app = Dash(
     __name__,
     title="Montana Mesonet",
-    suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.BOOTSTRAP],
     meta_tags=[
         {
@@ -54,10 +58,64 @@ app = Dash(
 )
 
 app._favicon = "MCO_logo.svg"
+app.config["suppress_callback_exceptions"] = True
 server = app.server
 
+
+def parse_query_string(query_string):
+    query_string = query_string.replace("?", "")
+    parsed_data = parse_qs(query_string)
+    result_dict = {key: value[0] for key, value in parsed_data.items()}
+    return result_dict
+
+
+class FileShare(DashShare):
+    def load(self, input, state):
+        q = parse_query_string(input)
+        if "state" in q:
+            with open(f'./share/{q["state"]}.json', "rb") as file:
+                state = json.load(file)
+            state = update_component_state(
+                state, None, **{self.modal_id: {"is_open": False}}
+            )
+        return state
+
+    def save(self, input, state, hash):
+        out_dir = Path("./share")
+        if not out_dir.exists():
+            out_dir.mkdir()
+        if input is not None and input > 0:
+            state = update_component_state(
+                state,
+                None,
+                temp_station_data={"data": -1},
+                dl_data={"data": None},
+                dl_plots={"figure": {}},
+                temp_derived_data={"data": None},
+                station_data={"figure": {}},
+                derived_plot={"figure": {}},
+                satellite_plot={"figure": {}},
+                satellite_compare={"figure": {}},
+                station_fig={"figure": {}},
+                save_modal={"is_open": False},
+                download_map={"figure": {}},
+            )
+
+            with open(f"./{out_dir}/{hash}.json", "w") as json_file:
+                json.dump(state, json_file, indent=4)
+        return input
+
+
+tracker = FileShare(
+    app=app,
+    load_input=("url", "search"),
+    save_input=("test-button", "n_clicks"),
+    save_output=("test-button", "n_clicks"),
+    url_input="url",
+)
 # Make this a function so that it is refreshed on page load.
-app.layout = lambda: lay.app_layout(app, get.get_sites())
+app.layout = lambda: tracker.update_layout(lay.app_layout(app, get.get_sites()))
+tracker.register_callbacks()
 
 
 @app.callback(
@@ -195,6 +253,7 @@ def download_called_data(n_clicks, tmp_data, station, time, start, end):
     ],
     [Input("station-dropdown", "value"), State("select-vars", "value")],
 )
+@tracker.pause_update
 def update_select_vars(station: str, selected):
     if not selected:
         selected = [
@@ -215,6 +274,120 @@ def update_select_vars(station: str, selected):
 
     selected = [x for x in selected if x in elems]
     return [{"value": x, "label": x} for x in sorted(elems)], selected
+
+
+@app.callback(
+    Output("temp-derived-data", "data"),
+    [
+        Input("station-dropdown-derived", "value"),
+        Input("derived-vars", "value"),
+        Input("start-date-derived", "value"),
+        Input("end-date-derived", "value"),
+        Input("derived-timeagg", "value"),
+        Input("gdd-selection", "value")
+    ],
+)
+def get_derived_data(station: str, variable, start, end, time, crop):
+    if not station:
+        return None
+    
+    if ctx.triggered_id == "gdd-selection":
+        slider = [None, None]
+    
+    if ctx.triggered_id == "gdd-slider":
+        crop = None
+
+    if "soil" in variable or "swp" in variable:
+        dat = get.get_derived(station, variable, start, end, time)
+        dat2 = get.get_derived(station, "swp", start, end, time)
+        dat = dat.merge(dat2)
+    else:
+        dat = get.get_derived(station, variable, start, end, time, crop)
+    dat = dat.to_json(date_format="iso", orient="records")
+    return dat
+
+
+@app.callback(
+    Output("gdd-slider", "value", allow_duplicate=True),
+    Output("gdd-selection", "value"),
+    Output("derived-timeagg", "value"),
+    Output("derived-soil-var", "value", allow_duplicate=True),
+    Input("derived-vars", "value"),
+    prevent_initial_call=True,
+)
+def reset_derived_selectors_on_var_update(variable):
+    return [50, 86], "wheat", "daily", "soil_vwc"
+
+
+@app.callback(
+    Output("livestock-container", "style"),
+    Input("derived-vars", "value"),
+)
+def hide_livestock_type(variable):
+    if variable != "cci":
+        return {"display": "None"}
+    return {}
+
+
+@app.callback(
+    Output("derived-gdd-panel", "style"),
+    Output("derived-soil-panel", "style"),
+    Output("derived-timeagg-panel", "style"),
+    Input("derived-vars", "value"),
+)
+def unhide_selected_panel(variable):
+    if variable in ["etr", "feels_like", "cci", "swp"]:
+        return {"display": "None"}, {"display": "None"}, {}
+    elif variable == "gdd":
+        return {}, {"display": "None"}, {"display": "None"}
+    else:
+        return {"display": "None"}, {}, {"display": "None"}
+
+@app.callback(
+    Output("derived-link", "href"),
+    Input("derived-vars", "value"),
+    Input("gdd-selection", "value"),
+)
+def update_derived_learn_link(variable, crop):
+    base = "https://climate.umt.edu/mesonet/ag_tools/"
+    mapper = {
+        "gdd": "gdds",
+        "soil_temp,soil_ec_blk": "soil_profile",
+        "cci": "risk"
+    }    
+
+    variable = mapper.get(variable, variable)
+    url = f"{base}{variable}/"
+    if variable == "gdds":
+        url = f"{url}#{crop}-growing-degree-days"
+    return url
+
+
+@app.callback(
+    Output("gdd-slider", "value", allow_duplicate=True),
+    Input("gdd-selection", "value"),
+    prevent_initial_call=True,
+)
+def update_gdd_slider(sel):
+    mapper = {
+        "canola": [41, 100],
+        "corn": [50, 86],
+        "sunflower": [44, 100],
+        "wheat": [32, 95],
+        "barley": [32, 95],
+        "sugarbeet": [34, 86],
+    }
+    if sel is None:
+        return no_update
+    return mapper[sel]
+
+
+@app.callback(Output("derived-right-panel", "children"), Input("derived-vars", "value"))
+def update_derived_control_panel(variable):
+    if variable == "gdd":
+        return lay.build_gdd_selector()
+    else:
+        return []
 
 
 @app.callback(
@@ -273,6 +446,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
                 e=",".join(elements),
                 has_etr=has_etr,
             )
+
             out = out.to_json(date_format="iso", orient="records")
         except HTTPError:
             out = -1
@@ -314,6 +488,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     out.datetime = pd.to_datetime(out.datetime)
 
     out = tmp.merge(out, on=["station", "datetime"])
+
     return out.to_json(date_format="iso", orient="records")
 
 
@@ -322,6 +497,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
     Input("station-dropdown", "value"),
     State("mesonet-stations", "data"),
 )
+@tracker.pause_update
 def adjust_start_date(station, stations):
     stations = pd.read_json(stations, orient="records")
 
@@ -390,6 +566,7 @@ def render_station_plot(tmp_data, select_vars, station, period, norm, stations):
 
 
 @app.callback(Output("station-dropdown", "value"), Input("url", "pathname"))
+@tracker.pause_update
 def update_dropdown_from_url(pth):
     stem = Path(pth).stem
     if stem == "/" or "dash" in stem:
@@ -442,6 +619,7 @@ def select_default_tab(station, stations):
         # State("ul-content", "children"),
     ],
 )
+@tracker.pause_update
 def update_ul_card(at, station, tmp_data, stations):
     # if at == "photo-tab" and ctx.triggered_id == "temp-station-data":
     #     return cur_content
@@ -592,6 +770,7 @@ def update_ul_card(at, station, tmp_data, stations):
 
 
 @app.callback(Output("gridmet-switch", "options"), Input("hourly-switch", "value"))
+@tracker.pause_update
 def disable_gridmet_switch(period):
     if period != "daily":
         return [{"label": "gridMET Normals", "value": 1, "disabled": True}]
@@ -665,6 +844,7 @@ def toggle_feedback(n1, is_open):
     Input("main-display-tabs", "value"),
     State("mesonet-stations", "data"),
 )
+@tracker.pause_update
 def toggle_main_tab(sel, stations):
     stations = pd.read_json(stations, orient="records")
 
@@ -673,6 +853,8 @@ def toggle_main_tab(sel, stations):
         return lay.build_latest_content(station_fig=station_fig, stations=stations)
     elif sel == "satellite-tab":
         return lay.build_satellite_content(stations)
+    elif sel == "derived-tab":
+        return lay.build_derived_content(stations)
     elif sel == "download-tab":
         station_fig = plt.plot_station(stations, zoom=5)
         station = stations["station"].values[0]
@@ -690,6 +872,7 @@ def toggle_main_tab(sel, stations):
     Input("network-options", "value"),
     State("mesonet-stations", "data"),
 )
+@tracker.pause_update
 def subset_stations(opts, stations):
     stations = pd.read_json(stations, orient="records")
 
@@ -710,6 +893,7 @@ def subset_stations(opts, stations):
     State("mesonet-stations", "data"),
     State("station-dropdown-satellite", "value"),
 )
+@tracker.pause_update
 def update_sat_selectors(sel, stations, station):
     if sel == "timeseries":
         graph = dls.Bars(dcc.Graph(id="satellite-plot"))
@@ -769,8 +953,45 @@ def render_satellite_ts_plot(station, elements, climatology):
 
 
 @app.callback(
+    Output("derived-plot", "figure"),
+    [
+        Input("temp-derived-data", "data"),
+        Input("station-dropdown-derived", "value"),
+        Input("derived-vars", "value"),
+        Input("derived-soil-var", "value"),
+        Input("livestock-type", "value"),
+    ],
+    prevent_initial_callback=True,
+)
+def render_derived_plot(data, station, select_vars, soil_var, livestock_type):
+    # For some reason I get a syntax error if this isn't here...
+    from mdb.utils import plotting as plt
+
+    if station is None:
+        return plt.make_nodata_figure(
+            """
+        <b>Select Station</b> <br><br>
+        
+        To get started, select a station from the dropdown.
+        """
+        )
+
+    if len(select_vars) == 0:
+        return plt.make_nodata_figure("No variables selected")
+    elif data and data != -1:
+        data = pd.read_json(data, orient="records")
+        data["datetime"] = pd.to_datetime(data["datetime"], utc=True).dt.tz_convert(
+            "America/Denver"
+        )
+
+    plt = plt_der.plot_derived(data, select_vars, soil_var, livestock_type == "newborn")
+    return plt
+
+
+@app.callback(
     Output("compare1", "options"), Input("station-dropdown-satellite", "value")
 )
+@tracker.pause_update
 def update_compare2_options(station):
     options = [
         {"label": " ", "value": " ", "disabled": True},
@@ -885,6 +1106,7 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
     Input("dl-public", "checked"),
     State("download-elements", "value"),
 )
+@tracker.pause_update
 def update_downloader_elements(station, public, elements):
     if station is None:
         return [], []
@@ -905,6 +1127,7 @@ def update_downloader_elements(station, public, elements):
     Input("station-dropdown-dl", "value"),
     State("mesonet-stations", "data"),
 )
+@tracker.pause_update
 def set_downloader_start_date(station, stations):
     if station is None:
         return no_update, no_update, no_update
@@ -1017,6 +1240,7 @@ def change_alert_text(dl_button, req_button):
     Output("station-dropdown-dl", "value"),
     Input("download-map", "clickData"),
 )
+@tracker.pause_update
 def select_station_from_map(clickData):
     if clickData:
         lat, lon, name, elevation, href, station, color = clickData["points"][0][
@@ -1046,6 +1270,84 @@ def plot_downloaded_data(data):
         out.append(tmp_plot)
 
     return out
+
+
+@app.callback(
+    Output("download-map", "figure"),
+    Input("dl-plots", "figure"),
+    State("mesonet-stations", "data"),
+)
+def update_dl_map(plots, stations):
+    if tracker.locked:
+        stations = pd.read_json(stations, orient="records")
+        return plt.plot_station(stations=stations)
+    return no_update
+
+
+@app.callback(
+    Output("derived-soil-var", "children"),
+    Input("station-dropdown-derived", "value"),
+    State("mesonet-stations", "data"),
+    State("derived-soil-var", "children"),
+)
+def update_swp_chips(station, stations, cur):
+    if station is None:
+        return cur
+    stations = pd.read_json(stations, orient="records")
+    children = [
+        dmc.Chip(v, value=k, size="xs")
+        for k, v in [
+            ("soil_blk_ec", "Electrical Conductivity"),
+            ("soil_vwc", "Volumetric Water Content"),
+            ("soil_temp", "Temperature"),
+        ]
+    ]
+
+    if stations[stations["station"] == station]["has_swp"].values[0]:
+        children.append(dmc.Chip("Soil Water Potential", value="swp", size="xs"))
+    return children
+
+
+@app.callback(
+    Output("derived-soil-var", "value", allow_duplicate=True),
+    Input("station-dropdown-derived", "value"),
+    State("derived-soil-var", "value"),
+    State("mesonet-stations", "data"),
+    prevent_initial_call=True,
+)
+def update_swp_if_station_doesnt_have(station, cur, stations):
+    if station is None:
+        return "soil_vwc"
+    stations = pd.read_json(stations, orient="records")
+    has_swp = stations[stations["station"] == station]["has_swp"].values[0]
+
+    if cur == "swp" and has_swp:
+        return "swp"
+    if cur == "swp" and not has_swp:
+        return "soil_vwc"
+    return cur
+
+
+@app.callback(
+    Output("station-dropdown-derived", "data"),
+    Output("station-dropdown-derived", "value"),
+    Input("derived-vars", "value"),
+    State("mesonet-stations", "data"),
+    State("station-dropdown-derived", "value"),
+)
+def filter_to_only_swp_stations(variable, stations, cur_station):
+    stations = pd.read_json(stations, orient="records")
+    if variable == "swp":
+        stations = stations[stations["has_swp"]]
+
+    data = [
+        {"label": k, "value": v}
+        for k, v in zip(stations["long_name"], stations["station"])
+    ]
+
+    if cur_station is not None and cur_station not in stations["station"].values:
+        return data, None
+    return data, cur_station
 
 
 if __name__ == "__main__":

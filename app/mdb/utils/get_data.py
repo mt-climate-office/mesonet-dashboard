@@ -322,3 +322,31 @@ def get_station_elements(station, public=False):
     station_elements = station_elements.sort_values("label")
     station_elements = station_elements.to_dict(orient="records")
     return station_elements
+
+
+def get_derived(station, variable, start, end, time, crop=None):
+
+    endpoint = "observations/" if "soil" in variable else "derived/"
+    endpoint = f"{endpoint}{time}"
+
+    q = {
+        "stations": station,
+        "start_time": start,
+        "end_time": end,
+        # "low": low,
+        # "high": high,
+        "alpha": 0.23,
+        "elements": variable,
+        "type": "csv",
+        "premade": True,
+        "rm_na": True,
+        "keep": True,
+    }
+    if crop is not None:
+        q.update({"crop": crop})
+
+    payload = parse.urlencode(q, safe=",:")
+    r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
+    dat = pd.read_csv(r.url)
+    dat = dat.rename(columns=params.lab_swap)
+    return dat
