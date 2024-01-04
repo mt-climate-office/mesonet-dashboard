@@ -662,7 +662,7 @@ def build_gdd_selector():
     return [
         dmc.Center(
             dmc.Text(
-                "GDD Crop Type",
+                "GDD Generic Crop Type",
                 size="sm",
                 weight=500,
             )
