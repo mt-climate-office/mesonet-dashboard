@@ -73,8 +73,11 @@ class FileShare(DashShare):
     def load(self, input, state):
         q = parse_query_string(input)
         if "state" in q:
-            with open(f'./share/{q["state"]}.json', "rb") as file:
-                state = json.load(file)
+            try:
+                with open(f'./share/{q["state"]}.json', "rb") as file:
+                    state = json.load(file)
+            except FileNotFoundError:
+                return state
             state = update_component_state(
                 state, None, **{self.modal_id: {"is_open": False}}
             )
@@ -82,8 +85,14 @@ class FileShare(DashShare):
 
     def save(self, input, state, hash):
         out_dir = Path("./share")
+        
         if not out_dir.exists():
             out_dir.mkdir()
+
+        
+        if Path(f"./{out_dir}/{hash}.json").exists():
+            return input
+        
         if input is not None and input > 0:
             state = update_component_state(
                 state,
