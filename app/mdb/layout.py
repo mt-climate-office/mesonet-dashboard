@@ -243,7 +243,7 @@ def build_bottom_left_card(station_fig):
             html.Div(
                 children=dbc.CardBody(
                     id="bl-content",
-                    children=dcc.Graph(id="station-fig", figure=station_fig),
+                    children=html.Div(id="station-fig", children=station_fig),
                     className="card-text",
                 ),
                 # style={"overflow": "scroll"},

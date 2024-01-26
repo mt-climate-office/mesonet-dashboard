@@ -61,6 +61,11 @@ app._favicon = "MCO_logo.svg"
 app.config["suppress_callback_exceptions"] = True
 server = app.server
 
+def make_station_iframe(station="none"):
+
+    return html.Div(html.Iframe(
+        src=f"https://mesonet.climate.umt.edu/api/map/stations/?station={station}"), className="second-row"
+    )
 
 def parse_query_string(query_string):
     query_string = query_string.replace("?", "")
@@ -189,8 +194,8 @@ def update_br_card(
         switch_to_current = ctx.triggered_id == "station-dropdown"
 
     if at == "map-tab" and not switch_to_current:
-        station_fig = plt.plot_station(stations, station=station)
-        return dcc.Graph(id="station-fig", figure=station_fig), "map-tab"
+        station_name = station if station is not None else "none"
+        return make_station_iframe(station_name), "map-tab"
     elif at == "meta-tab" and not switch_to_current:
         table = tab.make_metadata_table(stations, station)
         return dash_table.DataTable(data=table, **lay.TABLE_STYLING), "meta-tab"
@@ -858,7 +863,7 @@ def toggle_main_tab(sel, stations):
     stations = pd.read_json(stations, orient="records")
 
     if sel == "station-tab":
-        station_fig = plt.plot_station(stations)
+        station_fig = make_station_iframe()
         return lay.build_latest_content(station_fig=station_fig, stations=stations)
     elif sel == "satellite-tab":
         return lay.build_satellite_content(stations)
@@ -872,7 +877,7 @@ def toggle_main_tab(sel, stations):
             station_fig, elements=station_elements, stations=stations, station=station
         )
     else:
-        station_fig = plt.plot_station(stations)
+        station_fig = make_station_iframe()
         return lay.build_latest_content(station_fig=station_fig, stations=stations)
 
 
