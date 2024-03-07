@@ -61,11 +61,16 @@ app._favicon = "MCO_logo.svg"
 app.config["suppress_callback_exceptions"] = True
 server = app.server
 
+
 def make_station_iframe(station="none"):
 
-    return html.Div(html.Iframe(
-        src=f"https://mesonet.climate.umt.edu/api/map/stations/?station={station}"), className="second-row"
+    return html.Div(
+        html.Iframe(
+            src=f"https://mesonet.climate.umt.edu/api/map/stations/?station={station}"
+        ),
+        className="second-row",
     )
+
 
 def parse_query_string(query_string):
     query_string = query_string.replace("?", "")
@@ -90,14 +95,13 @@ class FileShare(DashShare):
 
     def save(self, input, state, hash):
         out_dir = Path("./share")
-        
+
         if not out_dir.exists():
             out_dir.mkdir()
 
-        
         if Path(f"./{out_dir}/{hash}.json").exists():
             return input
-        
+
         if input is not None and input > 0:
             state = update_component_state(
                 state,
@@ -298,16 +302,16 @@ def update_select_vars(station: str, selected):
         Input("start-date-derived", "value"),
         Input("end-date-derived", "value"),
         Input("derived-timeagg", "value"),
-        Input("gdd-selection", "value")
+        Input("gdd-selection", "value"),
     ],
 )
 def get_derived_data(station: str, variable, start, end, time, crop):
     if not station:
         return None
-    
+
     if ctx.triggered_id == "gdd-selection":
         slider = [None, None]
-    
+
     if ctx.triggered_id == "gdd-slider":
         crop = None
 
@@ -357,6 +361,7 @@ def unhide_selected_panel(variable):
     else:
         return {"display": "None"}, {}, {"display": "None"}
 
+
 @app.callback(
     Output("derived-link", "href"),
     Input("derived-vars", "value"),
@@ -364,11 +369,7 @@ def unhide_selected_panel(variable):
 )
 def update_derived_learn_link(variable, crop):
     base = "https://climate.umt.edu/mesonet/ag_tools/"
-    mapper = {
-        "gdd": "gdds",
-        "soil_temp,soil_ec_blk": "soil_profile",
-        "cci": "risk"
-    }    
+    mapper = {"gdd": "gdds", "soil_temp,soil_ec_blk": "soil_profile", "cci": "risk"}
 
     variable = mapper.get(variable, variable)
     url = f"{base}{variable}/"
@@ -1172,9 +1173,10 @@ clientside_callback(
     State("dl-start", "value"),
     State("dl-end", "value"),
     State("dl-timeperiod", "value"),
+    State("dl-rmna", "checked"),
     prevent_initial_call=True,
 )
-def downloader_data(n_clicks, station, elements, start, end, period):
+def downloader_data(n_clicks, station, elements, start, end, period, rmna):
     if n_clicks and (not station or not elements):
         return no_update, False, False
     if start is None or station is None:
@@ -1192,6 +1194,7 @@ def downloader_data(n_clicks, station, elements, start, end, period):
             has_etr=False,
             na_info=True,
             public=False,
+            rmna=not rmna,
         )
         data = data.rename(columns={"has_na": "Contains Missing Data"})
         if "bp_logger_0244" not in elements:

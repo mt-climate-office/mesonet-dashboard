@@ -72,7 +72,33 @@ def add_etr_trace(dat):
     return fig
 
 
-_stage_colors = ['#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928', '#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f'] * 2
+_stage_colors = [
+    "#a6cee3",
+    "#1f78b4",
+    "#b2df8a",
+    "#33a02c",
+    "#fb9a99",
+    "#e31a1c",
+    "#fdbf6f",
+    "#ff7f00",
+    "#cab2d6",
+    "#6a3d9a",
+    "#ffff99",
+    "#b15928",
+    "#8dd3c7",
+    "#ffffb3",
+    "#bebada",
+    "#fb8072",
+    "#80b1d3",
+    "#fdb462",
+    "#b3de69",
+    "#fccde5",
+    "#d9d9d9",
+    "#bc80bd",
+    "#ccebc5",
+    "#ffed6f",
+] * 2
+
 
 def add_gdd_trace(dat):
     fig = go.Figure(
@@ -92,14 +118,14 @@ def add_gdd_trace(dat):
             x=dat["datetime"],
             y=dat["Cumulative GDDs [GDD °F]"],
             mode="lines+markers",
-            marker={
-                "color": dat["Growth Stage"].apply(lambda x: color_map[x])
-            },
+            marker={"color": dat["Growth Stage"].apply(lambda x: color_map[x])},
             customdata=dat["Growth Stage"],
             line=dict(color="orange", width=2),
             name="Cumulative GDDs",
             yaxis="y2",
-            hovertemplate="<b>Date</b>: %{x}<br>" + "<b>Cumulative GDDs</b>: %{y}<br>" + "<b>Growth Stage</b>: %{customdata}",
+            hovertemplate="<b>Date</b>: %{x}<br>"
+            + "<b>Cumulative GDDs</b>: %{y}<br>"
+            + "<b>Growth Stage</b>: %{customdata}",
         ),
         # row=idx,
         # col=1,
@@ -368,16 +394,16 @@ def plot_swp(dat):
     )
     max_all = dat[y_cols].max().max()
     top_line = go.Scatter(
-        x=dat['datetime'],
-        y=[max_all] * len(dat['datetime']),
+        x=dat["datetime"],
+        y=[max_all] * len(dat["datetime"]),
         mode="lines",
         line={"dash": "dash", "color": "rgba(255, 0, 0, 1)"},
-        fillcolor= "rgba(255, 0, 0, 0.2)",
+        fillcolor="rgba(255, 0, 0, 0.2)",
         showlegend=True,
         fill="tonexty",
         name="Wilting Point",
         hovertext="Water Not Plant Available",
-        stackgroup='one' # define stack group
+        stackgroup="one",  # define stack group
     )
     mx_line = go.Scatter(
         x=dat.datetime,
@@ -388,7 +414,7 @@ def plot_swp(dat):
         showlegend=True,
         name="Plant Available Water",
         hovertext="Water Is Plant Available",
-        stackgroup='one' # define stack group
+        stackgroup="one",  # define stack group
     )
 
     mn_line = go.Scatter(
@@ -401,7 +427,7 @@ def plot_swp(dat):
         name="Field Capacity",
         fill="tozeroy",
         hovertext="Soil Is Saturated",
-        stackgroup='one' # define stack group
+        stackgroup="one",  # define stack group
     )
 
     fig.add_trace(mn_line)

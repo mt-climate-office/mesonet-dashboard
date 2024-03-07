@@ -54,6 +54,7 @@ def get_station_record(
     has_etr: Optional[bool] = True,
     na_info: Optional[bool] = False,
     public: Optional[bool] = True,
+    rmna: Optional[bool] = True,
 ) -> pd.DataFrame:
     """Given a Mesonet station name and date range, return a dataframe of climate data.
 
@@ -74,7 +75,7 @@ def get_station_record(
         "start_time": start_time,
         "level": 1,
         "type": "csv",
-        "rm_na": True,
+        "rm_na": rmna,
         "premade": True,
         "na_info": na_info,
         "public": public,

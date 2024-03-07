@@ -521,13 +521,25 @@ def build_downloader_content(
                                 element_dd,
                                 dmc.Group(
                                     [
-                                        dmc.Switch(
-                                            size="md",
-                                            id="dl-public",
-                                            radius="xl",
-                                            label="Show Uncommon Variables",
-                                            checked=False,
-                                            disabled=False,
+                                        dmc.Stack(
+                                            [
+                                                dmc.Switch(
+                                                    size="md",
+                                                    id="dl-public",
+                                                    radius="xl",
+                                                    label="Show Uncommon Variables",
+                                                    checked=False,
+                                                    disabled=False,
+                                                ),
+                                                dmc.Switch(
+                                                    size="md",
+                                                    id="dl-rmna",
+                                                    radius="xl",
+                                                    label="Remove Flagged Data",
+                                                    checked=False,
+                                                    disabled=False,
+                                                ),
+                                            ],
                                         ),
                                         dmc.Stack(
                                             [
@@ -727,30 +739,40 @@ def build_derived_dropdowns(
                         dmc.Group(
                             [
                                 dmc.Stack(
-                                    [dmc.Text("Select Variable"),
-                                    dmc.Select(
-                                        data=[
-                                            {"value": "etr", "label": "Reference ET"},
-                                            {
-                                                "value": "feels_like",
-                                                "label": "Feels Like Temperature",
-                                            },
-                                            {"value": "gdd", "label": "Growing Degree Days"},
-                                            {
-                                                "value": "soil_temp,soil_ec_blk",
-                                                "label": "Soil Profile Plot",
-                                            },
-                                            {
-                                                "value": "cci",
-                                                "label": "Livestock Risk Index",
-                                            },
-                                            {"value": "swp", "label": "Soil Water Potential"},
-                                        ],
-                                        id="derived-vars",
-                                        value="gdd",
-                                        searchable=True
-                                        # style={"width": 400, "marginBottom": 10},
-                                    ),
+                                    [
+                                        dmc.Text("Select Variable"),
+                                        dmc.Select(
+                                            data=[
+                                                {
+                                                    "value": "etr",
+                                                    "label": "Reference ET",
+                                                },
+                                                {
+                                                    "value": "feels_like",
+                                                    "label": "Feels Like Temperature",
+                                                },
+                                                {
+                                                    "value": "gdd",
+                                                    "label": "Growing Degree Days",
+                                                },
+                                                {
+                                                    "value": "soil_temp,soil_ec_blk",
+                                                    "label": "Soil Profile Plot",
+                                                },
+                                                {
+                                                    "value": "cci",
+                                                    "label": "Livestock Risk Index",
+                                                },
+                                                {
+                                                    "value": "swp",
+                                                    "label": "Soil Water Potential",
+                                                },
+                                            ],
+                                            id="derived-vars",
+                                            value="gdd",
+                                            searchable=True
+                                            # style={"width": 400, "marginBottom": 10},
+                                        ),
                                     ]
                                 ),
                                 dmc.Stack(
@@ -760,19 +782,21 @@ def build_derived_dropdowns(
                                             dmc.Button(
                                                 "Learn More",
                                                 # href="/mesonet/dashboard/ag_tools/"
-                                                leftIcon=DashIconify(icon="feather:info", width=20)
+                                                leftIcon=DashIconify(
+                                                    icon="feather:info", width=20
+                                                ),
                                             ),
                                             href="https://climate.umt.edu/mesonet/dashboard/ag_tools/",
                                             id="derived-link",
                                             target="_blank",
-                                        )
+                                        ),
                                     ]
-                                )
+                                ),
                             ],
                             grow=True,
                             spacing="xl",
-                            position="left"
-                        )
+                            position="left",
+                        ),
                     ]
                 ),
                 span=4,
