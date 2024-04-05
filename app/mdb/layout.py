@@ -390,6 +390,10 @@ def build_dropdowns(stations):
                         ),
                         width="auto",
                     ),
+                    dbc.Col(
+                        dbc.Button("ABOUT THESE VARIABLES", href="https://climate.umt.edu/mesonet/variables/", target="_blank"),
+                        width="auto",
+                    )
                 ],
                 style={"padding": "0.5rem"},  # Add some padding to the row
                 justify="around",
