@@ -235,7 +235,7 @@ def get_satellite_data(
         password=os.getenv("Neo4jPassword"),
         uri=os.getenv("Neo4jURI"),
     )
-
+    
     if isinstance(start_time, dt.date):
         start_time = (start_time - dt.date(1970, 1, 1)).total_seconds()
     if isinstance(end_time, dt.date):

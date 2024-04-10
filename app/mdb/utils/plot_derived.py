@@ -333,7 +333,12 @@ def plot_soil_heatmap(dat, variable):
         "soil_vwc": "Soil VWC [%]",
         "soil_temp": "Soil Temperature [degF]",
         "soil_blk_ec": "Soil Electrical Conductivity [mS/cm]",
-        "swp": "Soil Water Potential [kPa]",
+        "swp": "Soil Water Potential [negative kPa]",
+    }
+
+    color_map = {
+        "soil_temp": px.colors.diverging.RdBu_r,
+        "swp": px.colors.diverging.BrBG_r
     }
 
     mn = min(out["value"])
@@ -356,9 +361,7 @@ def plot_soil_heatmap(dat, variable):
         y=ys,
         x=xs,
         labels=dict(color=lab_map[variable]),
-        color_continuous_scale=px.colors.diverging.RdBu_r
-        if variable == "soil_temp"
-        else px.colors.diverging.BrBG,
+        color_continuous_scale=color_map.get(variable, px.colors.diverging.BrBG),
         color_continuous_midpoint=32 if variable == "soil_temp" else (mn + mx) / 2,
     )
 
