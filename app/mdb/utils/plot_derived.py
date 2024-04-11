@@ -333,7 +333,7 @@ def plot_soil_heatmap(dat, variable):
         "soil_vwc": "Soil VWC [%]",
         "soil_temp": "Soil Temperature [degF]",
         "soil_blk_ec": "Soil Electrical Conductivity [mS/cm]",
-        "swp": "Soil Water Potential [negative kPa]",
+        "swp": "Soil Water Potential [negative bar]",
     }
 
     color_map = {
@@ -371,8 +371,8 @@ def plot_soil_heatmap(dat, variable):
 def plot_swp(dat):
     cols = dat.columns[1:].tolist()
     y_cols = [x for x in cols if "Potential" in x]
-    dat["mx"] = 1500
-    dat["mn"] = 33
+    dat["mx"] = 15
+    dat["mn"] = 0.33
 
     # clipped_cols = [x for x in cols if "Clipped" in x]
 
@@ -381,18 +381,18 @@ def plot_swp(dat):
         x="datetime",
         y=y_cols,
         color_discrete_map={
-            "Soil Water Potential @ 2 in [kPa]": "#636efa",
-            "Soil Water Potential @ 4 in [kPa]": "#EF553B",
-            "Soil Water Potential @ 8 in [kPa]": "#00cc96",
-            "Soil Water Potential @ 20 in [kPa]": "#ab63fa",
-            "Soil Water Potential @ 28 in [kPa]": "#FFA15A",
-            "Soil Water Potential @ 36 in [kPa]": "#FFA15A",
-            "Soil Water Potential @ 40 in [kPa]": "#301934",
+            "Soil Water Potential @ 2 in [bar]": "#636efa",
+            "Soil Water Potential @ 4 in [bar]": "#EF553B",
+            "Soil Water Potential @ 8 in [bar]": "#00cc96",
+            "Soil Water Potential @ 20 in [bar]": "#ab63fa",
+            "Soil Water Potential @ 28 in [bar]": "#FFA15A",
+            "Soil Water Potential @ 36 in [bar]": "#FFA15A",
+            "Soil Water Potential @ 40 in [bar]": "#301934",
         },
     )
 
     fig.update_layout(
-        yaxis_title="Soil Water Potential [Negative kPa]",
+        yaxis_title="Soil Water Potential [Negative Bar]",
         yaxis_type="log",  # Set the y-axis to log scale
     )
     max_all = dat[y_cols].max().max()
