@@ -164,7 +164,7 @@ def get_station_latest(station):
     dat = dat.rename(columns=params.lab_swap)
 
     try:
-        dat["Wind Chill [°F]"] = round(
+        dat["Real Feel [°F]"] = round(
             35.74
             + (0.6215 * dat["Air Temperature [°F]"])
             - (35.75 * (dat["Wind Speed [mi/hr]"] ** 0.16))
