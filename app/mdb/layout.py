@@ -59,7 +59,7 @@ def generate_modal():
                         Selecting the "Comparison" button allows you to choose two variable to plot against one another for the current year. 
                         If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, please:
                         - Email [colin.brust@mso.umt.edu](mailto:colin.brust@mso.umt.edu),
-                        - Fill out our [feedback form](https://airtable.com/shrxlaYUu6DcyK98s),
+                        - Fill out our [feedback form](https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN/form),
                         - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
 
                         For questions or issues related to current Mesonet stations, please contact our Mesonet Manager (Kevin Hyde) at
