@@ -96,7 +96,7 @@ def feedback_iframe():
                 ),
                 dbc.ModalBody(
                     html.Iframe(
-                        src="https://airtable.com/embed/shrxlaYUu6DcyK98s?",
+                        src="https://airtable.com/embed/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN/form",
                         style={
                             "backgroundColor": "orange",
                             "frameborder": "0",
