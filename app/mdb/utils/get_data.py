@@ -351,3 +351,7 @@ def get_derived(station, variable, start, end, time, crop=None):
     dat = pd.read_csv(r.url)
     dat = dat.rename(columns=params.lab_swap)
     return dat
+
+
+def get_nws_forecast(lat: float, lon: float):
+    pass
