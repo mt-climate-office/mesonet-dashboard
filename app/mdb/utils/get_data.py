@@ -2,6 +2,7 @@ import datetime as dt
 import io
 from typing import Optional, Union
 from urllib import parse
+import numpy as np
 
 import pandas as pd
 import requests
@@ -152,7 +153,10 @@ def get_station_latest(station):
         dat = pd.read_csv(text_io)
     dat = dat.loc[:, dat.columns.isin(["datetime"] + params.elem_labs)]
     dat = dat.rename(columns=params.lab_swap)
-    dat["Wind Direction [deg]"] = deg_to_compass(dat["Wind Direction [deg]"])
+    try: 
+        dat["Wind Direction [deg]"] = deg_to_compass(dat["Wind Direction [deg]"])
+    except ValueError:
+        dat["Wind Direction [deg]"] = np.NaN
     title = dat.datetime.values[0]
     dat = dat.drop(columns="datetime")
 

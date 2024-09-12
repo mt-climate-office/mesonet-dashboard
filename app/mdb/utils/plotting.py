@@ -233,9 +233,13 @@ def deg_to_compass(num):
 
 def plot_wind(wind_data):
     wind_data = wind_data.dropna()
-    wind_data["Wind Direction [deg]"] = wind_data["Wind Direction [deg]"].apply(
-        deg_to_compass
-    )
+    try:
+        wind_data["Wind Direction [deg]"] = wind_data["Wind Direction [deg]"].apply(
+            deg_to_compass
+        )
+    except ValueError:
+        wind_data["Wind Direction [deg]"] = np.NaN
+        
     wind_data["Wind Speed [mi/hr]"] = round(wind_data["Wind Speed [mi/hr]"])
     wind_data["Wind Speed [mi/hr]"] = pd.qcut(
         wind_data["Wind Speed [mi/hr]"], q=8, duplicates="drop"
