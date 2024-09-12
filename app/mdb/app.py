@@ -93,7 +93,7 @@ def render_station_plot(station, dat, select_vars, stations):
 
 def weather_iframe(station, stations):
     row = stations[stations["station"] == station]
-    url = f"https://mobile.weather.gov/index.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
+    url = f"https://forecast.weather.gov/MapClick.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"    
     return html.Div(
         html.Iframe(
             src=url,
