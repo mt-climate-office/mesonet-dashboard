@@ -66,6 +66,7 @@ def get_station_record(
         "level": 1,
         "type": "csv",
         "premade": "TRUE",
+        "rm_na": "TRUE",
     }
 
     if end_time:

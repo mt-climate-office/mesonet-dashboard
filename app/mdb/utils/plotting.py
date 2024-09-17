@@ -456,7 +456,10 @@ def get_plot_func(v):
 
 
 def get_soil_legend_loc(dat):
-    vmax = max(dat.iloc[:, dat.columns.str.contains("Soil VWC")].max(axis=0))
+    try:
+        vmax = max(dat.iloc[:, dat.columns.str.contains("Soil VWC")].max(axis=0))
+    except ValueError:
+        vmax = None
     d = dat.datetime.max()
     d = [d - rd(hours=36 * i) for i in range(6)]
 
@@ -543,8 +546,7 @@ def plot_site(*args: List, dat: pd.DataFrame, ppt: pd.DataFrame, **kwargs):
                 data = filter_df(df, v)
 
                 if len(data) == 0 or data.shape[-1] == 1:
-                    no_data.append(v)
-                    continue
+                    raise ValueError("No Data Available.")
                 if v == "Soil Temperature" or v == "Soil VWC":
                     kwargs.update({"txt": v})
                 plt = plot_func(data, color=params.color_mapper[v], **kwargs)
