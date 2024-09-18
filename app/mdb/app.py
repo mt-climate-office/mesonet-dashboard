@@ -1120,18 +1120,50 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
     Input("station-dropdown-dl", "value"),
     Input("dl-public", "checked"),
     State("download-elements", "value"),
+    State("mesonet-stations", "data"),
 )
 @tracker.pause_update
-def update_downloader_elements(station, public, elements):
+def update_downloader_elements(station, public, elements, stations):
     if station is None:
         return [], []
+    
+    stations = pd.read_json(stations, orient="records")
 
     elems_out = get.get_station_elements(station, public)
+    derived_elems = [
+        {
+            "value": "feels_like",
+            "label": "Feels Like Temperature"
+        },
+        {
+            "value": "etr",
+            "label": "Reference ET"
+        },
+        {
+            "value": "cci",
+            "label": "Livestock Risk Index"
+        }
+    ]
+
+    # if stations[stations['station'] == station].has_swp.values[0]:
+    #     derived_elems.append(
+    #         {
+    #             "value": "swp",
+    #             "label": "Soil Water Potential"
+    #         }
+    #     )
+    elems_out.insert(0, {"value": "nuffin", "label": "STANDARD ELEMENTS", "disabled": True})
+    elems_out.append({"value": "nuffin", "label": "DERIVED VARIABLES", "disabled": True})
+    elems_out += derived_elems
+
     if not elements:
         return elems_out, []
 
     poss_elems = [x["value"] for x in elems_out]
+
+
     elements = [x for x in elements if x in poss_elems]
+
     return elems_out, elements
 
 
@@ -1184,20 +1216,25 @@ def downloader_data(n_clicks, station, elements, start, end, period, rmna):
 
     start = dt.datetime.strptime(start, "%Y-%m-%d").date()
     end = dt.datetime.strptime(end, "%Y-%m-%d").date()
+
+    std_elems = [x for x in elements if x not in ['feels_like', 'etr', 'swp', 'cci']]
+    derived_elems = [x for x in elements if x  in ['feels_like', 'etr', 'swp', 'cci']]
+
     if n_clicks:
         data = get.get_station_record(
             station,
             start,
             end,
             period,
-            ",".join(elements),
+            ",".join(std_elems),
             has_etr=False,
             na_info=True,
             public=False,
             rmna=not rmna,
+            derived_elems=derived_elems,
         )
         data = data.rename(columns={"has_na": "Contains Missing Data"})
-        if "bp_logger_0244" not in elements:
+        if "bp_logger_0244" not in std_elems:
             try:
                 data = data.drop(columns=["Logger Reference Pressure [mbar]"])
             except KeyError:

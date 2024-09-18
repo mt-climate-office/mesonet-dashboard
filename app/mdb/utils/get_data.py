@@ -55,6 +55,7 @@ def get_station_record(
     na_info: Optional[bool] = False,
     public: Optional[bool] = True,
     rmna: Optional[bool] = True,
+    derived_elems: Optional[list[str]] = None,
 ) -> pd.DataFrame:
     """Given a Mesonet station name and date range, return a dataframe of climate data.
 
@@ -95,10 +96,11 @@ def get_station_record(
     try:
         dat = pd.read_csv(r.url)
     except HTTPError:
-        if has_etr:
+        if has_etr or derived_elems:
             dat = pd.DataFrame()
         else:
             raise HTTPError(r.url, 404, "No data found.", None, None)
+
     if has_etr:
         q["elements"] = "etr"
         endpoint = params.derived_endpoints[period]
@@ -111,6 +113,26 @@ def get_station_record(
             dat = dat.merge(etr, how="left", on=["station", "datetime"])
         else:
             dat = etr
+
+    if derived_elems:
+        q["elements"] = ",".join(derived_elems)
+        endpoint = params.derived_endpoints[period]
+        payload = parse.urlencode(q, safe=",:")
+
+        r = Request("GET", url=f"{params.API_URL}{endpoint}", params=payload).prepare()
+
+        derived = pd.read_csv(r.url)
+        if not dat.empty:
+            dat = dat.merge(derived, how="left", on=["station", "datetime"])
+            if ("has_na_x" in dat.columns) and ("has_na_y" in dat.columns):
+                dat = dat.assign(
+                    has_na = dat["has_na_x"] | dat["has_na_y"]
+                )
+                dat = dat.drop(
+                    columns=["has_na_x", "has_na_y"],
+                )
+        else:
+            dat = derived
 
     if period == "monthly":
         dat = dat.assign(
