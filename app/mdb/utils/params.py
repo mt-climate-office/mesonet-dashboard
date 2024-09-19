@@ -87,10 +87,13 @@ class params:
         "Gust Speed @ 8 ft [mi/hr]",
         "Gust Speed @ 10 m [mi/hr]",
         "Well Water Level [in]",
+        'Reference ET (a=0.23) [in]',
+        'Comprehensive Climate Index [°F]',
+        'Feels Like Temperature [°F]',
     ]
 
     agg_funcs = {
-        item: "sum" if item == "Precipitation [in]" else "mean" for item in elem_labs
+        item: "sum" if item in ["Precipitation [in]", 'Reference ET (a=0.23) [in]'] else "mean" for item in elem_labs
     }
 
     lab_swap = {
