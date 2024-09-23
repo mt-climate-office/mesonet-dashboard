@@ -883,6 +883,24 @@ def toggle_main_tab(sel, stations):
 
 
 @app.callback(
+    Output("main-display-tabs", "value"),
+    Input("url", "hash"),
+    State("main-display-tabs", "value"),
+)
+def change_display_tab_with_hash(hash, cur):
+    if hash == '':
+        return cur
+    if hash == "#satellite":
+        return "satellite-tab"
+    elif hash == "#ag":
+        return "derived-tab"
+    elif hash == "#downloader":
+        return "download-tab"
+    else:
+        return "station-tab"
+
+
+@app.callback(
     Output("station-dropdown", "options"),
     Input("network-options", "value"),
     State("mesonet-stations", "data"),
