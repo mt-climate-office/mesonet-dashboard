@@ -78,17 +78,22 @@ out <- purrr::map(
   function(x) {
     purrr::pmap(
       l,
-      function(lat, lon, start, end, name) {
-        get_gridmet(
-          lat, 
-          lon, 
-          start, 
-          end, 
-          x, 
-          name)
-      }
+      purrr::possibly(
+        function(lat, lon, start, end, name) {
+          get_gridmet(
+            lat, 
+            lon, 
+            start, 
+            end, 
+            x, 
+            name
+          )
+        },
+        # Return an empty tibble if an error occurs
+        tibble::tibble()
+      )
     )
-  }       
+  }
 )
 
 
