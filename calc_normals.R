@@ -132,10 +132,3 @@ dplyr::bind_rows() %>%
     readr::write_csv(x, name)
   })
 
-
-
-
-
-
-
-
