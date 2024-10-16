@@ -169,12 +169,14 @@ def plot_comparison(dat_x, dat_y, station=None):
         direction="nearest",
         tolerance=pd.Timedelta("16 day"),
     )
-
+    out['julian_date'] = pd.to_datetime(out['date_x']).apply(lambda x: x.timetuple().tm_yday)
     fig = px.scatter(
         out,
         x="value_x",
         y="value_y",
-        custom_data=["date_x"],
+        color="julian_date",  # Color by Julian date
+        custom_data=["date_x"],  # Keep the original date for hover info
+        color_continuous_scale=px.colors.sequential.Magma  # Optional: set a color scale
     )
 
     fig = style_figure(fig, None)
@@ -183,6 +185,9 @@ def plot_comparison(dat_x, dat_y, station=None):
         xaxis_title=lab_x,
         yaxis_title=lab_y,
         height=600,
+        coloraxis_colorbar=dict(
+            title="Day of Year"
+        )
     )
     fig.update_traces(
         hovertemplate="<b>"
