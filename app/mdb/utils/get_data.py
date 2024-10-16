@@ -226,7 +226,6 @@ def get_ppt_summary(station):
         dat = pd.read_csv(text_io)
     dat = pd.melt(dat, id_vars=["station"], var_name="time", value_name="value")
     dat = dat[["time", "value"]]
-    dat = dat.sort_values("value")
     dat = dat.rename(columns={"time": "name"})
     return dat.to_dict("records")
 
