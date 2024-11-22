@@ -392,17 +392,17 @@ def plot_swp(dat):
     )
 
     fig.update_layout(
-        yaxis_title="Soil Water Potential [Negative Bar]",
+        yaxis_title="Soil Water Potential [Bar]",
         yaxis_type="log",  # Set the y-axis to log scale
     )
-    max_all = dat[y_cols].max().max()
+    max_all = dat[y_cols].max().max() + 200
     top_line = go.Scatter(
         x=dat["datetime"],
         y=[max_all] * len(dat["datetime"]),
         mode="lines",
-        line={"dash": "dash", "color": "rgba(255, 0, 0, 1)"},
-        fillcolor="rgba(255, 0, 0, 0.2)",
-        showlegend=True,
+        line={"dash": "dash", "color": "rgba(255, 0, 0, 0)"},
+        fillcolor="rgba(128, 128, 128, 0.2)",
+        showlegend=False,
         fill="tonexty",
         name="Wilting Point",
         hovertext="Water Not Plant Available",
@@ -412,11 +412,11 @@ def plot_swp(dat):
         x=dat.datetime,
         y=dat.mx,
         mode="lines",
-        line={"dash": "dash", "color": "rgba(2, 75, 48, 1)"},
-        fillcolor="rgba(2, 75, 48, 0.2)",
-        showlegend=True,
-        name="Plant Available Water",
-        hovertext="Water Is Plant Available",
+        line={"dash": "dash", "color": "rgba(255, 0, 0, 0)"},
+        fillcolor="rgba(2, 75, 48, 0)",
+        showlegend=False,
+        name="Wilting Point",
+        hovertext="Water Not Plant Available",
         stackgroup="one",  # define stack group
     )
 
@@ -424,9 +424,9 @@ def plot_swp(dat):
         x=dat.datetime,
         y=dat.mn,
         mode="lines",
-        line={"dash": "dash", "color": "rgba(135, 206, 250, 1)"},
-        fillcolor="rgba(135, 206, 250, 0.2)",
-        showlegend=True,
+        line={"dash": "dash", "color": "rgba(135, 206, 250, 0)"},
+        fillcolor="rgba(128, 128, 128, 0.2)",
+        showlegend=False,
         name="Field Capacity",
         fill="tozeroy",
         hovertext="Soil Is Saturated",
@@ -440,6 +440,40 @@ def plot_swp(dat):
     fig.update_layout(
         xaxis=dict(title_text=""),
         legend=dict(title_text=""),
+        yaxis = dict(autorange="reversed"),
+        yaxis_tickprefix = "-",
+        annotations=[
+            # Top-left corner
+            dict(
+                text="Field Capacity",
+                x=0,  # X position (relative to the plot area: 0 to 1)
+                y=1,  # Y position (relative to the plot area: 0 to 1)
+                xref="paper",  # Anchor to the plot area
+                yref="paper",
+                showarrow=False,
+                font=dict(size=14, color="black"),
+                align="left",
+                bgcolor="rgba(255,255,255, 0.8)",  # Semi-transparent black background
+                bordercolor="black",  # Border color
+                borderwidth=2,  # Border width
+                borderpad=4, 
+            ),
+            # Bottom-left corner
+            dict(
+                text="Wilting Point",
+                x=0,  # X position (relative to the plot area: 0 to 1)
+                y=0,  # Y position (relative to the plot area: 0 to 1)
+                xref="paper",  # Anchor to the plot area
+                yref="paper",
+                showarrow=False,
+                font=dict(size=14, color="black"),
+                align="left",
+                bgcolor="rgba(255,255,255, 0.8)",  # Semi-transparent black background
+                bordercolor="black",  # Border color
+                borderwidth=2,  # Border width
+                borderpad=4, 
+            )
+        ],
     )
 
     return fig

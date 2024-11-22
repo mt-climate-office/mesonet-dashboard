@@ -560,7 +560,7 @@ def render_station_plot(tmp_data, select_vars, station, period, norm, stations):
             station=station,
             norm=(len(norm) == 1) and (period == "daily"),
             top_of_hour=period != "raw",
-            period="hourly" if period == "raw" else period,
+            period=period,
         )
     elif tmp_data == -1:
         return plt.make_nodata_figure(
