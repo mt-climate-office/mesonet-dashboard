@@ -10,7 +10,7 @@ _axis_labeller = {
     "gdd": "<b>Cumulative GDDs<br>[GDD °F]</b>",
     "feels_like": "<b>Feels Like Temperature<br>[°F]</b>",
     "soil_vwc,soil_temp,soil_ec_blk": "<b>Soil Depth [cm]</b>",
-    "cci": "<b>Comprehensive Climate Index [degF]</b>",
+    "cci": "<b>Livestock Risk Index [degF]</b>",
 }
 
 
@@ -206,10 +206,14 @@ def add_cci_trace(dat, newborn=False):
     dat["Livestock Risk"] = dat["Comprehensive Climate Index [°F]"].apply(
         lambda x: classify_cci(x, newborn=newborn)
     )
+
+    dat = dat.rename(columns={
+        "Comprehensive Climate Index [°F]": "Livestock Risk Index [°F]"
+    })
     fig = px.scatter(
         dat,
         x="datetime",
-        y="Comprehensive Climate Index [°F]",
+        y="Livestock Risk Index [°F]",
         color="Livestock Risk",
         color_discrete_map={
             "Extreme Danger": "#843094",
@@ -222,7 +226,7 @@ def add_cci_trace(dat, newborn=False):
     ).add_trace(
         go.Line(
             x=dat["datetime"],
-            y=dat["Comprehensive Climate Index [°F]"],
+            y=dat["Livestock Risk Index [°F]"],
             mode="lines",
             line=dict(color="#000000"),
             showlegend=False,
