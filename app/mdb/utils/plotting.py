@@ -475,7 +475,12 @@ def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
             elif kwargs["period"] == "hourly":
                 title_text = title_text.replace("(inches)", "(inches/hour)")
             elif kwargs["period"] == "raw":
-                pass  # don't update label.
+                if ylab == "Precipitation":
+                    title_text = title_text.replace("(inches)", "(inches)")
+                if ylab == "Reference ET":
+                    title_text = title_text.replace("(inches)", "(inches/hour)")
+
+  # don't update label.
         sub.update_yaxes(title_text=title_text, row=row, col=1)
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
