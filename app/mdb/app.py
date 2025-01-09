@@ -468,7 +468,7 @@ def get_latest_api_data(station: str, start, end, hourly, select_vars, tmp):
         return out
     existing_elements = set()
     for x in tmp.columns:
-        x = re.sub("[\(\[].*?[\)\]]", "", x).strip()
+        x = re.sub(r"[\(\[].*?[\)\]]", "", x).strip()
         x = params.description_to_element.get(x, None)
         if x:
             existing_elements.update([x])
