@@ -674,6 +674,7 @@ def build_gdd_selector():
         ("corn", "Corn"),
         ("sunflower", "Sunflower"),
         ("sugarbeet", "Sugarbeet"),
+        ("hemp", "Hemp"),
     ]
     return [
         dmc.Center(

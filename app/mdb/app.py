@@ -391,6 +391,7 @@ def update_gdd_slider(sel):
         "wheat": [32, 95],
         "barley": [32, 95],
         "sugarbeet": [34, 86],
+        "hemp": [34, 100],
     }
     if sel is None:
         return no_update
