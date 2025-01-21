@@ -11,7 +11,7 @@ COPY ./mt_counties.geojson ./app/pyproject.toml ./app/poetry.lock* /app/
 COPY ./normals/* /app/normals/
 
 WORKDIR /app
-RUN poetry install --no-root --no-dev
+RUN poetry install --no-root
 
 COPY ./app /app
 RUN rm -rf ./.venv
