@@ -581,13 +581,21 @@ def render_station_plot(tmp_data, select_vars, station, period, norm, stations):
     )
 
 
-@app.callback(Output("station-dropdown", "value"), Input("url", "pathname"))
+
+@app.callback(Output("station-dropdown", "value"), Input("url", "pathname"), State("mesonet-stations", "data"),)
 @tracker.pause_update
-def update_dropdown_from_url(pth):
+def update_dropdown_from_url(pth, stations):
+
     stem = Path(pth).stem
-    if stem == "/" or "dash" in stem:
+
+    stations = pd.read_json(stations, orient="records")
+    out = stations[stations['station'] == stem]
+    if len(out) == 0:
+        out = stations[stations['nwsli_id'] == stem]
+    
+    if stem == "/" or "dash" in stem or len(out) == 0:
         return None
-    return stem
+    return out['station'].values[0]
 
 
 @app.callback(
