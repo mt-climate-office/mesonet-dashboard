@@ -1431,5 +1431,73 @@ def filter_to_only_swp_stations(variable, stations, cur_station):
     return data, cur_station
 
 
+# @app.callback(
+#     Output("no-funding-modal", "is_open", allow_duplicate=True),
+#     Input("station-dropdown", "value"),
+#     State("mesonet-stations", "data"),
+#     prevent_initial_callback=True,
+# )
+# def open_no_funding_modal(station, stations):
+#     if station is None:
+#         return no_update
+#     stations = pd.read_json(stations, orient="records")
+#     try:
+#         funded = stations[stations['station'] == station].funded.values[0]
+#     except AttributeError:
+#         return False
+    
+#     return not funded
+
+# @app.callback(
+#     Output("no-funding-modal", "is_open", allow_duplicate=True),
+#     Input("station-dropdown-derived", "value"),
+#     State("mesonet-stations", "data"),
+#     prevent_initial_callback=True,
+# )
+# def open_no_funding_modal_derived(station, stations):
+#     if station is None:
+#         return no_update
+#     stations = pd.read_json(stations, orient="records")
+#     try:
+#         funded = stations[stations['station'] == station].funded.values[0]
+#     except AttributeError:
+#         return False
+    
+#     return not funded
+
+# @app.callback(
+#     Output("no-funding-modal", "is_open", allow_duplicate=True),
+#     Input("station-dropdown-satellite", "value"),
+#     State("mesonet-stations", "data"),
+#     prevent_initial_callback=True,
+# )
+# def open_no_funding_modal_satellite(station, stations):
+#     if station is None:
+#         return no_update
+#     stations = pd.read_json(stations, orient="records")
+#     try:
+#         funded = stations[stations['station'] == station].funded.values[0]
+#     except AttributeError:
+#         return False
+    
+#     return not funded
+
+# @app.callback(
+#     Output("no-funding-modal", "is_open", allow_duplicate=True),
+#     Input("station-dropdown-dl", "value"),
+#     State("mesonet-stations", "data"),
+#     prevent_initial_callback=True,
+# )
+# def open_no_funding_modal_dl(station, stations):
+#     if station is None:
+#         return no_update
+#     stations = pd.read_json(stations, orient="records")
+#     try:
+#         funded = stations[stations['station'] == station].funded.values[0]
+#     except AttributeError:
+#         return False
+
+#     return not funded
+
 if __name__ == "__main__":
     app.run_server(debug=True)
