@@ -772,6 +772,10 @@ def build_derived_dropdowns(
                                                     "value": "swp",
                                                     "label": "Soil Water Potential",
                                                 },
+                                                {
+                                                    "value": "percent_saturation",
+                                                    "label": "Percent Soil Saturation",
+                                                }
                                             ],
                                             id="derived-vars",
                                             value="gdd",
@@ -890,6 +894,7 @@ def build_derived_dropdowns(
                                     ("soil_vwc", "Volumetric Water Content"),
                                     ("soil_temp", "Temperature"),
                                     ("swp", "Soil Water Potential"),
+                                    ("percent_saturation", "Percent Saturation"),
                                 ]
                             ],
                             id="derived-soil-var",

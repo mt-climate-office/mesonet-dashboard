@@ -291,7 +291,7 @@ def update_value(group):
         ].values[0]
         if soil_temp_value <= 32:
             group.loc[
-                group["variable"].str.contains("Soil VWC|Bulk EC"), "value"
+                group["variable"].str.contains("Soil VWC|Bulk EC|Percent Saturation|Water Potential"), "value"
             ] = np.nan
     return group
 
@@ -315,6 +315,8 @@ def plot_soil_heatmap(dat, variable):
         out = out[out["variable"] == "Soil Temperature"]
     elif variable == "swp":
         out = out[out["variable"] == "Soil Water Potential"]
+    elif variable == "percent_saturation":
+        out = out[out["variable"] == "Percent Saturation"]
     else:
         out = out[out["variable"] == "Bulk EC"]
 
@@ -338,6 +340,7 @@ def plot_soil_heatmap(dat, variable):
         "soil_temp": "Soil Temperature [degF]",
         "soil_blk_ec": "Soil Electrical Conductivity [mS/cm]",
         "swp": "Soil Water Potential [negative bar]",
+        "percent_saturation": "Percent Saturation [%]",
     }
 
     color_map = {
@@ -482,6 +485,40 @@ def plot_swp(dat):
 
     return fig
 
+def plot_percent_saturation(dat):
+    cols = dat.columns[1:].tolist()
+    y_cols = [x for x in cols if "Percent Saturation" in x]
+
+    # clipped_cols = [x for x in cols if "Clipped" in x]
+
+    fig = px.line(
+        dat,
+        x="datetime",
+        y=y_cols,
+        labels={col: col.replace("Percent Saturation", "Percent Saturation [%]") for col in y_cols},
+        color_discrete_map={
+            "Percent Saturation @ 2 in [%]": "#636efa",
+            "Percent Saturation @ 4 in [%]": "#EF553B",
+            "Percent Saturation @ 8 in [%]": "#00cc96",
+            "Percent Saturation @ 20 in [%]": "#ab63fa",
+            "Percent Saturation @ 28 in [%]": "#FFA15A",
+            "Percent Saturation @ 36 in [%]": "#FFA15A",
+            "Percent Saturation @ 40 in [%]": "#301934",
+        },
+    )
+
+    fig.update_layout(
+        yaxis_title="Percent Saturation [%]",
+    )
+    fig = style_figure(fig, legend=True)
+    fig.update_layout(
+        xaxis=dict(title_text=""),
+        legend=dict(title_text=""),
+    )
+
+    return fig
+
+
 
 def plot_derived(dat, selected, soil_var=None, newborn=False):
 
@@ -495,5 +532,7 @@ def plot_derived(dat, selected, soil_var=None, newborn=False):
         return add_cci_trace(dat, newborn)
     elif selected == "swp":
         return plot_swp(dat)
+    elif selected == "percent_saturation":
+        return plot_percent_saturation(dat)
     else:
         return plot_soil_heatmap(dat, soil_var)

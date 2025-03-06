@@ -315,9 +315,9 @@ def get_derived_data(station: str, variable, start, end, time, crop):
     if ctx.triggered_id == "gdd-slider":
         crop = None
 
-    if "soil" in variable or "swp" in variable:
+    if "soil" in variable or "swp" in variable or "percent_saturation" in variable:
         dat = get.get_derived(station, variable, start, end, time)
-        dat2 = get.get_derived(station, "swp", start, end, time)
+        dat2 = get.get_derived(station, "percent_saturation,swp", start, end, time)
         dat = dat.merge(dat2)
     else:
         dat = get.get_derived(station, variable, start, end, time, crop)
@@ -354,7 +354,7 @@ def hide_livestock_type(variable):
     Input("derived-vars", "value"),
 )
 def unhide_selected_panel(variable):
-    if variable in ["etr", "feels_like", "cci", "swp"]:
+    if variable in ["etr", "feels_like", "cci", "swp", "percent_saturation"]:
         return {"display": "None"}, {"display": "None"}, {}
     elif variable == "gdd":
         return {}, {"display": "None"}, {"display": "None"}
@@ -1244,8 +1244,8 @@ def downloader_data(n_clicks, station, elements, start, end, period, rmna):
     start = dt.datetime.strptime(start, "%Y-%m-%d").date()
     end = dt.datetime.strptime(end, "%Y-%m-%d").date()
 
-    std_elems = [x for x in elements if x not in ['feels_like', 'etr', 'swp', 'cci']]
-    derived_elems = [x for x in elements if x  in ['feels_like', 'etr', 'swp', 'cci']]
+    std_elems = [x for x in elements if x not in ['feels_like', 'etr', 'swp', "percent_saturation", 'cci']]
+    derived_elems = [x for x in elements if x  in ['feels_like', 'etr', 'swp', "percent_saturation", 'cci']]
 
     if n_clicks:
         data = get.get_station_record(
@@ -1386,6 +1386,7 @@ def update_swp_chips(station, stations, cur):
 
     if stations[stations["station"] == station]["has_swp"].values[0]:
         children.append(dmc.Chip("Soil Water Potential", value="swp", size="xs"))
+        children.append(dmc.Chip("Percent Saturation", value="percent_saturation", size="xs"))
     return children
 
 
@@ -1402,9 +1403,9 @@ def update_swp_if_station_doesnt_have(station, cur, stations):
     stations = pd.read_json(stations, orient="records")
     has_swp = stations[stations["station"] == station]["has_swp"].values[0]
 
-    if cur == "swp" and has_swp:
-        return "swp"
-    if cur == "swp" and not has_swp:
+    if cur in ["swp", "percent_saturation"] and has_swp:
+        return cur
+    if cur in ["swp", "percent_saturation"] and not has_swp:
         return "soil_vwc"
     return cur
 
@@ -1418,7 +1419,7 @@ def update_swp_if_station_doesnt_have(station, cur, stations):
 )
 def filter_to_only_swp_stations(variable, stations, cur_station):
     stations = pd.read_json(stations, orient="records")
-    if variable == "swp":
+    if variable in ["swp", "percent_saturation"]:
         stations = stations[stations["has_swp"]]
 
     data = [
