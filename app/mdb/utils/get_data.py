@@ -125,9 +125,7 @@ def get_station_record(
         if not dat.empty:
             dat = dat.merge(derived, how="left", on=["station", "datetime"])
             if ("has_na_x" in dat.columns) and ("has_na_y" in dat.columns):
-                dat = dat.assign(
-                    has_na = dat["has_na_x"] | dat["has_na_y"]
-                )
+                dat = dat.assign(has_na=dat["has_na_x"] | dat["has_na_y"])
                 dat = dat.drop(
                     columns=["has_na_x", "has_na_y"],
                 )
@@ -201,9 +199,9 @@ def get_station_latest(station):
         pass
 
     try:
-        dat[
-            "Wind Direction [deg]"
-        ] = f'{deg_to_compass(dat["Wind Direction [deg]"])} ({dat["Wind Direction [deg]"].values[0]} deg)'
+        dat["Wind Direction [deg]"] = (
+            f"{deg_to_compass(dat['Wind Direction [deg]'])} ({dat['Wind Direction [deg]'].values[0]} deg)"
+        )
     except ValueError:
         pass
     dat = dat.rename(columns={"datetime": "Timestamp"})
@@ -256,7 +254,7 @@ def get_satellite_data(
         password=os.getenv("Neo4jPassword"),
         uri=os.getenv("Neo4jURI"),
     )
-    
+
     if isinstance(start_time, dt.date):
         start_time = (start_time - dt.date(1970, 1, 1)).total_seconds()
     if isinstance(end_time, dt.date):
@@ -347,7 +345,6 @@ def get_station_elements(station, public=False):
 
 
 def get_derived(station, variable, start, end, time, crop=None):
-
     endpoint = "observations/" if "soil" in variable else "derived/"
     endpoint = f"{endpoint}{time}"
 

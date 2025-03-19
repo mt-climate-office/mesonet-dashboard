@@ -44,7 +44,7 @@ def test1(n):
     Input("inc", "n_clicks"),
 )
 def test2(n):
-    return f"Clicked {n*2} times"
+    return f"Clicked {n * 2} times"
 
 
 @app.callback(
@@ -52,7 +52,7 @@ def test2(n):
     Input("inc", "n_clicks"),
 )
 def test3(n):
-    return f"Clicked {n*3} times"
+    return f"Clicked {n * 3} times"
 
 
 if __name__ == "__main__":

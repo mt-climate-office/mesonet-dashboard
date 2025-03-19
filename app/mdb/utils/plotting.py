@@ -480,7 +480,7 @@ def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
                 if ylab == "Reference ET":
                     title_text = title_text.replace("(inches)", "(inches/hour)")
 
-  # don't update label.
+        # don't update label.
         sub.update_yaxes(title_text=title_text, row=row, col=1)
 
     height = 500 if len(plots) == 1 else 250 * len(plots)
@@ -498,7 +498,7 @@ def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
 
     for v in "Soil Temperature", "Soil VWC", "Bulk EC":
         if v in list(args):
-            idx = [f"y{idx+1}" for idx, x in enumerate(list(args)) if v in x]
+            idx = [f"y{idx + 1}" for idx, x in enumerate(list(args)) if v in x]
 
             sub = add_soil_legend(
                 sub=sub,
