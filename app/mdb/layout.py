@@ -308,6 +308,13 @@ def build_dropdowns(stations):
                         ),
                         width="auto",
                     ),
+                    dbc.Col(
+                        dbc.Button(
+                            "Display Period of Record",
+                            id="por-button",
+                        ),
+                        width="auto",
+                    ),
                 ],
                 style={"padding": "0.5rem"},  # Add some padding to the row
                 justify="around",
@@ -391,9 +398,13 @@ def build_dropdowns(stations):
                         width="auto",
                     ),
                     dbc.Col(
-                        dbc.Button("ABOUT THESE VARIABLES", href="https://climate.umt.edu/mesonet/variables/", target="_blank"),
+                        dbc.Button(
+                            "ABOUT THESE VARIABLES",
+                            href="https://climate.umt.edu/mesonet/variables/",
+                            target="_blank",
+                        ),
                         width="auto",
-                    )
+                    ),
                 ],
                 style={"padding": "0.5rem"},  # Add some padding to the row
                 justify="around",
@@ -495,7 +506,7 @@ def build_downloader_content(
         value=station,
         label="Select Station",
         searchable=True,
-        clearable=True
+        clearable=True,
         # style={"width": "150%"}
     )
     element_dd = dmc.MultiSelect(
@@ -504,7 +515,7 @@ def build_downloader_content(
         clearable=True,
         value=None,
         label="Select Variable(s)",
-        searchable=True
+        searchable=True,
         # style={"width": 400, "marginBottom": 10},
     )
     times = [
@@ -721,7 +732,6 @@ def build_derived_dropdowns(
     stations,
     station=None,
 ):
-
     return dmc.Grid(
         children=[
             dmc.Col(
@@ -775,11 +785,11 @@ def build_derived_dropdowns(
                                                 {
                                                     "value": "percent_saturation",
                                                     "label": "Percent Soil Saturation",
-                                                }
+                                                },
                                             ],
                                             id="derived-vars",
                                             value="gdd",
-                                            searchable=True
+                                            searchable=True,
                                             # style={"width": 400, "marginBottom": 10},
                                         ),
                                     ]
@@ -1003,7 +1013,7 @@ def build_satellite_comp_selector(sat_compare_mapper):
                         ],
                         id="compare1",
                         placeholder="Select an X-Axis...",
-                        className="stationSelect"
+                        className="stationSelect",
                         # style={"width": "150%"}
                     ),
                     dbc.Select(
@@ -1177,12 +1187,12 @@ def app_layout(app_ref, stations):
                         style=dict(
                             borderLeft="1px black solid",
                             borderRight="0px black solid",
-                            **TAB_STYLE
+                            **TAB_STYLE,
                         ),
                         selected_style=dict(
                             borderLeft="1px black solid",
                             borderRight="0.5px black solid",
-                            **SELECTED_STYLE
+                            **SELECTED_STYLE,
                         ),
                     ),
                     dcc.Tab(
@@ -1192,12 +1202,12 @@ def app_layout(app_ref, stations):
                         style=dict(
                             borderLeft="0.5px black solid",
                             borderRight="0.5px black solid",
-                            **TAB_STYLE
+                            **TAB_STYLE,
                         ),
                         selected_style=dict(
                             borderLeft="0.5px black solid",
                             borderRight="0.5px black solid",
-                            **SELECTED_STYLE
+                            **SELECTED_STYLE,
                         ),
                     ),
                     dcc.Tab(
@@ -1207,12 +1217,12 @@ def app_layout(app_ref, stations):
                         style=dict(
                             borderLeft="0.5px black solid",
                             borderRight="0.5px black solid",
-                            **TAB_STYLE
+                            **TAB_STYLE,
                         ),
                         selected_style=dict(
                             borderLeft="0.5px black solid",
                             borderRight="0.5px black solid",
-                            **SELECTED_STYLE
+                            **SELECTED_STYLE,
                         ),
                     ),
                     dcc.Tab(
@@ -1222,12 +1232,12 @@ def app_layout(app_ref, stations):
                         style=dict(
                             borderLeft="0px black solid",
                             borderRight="1px black solid",
-                            **TAB_STYLE
+                            **TAB_STYLE,
                         ),
                         selected_style=dict(
                             borderLeft="0.5px black solid",
                             borderRight="1px black solid",
-                            **SELECTED_STYLE
+                            **SELECTED_STYLE,
                         ),
                     ),
                 ],

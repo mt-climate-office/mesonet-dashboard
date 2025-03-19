@@ -63,7 +63,6 @@ server = app.server
 
 
 def make_station_iframe(station="none"):
-
     return html.Div(
         html.Iframe(
             src=f"https://mesonet.climate.umt.edu/api/map/stations/?station={station}"
@@ -84,7 +83,7 @@ class FileShare(DashShare):
         q = parse_query_string(input)
         if "state" in q:
             try:
-                with open(f'./share/{q["state"]}.json', "rb") as file:
+                with open(f"./share/{q['state']}.json", "rb") as file:
                     state = json.load(file)
             except FileNotFoundError:
                 return state
@@ -581,21 +580,23 @@ def render_station_plot(tmp_data, select_vars, station, period, norm, stations):
     )
 
 
-
-@app.callback(Output("station-dropdown", "value"), Input("url", "pathname"), State("mesonet-stations", "data"),)
+@app.callback(
+    Output("station-dropdown", "value"),
+    Input("url", "pathname"),
+    State("mesonet-stations", "data"),
+)
 @tracker.pause_update
 def update_dropdown_from_url(pth, stations):
-
     stem = Path(pth).stem
 
     stations = pd.read_json(stations, orient="records")
-    out = stations[stations['station'] == stem]
+    out = stations[stations["station"] == stem]
     if len(out) == 0:
-        out = stations[stations['nwsli_id'] == stem]
-    
+        out = stations[stations["nwsli_id"] == stem]
+
     if stem == "/" or "dash" in stem or len(out) == 0:
         return None
-    return out['station'].values[0]
+    return out["station"].values[0]
 
 
 @app.callback(
@@ -897,7 +898,7 @@ def toggle_main_tab(sel, stations):
     State("main-display-tabs", "value"),
 )
 def change_display_tab_with_hash(hash, cur):
-    if hash == '':
+    if hash == "":
         return cur
     if hash == "#satellite":
         return "satellite-tab"
@@ -1153,23 +1154,14 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
 def update_downloader_elements(station, public, elements, stations):
     if station is None:
         return [], []
-    
+
     stations = pd.read_json(stations, orient="records")
 
     elems_out = get.get_station_elements(station, public)
     derived_elems = [
-        {
-            "value": "feels_like",
-            "label": "Feels Like Temperature"
-        },
-        {
-            "value": "etr",
-            "label": "Reference ET"
-        },
-        {
-            "value": "cci",
-            "label": "Livestock Risk Index"
-        }
+        {"value": "feels_like", "label": "Feels Like Temperature"},
+        {"value": "etr", "label": "Reference ET"},
+        {"value": "cci", "label": "Livestock Risk Index"},
     ]
 
     # if stations[stations['station'] == station].has_swp.values[0]:
@@ -1179,15 +1171,18 @@ def update_downloader_elements(station, public, elements, stations):
     #             "label": "Soil Water Potential"
     #         }
     #     )
-    elems_out.insert(0, {"value": "nuffin", "label": "STANDARD ELEMENTS", "disabled": True})
-    elems_out.append({"value": "nuffin", "label": "DERIVED VARIABLES", "disabled": True})
+    elems_out.insert(
+        0, {"value": "nuffin", "label": "STANDARD ELEMENTS", "disabled": True}
+    )
+    elems_out.append(
+        {"value": "nuffin", "label": "DERIVED VARIABLES", "disabled": True}
+    )
     elems_out += derived_elems
 
     if not elements:
         return elems_out, []
 
     poss_elems = [x["value"] for x in elems_out]
-
 
     elements = [x for x in elements if x in poss_elems]
 
@@ -1244,8 +1239,16 @@ def downloader_data(n_clicks, station, elements, start, end, period, rmna):
     start = dt.datetime.strptime(start, "%Y-%m-%d").date()
     end = dt.datetime.strptime(end, "%Y-%m-%d").date()
 
-    std_elems = [x for x in elements if x not in ['feels_like', 'etr', 'swp', "percent_saturation", 'cci']]
-    derived_elems = [x for x in elements if x  in ['feels_like', 'etr', 'swp', "percent_saturation", 'cci']]
+    std_elems = [
+        x
+        for x in elements
+        if x not in ["feels_like", "etr", "swp", "percent_saturation", "cci"]
+    ]
+    derived_elems = [
+        x
+        for x in elements
+        if x in ["feels_like", "etr", "swp", "percent_saturation", "cci"]
+    ]
 
     if n_clicks:
         data = get.get_station_record(
@@ -1386,7 +1389,9 @@ def update_swp_chips(station, stations, cur):
 
     if stations[stations["station"] == station]["has_swp"].values[0]:
         children.append(dmc.Chip("Soil Water Potential", value="swp", size="xs"))
-        children.append(dmc.Chip("Percent Saturation", value="percent_saturation", size="xs"))
+        children.append(
+            dmc.Chip("Percent Saturation", value="percent_saturation", size="xs")
+        )
     return children
 
 
@@ -1432,6 +1437,34 @@ def filter_to_only_swp_stations(variable, stations, cur_station):
     return data, cur_station
 
 
+@app.callback(
+    Output("hourly-switch", "value"),
+    Output("dates", "start_date"),
+    Output("por-button", "children"),
+    Input("por-button", "n_clicks"),
+    State("station-dropdown", "value"),
+    State("mesonet-stations", "data"),
+)
+def set_dates_to_por(n_clicks, station, stations):
+    if not n_clicks:
+        return no_update, no_update, no_update
+
+    if n_clicks % 2 == 1:
+        # Odd clicks - show full period of record
+        stations = pd.read_json(stations, orient="records")
+        d = stations[stations["station"] == station]["date_installed"].values[0]
+        return (
+            "daily",
+            dt.datetime.strptime(d, "%Y-%m-%d").date(),
+            "Display Latest 2 Weeks",
+        )
+    else:
+        # Even clicks - show last 2 weeks
+        today = dt.date.today()
+        two_weeks_ago = today - dt.timedelta(days=14)
+        return "hourly", two_weeks_ago, "Display Period of Record"
+
+
 # @app.callback(
 #     Output("no-funding-modal", "is_open", allow_duplicate=True),
 #     Input("station-dropdown", "value"),
@@ -1446,7 +1479,7 @@ def filter_to_only_swp_stations(variable, stations, cur_station):
 #         funded = stations[stations['station'] == station].funded.values[0]
 #     except AttributeError:
 #         return False
-    
+
 #     return not funded
 
 # @app.callback(
@@ -1463,7 +1496,7 @@ def filter_to_only_swp_stations(variable, stations, cur_station):
 #         funded = stations[stations['station'] == station].funded.values[0]
 #     except AttributeError:
 #         return False
-    
+
 #     return not funded
 
 # @app.callback(
@@ -1480,7 +1513,7 @@ def filter_to_only_swp_stations(variable, stations, cur_station):
 #         funded = stations[stations['station'] == station].funded.values[0]
 #     except AttributeError:
 #         return False
-    
+
 #     return not funded
 
 # @app.callback(

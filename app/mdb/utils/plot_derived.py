@@ -207,9 +207,9 @@ def add_cci_trace(dat, newborn=False):
         lambda x: classify_cci(x, newborn=newborn)
     )
 
-    dat = dat.rename(columns={
-        "Comprehensive Climate Index [°F]": "Livestock Risk Index [°F]"
-    })
+    dat = dat.rename(
+        columns={"Comprehensive Climate Index [°F]": "Livestock Risk Index [°F]"}
+    )
     fig = px.scatter(
         dat,
         x="datetime",
@@ -291,7 +291,10 @@ def update_value(group):
         ].values[0]
         if soil_temp_value <= 32:
             group.loc[
-                group["variable"].str.contains("Soil VWC|Bulk EC|Percent Saturation|Water Potential"), "value"
+                group["variable"].str.contains(
+                    "Soil VWC|Bulk EC|Percent Saturation|Water Potential"
+                ),
+                "value",
             ] = np.nan
     return group
 
@@ -345,7 +348,7 @@ def plot_soil_heatmap(dat, variable):
 
     color_map = {
         "soil_temp": px.colors.diverging.RdBu_r,
-        "swp": px.colors.diverging.BrBG_r
+        "swp": px.colors.diverging.BrBG_r,
     }
 
     mn = min(out["value"])
@@ -447,8 +450,8 @@ def plot_swp(dat):
     fig.update_layout(
         xaxis=dict(title_text=""),
         legend=dict(title_text=""),
-        yaxis = dict(autorange="reversed"),
-        yaxis_tickprefix = "-",
+        yaxis=dict(autorange="reversed"),
+        yaxis_tickprefix="-",
         annotations=[
             # Top-left corner
             dict(
@@ -463,7 +466,7 @@ def plot_swp(dat):
                 bgcolor="rgba(255,255,255, 0.8)",  # Semi-transparent black background
                 bordercolor="black",  # Border color
                 borderwidth=2,  # Border width
-                borderpad=4, 
+                borderpad=4,
             ),
             # Bottom-left corner
             dict(
@@ -478,12 +481,13 @@ def plot_swp(dat):
                 bgcolor="rgba(255,255,255, 0.8)",  # Semi-transparent black background
                 bordercolor="black",  # Border color
                 borderwidth=2,  # Border width
-                borderpad=4, 
-            )
+                borderpad=4,
+            ),
         ],
     )
 
     return fig
+
 
 def plot_percent_saturation(dat):
     cols = dat.columns[1:].tolist()
@@ -495,7 +499,10 @@ def plot_percent_saturation(dat):
         dat,
         x="datetime",
         y=y_cols,
-        labels={col: col.replace("Percent Saturation", "Percent Saturation [%]") for col in y_cols},
+        labels={
+            col: col.replace("Percent Saturation", "Percent Saturation [%]")
+            for col in y_cols
+        },
         color_discrete_map={
             "Percent Saturation @ 2 in [%]": "#636efa",
             "Percent Saturation @ 4 in [%]": "#EF553B",
@@ -519,9 +526,7 @@ def plot_percent_saturation(dat):
     return fig
 
 
-
 def plot_derived(dat, selected, soil_var=None, newborn=False):
-
     if selected == "etr":
         return add_etr_trace(dat)
     elif selected == "gdd":
