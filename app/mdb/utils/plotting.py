@@ -5,6 +5,7 @@ from typing import List
 import geojson
 import numpy as np
 import pandas as pd
+import plotly.colors as pc
 import plotly.express as px
 import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta as rd
@@ -599,6 +600,48 @@ def plot_station(stations, station=None, zoom=4):
     )
 
     return fig
+
+def plot_annual(dat: pd.DataFrame, colname: str):
+    dat = dat.copy()
+    dat['datetime'] = pd.to_datetime(dat['datetime'], utc=True)
+    dat['julian'] = dat['datetime'].dt.dayofyear
+    dat['Year'] = dat['datetime'].dt.year
+    dat['date'] = dat['datetime'].dt.date
+
+    fig = px.line(dat, x='julian', y=colname, color='Year')
+    # Get colors from OrRd palette
+    years = dat['Year'].unique()
+    n = len(years) - 1
+
+    if n == 1:
+        samps = [0.5]
+    else:
+        samps = [(1/(n-1) * i) * 0.60 + 0.15 for i in range(n)]
+
+    colors = pc.sample_colorscale(px.colors.sequential.YlGnBu, samps)
+    colors.append('black')  # Add light grey for current year
+
+    for i, trace in enumerate(fig.data):
+        if i == len(fig.data) - 1:
+            trace.line.width = 3
+        trace.line.color = colors[i]
+        trace.showlegend = True
+
+    fig.update_layout(legend=dict(
+        yanchor="top",
+        y=0.99,
+        xanchor="left",
+        x=1.01,
+        bgcolor='rgba(255, 255, 255, 0.5)'
+    ))
+
+
+    fig.update_traces(connectgaps=False)
+    fig.update_layout(
+        xaxis_title='Day of Year',
+        yaxis_title=colname
+    )
+    return style_figure(fig, legend=True)
 
 
 # Credit to https://plotly.com/python/images/#zoom-on-static-images

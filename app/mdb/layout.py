@@ -775,6 +775,10 @@ def build_derived_dropdowns(
                                                     "label": "Soil Profile Plot",
                                                 },
                                                 {
+                                                    "value": "",
+                                                    "label": "Annual Comparison Plot",
+                                                },
+                                                {
                                                     "value": "cci",
                                                     "label": "Livestock Risk Index",
                                                 },
@@ -844,6 +848,17 @@ def build_derived_dropdowns(
                 id="derived-gdd-panel",
                 children=dmc.Stack(build_gdd_selector()),
                 span=4,
+            ),
+            dmc.Col(
+                id="derived-annual-panel",
+                children=dmc.Stack([
+                    dmc.Select(
+                        id="annual-dropdown",
+                        label="Comparison Variable",
+                        placeholder="Select a Variable..."
+                    )
+                ]),
+                span=4
             ),
             dmc.Col(
                 id="derived-timeagg-panel",
