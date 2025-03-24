@@ -11,6 +11,7 @@ import requests
 from dotenv import load_dotenv
 from mt_mesonet_satellite import MesonetSatelliteDB
 from requests import Request
+from natsort import natsorted
 
 from mdb.utils.params import params
 from mdb.utils.plotting import deg_to_compass
@@ -329,7 +330,7 @@ def get_sat_compare_data(
     return station_data, sat_data
 
 
-def get_station_elements(station, public=False):
+def get_station_elements(station, public=False) -> list[dict[str, str]]:
     station_elements = pd.read_csv(
         f"{params.API_URL}elements/{station}/?type=csv&public={not public}"
     )
@@ -341,6 +342,7 @@ def get_station_elements(station, public=False):
     station_elements.columns = ["value", "label"]
     station_elements = station_elements.sort_values("label")
     station_elements = station_elements.to_dict(orient="records")
+    station_elements = natsorted(station_elements, key=lambda x: x["label"])
     return station_elements
 
 

@@ -305,7 +305,7 @@ def update_select_vars(station: str, selected):
     ],
 )
 def get_derived_data(station: str, variable, start, end, time, crop):
-    if not station:
+    if not station or variable == "":
         return None
 
     if ctx.triggered_id == "gdd-selection":
@@ -350,15 +350,20 @@ def hide_livestock_type(variable):
     Output("derived-gdd-panel", "style"),
     Output("derived-soil-panel", "style"),
     Output("derived-timeagg-panel", "style"),
+    Output("derived-annual-panel", "style"),
     Input("derived-vars", "value"),
 )
 def unhide_selected_panel(variable):
+    print(variable)
     if variable in ["etr", "feels_like", "cci", "swp", "percent_saturation"]:
-        return {"display": "None"}, {"display": "None"}, {}
+        return {"display": "None"}, {"display": "None"}, {}, {"display": "None"}
     elif variable == "gdd":
-        return {}, {"display": "None"}, {"display": "None"}
+        return {}, {"display": "None"}, {"display": "None"}, {"display": "None"},
+    elif variable == "":
+        print('here')
+        return {"display": "None"}, {"display": "None"}, {"display": "None"}, {},
     else:
-        return {"display": "None"}, {}, {"display": "None"}
+        return {"display": "None"}, {}, {"display": "None"}, {"display": "None"},
 
 
 @app.callback(
@@ -1003,10 +1008,11 @@ def render_satellite_ts_plot(station, elements, climatology):
         Input("derived-vars", "value"),
         Input("derived-soil-var", "value"),
         Input("livestock-type", "value"),
+        Input("annual-dropdown", "value"),
     ],
     prevent_initial_callback=True,
 )
-def render_derived_plot(data, station, select_vars, soil_var, livestock_type):
+def render_derived_plot(data, station, select_vars, soil_var, livestock_type, annual_var):
     # For some reason I get a syntax error if this isn't here...
     from mdb.utils import plotting as plt
 
@@ -1018,7 +1024,25 @@ def render_derived_plot(data, station, select_vars, soil_var, livestock_type):
         To get started, select a station from the dropdown.
         """
         )
+    
 
+    if select_vars == "":
+        if annual_var is None:
+            return plt.make_nodata_figure("Select a variable for comparison...")
+        
+        data = get.get_station_record(
+            station,
+            start_time=dt.date(2000, 1, 1),
+            end_time=dt.date.today(),
+            period="daily",
+            e=annual_var,
+            has_etr=False,
+            na_info=False,
+        )
+        colname = [x for x in data.columns if x not in ["datetime", "station"]][0]
+        return plt.plot_annual(data, colname)
+
+    
     if len(select_vars) == 0:
         return plt.make_nodata_figure("No variables selected")
     elif data and data != -1:
@@ -1436,6 +1460,25 @@ def filter_to_only_swp_stations(variable, stations, cur_station):
         return data, None
     return data, cur_station
 
+
+@app.callback(
+    Output("annual-dropdown", "data"),
+    Output("annual-dropdown", "value"),
+    Input("station-dropdown-derived", "value"),
+    State("annual-dropdown", "value"),
+    prevent_initial_call=True,
+)
+def update_annual_station_elements(station, cur_val):
+    if station is None:
+        return [], None
+    elements = get.get_station_elements(station, False)
+
+    matched = [x for x in elements if x["value"] == cur_val]
+    if len(matched) != 0:
+        head = matched[0]['value']
+    else:
+        head = elements[0]['value']
+    return elements, head
 
 @app.callback(
     Output("hourly-switch", "value"),
