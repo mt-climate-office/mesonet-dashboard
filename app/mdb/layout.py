@@ -1,10 +1,8 @@
 import datetime as dt
 
 import dash_bootstrap_components as dbc
-import dash_loading_spinners as dls
 import dash_mantine_components as dmc
 from dash import dcc, html
-from dash_iconify import DashIconify
 from dateutil.relativedelta import relativedelta as rd
 
 TABLE_STYLING = {
@@ -429,7 +427,7 @@ def build_right_card(stations):
             dbc.CardBody(
                 html.Div(
                     [
-                        dls.Bars(
+                        dcc.Loading(
                             children=[
                                 dcc.Store(
                                     id="temp-station-data", storage_type="session"
@@ -503,7 +501,7 @@ def build_downloader_content(
         ],
         id="station-dropdown-dl",
         placeholder="Select a Mesonet Station from the Map or Dropdown...",
-        value=station,
+        # value=station,
         label="Select Station",
         searchable=True,
         clearable=True,
@@ -518,6 +516,7 @@ def build_downloader_content(
         searchable=True,
         # style={"width": 400, "marginBottom": 10},
     )
+    print(elements)
     times = [
         {"value": "monthly", "label": "Monthly"},
         {"value": "daily", "label": "Daily"},
@@ -561,7 +560,7 @@ def build_downloader_content(
                                                 dmc.Text(
                                                     "Time Aggregation",
                                                     size="sm",
-                                                    weight=500,
+                                                    fw=500,
                                                 ),
                                                 dmc.ChipGroup(
                                                     [
@@ -578,19 +577,19 @@ def build_downloader_content(
                                             justify="center",
                                         ),
                                     ],
-                                    position="center",
+                                    justify="center",
                                     grow=True,
                                 ),
                                 dmc.Group(
                                     [
-                                        dmc.DatePicker(
+                                        dmc.DatePickerInput(
                                             id="dl-start",
                                             label="Start Date",
                                             minDate=min_date,
                                             maxDate=dt.date.today(),
                                             value=min_date,
                                         ),
-                                        dmc.DatePicker(
+                                        dmc.DatePickerInput(
                                             id="dl-end",
                                             label="End Date",
                                             minDate=min_date,
@@ -598,7 +597,7 @@ def build_downloader_content(
                                             value=dt.date.today(),
                                         ),
                                     ],
-                                    position="center",
+                                    justify="center",
                                     grow=True,
                                 ),
                                 dmc.Group(
@@ -622,7 +621,7 @@ def build_downloader_content(
                                             hide=True,
                                         ),
                                     ],
-                                    position="center",
+                                    justify="center",
                                     grow=True,
                                 ),
                                 dcc.Download(id="downloader-data"),
@@ -663,16 +662,14 @@ def build_downloader_content(
                 ),
             ]
         ),
-        dmc.Footer(
-            height=40,
-            fixed=True,
+        html.Footer(
             children=[
                 dmc.Text(
                     "Supported by Bureau of Land Management (RM-CESU Award L16AC00359)",
-                    weight=800,
+                    fw=800,
                 )
             ],
-            style={"backgroundColor": "#129dff"},
+            style={"backgroundColor": "#129dff", "height": "40px"},
         ),
     ]
 
@@ -692,7 +689,7 @@ def build_gdd_selector():
             dmc.Text(
                 "GDD Generic Crop Type",
                 size="sm",
-                weight=500,
+                fw=500,
             )
         ),
         dmc.Center(
@@ -700,7 +697,6 @@ def build_gdd_selector():
                 [dmc.Chip(v, value=k, size="xs") for k, v in gdd_items],
                 id="gdd-selection",
                 value="wheat",
-                style={"text-align": "center"},
                 # mt=10,
             )
         ),
@@ -734,7 +730,7 @@ def build_derived_dropdowns(
 ):
     return dmc.Grid(
         children=[
-            dmc.Col(
+            dmc.GridCol(
                 dmc.Stack(
                     [
                         dmc.Select(
@@ -804,10 +800,6 @@ def build_derived_dropdowns(
                                         dmc.Anchor(
                                             dmc.Button(
                                                 "Learn More",
-                                                # href="/mesonet/dashboard/ag_tools/"
-                                                leftIcon=DashIconify(
-                                                    icon="feather:info", width=20
-                                                ),
                                             ),
                                             href="https://climate.umt.edu/mesonet/dashboard/ag_tools/",
                                             id="derived-link",
@@ -817,24 +809,24 @@ def build_derived_dropdowns(
                                 ),
                             ],
                             grow=True,
-                            spacing="xl",
-                            position="left",
+                            gap="xl",
+                            justify="left",
                         ),
                     ]
                 ),
                 span=4,
             ),
-            dmc.Col(
+            dmc.GridCol(
                 dmc.Stack(
                     [
-                        dmc.DatePicker(
+                        dmc.DatePickerInput(
                             id="start-date-derived",
                             label="Start Date",
                             # minDate=min_date,
                             maxDate=dt.date.today(),
                             value=dt.date.today() - rd(days=365),
                         ),
-                        dmc.DatePicker(
+                        dmc.DatePickerInput(
                             id="end-date-derived",
                             value=dt.date.today() + rd(days=1),
                             maxDate=dt.date.today() + rd(days=1),
@@ -844,12 +836,12 @@ def build_derived_dropdowns(
                 ),
                 span=4,
             ),
-            dmc.Col(
+            dmc.GridCol(
                 id="derived-gdd-panel",
                 children=dmc.Stack(build_gdd_selector()),
                 span=4,
             ),
-            dmc.Col(
+            dmc.GridCol(
                 id="derived-annual-panel",
                 children=dmc.Stack([
                     dmc.Select(
@@ -860,7 +852,7 @@ def build_derived_dropdowns(
                 ]),
                 span=4
             ),
-            dmc.Col(
+            dmc.GridCol(
                 id="derived-timeagg-panel",
                 children=dmc.Stack(
                     [
@@ -877,7 +869,6 @@ def build_derived_dropdowns(
                                     ],
                                     id="derived-timeagg",
                                     value="daily",
-                                    style={"text-align": "center"},
                                     # mt=10,
                                 ),
                             ]
@@ -896,7 +887,6 @@ def build_derived_dropdowns(
                                     ],
                                     id="livestock-type",
                                     value="adult",
-                                    style={"text-align": "center"},
                                     # mt=10,
                                 ),
                             ],
@@ -906,7 +896,7 @@ def build_derived_dropdowns(
                 span=4,
                 style={"display": "none"},
             ),
-            dmc.Col(
+            dmc.GridCol(
                 id="derived-soil-panel",
                 children=dmc.Stack(
                     [
@@ -924,7 +914,6 @@ def build_derived_dropdowns(
                             ],
                             id="derived-soil-var",
                             value="soil_vwc",
-                            style={"text-align": "center"},
                             # mt=10,
                         ),
                     ]
@@ -933,8 +922,8 @@ def build_derived_dropdowns(
                 style={"display": "none"},
             ),
         ],
-        # position="center",
-        # spacing="sm",
+        # justify="center",
+        # gap="sm",
         grow=True,
         justify="space-around",
         align="center",
@@ -1147,7 +1136,7 @@ def build_derived_content(station):
             dbc.CardBody(
                 html.Div(
                     [
-                        dls.Bars(
+                        dcc.Loading(
                             children=[
                                 dcc.Store(
                                     id="temp-derived-data", storage_type="session"

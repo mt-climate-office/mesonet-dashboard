@@ -1,59 +1,36 @@
+import dash_mantine_components as dmc
+from dash import Output, Input, html, callback
 import dash
-from dash import html
-from dash.dependencies import (
-    Input,
-    Output,
-)
-
-from mdb.utils.update import FileShare
 
 app = dash.Dash(__name__)
 
 
-def make_layout():
-    return html.Div(
-        children=[
-            html.Button("Save", "save"),
-            html.Button("Load", "load"),
-            html.Button("Increment", "inc", n_clicks=0),
-            html.P("No clicks", "test1"),
-            html.P("No clicks", "test2"),
-            html.Div([html.Div([html.P("Nested", "test3")])]),
-        ],
-    )
+app.layout = dmc.MantineProvider(html.Div(
+    [
+        dmc.MultiSelect(
+            label="Select your favorite libraries",
+            placeholder="Select all you like!",
+            id="framework-multi-select",
+            value=None,
+            data=[
+                {"value": "pd", "label": "Pandas"},
+                {"value": "np", "label": "NumPy"},
+                {"value": "tf", "label": "TensorFlow"},
+                {"value": "torch", "label": "PyTorch"},
+            ],
+            w=400,
+            mb=10,
+        ),
+        dmc.Text(id="multi-selected-value"),
+    ]
+))
 
-
-tracker = FileShare(
-    app=app,
-    load_input=("load", "n_clicks"),
-    save_input=("save", "n_clicks"),
-    save_output=("save", "n_clicks"),
+@callback(
+    Output("multi-selected-value", "children"), Input("framework-multi-select", "value")
 )
-app.layout = tracker.update_layout(make_layout())
-tracker.register_callbacks()
+def select_value(value):
+    if value is None:
+        return "nothing selected"
+    return ", ".join(value)
 
-
-@app.callback(Output("test1", "children"), Input("inc", "n_clicks"))
-@tracker.pause_update
-def test1(n):
-    return f"Clicked {n} times"
-
-
-@app.callback(
-    Output("test2", "children"),
-    Input("inc", "n_clicks"),
-)
-def test2(n):
-    return f"Clicked {n * 2} times"
-
-
-@app.callback(
-    Output("test3", "children"),
-    Input("inc", "n_clicks"),
-)
-def test3(n):
-    return f"Clicked {n * 3} times"
-
-
-if __name__ == "__main__":
-    app.run_server(debug=True)
+app.run(debug=True)

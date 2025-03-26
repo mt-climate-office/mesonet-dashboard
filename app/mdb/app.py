@@ -9,7 +9,6 @@ from urllib.error import HTTPError
 from urllib.parse import parse_qs
 
 import dash_bootstrap_components as dbc
-import dash_loading_spinners as dls
 import dash_mantine_components as dmc
 import pandas as pd
 from dash import (
@@ -131,7 +130,7 @@ tracker = FileShare(
     url_input="url",
 )
 # Make this a function so that it is refreshed on page load.
-app.layout = lambda: tracker.update_layout(lay.app_layout(app, get.get_sites()))
+app.layout = lambda: dmc.MantineProvider(tracker.update_layout(lay.app_layout(app, get.get_sites())))
 tracker.register_callbacks()
 
 
@@ -354,13 +353,11 @@ def hide_livestock_type(variable):
     Input("derived-vars", "value"),
 )
 def unhide_selected_panel(variable):
-    print(variable)
     if variable in ["etr", "feels_like", "cci", "swp", "percent_saturation"]:
         return {"display": "None"}, {"display": "None"}, {}, {"display": "None"}
     elif variable == "gdd":
         return {}, {"display": "None"}, {"display": "None"}, {"display": "None"},
     elif variable == "":
-        print('here')
         return {"display": "None"}, {"display": "None"}, {"display": "None"}, {},
     else:
         return {"display": "None"}, {}, {"display": "None"}, {"display": "None"},
@@ -944,9 +941,9 @@ def subset_stations(opts, stations):
 @tracker.pause_update
 def update_sat_selectors(sel, stations, station):
     if sel == "timeseries":
-        graph = dls.Bars(dcc.Graph(id="satellite-plot"))
+        graph = dcc.Loading(dcc.Graph(id="satellite-plot"))
     else:
-        graph = dls.Bars(dcc.Graph(id="satellite-compare"))
+        graph = dcc.Loading(dcc.Graph(id="satellite-compare"))
     stations = pd.read_json(stations, orient="records")
 
     return (
@@ -1199,7 +1196,7 @@ def update_downloader_elements(station, public, elements, stations):
         0, {"value": "nuffin", "label": "STANDARD ELEMENTS", "disabled": True}
     )
     elems_out.append(
-        {"value": "nuffin", "label": "DERIVED VARIABLES", "disabled": True}
+        {"value": "nuffin2", "label": "DERIVED VARIABLES", "disabled": True}
     )
     elems_out += derived_elems
 
@@ -1577,4 +1574,4 @@ def set_dates_to_por(n_clicks, station, stations):
 #     return not funded
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(debug=True)
