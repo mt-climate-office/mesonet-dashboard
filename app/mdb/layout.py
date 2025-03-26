@@ -1189,6 +1189,7 @@ def app_layout(app_ref, stations):
     return dbc.Container(
         children=[
             dcc.Location(id="url", refresh=False),
+            dcc.Store(data="", id="current-station", storage_type="memory"),
             dcc.Store(data=stations, id="mesonet-stations", storage_type="memory"),
             dcc.Store(data="", id="triggered-by", storage_type="memory"),
             build_banner(app_ref),

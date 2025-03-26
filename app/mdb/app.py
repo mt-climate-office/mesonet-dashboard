@@ -40,6 +40,42 @@ on_server = os.getenv("ON_SERVER")
 
 prefix = "/" if on_server is None or not on_server else "/dash/"
 
+from dash.exceptions import PreventUpdate
+
+def create_dropdown_sync_callback(app, dropdown_ids):
+    """
+    Create a callback to synchronize multiple dropdown values 
+    even when some dropdowns might not exist in the initial layout.
+    
+    Args:
+        app: Dash app instance
+        dropdown_ids: List of dropdown component IDs to synchronize
+    """
+    @app.callback(
+        [Output(did, "value", allow_duplicate=True) for did in dropdown_ids],
+        [Input(did, "value") for did in dropdown_ids],
+        prevent_initial_call='initial_duplicate'
+    )
+    def sync_station_dropdowns(*values):
+        # Get the context to determine which input triggered the callback
+        ctx = dash.callback_context
+        
+        if not ctx.triggered:
+            raise PreventUpdate
+        
+        # Find the triggered input
+        triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        triggered_value = ctx.triggered[0]['value']
+        
+        # Create a list of values to return, matching the original dropdowns
+        return_values = [triggered_value if did == triggered_id else triggered_value 
+                         for did in dropdown_ids]
+        
+        return return_values
+
+    return sync_station_dropdowns
+
+
 app = Dash(
     __name__,
     title="Montana Mesonet",
@@ -59,8 +95,20 @@ app = Dash(
 
 app._favicon = "MCO_logo.svg"
 app.config["suppress_callback_exceptions"] = True
+app.config["prevent_initial_callbacks"]='initial_duplicate'
 server = app.server
 
+
+# Define your dropdown IDs
+dropdown_ids = [
+    "station-dropdown", 
+    "station-dropdown-derived", 
+    "station-dropdown-satellite", 
+    "station-dropdown-dl"
+]
+
+# Create the callback
+create_dropdown_sync_callback(app, dropdown_ids)
 
 def make_station_iframe(station="none"):
     return html.Div(
@@ -354,13 +402,11 @@ def hide_livestock_type(variable):
     Input("derived-vars", "value"),
 )
 def unhide_selected_panel(variable):
-    print(variable)
     if variable in ["etr", "feels_like", "cci", "swp", "percent_saturation"]:
         return {"display": "None"}, {"display": "None"}, {}, {"display": "None"}
     elif variable == "gdd":
         return {}, {"display": "None"}, {"display": "None"}, {"display": "None"},
     elif variable == "":
-        print('here')
         return {"display": "None"}, {"display": "None"}, {"display": "None"}, {},
     else:
         return {"display": "None"}, {}, {"display": "None"}, {"display": "None"},
