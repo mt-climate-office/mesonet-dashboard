@@ -511,7 +511,7 @@ def build_downloader_content(
         data=elements,
         id="download-elements",
         clearable=True,
-        value=None,
+        value=[],
         label="Select Variable(s)",
         searchable=True,
         # style={"width": 400, "marginBottom": 10},
@@ -1181,72 +1181,36 @@ def app_layout(app_ref, stations):
             dcc.Store(data=stations, id="mesonet-stations", storage_type="memory"),
             dcc.Store(data="", id="triggered-by", storage_type="memory"),
             build_banner(app_ref),
-            dcc.Tabs(
-                style={"width": "100%", "font-size": "100%", "height": "4.5vh"},
-                children=[
-                    dcc.Tab(
-                        label="Latest Data",
-                        id="station-tab",
-                        value="station-tab",
-                        style=dict(
-                            borderLeft="1px black solid",
-                            borderRight="0px black solid",
-                            **TAB_STYLE,
+            dmc.Tabs(
+                [dmc.TabsList(
+                    children=[
+                        dmc.TabsTab(
+                            "Latest Data",
+                            id="station-tab",
+                            value="station-tab",
                         ),
-                        selected_style=dict(
-                            borderLeft="1px black solid",
-                            borderRight="0.5px black solid",
-                            **SELECTED_STYLE,
+                        dmc.TabsTab(
+                            "Ag Tools",
+                            id="derived-tab",
+                            value="derived-tab",
                         ),
-                    ),
-                    dcc.Tab(
-                        label="Ag Tools",
-                        id="derived-tab",
-                        value="derived-tab",
-                        style=dict(
-                            borderLeft="0.5px black solid",
-                            borderRight="0.5px black solid",
-                            **TAB_STYLE,
+                        dmc.TabsTab(
+                            "Data Downloader",
+                            id="download-tab",
+                            value="download-tab",
                         ),
-                        selected_style=dict(
-                            borderLeft="0.5px black solid",
-                            borderRight="0.5px black solid",
-                            **SELECTED_STYLE,
+                        dmc.TabsTab(
+                            "Satellite Indicators",
+                            id="satellite-tab",
+                            value="satellite-tab",
                         ),
-                    ),
-                    dcc.Tab(
-                        label="Data Downloader",
-                        id="download-tab",
-                        value="download-tab",
-                        style=dict(
-                            borderLeft="0.5px black solid",
-                            borderRight="0.5px black solid",
-                            **TAB_STYLE,
-                        ),
-                        selected_style=dict(
-                            borderLeft="0.5px black solid",
-                            borderRight="0.5px black solid",
-                            **SELECTED_STYLE,
-                        ),
-                    ),
-                    dcc.Tab(
-                        label="Satellite Indicators",
-                        id="satellite-tab",
-                        value="satellite-tab",
-                        style=dict(
-                            borderLeft="0px black solid",
-                            borderRight="1px black solid",
-                            **TAB_STYLE,
-                        ),
-                        selected_style=dict(
-                            borderLeft="0.5px black solid",
-                            borderRight="1px black solid",
-                            **SELECTED_STYLE,
-                        ),
-                    ),
-                ],
+                    ],
+                )],
                 id="main-display-tabs",
                 value="station-tab",
+                color="blue",
+                autoContrast=True,
+                variant="pills",
             ),
             dbc.Row(className="h-100", id="main-content"),
             generate_modal(),

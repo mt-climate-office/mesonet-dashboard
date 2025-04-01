@@ -130,7 +130,7 @@ tracker = FileShare(
     url_input="url",
 )
 # Make this a function so that it is refreshed on page load.
-app.layout = lambda: dmc.MantineProvider(tracker.update_layout(lay.app_layout(app, get.get_sites())))
+app.layout = lambda: dmc.MantineProvider(tracker.update_layout(lay.app_layout(app, get.get_sites())), id="mantine-provider", forceColorScheme="light")
 tracker.register_callbacks()
 
 
