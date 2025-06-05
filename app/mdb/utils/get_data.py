@@ -183,16 +183,17 @@ def get_station_latest(station):
         dat = pd.read_csv(text_io)
     dat = dat.loc[:, dat.columns.isin(["datetime"] + params.elem_labs)]
     dat = dat.rename(columns=params.lab_swap)
+    wind_col = [x for x in dat.columns if "Wind Speed" in x][0]
 
     try:
         dat["Real Feel [°F]"] = round(
             35.74
             + (0.6215 * dat["Air Temperature [°F]"])
-            - (35.75 * (dat["Wind Speed [mi/hr]"] ** 0.16))
+            - (35.75 * (dat[wind_col] ** 0.16))
             + (
                 0.4275
                 * dat["Air Temperature [°F]"]
-                * (dat["Wind Speed [mi/hr]"] ** 0.16)
+                * (dat[wind_col] ** 0.16)
             ),
             2,
         )

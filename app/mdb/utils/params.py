@@ -9,15 +9,15 @@ on_server = os.getenv("ON_SERVER")
 
 if on_server is None or not on_server:
     elements_df = pd.read_csv(
-        "https://mesonet.climate.umt.edu/api/v2/elements?type=csv"
+        "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/elements?type=csv"
     )
-    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
+    API_URL = "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/"
 
 else:
     elements_df = pd.read_csv(
-        "https://mesonet.climate.umt.edu/api/v2/elements?type=csv"
+        "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/elements?type=csv"
     )
-    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
+    API_URL = "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/"
 
 
 @dataclass
@@ -59,6 +59,7 @@ class params:
         "Atmospheric Pressure [mbar]",
         "Precipitation [in]",
         "Max Precip Rate [in/hr]",
+        "Max Precip Rate [in/h]",
         "Relative Humidity [%]",
         "Soil Temperature @ -10 cm [°F]",
         "Soil Temperature @ -100 cm [°F]",
@@ -86,6 +87,10 @@ class params:
         "Wind Speed @ 8 ft [mi/hr]",
         "Gust Speed @ 8 ft [mi/hr]",
         "Gust Speed @ 10 m [mi/hr]",
+        "Wind Speed @ 10 m [mi/h]",
+        "Wind Speed @ 8 ft [mi/h]",
+        "Gust Speed @ 8 ft [mi/h]",
+        "Gust Speed @ 10 m [mi/h]",
         "Well Water Level [in]",
         "Reference ET (a=0.23) [in]",
         "Comprehensive Climate Index [°F]",
@@ -151,6 +156,10 @@ class params:
         "Wind Speed @ 8 ft [mi/hr]": "Wind Speed [mi/hr]",
         "Gust Speed @ 8 ft [mi/hr]": "Gust Speed [mi/hr]",
         "Gust Speed @ 10 m [mi/hr]": "Gust Speed [mi/hr]",
+        "Wind Speed @ 10 m [mi/h]": "Wind Speed [mi/hr]",
+        "Wind Speed @ 8 ft [mi/h]": "Wind Speed [mi/hr]",
+        "Gust Speed @ 8 ft [mi/h]": "Gust Speed [mi/hr]",
+        "Gust Speed @ 10 m [mi/h]": "Gust Speed [mi/hr]",
     }
 
     dist_swap = {
