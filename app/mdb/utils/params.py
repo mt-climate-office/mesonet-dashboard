@@ -9,15 +9,15 @@ on_server = os.getenv("ON_SERVER")
 
 if on_server is None or not on_server:
     elements_df = pd.read_csv(
-        "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/elements?type=csv"
+        "https://mesonet.climate.umt.edu/api/v2/elements?type=csv"
     )
-    API_URL = "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/"
+    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 
 else:
     elements_df = pd.read_csv(
-        "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/elements?type=csv"
+        "https://mesonet.climate.umt.edu/api/v2/elements?type=csv"
     )
-    API_URL = "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/"
+    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 
 
 @dataclass
