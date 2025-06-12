@@ -59,6 +59,7 @@ app = Dash(
 
 app._favicon = "MCO_logo.svg"
 app.config["suppress_callback_exceptions"] = True
+app.config["prevent_initial_callbacks"] = "initial_duplicate"
 server = app.server
 
 
@@ -354,13 +355,11 @@ def hide_livestock_type(variable):
     Input("derived-vars", "value"),
 )
 def unhide_selected_panel(variable):
-    print(variable)
     if variable in ["etr", "feels_like", "cci", "swp", "percent_saturation"]:
         return {"display": "None"}, {"display": "None"}, {}, {"display": "None"}
     elif variable == "gdd":
         return {}, {"display": "None"}, {"display": "None"}, {"display": "None"},
     elif variable == "":
-        print('here')
         return {"display": "None"}, {"display": "None"}, {"display": "None"}, {},
     else:
         return {"display": "None"}, {}, {"display": "None"}, {"display": "None"},
@@ -668,6 +667,8 @@ def update_ul_card(at, station, tmp_data, stations):
             )
             start_date = data.datetime.min().date()
             end_date = data.datetime.max().date()
+            
+            [x for x in data.columns if "Wind" in x]
             data = data[["Wind Direction [deg]", "Wind Speed [mi/hr]"]]
 
             fig = plt.plot_wind(data)
@@ -760,7 +761,7 @@ def update_ul_card(at, station, tmp_data, stations):
                 # Between 930 and 1530 only the morning photos are available.
                 options = options[1:]
             values = [
-                x.replace(" Morning", "T9:00").replace(" Afternoon", "T15:00")
+                x.replace(" Morning", "T09:00:00").replace(" Afternoon", "T15:00:00")
                 for x in options
             ]
             sel = dbc.Select(
@@ -1508,8 +1509,30 @@ def set_dates_to_por(n_clicks, station, stations):
         return "hourly", two_weeks_ago, "Display Period of Record"
 
 
+# def generate_funding_info(req_funding, current_funding, station_name):
+
+#     return [
+#         dbc.ModalHeader(dbc.ModalTitle("Support Your Local Mesonet Station")),
+#         dbc.ModalBody(
+#             dcc.Markdown(
+#                 f"""
+# **It costs ${req_funding:,} annually to operate and maintain the {station_name} mesonet station. However, only ${current_funding:,} 
+# in funding has been secured for this year.** Your support helps ensure that this station remains operational and monitoring continues.
+# Please consider supporting this station to preserve Montana's agricultural infrastructure and community safety. Please
+# visit the [Montana Mesonet Funding Page](https://climate.umt.edu/mesonet/funding_draft/) or our [Support Us](https://climate.umt.edu/about/support/)
+# page to learn more about how you can help.
+
+# Accurate, localized weather and water data are essential—for protecting livelihoods,
+# supporting agricultural decision-making, and predicting and preparing for extreme events
+# such as drought, floods and fire.
+# """
+#             )
+#         ),
+#     ]
+
 # @app.callback(
 #     Output("no-funding-modal", "is_open", allow_duplicate=True),
+#     Output("no-funding-modal", "children", allow_duplicate=True),
 #     Input("station-dropdown", "value"),
 #     State("mesonet-stations", "data"),
 #     prevent_initial_callback=True,
@@ -1517,13 +1540,17 @@ def set_dates_to_por(n_clicks, station, stations):
 # def open_no_funding_modal(station, stations):
 #     if station is None:
 #         return no_update
+#     dat = pd.read_csv(f"https://mesonet.climate.umt.edu/api/v2/stations/funding/?stations={station}&type=csv")
 #     stations = pd.read_json(stations, orient="records")
-#     try:
-#         funded = stations[stations['station'] == station].funded.values[0]
-#     except AttributeError:
-#         return False
+#     sub_network = stations[stations['station'] == station].sub_network.values[0]
+#     station_name = stations[stations['station'] == station].name.values[0]
 
-#     return not funded
+#     req_funding = 2500 if sub_network == "AgriMet" else 14000
+#     actual_funding = dat[dat['station_code'] == station].funding_amount.values[0]
+    
+#     if req_funding > actual_funding:
+#         return True, generate_funding_info(req_funding, actual_funding, station_name)
+#     return False, []
 
 # @app.callback(
 #     Output("no-funding-modal", "is_open", allow_duplicate=True),

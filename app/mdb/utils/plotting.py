@@ -650,6 +650,7 @@ def plot_latest_ace_image(station, direction="N", dt=None):
         source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True&dt={dt}"
     else:
         source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True"
+    
     # Create figure
     fig = go.Figure()
 
