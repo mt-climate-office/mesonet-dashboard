@@ -10,6 +10,6 @@ RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry python
 COPY ./app /app
 WORKDIR /app
 RUN rm -rf ./.venv
-RUN poetry install --no-root --no-dev
+RUN poetry install --no-root
 
 CMD gunicorn -b 0.0.0.0:80 --workers 10 --threads 10 mdb.app:server
