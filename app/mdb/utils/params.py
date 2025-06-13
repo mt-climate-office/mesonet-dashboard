@@ -112,6 +112,10 @@ class params:
         "Wind Speed @ 8 ft [mi/hr]",
         "Gust Speed @ 8 ft [mi/hr]",
         "Gust Speed @ 10 m [mi/hr]",
+        "Wind Speed @ 10 m [mi/h]",
+        "Wind Speed @ 8 ft [mi/h]",
+        "Gust Speed @ 8 ft [mi/h]",
+        "Gust Speed @ 10 m [mi/h]",
     ]
 
     lab_swap = {
@@ -132,10 +136,10 @@ class params:
         "Soil VWC @ -91 cm [%]": "Soil VWC @ 36 in [%]",
         "Wind Direction @ 10 m [deg]": "Wind Direction [deg]",
         "Wind Direction @ 8 ft [deg]": "Wind Direction [deg]",
-        "Wind Speed @ 10 m [mi/hr]": "Wind Speed [mi/hr]",
-        "Wind Speed @ 8 ft [mi/hr]": "Wind Speed [mi/hr]",
-        "Gust Speed @ 8 ft [mi/hr]": "Wind Gust [mi/hr]",
-        "Gust Speed @ 10 m [mi/hr]": "Wind Gust [mi/hr]",
+        "Wind Speed @ 10 m [mi/h]": "Wind Speed [mi/hr]",
+        "Wind Speed @ 8 ft [mi/h]": "Wind Speed [mi/hr]",
+        "Gust Speed @ 8 ft [mi/h]": "Wind Gust [mi/hr]",
+        "Gust Speed @ 10 m [mi/h]": "Wind Gust [mi/hr]",
     }
 
     color_mapper = {
