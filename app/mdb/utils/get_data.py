@@ -347,6 +347,25 @@ def get_station_elements(station, public=False) -> list[dict[str, str]]:
     return station_elements
 
 
+def get_station_config(station: str) -> pd.DataFrame:
+    r = requests.get(
+        url=f"{params.API_URL}config/{station}",
+        params={"public": False},
+    )
+
+    instruments = r.json().get("instruments", [])
+
+    if not instruments:
+        return pd.DataFrame()
+    
+    dat = pd.DataFrame(instruments).explode(
+        "elements"
+    ).drop(
+        columns=["serial_number", "type", "manufacturer", "model"]
+    )
+    return dat
+
+
 def get_derived(station, variable, start, end, time, crop=None):
     endpoint = "observations/" if "soil" in variable else "derived/"
     endpoint = f"{endpoint}{time}"
