@@ -183,16 +183,17 @@ def get_station_latest(station):
         dat = pd.read_csv(text_io)
     dat = dat.loc[:, dat.columns.isin(["datetime"] + params.elem_labs)]
     dat = dat.rename(columns=params.lab_swap)
+    wind_col = [x for x in dat.columns if "Wind Speed" in x][0]
 
     try:
         dat["Real Feel [°F]"] = round(
             35.74
             + (0.6215 * dat["Air Temperature [°F]"])
-            - (35.75 * (dat["Wind Speed [mi/hr]"] ** 0.16))
+            - (35.75 * (dat[wind_col] ** 0.16))
             + (
                 0.4275
                 * dat["Air Temperature [°F]"]
-                * (dat["Wind Speed [mi/hr]"] ** 0.16)
+                * (dat[wind_col] ** 0.16)
             ),
             2,
         )
@@ -344,6 +345,25 @@ def get_station_elements(station, public=False) -> list[dict[str, str]]:
     station_elements = station_elements.to_dict(orient="records")
     station_elements = natsorted(station_elements, key=lambda x: x["label"])
     return station_elements
+
+
+def get_station_config(station: str) -> pd.DataFrame:
+    r = requests.get(
+        url=f"{params.API_URL}config/{station}",
+        params={"public": False},
+    )
+
+    instruments = r.json().get("instruments", [])
+
+    if not instruments:
+        return pd.DataFrame()
+    
+    dat = pd.DataFrame(instruments).explode(
+        "elements"
+    ).drop(
+        columns=["serial_number", "type", "manufacturer", "model"]
+    )
+    return dat
 
 
 def get_derived(station, variable, start, end, time, crop=None):

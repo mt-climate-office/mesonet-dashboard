@@ -1216,14 +1216,7 @@ def app_layout(app_ref, stations):
             generate_modal(),
             feedback_iframe(),
             dbc.Modal(
-                [
-                    dbc.ModalHeader(dbc.ModalTitle("Notice")),
-                    dbc.ModalBody(
-                        html.P(
-                            "The selected station has no current funding and we are unfortunately unable to provide data for it."
-                        )
-                    ),
-                ],
+                [],
                 id="no-funding-modal",
                 is_open=False,
                 size="md",
