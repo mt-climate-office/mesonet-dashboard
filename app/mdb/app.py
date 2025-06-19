@@ -226,6 +226,7 @@ def update_br_card(
             )
             if network == "HydroMet":
                 ppt = get.get_ppt_summary(station)
+                ppt = ppt[::-1]
                 if ppt:
                     out.append(
                         dbc.Row(
