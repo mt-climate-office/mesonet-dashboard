@@ -226,6 +226,7 @@ def update_br_card(
             )
             if network == "HydroMet":
                 ppt = get.get_ppt_summary(station)
+                ppt = ppt[::-1]
                 if ppt:
                     out.append(
                         dbc.Row(
@@ -557,10 +558,12 @@ def render_station_plot(tmp_data, select_vars, station, period, norm, stations):
 
         select_vars = [select_vars] if isinstance(select_vars, str) else select_vars
         station = stations[stations["station"] == station]
-
+        config = get.get_station_config(station.station.values[0])
+        config["elements"] = config["elements"].replace(params.short_to_long_map)
         return plt.plot_site(
             *select_vars,
             dat=data,
+            config=config,
             station=station,
             norm=(len(norm) == 1) and (period == "daily"),
             top_of_hour=period != "raw",

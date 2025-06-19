@@ -95,7 +95,7 @@ def merge_normal_data(v, df, station):
     return None
 
 
-def plot_soil(dat, **kwargs):
+def plot_soil(dat, config, **kwargs):
     cols = dat.columns[1:].tolist()
     dat = pd.concat(
         [
@@ -106,6 +106,15 @@ def plot_soil(dat, **kwargs):
     unit = {"Soil VWC": "%", "Soil Temperature": "°F", "Bulk EC": "mS/cm"}
 
     unit = unit[kwargs["txt"]]
+    valid_config_elems = [x for x in config["elements"] if x in dat["elem_lab"].drop_duplicates().tolist()]
+    config = config.copy()[config["elements"].isin(valid_config_elems)]
+    sensor_additions = config[pd.to_datetime(config['date_start']).dt.tz_localize("America/Denver") >= pd.to_datetime(dat['datetime'].min())]
+    sensor_additions = sensor_additions.groupby("date_start").agg(
+        {
+            "elements": lambda x: ",<br>".join(x),
+        }
+    ).reset_index()
+
     fig = px.line(
         dat,
         x="datetime",
@@ -126,13 +135,55 @@ def plot_soil(dat, **kwargs):
         connectgaps=False,
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>" + kwargs["txt"] + "</b>: %{y}",
     )
+    for _, row in sensor_additions.iterrows():
+        first = pd.to_datetime(row["date_start"]) + rd(hours=12)
+        second = first + rd(hours=6)
+        fig.add_vrect(
+            x0=first,
+            x1=second,
+            fillcolor="rgba(200,200,200,1)",
+            opacity=0.75,
+            line_width=0,
+            layer="below",
+            annotation_text=None,
+        )
+        # Add transparent trace for hovertext
+        # Add transparent trace for hovertext
+        fig.add_trace(
+            go.Scatter(
+            x=[first, first, second, second, first],
+            y=[dat['value'].min(), dat['value'].max(), dat['value'].max(), dat['value'].min(), dat['value'].min()],
+            fill="toself",
+            mode="lines",
+            line=dict(color="rgba(200,200,200,0.5)", width=0),
+            showlegend=False,
+            name="",  # Add this line to remove "trace 1" from the legend
+            text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
+            opacity=0.5,
+            )
+        )
+        # Move the last trace (the transparent marker) to the frontmost layer
+        fig.data = fig.data[:-1] + (fig.data[-1],)
+
 
     fig.update_layout(hovermode="x unified")
 
     return fig
 
 
-def plot_met(dat, **kwargs):
+def plot_met(dat, config, **kwargs):
+    elem_columns = [x for x in dat.columns if x not in ['datetime']]
+    valid_config_elems = [x for x in config["elements"] if x in elem_columns]
+    config = config.copy()[config["elements"].isin(valid_config_elems)]
+    sensor_additions = config[pd.to_datetime(config['date_start']).dt.tz_localize("America/Denver") >= pd.to_datetime(dat['datetime'].min())]
+    sensor_additions = sensor_additions.groupby("date_start").agg(
+        {
+            "elements": lambda x: ",\n".join(x),
+        }
+    ).reset_index()
+
+    #TODO: Debug cherry ridge temperature sensor swap
+
     variable_text = dat.columns.tolist()[-1]
     station_name = kwargs["station"]["station"].values[0]
 
@@ -174,6 +225,41 @@ def plot_met(dat, **kwargs):
 
         fig.add_trace(mx_line)
         fig.add_trace(mn_line)
+    
+    for _, row in sensor_additions.iterrows():
+        # Determine width based on date range
+        date_min = pd.to_datetime(dat['datetime'].min())
+        date_max = pd.to_datetime(dat['datetime'].max())
+        if (date_max - date_min) <= pd.Timedelta(days=31):
+            vrect_width = pd.Timedelta(hours=6)
+        else:
+            vrect_width = pd.Timedelta(hours=48)
+        first = pd.to_datetime(row["date_start"]) + rd(hours=12)
+        second = first + vrect_width
+
+        fig.add_vrect(
+            x0=first,
+            x1=second,
+            fillcolor="rgba(200,200,200,1)",
+            opacity=0.75,
+            line_width=0,
+            layer="below",
+        )
+        # Add transparent trace for hovertext
+        fig.add_trace(
+            go.Scatter(
+            x=[first, first, second, second, first],
+            y=[dat[variable_text].min(), dat[variable_text].max(), dat[variable_text].max(), dat[variable_text].min(), dat[variable_text].min()],
+            fill="toself",
+            mode="lines",
+            line=dict(color="rgba(200,200,200,0.5)", width=0),
+            showlegend=False,
+            name="",
+            text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
+            opacity=0.5,
+            )
+        )
+
     return fig
 
 
@@ -224,7 +310,17 @@ def add_boxplot_normals(fig, norms):
     return fig
 
 
-def plot_ppt(dat, **kwargs):
+def plot_ppt(dat, config, **kwargs):
+    elem_columns = [x for x in dat.columns if x not in ['datetime']]
+    valid_config_elems = [x for x in config["elements"] if x in elem_columns]
+    config = config.copy()[config["elements"].isin(valid_config_elems)]
+    sensor_additions = config[pd.to_datetime(config['date_start']).dt.tz_localize("America/Denver") >= pd.to_datetime(dat['datetime'].min())]
+    sensor_additions = sensor_additions.groupby("date_start").agg(
+        {
+            "elements": lambda x: ",\n".join(x),
+        }
+    ).reset_index()
+
     station_name = kwargs["station"]["station"].values[0]
     variable_text = dat.columns.tolist()[-1]
     # dat = dat.assign(datetime=dat.datetime.dt.date)
@@ -237,6 +333,33 @@ def plot_ppt(dat, **kwargs):
         dat["datetime"] = pd.to_datetime(dat.datetime)
         norms = merge_normal_data(variable_text, dat, station_name)
         fig = add_boxplot_normals(fig, norms)
+    
+    for _, row in sensor_additions.iterrows():
+        first = pd.to_datetime(row["date_start"]) + rd(hours=12)
+        second = first + rd(hours=6)
+
+        fig.add_vrect(
+            x0=first,
+            x1=second,
+            fillcolor="rgba(200,200,200,1)",
+            opacity=0.75,
+            line_width=0,
+            layer="below",
+        )
+        # Add transparent trace for hovertext
+        fig.add_trace(
+            go.Scatter(
+            x=[first, first, second, second, first],
+            y=[dat[variable_text].min(), dat[variable_text].max(), dat[variable_text].max(), dat[variable_text].min(), dat[variable_text].min()],
+            fill="toself",
+            mode="lines",
+            line=dict(color="rgba(200,200,200,0.5)", width=0),
+            showlegend=False,
+            name="",
+            text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
+            opacity=0.5,
+            )
+        )
 
     return fig
 
@@ -320,18 +443,35 @@ def px_to_subplot(*figs, **kwargs):
     fig_traces = []
 
     for fig in figs:
+        fig_items = {}
         traces = []
         for trace in range(len(fig["data"])):
             traces.append(fig["data"][trace])
-        fig_traces.append(traces)
+        try:
+            shapes = fig["layout"]["shapes"]
+        except IndexError:
+            shapes = ""
+
+        fig_items["shapes"] = shapes
+        fig_items["traces"] = traces
+        fig_traces.append(fig_items)
 
     sub = make_subplots(rows=len(figs), cols=1, **kwargs)
-    for idx, traces in enumerate(fig_traces, start=1):
+    for idx, items in enumerate(fig_traces, start=1):
+        traces, shapes = items["traces"], items["shapes"]
         if len(traces) > 0:
             for trace in traces:
                 sub.append_trace(trace, row=idx, col=1)
         else:
             sub.add_trace(*traces, row=idx, col=1)
+        
+        if shapes:
+            for shape in shapes:
+                sub.add_shape(
+                    shape,
+                    row=idx,
+                    col=1
+                )
 
     return sub
 
@@ -441,7 +581,7 @@ def add_nodata_lab(sub, d, idx, v):
     return sub
 
 
-def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
+def plot_site(*args: List, dat: pd.DataFrame, config: pd.DataFrame, **kwargs):
     plots = {}
     no_data = {}
     no_data_df = dat[["datetime"]].drop_duplicates()
@@ -459,7 +599,7 @@ def plot_site(*args: List, dat: pd.DataFrame, **kwargs):
                 if v in ["Soil Temperature", "Soil VWC", "Bulk EC"]:
                     kwargs.update({"txt": v})
 
-                plt = plot_func(data, color=params.color_mapper[v], **kwargs)
+                plt = plot_func(data, config=config, color=params.color_mapper[v], **kwargs)
         except (KeyError, ValueError):
             plt = px.line(no_data_df, x="datetime", y="data", markers=True)
             no_data[idx] = v
