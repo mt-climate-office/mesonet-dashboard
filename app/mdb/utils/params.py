@@ -164,7 +164,7 @@ class params:
 
     short_to_long_map = {
         'air_temp_0200': 'Air Temperature [°F]',
-        'air_temp_0244': 'Air Temperature @ 8 ft [°F]',
+        'air_temp_0244': 'Air Temperature [°F]',
         'ppt': 'Precipitation [in]',
         'ppt_max_rate': 'Max Precip Rate [in/h]',
         'bp': 'Atmospheric Pressure [mbar]',
@@ -188,11 +188,11 @@ class params:
         'soil_ec_blk_0091': 'Bulk EC @ 36 in [mS/cm]',
         'soil_ec_blk_0100': 'Bulk EC @ 40 in [mS/cm]',
         'sol_rad': 'Solar Radiation [W/m²]',
-        'wind_dir_0244': 'Wind Direction @ 8 ft [deg]',
+        'wind_dir_0244': 'Wind Direction [deg]',
         'wind_dir_1000': 'Wind Direction [deg]',
-        'wind_spd_0244': 'Wind Speed @ 8 ft [mi/hr]',
+        'wind_spd_0244': 'Wind Speed [mi/hr]',
         'wind_spd_1000': 'Wind Speed [mi/hr]',
-        'windgust_0244': 'Gust Speed @ 8 ft [mi/hr]',
+        'windgust_0244': 'Gust Speed [mi/hr]',
         'windgust_1000': 'Gust Speed [mi/hr]',
         'snow_depth': 'Snow Depth [in]',
     }

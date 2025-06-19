@@ -227,8 +227,15 @@ def plot_met(dat, config, **kwargs):
         fig.add_trace(mn_line)
     
     for _, row in sensor_additions.iterrows():
+        # Determine width based on date range
+        date_min = pd.to_datetime(dat['datetime'].min())
+        date_max = pd.to_datetime(dat['datetime'].max())
+        if (date_max - date_min) <= pd.Timedelta(days=31):
+            vrect_width = pd.Timedelta(hours=6)
+        else:
+            vrect_width = pd.Timedelta(hours=48)
         first = pd.to_datetime(row["date_start"]) + rd(hours=12)
-        second = first + rd(hours=6)
+        second = first + vrect_width
 
         fig.add_vrect(
             x0=first,
