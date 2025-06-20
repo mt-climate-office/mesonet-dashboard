@@ -145,6 +145,23 @@ def toggle_main_tab(station, tab, data, select_vars, stations):
         ]
         if network == "HydroMet":
             ppt = get.get_ppt_summary(station)
+            # Define a custom order for chronological sorting
+            ppt_order = [
+                "Precipitation Since Midnight [in]",
+                "24-hour Precipitation [in]",
+                "2-day Precipitation [in]",
+                "7-day Precipitation [in]",
+                "14-day Precipitation [in]",
+                "30-day Precipitation [in]",
+                "60-day Precipitation [in]",
+                "90-day Precipitation [in]",
+                "180-day Precipitation [in]",
+                "Year to Date Precipitation [in]",
+            ]
+            ppt = sorted(
+                ppt,
+                key=lambda x: ppt_order.index(x["name"]) if x["name"] in ppt_order else len(ppt_order)
+            )
             out.insert(
                 0,
                 dbc.Row(
