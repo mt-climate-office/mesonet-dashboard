@@ -18,6 +18,9 @@ dependencies = [
     "importlib-resources>=5.9.0,<6",
     "dash-mantine-components>=1.0.0,<2",
     "geojson>=3.0.1,<4",
+    "dash-ag-grid>=31.3.1",
+    "polars>=1.31.0",
+    "httpx>=0.28.1",
 ]
 
 [dependency-groups]

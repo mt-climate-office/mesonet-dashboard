@@ -1205,6 +1205,7 @@ def app_layout(app_ref, stations):
                             value="satellite-tab",
                         ),
                     ],
+                    grow = True
                 )],
                 id="main-display-tabs",
                 value="station-tab",
