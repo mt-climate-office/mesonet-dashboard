@@ -843,14 +843,16 @@ def build_derived_dropdowns(
             ),
             dmc.GridCol(
                 id="derived-annual-panel",
-                children=dmc.Stack([
-                    dmc.Select(
-                        id="annual-dropdown",
-                        label="Comparison Variable",
-                        placeholder="Select a Variable..."
-                    )
-                ]),
-                span=4
+                children=dmc.Stack(
+                    [
+                        dmc.Select(
+                            id="annual-dropdown",
+                            label="Comparison Variable",
+                            placeholder="Select a Variable...",
+                        )
+                    ]
+                ),
+                span=4,
             ),
             dmc.GridCol(
                 id="derived-timeagg-panel",
@@ -1182,31 +1184,33 @@ def app_layout(app_ref, stations):
             dcc.Store(data="", id="triggered-by", storage_type="memory"),
             build_banner(app_ref),
             dmc.Tabs(
-                [dmc.TabsList(
-                    children=[
-                        dmc.TabsTab(
-                            "Latest Data",
-                            id="station-tab",
-                            value="station-tab",
-                        ),
-                        dmc.TabsTab(
-                            "Ag Tools",
-                            id="derived-tab",
-                            value="derived-tab",
-                        ),
-                        dmc.TabsTab(
-                            "Data Downloader",
-                            id="download-tab",
-                            value="download-tab",
-                        ),
-                        dmc.TabsTab(
-                            "Satellite Indicators",
-                            id="satellite-tab",
-                            value="satellite-tab",
-                        ),
-                    ],
-                    grow = True
-                )],
+                [
+                    dmc.TabsList(
+                        children=[
+                            dmc.TabsTab(
+                                "Latest Data",
+                                id="station-tab",
+                                value="station-tab",
+                            ),
+                            dmc.TabsTab(
+                                "Ag Tools",
+                                id="derived-tab",
+                                value="derived-tab",
+                            ),
+                            dmc.TabsTab(
+                                "Data Downloader",
+                                id="download-tab",
+                                value="download-tab",
+                            ),
+                            dmc.TabsTab(
+                                "Satellite Indicators",
+                                id="satellite-tab",
+                                value="satellite-tab",
+                            ),
+                        ],
+                        grow=True,
+                    )
+                ],
                 id="main-display-tabs",
                 value="station-tab",
                 color="blue",

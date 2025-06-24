@@ -10,8 +10,8 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 from mt_mesonet_satellite import MesonetSatelliteDB
-from requests import Request
 from natsort import natsorted
+from requests import Request
 
 from mdb.utils.params import params
 from mdb.utils.plotting import deg_to_compass
@@ -190,11 +190,7 @@ def get_station_latest(station):
             35.74
             + (0.6215 * dat["Air Temperature [°F]"])
             - (35.75 * (dat[wind_col] ** 0.16))
-            + (
-                0.4275
-                * dat["Air Temperature [°F]"]
-                * (dat[wind_col] ** 0.16)
-            ),
+            + (0.4275 * dat["Air Temperature [°F]"] * (dat[wind_col] ** 0.16)),
             2,
         )
     except ValueError:
@@ -357,11 +353,11 @@ def get_station_config(station: str) -> pd.DataFrame:
 
     if not instruments:
         return pd.DataFrame()
-    
-    dat = pd.DataFrame(instruments).explode(
-        "elements"
-    ).drop(
-        columns=["serial_number", "type", "manufacturer", "model"]
+
+    dat = (
+        pd.DataFrame(instruments)
+        .explode("elements")
+        .drop(columns=["serial_number", "type", "manufacturer", "model"])
     )
     return dat
 

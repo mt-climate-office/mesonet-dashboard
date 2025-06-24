@@ -131,7 +131,11 @@ tracker = FileShare(
     url_input="url",
 )
 # Make this a function so that it is refreshed on page load.
-app.layout = lambda: dmc.MantineProvider(tracker.update_layout(lay.app_layout(app, get.get_sites())), id="mantine-provider", forceColorScheme="light")
+app.layout = lambda: dmc.MantineProvider(
+    tracker.update_layout(lay.app_layout(app, get.get_sites())),
+    id="mantine-provider",
+    forceColorScheme="light",
+)
 tracker.register_callbacks()
 
 
@@ -358,11 +362,26 @@ def unhide_selected_panel(variable):
     if variable in ["etr", "feels_like", "cci", "swp", "percent_saturation"]:
         return {"display": "None"}, {"display": "None"}, {}, {"display": "None"}
     elif variable == "gdd":
-        return {}, {"display": "None"}, {"display": "None"}, {"display": "None"},
+        return (
+            {},
+            {"display": "None"},
+            {"display": "None"},
+            {"display": "None"},
+        )
     elif variable == "":
-        return {"display": "None"}, {"display": "None"}, {"display": "None"}, {},
+        return (
+            {"display": "None"},
+            {"display": "None"},
+            {"display": "None"},
+            {},
+        )
     else:
-        return {"display": "None"}, {}, {"display": "None"}, {"display": "None"},
+        return (
+            {"display": "None"},
+            {},
+            {"display": "None"},
+            {"display": "None"},
+        )
 
 
 @app.callback(
@@ -669,7 +688,7 @@ def update_ul_card(at, station, tmp_data, stations):
             )
             start_date = data.datetime.min().date()
             end_date = data.datetime.max().date()
-            
+
             [x for x in data.columns if "Wind" in x]
             data = data[["Wind Direction [deg]", "Wind Speed [mi/hr]"]]
 
@@ -1015,7 +1034,9 @@ def render_satellite_ts_plot(station, elements, climatology):
     ],
     prevent_initial_callback=True,
 )
-def render_derived_plot(data, station, select_vars, soil_var, livestock_type, annual_var):
+def render_derived_plot(
+    data, station, select_vars, soil_var, livestock_type, annual_var
+):
     # For some reason I get a syntax error if this isn't here...
     from mdb.utils import plotting as plt
 
@@ -1027,12 +1048,11 @@ def render_derived_plot(data, station, select_vars, soil_var, livestock_type, an
         To get started, select a station from the dropdown.
         """
         )
-    
 
     if select_vars == "":
         if annual_var is None:
             return plt.make_nodata_figure("Select a variable for comparison...")
-        
+
         data = get.get_station_record(
             station,
             start_time=dt.date(2000, 1, 1),
@@ -1045,7 +1065,6 @@ def render_derived_plot(data, station, select_vars, soil_var, livestock_type, an
         colname = [x for x in data.columns if x not in ["datetime", "station"]][0]
         return plt.plot_annual(data, colname)
 
-    
     if len(select_vars) == 0:
         return plt.make_nodata_figure("No variables selected")
     elif data and data != -1:
@@ -1478,10 +1497,11 @@ def update_annual_station_elements(station, cur_val):
 
     matched = [x for x in elements if x["value"] == cur_val]
     if len(matched) != 0:
-        head = matched[0]['value']
+        head = matched[0]["value"]
     else:
-        head = elements[0]['value']
+        head = elements[0]["value"]
     return elements, head
+
 
 @app.callback(
     Output("hourly-switch", "value"),
@@ -1518,7 +1538,7 @@ def set_dates_to_por(n_clicks, station, stations):
 #         dbc.ModalBody(
 #             dcc.Markdown(
 #                 f"""
-# **It costs ${req_funding:,} annually to operate and maintain the {station_name} mesonet station. However, only ${current_funding:,} 
+# **It costs ${req_funding:,} annually to operate and maintain the {station_name} mesonet station. However, only ${current_funding:,}
 # in funding has been secured for this year.** Your support helps ensure that this station remains operational and monitoring continues.
 # Please consider supporting this station to preserve Montana's agricultural infrastructure and community safety. Please
 # visit the [Montana Mesonet Funding Page](https://climate.umt.edu/mesonet/funding_draft/) or our [Support Us](https://climate.umt.edu/about/support/)
@@ -1549,7 +1569,7 @@ def set_dates_to_por(n_clicks, station, stations):
 
 #     req_funding = 2500 if sub_network == "AgriMet" else 14000
 #     actual_funding = dat[dat['station_code'] == station].funding_amount.values[0]
-    
+
 #     if req_funding > actual_funding:
 #         return True, generate_funding_info(req_funding, actual_funding, station_name)
 #     return False, []
