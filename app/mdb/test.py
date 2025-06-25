@@ -1,50 +1,51 @@
-import dash_bootstrap_components as dbc
-import dash_draggable
-from dash import Dash, Input, Output, clientside_callback, html
+import dash
+from dash import html, dcc
+import dash_mantine_components as dmc
 
-app = Dash(__name__)
+app = dash.Dash(__name__)
 
-app.layout = html.Div(
+app.layout = dmc.MantineProvider(html.Div(
     [
-        dash_draggable.ResponsiveGridLayout(
-            id="draggable-container",
+        dcc.Store(id='selected-values-store', data=[]), # To store selected values if needed elsewhere
+        html.Div(
+            className='custom-multiselect-container', # Add a class for specific styling
             children=[
-                html.Div(
-                    "Component 1",
-                    id="comp1",
-                    style={"border": "1px solid black", "padding": "10px"},
+                dmc.MultiSelect(
+                    id="my-multiselect",
+                    label="Select your options",
+                    placeholder="Select all you like!",
+                    data=[
+                        {"value": "option1", "label": "Option 1"},
+                        {"value": "option2", "label": "Option 2"},
+                        {"value": "option3", "label": "Option 3"},
+                        {"value": "option4", "label": "Option 4"},
+                    ],
+                    value=[], # Initial value
+                    clearable=True,
+                    searchable=True,
+                    w=400,
                 ),
-                html.Div(
-                    "Component 2",
-                    id="comp2",
-                    style={"border": "1px solid black", "padding": "10px"},
-                ),
-                html.Div(
-                    "Component 3",
-                    id="comp3",
-                    style={"border": "1px solid black", "padding": "10px"},
-                ),
-            ],
-            layouts={
-                "lg": [
-                    {"i": "comp1", "x": 0, "y": 0, "w": 4, "h": 2},
-                    {"i": "comp2", "x": 4, "y": 0, "w": 4, "h": 2},
-                    {"i": "comp3", "x": 8, "y": 0, "w": 4, "h": 2},
-                ]
-            },
-            style={"width": "100%", "height": "100%"},
+            ]
+        ),
+        html.Hr(),
+        html.Div(id='output-selected-values'),
+        dmc.Slider(
+            value=69,
+            classNames={"bar": "dmc-bar", "thumb": "dmc-thumb"},
         )
-    ],
-    style={
-        "display": "flex",
-        "justifyContent": "center",
-        "alignItems": "center",
-        "height": "100vh",
-    },
-)
+    ]
+))
 
-# Set the width/height of the grid container to 50vw/50vh for ~50% of screen area
-app.layout.children[0].style.update({"width": "50vw", "height": "50vh"})
+# Optional: Callback to show what's actually selected (for debugging/demonstration)
+from dash.dependencies import Input, Output
+
+@app.callback(
+    Output('output-selected-values', 'children'),
+    Input('my-multiselect', 'value')
+)
+def update_output(selected_values):
+    return f"Currently selected values (internal): {selected_values}"
+
 
 if __name__ == "__main__":
     app.run(debug=True)

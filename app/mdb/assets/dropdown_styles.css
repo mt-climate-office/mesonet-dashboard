@@ -1,0 +1,6 @@
+.custom-multiselect-container .mantine-MultiSelect-pillsList {
+    display: none !important; /* Hides the selected pills/tags */
+}
+.custom-multiselect-container .mantine-MultiSelect-inputField {
+    width: 100% !important; /* Make search input fill the space */
+}

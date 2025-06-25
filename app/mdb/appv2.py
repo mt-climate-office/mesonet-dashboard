@@ -89,7 +89,7 @@ theme_toggle = dmc.Switch(
 def build_station_dropdown():
     return dmc.Stack(
         [
-            dmc.Text("Weather Station", fw=600, size="sm", c="dimmed"),
+            dmc.Text("Weather Station", fw=600, size="lg", c="dimmed"),
             dmc.Select(
                 id="station-select",
                 data=[
@@ -118,7 +118,7 @@ def build_station_dropdown():
 def build_date_range():
     return dmc.Stack(
         [
-            dmc.Text("Date Range", fw=600, size="sm", c="dimmed"),
+            dmc.Text("Date Range", fw=600, size="lg", c="dimmed"),
             dmc.DatePickerInput(
                 id="date-range-picker",
                 placeholder="Select your date range...",
@@ -136,6 +136,7 @@ def build_date_range():
                 styles={
                     "input": {"fontFamily": "Arial, sans-serif", "fontSize": "9px"},
                 },
+                numberOfColumns=2,
             ),
             dmc.Button(
                 "Select Period of Record",
@@ -155,7 +156,7 @@ def build_date_range():
 def build_timescale_tabs():
     return dmc.Stack(
         [
-            dmc.Text("Data Resolution", fw=600, size="sm", c="dimmed"),
+            dmc.Text("Data Resolution", fw=600, size="lg", c="dimmed"),
             dmc.SegmentedControl(
                 id="timescale-tabs",
                 value="hourly",
@@ -174,24 +175,23 @@ def build_timescale_tabs():
         gap="xs",
     )
 
-
 def build_feedback_modal():
-    dmc.Modal(
+    return dmc.Modal(
         title="Provide Feedback to Improve Our Dashboard",
         id="feedback-modal",
         opened=False,
         size="xl",
         children=[
-            html.Iframe(
-                src="https://airtable.com/embed/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN/form",
-                style={
-                    "backgroundColor": "orange",
-                    "width": "100%",
-                    "height": "90vh",
-                    "background": "transparent",
-                    "border": "2px solid #ccc",
-                },
-            )
+                html.Div(
+                    id="fillout-popup",
+                    **{
+                        "data-fillout-id": "o72SZtDEonus",
+                        "data-fillout-embed-type": "popup",
+                        "data-fillout-dynamic-resize": True,
+                        "data-fillout-inherit-parameters": True,
+                        "data-fillout-popup-size": "medium"
+                    }
+                )
         ],
         styles={"content": {"maxHeight": "none", "height": "100%"}},
     )
@@ -312,7 +312,7 @@ def build_element_multiselect(public=True):
         [
             dmc.Group(
                 [
-                    dmc.Text("Weather Variables", fw=600, size="sm", c="dimmed"),
+                    dmc.Text("Weather Variables", fw=600, size="lg", c="dimmed"),
                     dmc.Anchor(
                         DashIconify(icon="mdi:information-outline", width=18),
                         href="https://climate.umt.edu/mesonet/variables/",
@@ -329,12 +329,15 @@ def build_element_multiselect(public=True):
                     {"value": row["element"], "label": row["description_short"]}
                     for row in df.to_dicts()
                 ],
+                # TODO: Use this class to hide selections. Then use dash-ag-grid to 
+                # make  the order draggable.
+                # className='custom-multiselect-container',
                 searchable=True,
                 clearable=True,
                 placeholder="Select variables...",
                 size="lg",
                 radius="md",
-                hidePickedOptions=True,
+                hidePickedOptions=False,
                 leftSection=DashIconify(icon="mdi:chart-line", width=20),
                 comboboxProps={
                     "shadow": "md",
@@ -374,7 +377,7 @@ def build_control_panel():
             dmc.Divider(
                 variant="dashed", style={"marginTop": "2rem", "marginBottom": "1rem"}
             ),
-            dmc.Group(
+            dmc.Stack(
                 [
                     dmc.Button(
                         "Download Data",
@@ -394,115 +397,288 @@ def build_control_panel():
                     ),
                 ],
                 justify="space-between",
-                grow=True,
             ),
         ],
         gap="lg",
     )
 
+def build_main_graph_card():
+    return dmc.Paper(
+                    [
+                        dmc.Stack(
+                            [
+                                dmc.Group(
+                                    [
+                                        DashIconify(
+                                            icon="mdi:chart-timeline-variant",
+                                            width=28,
+                                            color="blue",
+                                        ),
+                                        dmc.Title(
+                                            "Weather Data Visualization",
+                                            order=2,
+                                            c="blue",
+                                        ),
+                                    ],
+                                    gap="sm",
+                                ),
+                                dmc.Text(
+                                    "Explore real-time and historical weather data from Montana's comprehensive weather station network. "
+                                    "Select a station, choose your variables of interest, and visualize the data across different time scales.",
+                                    size="md",
+                                    c="dimmed",
+                                ),
+                                dmc.Divider(variant="dashed"),
+                                dmc.Text(
+                                    "Interactive charts and data tables will appear here once you make your selections.",
+                                    ta="center",
+                                    size="lg",
+                                    c="dimmed",
+                                    py="xl",
+                                    id="main-graph-id"
+                                ),
+                            ],
+                            gap="md",
+                            style={"height": "100%"}
+                        ),
+                    ],
+                    p="xl",
+                    radius="lg",
+                    withBorder=True,
+                    shadow="sm",
+                    style={"height": "100%"},
+                )
 
-layout = dmc.AppShell(
-    [
-        build_feedback_modal(),
-        build_learn_more_modal(),
-        dmc.AppShellHeader(
+main_graph_container = build_main_graph_card()
+
+def build_upper_info_card():
+    return dmc.Paper(
+                            [
+                                dmc.Stack(
+                                    [
+                                        dmc.Group(
+                                            [
+                                                DashIconify(
+                                                    icon="mdi:information",
+                                                    width=24,
+                                                    color="green",
+                                                ),
+                                                dmc.Title(
+                                                    "Station Info",
+                                                    order=3,
+                                                    c="green",
+                                                ),
+                                            ],
+                                            gap="sm",
+                                        ),
+                                        dmc.Text(
+                                            "Station details, location coordinates, elevation, and current status will be displayed here when a station is selected.",
+                                            size="sm",
+                                            c="dimmed",
+                                        ),
+                                        dmc.Badge(
+                                            "No Station Selected",
+                                            color="gray",
+                                            variant="light",
+                                        ),
+                                    ],
+                                    gap="sm",
+                                ),
+                            ],
+                            p="lg",
+                            radius="lg",
+                            withBorder=True,
+                            shadow="sm",
+                        )
+
+def build_lower_info_card():
+    return dmc.Paper(
+                            [
+                                dmc.Stack(
+                                    [
+                                        dmc.Group(
+                                            [
+                                                DashIconify(
+                                                    icon="mdi:download",
+                                                    width=24,
+                                                    color="orange",
+                                                ),
+                                                dmc.Title(
+                                                    "Data Export",
+                                                    order=3,
+                                                    c="orange",
+                                                ),
+                                            ],
+                                            gap="sm",
+                                        ),
+                                        dmc.Text(
+                                            "Download options for CSV, JSON, and other formats. Export filtered data based on your current selections.",
+                                            size="sm",
+                                            c="dimmed",
+                                        ),
+                                        dmc.Group(
+                                            [
+                                                dmc.Button(
+                                                    "CSV",
+                                                    size="xs",
+                                                    variant="light",
+                                                    color="orange",
+                                                ),
+                                                dmc.Button(
+                                                    "JSON",
+                                                    size="xs",
+                                                    variant="light",
+                                                    color="orange",
+                                                ),
+                                                dmc.Button(
+                                                    "Excel",
+                                                    size="xs",
+                                                    variant="light",
+                                                    color="orange",
+                                                ),
+                                            ],
+                                            gap="xs",
+                                        ),
+                                    ],
+                                    gap="sm",
+                                ),
+                            ],
+                            p="lg",
+                            radius="lg",
+                            withBorder=True,
+                            shadow="sm",
+                        )
+
+def build_latest_data_tab_content():
+    return dmc.Grid(
+            [
+                dmc.GridCol(main_graph_container, span=8),
+                dmc.GridCol(dmc.Stack(
+                    [
+                        build_upper_info_card(),
+                        build_lower_info_card(),
+                    ],
+                    gap="md",
+                ), span=4),
+            ],
+            grow=True,
+            gutter="md",
+            style={"height": "100%"},
+            justify="space-between",
+            align="stretch",
+
+        )
+
+
+
+def build_app_header():
+    return dmc.Group(
+        [
+            dmc.Group(
+                [
+                    dmc.Burger(
+                        id="burger",
+                        size="md",
+                        hiddenFrom="sm",
+                        opened=True,
+                    ),
+                    dmc.Anchor(
+                        dmc.Paper(
+                            dmc.Image(
+                                src=app.get_asset_url("MCO_logo.svg"),
+                                alt="MCO Logo",
+                                h=70,
+                                radius="md",
+                            ),
+                            withBorder=False,
+                            shadow="xs",
+                            radius="md",
+                            p="sm",
+                            style={"backgroundColor": "white"},
+                        ),
+                        href="https://climate.umt.edu",
+                        target="_blank",
+                    ),
+                ]
+            ),
+            dmc.Title("The Montana Mesonet Dashboard", order="1", c="dark"),
             dmc.Group(
                 [
                     dmc.Group(
                         [
-                            dmc.Burger(
-                                id="burger",
-                                size="md",
-                                hiddenFrom="sm",
-                                opened=True,
+                            dmc.Anchor(
+                                dmc.Button(
+                                    "Give Feedback",
+                                    id="feedback-button",
+                                    variant="subtle",
+                                    color="gray",
+                                    size="sm",
+                                    leftSection=DashIconify(
+                                        icon="mdi:comment-text", width=16
+                                    ),
+                                ),
+                                href="https://forms.fillout.com/t/o72SZtDEonus",
+                                target="_blank",
+                                underline=False,
+                                style={"textDecoration": "none"},
+                            ),
+                            dmc.Button(
+                                "Learn More",
+                                id="help-button",
+                                variant="subtle",
+                                color="gray",
+                                size="sm",
+                                leftSection=DashIconify(icon="mdi:book-open", width=16),
                             ),
                             dmc.Anchor(
-                                dmc.Paper(
-                                    dmc.Image(
-                                        src=app.get_asset_url("MCO_logo.svg"),
-                                        alt="MCO Logo",
-                                        h=70,
-                                        radius="md",
+                                dmc.Button(
+                                    "GitHub",
+                                    variant="subtle",
+                                    color="gray",
+                                    size="sm",
+                                    leftSection=DashIconify(
+                                        icon="mdi:github", width=16
                                     ),
-                                    withBorder=False,
-                                    shadow="xs",
-                                    radius="md",
-                                    p="sm",
-                                    style={"backgroundColor": "white"},
                                 ),
-                                href="https://climate.umt.edu",
+                                href="https://github.com/mt-climate-office",
                                 target="_blank",
                             ),
-                        ]
+                            dmc.Anchor(
+                                dmc.Button(
+                                    "Email",
+                                    variant="subtle",
+                                    color="gray",
+                                    size="sm",
+                                    leftSection=DashIconify(icon="mdi:email", width=16),
+                                ),
+                                href="mailto:state.climatologist@umontana.edu",
+                            ),
+                        ],
+                        gap="xs",
                     ),
                     dmc.Group(
                         [
-                            dmc.Group(
-                                [
-                                    dmc.Button(
-                                        "Give Feedback",
-                                        id="feedback-button",
-                                        variant="subtle",
-                                        color="gray",
-                                        size="sm",
-                                        leftSection=DashIconify(
-                                            icon="mdi:comment-text", width=16
-                                        ),
-                                    ),
-                                    dmc.Button(
-                                        "Learn More",
-                                        id="help-button",
-                                        variant="subtle",
-                                        color="gray",
-                                        size="sm",
-                                        leftSection=DashIconify(
-                                            icon="mdi:book-open", width=16
-                                        ),
-                                    ),
-                                    dmc.Anchor(
-                                        dmc.Button(
-                                            "GitHub",
-                                            variant="subtle",
-                                            color="gray",
-                                            size="sm",
-                                            leftSection=DashIconify(
-                                                icon="mdi:github", width=16
-                                            ),
-                                        ),
-                                        href="https://github.com/mt-climate-office",
-                                        target="_blank",
-                                    ),
-                                    dmc.Anchor(
-                                        dmc.Button(
-                                            "Email",
-                                            variant="subtle",
-                                            color="gray",
-                                            size="sm",
-                                            leftSection=DashIconify(
-                                                icon="mdi:email", width=16
-                                            ),
-                                        ),
-                                        href="mailto:state.climatologist@umontana.edu",
-                                    ),
-                                ],
-                                gap="xs",
-                            ),
-                            dmc.Group(
-                                [
-                                    dmc.Text("Theme", size="sm", c="dimmed", fw=500),
-                                    theme_toggle,
-                                ],
-                                gap="xs",
-                            ),
+                            dmc.Text("Theme", size="sm", c="dimmed", fw=500),
+                            theme_toggle,
                         ],
-                        gap="md",
+                        gap="xs",
                     ),
                 ],
-                justify="space-between",
-                style={"flex": 1},
-                h="100%",
-                px="md",
+                gap="md",
             ),
+        ],
+        justify="space-between",
+        style={"flex": 1},
+        h="100%",
+        px="md",
+    )
+
+
+layout = dmc.AppShell(
+    [
+        build_learn_more_modal(),
+        dmc.AppShellHeader(
+            build_app_header(),
         ),
         dmc.AppShellNavbar(
             id="navbar",
@@ -510,169 +686,44 @@ layout = dmc.AppShell(
             p="xl",
         ),
         dmc.AppShellMain(
-            [
-                dmc.Container(
-                    [
-                        dmc.SimpleGrid(
-                            [
-                                # Main large card
-                                dmc.Paper(
-                                    [
-                                        dmc.Stack(
-                                            [
-                                                dmc.Group(
-                                                    [
-                                                        DashIconify(
-                                                            icon="mdi:chart-timeline-variant",
-                                                            width=28,
-                                                            color="blue",
-                                                        ),
-                                                        dmc.Title(
-                                                            "Weather Data Visualization",
-                                                            order=2,
-                                                            c="blue",
-                                                        ),
-                                                    ],
-                                                    gap="sm",
-                                                ),
-                                                dmc.Text(
-                                                    "Explore real-time and historical weather data from Montana's comprehensive weather station network. "
-                                                    "Select a station, choose your variables of interest, and visualize the data across different time scales.",
-                                                    size="md",
-                                                    c="dimmed",
-                                                ),
-                                                dmc.Divider(variant="dashed"),
-                                                dmc.Text(
-                                                    "Interactive charts and data tables will appear here once you make your selections.",
-                                                    ta="center",
-                                                    size="lg",
-                                                    c="dimmed",
-                                                    py="xl",
-                                                ),
-                                            ],
-                                            gap="md",
-                                        ),
-                                    ],
-                                    p="xl",
-                                    radius="lg",
-                                    withBorder=True,
-                                    shadow="sm",
-                                ),
-                                # Smaller stacked cards on the right
-                                dmc.Stack(
-                                    [
-                                        dmc.Paper(
-                                            [
-                                                dmc.Stack(
-                                                    [
-                                                        dmc.Group(
-                                                            [
-                                                                DashIconify(
-                                                                    icon="mdi:information",
-                                                                    width=24,
-                                                                    color="green",
-                                                                ),
-                                                                dmc.Title(
-                                                                    "Station Info",
-                                                                    order=3,
-                                                                    c="green",
-                                                                ),
-                                                            ],
-                                                            gap="sm",
-                                                        ),
-                                                        dmc.Text(
-                                                            "Station details, location coordinates, elevation, and current status will be displayed here when a station is selected.",
-                                                            size="sm",
-                                                            c="dimmed",
-                                                        ),
-                                                        dmc.Badge(
-                                                            "No Station Selected",
-                                                            color="gray",
-                                                            variant="light",
-                                                        ),
-                                                    ],
-                                                    gap="sm",
-                                                ),
-                                            ],
-                                            p="lg",
-                                            radius="lg",
-                                            withBorder=True,
-                                            shadow="sm",
-                                        ),
-                                        dmc.Paper(
-                                            [
-                                                dmc.Stack(
-                                                    [
-                                                        dmc.Group(
-                                                            [
-                                                                DashIconify(
-                                                                    icon="mdi:download",
-                                                                    width=24,
-                                                                    color="orange",
-                                                                ),
-                                                                dmc.Title(
-                                                                    "Data Export",
-                                                                    order=3,
-                                                                    c="orange",
-                                                                ),
-                                                            ],
-                                                            gap="sm",
-                                                        ),
-                                                        dmc.Text(
-                                                            "Download options for CSV, JSON, and other formats. Export filtered data based on your current selections.",
-                                                            size="sm",
-                                                            c="dimmed",
-                                                        ),
-                                                        dmc.Group(
-                                                            [
-                                                                dmc.Button(
-                                                                    "CSV",
-                                                                    size="xs",
-                                                                    variant="light",
-                                                                    color="orange",
-                                                                ),
-                                                                dmc.Button(
-                                                                    "JSON",
-                                                                    size="xs",
-                                                                    variant="light",
-                                                                    color="orange",
-                                                                ),
-                                                                dmc.Button(
-                                                                    "Excel",
-                                                                    size="xs",
-                                                                    variant="light",
-                                                                    color="orange",
-                                                                ),
-                                                            ],
-                                                            gap="xs",
-                                                        ),
-                                                    ],
-                                                    gap="sm",
-                                                ),
-                                            ],
-                                            p="lg",
-                                            radius="lg",
-                                            withBorder=True,
-                                            shadow="sm",
-                                        ),
-                                    ],
-                                    gap="md",
-                                ),
-                            ],
-                            cols={"base": 1, "md": 2},
-                            spacing="xl",
-                        ),
-                    ],
-                    size="xl",
-                    py="xl",
-                ),
-            ]
+            dmc.Tabs(
+                [
+                    dmc.TabsList(
+                        [
+                            dmc.TabsTab(
+                                "Latest Data", 
+                                value="latest-data-tab",
+                                leftSection=DashIconify(icon="mdi:chart-timeline-variant", width=18),
+                            ),
+                            dmc.TabsTab(
+                                "Ag Tools", 
+                                value="ag-tools-tab",
+                                leftSection=DashIconify(icon="mdi:sprout", width=18),
+                            ),
+                            dmc.TabsTab(
+                                "Satellite Indicators", 
+                                value="satellite-indicators-tab",
+                                leftSection=DashIconify(icon="mdi:satellite-variant", width=18),
+                            ),
+                        ],
+                        grow=True
+                    ),
+                    dmc.TabsPanel([dmc.Space(h=30), build_latest_data_tab_content()], value="latest-data-tab"),
+                    dmc.TabsPanel([dmc.Space(h=30), main_graph_container], value="ag-tools-tab"),
+                    dmc.TabsPanel([dmc.Space(h=30), main_graph_container], value="satellite-indicators-tab"),
+                ],
+                value="latest-data-tab",
+                variant="default",
+                radius="xs",
+            ),
+            w="100%",
+            style={"height": "100vh"}
         ),
     ],
     header={"height": 120},
     padding="md",
     navbar={
-        "width": 450,
+        "width": 500,
         "breakpoint": "sm",
         "collapsed": {"mobile": True},
     },
@@ -723,18 +774,6 @@ def toggle_modal(n1, is_open):
         return not is_open
     return is_open
 
-
-@app.callback(
-    Output("feedback-modal", "is_open"),
-    [Input("feedback-button", "n_clicks")],
-    [State("feedback-modal", "is_open")],
-)
-def toggle_feedback(n1, is_open):
-    print(n1)
-    print(is_open)
-    if n1:
-        return not is_open
-    return is_open
 
 
 clientside_callback(
