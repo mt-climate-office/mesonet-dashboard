@@ -1,52 +1,161 @@
 import datetime as dt
 
+import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
-from dash import dcc, html
-from dateutil.relativedelta import relativedelta as rd
+import httpx
+import polars as pl
+from dash import (
+    Dash,
+    Input,
+    Output,
+    State,
+    _dash_renderer,
+    callback,
+    clientside_callback,
+    dcc,
+    html,
+)
+from dash_ag_grid import AgGrid
+from dash_iconify import DashIconify
 
-TABLE_STYLING = {
-    "css": [{"selector": "tr:first-child", "rule": "display: none"}],
-    "style_cell": {"textAlign": "left"},
-    "style_data": {"color": "black", "backgroundColor": "white"},
-    "style_data_conditional": [
-        {"if": {"row_index": "odd"}, "backgroundColor": "rgb(220, 220, 220)"}
-    ],
-}
+from mdb.utils.get_data import get_elements, get_stations
 
-TAB_STYLE = {
-    "width": "inherit",
-    "borderTop": "1px black solid",
-    # 'borderBottom': '1px black solid',
-    "background": "white",
-    "paddingTop": 0,
-    "paddingBottom": 0,
-    # 'height': '100px',
-    "line-height": "4.5vh",
-}
-
-SELECTED_STYLE = {
-    "width": "inherit",
-    # "boxShadow": "none",
-    "borderTop": "3px #0B5ED7 solid",
-    # 'borderBottom': '1px black solid',
-    "boxShadow": "inset 0px -1px 0px 0px lightgrey",
-    "background": "#E9ECEF",
-    "paddingTop": 0,
-    "paddingBottom": 0,
-    # 'height': '42px',
-    "line-height": "4.5vh",
-}
+theme_toggle = dmc.Switch(
+    offLabel=DashIconify(
+        icon="radix-icons:sun", width=16, color=dmc.DEFAULT_THEME["colors"]["yellow"][6]
+    ),
+    onLabel=DashIconify(
+        icon="radix-icons:moon",
+        width=16,
+        color=dmc.DEFAULT_THEME["colors"]["blue"][4],
+    ),
+    id="color-scheme-toggle",
+    persistence=True,
+    color="blue",
+    size="lg",
+    radius="xl",
+)
 
 
-def generate_modal():
+def build_station_dropdown(stations):
+    return dmc.Stack(
+        [
+            dmc.Text("Weather Station", fw=600, size="lg", c="dimmed"),
+            dmc.Select(
+                id="station-select",
+                data=[
+                    {
+                        "value": str(station["station"]),
+                        "label": f"{station['name']} ({station['sub_network']})",
+                    }
+                    for station in stations.to_dicts()
+                ],
+                searchable=True,
+                clearable=True,
+                placeholder="Choose your weather station...",
+                size="lg",
+                radius="md",
+                leftSection=DashIconify(icon="mdi:map-marker", width=20),
+                comboboxProps={
+                    "shadow": "md",
+                    "transitionProps": {"transition": "pop", "duration": 200},
+                },
+            ),
+        ],
+        gap="xs",
+    )
+
+
+def build_date_range():
+    return dmc.Stack(
+        [
+            dmc.Text("Date Range", fw=600, size="lg", c="dimmed"),
+            dmc.DatePickerInput(
+                id="date-range",
+                placeholder="Select your date range...",
+                size="xl",
+                radius="md",
+                value=[
+                    dt.datetime.now().date() - dt.timedelta(days=14),
+                    dt.datetime.now().date(),
+                ],
+                clearable=True,
+                type="range",
+                withAsterisk=True,
+                leftSection=DashIconify(icon="mdi:calendar-range", width=20),
+                popoverProps={"shadow": "md", "radius": "md"},
+                styles={
+                    "input": {"fontFamily": "Arial, sans-serif", "fontSize": "9px"},
+                },
+                numberOfColumns=2,
+            ),
+            dmc.Button(
+                "Select Period of Record",
+                id="por-button",
+                variant="light",
+                color="indigo",
+                size="sm",
+                radius="md",
+                leftSection=DashIconify(icon="mdi:calendar-clock", width=16),
+                fullWidth=True,
+            ),
+        ],
+        gap="xs",
+    )
+
+
+def build_timescale_tabs():
+    return dmc.Stack(
+        [
+            dmc.Text("Data Resolution", fw=600, size="lg", c="dimmed"),
+            dmc.SegmentedControl(
+                id="timescale-tabs",
+                value="hourly",
+                data=[
+                    {"value": "raw", "label": "Raw Data"},
+                    {"value": "hourly", "label": "Hourly"},
+                    {"value": "daily", "label": "Daily"},
+                    {"value": "monthly", "label": "Monthly"},
+                ],
+                size="md",
+                radius="md",
+                color="blue",
+                fullWidth=True,
+            ),
+        ],
+        gap="xs",
+    )
+
+
+def build_feedback_modal():
+    return dmc.Modal(
+        title="Provide Feedback to Improve Our Dashboard",
+        id="feedback-modal",
+        opened=False,
+        size="xl",
+        children=[
+            html.Div(
+                id="fillout-popup",
+                **{
+                    "data-fillout-id": "o72SZtDEonus",
+                    "data-fillout-embed-type": "popup",
+                    "data-fillout-dynamic-resize": True,
+                    "data-fillout-inherit-parameters": True,
+                    "data-fillout-popup-size": "medium",
+                },
+            )
+        ],
+        styles={"content": {"maxHeight": "none", "height": "100%"}},
+    )
+
+
+def build_learn_more_modal():
     return html.Div(
-        dbc.Modal(
+        dmc.Modal(
             [
-                dbc.ModalHeader(dbc.ModalTitle("")),
-                dbc.ModalBody(
-                    dcc.Markdown(
-                        """
+                dcc.Markdown(
+                    """
                         #### The Montana Mesonet Dashboard
                         Welcome to the Montana Mesonet Dashboard! This dashboard visualizes historical data from all stations that are a part of the Montana Mesonet. 
                         To visualize data from a station, either select a station from the dropdown on the top left, click a station on the locator map, or add a station name to the URL path (e.g. [https://mesonet.climate.umt.edu/dash/crowagen](https://mesonet.climate.umt.edu/dash/crowagen)).
@@ -74,1173 +183,546 @@ def generate_modal():
                         #### Source Code
                         See how we built this application at our [GitHub repository](https://github.com/mt-climate-office/mesonet-dashboard/tree/main).
                     """
-                    )
-                ),
+                )
             ],
             id="modal",
-            is_open=False,
+            opened=False,
             size="xl",
-            scrollable=True,
+            centered=True,
         )
     )
 
 
-def feedback_iframe():
-    return html.Div(
-        dbc.Modal(
-            [
-                dbc.ModalHeader(
-                    dbc.ModalTitle("Provide Feedback to Improve Our Dashboard")
-                ),
-                dbc.ModalBody(
-                    html.Iframe(
-                        src="https://airtable.com/embed/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN/form",
-                        style={
-                            "backgroundColor": "orange",
-                            "frameborder": "0",
-                            "onmousewheel": "",
-                            "width": "100%",
-                            "height": "90vh",
-                            "background": "transparent",
-                            "border": "2px solid #ccc",
-                        },
-                    ),
-                    style={"overflow": "clip"},
-                ),
-            ],
-            id="feedback-modal",
-            is_open=False,
-            size="xl",
-            scrollable=True,
-            style={"max-height": "none", "height": "100%"},
-        )
-    )
-
-
-def build_banner(app_ref):
-    return dbc.Navbar(
-        dbc.Container(
-            [
-                html.A(
-                    # Use row and col to control vertical alignment of logo / brand
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                html.A(
-                                    href="https://climate.umt.edu/",
-                                    children=[
-                                        html.Img(
-                                            id="pls-work",
-                                            src=app_ref.get_asset_url("MCO_logo.svg"),
-                                            height="50px",
-                                            alt="MCO Logo",
-                                        )
-                                    ],
-                                )
-                            ),
-                            # dbc.Col(
-                            #     dbc.NavbarBrand(
-                            #         "Montana Mesonet Dashboard", className="ms-5"
-                            #     )
-                            # ),
-                        ],
-                        align="center",
-                        className="g-0",
-                    ),
-                    style={"textDecoration": "none"},
-                ),
-                html.Div(
-                    html.P(
-                        "The Montana Mesonet Dashboard",
-                        id="banner-title",
-                        className="bannertxt",
-                    )
-                ),
-                html.Div(
-                    [
-                        dbc.Button(
-                            "GIVE FEEDBACK",
-                            href="#",
-                            size="lg",
-                            n_clicks=0,
-                            id="feedback-button",
-                            className="me-md-2",
-                        ),
-                        dbc.Button(
-                            "LEARN MORE",
-                            href="#",
-                            size="lg",
-                            n_clicks=0,
-                            id="help-button",
-                            className="me-md-2",
-                        ),
-                        dbc.Button(
-                            "SHARE PLOT",
-                            href="#",
-                            size="lg",
-                            n_clicks=0,
-                            id="test-button",
-                            className="me-md-2",
-                        ),
-                    ],
-                    className="d-inline-flex gap-2",
-                    style={"padding": "0rem 0rem 0rem 0rem"},
-                ),
-            ],
-            fluid=True,
-        ),
-        color="#E9ECEF",
-        dark=False,
-    )
-
-
-def build_top_left_card():
-    return dbc.Card(
+def build_advanced_options():
+    return dmc.Stack(
         [
-            dbc.CardHeader(
-                dbc.Tabs(
-                    [
-                        dbc.Tab(label="Wind Rose", id="wind-tab"),
-                        dbc.Tab(label="Weather Forecast", id="wx-tab"),
-                        dbc.Tab(label="Latest Photo", id="photo-tab", disabled=True),
-                    ],
-                    id="ul-tabs",
-                    active_tab="wind-tab",
-                )
+            dmc.Button(
+                "Advanced Options",
+                id="advanced-options-toggle",
+                variant="subtle",
+                color="gray",
+                size="sm",
+                radius="md",
+                leftSection=DashIconify(icon="mdi:cog", width=16),
+                rightSection=DashIconify(icon="mdi:chevron-down", width=16),
+                fullWidth=True,
             ),
-            dbc.CardBody(html.Div(id="ul-content")),
-            # dbc.Tooltip(
-            #     """ A wind rose shows the aggregated wind conditions over the selected time period.
-            #     The size of the colored boxes shows how frequently a range of wind speeds occurred,
-            #     the color of the box shows how fast those wind speeds were and the orientation of
-            #     the boxes on the wind rose shows which direction that wind was coming from.""",
-            #     target="wind-tab",
-            # ),
-        ],
-        outline=True,
-        color="secondary",
-        className="h-100",
-        style={"overflow": "clip"},
-    )
-
-
-def build_bottom_left_card(station_fig):
-    return dbc.Card(
-        [
-            dbc.CardHeader(
-                dbc.Tabs(
-                    [
-                        dbc.Tab(label="Locator Map", tab_id="map-tab"),
-                        dbc.Tab(label="Station Metadata", tab_id="meta-tab"),
-                        dbc.Tab(label="Current Conditions", tab_id="data-tab"),
-                    ],
-                    id="bl-tabs",
-                    active_tab="data-tab",
-                )
-            ),
-            html.Div(
-                children=dbc.CardBody(
-                    id="bl-content",
-                    children=html.Div(id="station-fig", children=station_fig),
-                    className="card-text",
-                ),
-                # style={"overflow": "scroll"},
-            ),
-        ],
-        id="bl-card",
-        outline=True,
-        color="secondary",
-    )
-
-
-def make_station_dropdowns(stations, id, station):
-    return dbc.Select(
-        options=[
-            {"label": k, "value": v}
-            for k, v in zip(stations["long_name"], stations["station"])
-        ],
-        id=id,
-        placeholder="Select a Mesonet Station...",
-        # className="stationSelect",
-        value=station,
-        # style={"width": "150%"}
-    )
-
-
-def build_dropdowns(stations):
-    checklist_input = dbc.InputGroup(
-        dbc.InputGroupText(
-            [
-                dbc.Checklist(
-                    inline=True,
-                    id="select-vars",
-                )
-            ],
-            style={"overflow-x": "scroll"},
-        ),
-        className="mb-3",
-        size="lg",
-    )
-
-    return dbc.Container(
-        [
-            dbc.Row(
-                [
-                    dbc.Col(
-                        make_station_dropdowns(stations, "station-dropdown", None),
-                        width="auto",
-                    ),
-                    dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dcc.DatePickerRange(
-                                    id="dates",
-                                    month_format="MMMM Y",
-                                    start_date=dt.date.today() - rd(days=14),
-                                    end_date=dt.date.today(),
-                                    clearable=False,
-                                    max_date_allowed=dt.date.today(),
-                                    stay_open_on_select=False,
-                                )
-                            ]
-                        ),
-                        width="auto",
-                    ),
-                    dbc.Col(
-                        dbc.Button(
-                            "Display Period of Record",
-                            id="por-button",
-                        ),
-                        width="auto",
-                    ),
-                ],
-                style={"padding": "0.5rem"},  # Add some padding to the row
-                justify="around",
-            ),
-            # html.Br(),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dbc.RadioItems(
-                                    options=[
-                                        {"label": "Hourly", "value": "hourly"},
-                                        {"label": "Daily", "value": "daily"},
-                                        {"label": "Raw", "value": "raw"},
-                                    ],
-                                    inline=True,
-                                    id="hourly-switch",
-                                    value="hourly",
-                                ),
-                                dbc.Tooltip(
-                                    """Hourly and daily averages are pre-computed and will take much less time to render plots. 
-                                        It is not recommended to select a time period longer than 1 year for daily data, 3 months for hourly
-                                        data, or 2 weeks for raw data. Longer time selections could take up to a few minutes to load.""",
-                                    target="hourly-switch",
-                                ),
-                            ]
-                        ),
-                        width="auto",  # Adjust column width
-                    ),
-                    dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dbc.Checklist(
-                                    options=[
-                                        {
-                                            "label": "gridMET Normals",
-                                            "value": 1,
-                                            "disabled": True,
-                                        }
-                                    ],
-                                    inline=True,
-                                    id="gridmet-switch",
-                                    switch=True,
-                                    value=[],
-                                ),
-                                dbc.Tooltip(
-                                    "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions. **Note** This is only available on daily data.",
-                                    target="gridmet-switch",
-                                ),
-                            ]
-                        ),
-                        width="auto",  # Adjust column width
-                    ),
-                    dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dbc.Checklist(
-                                    options=[
-                                        {
-                                            "label": "HydroMet",
-                                            "value": "HydroMet",
-                                        },
-                                        {
-                                            "label": "AgriMet",
-                                            "value": "AgriMet",
-                                        },
-                                    ],
-                                    inline=True,
-                                    id="network-options",
-                                    value=["HydroMet", "AgriMet"],
-                                ),
-                                dbc.Tooltip(
-                                    """These checkboxes allow you to subset the stations listed in the dropdown. 
-                                        Leaving both boxes checked shows all possible stations. Checking either HydroMet or
-                                        AgriMet subsets selectable stations to only the respective network.""",
-                                    target="network-options",
-                                ),
-                            ]
-                        ),
-                        width="auto",
-                    ),
-                    dbc.Col(
-                        dbc.Button(
-                            "ABOUT THESE VARIABLES",
-                            href="https://climate.umt.edu/mesonet/variables/",
-                            target="_blank",
-                        ),
-                        width="auto",
-                    ),
-                ],
-                style={"padding": "0.5rem"},  # Add some padding to the row
-                justify="around",
-            ),
-            dbc.Row(
-                [dbc.Col(checklist_input, width="auto")],
-                style={"padding": "0.5rem"},  # Add some padding to the row
-                justify="around",
-            ),
-        ],
-        style={"padding": "0rem"},  # Adjust overall padding
-        fluid=True,
-    )
-
-
-def build_right_card(stations):
-    selectors = build_dropdowns(stations)
-
-    return dbc.Card(
-        [
-            dbc.CardHeader(selectors),
-            dbc.CardBody(
-                html.Div(
-                    [
-                        dcc.Loading(
-                            children=[
-                                dcc.Store(
-                                    id="temp-station-data", storage_type="session"
-                                ),
-                                dcc.Graph(id="station-data"),
-                            ]
-                        )
-                    ]
-                )
-            ),
-        ],
-        color="secondary",
-        outline=True,
-        className="h-100",
-        style={"overflow-y": "scroll", "overflow-x": "clip"},
-    )
-
-
-def build_latest_content(station_fig, stations):
-    return [
-        dbc.Col(
-            [
-                dbc.Row(
-                    build_top_left_card(),
-                    className="h-50",
-                    style={"padding": "0rem 0rem 0.25rem 0rem"},
-                    id="top-card",
-                ),
-                dbc.Row(
-                    build_bottom_left_card(station_fig),
-                    className="h-50",
-                    style={"padding": "0.25rem 0rem 0rem 0rem"},
-                    id="bottom-card",
-                ),
-            ],
-            xs={"size": 12, "order": "last", "offset": 0},
-            sm={"size": 12, "order": "last", "offset": 0},
-            md={"size": 12, "order": "last", "offset": 0},
-            lg={"size": 4, "order": "last", "offset": 0},
-            xl={"size": 4, "order": "last", "offset": 0},
-            style={"maxHeight": "92vh", "overflow-y": "scroll", "overflow-x": "clip"},
-            id="sub-cards",
-        ),
-        dbc.Col(
-            html.Div(
-                build_right_card(stations),
-                style={
-                    "height": "100%",
-                    "maxHeight": "92vh",
-                    # "overflow": "scroll",
-                },
-                id="latest-plots",
-            ),
-            xs={"size": 12, "order": "first", "offset": 0},
-            sm={"size": 12, "order": "first", "offset": 0},
-            md={"size": 12, "order": "first", "offset": 0},
-            lg={"size": 8, "order": "first", "offset": 0},
-            xl={"size": 8, "order": "first", "offset": 0},
-            style={"padding": "0rem 0.5rem 0rem 0rem"},
-        ),
-    ]
-
-
-def build_downloader_content(
-    station_fig, stations, elements, station=None, min_date=None
-):
-    station_dd = dmc.Select(
-        data=[
-            {"label": k, "value": v}
-            for k, v in zip(stations["long_name"], stations["station"])
-        ],
-        id="station-dropdown-dl",
-        placeholder="Select a Mesonet Station from the Map or Dropdown...",
-        # value=station,
-        label="Select Station",
-        searchable=True,
-        clearable=True,
-        # style={"width": "150%"}
-    )
-    element_dd = dmc.MultiSelect(
-        data=elements,
-        id="download-elements",
-        clearable=True,
-        value=[],
-        label="Select Variable(s)",
-        searchable=True,
-        # style={"width": 400, "marginBottom": 10},
-    )
-    print(elements)
-    times = [
-        {"value": "monthly", "label": "Monthly"},
-        {"value": "daily", "label": "Daily"},
-        {"value": "hourly", "label": "Hourly"},
-        # {"value": "raw", "label": "Raw"},
-    ]
-    # station, variable(s) Aggregation Interval, Start Date, End Date
-    return [
-        dmc.Stack(
-            [
-                dmc.Group(
-                    [
-                        dmc.Stack(
-                            [
-                                station_dd,
-                                element_dd,
-                                dmc.Group(
-                                    [
-                                        dmc.Stack(
-                                            [
-                                                dmc.Switch(
-                                                    size="md",
-                                                    id="dl-public",
-                                                    radius="xl",
-                                                    label="Show Uncommon Variables",
-                                                    checked=False,
-                                                    disabled=False,
-                                                ),
-                                                dmc.Switch(
-                                                    size="md",
-                                                    id="dl-rmna",
-                                                    radius="xl",
-                                                    label="Remove Flagged Data",
-                                                    checked=False,
-                                                    disabled=False,
-                                                ),
-                                            ],
-                                        ),
-                                        dmc.Stack(
-                                            [
-                                                dmc.Text(
-                                                    "Time Aggregation",
-                                                    size="sm",
-                                                    fw=500,
-                                                ),
-                                                dmc.ChipGroup(
-                                                    [
-                                                        dmc.Chip(
-                                                            x["label"],
-                                                            value=x["value"],
-                                                        )
-                                                        for x in times
-                                                    ],
-                                                    id="dl-timeperiod",
-                                                    value="daily",
-                                                ),
-                                            ],
-                                            justify="center",
-                                        ),
-                                    ],
-                                    justify="center",
-                                    grow=True,
-                                ),
-                                dmc.Group(
-                                    [
-                                        dmc.DatePickerInput(
-                                            id="dl-start",
-                                            label="Start Date",
-                                            minDate=min_date,
-                                            maxDate=dt.date.today(),
-                                            value=min_date,
-                                        ),
-                                        dmc.DatePickerInput(
-                                            id="dl-end",
-                                            label="End Date",
-                                            minDate=min_date,
-                                            maxDate=dt.date.today(),
-                                            value=dt.date.today(),
-                                        ),
-                                    ],
-                                    justify="center",
-                                    grow=True,
-                                ),
-                                dmc.Group(
-                                    [
-                                        dmc.Button(
-                                            "Run Request",
-                                            id="run-dl-request",
-                                            variant="gradient",
-                                        ),
-                                        dmc.Button(
-                                            "Download Data",
-                                            id="dl-data-button",
-                                            variant="gradient",
-                                        ),
-                                        dmc.Alert(
-                                            "Please select a station and variable first!",
-                                            color="red",
-                                            withCloseButton=True,
-                                            variant="filled",
-                                            id="dl-alert",
-                                            hide=True,
-                                        ),
-                                    ],
-                                    justify="center",
-                                    grow=True,
-                                ),
-                                dcc.Download(id="downloader-data"),
-                            ],
-                            align="left",
-                            justify="center",
-                        ),
-                        dbc.Col(
-                            dbc.Card(
-                                html.Div(
-                                    dbc.CardBody(
-                                        # id="bl-content",
-                                        children=dcc.Graph(
-                                            id="download-map", figure=station_fig
-                                        ),
-                                        className="card-text",
-                                    ),
-                                    # style={"overflow": "scroll"},
-                                )
-                            ),
-                        ),
-                    ],
-                    grow=True,
-                ),
+            dmc.Collapse(
                 dmc.Stack(
                     [
-                        html.Div(
-                            children=[
-                                dcc.Store("dl-data", storage_type="memory"),
-                                dmc.Stack(
-                                    id="dl-plots", align="strech", justify="center"
-                                ),
-                            ]
-                        )
+                        dmc.Switch(
+                            label="GridMET Normals",
+                            id="gridmet-normals-switch",
+                            color="blue",
+                            size="sm",
+                        ),
+                        dmc.Switch(
+                            label="Show Uncommon Variables",
+                            id="uncommon-variables-switch",
+                            color="blue",
+                            size="sm",
+                        ),
+                        dmc.Switch(
+                            label="Remove Flagged Data",
+                            id="remove-flagged-switch",
+                            color="blue",
+                            size="sm",
+                        ),
                     ],
-                    align="strech",
-                    justify="center",
+                    gap="sm",
+                    p="md",
+                    style={
+                        "backgroundColor": "var(--mantine-color-gray-0)",
+                        "border-radius": "8px",
+                    },
                 ),
+                id="advanced-options-collapse",
+                opened=False,
+            ),
+        ],
+        gap="xs",
+    )
+
+
+def build_element_multiselect(elements, public=True):
+    df = (
+        elements.select("element", "description_short", "public")
+        .filter(pl.col("public") == public)
+        .with_columns(
+            [
+                pl.col("element").str.replace(r"(_\d+)$", ""),  # Remove trailing _XXXX
+                pl.col("description_short")
+                .str.split("@")
+                .list.get(0)
+                .str.strip_suffix(" "),
             ]
-        ),
-        html.Footer(
-            children=[
-                dmc.Text(
-                    "Supported by Bureau of Land Management (RM-CESU Award L16AC00359)",
-                    fw=800,
-                )
-            ],
-            style={"backgroundColor": "#129dff", "height": "40px"},
-        ),
-    ]
-
-
-def build_gdd_selector():
-    gdd_items = [
-        ("wheat", "Wheat"),
-        ("barley", "Barley"),
-        ("canola", "Canola"),
-        ("corn", "Corn"),
-        ("sunflower", "Sunflower"),
-        ("sugarbeet", "Sugarbeet"),
-        ("hemp", "Hemp"),
-    ]
-    return [
-        dmc.Center(
-            dmc.Text(
-                "GDD Generic Crop Type",
-                size="sm",
-                fw=500,
-            )
-        ),
-        dmc.Center(
-            dmc.ChipGroup(
-                [dmc.Chip(v, value=k, size="xs") for k, v in gdd_items],
-                id="gdd-selection",
-                value="wheat",
-                # mt=10,
-            )
-        ),
-        dmc.RangeSlider(
-            id="gdd-slider",
-            value=[50, 86],
-            marks=[
-                {"value": 30, "label": "30°F"},
-                # {"value": 40, "label": "40°F"},
-                {"value": 50, "label": "50°F"},
-                # {"value": 60, "label": "60°F"},
-                {"value": 70, "label": "70°F"},
-                # {"value": 80, "label": "80°F"},
-                {"value": 90, "label": "90°F"},
-                # {"value": 100, "label": "100°F"},
-            ],
-            disabled=True,
-            min=30,
-            max=100,
-            step=1,
-            minRange=1,
-            maxRange=100,
-            mb=35,
-        ),
-    ]
-
-
-def build_derived_dropdowns(
-    stations,
-    station=None,
-):
-    return dmc.Grid(
-        children=[
-            dmc.GridCol(
-                dmc.Stack(
-                    [
-                        dmc.Select(
-                            data=[
-                                {"label": k, "value": v}
-                                for k, v in zip(
-                                    stations["long_name"], stations["station"]
-                                )
-                            ],
-                            id="station-dropdown-derived",
-                            placeholder="Select a Mesonet Station Dropdown...",
-                            value=station,
-                            label=html.P(["Select Station", html.Br()]),
-                            searchable=True,
-                            # style={"width": "150%"}
-                        ),
-                        dmc.Group(
-                            [
-                                dmc.Stack(
-                                    [
-                                        dmc.Text("Select Variable"),
-                                        dmc.Select(
-                                            data=[
-                                                {
-                                                    "value": "etr",
-                                                    "label": "Reference ET",
-                                                },
-                                                {
-                                                    "value": "feels_like",
-                                                    "label": "Feels Like Temperature",
-                                                },
-                                                {
-                                                    "value": "gdd",
-                                                    "label": "Growing Degree Days",
-                                                },
-                                                {
-                                                    "value": "soil_temp,soil_ec_blk",
-                                                    "label": "Soil Profile Plot",
-                                                },
-                                                {
-                                                    "value": "",
-                                                    "label": "Annual Comparison Plot",
-                                                },
-                                                {
-                                                    "value": "cci",
-                                                    "label": "Livestock Risk Index",
-                                                },
-                                                {
-                                                    "value": "swp",
-                                                    "label": "Soil Water Potential",
-                                                },
-                                                {
-                                                    "value": "percent_saturation",
-                                                    "label": "Percent Soil Saturation",
-                                                },
-                                            ],
-                                            id="derived-vars",
-                                            value="gdd",
-                                            searchable=True,
-                                            # style={"width": 400, "marginBottom": 10},
-                                        ),
-                                    ]
-                                ),
-                                dmc.Stack(
-                                    [
-                                        dmc.Text(html.Br()),
-                                        dmc.Anchor(
-                                            dmc.Button(
-                                                "Learn More",
-                                            ),
-                                            href="https://climate.umt.edu/mesonet/dashboard/ag_tools/",
-                                            id="derived-link",
-                                            target="_blank",
-                                        ),
-                                    ]
-                                ),
-                            ],
-                            grow=True,
-                            gap="xl",
-                            justify="left",
-                        ),
-                    ]
-                ),
-                span=4,
-            ),
-            dmc.GridCol(
-                dmc.Stack(
-                    [
-                        dmc.DatePickerInput(
-                            id="start-date-derived",
-                            label="Start Date",
-                            # minDate=min_date,
-                            maxDate=dt.date.today(),
-                            value=dt.date.today() - rd(days=365),
-                        ),
-                        dmc.DatePickerInput(
-                            id="end-date-derived",
-                            value=dt.date.today() + rd(days=1),
-                            maxDate=dt.date.today() + rd(days=1),
-                            label="End Date",
-                        ),
-                    ]
-                ),
-                span=4,
-            ),
-            dmc.GridCol(
-                id="derived-gdd-panel",
-                children=dmc.Stack(build_gdd_selector()),
-                span=4,
-            ),
-            dmc.GridCol(
-                id="derived-annual-panel",
-                children=dmc.Stack(
-                    [
-                        dmc.Select(
-                            id="annual-dropdown",
-                            label="Comparison Variable",
-                            placeholder="Select a Variable...",
-                        )
-                    ]
-                ),
-                span=4,
-            ),
-            dmc.GridCol(
-                id="derived-timeagg-panel",
-                children=dmc.Stack(
-                    [
-                        dmc.Center(
-                            [
-                                dmc.Text("Time Aggregation:"),
-                                dmc.ChipGroup(
-                                    [
-                                        dmc.Chip(v, value=k, size="xs")
-                                        for k, v in [
-                                            ("hourly", "Hourly"),
-                                            ("daily", "Daily"),
-                                        ]
-                                    ],
-                                    id="derived-timeagg",
-                                    value="daily",
-                                    # mt=10,
-                                ),
-                            ]
-                        ),
-                        dmc.Center(
-                            id="livestock-container",
-                            children=[
-                                dmc.Text("Livestock Type:"),
-                                dmc.ChipGroup(
-                                    [
-                                        dmc.Chip(v, value=k, size="xs")
-                                        for k, v in [
-                                            ("adult", "Adult"),
-                                            ("newborn", "Newborn"),
-                                        ]
-                                    ],
-                                    id="livestock-type",
-                                    value="adult",
-                                    # mt=10,
-                                ),
-                            ],
-                        ),
-                    ]
-                ),
-                span=4,
-                style={"display": "none"},
-            ),
-            dmc.GridCol(
-                id="derived-soil-panel",
-                children=dmc.Stack(
-                    [
-                        dmc.Text("Soil Variable to Plot"),
-                        dmc.ChipGroup(
-                            [
-                                dmc.Chip(v, value=k, size="xs")
-                                for k, v in [
-                                    ("soil_blk_ec", "Electrical Conductivity"),
-                                    ("soil_vwc", "Volumetric Water Content"),
-                                    ("soil_temp", "Temperature"),
-                                    ("swp", "Soil Water Potential"),
-                                    ("percent_saturation", "Percent Saturation"),
-                                ]
-                            ],
-                            id="derived-soil-var",
-                            value="soil_vwc",
-                            # mt=10,
-                        ),
-                    ]
-                ),
-                span=4,
-                style={"display": "none"},
-            ),
-        ],
-        # justify="center",
-        # gap="sm",
-        grow=True,
-        justify="space-around",
-        align="center",
+        )
+        .unique(subset=["element", "description_short"])
+        .sort("description_short")
     )
 
-
-def build_satellite_ts_selector():
-    return (
-        dbc.Col(
-            [
-                dbc.Checklist(
-                    options=[{"label": "Percentiles", "value": 1}],
-                    id="climatology-switch",
-                    switch=True,
-                    value=[1],
-                    # className="toggle",
-                ),
-                dbc.Tooltip(
-                    """
-                Show the 5th and 95th percentile of observations for the period of record.
-                """,
-                    target="climatology-switch",
-                ),
-            ],
-            xs=12,
-            sm=12,
-            md=2,
-            lg=2,
-            xl=2,
-        ),
-        dbc.Col(
-            [
-                dbc.InputGroup(
-                    dbc.InputGroupText(
-                        [
-                            dbc.Checklist(
-                                options=[
-                                    {"value": "ET", "label": "ET"},
-                                    {"value": "EVI", "label": "EVI"},
-                                    {"value": "Fpar", "label": "FPAR"},
-                                    {"value": "GPP", "label": "GPP"},
-                                    {"value": "LAI", "label": "LAI"},
-                                    {"value": "NDVI", "label": "NDVI"},
-                                    {"value": "PET", "label": "PET"},
-                                    {
-                                        "label": "Rootzone Soil Moisture",
-                                        "value": "sm_rootzone",
-                                    },
-                                    {
-                                        "label": "Rootzone Soil Saturation",
-                                        "value": "sm_rootzone_wetness",
-                                    },
-                                    {
-                                        "label": "Surface Soil Moisture",
-                                        "value": "sm_surface",
-                                    },
-                                    {
-                                        "label": "Surface Soil Saturation",
-                                        "value": "sm_surface_wetness",
-                                    },
-                                ],
-                                inline=True,
-                                id="sat-vars",
-                                value=["ET", "GPP", "NDVI"],
-                            )
-                        ],
-                        style={"overflow-x": "scroll"},
-                    ),
-                    # className="mb-3",
-                    size="lg",
-                )
-            ],
-            xs=12,
-            sm=12,
-            md=6,
-            lg=6,
-            xl=6,
-        ),
-    )
-
-
-def build_satellite_comp_selector(sat_compare_mapper):
-    return [
-        dbc.Col(
-            dbc.Row(
+    return dmc.Stack(
+        [
+            dmc.Group(
                 [
-                    dbc.Select(
-                        options=[
-                            {"label": k, "value": v}
-                            for k, v in sat_compare_mapper.items()
-                        ],
-                        id="compare1",
-                        placeholder="Select an X-Axis...",
-                        className="stationSelect",
-                        # style={"width": "150%"}
+                    dmc.Text("Weather Variables", fw=600, size="lg", c="dimmed"),
+                    dmc.Anchor(
+                        DashIconify(icon="mdi:information-outline", width=18),
+                        href="https://climate.umt.edu/mesonet/variables/",
+                        target="_blank",
+                        style={"marginLeft": "0.5em"},
                     ),
-                    dbc.Select(
-                        options=[
-                            {"label": k, "value": v}
-                            for k, v in sat_compare_mapper.items()
-                        ],
-                        id="compare2",
-                        placeholder="Select a Y-Axis...",
-                        className="stationSelect",
-                        # style={"width": "150%"}
-                    ),
-                ]
-            ),
-            xs=5,
-            sm=5,
-            md=2,
-            lg=2,
-            xl=2,
-        ),
-        dbc.Col(
-            dbc.InputGroup(
-                [
-                    dbc.InputGroupText("Start Date"),
-                    dcc.DatePickerSingle(
-                        id="start-date-satellite",
-                        date=dt.date.today() - rd(years=1),
-                        max_date_allowed=dt.date.today(),
-                        # min_date_allowed=dt.date(2022, 1, 1),
-                        disabled=False,
-                    ),
-                ]
-            ),
-            xs=5,
-            sm=5,
-            md=3,
-            lg=3,
-            xl=3,
-            # style={"padding": "0rem 0rem 0rem 6.5rem"},
-        ),
-        dbc.Col(
-            dbc.InputGroup(
-                [
-                    dbc.InputGroupText("End Date"),
-                    dcc.DatePickerSingle(
-                        id="end-date-satellite",
-                        date=dt.date.today(),
-                        max_date_allowed=dt.date.today(),
-                        # min_date_allowed=dt.date(2022, 1, 1),
-                        disabled=False,
-                    ),
-                ]
-            ),
-            xs=5,
-            sm=5,
-            md=3,
-            lg=3,
-            xl=3,
-            # style={"padding": "0rem 0rem 0rem 6.5rem"},
-        ),
-    ]
-
-
-def build_satellite_dropdowns(
-    stations, timeseries=True, station=None, sat_compare_mapper=None
-):
-    if timeseries:
-        content = build_satellite_ts_selector()
-    else:
-        content = build_satellite_comp_selector(sat_compare_mapper)
-
-    children = [
-        dbc.Col(
-            make_station_dropdowns(stations, "station-dropdown-satellite", station),
-            xs=12,
-            sm=12,
-            md=2,
-            lg=2,
-            xl=2,
-        ),
-        dbc.Col(
-            dbc.RadioItems(
-                options=[
-                    {"label": "Timeseries Plot", "value": "timeseries"},
-                    {"label": "Comparison Plot", "value": "compare"},
                 ],
-                value="timeseries" if timeseries else "compare",
-                id="satellite-radio",
-                # inline=True,
-                # style={"padding": "0rem 0rem 0rem 5rem"},
+                gap="xs",
+                align="center",
             ),
-            xs=12,
-            sm=12,
-            md=2,
-            lg=2,
-            xl=2,
-        ),
-    ]
-    children += content
-    return (
-        dbc.Row(
-            children=children,
-            align="center",
-            # style={"padding": "0.75rem 0rem 0rem 0rem"},
-        ),
-    )
-
-
-def build_derived_content(station):
-    selectors = build_derived_dropdowns(station)
-    return dbc.Card(
-        [
-            dbc.CardHeader(
-                dbc.Container(selectors, fluid=True, id="derived-selectors")
-            ),
-            dbc.CardBody(
-                html.Div(
-                    [
-                        dcc.Loading(
-                            children=[
-                                dcc.Store(
-                                    id="temp-derived-data", storage_type="session"
-                                ),
-                                dcc.Graph(id="derived-plot"),
-                            ]
-                        )
-                    ]
-                )
+            dmc.MultiSelect(
+                id="element-multiselect",
+                data=[
+                    {"value": row["element"], "label": row["description_short"]}
+                    for row in df.to_dicts()
+                ],
+                # TODO: Use this class to hide selections. Then use dash-ag-grid to
+                # make  the order draggable.
+                # className='custom-multiselect-container',
+                searchable=True,
+                clearable=True,
+                placeholder="Select variables...",
+                size="lg",
+                radius="md",
+                hidePickedOptions=False,
+                leftSection=DashIconify(icon="mdi:chart-line", width=20),
+                comboboxProps={
+                    "shadow": "md",
+                    "transitionProps": {"transition": "pop", "duration": 200},
+                },
+                value=["air_temp", "ppt", "soil_vwc", "soil_temp"],
             ),
         ],
-        color="secondary",
-        outline=True,
-        className="h-100",
-        style={"overflow-x": "clip"},
+        gap="xs",
     )
 
 
-def build_satellite_content(stations):
-    selectors = build_satellite_dropdowns(stations)
-    return dbc.Card(
+def build_control_panel(stations, elements):
+    return dmc.Stack(
         [
-            dbc.CardHeader(
-                dbc.Container(selectors, fluid=True, id="satellite-selectors")
-            ),
-            dbc.CardBody(
-                html.Div([dcc.Graph(id="satellite-plot")], id="satellite-graph")
-            ),
-        ],
-        color="secondary",
-        outline=True,
-        className="h-100",
-        style={"overflow-x": "clip"},
-    )
-
-
-def app_layout(app_ref, stations):
-    stations = stations.to_json(orient="records")
-    return dbc.Container(
-        children=[
-            dcc.Location(id="url", refresh=False),
-            dcc.Store(data=stations, id="mesonet-stations", storage_type="memory"),
-            dcc.Store(data="", id="triggered-by", storage_type="memory"),
-            build_banner(app_ref),
-            dmc.Tabs(
+            dmc.Paper(
                 [
-                    dmc.TabsList(
-                        children=[
-                            dmc.TabsTab(
-                                "Latest Data",
-                                id="station-tab",
-                                value="station-tab",
+                    dmc.Group(
+                        [
+                            DashIconify(icon="mdi:tune", width=20, color="blue"),
+                            dmc.Text("Control Panel", fw=700, size="lg", c="blue"),
+                        ],
+                        gap="xs",
+                    ),
+                ],
+                p="xs",
+                radius="md",
+                withBorder=True,
+                shadow="sm",
+                mb="lg",
+            ),
+            build_station_dropdown(stations=stations),
+            build_date_range(),
+            build_element_multiselect(elements=elements),
+            build_timescale_tabs(),
+            build_advanced_options(),
+            dmc.Divider(
+                variant="dashed", style={"marginTop": "2rem", "marginBottom": "1rem"}
+            ),
+            dmc.Stack(
+                [
+                    dmc.Button(
+                        "Download Data",
+                        leftSection=DashIconify(icon="mdi:download", width=16),
+                        variant="light",
+                        color="green",
+                        size="sm",
+                        radius="md",
+                    ),
+                    dmc.Button(
+                        "Reset Filters",
+                        leftSection=DashIconify(icon="mdi:refresh", width=16),
+                        variant="subtle",
+                        color="gray",
+                        size="sm",
+                        radius="md",
+                    ),
+                ],
+                justify="space-between",
+            ),
+        ],
+        gap="lg",
+    )
+
+
+def build_main_graph_card():
+    return dmc.Paper(
+        [
+            dmc.Stack(
+                [
+                    dmc.Group(
+                        [
+                            DashIconify(
+                                icon="mdi:chart-timeline-variant",
+                                width=28,
+                                color="blue",
                             ),
-                            dmc.TabsTab(
-                                "Ag Tools",
-                                id="derived-tab",
-                                value="derived-tab",
-                            ),
-                            dmc.TabsTab(
-                                "Data Downloader",
-                                id="download-tab",
-                                value="download-tab",
-                            ),
-                            dmc.TabsTab(
-                                "Satellite Indicators",
-                                id="satellite-tab",
-                                value="satellite-tab",
+                            dmc.Title(
+                                "Weather Data Visualization",
+                                order=2,
+                                c="blue",
                             ),
                         ],
-                        grow=True,
+                        gap="sm",
+                    ),
+                    dmc.Text(
+                        "Explore real-time and historical weather data from Montana's comprehensive weather station network. "
+                        "Select a station, choose your variables of interest, and visualize the data across different time scales.",
+                        size="md",
+                        c="dimmed",
+                    ),
+                    dmc.Divider(variant="dashed"),
+                    dmc.Text(
+                        "Interactive charts and data tables will appear here once you make your selections.",
+                        ta="center",
+                        size="lg",
+                        c="dimmed",
+                        py="xl",
+                        # id="main-graph-id"
+                    ),
+                ],
+                gap="md",
+                style={"height": "100%"},
+            ),
+        ],
+        p="xl",
+        radius="lg",
+        withBorder=True,
+        shadow="sm",
+        style={"height": "100%"},
+    )
+
+
+def build_upper_info_card():
+    return dmc.Paper(
+        [
+            dmc.Stack(
+                [
+                    dmc.Group(
+                        [
+                            DashIconify(
+                                icon="mdi:information",
+                                width=24,
+                                color="green",
+                            ),
+                            dmc.Title(
+                                "Station Info",
+                                order=3,
+                                c="green",
+                            ),
+                        ],
+                        gap="sm",
+                    ),
+                    dmc.Text(
+                        "Station details, location coordinates, elevation, and current status will be displayed here when a station is selected.",
+                        size="sm",
+                        c="dimmed",
+                    ),
+                    dmc.Badge(
+                        "No Station Selected",
+                        color="gray",
+                        variant="light",
+                    ),
+                ],
+                gap="sm",
+            ),
+        ],
+        p="lg",
+        radius="lg",
+        withBorder=True,
+        shadow="sm",
+    )
+
+
+def build_lower_info_card():
+    return dmc.Paper(
+        [
+            dmc.Stack(
+                [
+                    dmc.Group(
+                        [
+                            DashIconify(
+                                icon="mdi:download",
+                                width=24,
+                                color="orange",
+                            ),
+                            dmc.Title(
+                                "Data Export",
+                                order=3,
+                                c="orange",
+                            ),
+                        ],
+                        gap="sm",
+                    ),
+                    dmc.Text(
+                        "Download options for CSV, JSON, and other formats. Export filtered data based on your current selections.",
+                        size="sm",
+                        c="dimmed",
+                    ),
+                    dmc.Group(
+                        [
+                            dmc.Button(
+                                "CSV",
+                                size="xs",
+                                variant="light",
+                                color="orange",
+                            ),
+                            dmc.Button(
+                                "JSON",
+                                size="xs",
+                                variant="light",
+                                color="orange",
+                            ),
+                            dmc.Button(
+                                "Excel",
+                                size="xs",
+                                variant="light",
+                                color="orange",
+                            ),
+                        ],
+                        gap="xs",
+                    ),
+                ],
+                gap="sm",
+            ),
+        ],
+        p="lg",
+        radius="lg",
+        withBorder=True,
+        shadow="sm",
+    )
+
+
+def build_latest_data_tab_content():
+    return dmc.Grid(
+        [
+            dmc.GridCol(
+                build_main_graph_card(),
+                span={"base": 12, "md": 8},
+            ),
+            dmc.GridCol(
+                dmc.Stack(
+                    [
+                        build_upper_info_card(),
+                        build_lower_info_card(),
+                    ],
+                    gap="md",
+                ),
+                span={"base": 12, "md": 4},
+            ),
+        ],
+        grow=True,
+        gutter="md",
+        style={"height": "100%"},
+        justify="space-between",
+        align="stretch",
+    )
+
+
+def build_app_header():
+    return dmc.Group(
+        [
+            dmc.Group(
+                [
+                    dmc.Burger(
+                        id="burger",
+                        size="md",
+                        hiddenFrom="sm",
+                        opened=True,
+                    ),
+                    dmc.Anchor(
+                        dmc.Paper(
+                            dmc.Image(
+                                src=dash.get_asset_url("MCO_logo.svg"),
+                                alt="MCO Logo",
+                                h=70,
+                                radius="md",
+                            ),
+                            withBorder=False,
+                            shadow="xs",
+                            radius="md",
+                            p="sm",
+                            style={"backgroundColor": "white"},
+                        ),
+                        href="https://climate.umt.edu",
+                        target="_blank",
+                    ),
+                ]
+            ),
+            dmc.Title("The Montana Mesonet Dashboard", order="1", c="dark"),
+            dmc.Group(
+                [
+                    dmc.Group(
+                        [
+                            dmc.Anchor(
+                                dmc.Button(
+                                    "Give Feedback",
+                                    id="feedback-button",
+                                    variant="subtle",
+                                    color="gray",
+                                    size="sm",
+                                    leftSection=DashIconify(
+                                        icon="mdi:comment-text", width=16
+                                    ),
+                                ),
+                                href="https://forms.fillout.com/t/o72SZtDEonus",
+                                target="_blank",
+                                underline=False,
+                                style={"textDecoration": "none"},
+                            ),
+                            dmc.Button(
+                                "Learn More",
+                                id="help-button",
+                                variant="subtle",
+                                color="gray",
+                                size="sm",
+                                leftSection=DashIconify(icon="mdi:book-open", width=16),
+                            ),
+                            dmc.Anchor(
+                                dmc.Button(
+                                    "GitHub",
+                                    variant="subtle",
+                                    color="gray",
+                                    size="sm",
+                                    leftSection=DashIconify(
+                                        icon="mdi:github", width=16
+                                    ),
+                                ),
+                                href="https://github.com/mt-climate-office",
+                                target="_blank",
+                            ),
+                            dmc.Anchor(
+                                dmc.Button(
+                                    "Email",
+                                    variant="subtle",
+                                    color="gray",
+                                    size="sm",
+                                    leftSection=DashIconify(icon="mdi:email", width=16),
+                                ),
+                                href="mailto:state.climatologist@umontana.edu",
+                            ),
+                        ],
+                        gap="xs",
+                    ),
+                    dmc.Group(
+                        [
+                            dmc.Text("Theme", size="sm", c="dimmed", fw=500),
+                            theme_toggle,
+                        ],
+                        gap="xs",
+                    ),
+                ],
+                gap="md",
+            ),
+        ],
+        justify="space-between",
+        style={"flex": 1},
+        h="100%",
+        px="md",
+    )
+
+
+def build_layout():
+    stations = get_stations()
+    elements = get_elements()
+
+    layout = dmc.AppShell(
+        [
+            dcc.Store(id="elements-store", data=elements.to_dicts()),
+            dcc.Store(id="stations-store", data=stations.to_dicts()),
+            dcc.Store(id="latest-store"),
+            dcc.Store(id="agtools-store"),
+            dcc.Store(id="satellite-store"),
+            dcc.Location(id="url"),
+            build_learn_more_modal(),
+            dmc.AppShellHeader(
+                build_app_header(),
+            ),
+            dmc.AppShellNavbar(
+                id="navbar",
+                children=[
+                    build_control_panel(
+                        stations=stations,
+                        elements=elements,
                     )
                 ],
-                id="main-display-tabs",
-                value="station-tab",
-                color="blue",
-                autoContrast=True,
-                variant="pills",
+                p="xl",
+                style={"overflow-y": "scroll"}
             ),
-            dbc.Row(className="h-100", id="main-content"),
-            generate_modal(),
-            feedback_iframe(),
-            dbc.Modal(
-                [],
-                id="no-funding-modal",
-                is_open=False,
-                size="md",
-                centered=True,
-                scrollable=True,
-            ),
-            dbc.Modal(
-                id="station-modal",
-                is_open=False,
-                size="sm",
-                centered=True,
-                scrollable=True,
+            dmc.AppShellMain(
+                dmc.Tabs(
+                    [
+                        dmc.TabsList(
+                            [
+                                dmc.TabsTab(
+                                    "Latest Data",
+                                    value="latest-data-tab",
+                                    leftSection=DashIconify(
+                                        icon="mdi:chart-timeline-variant", width=18
+                                    ),
+                                ),
+                                dmc.TabsTab(
+                                    "Ag Tools",
+                                    value="ag-tools-tab",
+                                    leftSection=DashIconify(
+                                        icon="mdi:sprout", width=18
+                                    ),
+                                ),
+                                dmc.TabsTab(
+                                    "Satellite Indicators",
+                                    value="satellite-indicators-tab",
+                                    leftSection=DashIconify(
+                                        icon="mdi:satellite-variant", width=18
+                                    ),
+                                ),
+                            ],
+                            style={"background-color": "#FFFFFF"},
+                            grow=True,
+                        ),
+                        dmc.Container(
+                            [dmc.Space(h=30), build_latest_data_tab_content()],
+                            fluid=True,
+                        ),
+                    ],
+                    value="latest-data-tab",
+                    variant="default",
+                    radius="xs",
+                    autoContrast=False,
+                    id='page-tabs'
+                ),
+                w="100%",
+                style={"height": "100vh", "background-color": "#F5F5F5", "overflow-y": "scroll"},
             ),
         ],
-        fluid=True,
-        style={
-            "height": "100%",
-            "backgroundColor": "#E9ECEF",
-            "padding": "0rem 1.5rem 0rem 1.5rem",
-            "overflow-y": "clip",
+        header={"height": 120},
+        padding="md",
+        navbar={
+            "width": 500,
+            "breakpoint": "sm",
+            "collapsed": {"mobile": True},
+        },
+        id="appshell",
+    )
+
+    return dmc.MantineProvider(
+        layout,
+        theme={
+            "primaryColor": "blue",
+            "fontFamily": "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+            "headings": {
+                "fontFamily": "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+            },
+            "radius": {"md": "8px", "lg": "12px"},
         },
     )

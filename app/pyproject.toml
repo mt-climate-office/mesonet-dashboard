@@ -23,6 +23,7 @@ dependencies = [
     "httpx>=0.28.1",
     "dash-iconify>=0.1.2",
     "dash-draggable>=0.1.2",
+    "dash-leaflet>=1.0.15",
 ]
 
 [dependency-groups]
