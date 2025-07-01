@@ -1,6 +1,8 @@
 import datetime as dt
 
 import dash
+import dash_leaflet as dl
+import dash_leaflet.express as dlx
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import httpx
@@ -20,6 +22,7 @@ from dash_ag_grid import AgGrid
 from dash_iconify import DashIconify
 
 from mdb.utils.get_data import get_elements, get_stations
+import pytz
 
 theme_toggle = dmc.Switch(
     offLabel=DashIconify(
@@ -116,7 +119,7 @@ def build_timescale_tabs():
                     {"value": "raw", "label": "Raw Data"},
                     {"value": "hourly", "label": "Hourly"},
                     {"value": "daily", "label": "Daily"},
-                    {"value": "monthly", "label": "Monthly"},
+                    # {"value": "monthly", "label": "Monthly"},
                 ],
                 size="md",
                 radius="md",
@@ -206,6 +209,7 @@ def build_advanced_options():
                 leftSection=DashIconify(icon="mdi:cog", width=16),
                 rightSection=DashIconify(icon="mdi:chevron-down", width=16),
                 fullWidth=True,
+                n_clicks=0,
             ),
             dmc.Collapse(
                 dmc.Stack(
@@ -407,119 +411,173 @@ def build_main_graph_card():
 def build_upper_info_card():
     return dmc.Paper(
         [
-            dmc.Stack(
+            dmc.Tabs(
                 [
-                    dmc.Group(
-                        [
-                            DashIconify(
-                                icon="mdi:information",
-                                width=24,
-                                color="green",
+                    dmc.TabsList(
+                        children=[
+                            dmc.TabsTab(
+                                "Wind Rose",
+                                value="wind-rose-tab",
+                                leftSection=DashIconify(
+                                    icon="mdi:weather-windy", width=18, color="blue"
+                                ),
                             ),
-                            dmc.Title(
-                                "Station Info",
-                                order=3,
-                                c="green",
+                            dmc.TabsTab(
+                                "Weather Forecast",
+                                value="forecast-tab",
+                                leftSection=DashIconify(
+                                    icon="mdi:weather-partly-cloudy",
+                                    width=18,
+                                    color="blue",
+                                ),
+                            ),
+                            dmc.TabsTab(
+                                "Photos",
+                                value="photos-tab",
+                                leftSection=DashIconify(
+                                    icon="mdi:camera", width=18, color="blue"
+                                ),
                             ),
                         ],
-                        gap="sm",
+                        style={"background-color": "#FFFFFF"},
+                        grow=True,
                     ),
-                    dmc.Text(
-                        "Station details, location coordinates, elevation, and current status will be displayed here when a station is selected.",
-                        size="sm",
-                        c="dimmed",
-                    ),
-                    dmc.Badge(
-                        "No Station Selected",
-                        color="gray",
-                        variant="light",
-                    ),
+                    dmc.TabsPanel("wind rose", value="wind-rose-tab"),
+                    dmc.TabsPanel("photos", value="photos-tab"),
+                    dmc.TabsPanel(                        dmc.Container(
+                            [
+                                dmc.Space(h=10),
+                                dmc.Paper(
+                                    children=[
+                                        "Please select a station to view its forecast"
+                                    ],
+                                    p="xs",
+                                    radius="md",
+                                    withBorder=True,
+                                    shadow="sm",
+                                    mb="lg",
+                                    id="forecast-tab-content",
+                                ),
+                            ]
+                        ), value="forecast-tab"),
                 ],
-                gap="sm",
-            ),
+                value="forecast-tab",
+                variant="default",
+                radius="xs",
+                autoContrast=False,
+                id="upper-right-tabs",
+            )
         ],
         p="lg",
         radius="lg",
         withBorder=True,
         shadow="sm",
+        h="5%",
+        style={"overflow-y": "scroll"}
     )
 
 
-def build_lower_info_card():
+def build_lower_info_card(stations):
     return dmc.Paper(
         [
-            dmc.Stack(
+            dmc.Tabs(
                 [
-                    dmc.Group(
-                        [
-                            DashIconify(
-                                icon="mdi:download",
-                                width=24,
-                                color="orange",
+                    dmc.TabsList(
+                        children=[
+                            dmc.TabsTab(
+                                "Locator Map",
+                                value="locator-map-tab",
+                                leftSection=DashIconify(
+                                    icon="mdi:map-marker-radius", width=18, color="blue"
+                                ),
                             ),
-                            dmc.Title(
-                                "Data Export",
-                                order=3,
-                                c="orange",
+                            dmc.TabsTab(
+                                "Station Metadata",
+                                value="station-metadata-tab",
+                                leftSection=DashIconify(
+                                    icon="mdi:database", width=18, color="blue"
+                                ),
                             ),
-                        ],
-                        gap="sm",
-                    ),
-                    dmc.Text(
-                        "Download options for CSV, JSON, and other formats. Export filtered data based on your current selections.",
-                        size="sm",
-                        c="dimmed",
-                    ),
-                    dmc.Group(
-                        [
-                            dmc.Button(
-                                "CSV",
-                                size="xs",
-                                variant="light",
-                                color="orange",
-                            ),
-                            dmc.Button(
-                                "JSON",
-                                size="xs",
-                                variant="light",
-                                color="orange",
-                            ),
-                            dmc.Button(
-                                "Excel",
-                                size="xs",
-                                variant="light",
-                                color="orange",
+                            dmc.TabsTab(
+                                "Current Conditions",
+                                value="current-conditions-tab",
+                                leftSection=DashIconify(
+                                    icon="mdi:weather-sunny", width=18, color="blue"
+                                ),
                             ),
                         ],
-                        gap="xs",
+                        style={"background-color": "#FFFFFF"},
+                        grow=True,
                     ),
+                    dmc.TabsPanel(build_station_map(stations), value="locator-map-tab"),
+                    dmc.TabsPanel(
+                        dmc.Container(
+                            [
+                                dmc.Space(h=10),
+                                dmc.Paper(
+                                    children=[
+                                        "Please select a station to view its metadata"
+                                    ],
+                                    p="xs",
+                                    radius="md",
+                                    withBorder=True,
+                                    shadow="sm",
+                                    mb="lg",
+                                    id="station-metadata-content",
+                                ),
+                            ]
+                        ),
+                        value="station-metadata-tab",
+                    ),
+                    dmc.TabsPanel(                        dmc.Container(
+                            [
+                                dmc.Space(h=10),
+                                dmc.Paper(
+                                    children=[
+                                        "Please select a station to view latest data"
+                                    ],
+                                    p="xs",
+                                    radius="md",
+                                    withBorder=True,
+                                    shadow="sm",
+                                    mb="lg",
+                                    id="station-latest-content",
+                                ),
+                            ]
+                        ), value="current-conditions-tab"),
                 ],
-                gap="sm",
-            ),
+                value="locator-map-tab",
+                variant="default",
+                radius="xs",
+                autoContrast=False,
+                id="bottom-right-tabs",
+            )
         ],
         p="lg",
         radius="lg",
         withBorder=True,
         shadow="sm",
+        h="33%",
+        style={"overflow-y": "scroll"}
     )
 
 
-def build_latest_data_tab_content():
+def build_latest_data_tab_content(stations):
     return dmc.Grid(
         [
             dmc.GridCol(
                 build_main_graph_card(),
-                span={"base": 12, "md": 8},
+                span={"base": 12, "md": 7},
             ),
             dmc.GridCol(
                 dmc.Stack(
                     [
                         build_upper_info_card(),
-                        build_lower_info_card(),
+                        build_lower_info_card(stations),
                     ],
                     gap="md",
                 ),
-                span={"base": 12, "md": 4},
+                span={"base": 12, "md": 5},
             ),
         ],
         grow=True,
@@ -633,7 +691,143 @@ def build_app_header():
     )
 
 
-def build_layout():
+def build_station_map(stations: pl.DataFrame) -> dmc.Container:
+    stations = stations.rename({"latitude": "lat", "longitude": "lon"})
+    stations = stations.select(
+        "station", "name", "lat", "lon", "sub_network", "elevation"
+    )
+    return dmc.Container(
+        [
+            dmc.Space(h=10),
+            dmc.Paper(
+                [
+                    dl.Map(
+                        [
+                            dl.TileLayer(),
+                            dl.GeoJSON(
+                                data=dlx.dicts_to_geojson(stations.to_dicts()),
+                                cluster=True,
+                                zoomToBoundsOnClick=True,
+                            ),
+                        ],
+                        center=(46.65, -109.75),
+                        zoom=5,
+                        style={"height": "40vh"},
+                    ),
+                ],
+                p="xs",
+                radius="md",
+                withBorder=True,
+                shadow="sm",
+                mb="lg",
+            ),
+        ]
+    )
+
+def create_forecast_card(forecast_data):
+    """Create a single forecast card from forecast data"""
+    
+    # Parse the start time to get day name
+    start_time = dt.datetime.fromisoformat(forecast_data['startTime'].replace('Z', '+00:00'))
+    day_name = start_time.strftime('%A')
+    
+    # Determine if it's a day or night period
+    period_name = forecast_data.get('name', '')
+    
+    return dmc.Card(
+        children=[
+            dmc.Stack(
+                [
+                    dmc.Group(
+                        [
+                            dmc.Stack(
+                                [
+                                    dmc.Text(day_name, size="lg"),
+                                    dmc.Text(period_name, size="sm", c="dimmed"),
+                                ]
+                            ),
+                            html.Img(
+                                src=forecast_data.get('icon', ''),
+                                style={"width": "50px", "height": "50px"}
+                            ),
+                            dmc.Text(
+                                f"{forecast_data.get('temperature', 'N/A')}°{forecast_data.get('temperatureUnit', 'F')}",
+                                size="xl",
+                            ),
+                            dmc.Stack(
+                                [
+                                    dmc.Group(
+                                        [
+                                            dmc.Text("Chance of Rain 💧", size="sm", c="dimmed"),
+                                            dmc.Text(
+                                                f"{forecast_data.get('probabilityOfPrecipitation', {}).get('value', 0)}%",
+                                                size="sm"
+                                            )
+                                        ]
+                                    ),
+                                    dmc.Group(
+                                        [
+                                            dmc.Text("Wind Speed 💨", size="sm", c="dimmed"),
+                                            dmc.Text(
+                                                f"{forecast_data.get('windSpeed', 'N/A')} {forecast_data.get('windDirection', '')}",
+                                                size="sm"
+                                            )
+                                        ]
+                                    ),
+                                ],
+                            ),
+                        ]
+                    ),
+                    dmc.Text(
+                        f"Forecast Description: {forecast_data.get('shortForecast', '')}",
+                        size="sm",
+                    ),
+                    dmc.Accordion(
+                        children=[
+                            dmc.AccordionItem(
+                                children=[
+                                    dmc.AccordionControl("Details"),
+                                    dmc.AccordionPanel(
+                                        dmc.Text(
+                                            forecast_data.get('detailedForecast', ''),
+                                            size="sm"
+                                        )
+                                    )
+                                ],
+                                value="details"
+                            )
+                        ],
+                        variant="separated",
+                    )
+                ]
+            )
+        ],
+        withBorder=True,
+        shadow="sm",
+        radius="md",
+    )
+
+def create_forecast_widget(forecast):
+    """Create the main forecast widget with up to 5 days of forecasts"""
+    forecast_list = forecast["periods"]
+    forecast_data = forecast_list[:5] if len(forecast_list) > 5 else forecast_list
+    # Convert generatedAt to America/Denver time
+    utc_dt = dt.datetime.fromisoformat(forecast['generatedAt'].replace('Z', '+00:00'))
+    local_tz = pytz.timezone('America/Denver')
+    local_t = str(utc_dt.astimezone(local_tz))
+    return [
+            dmc.Group([
+                dmc.Text("5-Day NOAA Weather Forecast", size="xl"),
+                dmc.Badge(f"Updated at {local_t}", c="blue", variant="light")
+            ], style={"marginBottom": "20px"}),
+            
+            dmc.Stack([
+                create_forecast_card(forecast) for forecast in forecast_data
+            ])
+        ]
+
+
+def build_layout() -> dmc.AppShell:
     stations = get_stations()
     elements = get_elements()
 
@@ -641,6 +835,7 @@ def build_layout():
         [
             dcc.Store(id="elements-store", data=elements.to_dicts()),
             dcc.Store(id="stations-store", data=stations.to_dicts()),
+            dcc.Store(id="observations-store"),
             dcc.Store(id="latest-store"),
             dcc.Store(id="agtools-store"),
             dcc.Store(id="satellite-store"),
@@ -658,7 +853,7 @@ def build_layout():
                     )
                 ],
                 p="xl",
-                style={"overflow-y": "scroll"}
+                style={"overflow-y": "scroll"},
             ),
             dmc.AppShellMain(
                 dmc.Tabs(
@@ -691,7 +886,7 @@ def build_layout():
                             grow=True,
                         ),
                         dmc.Container(
-                            [dmc.Space(h=30), build_latest_data_tab_content()],
+                            [dmc.Space(h=30), build_latest_data_tab_content(stations)],
                             fluid=True,
                         ),
                     ],
@@ -699,10 +894,14 @@ def build_layout():
                     variant="default",
                     radius="xs",
                     autoContrast=False,
-                    id='page-tabs'
+                    id="page-tabs",
                 ),
                 w="100%",
-                style={"height": "100vh", "background-color": "#F5F5F5", "overflow-y": "scroll"},
+                style={
+                    "height": "100vh",
+                    "background-color": "#F5F5F5",
+                    "overflow-y": "scroll",
+                },
             ),
         ],
         header={"height": 120},

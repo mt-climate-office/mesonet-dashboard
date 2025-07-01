@@ -1,7 +1,8 @@
 import httpx
 import polars as pl
-
+from typing import Any
 from mdb.utils.params import Params
+import re
 
 API_URL = "https://mesonet.climate.umt.edu/api/elements?type=csv&public=False"
 
@@ -25,13 +26,47 @@ def get_elements() -> pl.DataFrame:
     )
 
 
+def get_station_elements(station: str) -> pl.DataFrame:
+    r = httpx.get(
+        f"{Params.API_URL}elements/{station}",
+        params={"type": "csv", "public": "False"},
+    )
+
+    return pl.read_csv(r.content)
+
+
 def get_stations() -> pl.DataFrame:
     r = httpx.get(f"{Params.API_URL}stations", params={"type": "csv"})
     df = pl.read_csv(r.content)
     return df.sort("name")
 
 
-def get_observations(station, start_date, end_date, period) -> pl.DataFrame:
+depth_mappings = {
+    "@ -100 cm": "@ -40 in",
+    "@ -91 cm": "@ -36 in",
+    "@ -76 cm": "@ -30 in",
+    "@ -70 cm": "@ -28 in",
+    "@ -50 cm": "@ -20 in",
+    "@ -20 cm": "@ -8 in",
+    "@ -10 cm": "@ -4 in",
+    "@ -5 cm": "@ -2 in",
+    "@ 70 cm": "@ -28 in",
+    "@ 76 cm": "@ -30 in",
+}
+
+
+def column_remapper(col_name: str) -> str:
+    if "@" not in col_name:
+        return col_name
+    if "Wind" in col_name or "Gust" in col_name or "Air" in col_name:
+        return re.sub(r" @.*(?=\[)", "", col_name)
+    for key in depth_mappings.keys():
+        if key in col_name:
+            return col_name.replace(key, depth_mappings[key])
+    return col_name
+
+
+def get_observations(station, start_date, end_date, period, rm_na=True) -> pl.DataFrame:
     match period:
         case "raw":
             endpoint = "observations"
@@ -44,31 +79,51 @@ def get_observations(station, start_date, end_date, period) -> pl.DataFrame:
         case _:
             raise ValueError(f"Invalid period: {period}")
 
-    r = httpx.get(f"{Params.API_URL}{endpoint}", params={
-        "type": "csv",
-        "stations": station,
-        "start_time": start_date,
-        "end_time": end_date,
-        "premade": True,
-        "rm_na": True,
-        "public": False
-    })
+    r = httpx.get(
+        f"{Params.API_URL}{endpoint}",
+        params={
+            "type": "csv",
+            "stations": station,
+            "start_time": start_date,
+            "end_time": end_date,
+            "premade": True,
+            "rm_na": rm_na,
+            "public": False,
+        },
+    )
     df = pl.read_csv(r.content)
-    if period == "monthly":
-        # Extract year and month from the date column (assuming it's named 'date')
-        ...
-        # df = df.with_columns([
-        #     pl.col("date").str.strptime(pl.Date, "%Y-%m-%d").alias("date_parsed"),
-        # ])
-        # df = df.with_columns([
-        #     pl.col("date_parsed").dt.year().alias("year"),
-        #     pl.col("date_parsed").dt.month().alias("month"),
-        # ])
-        # # Identify columns to aggregate
-        # ppt_cols = [col for col in df.columns if "ppt" in col.lower()]
-        # other_cols = [col for col in df.columns if col not in ppt_cols + ["date", "date_parsed", "year", "month"]]
-        # # Build aggregation expressions
-        # aggs = [pl.col(col).sum().alias(col) for col in ppt_cols]
-        # aggs += [pl.col(col).mean().alias(col) for col in other_cols]
-        # df = df.groupby(["year", "month"]).agg(aggs)
+    df = df.rename(lambda x: column_remapper(x))
     return df
+
+
+def get_latest(station: str) -> pl.DataFrame:
+    r = httpx.get(
+        f"{Params.API_URL}latest",
+        params={
+            "type": "csv",
+            "stations": station,
+        },
+    )
+    df = pl.read_csv(r.content)
+    df = df.rename(lambda x: column_remapper(x))
+    df = df.rename({"datetime": "Reading Timestamp"}).drop("station")
+    df = df.unpivot(variable_name="Variable", value_name="Value")
+    return df
+
+
+def get_forecast_data(lat: float, lon: float) -> list[dict[str, Any]] | str:
+    r = httpx.get(f"https://api.weather.gov/points/{lat},{lon}")
+    if r.status_code == 200:
+        try: 
+            fcast_url = r.json()["properties"]["forecast"]
+        except KeyError:
+            return "Forecast not available for this station."
+        
+        r2 = httpx.get(fcast_url)
+
+        if r2.status_code == 200:
+            try: 
+                return r2.json()['properties']
+            except KeyError:
+                return "Forecast not available for this station."
+    return "Forecast not available for this station."

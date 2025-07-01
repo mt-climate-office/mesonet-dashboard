@@ -15,10 +15,10 @@ from dash import (
     clientside_callback,
     dcc,
     html,
-    no_update
+    no_update,
 )
 
-from mdb.layout import build_layout
+from mdb.layout import build_layout, create_forecast_widget
 from mdb.utils import get_data as get
 
 _dash_renderer._set_react_version("18.2.0")
@@ -51,9 +51,11 @@ app.layout = build_layout
     State("por-button", "children"),
     State("stations-store", "data"),
     State("station-select", "value"),
-    State("timescale-tabs", "value")
+    State("timescale-tabs", "value"),
 )
-def update_dates_to_por(n_clicks, button_lab, stations, selected_station, current_timescale):
+def update_dates_to_por(
+    n_clicks, button_lab, stations, selected_station, current_timescale
+):
     stations = pl.from_dicts(stations)
     if n_clicks and n_clicks > 0:
         today = dt.date.today()
@@ -74,19 +76,109 @@ def update_dates_to_por(n_clicks, button_lab, stations, selected_station, curren
 
 
 @app.callback(
-    Output("latest-store", "data"),
+    Output("observations-store", "data"),
     Input("station-select", "value"),
     Input("page-tabs", "value"),
     Input("date-range", "value"),
-    Input("timescale-tabs", "value")
+    Input("timescale-tabs", "value"),
+    Input("remove-flagged-switch", "checked"),
 )
-def updata_latest_data_store(station, tab, dates, agg):
+def update_observations_store(station, tab, dates, agg, rm_na):
     if station is not None and tab == "latest-data-tab":
         start_date, end_date = dates
-        data = get.get_observations(station, start_date, end_date, agg)
+        data = get.get_observations(station, start_date, end_date, agg, not rm_na)
         print(data)
         return data.to_dicts()
     return no_update
+
+
+@app.callback(
+    Output("station-metadata-content", "children"),
+    Input("station-select", "value"),
+    State("stations-store", "data"),
+)
+def update_station_metadata(station, stations):
+    if station is None:
+        return no_update
+    selected_station = [x for x in stations if x['station'] == station]
+    if len(selected_station) == 0:
+        return html.B("The selected station has no associated metadata!")
+    selected_station = selected_station[0]
+
+    rows = []
+    to_drop = ["mesowest_id", "gwic_id", "nwsli_id", "has_swp", "funded"]
+    for k, v in selected_station.items():
+        if k in to_drop:
+            continue
+        if "_" in k:
+            k = k.replace("_", " ")
+        k = k.title()
+        if k == "Station":
+            k = "Station Key"
+        elif k == "Name":
+            k = "Station Name"
+        elif k == "Elevation":
+            k = "Elevation (ft)"
+            try:
+                v = round(float(v) * 3.28084, 2)
+            except (ValueError, TypeError):
+                pass
+        k = "    " + k
+        rows.append([k, v])
+
+    return dmc.Table(
+        data={
+            "body": rows,
+        },
+        striped=True,
+        withColumnBorders=True,
+        withTableBorder=True,
+        highlightOnHover=True
+    )
+
+@app.callback(
+    Output("station-latest-content", "children"),
+    Input("station-select", "value"),
+)
+def update_latest_station_table(station):
+    if station is None:
+        return no_update
+    dat = get.get_latest(station)
+    rows = [list(row.values()) for row in dat.to_dicts()]
+    return dmc.Table(
+        data={
+            "head": ["Variable", "Value"],
+            "body": rows,
+        },
+        striped=True,
+        withColumnBorders=True,
+        withTableBorder=True,
+        highlightOnHover=True
+    )
+
+@app.callback(
+    Output("forecast-tab-content", "children"),
+    Input("station-select", "value"),
+    State("stations-store", "data")
+)
+def update_station_forecast(station, stations):
+    if station is None:
+        return no_update
+    station = [x for x in stations if x['station'] == station][0]
+    forecast = get.get_forecast_data(station["latitude"], station["longitude"])
+    return create_forecast_widget(forecast)
+    
+
+@app.callback(
+    Output("latest-store", "data"),
+    Input("station-select", "value"),
+)
+def update_latest_store(station: str):
+    if station is None:
+        return no_update
+    dat = get.get_latest(station)
+    return dat.to_dicts()
+
 
 @callback(
     Output("appshell", "navbar"),
@@ -101,11 +193,12 @@ def toggle_navbar(opened, navbar):
 @callback(
     Output("advanced-options-collapse", "opened"),
     Input("advanced-options-toggle", "n_clicks"),
-    State("advanced-options-collapse", "opened"),
-    prevent_initial_call=True,
 )
-def toggle_advanced_options(n_clicks, opened):
-    return not opened
+def toggle_advanced_options(n):
+    print(n)
+    if n % 2 == 0:
+        return False
+    return True
 
 
 @app.callback(
