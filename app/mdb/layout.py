@@ -356,14 +356,14 @@ def build_main_graph_card():
                         gap="sm",
                     ),
                     dmc.Text(
-                        "Explore real-time and historical weather data from Montana's comprehensive weather station network. "
+                        "Explore real-time and historical weather data from the Montana Mesonet station network."
                         "Select a station, choose your variables of interest, and visualize the data across different time scales.",
                         size="md",
                         c="dimmed",
                     ),
                     dmc.Divider(variant="dashed"),
                     dmc.Text(
-                        "Interactive charts and data tables will appear here once you make your selections.",
+                        "Interactive charts will appear here once you make your selections.",
                         ta="center",
                         size="lg",
                         c="dimmed",
@@ -371,6 +371,7 @@ def build_main_graph_card():
                         # id="main-graph-id"
                     ),
                 ],
+                id="main-chart-panel",
                 gap="md",
                 style={"height": "100%"},
             ),

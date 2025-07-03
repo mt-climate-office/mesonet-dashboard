@@ -288,6 +288,13 @@ def toggle_modal(n1, is_open):
         return not is_open
     return is_open
 
+@app.callback(
+    Output("main-chart-panel", "children"),
+    Input("station-select", "value")
+    #elements, datetime, tab?, gridmet swithc, timescale switch
+)
+def update_main_chart(station):
+    ...
 
 clientside_callback(
     """ 
