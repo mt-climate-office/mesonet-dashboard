@@ -1,12 +1,13 @@
 import datetime as dt
 
 import dash
+import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import dash_leaflet.express as dlx
-import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import httpx
 import polars as pl
+import pytz
 from dash import (
     Dash,
     Input,
@@ -21,8 +22,7 @@ from dash import (
 from dash_ag_grid import AgGrid
 from dash_iconify import DashIconify
 
-from mdb.utils.get_data import get_elements, get_stations
-import pytz
+from mdb.utils.get_data import get_elements, get_stations, get_photo_config
 
 theme_toggle = dmc.Switch(
     offLabel=DashIconify(
@@ -199,49 +199,40 @@ def build_learn_more_modal():
 def build_advanced_options():
     return dmc.Stack(
         [
-            dmc.Button(
+            dmc.Badge(
                 "Advanced Options",
-                id="advanced-options-toggle",
                 variant="subtle",
                 color="gray",
-                size="sm",
-                radius="md",
+                size="lg",
                 leftSection=DashIconify(icon="mdi:cog", width=16),
-                rightSection=DashIconify(icon="mdi:chevron-down", width=16),
-                fullWidth=True,
-                n_clicks=0,
             ),
-            dmc.Collapse(
-                dmc.Stack(
-                    [
-                        dmc.Switch(
-                            label="GridMET Normals",
-                            id="gridmet-normals-switch",
-                            color="blue",
-                            size="sm",
-                        ),
-                        dmc.Switch(
-                            label="Show Uncommon Variables",
-                            id="uncommon-variables-switch",
-                            color="blue",
-                            size="sm",
-                        ),
-                        dmc.Switch(
-                            label="Remove Flagged Data",
-                            id="remove-flagged-switch",
-                            color="blue",
-                            size="sm",
-                        ),
-                    ],
-                    gap="sm",
-                    p="md",
-                    style={
-                        "backgroundColor": "var(--mantine-color-gray-0)",
-                        "border-radius": "8px",
-                    },
-                ),
-                id="advanced-options-collapse",
-                opened=False,
+            dmc.Stack(
+                [
+                    dmc.Switch(
+                        label="GridMET Normals",
+                        id="gridmet-normals-switch",
+                        color="blue",
+                        size="sm",
+                    ),
+                    dmc.Switch(
+                        label="Show Uncommon Variables",
+                        id="uncommon-variables-switch",
+                        color="blue",
+                        size="sm",
+                    ),
+                    dmc.Switch(
+                        label="Remove Flagged Data",
+                        id="remove-flagged-switch",
+                        color="blue",
+                        size="sm",
+                    ),
+                ],
+                gap="sm",
+                p="md",
+                style={
+                    "backgroundColor": "var(--mantine-color-gray-0)",
+                    "border-radius": "8px",
+                },
             ),
         ],
         gap="xs",
@@ -310,22 +301,6 @@ def build_element_multiselect(elements, public=True):
 def build_control_panel(stations, elements):
     return dmc.Stack(
         [
-            dmc.Paper(
-                [
-                    dmc.Group(
-                        [
-                            DashIconify(icon="mdi:tune", width=20, color="blue"),
-                            dmc.Text("Control Panel", fw=700, size="lg", c="blue"),
-                        ],
-                        gap="xs",
-                    ),
-                ],
-                p="xs",
-                radius="md",
-                withBorder=True,
-                shadow="sm",
-                mb="lg",
-            ),
             build_station_dropdown(stations=stations),
             build_date_range(),
             build_element_multiselect(elements=elements),
@@ -431,20 +406,53 @@ def build_upper_info_card():
                                     color="blue",
                                 ),
                             ),
-                            dmc.TabsTab(
-                                "Photos",
-                                value="photos-tab",
-                                leftSection=DashIconify(
-                                    icon="mdi:camera", width=18, color="blue"
+                            dmc.Tooltip(
+                                dmc.TabsTab(
+                                    "Photos",
+                                    value="photos-tab",
+                                    leftSection=DashIconify(
+                                        icon="mdi:camera", width=18, color="blue"
+                                    ),
+                                    id="photo-tab",
                                 ),
-                            ),
+                                label="Note: Photos are only available for HydroMet stations",
+                                color="#ff6b6b",
+                                radius="sm",
+                                position="top",
+                                withArrow=True,
+                            )
                         ],
                         style={"background-color": "#FFFFFF"},
                         grow=True,
                     ),
                     dmc.TabsPanel("wind rose", value="wind-rose-tab"),
-                    dmc.TabsPanel("photos", value="photos-tab"),
-                    dmc.TabsPanel(                        dmc.Container(
+                    dmc.TabsPanel(
+                        dmc.Box(
+                            [
+                                dmc.Space(h=10),
+                                dmc.Group(
+                                    [dmc.ChipGroup(
+                                        [
+                                            dmc.Chip("North", value="N"),
+                                            dmc.Chip("South", value="S"),
+                                        ],
+                                        multiple=False,
+                                        value="N",
+                                        id="photo-chipgroup",
+                                    ),
+                                    dmc.Select(id="photo-datetimes", data=[{"value": dt.date.today(), "label": dt.date.today()}])],
+                                    justify="center",
+                                ),
+                                dmc.Space(h=10),
+                                dmc.Container(
+                                    id="photo-container"
+                                )
+                            ]
+                        ),
+                        value="photos-tab",
+                    ),
+                    dmc.TabsPanel(
+                        dmc.Container(
                             [
                                 dmc.Space(h=10),
                                 dmc.Paper(
@@ -459,7 +467,9 @@ def build_upper_info_card():
                                     id="forecast-tab-content",
                                 ),
                             ]
-                        ), value="forecast-tab"),
+                        ),
+                        value="forecast-tab",
+                    ),
                 ],
                 value="forecast-tab",
                 variant="default",
@@ -473,7 +483,7 @@ def build_upper_info_card():
         withBorder=True,
         shadow="sm",
         h="5%",
-        style={"overflow-y": "scroll"}
+        style={"overflow-y": "scroll"},
     )
 
 
@@ -529,7 +539,8 @@ def build_lower_info_card(stations):
                         ),
                         value="station-metadata-tab",
                     ),
-                    dmc.TabsPanel(                        dmc.Container(
+                    dmc.TabsPanel(
+                        dmc.Container(
                             [
                                 dmc.Space(h=10),
                                 dmc.Paper(
@@ -544,7 +555,9 @@ def build_lower_info_card(stations):
                                     id="station-latest-content",
                                 ),
                             ]
-                        ), value="current-conditions-tab"),
+                        ),
+                        value="current-conditions-tab",
+                    ),
                 ],
                 value="locator-map-tab",
                 variant="default",
@@ -558,7 +571,7 @@ def build_lower_info_card(stations):
         withBorder=True,
         shadow="sm",
         h="33%",
-        style={"overflow-y": "scroll"}
+        style={"overflow-y": "scroll"},
     )
 
 
@@ -724,16 +737,19 @@ def build_station_map(stations: pl.DataFrame) -> dmc.Container:
         ]
     )
 
+
 def create_forecast_card(forecast_data):
     """Create a single forecast card from forecast data"""
-    
+
     # Parse the start time to get day name
-    start_time = dt.datetime.fromisoformat(forecast_data['startTime'].replace('Z', '+00:00'))
-    day_name = start_time.strftime('%A')
-    
+    start_time = dt.datetime.fromisoformat(
+        forecast_data["startTime"].replace("Z", "+00:00")
+    )
+    day_name = start_time.strftime("%A")
+
     # Determine if it's a day or night period
-    period_name = forecast_data.get('name', '')
-    
+    period_name = forecast_data.get("name", "")
+
     return dmc.Card(
         children=[
             dmc.Stack(
@@ -743,12 +759,12 @@ def create_forecast_card(forecast_data):
                             dmc.Stack(
                                 [
                                     dmc.Text(day_name, size="lg"),
-                                    dmc.Text(period_name, size="sm", c="dimmed"),
+                                    dmc.Text(period_name, size="md", c="dimmed"),
                                 ]
                             ),
                             html.Img(
-                                src=forecast_data.get('icon', ''),
-                                style={"width": "50px", "height": "50px"}
+                                src=forecast_data.get("icon", ""),
+                                style={"width": "50px", "height": "50px"},
                             ),
                             dmc.Text(
                                 f"{forecast_data.get('temperature', 'N/A')}°{forecast_data.get('temperatureUnit', 'F')}",
@@ -758,20 +774,26 @@ def create_forecast_card(forecast_data):
                                 [
                                     dmc.Group(
                                         [
-                                            dmc.Text("Chance of Rain 💧", size="sm", c="dimmed"),
+                                            dmc.Text(
+                                                "Chance of Rain 💧",
+                                                size="lg",
+                                                c="dimmed",
+                                            ),
                                             dmc.Text(
                                                 f"{forecast_data.get('probabilityOfPrecipitation', {}).get('value', 0)}%",
-                                                size="sm"
-                                            )
+                                                size="lg",
+                                            ),
                                         ]
                                     ),
                                     dmc.Group(
                                         [
-                                            dmc.Text("Wind Speed 💨", size="sm", c="dimmed"),
+                                            dmc.Text(
+                                                "Wind Speed 💨", size="lg", c="dimmed"
+                                            ),
                                             dmc.Text(
                                                 f"{forecast_data.get('windSpeed', 'N/A')} {forecast_data.get('windDirection', '')}",
-                                                size="sm"
-                                            )
+                                                size="lg",
+                                            ),
                                         ]
                                     ),
                                 ],
@@ -780,7 +802,7 @@ def create_forecast_card(forecast_data):
                     ),
                     dmc.Text(
                         f"Forecast Description: {forecast_data.get('shortForecast', '')}",
-                        size="sm",
+                        size="lg",
                     ),
                     dmc.Accordion(
                         children=[
@@ -789,16 +811,16 @@ def create_forecast_card(forecast_data):
                                     dmc.AccordionControl("Details"),
                                     dmc.AccordionPanel(
                                         dmc.Text(
-                                            forecast_data.get('detailedForecast', ''),
-                                            size="sm"
+                                            forecast_data.get("detailedForecast", ""),
+                                            size="lg",
                                         )
-                                    )
+                                    ),
                                 ],
-                                value="details"
+                                value="details",
                             )
                         ],
                         variant="separated",
-                    )
+                    ),
                 ]
             )
         ],
@@ -807,34 +829,57 @@ def create_forecast_card(forecast_data):
         radius="md",
     )
 
+
 def create_forecast_widget(forecast):
     """Create the main forecast widget with up to 5 days of forecasts"""
     forecast_list = forecast["periods"]
     forecast_data = forecast_list[:5] if len(forecast_list) > 5 else forecast_list
     # Convert generatedAt to America/Denver time
-    utc_dt = dt.datetime.fromisoformat(forecast['generatedAt'].replace('Z', '+00:00'))
-    local_tz = pytz.timezone('America/Denver')
+    utc_dt = dt.datetime.fromisoformat(forecast["generatedAt"].replace("Z", "+00:00"))
+    local_tz = pytz.timezone("America/Denver")
     local_t = str(utc_dt.astimezone(local_tz))
     return [
-            dmc.Group([
-                dmc.Text("5-Day NOAA Weather Forecast", size="xl"),
-                dmc.Badge(f"Updated at {local_t}", c="blue", variant="light")
-            ], style={"marginBottom": "20px"}),
-            
-            dmc.Stack([
-                create_forecast_card(forecast) for forecast in forecast_data
-            ])
-        ]
+        dcc.Loading(
+            # TODO: Figure this loading out.
+            dmc.ScrollArea(
+                [
+                    dmc.Group(
+                        [
+                            dmc.Text("5-Day NOAA Weather Forecast", size="xl"),
+                            dmc.Badge(
+                                f"Updated at {local_t}",
+                                c="blue",
+                                variant="light",
+                                size="lg",
+                            ),
+                        ],
+                        style={"marginBottom": "20px"},
+                    ),
+                    dmc.Stack(
+                        [create_forecast_card(forecast) for forecast in forecast_data]
+                    ),
+                ],
+                type="scroll",
+                scrollbarSize=10,
+                scrollHideDelay=1000,
+                offsetScrollbars=True,
+                h=400,
+            ),
+            custom_spinner=dmc.Skeleton(visible=True, h="100%"),
+        )
+    ]
 
 
 def build_layout() -> dmc.AppShell:
     stations = get_stations()
     elements = get_elements()
+    photos = get_photo_config()
 
     layout = dmc.AppShell(
         [
             dcc.Store(id="elements-store", data=elements.to_dicts()),
             dcc.Store(id="stations-store", data=stations.to_dicts()),
+            dcc.Store(id="photo-store", data=photos.to_dicts()),
             dcc.Store(id="observations-store"),
             dcc.Store(id="latest-store"),
             dcc.Store(id="agtools-store"),
@@ -904,7 +949,7 @@ def build_layout() -> dmc.AppShell:
                 },
             ),
         ],
-        header={"height": 120},
+        header={"height": 100},
         padding="md",
         navbar={
             "width": 500,

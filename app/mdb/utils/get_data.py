@@ -1,10 +1,12 @@
+import re
+from typing import Any
+
 import httpx
 import polars as pl
-from typing import Any
-from mdb.utils.params import Params
-import re
 
-API_URL = "https://mesonet.climate.umt.edu/api/elements?type=csv&public=False"
+from mdb.utils.params import Params
+
+API_URL = "https://mesonet.climate.umt.edu/api/"
 
 
 def get_elements() -> pl.DataFrame:
@@ -114,16 +116,37 @@ def get_latest(station: str) -> pl.DataFrame:
 def get_forecast_data(lat: float, lon: float) -> list[dict[str, Any]] | str:
     r = httpx.get(f"https://api.weather.gov/points/{lat},{lon}")
     if r.status_code == 200:
-        try: 
+        try:
             fcast_url = r.json()["properties"]["forecast"]
         except KeyError:
             return "Forecast not available for this station."
-        
+
         r2 = httpx.get(fcast_url)
 
         if r2.status_code == 200:
-            try: 
-                return r2.json()['properties']
+            try:
+                return r2.json()["properties"]
             except KeyError:
                 return "Forecast not available for this station."
     return "Forecast not available for this station."
+
+
+def get_photo_config():
+    r = httpx.get(
+        f"{API_URL}photos?type=csv"
+    )
+
+    if r.status_code == 200:
+        df = pl.read_csv(r.content)
+        df = df.with_columns(
+            pl.col("Photo Directions")
+                .map_elements(
+                    lambda x: re.findall(r"'(\w+)", x) if isinstance(x, str) else [],
+                    return_dtype=pl.List(pl.Utf8)
+                )
+                .alias("Photo Directions"),
+            pl.col("Photo Start Date").str.strptime(pl.Date, "%Y-%m-%d", strict=False)
+        )
+
+        return df
+    return pl.DataFrame()

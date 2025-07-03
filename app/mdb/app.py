@@ -1,5 +1,6 @@
 import datetime as dt
 
+from dash_iconify import DashIconify
 import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
@@ -100,7 +101,7 @@ def update_observations_store(station, tab, dates, agg, rm_na):
 def update_station_metadata(station, stations):
     if station is None:
         return no_update
-    selected_station = [x for x in stations if x['station'] == station]
+    selected_station = [x for x in stations if x["station"] == station]
     if len(selected_station) == 0:
         return html.B("The selected station has no associated metadata!")
     selected_station = selected_station[0]
@@ -123,18 +124,22 @@ def update_station_metadata(station, stations):
                 v = round(float(v) * 3.28084, 2)
             except (ValueError, TypeError):
                 pass
-        k = "    " + k
+
         rows.append([k, v])
 
     return dmc.Table(
-        data={
-            "body": rows,
-        },
-        striped=True,
+        children=[
+            dmc.TableTbody(
+                [dmc.TableTr([dmc.TableTh(x[0]), dmc.TableTd(x[1])]) for x in rows]
+            )
+        ],
         withColumnBorders=True,
         withTableBorder=True,
-        highlightOnHover=True
+        highlightOnHover=True,
+        layout="fixed",
+        variant="vertical",
     )
+
 
 @app.callback(
     Output("station-latest-content", "children"),
@@ -145,29 +150,38 @@ def update_latest_station_table(station):
         return no_update
     dat = get.get_latest(station)
     rows = [list(row.values()) for row in dat.to_dicts()]
-    return dmc.Table(
-        data={
-            "head": ["Variable", "Value"],
-            "body": rows,
-        },
-        striped=True,
-        withColumnBorders=True,
-        withTableBorder=True,
-        highlightOnHover=True
+    return dmc.TableScrollContainer(
+        dmc.Table(
+            children=[
+                dmc.TableTbody(
+                    [dmc.TableTr([dmc.TableTh(x[0]), dmc.TableTd(x[1])]) for x in rows]
+                )
+            ],
+            withColumnBorders=True,
+            withTableBorder=True,
+            highlightOnHover=True,
+            layout="fixed",
+            variant="vertical",
+            horizontalSpacing="lg",
+        ),
+        type="scrollarea",
+        maxHeight=300,
+        minWidth=600,
     )
+
 
 @app.callback(
     Output("forecast-tab-content", "children"),
     Input("station-select", "value"),
-    State("stations-store", "data")
+    State("stations-store", "data"),
 )
 def update_station_forecast(station, stations):
     if station is None:
         return no_update
-    station = [x for x in stations if x['station'] == station][0]
+    station = [x for x in stations if x["station"] == station][0]
     forecast = get.get_forecast_data(station["latitude"], station["longitude"])
     return create_forecast_widget(forecast)
-    
+
 
 @app.callback(
     Output("latest-store", "data"),
@@ -190,15 +204,78 @@ def toggle_navbar(opened, navbar):
     return navbar
 
 
-@callback(
-    Output("advanced-options-collapse", "opened"),
-    Input("advanced-options-toggle", "n_clicks"),
+@app.callback(
+    Output("photo-tab", "disabled"),
+    Input("station-select", "value"),
+    State("stations-store", "data"),
 )
-def toggle_advanced_options(n):
-    print(n)
-    if n % 2 == 0:
-        return False
-    return True
+def disable_photo_tab(station, stations):
+    if station is None:
+        return True
+    sub_net = next((x['sub_network'] for x in stations if x['station'] == station), 'AgriMet')
+    return sub_net != "HydroMet"
+
+@app.callback(
+    Output("photo-chipgroup", "children"),
+    Output("photo-datetimes", "data"),
+    Output("photo-datetimes", "value"),
+    Input("station-select", "value"),
+    State("photo-store", "data")
+)
+def update_photo_chips(station, photos):
+    choices = {
+        "N": "North",
+        "S": "South",
+        "E": "East",
+        "W": "West",
+        "SNOW": "Snow",
+        "SS": "South Sky",
+        "NS": "North Sky",
+    }
+
+    if station is None:
+        return no_update, no_update, no_update
+    photos = pl.from_dicts(photos)
+    photos = photos.filter(pl.col("Station ID") == station)
+    if len(photos) == 0:
+        return no_update, no_update, no_update
+    
+    start_date = photos["Photo Start Date"].to_list()[0]
+    now = dt.datetime.now()
+    start = dt.datetime.strptime(start_date, "%Y-%m-%d")
+    date_list = []
+    current = start
+    while current.date() <= now.date():
+        for hour in [9, 15]:
+            dt_point = current.replace(hour=hour, minute=0, second=0, microsecond=0)
+            if dt_point <= now:
+                date_list.append(dt_point.isoformat())
+        current += dt.timedelta(days=1)
+    
+    date_out = [{"value": x, "label": x} for x in date_list]
+    date_out = date_out[::-1]
+    photos = photos["Photo Directions"].to_list()[0]
+    return [
+        dmc.Chip(
+            choices[x],
+            value=x,
+            icon=DashIconify(icon="fluent:camera-16-filled", width=9)
+        )
+        for x in photos
+    ], date_out, date_out[0]['value']
+
+
+@app.callback(
+    Output("photo-container", "children"), 
+    Input("station-select", "value"),
+    Input("photo-chipgroup", "value"),
+    Input("photo-datetimes", "value")
+)
+def update_selected_photo(station, direction, time):
+    return dmc.Image(
+        radius="md",
+        src=f"https://mesonet.climate.umt.edu/api/photos/{station}/{direction.lower()}?dt={time}",
+    )
 
 
 @app.callback(
