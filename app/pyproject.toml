@@ -3,7 +3,7 @@ name = "mdb"
 version = "0.1.0"
 description = "Version 2 of the Montana Mesonet Dashboard"
 authors = [{ name = "colinbrust", email = "colin.brust@gmail.com" }]
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "dash>=3.0.4,<4",
     "pandas>=2.0.0,<3",
@@ -23,7 +23,8 @@ dependencies = [
     "httpx>=0.28.1",
     "dash-iconify>=0.1.2",
     "dash-draggable>=0.1.2",
-    "dash-leaflet>=1.0.15",
+    "dash-leaflet>=1.1.2",
+    "pyarrow>=20.0.0",
 ]
 
 [dependency-groups]

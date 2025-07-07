@@ -2,6 +2,7 @@ import datetime as dt
 
 import dash
 import dash_bootstrap_components as dbc
+from dash_extensions.javascript import arrow_function
 import dash_leaflet as dl
 import dash_leaflet.express as dlx
 import dash_mantine_components as dmc
@@ -426,7 +427,7 @@ def build_upper_info_card():
                         style={"background-color": "#FFFFFF"},
                         grow=True,
                     ),
-                    dmc.TabsPanel("wind rose", value="wind-rose-tab"),
+                    dmc.TabsPanel("wind rose", value="wind-rose-tab", id="wind-rose-panel"),
                     dmc.TabsPanel(
                         dmc.Box(
                             [
@@ -581,7 +582,7 @@ def build_latest_data_tab_content(stations):
         [
             dmc.GridCol(
                 build_main_graph_card(),
-                span={"base": 12, "md": 7},
+                span={"base": 12, "md": 8},
             ),
             dmc.GridCol(
                 dmc.Stack(
@@ -591,7 +592,7 @@ def build_latest_data_tab_content(stations):
                     ],
                     gap="md",
                 ),
-                span={"base": 12, "md": 5},
+                span={"base": 12, "md": 4},
             ),
         ],
         grow=True,
@@ -603,6 +604,7 @@ def build_latest_data_tab_content(stations):
 
 
 def build_app_header():
+    print(dash.get_asset_url("MCO_logo.svg"))
     return dmc.Group(
         [
             dmc.Group(
@@ -705,11 +707,16 @@ def build_app_header():
     )
 
 
+classes = [0, 10, 20, 50, 100, 200, 500, 1000]
+colorscale = ["#FFEDA0", "#FED976", "#FEB24C", "#FD8D3C", "#FC4E2A", "#E31A1C", "#BD0026", "#800026"]
+style = dict(weight=2, opacity=1, color="white", dashArray="3", fillOpacity=0.7)
+
 def build_station_map(stations: pl.DataFrame) -> dmc.Container:
     stations = stations.rename({"latitude": "lat", "longitude": "lon"})
     stations = stations.select(
         "station", "name", "lat", "lon", "sub_network", "elevation"
     )
+    print(dash.get_asset_url("us-states.json"))
     return dmc.Container(
         [
             dmc.Space(h=10),
@@ -718,6 +725,13 @@ def build_station_map(stations: pl.DataFrame) -> dmc.Container:
                     dl.Map(
                         [
                             dl.TileLayer(),
+                            dl.GeoJSON(
+                                url="/home/cbrust/git/mesonet-dashboard/app/mdb/assets/us-states.json",
+                                    zoomToBounds=True,  # when true, zooms to bounds when data changes (e.g. on load)
+    zoomToBoundsOnClick=True,  # when true, zooms to bounds of feature (e.g. polygon) on click
+    hoverStyle=arrow_function(dict(weight=5, color="#666", dashArray="")),  # style applied on hover
+    hideout=dict(colorscale=colorscale, classes=classes, style=style, colorProp="density"),
+                            ),
                             dl.GeoJSON(
                                 data=dlx.dicts_to_geojson(stations.to_dicts()),
                                 cluster=True,
@@ -946,7 +960,6 @@ def build_layout() -> dmc.AppShell:
                 style={
                     "height": "100vh",
                     "background-color": "#F5F5F5",
-                    "overflow-y": "scroll",
                 },
             ),
         ],

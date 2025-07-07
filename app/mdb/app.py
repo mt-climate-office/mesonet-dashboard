@@ -6,6 +6,7 @@ import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import httpx
 import polars as pl
+import polars.selectors as cs
 from dash import (
     Dash,
     Input,
@@ -21,6 +22,7 @@ from dash import (
 
 from mdb.layout import build_layout, create_forecast_widget
 from mdb.utils import get_data as get
+from mdb.utils import plotting
 
 _dash_renderer._set_react_version("18.2.0")
 
@@ -39,6 +41,7 @@ app = Dash(
     ],
     name="MT Mesonet Dashboard",
     title="MT Mesonet Dashboard",
+    assets_folder="assets"
 )
 
 app.layout = build_layout
@@ -89,7 +92,7 @@ def update_observations_store(station, tab, dates, agg, rm_na):
         start_date, end_date = dates
         data = get.get_observations(station, start_date, end_date, agg, not rm_na)
         print(data)
-        return data.to_dicts()
+        return data.serialize()
     return no_update
 
 
@@ -290,11 +293,46 @@ def toggle_modal(n1, is_open):
 
 @app.callback(
     Output("main-chart-panel", "children"),
-    Input("station-select", "value")
-    #elements, datetime, tab?, gridmet swithc, timescale switch
+    Input("observations-store", "data"),
+    Input("element-multiselect", "value"),
+    State("element-multiselect", "data")
 )
-def update_main_chart(station):
-    ...
+def update_main_chart(df, elements, elem_map):
+    if df is None:
+        return no_update
+    
+    # TODO: Polars is seeing None at the start of the batt_vol column and thinking it is a string type. 
+    # When data eventually populates, it fails to parse. 
+    schemas = {col: pl.Float64 for col in df[0] if col not in ["station", "datetime"]}
+    schemas["datetime"] = pl.Datetime
+    schemas["station"] = pl.String
+    df = pl.from_dicts(df, schema=schemas)
+
+    plots = []
+    for element in elements:
+        elem_label = next((x['label'] for x in elem_map if x['value'] == element), None)
+        if elem_label is None:
+            # TODO: Create blank graph here
+            continue
+        tmp = df.select( "datetime", cs.starts_with(elem_label))
+        col_unit = next((x for x in tmp.columns if x != "datetime"), None)
+        ylab = elem_label + " " + col_unit.split(" ")[-1] if col_unit is not None else element
+        plots.append(dcc.Graph(figure=plotting.create_plot(tmp, ylab)))
+
+    return dmc.ScrollArea(dmc.Stack(plots), 	type="hover",
+	scrollbarSize=10,
+	scrollHideDelay=1000,
+	offsetScrollbars=True,
+    h="75%"
+    ) 
+
+@app.callback(
+    Output("wind-rose-panel", "children"),
+    Input("observations-store", "data")
+)
+def create_wind_rose(data):
+    data = pl.from_dicts(data)
+    return dcc.Graph(figure=plotting.plot_wind(data), style={"width": "100%"})
 
 clientside_callback(
     """ 

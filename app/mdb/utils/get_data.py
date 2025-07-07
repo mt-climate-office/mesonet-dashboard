@@ -61,7 +61,7 @@ def column_remapper(col_name: str) -> str:
     if "@" not in col_name:
         return col_name
     if "Wind" in col_name or "Gust" in col_name or "Air" in col_name:
-        return re.sub(r" @.*(?=\[)", "", col_name)
+        return re.sub(r" @.*(?=\[)", " ", col_name)
     for key in depth_mappings.keys():
         if key in col_name:
             return col_name.replace(key, depth_mappings[key])

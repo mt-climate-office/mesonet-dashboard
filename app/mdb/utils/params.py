@@ -2,8 +2,6 @@ import datetime as dt
 import os
 from dataclasses import dataclass
 
-import dateutil.relativedelta as rd
-import pandas as pd
 
 on_server = os.getenv("ON_SERVER")
 

@@ -1,170 +1,71 @@
-from datetime import datetime
+import dash_leaflet as dl
+import dash_leaflet.express as dlx
+from dash_extensions.enrich import DashProxy, Input, Output, html
+from dash_extensions.javascript import arrow_function, assign
 
-import dash
-import dash_mantine_components as dmc
-from dash import html
+
+def get_info(feature=None):
+    header = [html.H4("US Population Density")]
+    if not feature:
+        return header + [html.P("Hoover over a state")]
+    return header + [
+        html.B(feature["properties"]["name"]),
+        html.Br(),
+        "{:.3f} people / mi".format(feature["properties"]["density"]),
+        html.Sup("2"),
+    ]
 
 
-def create_forecast_card(forecast_data):
-    """Create a single forecast card from forecast data"""
-
-    # Parse the start time to get day name
-    start_time = datetime.fromisoformat(
-        forecast_data["startTime"].replace("Z", "+00:00")
+classes = [0, 10, 20, 50, 100, 200, 500, 1000]
+colorscale = ["#FFEDA0", "#FED976", "#FEB24C", "#FD8D3C", "#FC4E2A", "#E31A1C", "#BD0026", "#800026"]
+style = dict(weight=2, opacity=1, color="white", dashArray="3", fillOpacity=0.7)
+# Create colorbar.
+ctg = [
+    "{}+".format(
+        cls,
     )
-    day_name = start_time.strftime("%A")
-
-    # Determine if it's a day or night period
-    period_name = forecast_data.get("name", "")
-
-    return dmc.Card(
-        children=[
-            dmc.Group(
-                [
-                    # Day name and period
-                    dmc.Stack(
-                        [
-                            dmc.Text(day_name, size="lg"),
-                            dmc.Text(period_name, size="sm", c="dimmed"),
-                        ]
-                    ),
-                    # Weather icon
-                    html.Img(
-                        src=forecast_data.get("icon", ""),
-                        style={"width": "50px", "height": "50px"},
-                    ),
-                    # Temperature
-                    dmc.Text(
-                        f"{forecast_data.get('temperature', 'N/A')}°{forecast_data.get('temperatureUnit', 'F')}",
-                        size="xl",
-                    ),
-                ]
-            ),
-            # Short forecast
-            dmc.Text(
-                forecast_data.get("shortForecast", ""),
-                size="sm",
-                style={"marginTop": "8px"},
-            ),
-            # Weather details
-            dmc.Stack(
-                [
-                    dmc.Group(
-                        [
-                            dmc.Text("💧", size="sm"),
-                            dmc.Text(
-                                f"{forecast_data.get('probabilityOfPrecipitation', {}).get('value', 0)}%",
-                                size="sm",
-                            ),
-                        ]
-                    ),
-                    dmc.Group(
-                        [
-                            dmc.Text("💨", size="sm"),
-                            dmc.Text(
-                                f"{forecast_data.get('windSpeed', 'N/A')} {forecast_data.get('windDirection', '')}",
-                                size="sm",
-                            ),
-                        ]
-                    ),
-                ],
-                style={"marginTop": "12px"},
-            ),
-            # Detailed forecast (expandable)
-            dmc.Accordion(
-                children=[
-                    dmc.AccordionItem(
-                        children=[
-                            dmc.AccordionControl("Details"),
-                            dmc.AccordionPanel(
-                                dmc.Text(
-                                    forecast_data.get("detailedForecast", ""), size="sm"
-                                )
-                            ),
-                        ],
-                        value="details",
-                    )
-                ],
-                variant="separated",
-                style={"marginTop": "12px"},
-            ),
-        ],
-        withBorder=True,
-        shadow="sm",
-        radius="md",
-        style={"marginBottom": "16px"},
-    )
-
-
-def create_forecast_widget(forecast_list):
-    """Create the main forecast widget with up to 5 days of forecasts"""
-
-    # Take only the first 5 forecast periods
-    forecast_data = forecast_list[:5] if len(forecast_list) > 5 else forecast_list
-
-    return dmc.Paper(
-        children=[
-            # Header
-            dmc.Group(
-                [
-                    dmc.Text("5-Day Weather Forecast", size="xl"),
-                    dmc.Badge("Updated", c="blue", variant="light"),
-                ],
-                style={"marginBottom": "20px"},
-            ),
-            # Forecast cards
-            dmc.Stack([create_forecast_card(forecast) for forecast in forecast_data]),
-        ],
-        shadow="lg",
-        radius="lg",
-        p="xl",
-        style={"maxWidth": "600px", "margin": "20px auto"},
-    )
-
-
-# Example usage in your Dash app
-app = dash.Dash(__name__)
-
-# Sample forecast data (replace with your actual API response)
-sample_forecast_data = [
-    {
-        "number": 1,
-        "name": "This Afternoon",
-        "startTime": "2025-07-01T13:00:00-07:00",
-        "endTime": "2025-07-01T18:00:00-07:00",
-        "isDaytime": True,
-        "temperature": 84,
-        "temperatureUnit": "F",
-        "temperatureTrend": "",
-        "probabilityOfPrecipitation": {"unitCode": "wmoUnit:percent", "value": 6},
-        "windSpeed": "7 mph",
-        "windDirection": "N",
-        "icon": "https://api.weather.gov/icons/land/day/sct?size=medium",
-        "shortForecast": "Mostly Sunny",
-        "detailedForecast": "Mostly sunny, with a high near 84. North wind around 7 mph.",
-    },
-    {
-        "number": 2,
-        "name": "Tonight",
-        "startTime": "2025-07-01T18:00:00-07:00",
-        "endTime": "2025-07-02T06:00:00-07:00",
-        "isDaytime": False,
-        "temperature": 58,
-        "temperatureUnit": "F",
-        "temperatureTrend": "",
-        "probabilityOfPrecipitation": {"unitCode": "wmoUnit:percent", "value": 10},
-        "windSpeed": "5 mph",
-        "windDirection": "NW",
-        "icon": "https://api.weather.gov/icons/land/night/few?size=medium",
-        "shortForecast": "Mostly Clear",
-        "detailedForecast": "Mostly clear, with a low around 58. Northwest wind around 5 mph.",
-    },
-    # Add more forecast periods as needed...
-]
-
-app.layout = dmc.MantineProvider(
-    [dmc.Container([create_forecast_widget(sample_forecast_data)], size="lg")]
+    for i, cls in enumerate(classes[:-1])
+] + ["{}+".format(classes[-1])]
+colorbar = dlx.categorical_colorbar(categories=ctg, colorscale=colorscale, width=300, height=30, position="bottomleft")
+# Geojson rendering logic, must be JavaScript as it is executed in clientside.
+style_handle = assign("""function(feature, context){
+    const {classes, colorscale, style, colorProp} = context.hideout;  // get props from hideout
+    const value = feature.properties[colorProp];  // get value the determines the color
+    for (let i = 0; i < classes.length; ++i) {
+        if (value > classes[i]) {
+            style.fillColor = colorscale[i];  // set the fill color according to the class
+        }
+    }
+    return style;
+}""")
+# Create geojson.
+geojson = dl.GeoJSON(
+    url="https://raw.githubusercontent.com/emilhe/dash-leaflet-docs/refs/heads/main/assets/us-states.json",  # url to geojson file
+    style=style_handle,  # how to style each polygon
+    zoomToBounds=True,  # when true, zooms to bounds when data changes (e.g. on load)
+    zoomToBoundsOnClick=True,  # when true, zooms to bounds of feature (e.g. polygon) on click
+    hoverStyle=arrow_function(dict(weight=5, color="#666", dashArray="")),  # style applied on hover
+    hideout=dict(colorscale=colorscale, classes=classes, style=style, colorProp="density"),
+    id="geojson",
+)
+# Create info control.
+info = html.Div(
+    children=get_info(),
+    id="info",
+    className="info",
+    style={"position": "absolute", "top": "10px", "right": "10px", "zIndex": "1000"},
+)
+# Create app.
+app = DashProxy(prevent_initial_callbacks=True)
+app.layout = dl.Map(
+    children=[dl.TileLayer(), geojson, colorbar, info], style={"height": "50vh"}, center=[56, 10], zoom=6
 )
 
+
+@app.callback(Output("info", "children"), Input("geojson", "hoverData"))
+def info_hover(feature):
+    return get_info(feature)
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
