@@ -22,6 +22,7 @@ from dash import (
 )
 from dash_ag_grid import AgGrid
 from dash_iconify import DashIconify
+from functools import lru_cache
 
 from mdb.utils.get_data import get_elements, get_stations, get_photo_config
 
@@ -427,48 +428,67 @@ def build_upper_info_card():
                         style={"background-color": "#FFFFFF"},
                         grow=True,
                     ),
-                    dmc.TabsPanel("wind rose", value="wind-rose-tab", id="wind-rose-panel"),
                     dmc.TabsPanel(
-                        dmc.Box(
-                            [
-                                dmc.Space(h=10),
-                                dmc.Group(
-                                    [dmc.ChipGroup(
-                                        [
-                                            dmc.Chip("North", value="N"),
-                                            dmc.Chip("South", value="S"),
-                                        ],
-                                        multiple=False,
-                                        value="N",
-                                        id="photo-chipgroup",
+                        dmc.ScrollArea(
+                            "wind rose", 
+                            h=300,  # Fixed height
+                            type="scroll",
+                            scrollbarSize=8,
+                        ), 
+                        value="wind-rose-tab", 
+                        id="wind-rose-panel"
+                    ),
+                    dmc.TabsPanel(
+                        dmc.ScrollArea(
+                            dmc.Box(
+                                [
+                                    dmc.Space(h=10),
+                                    dmc.Group(
+                                        [dmc.ChipGroup(
+                                            [
+                                                dmc.Chip("North", value="N"),
+                                                dmc.Chip("South", value="S"),
+                                            ],
+                                            multiple=False,
+                                            value="N",
+                                            id="photo-chipgroup",
+                                        ),
+                                        dmc.Select(id="photo-datetimes", data=[{"value": dt.date.today(), "label": dt.date.today()}])],
+                                        justify="center",
                                     ),
-                                    dmc.Select(id="photo-datetimes", data=[{"value": dt.date.today(), "label": dt.date.today()}])],
-                                    justify="center",
-                                ),
-                                dmc.Space(h=10),
-                                dmc.Container(
-                                    id="photo-container"
-                                )
-                            ]
+                                    dmc.Space(h=10),
+                                    dmc.Container(
+                                        id="photo-container"
+                                    )
+                                ]
+                            ),
+                            h=300,  # Fixed height
+                            type="scroll",
+                            scrollbarSize=8,
                         ),
                         value="photos-tab",
                     ),
                     dmc.TabsPanel(
-                        dmc.Container(
-                            [
-                                dmc.Space(h=10),
-                                dmc.Paper(
-                                    children=[
-                                        "Please select a station to view its forecast"
-                                    ],
-                                    p="xs",
-                                    radius="md",
-                                    withBorder=True,
-                                    shadow="sm",
-                                    mb="lg",
-                                    id="forecast-tab-content",
-                                ),
-                            ]
+                        dmc.ScrollArea(
+                            dmc.Container(
+                                [
+                                    dmc.Space(h=10),
+                                    dmc.Paper(
+                                        children=[
+                                            "Please select a station to view its forecast"
+                                        ],
+                                        p="xs",
+                                        radius="md",
+                                        withBorder=True,
+                                        shadow="sm",
+                                        mb="lg",
+                                        id="forecast-tab-content",
+                                    ),
+                                ]
+                            ),
+                            h=300,  # Fixed height
+                            type="scroll",
+                            scrollbarSize=8,
                         ),
                         value="forecast-tab",
                     ),
@@ -484,10 +504,8 @@ def build_upper_info_card():
         radius="lg",
         withBorder=True,
         shadow="sm",
-        h="5%",
-        style={"overflow-y": "scroll"},
+        h=400,  # Fixed height for the entire card
     )
-
 
 def build_lower_info_card(stations):
     return dmc.Paper(
@@ -521,42 +539,60 @@ def build_lower_info_card(stations):
                         style={"background-color": "#FFFFFF"},
                         grow=True,
                     ),
-                    dmc.TabsPanel(build_station_map(stations), value="locator-map-tab"),
                     dmc.TabsPanel(
-                        dmc.Container(
-                            [
-                                dmc.Space(h=10),
-                                dmc.Paper(
-                                    children=[
-                                        "Please select a station to view its metadata"
-                                    ],
-                                    p="xs",
-                                    radius="md",
-                                    withBorder=True,
-                                    shadow="sm",
-                                    mb="lg",
-                                    id="station-metadata-content",
-                                ),
-                            ]
+                        dmc.ScrollArea(
+                            build_station_map(stations), 
+                            h=300,  # Fixed height
+                            type="scroll",
+                            scrollbarSize=8,
+                        ), 
+                        value="locator-map-tab"
+                    ),
+                    dmc.TabsPanel(
+                        dmc.ScrollArea(
+                            dmc.Container(
+                                [
+                                    dmc.Space(h=10),
+                                    dmc.Paper(
+                                        children=[
+                                            "Please select a station to view its metadata"
+                                        ],
+                                        p="xs",
+                                        radius="md",
+                                        withBorder=True,
+                                        shadow="sm",
+                                        mb="lg",
+                                        id="station-metadata-content",
+                                    ),
+                                ]
+                            ),
+                            h=300,  # Fixed height
+                            type="scroll",
+                            scrollbarSize=8,
                         ),
                         value="station-metadata-tab",
                     ),
                     dmc.TabsPanel(
-                        dmc.Container(
-                            [
-                                dmc.Space(h=10),
-                                dmc.Paper(
-                                    children=[
-                                        "Please select a station to view latest data"
-                                    ],
-                                    p="xs",
-                                    radius="md",
-                                    withBorder=True,
-                                    shadow="sm",
-                                    mb="lg",
-                                    id="station-latest-content",
-                                ),
-                            ]
+                        dmc.ScrollArea(
+                            dmc.Container(
+                                [
+                                    dmc.Space(h=10),
+                                    dmc.Paper(
+                                        children=[
+                                            "Please select a station to view latest data"
+                                        ],
+                                        p="xs",
+                                        radius="md",
+                                        withBorder=True,
+                                        shadow="sm",
+                                        mb="lg",
+                                        id="station-latest-content",
+                                    ),
+                                ]
+                            ),
+                            h=300,  # Fixed height
+                            type="scroll",
+                            scrollbarSize=8,
                         ),
                         value="current-conditions-tab",
                     ),
@@ -572,34 +608,40 @@ def build_lower_info_card(stations):
         radius="lg",
         withBorder=True,
         shadow="sm",
-        h="33%",
-        style={"overflow-y": "scroll"},
+        h=400,  # Fixed height for the entire card
     )
 
 
 def build_latest_data_tab_content(stations):
-    return dmc.Grid(
-        [
-            dmc.GridCol(
-                build_main_graph_card(),
-                span={"base": 12, "md": 8},
-            ),
-            dmc.GridCol(
-                dmc.Stack(
-                    [
-                        build_upper_info_card(),
-                        build_lower_info_card(stations),
-                    ],
-                    gap="md",
+    return dmc.ScrollArea(
+        dmc.Grid(
+            [
+                dmc.GridCol(
+                    build_main_graph_card(),
+                    span={"base": 12, "md": 8},
                 ),
-                span={"base": 12, "md": 4},
-            ),
-        ],
-        grow=True,
-        gutter="md",
-        style={"height": "100%"},
-        justify="space-between",
-        align="stretch",
+                dmc.GridCol(
+                    dmc.Stack(
+                        [
+                            build_upper_info_card(),
+                            build_lower_info_card(stations),
+                        ],
+                        gap="md",
+                    ),
+                    span={"base": 12, "md": 4},
+                ),
+            ],
+            grow=True,
+            gutter="md",
+            style={"height": "100%"},
+            justify="space-between",
+            align="stretch",
+        ),
+        type="scroll",
+        scrollbarSize=10,
+        scrollHideDelay=1000,
+        offsetScrollbars=True,
+        h="calc(100vh - 200px)",  # Adjust based on your header/tab heights
     )
 
 
@@ -884,8 +926,9 @@ def create_forecast_widget(forecast):
         )
     ]
 
-
+@lru_cache(maxsize=1)
 def build_layout() -> dmc.AppShell:
+    print('api calls')
     stations = get_stations()
     elements = get_elements()
     photos = get_photo_config()
@@ -915,53 +958,85 @@ def build_layout() -> dmc.AppShell:
                 p="xl",
                 style={"overflow-y": "scroll"},
             ),
-            dmc.AppShellMain(
-                dmc.Tabs(
+                dmc.AppShellMain(
+        dmc.Tabs(
+            [
+                dmc.TabsList(
                     [
-                        dmc.TabsList(
-                            [
-                                dmc.TabsTab(
-                                    "Latest Data",
-                                    value="latest-data-tab",
-                                    leftSection=DashIconify(
-                                        icon="mdi:chart-timeline-variant", width=18
-                                    ),
-                                ),
-                                dmc.TabsTab(
-                                    "Ag Tools",
-                                    value="ag-tools-tab",
-                                    leftSection=DashIconify(
-                                        icon="mdi:sprout", width=18
-                                    ),
-                                ),
-                                dmc.TabsTab(
-                                    "Satellite Indicators",
-                                    value="satellite-indicators-tab",
-                                    leftSection=DashIconify(
-                                        icon="mdi:satellite-variant", width=18
-                                    ),
-                                ),
-                            ],
-                            style={"background-color": "#FFFFFF"},
-                            grow=True,
+                        dmc.TabsTab(
+                            "Latest Data",
+                            value="latest-data-tab",
+                            leftSection=DashIconify(
+                                icon="mdi:chart-timeline-variant", width=18
+                            ),
                         ),
-                        dmc.Container(
-                            [dmc.Space(h=30), build_latest_data_tab_content(stations)],
-                            fluid=True,
+                        dmc.TabsTab(
+                            "Ag Tools",
+                            value="ag-tools-tab",
+                            leftSection=DashIconify(
+                                icon="mdi:sprout", width=18
+                            ),
+                        ),
+                        dmc.TabsTab(
+                            "Satellite Indicators",
+                            value="satellite-indicators-tab",
+                            leftSection=DashIconify(
+                                icon="mdi:satellite-variant", width=18
+                            ),
                         ),
                     ],
-                    value="latest-data-tab",
-                    variant="default",
-                    radius="xs",
-                    autoContrast=False,
-                    id="page-tabs",
+                    style={"background-color": "#FFFFFF"},
+                    grow=True,
                 ),
-                w="100%",
-                style={
-                    "height": "100vh",
-                    "background-color": "#F5F5F5",
-                },
-            ),
+                dmc.TabsPanel(
+                    build_latest_data_tab_content(stations),
+                    value="latest-data-tab",
+                ),
+                # Add your other tab panels here with ScrollArea if needed
+                dmc.TabsPanel(
+                    dmc.ScrollArea(
+                        dmc.Container(
+                            [
+                                dmc.Space(h=30),
+                                dmc.Text("Ag Tools content goes here"),
+                            ],
+                            fluid=True,
+                        ),
+                        h="calc(100vh - 200px)",
+                        type="scroll",
+                        scrollbarSize=10,
+                    ),
+                    value="ag-tools-tab",
+                ),
+                dmc.TabsPanel(
+                    dmc.ScrollArea(
+                        dmc.Container(
+                            [
+                                dmc.Space(h=30),
+                                dmc.Text("Satellite Indicators content goes here"),
+                            ],
+                            fluid=True,
+                        ),
+                        h="calc(100vh - 200px)",
+                        type="scroll",
+                        scrollbarSize=10,
+                    ),
+                    value="satellite-indicators-tab",
+                ),
+            ],
+            value="latest-data-tab",
+            variant="default",
+            radius="xs",
+            autoContrast=False,
+            id="page-tabs",
+        ),
+        w="100%",
+        style={
+            "height": "100vh",
+            "background-color": "#F5F5F5",
+            "overflow": "hidden",  # Prevent main container from scrolling
+        },
+    ),
         ],
         header={"height": 100},
         padding="md",

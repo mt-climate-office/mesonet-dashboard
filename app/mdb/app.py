@@ -91,8 +91,7 @@ def update_observations_store(station, tab, dates, agg, rm_na):
     if station is not None and tab == "latest-data-tab":
         start_date, end_date = dates
         data = get.get_observations(station, start_date, end_date, agg, not rm_na)
-        print(data)
-        return data.serialize()
+        return data.to_dicts()
     return no_update
 
 
@@ -301,12 +300,7 @@ def update_main_chart(df, elements, elem_map):
     if df is None:
         return no_update
     
-    # TODO: Polars is seeing None at the start of the batt_vol column and thinking it is a string type. 
-    # When data eventually populates, it fails to parse. 
-    schemas = {col: pl.Float64 for col in df[0] if col not in ["station", "datetime"]}
-    schemas["datetime"] = pl.Datetime
-    schemas["station"] = pl.String
-    df = pl.from_dicts(df, schema=schemas)
+    df = pl.from_dicts(df, infer_schema_length=100000)
 
     plots = []
     for element in elements:
@@ -331,7 +325,7 @@ def update_main_chart(df, elements, elem_map):
     Input("observations-store", "data")
 )
 def create_wind_rose(data):
-    data = pl.from_dicts(data)
+    data = pl.from_dicts(data, infer_schema_length=100000)
     return dcc.Graph(figure=plotting.plot_wind(data), style={"width": "100%"})
 
 clientside_callback(
