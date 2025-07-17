@@ -22,7 +22,7 @@ from dash_iconify import DashIconify
 
 from mdb.layout import build_layout, create_forecast_widget
 from mdb.utils import get_data as get
-from mdb.utils import plotting
+from mdb.utils import plotting, params
 
 _dash_renderer._set_react_version("18.2.0")
 
@@ -299,20 +299,39 @@ def toggle_modal(n1, is_open):
 
 
 @app.callback(
+    Output("element-dag", "rowData"),
+    Input("station-select", "value"),
+    State("elements-store", "data")
+)
+def update_station_elements(station, rows):
+    if station is None:
+        return no_update
+    
+    rows = pl.from_dicts(rows)
+    dat = get.get_station_elements(station)
+    dat = dat.join(rows, how="left", on="element")
+    dat = get.group_elements_df(dat, True)
+
+    return dat.to_dicts()
+
+
+@app.callback(
     Output("main-chart-panel", "children"),
     Input("observations-store", "data"),
-    Input("element-multiselect", "value"),
-    State("element-multiselect", "data"),
+    Input("element-dag", "virtualRowData"),
+    Input("element-dag", "selectedRows"),
 )
-def update_main_chart(df, elements, elem_map):
+def update_main_chart(df, rows, selected_rows):
     if df is None:
         return no_update
 
+    if selected_rows is None:
+        return no_update
     df = pl.from_dicts(df, infer_schema_length=100000)
 
     plots = []
-    for element in elements:
-        elem_label = next((x["label"] for x in elem_map if x["value"] == element), None)
+    for element in (x for x in rows if x in selected_rows):
+        elem_label = element.get("description_short", None)
         if elem_label is None:
             # TODO: Create blank graph here
             continue

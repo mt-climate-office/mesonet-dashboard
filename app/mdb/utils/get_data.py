@@ -37,6 +37,28 @@ def get_station_elements(station: str) -> pl.DataFrame:
     return pl.read_csv(r.content)
 
 
+def group_elements_df(df: pl.DataFrame, public: bool=True) -> pl.DataFrame:
+    try:
+        df = df.select("element", "description_short", "public")
+        if public:
+            df = df.filter(
+                pl.col("public") == public
+            )
+    except pl.exceptions.ColumnNotFoundError:
+        df = df.select("element", "description_short")
+    
+    return df.with_columns(
+        [
+            pl.col("element").str.replace(r"(_\d+)$", ""),  # Remove trailing _XXXX
+            pl.col("description_short")
+            .str.split("@")
+            .list.get(0)
+            .str.strip_suffix(" "),
+        ]
+    ).unique(subset=["element", "description_short"]).sort("description_short")
+
+
+
 def get_stations() -> pl.DataFrame:
     r = httpx.get(f"{Params.API_URL}stations", params={"type": "csv"})
     df = pl.read_csv(r.content)

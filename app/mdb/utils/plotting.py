@@ -12,6 +12,9 @@ def style_figure(fig):
     fig.update_xaxes(showgrid=True, gridcolor="grey")
     fig.update_yaxes(showgrid=True, gridcolor="grey")
     fig.update_layout(showlegend=False)
+    fig.update_layout(
+        margin=dict(l=10, r=10, t=10, b=10),
+    )
     return fig
 
 

@@ -1,5 +1,5 @@
 import dash_ag_grid as dag
-from dash import Dash, html
+from dash import Dash, html, dcc, Input, Output, callback
 import pandas as pd
 
 app = Dash()
@@ -9,38 +9,44 @@ df = pd.read_csv(
 )
 
 columnDefs = [
-    {"field": "athlete"},
-    {"field": "age"},
-    {"field": "country"},
-    {"field": "year"},
-    {"field": "sport"},
-    {"field": "total"},
+    {"field": "athlete", "rowDrag": True, "checkboxSelection": True},
 ]
 
 app.layout = html.Div(
     [
         dag.AgGrid(
-            id="row-selection-checkbox-header-function",
-            columnDefs=columnDefs,
+            id="row-dragging-managed-dragging-options",
             rowData=df.to_dict("records"),
-            columnSize="sizeToFit",
+            columnDefs=columnDefs,
             defaultColDef={
                 "filter": True,
-                "checkboxSelection": {
-                    "function": 'params.column == params.columnApi.getAllDisplayedColumns()[0]'
-                },
-                "headerCheckboxSelection": {
-                    "function": 'params.column == params.columnApi.getAllDisplayedColumns()[0]'
-                }
+                "headerCheckboxSelection": True
             },
+            columnSize="sizeToFit",
             dashGridOptions={
+                "rowDragManaged": True,
                 "rowSelection": "multiple",
-                "suppressRowClickSelection": True,
-                "animateRows": False
+                "suppressRowClickSelection": False,
+                "animateRows": True,
+                "suppressMoveWhenRowDragging": False,
+                "rowDragMultiRow": False,
             },
         ),
+        html.Div(id="div", children="data"),
     ],
 )
 
+
+@callback(
+    Output("div", "children"),
+    Input("row-dragging-managed-dragging-options", "virtualRowData"),
+    Input("row-dragging-managed-dragging-options", "selectedRows")
+)
+def update_row_order(rows, checks):
+    out = [x["athlete"] for x in rows]
+    print(checks)
+    return str(out[:5])
+
+
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=True)

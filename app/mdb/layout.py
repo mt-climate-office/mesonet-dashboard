@@ -25,7 +25,7 @@ from dash_ag_grid import AgGrid
 from dash_extensions.javascript import arrow_function
 from dash_iconify import DashIconify
 
-from mdb.utils.get_data import get_elements, get_photo_config, get_stations
+from mdb.utils.get_data import get_elements, get_photo_config, get_stations, group_elements_df
 
 theme_toggle = dmc.Switch(
     offLabel=DashIconify(
@@ -243,21 +243,7 @@ def build_advanced_options():
 
 
 def build_element_multiselect(elements, public=True):
-    df = (
-        elements.select("element", "description_short", "public")
-        .filter(pl.col("public") == public)
-        .with_columns(
-            [
-                pl.col("element").str.replace(r"(_\d+)$", ""),  # Remove trailing _XXXX
-                pl.col("description_short")
-                .str.split("@")
-                .list.get(0)
-                .str.strip_suffix(" "),
-            ]
-        )
-        .unique(subset=["element", "description_short"])
-        .sort("description_short")
-    )
+    df = group_elements_df(elements, public)
 
     return dmc.Stack(
         [
@@ -274,28 +260,34 @@ def build_element_multiselect(elements, public=True):
                 gap="xs",
                 align="center",
             ),
-            # dmc.MultiSelect(
-            #     id="element-multiselect",
-            #     data=[
-            #         {"value": row["element"], "label": row["description_short"]}
-            #         for row in df.to_dicts()
-            #     ],
-            #     # TODO: Use this class to hide selections. Then use dash-ag-grid to
-            #     # make  the order draggable.
-            #     # className='custom-multiselect-container',
-            #     searchable=True,
-            #     clearable=True,
-            #     placeholder="Select variables...",
-            #     size="lg",
-            #     radius="md",
-            #     hidePickedOptions=False,
-            #     leftSection=DashIconify(icon="mdi:chart-line", width=20),
-            #     comboboxProps={
-            #         "shadow": "md",
-            #         "transitionProps": {"transition": "pop", "duration": 200},
-            #     },
-            #     value=["air_temp", "ppt", "soil_vwc", "soil_temp"],
-            # ),
+            dag.AgGrid(
+                id="element-dag",
+                rowData=df.to_dicts(),
+                columnDefs=[
+                    {
+                        "field": "description_short", 
+                        "rowDrag": True, 
+                        "checkboxSelection": True,
+                        "headerName": "Variables (drag to reorder plots)",
+                        "wrapHeaderText": True,
+                        "autoHeaderHeight": True,
+                        "initialWidth": "300",
+                    },
+                ],
+                defaultColDef={
+                    "filter": True,
+                    "headerCheckboxSelection": True
+                },
+                columnSize="sizeToFit",
+                dashGridOptions={
+                    "rowDragManaged": True,
+                    "rowSelection": "multiple",
+                    "suppressRowClickSelection": True,
+                    "animateRows": True,
+                    "suppressMoveWhenRowDragging": False,
+                    "rowDragMultiRow": False,
+                },
+            ),
         ],
         gap="xs",
     )
@@ -642,8 +634,8 @@ def build_latest_data_tab_content(stations):
                 ),
             ],
             grow=True,
-            gutter="md",
-            style={"height": "100%"},
+            gutter="xs",
+            style={"backgroundColor": "lightblue", "height": "100%"},
             justify="space-between",
             align="stretch",
         ),
@@ -651,7 +643,8 @@ def build_latest_data_tab_content(stations):
         scrollbarSize=10,
         scrollHideDelay=1000,
         offsetScrollbars=True,
-        h="calc(100vh - 200px)",  # Adjust based on your header/tab heights
+        style={"backgroundColor": "red"},
+        h="100%",  # Adjust based on your header/tab heights
     )
 
 
@@ -1019,6 +1012,7 @@ def build_layout() -> dmc.AppShell:
                         dmc.TabsPanel(
                             build_latest_data_tab_content(stations),
                             value="latest-data-tab",
+                            h="100vh"
                         ),
                         # Add your other tab panels here with ScrollArea if needed
                         dmc.TabsPanel(
