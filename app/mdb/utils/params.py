@@ -2,7 +2,6 @@ import datetime as dt
 import os
 from dataclasses import dataclass
 
-
 on_server = os.getenv("ON_SERVER")
 
 

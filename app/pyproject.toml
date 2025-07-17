@@ -5,7 +5,7 @@ description = "Version 2 of the Montana Mesonet Dashboard"
 authors = [{ name = "colinbrust", email = "colin.brust@gmail.com" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "dash>=3.0.4,<4",
+    "dash>=3.1.1,<4",
     "pandas>=2.0.0,<3",
     "dash-daq>=0.6.0,<1",
     "requests>=2.27.1,<3",

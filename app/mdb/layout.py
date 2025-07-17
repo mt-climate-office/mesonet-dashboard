@@ -1,8 +1,9 @@
 import datetime as dt
+from functools import lru_cache
 
 import dash
 import dash_bootstrap_components as dbc
-from dash_extensions.javascript import arrow_function
+import dash_ag_grid as dag
 import dash_leaflet as dl
 import dash_leaflet.express as dlx
 import dash_mantine_components as dmc
@@ -21,10 +22,10 @@ from dash import (
     html,
 )
 from dash_ag_grid import AgGrid
+from dash_extensions.javascript import arrow_function
 from dash_iconify import DashIconify
-from functools import lru_cache
 
-from mdb.utils.get_data import get_elements, get_stations, get_photo_config
+from mdb.utils.get_data import get_elements, get_photo_config, get_stations
 
 theme_toggle = dmc.Switch(
     offLabel=DashIconify(
@@ -273,28 +274,28 @@ def build_element_multiselect(elements, public=True):
                 gap="xs",
                 align="center",
             ),
-            dmc.MultiSelect(
-                id="element-multiselect",
-                data=[
-                    {"value": row["element"], "label": row["description_short"]}
-                    for row in df.to_dicts()
-                ],
-                # TODO: Use this class to hide selections. Then use dash-ag-grid to
-                # make  the order draggable.
-                # className='custom-multiselect-container',
-                searchable=True,
-                clearable=True,
-                placeholder="Select variables...",
-                size="lg",
-                radius="md",
-                hidePickedOptions=False,
-                leftSection=DashIconify(icon="mdi:chart-line", width=20),
-                comboboxProps={
-                    "shadow": "md",
-                    "transitionProps": {"transition": "pop", "duration": 200},
-                },
-                value=["air_temp", "ppt", "soil_vwc", "soil_temp"],
-            ),
+            # dmc.MultiSelect(
+            #     id="element-multiselect",
+            #     data=[
+            #         {"value": row["element"], "label": row["description_short"]}
+            #         for row in df.to_dicts()
+            #     ],
+            #     # TODO: Use this class to hide selections. Then use dash-ag-grid to
+            #     # make  the order draggable.
+            #     # className='custom-multiselect-container',
+            #     searchable=True,
+            #     clearable=True,
+            #     placeholder="Select variables...",
+            #     size="lg",
+            #     radius="md",
+            #     hidePickedOptions=False,
+            #     leftSection=DashIconify(icon="mdi:chart-line", width=20),
+            #     comboboxProps={
+            #         "shadow": "md",
+            #         "transitionProps": {"transition": "pop", "duration": 200},
+            #     },
+            #     value=["air_temp", "ppt", "soil_vwc", "soil_temp"],
+            # ),
         ],
         gap="xs",
     )
@@ -423,20 +424,20 @@ def build_upper_info_card():
                                 radius="sm",
                                 position="top",
                                 withArrow=True,
-                            )
+                            ),
                         ],
                         style={"background-color": "#FFFFFF"},
                         grow=True,
                     ),
                     dmc.TabsPanel(
                         dmc.ScrollArea(
-                            "wind rose", 
+                            "wind rose",
                             h=300,  # Fixed height
                             type="scroll",
                             scrollbarSize=8,
-                        ), 
-                        value="wind-rose-tab", 
-                        id="wind-rose-panel"
+                        ),
+                        value="wind-rose-tab",
+                        id="wind-rose-panel",
                     ),
                     dmc.TabsPanel(
                         dmc.ScrollArea(
@@ -444,22 +445,30 @@ def build_upper_info_card():
                                 [
                                     dmc.Space(h=10),
                                     dmc.Group(
-                                        [dmc.ChipGroup(
-                                            [
-                                                dmc.Chip("North", value="N"),
-                                                dmc.Chip("South", value="S"),
-                                            ],
-                                            multiple=False,
-                                            value="N",
-                                            id="photo-chipgroup",
-                                        ),
-                                        dmc.Select(id="photo-datetimes", data=[{"value": dt.date.today(), "label": dt.date.today()}])],
+                                        [
+                                            dmc.ChipGroup(
+                                                [
+                                                    dmc.Chip("North", value="N"),
+                                                    dmc.Chip("South", value="S"),
+                                                ],
+                                                multiple=False,
+                                                value="N",
+                                                id="photo-chipgroup",
+                                            ),
+                                            dmc.Select(
+                                                id="photo-datetimes",
+                                                data=[
+                                                    {
+                                                        "value": dt.date.today(),
+                                                        "label": dt.date.today(),
+                                                    }
+                                                ],
+                                            ),
+                                        ],
                                         justify="center",
                                     ),
                                     dmc.Space(h=10),
-                                    dmc.Container(
-                                        id="photo-container"
-                                    )
+                                    dmc.Container(id="photo-container"),
                                 ]
                             ),
                             h=300,  # Fixed height
@@ -507,6 +516,7 @@ def build_upper_info_card():
         h=400,  # Fixed height for the entire card
     )
 
+
 def build_lower_info_card(stations):
     return dmc.Paper(
         [
@@ -541,12 +551,12 @@ def build_lower_info_card(stations):
                     ),
                     dmc.TabsPanel(
                         dmc.ScrollArea(
-                            build_station_map(stations), 
+                            build_station_map(stations),
                             h=300,  # Fixed height
                             type="scroll",
                             scrollbarSize=8,
-                        ), 
-                        value="locator-map-tab"
+                        ),
+                        value="locator-map-tab",
                     ),
                     dmc.TabsPanel(
                         dmc.ScrollArea(
@@ -750,8 +760,18 @@ def build_app_header():
 
 
 classes = [0, 10, 20, 50, 100, 200, 500, 1000]
-colorscale = ["#FFEDA0", "#FED976", "#FEB24C", "#FD8D3C", "#FC4E2A", "#E31A1C", "#BD0026", "#800026"]
+colorscale = [
+    "#FFEDA0",
+    "#FED976",
+    "#FEB24C",
+    "#FD8D3C",
+    "#FC4E2A",
+    "#E31A1C",
+    "#BD0026",
+    "#800026",
+]
 style = dict(weight=2, opacity=1, color="white", dashArray="3", fillOpacity=0.7)
+
 
 def build_station_map(stations: pl.DataFrame) -> dmc.Container:
     stations = stations.rename({"latitude": "lat", "longitude": "lon"})
@@ -769,10 +789,17 @@ def build_station_map(stations: pl.DataFrame) -> dmc.Container:
                             dl.TileLayer(),
                             dl.GeoJSON(
                                 url="/home/cbrust/git/mesonet-dashboard/app/mdb/assets/us-states.json",
-                                    zoomToBounds=True,  # when true, zooms to bounds when data changes (e.g. on load)
-    zoomToBoundsOnClick=True,  # when true, zooms to bounds of feature (e.g. polygon) on click
-    hoverStyle=arrow_function(dict(weight=5, color="#666", dashArray="")),  # style applied on hover
-    hideout=dict(colorscale=colorscale, classes=classes, style=style, colorProp="density"),
+                                zoomToBounds=True,  # when true, zooms to bounds when data changes (e.g. on load)
+                                zoomToBoundsOnClick=True,  # when true, zooms to bounds of feature (e.g. polygon) on click
+                                hoverStyle=arrow_function(
+                                    dict(weight=5, color="#666", dashArray="")
+                                ),  # style applied on hover
+                                hideout=dict(
+                                    colorscale=colorscale,
+                                    classes=classes,
+                                    style=style,
+                                    colorProp="density",
+                                ),
                             ),
                             dl.GeoJSON(
                                 data=dlx.dicts_to_geojson(stations.to_dicts()),
@@ -926,9 +953,10 @@ def create_forecast_widget(forecast):
         )
     ]
 
+
 @lru_cache(maxsize=1)
 def build_layout() -> dmc.AppShell:
-    print('api calls')
+    print("api calls")
     stations = get_stations()
     elements = get_elements()
     photos = get_photo_config()
@@ -958,85 +986,87 @@ def build_layout() -> dmc.AppShell:
                 p="xl",
                 style={"overflow-y": "scroll"},
             ),
-                dmc.AppShellMain(
-        dmc.Tabs(
-            [
-                dmc.TabsList(
+            dmc.AppShellMain(
+                dmc.Tabs(
                     [
-                        dmc.TabsTab(
-                            "Latest Data",
+                        dmc.TabsList(
+                            [
+                                dmc.TabsTab(
+                                    "Latest Data",
+                                    value="latest-data-tab",
+                                    leftSection=DashIconify(
+                                        icon="mdi:chart-timeline-variant", width=18
+                                    ),
+                                ),
+                                dmc.TabsTab(
+                                    "Ag Tools",
+                                    value="ag-tools-tab",
+                                    leftSection=DashIconify(
+                                        icon="mdi:sprout", width=18
+                                    ),
+                                ),
+                                dmc.TabsTab(
+                                    "Satellite Indicators",
+                                    value="satellite-indicators-tab",
+                                    leftSection=DashIconify(
+                                        icon="mdi:satellite-variant", width=18
+                                    ),
+                                ),
+                            ],
+                            style={"background-color": "#FFFFFF"},
+                            grow=True,
+                        ),
+                        dmc.TabsPanel(
+                            build_latest_data_tab_content(stations),
                             value="latest-data-tab",
-                            leftSection=DashIconify(
-                                icon="mdi:chart-timeline-variant", width=18
-                            ),
                         ),
-                        dmc.TabsTab(
-                            "Ag Tools",
+                        # Add your other tab panels here with ScrollArea if needed
+                        dmc.TabsPanel(
+                            dmc.ScrollArea(
+                                dmc.Container(
+                                    [
+                                        dmc.Space(h=30),
+                                        dmc.Text("Ag Tools content goes here"),
+                                    ],
+                                    fluid=True,
+                                ),
+                                h="calc(100vh - 200px)",
+                                type="scroll",
+                                scrollbarSize=10,
+                            ),
                             value="ag-tools-tab",
-                            leftSection=DashIconify(
-                                icon="mdi:sprout", width=18
-                            ),
                         ),
-                        dmc.TabsTab(
-                            "Satellite Indicators",
-                            value="satellite-indicators-tab",
-                            leftSection=DashIconify(
-                                icon="mdi:satellite-variant", width=18
+                        dmc.TabsPanel(
+                            dmc.ScrollArea(
+                                dmc.Container(
+                                    [
+                                        dmc.Space(h=30),
+                                        dmc.Text(
+                                            "Satellite Indicators content goes here"
+                                        ),
+                                    ],
+                                    fluid=True,
+                                ),
+                                h="calc(100vh - 200px)",
+                                type="scroll",
+                                scrollbarSize=10,
                             ),
+                            value="satellite-indicators-tab",
                         ),
                     ],
-                    style={"background-color": "#FFFFFF"},
-                    grow=True,
-                ),
-                dmc.TabsPanel(
-                    build_latest_data_tab_content(stations),
                     value="latest-data-tab",
+                    variant="default",
+                    radius="xs",
+                    autoContrast=False,
+                    id="page-tabs",
                 ),
-                # Add your other tab panels here with ScrollArea if needed
-                dmc.TabsPanel(
-                    dmc.ScrollArea(
-                        dmc.Container(
-                            [
-                                dmc.Space(h=30),
-                                dmc.Text("Ag Tools content goes here"),
-                            ],
-                            fluid=True,
-                        ),
-                        h="calc(100vh - 200px)",
-                        type="scroll",
-                        scrollbarSize=10,
-                    ),
-                    value="ag-tools-tab",
-                ),
-                dmc.TabsPanel(
-                    dmc.ScrollArea(
-                        dmc.Container(
-                            [
-                                dmc.Space(h=30),
-                                dmc.Text("Satellite Indicators content goes here"),
-                            ],
-                            fluid=True,
-                        ),
-                        h="calc(100vh - 200px)",
-                        type="scroll",
-                        scrollbarSize=10,
-                    ),
-                    value="satellite-indicators-tab",
-                ),
-            ],
-            value="latest-data-tab",
-            variant="default",
-            radius="xs",
-            autoContrast=False,
-            id="page-tabs",
-        ),
-        w="100%",
-        style={
-            "height": "100vh",
-            "background-color": "#F5F5F5",
-            "overflow": "hidden",  # Prevent main container from scrolling
-        },
-    ),
+                w="100%",
+                style={
+                    "height": "100vh",
+                    "background-color": "#F5F5F5",
+                    "overflow": "hidden",  # Prevent main container from scrolling
+                },
+            ),
         ],
         header={"height": 100},
         padding="md",

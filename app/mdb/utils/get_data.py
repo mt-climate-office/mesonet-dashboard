@@ -132,20 +132,18 @@ def get_forecast_data(lat: float, lon: float) -> list[dict[str, Any]] | str:
 
 
 def get_photo_config():
-    r = httpx.get(
-        f"{API_URL}photos?type=csv"
-    )
+    r = httpx.get(f"{API_URL}photos?type=csv")
 
     if r.status_code == 200:
         df = pl.read_csv(r.content)
         df = df.with_columns(
             pl.col("Photo Directions")
-                .map_elements(
-                    lambda x: re.findall(r"'(\w+)", x) if isinstance(x, str) else [],
-                    return_dtype=pl.List(pl.Utf8)
-                )
-                .alias("Photo Directions"),
-            pl.col("Photo Start Date").str.strptime(pl.Date, "%Y-%m-%d", strict=False)
+            .map_elements(
+                lambda x: re.findall(r"'(\w+)", x) if isinstance(x, str) else [],
+                return_dtype=pl.List(pl.Utf8),
+            )
+            .alias("Photo Directions"),
+            pl.col("Photo Start Date").str.strptime(pl.Date, "%Y-%m-%d", strict=False),
         )
 
         return df
