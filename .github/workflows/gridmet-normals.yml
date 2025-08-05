@@ -31,7 +31,7 @@ jobs:
       run: mkdir -p normals
       
     - name: Run GridMet script
-      run: Rscript gridmet_normals.R
+      run: Rscript calc_normals.R
       
     - name: Commit and push changes
       run: |
