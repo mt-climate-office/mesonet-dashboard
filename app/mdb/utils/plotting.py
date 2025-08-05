@@ -37,12 +37,12 @@ def merge_normal_data(v, df, station):
         if on_server is None or not on_server:
             norm = [
                 pd.read_csv(
-                    f"~/git/mesonet-dashboard/app/mdb/normals/{station}_{x}.csv"
+                    f"https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/normals/{station}_{x}.csv"
                 )
                 for x in v_short
             ]
         else:
-            norm = [pd.read_csv(f"/app/normals/{station}_{x}.csv") for x in v_short]
+            norm = [pd.read_csv(f"https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/normals/{station}_{x}.csv") for x in v_short]
 
         norm_l = len(norm)
         norm = pd.concat(norm, axis=0)
