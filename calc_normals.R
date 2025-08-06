@@ -50,85 +50,94 @@ get_gridmet <- function(lat, lon, start_date, end_date, variable, name) {
   return(dataset)
 }
 
-station_locs <- readr::read_csv(
-  "https://mesonet.climate.umt.edu/api/v2/stations/?type=csv",
-  show_col_types = FALSE
-)
-
-existing_normals <- list.files("./normals", pattern = ".csv", full.names = T) %>%
-  basename() %>%
-  stringr::str_split("_") %>%
-  purrr::map(magrittr::extract(1)) %>%
-  unlist() %>%
-  unique()
-
-station_locs <- station_locs %>% 
-  dplyr::filter(!(station %in% existing_normals))
-
-l <- list(
-  lat = station_locs$latitude,
-  lon = station_locs$longitude,
-  start = rep(as.Date("1991-01-01"), nrow(station_locs)),
-  end = rep(as.Date("2022-01-01"), nrow(station_locs)),
-  name = station_locs$station
-)
-
-out <- purrr::map(
-  c("pet", "pr", "rmax", "rmin", "tmmn", "tmmx"),
-  function(x) {
-    purrr::pmap(
-      l,
-      purrr::possibly(
-        function(lat, lon, start, end, name) {
-          get_gridmet(
-            lat, 
-            lon, 
-            start, 
-            end, 
-            x, 
-            name
-          )
-        },
-        # Return an empty tibble if an error occurs
-        tibble::tibble()
+calc_normals <- function() {
+  station_locs <- readr::read_csv(
+    "https://mesonet.climate.umt.edu/api/v2/stations/?type=csv",
+    show_col_types = FALSE
+  )
+  
+  existing_normals <- list.files("./normals", pattern = ".csv", full.names = T) %>%
+    basename() %>%
+    stringr::str_split("_") %>%
+    purrr::map(magrittr::extract(1)) %>%
+    unlist() %>%
+    unique()
+  
+  station_locs <- station_locs %>% 
+    dplyr::filter(!(station %in% existing_normals))
+  
+  l <- list(
+    lat = station_locs$latitude,
+    lon = station_locs$longitude,
+    start = rep(as.Date("1991-01-01"), nrow(station_locs)),
+    end = rep(as.Date("2022-01-01"), nrow(station_locs)),
+    name = station_locs$station
+  )
+  
+  out <- purrr::map(
+    c("pet", "pr", "rmax", "rmin", "tmmn", "tmmx"),
+    function(x) {
+      purrr::pmap(
+        l,
+        purrr::possibly(
+          function(lat, lon, start, end, name) {
+            get_gridmet(
+              lat, 
+              lon, 
+              start, 
+              end, 
+              x, 
+              name
+            )
+          },
+          # Return an empty tibble if an error occurs
+          tibble::tibble()
+        )
       )
-    )
+    }
+  )
+  
+  if ((purrr::map(out, length) %>% unlist() %>% sum()) == 0) {
+    return("No normals to calculate...")
   }
-)
-
-
-purrr::pmap(
-  list(
-    variable = c("pet", "pr", "rmax", "rmin", "tmmn", "tmmx"),
-    dat = out
-  ), 
-  function(variable, dat) {
-    dplyr::bind_rows(dat) %>% 
-      dplyr::mutate(variable = variable)
-  }
-) %>% 
-dplyr::bind_rows() %>% 
-  dplyr::mutate(
-    value = dplyr::case_when(
-      variable %in% c("pet", "pr") ~ value / 25.4,
-      variable %in% c("tmmn", "tmmx") ~ (value - 273.15) * 1.8 + 32,
-      TRUE ~ value
-    )
+  
+  
+  purrr::pmap(
+    list(
+      variable = c("pet", "pr", "rmax", "rmin", "tmmn", "tmmx"),
+      dat = out
+    ), 
+    function(variable, dat) {
+      dplyr::bind_rows(dat) %>% 
+        dplyr::mutate(variable = variable)
+    }
   ) %>% 
-  dplyr::group_by(month, day, station, variable) %>% 
-  dplyr::summarise(
-    mean = mean(value) %>% round(4),
-    std_dev = sd(value) %>% round(4),
-    median = median(value) %>% round(4),
-    q25 = quantile(value, 0.25) %>% round(4),
-    q75 = quantile(value, 0.75) %>% round(4)
-  ) %>% 
-  dplyr::mutate(type = "daily") %>% 
-  dplyr::group_by(station, variable) %>% 
-  dplyr::group_split() %>% 
-  purrr::map(function(x) {
-    name = glue::glue("{x$station[1]}_{x$variable[1]}.csv")
-    name = file.path("./normals", name)
-    readr::write_csv(x, name)
-  })
+    dplyr::bind_rows() %>% 
+    dplyr::mutate(
+      value = dplyr::case_when(
+        variable %in% c("pet", "pr") ~ value / 25.4,
+        variable %in% c("tmmn", "tmmx") ~ (value - 273.15) * 1.8 + 32,
+        TRUE ~ value
+      )
+    ) %>% 
+    dplyr::group_by(month, day, station, variable) %>% 
+    dplyr::summarise(
+      mean = mean(value) %>% round(4),
+      std_dev = sd(value) %>% round(4),
+      median = median(value) %>% round(4),
+      q25 = quantile(value, 0.25) %>% round(4),
+      q75 = quantile(value, 0.75) %>% round(4)
+    ) %>% 
+    dplyr::mutate(type = "daily") %>% 
+    dplyr::group_by(station, variable) %>% 
+    dplyr::group_split() %>% 
+    purrr::map(function(x) {
+      name = glue::glue("{x$station[1]}_{x$variable[1]}.csv")
+      name = file.path("./normals", name)
+      readr::write_csv(x, name)
+    })
+  
+  return("Normals calculated for missing stations.")
+}
 
+calc_normals()
