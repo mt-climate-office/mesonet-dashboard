@@ -979,22 +979,22 @@ def build_satellite_ts_selector():
                                     {"value": "LAI", "label": "LAI"},
                                     {"value": "NDVI", "label": "NDVI"},
                                     {"value": "PET", "label": "PET"},
-                                    {
-                                        "label": "Rootzone Soil Moisture",
-                                        "value": "sm_rootzone",
-                                    },
-                                    {
-                                        "label": "Rootzone Soil Saturation",
-                                        "value": "sm_rootzone_wetness",
-                                    },
-                                    {
-                                        "label": "Surface Soil Moisture",
-                                        "value": "sm_surface",
-                                    },
-                                    {
-                                        "label": "Surface Soil Saturation",
-                                        "value": "sm_surface_wetness",
-                                    },
+                                    # {
+                                    #     "label": "Rootzone Soil Moisture",
+                                    #     "value": "sm_rootzone",
+                                    # },
+                                    # {
+                                    #     "label": "Rootzone Soil Saturation",
+                                    #     "value": "sm_rootzone_wetness",
+                                    # },
+                                    # {
+                                    #     "label": "Surface Soil Moisture",
+                                    #     "value": "sm_surface",
+                                    # },
+                                    # {
+                                    #     "label": "Surface Soil Saturation",
+                                    #     "value": "sm_surface_wetness",
+                                    # },
                                 ],
                                 inline=True,
                                 id="sat-vars",

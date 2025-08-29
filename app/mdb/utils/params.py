@@ -9,15 +9,15 @@ on_server = os.getenv("ON_SERVER")
 
 if on_server is None or not on_server:
     elements_df = pd.read_csv(
-        "https://mesonet.climate.umt.edu/api/v2/elements?type=csv"
+        "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/elements?type=csv"
     )
-    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
+    API_URL = "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/"
 
 else:
     elements_df = pd.read_csv(
-        "https://mesonet.climate.umt.edu/api/v2/elements?type=csv"
+        "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/elements?type=csv"
     )
-    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
+    API_URL = "https://fcfc-mesonet-staging.cfc.umt.edu/api/v2/"
 
 
 @dataclass
@@ -312,10 +312,10 @@ class params:
     ]
 
     satellite_var_mapper = {
-        "sm_surface": "Surface Soil Moisture",
-        "sm_surface_wetness": "Surface Soil Saturation",
-        "sm_rootzone": "Rootzone Soil Moisture",
-        "sm_rootzone_wetness": "Rootzone Soil Saturation",
+        # "sm_surface": "Surface Soil Moisture",
+        # "sm_surface_wetness": "Surface Soil Saturation",
+        # "sm_rootzone": "Rootzone Soil Moisture",
+        # "sm_rootzone_wetness": "Rootzone Soil Saturation",
         "GPP": "Gross Primary Production",
         "ET": "Evapotranspiration",
         "PET": "Potential Evapotranspiration",
@@ -337,10 +337,10 @@ class params:
     }
 
     sat_axis_mapper = {
-        "sm_surface": "Surface Soil<br>VWC (%)",
-        "sm_surface_wetness": "Surface<br>Soil Saturation",
-        "sm_rootzone": "Rootzone Soil<br>VWC (%)",
-        "sm_rootzone_wetness": "Rootzone<br>Soil Saturation",
+        # "sm_surface": "Surface Soil<br>VWC (%)",
+        # "sm_surface_wetness": "Surface<br>Soil Saturation",
+        # "sm_rootzone": "Rootzone Soil<br>VWC (%)",
+        # "sm_rootzone_wetness": "Rootzone<br>Soil Saturation",
         "GPP": "GPP<br>(g C m^-2)",
         "ET": "ET<br>(mm day^-1)",
         "PET": "PET<br>(mm day^-1)",
@@ -376,8 +376,8 @@ class params:
         "EVI (VIIRS)": "EVI-VNP13A1.001",
         "LAI (MODIS Aqua)": "LAI-MYD15A2H.061",
         "LAI (MODIS Terra)": "LAI-MOD15A2H.061",
-        "Surface VWC (SMAP L4SM)": "sm_surface-SPL4SMGP.006",
-        "Surface Sat. (SMAP L4SM)": "sm_surface_wetness-SPL4SMGP.006",
-        "Rootzone VWC (SMAP L4SM)": "sm_rootzone-SPL4SMGP.006",
-        "Rootzone Sat. (SMAP L4SM)": "sm_rootzone_wetness-SPL4SMGP.006",
+        # "Surface VWC (SMAP L4SM)": "sm_surface-SPL4SMGP.006",
+        # "Surface Sat. (SMAP L4SM)": "sm_surface_wetness-SPL4SMGP.006",
+        # "Rootzone VWC (SMAP L4SM)": "sm_rootzone-SPL4SMGP.006",
+        # "Rootzone Sat. (SMAP L4SM)": "sm_rootzone_wetness-SPL4SMGP.006",
     }
