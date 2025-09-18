@@ -1315,7 +1315,7 @@ def update_ul_card(
                     style={"padding": "0rem 0rem 1rem 0rem"},
                 ),
                 html.Div(
-                    dcc.Graph(
+                    dmc.Container(
                         id="photo-figure",  # style={"height": "34vh", "width": "30vw"}
                     ),
                     style={
@@ -1355,7 +1355,7 @@ def disable_gridmet_switch(period: str) -> List[Dict[str, Union[str, int, bool]]
 
 
 @app.callback(
-    Output("photo-figure", "figure"),
+    Output("photo-figure", "children"),
     [
         Input("station-dropdown", "value"),
         Input("photo-direction", "value"),
@@ -1383,8 +1383,10 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
         - Uses Montana Mesonet photo API for image retrieval
         - Returns appropriate figure for display in dashboard
     """
-    return plt.plot_latest_ace_image(station, direction=direction, dt=dt)
-
+    return dmc.Image(
+        radius="md",
+        src=f"https://mesonet.climate.umt.edu/api/photos/{station}/{direction.lower()}?dt={dt}&force=True",
+    )
 
 @app.callback(
     [Output("station-modal", "children"), Output("station-modal", "is_open")],
