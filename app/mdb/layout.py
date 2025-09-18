@@ -1,8 +1,28 @@
+"""
+Layout Components for Montana Mesonet Dashboard
+
+This module defines the user interface layout components for the Montana Mesonet
+Dashboard. It provides functions to build various UI elements including navigation,
+cards, forms, and content areas using Dash Bootstrap Components and Dash Mantine.
+
+Key Components:
+- Banner and navigation elements
+- Multi-tab content areas for different data views
+- Form controls for data selection and filtering
+- Modal dialogs for help and feedback
+- Responsive layout containers for different screen sizes
+
+The module emphasizes responsive design, accessibility, and consistent styling
+throughout the dashboard interface.
+"""
+
 import datetime as dt
+from typing import Any, List, Optional
 
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
 import dash_mantine_components as dmc
+import pandas as pd
 from dash import dcc, html
 from dash_iconify import DashIconify
 from dateutil.relativedelta import relativedelta as rd
@@ -41,7 +61,23 @@ SELECTED_STYLE = {
 }
 
 
-def generate_modal():
+def generate_modal() -> html.Div:
+    """
+    Generate the help/information modal dialog.
+
+    Creates a modal dialog containing comprehensive information about the
+    Montana Mesonet Dashboard, including usage instructions, background
+    information, and contact details.
+
+    Returns:
+        html.Div: Modal dialog component with dashboard information.
+
+    Note:
+        - Contains markdown-formatted content with links
+        - Includes usage instructions and contact information
+        - Provides background on the Montana Mesonet network
+        - Links to external resources and documentation
+    """
     return html.Div(
         dbc.Modal(
             [
@@ -87,7 +123,22 @@ def generate_modal():
     )
 
 
-def feedback_iframe():
+def feedback_iframe() -> html.Div:
+    """
+    Generate the feedback modal dialog with embedded form.
+
+    Creates a modal dialog containing an embedded Airtable feedback form
+    for users to submit bug reports, feature requests, and general feedback.
+
+    Returns:
+        html.Div: Modal dialog component with embedded feedback form.
+
+    Note:
+        - Embeds external Airtable form for feedback collection
+        - Uses full-height modal for better form visibility
+        - Includes appropriate styling for iframe integration
+        - Provides scrollable content for longer forms
+    """
     return html.Div(
         dbc.Modal(
             [
@@ -119,7 +170,25 @@ def feedback_iframe():
     )
 
 
-def build_banner(app_ref):
+def build_banner(app_ref: Any) -> dbc.Navbar:
+    """
+    Build the main navigation banner for the dashboard.
+
+    Creates the top navigation bar containing the Montana Climate Office logo,
+    dashboard title, and action buttons for feedback, help, and sharing.
+
+    Args:
+        app_ref (Any): Dash application reference for asset URL generation.
+
+    Returns:
+        dbc.Navbar: Bootstrap navbar component with logo, title, and buttons.
+
+    Note:
+        - Logo links to Montana Climate Office website
+        - Title is dynamically updated based on selected station
+        - Includes buttons for user feedback, help, and plot sharing
+        - Uses responsive design for different screen sizes
+    """
     return dbc.Navbar(
         dbc.Container(
             [
@@ -196,7 +265,23 @@ def build_banner(app_ref):
     )
 
 
-def build_top_left_card():
+def build_top_left_card() -> dbc.Card:
+    """
+    Build the top-left card with wind rose, forecast, and photo tabs.
+
+    Creates a tabbed card component that displays wind roses, weather forecasts,
+    and station photos (when available). The photo tab is initially disabled
+    and enabled dynamically for HydroMet stations.
+
+    Returns:
+        dbc.Card: Bootstrap card with tabbed content for wind/weather/photo data.
+
+    Note:
+        - Wind rose tab shows aggregated wind conditions
+        - Weather forecast tab embeds NWS forecast
+        - Photo tab is only available for HydroMet stations with cameras
+        - Uses overflow clipping to maintain card dimensions
+    """
     return dbc.Card(
         [
             dbc.CardHeader(
@@ -226,7 +311,26 @@ def build_top_left_card():
     )
 
 
-def build_bottom_left_card(station_fig):
+def build_bottom_left_card(station_fig: Any) -> dbc.Card:
+    """
+    Build the bottom-left card with map, metadata, and current conditions tabs.
+
+    Creates a tabbed card that displays the station locator map, metadata table,
+    and current conditions summary. Content switches dynamically based on
+    selected tab and station.
+
+    Args:
+        station_fig (Any): Initial station map figure or iframe component.
+
+    Returns:
+        dbc.Card: Bootstrap card with tabbed content for station information.
+
+    Note:
+        - Map tab shows interactive station locations
+        - Metadata tab displays station details and specifications
+        - Current conditions tab shows latest observations and summaries
+        - Default active tab is "data-tab" for current conditions
+    """
     return dbc.Card(
         [
             dbc.CardHeader(
@@ -255,7 +359,30 @@ def build_bottom_left_card(station_fig):
     )
 
 
-def make_station_dropdowns(stations, id, station):
+def make_station_dropdowns(
+    stations: pd.DataFrame, id: str, station: Optional[str]
+) -> dbc.Select:
+    """
+    Create a station selection dropdown component.
+
+    Generates a Bootstrap select dropdown populated with all available
+    Montana Mesonet stations, using long names for display and short
+    names for values.
+
+    Args:
+        stations (pd.DataFrame): DataFrame containing station metadata.
+        id (str): HTML element ID for the dropdown component.
+        station (Optional[str]): Initially selected station value.
+
+    Returns:
+        dbc.Select: Bootstrap select component with station options.
+
+    Note:
+        - Uses long_name for display labels (includes network info)
+        - Uses station short name for option values
+        - Includes placeholder text for better UX
+        - Can be used for multiple dropdowns with different IDs
+    """
     return dbc.Select(
         options=[
             {"label": k, "value": v}
@@ -269,7 +396,27 @@ def make_station_dropdowns(stations, id, station):
     )
 
 
-def build_dropdowns(stations):
+def build_dropdowns(stations: pd.DataFrame) -> dbc.Container:
+    """
+    Build the main control panel with dropdowns and selection options.
+
+    Creates a comprehensive control interface including station selection,
+    date range picker, temporal aggregation options, network filters,
+    and variable selection checkboxes.
+
+    Args:
+        stations (pd.DataFrame): DataFrame containing station metadata.
+
+    Returns:
+        dbc.Container: Bootstrap container with organized control rows.
+
+    Note:
+        - First row: Station dropdown, date picker, period of record button
+        - Second row: Time aggregation, gridMET normals, network filters, help link
+        - Third row: Variable selection checkboxes with horizontal scrolling
+        - Includes tooltips for user guidance
+        - Uses responsive column widths for different screen sizes
+    """
     checklist_input = dbc.InputGroup(
         dbc.InputGroupText(
             [
@@ -420,7 +567,27 @@ def build_dropdowns(stations):
     )
 
 
-def build_right_card(stations):
+def build_right_card(stations: pd.DataFrame) -> dbc.Card:
+    """
+    Build the main plotting card with controls and graph area.
+
+    Creates the primary visualization card containing the control panel
+    in the header and the main plotting area in the body, with loading
+    indicators and data storage components.
+
+    Args:
+        stations (pd.DataFrame): DataFrame containing station metadata.
+
+    Returns:
+        dbc.Card: Bootstrap card with controls header and plotting body.
+
+    Note:
+        - Header contains all user controls (dropdowns, date pickers, etc.)
+        - Body contains the main plotting area with loading spinner
+        - Includes session storage for temporary station data
+        - Uses vertical scrolling for overflow content
+        - Maintains full height within parent container
+    """
     selectors = build_dropdowns(stations)
 
     return dbc.Card(
@@ -448,7 +615,28 @@ def build_right_card(stations):
     )
 
 
-def build_latest_content(station_fig, stations):
+def build_latest_content(station_fig: Any, stations: pd.DataFrame) -> List[dbc.Col]:
+    """
+    Build the main station data view layout with responsive columns.
+
+    Creates a two-column layout with the main plotting area on the right
+    and supplementary information cards on the left. Uses responsive
+    Bootstrap grid system for different screen sizes.
+
+    Args:
+        station_fig (Any): Initial station map figure or component.
+        stations (pd.DataFrame): DataFrame containing station metadata.
+
+    Returns:
+        List[dbc.Col]: List of Bootstrap column components for the layout.
+
+    Note:
+        - Left column (4/12 on large screens): Wind/weather/photo and map/metadata/conditions cards
+        - Right column (8/12 on large screens): Main plotting area with controls
+        - Responsive design: stacks vertically on smaller screens
+        - Uses viewport height constraints (92vh) to prevent overflow
+        - Includes proper padding and spacing between elements
+    """
     return [
         dbc.Col(
             [
@@ -677,7 +865,26 @@ def build_downloader_content(
     ]
 
 
-def build_gdd_selector():
+def build_gdd_selector() -> List[Any]:
+    """
+    Build the Growing Degree Day (GDD) crop selection interface.
+
+    Creates a control panel for selecting crop types and temperature
+    thresholds for growing degree day calculations, used in the
+    derived variables section.
+
+    Returns:
+        List[Any]: List of Dash Mantine Components for GDD selection:
+            - Centered text label
+            - Chip group for crop type selection
+            - Range slider for temperature thresholds (disabled by default)
+
+    Note:
+        - Supports common Montana crops (wheat, barley, canola, etc.)
+        - Default selection is wheat with 50-86°F range
+        - Range slider is disabled initially (controlled by crop selection)
+        - Uses Dash Mantine Components for modern UI styling
+    """
     gdd_items = [
         ("wheat", "Wheat"),
         ("barley", "Barley"),
@@ -851,14 +1058,16 @@ def build_derived_dropdowns(
             ),
             dmc.Col(
                 id="derived-annual-panel",
-                children=dmc.Stack([
-                    dmc.Select(
-                        id="annual-dropdown",
-                        label="Comparison Variable",
-                        placeholder="Select a Variable..."
-                    )
-                ]),
-                span=4
+                children=dmc.Stack(
+                    [
+                        dmc.Select(
+                            id="annual-dropdown",
+                            label="Comparison Variable",
+                            placeholder="Select a Variable...",
+                        )
+                    ]
+                ),
+                span=4,
             ),
             dmc.Col(
                 id="derived-timeagg-panel",

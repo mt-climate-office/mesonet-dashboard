@@ -1,6 +1,26 @@
+"""
+Plotting Utilities for Montana Mesonet Dashboard
+
+This module provides comprehensive plotting functions for visualizing meteorological
+data, station maps, and time series analysis. It handles different data types
+including precipitation, temperature, soil measurements, and wind data.
+
+Key Functions:
+- plot_site(): Main function for creating multi-panel station plots
+- plot_station(): Interactive map of all stations
+- plot_wind(): Wind rose diagrams
+- plot_ppt(): Precipitation bar charts with normals
+- plot_soil(): Multi-depth soil parameter visualizations
+- plot_met(): General meteorological time series
+- style_figure(): Consistent plot styling and formatting
+
+The module supports various plot types, normal overlays, sensor change annotations,
+and responsive design for the web dashboard.
+"""
+
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import geojson
 import numpy as np
@@ -16,7 +36,29 @@ from mdb.utils.params import params
 on_server = os.getenv("ON_SERVER")
 
 
-def style_figure(fig, x_ticks=None, legend=False):
+def style_figure(
+    fig: go.Figure, x_ticks: Optional[List] = None, legend: bool = False
+) -> go.Figure:
+    """
+    Apply consistent styling to plotly figures.
+
+    Standardizes the appearance of plots throughout the dashboard with
+    transparent backgrounds, grid lines, and optional legend display.
+
+    Args:
+        fig (go.Figure): Plotly figure object to style.
+        x_ticks (Optional[List]): X-axis range limits [start, end]. If provided,
+            applies to all x-axes in the figure.
+        legend (bool): Whether to show the legend. Defaults to False.
+
+    Returns:
+        go.Figure: Styled figure with consistent formatting applied.
+
+    Note:
+        - Sets transparent plot background for web integration
+        - Adds grey grid lines for better readability
+        - Applies x-axis ranges to all subplots when specified
+    """
     fig.update_layout({"plot_bgcolor": "rgba(0, 0, 0, 0)"})
     fig.update_xaxes(showgrid=True, gridcolor="grey")
     fig.update_yaxes(showgrid=True, gridcolor="grey")
@@ -31,7 +73,29 @@ def style_figure(fig, x_ticks=None, legend=False):
     return fig
 
 
-def merge_normal_data(v, df, station):
+def merge_normal_data(v: str, df: pd.DataFrame, station: str) -> Optional[pd.DataFrame]:
+    """
+    Merge climatological normal data with station observations.
+
+    Retrieves and merges gridMET climate normals (1991-2020) with station
+    data to provide historical context for current conditions. Handles
+    different variable types and temporal aggregations.
+
+    Args:
+        v (str): Variable name to get normals for (e.g., "Air Temperature [°F]").
+        df (pd.DataFrame): Station data with datetime column.
+        station (str): Station identifier for normal data lookup.
+
+    Returns:
+        Optional[pd.DataFrame]: DataFrame with added normal columns (mn, mx, avg)
+            if normals are available, None if no normals exist for the variable.
+
+    Note:
+        - Normals are only shown at daily resolution (hour == 0)
+        - Temperature and humidity use separate min/max normal files
+        - Other variables use single normal files with quantiles
+        - Normal data is fetched from GitHub repository
+    """
     v_short = params.short_name_mapper.get(v, None)
     if v_short:
         if on_server is None or not on_server:
@@ -42,7 +106,12 @@ def merge_normal_data(v, df, station):
                 for x in v_short
             ]
         else:
-            norm = [pd.read_csv(f"https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/normals/{station}_{x}.csv") for x in v_short]
+            norm = [
+                pd.read_csv(
+                    f"https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/normals/{station}_{x}.csv"
+                )
+                for x in v_short
+            ]
 
         norm_l = len(norm)
         norm = pd.concat(norm, axis=0)
@@ -106,14 +175,23 @@ def plot_soil(dat, config, **kwargs):
     unit = {"Soil VWC": "%", "Soil Temperature": "°F", "Bulk EC": "mS/cm"}
 
     unit = unit[kwargs["txt"]]
-    valid_config_elems = [x for x in config["elements"] if x in dat["elem_lab"].drop_duplicates().tolist()]
+    valid_config_elems = [
+        x for x in config["elements"] if x in dat["elem_lab"].drop_duplicates().tolist()
+    ]
     config = config.copy()[config["elements"].isin(valid_config_elems)]
-    sensor_additions = config[pd.to_datetime(config['date_start']).dt.tz_localize("America/Denver") >= pd.to_datetime(dat['datetime'].min())]
-    sensor_additions = sensor_additions.groupby("date_start").agg(
-        {
-            "elements": lambda x: ",<br>".join(x),
-        }
-    ).reset_index()
+    sensor_additions = config[
+        pd.to_datetime(config["date_start"]).dt.tz_localize("America/Denver")
+        >= pd.to_datetime(dat["datetime"].min())
+    ]
+    sensor_additions = (
+        sensor_additions.groupby("date_start")
+        .agg(
+            {
+                "elements": lambda x: ",<br>".join(x),
+            }
+        )
+        .reset_index()
+    )
 
     fig = px.line(
         dat,
@@ -151,20 +229,25 @@ def plot_soil(dat, config, **kwargs):
         # Add transparent trace for hovertext
         fig.add_trace(
             go.Scatter(
-            x=[first, first, second, second, first],
-            y=[dat['value'].min(), dat['value'].max(), dat['value'].max(), dat['value'].min(), dat['value'].min()],
-            fill="toself",
-            mode="lines",
-            line=dict(color="rgba(200,200,200,0.5)", width=0),
-            showlegend=False,
-            name="",  # Add this line to remove "trace 1" from the legend
-            text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
-            opacity=0.5,
+                x=[first, first, second, second, first],
+                y=[
+                    dat["value"].min(),
+                    dat["value"].max(),
+                    dat["value"].max(),
+                    dat["value"].min(),
+                    dat["value"].min(),
+                ],
+                fill="toself",
+                mode="lines",
+                line=dict(color="rgba(200,200,200,0.5)", width=0),
+                showlegend=False,
+                name="",  # Add this line to remove "trace 1" from the legend
+                text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
+                opacity=0.5,
             )
         )
         # Move the last trace (the transparent marker) to the frontmost layer
         fig.data = fig.data[:-1] + (fig.data[-1],)
-
 
     fig.update_layout(hovermode="x unified")
 
@@ -172,17 +255,24 @@ def plot_soil(dat, config, **kwargs):
 
 
 def plot_met(dat, config, **kwargs):
-    elem_columns = [x for x in dat.columns if x not in ['datetime']]
+    elem_columns = [x for x in dat.columns if x not in ["datetime"]]
     valid_config_elems = [x for x in config["elements"] if x in elem_columns]
     config = config.copy()[config["elements"].isin(valid_config_elems)]
-    sensor_additions = config[pd.to_datetime(config['date_start']).dt.tz_localize("America/Denver") >= pd.to_datetime(dat['datetime'].min())]
-    sensor_additions = sensor_additions.groupby("date_start").agg(
-        {
-            "elements": lambda x: ",\n".join(x),
-        }
-    ).reset_index()
+    sensor_additions = config[
+        pd.to_datetime(config["date_start"]).dt.tz_localize("America/Denver")
+        >= pd.to_datetime(dat["datetime"].min())
+    ]
+    sensor_additions = (
+        sensor_additions.groupby("date_start")
+        .agg(
+            {
+                "elements": lambda x: ",\n".join(x),
+            }
+        )
+        .reset_index()
+    )
 
-    #TODO: Debug cherry ridge temperature sensor swap
+    # TODO: Debug cherry ridge temperature sensor swap
 
     variable_text = dat.columns.tolist()[-1]
     station_name = kwargs["station"]["station"].values[0]
@@ -225,11 +315,11 @@ def plot_met(dat, config, **kwargs):
 
         fig.add_trace(mx_line)
         fig.add_trace(mn_line)
-    
+
     for _, row in sensor_additions.iterrows():
         # Determine width based on date range
-        date_min = pd.to_datetime(dat['datetime'].min())
-        date_max = pd.to_datetime(dat['datetime'].max())
+        date_min = pd.to_datetime(dat["datetime"].min())
+        date_max = pd.to_datetime(dat["datetime"].max())
         if (date_max - date_min) <= pd.Timedelta(days=31):
             vrect_width = pd.Timedelta(hours=6)
         else:
@@ -248,15 +338,21 @@ def plot_met(dat, config, **kwargs):
         # Add transparent trace for hovertext
         fig.add_trace(
             go.Scatter(
-            x=[first, first, second, second, first],
-            y=[dat[variable_text].min(), dat[variable_text].max(), dat[variable_text].max(), dat[variable_text].min(), dat[variable_text].min()],
-            fill="toself",
-            mode="lines",
-            line=dict(color="rgba(200,200,200,0.5)", width=0),
-            showlegend=False,
-            name="",
-            text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
-            opacity=0.5,
+                x=[first, first, second, second, first],
+                y=[
+                    dat[variable_text].min(),
+                    dat[variable_text].max(),
+                    dat[variable_text].max(),
+                    dat[variable_text].min(),
+                    dat[variable_text].min(),
+                ],
+                fill="toself",
+                mode="lines",
+                line=dict(color="rgba(200,200,200,0.5)", width=0),
+                showlegend=False,
+                name="",
+                text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
+                opacity=0.5,
             )
         )
 
@@ -311,15 +407,22 @@ def add_boxplot_normals(fig, norms):
 
 
 def plot_ppt(dat, config, **kwargs):
-    elem_columns = [x for x in dat.columns if x not in ['datetime']]
+    elem_columns = [x for x in dat.columns if x not in ["datetime"]]
     valid_config_elems = [x for x in config["elements"] if x in elem_columns]
     config = config.copy()[config["elements"].isin(valid_config_elems)]
-    sensor_additions = config[pd.to_datetime(config['date_start']).dt.tz_localize("America/Denver") >= pd.to_datetime(dat['datetime'].min())]
-    sensor_additions = sensor_additions.groupby("date_start").agg(
-        {
-            "elements": lambda x: ",\n".join(x),
-        }
-    ).reset_index()
+    sensor_additions = config[
+        pd.to_datetime(config["date_start"]).dt.tz_localize("America/Denver")
+        >= pd.to_datetime(dat["datetime"].min())
+    ]
+    sensor_additions = (
+        sensor_additions.groupby("date_start")
+        .agg(
+            {
+                "elements": lambda x: ",\n".join(x),
+            }
+        )
+        .reset_index()
+    )
 
     station_name = kwargs["station"]["station"].values[0]
     variable_text = dat.columns.tolist()[-1]
@@ -333,7 +436,7 @@ def plot_ppt(dat, config, **kwargs):
         dat["datetime"] = pd.to_datetime(dat.datetime)
         norms = merge_normal_data(variable_text, dat, station_name)
         fig = add_boxplot_normals(fig, norms)
-    
+
     for _, row in sensor_additions.iterrows():
         first = pd.to_datetime(row["date_start"]) + rd(hours=12)
         second = first + rd(hours=6)
@@ -349,29 +452,73 @@ def plot_ppt(dat, config, **kwargs):
         # Add transparent trace for hovertext
         fig.add_trace(
             go.Scatter(
-            x=[first, first, second, second, first],
-            y=[dat[variable_text].min(), dat[variable_text].max(), dat[variable_text].max(), dat[variable_text].min(), dat[variable_text].min()],
-            fill="toself",
-            mode="lines",
-            line=dict(color="rgba(200,200,200,0.5)", width=0),
-            showlegend=False,
-            name="",
-            text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
-            opacity=0.5,
+                x=[first, first, second, second, first],
+                y=[
+                    dat[variable_text].min(),
+                    dat[variable_text].max(),
+                    dat[variable_text].max(),
+                    dat[variable_text].min(),
+                    dat[variable_text].min(),
+                ],
+                fill="toself",
+                mode="lines",
+                line=dict(color="rgba(200,200,200,0.5)", width=0),
+                showlegend=False,
+                name="",
+                text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
+                opacity=0.5,
             )
         )
 
     return fig
 
 
-# credit to: https://stackoverflow.com/questions/7490660/converting-wind-direction-in-angles-to-text-words
-def deg_to_compass(num):
+def deg_to_compass(num: float) -> str:
+    """
+    Convert wind direction from degrees to compass bearing.
+
+    Converts numerical wind direction (0-360 degrees) to standard
+    16-point compass notation (N, NNE, NE, etc.).
+
+    Args:
+        num (float): Wind direction in degrees (0-360).
+
+    Returns:
+        str: Compass bearing abbreviation (e.g., 'N', 'SW', 'ESE').
+
+    Note:
+        Credit to: https://stackoverflow.com/questions/7490660/converting-wind-direction-in-angles-to-text-words
+        Uses 22.5-degree sectors for 16-point compass rose.
+    """
     val = int((num / 22.5) + 0.5)
     arr = params.wind_directions
     return arr[(val % 16)]
 
 
-def plot_wind(wind_data):
+def plot_wind(wind_data: pd.DataFrame) -> go.Figure:
+    """
+    Create a wind rose diagram from wind speed and direction data.
+
+    Generates a polar bar chart showing the frequency distribution of wind
+    conditions by direction and speed categories. Useful for visualizing
+    prevailing wind patterns at a station.
+
+    Args:
+        wind_data (pd.DataFrame): DataFrame with columns:
+            - "Wind Direction [deg]": Wind direction in degrees
+            - "Wind Speed [mi/hr]": Wind speed in miles per hour
+
+    Returns:
+        go.Figure: Plotly polar bar chart (wind rose) showing:
+            - Radial axis: Frequency of occurrence
+            - Angular axis: Wind direction (16-point compass)
+            - Color: Wind speed categories (8 quantile bins)
+
+    Note:
+        - Automatically fills in missing wind directions with zero frequency
+        - Uses quantile binning to create 8 wind speed categories
+        - Applies Plasma color scheme for speed differentiation
+    """
     wind_data = wind_data.dropna()
     wind_data["Wind Direction [deg]"] = wind_data["Wind Direction [deg]"].apply(
         deg_to_compass
@@ -464,14 +611,10 @@ def px_to_subplot(*figs, **kwargs):
                 sub.append_trace(trace, row=idx, col=1)
         else:
             sub.add_trace(*traces, row=idx, col=1)
-        
+
         if shapes:
             for shape in shapes:
-                sub.add_shape(
-                    shape,
-                    row=idx,
-                    col=1
-                )
+                sub.add_shape(shape, row=idx, col=1)
 
     return sub
 
@@ -599,7 +742,9 @@ def plot_site(*args: List, dat: pd.DataFrame, config: pd.DataFrame, **kwargs):
                 if v in ["Soil Temperature", "Soil VWC", "Bulk EC"]:
                     kwargs.update({"txt": v})
 
-                plt = plot_func(data, config=config, color=params.color_mapper[v], **kwargs)
+                plt = plot_func(
+                    data, config=config, color=params.color_mapper[v], **kwargs
+                )
         except (KeyError, ValueError):
             plt = px.line(no_data_df, x="datetime", y="data", markers=True)
             no_data[idx] = v
@@ -741,25 +886,26 @@ def plot_station(stations, station=None, zoom=4):
 
     return fig
 
+
 def plot_annual(dat: pd.DataFrame, colname: str):
     dat = dat.copy()
-    dat['datetime'] = pd.to_datetime(dat['datetime'], utc=True)
-    dat['julian'] = dat['datetime'].dt.dayofyear
-    dat['Year'] = dat['datetime'].dt.year
-    dat['date'] = dat['datetime'].dt.date
+    dat["datetime"] = pd.to_datetime(dat["datetime"], utc=True)
+    dat["julian"] = dat["datetime"].dt.dayofyear
+    dat["Year"] = dat["datetime"].dt.year
+    dat["date"] = dat["datetime"].dt.date
 
-    fig = px.line(dat, x='julian', y=colname, color='Year')
+    fig = px.line(dat, x="julian", y=colname, color="Year")
     # Get colors from OrRd palette
-    years = dat['Year'].unique()
+    years = dat["Year"].unique()
     n = len(years) - 1
 
     if n == 1:
         samps = [0.5]
     else:
-        samps = [(1/(n-1) * i) * 0.60 + 0.15 for i in range(n)]
+        samps = [(1 / (n - 1) * i) * 0.60 + 0.15 for i in range(n)]
 
     colors = pc.sample_colorscale(px.colors.sequential.YlGnBu, samps)
-    colors.append('black')  # Add light grey for current year
+    colors.append("black")  # Add light grey for current year
 
     for i, trace in enumerate(fig.data):
         if i == len(fig.data) - 1:
@@ -767,20 +913,18 @@ def plot_annual(dat: pd.DataFrame, colname: str):
         trace.line.color = colors[i]
         trace.showlegend = True
 
-    fig.update_layout(legend=dict(
-        yanchor="top",
-        y=0.99,
-        xanchor="left",
-        x=1.01,
-        bgcolor='rgba(255, 255, 255, 0.5)'
-    ))
-
+    fig.update_layout(
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=1.01,
+            bgcolor="rgba(255, 255, 255, 0.5)",
+        )
+    )
 
     fig.update_traces(connectgaps=False)
-    fig.update_layout(
-        xaxis_title='Day of Year',
-        yaxis_title=colname
-    )
+    fig.update_layout(xaxis_title="Day of Year", yaxis_title=colname)
     return style_figure(fig, legend=True)
 
 
@@ -790,7 +934,7 @@ def plot_latest_ace_image(station, direction="N", dt=None):
         source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True&dt={dt}"
     else:
         source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True"
-    
+
     # Create figure
     fig = go.Figure()
 
@@ -846,7 +990,26 @@ def plot_latest_ace_image(station, direction="N", dt=None):
     return fig
 
 
-def make_nodata_figure(txt="No data avaliable for selected dates."):
+def make_nodata_figure(txt: str = "No data available for selected dates.") -> go.Figure:
+    """
+    Create a placeholder figure for when no data is available.
+
+    Generates a clean, empty plot with a centered message explaining
+    why no data is displayed. Used throughout the dashboard when
+    queries return empty results.
+
+    Args:
+        txt (str): Message to display in the figure. Defaults to
+            "No data available for selected dates."
+
+    Returns:
+        go.Figure: Empty plotly figure with centered text annotation.
+
+    Note:
+        - Removes all axes and tick labels for clean appearance
+        - Uses consistent styling with white background
+        - Standard height of 500px for layout consistency
+    """
     fig = go.Figure()
     fig.add_annotation(
         dict(

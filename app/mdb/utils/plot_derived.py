@@ -1,4 +1,27 @@
+"""
+Derived Data Plotting Module for Montana Mesonet Dashboard
+
+This module provides specialized plotting functions for derived agricultural
+and environmental metrics including growing degree days, reference evapotranspiration,
+soil water potential, livestock comfort indices, and soil profile visualizations.
+
+Key Functions:
+- plot_derived(): Main dispatcher for derived variable plots
+- add_gdd_trace(): Growing degree day accumulation plots
+- add_etr_trace(): Reference evapotranspiration plots
+- add_cci_trace(): Livestock comfort index plots
+- plot_soil_heatmap(): Soil parameter depth profiles
+- plot_swp(): Soil water potential with plant-available water zones
+- plot_percent_saturation(): Soil saturation by depth
+
+Each function handles specific data types and includes appropriate annotations,
+color schemes, and contextual information for agricultural decision-making.
+"""
+
+from typing import Optional
+
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from dateutil.relativedelta import relativedelta as rd
@@ -14,7 +37,24 @@ _axis_labeller = {
 }
 
 
-def add_styling(fig, dat, selected, legend=False):
+def add_styling(
+    fig: go.Figure, dat: pd.DataFrame, selected: str, legend: bool = False
+) -> go.Figure:
+    """
+    Apply consistent styling to derived data plots.
+
+    Standardizes the appearance of derived variable plots with appropriate
+    axis labels, time ranges, and layout settings.
+
+    Args:
+        fig (go.Figure): Plotly figure to style.
+        dat (pd.DataFrame): Data used to determine time range.
+        selected (str): Variable type for axis labeling.
+        legend (bool): Whether to show legend. Defaults to False.
+
+    Returns:
+        go.Figure: Styled figure with consistent formatting.
+    """
     fig.update_yaxes(title_text=_axis_labeller[selected])
 
     x_ticks = [
@@ -160,7 +200,29 @@ def add_gdd_trace(dat):
     return fig
 
 
-def classify_cci(value, newborn=False):
+def classify_cci(value: float, newborn: bool = False) -> str:
+    """
+    Classify Comprehensive Climate Index values into livestock stress categories.
+
+    Converts numerical CCI values into categorical stress levels for livestock
+    management. Uses different thresholds for newborn vs. mature animals.
+
+    Args:
+        value (float): CCI value in degrees Fahrenheit.
+        newborn (bool): Whether to use newborn animal thresholds. Defaults to False.
+
+    Returns:
+        str: Stress category ('No Stress', 'Mild', 'Moderate', 'Severe',
+             'Extreme', 'Extreme Danger').
+
+    Raises:
+        ValueError: If value cannot be classified into any category.
+
+    Note:
+        - Heat stress thresholds are the same for all animals (>77°F)
+        - Cold stress thresholds differ between newborn and mature animals
+        - Based on livestock comfort research and industry standards
+    """
     if value >= 113:
         return "Extreme Danger"
     if value >= 105 and value < 113:
@@ -526,7 +588,35 @@ def plot_percent_saturation(dat):
     return fig
 
 
-def plot_derived(dat, selected, soil_var=None, newborn=False):
+def plot_derived(
+    dat: pd.DataFrame,
+    selected: str,
+    soil_var: Optional[str] = None,
+    newborn: bool = False,
+) -> go.Figure:
+    """
+    Main dispatcher function for creating derived variable plots.
+
+    Routes data to appropriate plotting functions based on the selected
+    derived variable type. Handles all supported derived metrics with
+    their specific visualization requirements.
+
+    Args:
+        dat (pd.DataFrame): Processed data for the selected variable.
+        selected (str): Variable type identifier ('etr', 'gdd', 'feels_like',
+                       'cci', 'swp', 'percent_saturation', or soil variables).
+        soil_var (Optional[str]): Specific soil variable for heatmap plots.
+        newborn (bool): Whether to use newborn thresholds for CCI. Defaults to False.
+
+    Returns:
+        go.Figure: Plotly figure appropriate for the selected variable type.
+
+    Note:
+        - Each variable type has specialized plotting logic
+        - Soil variables default to heatmap visualization
+        - CCI plots support different livestock categories
+        - All plots include appropriate units, colors, and annotations
+    """
     if selected == "etr":
         return add_etr_trace(dat)
     elif selected == "gdd":

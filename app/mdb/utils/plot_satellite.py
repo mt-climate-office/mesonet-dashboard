@@ -1,5 +1,22 @@
+"""
+Satellite Data Plotting Module for Montana Mesonet Dashboard
+
+This module provides specialized plotting functions for satellite-derived
+environmental indicators including vegetation indices (NDVI, EVI),
+evapotranspiration, gross primary production, and other remote sensing products.
+
+Key Functions:
+- plot_all(): Multi-panel time series of satellite indicators
+- plot_comparison(): Scatter plots comparing satellite vs ground data
+- plot_indicator(): Individual satellite product time series
+- make_satellite_normals(): Calculate climatological baselines
+
+The module handles multiple satellite platforms (MODIS, VIIRS, SMAP) and
+provides temporal context through climatological normals and multi-year overlays.
+"""
+
 import datetime as dt
-from typing import Dict
+from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -12,7 +29,28 @@ from mdb.utils.params import params
 from mdb.utils.plotting import style_figure
 
 
-def make_satellite_normals(df):
+def make_satellite_normals(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculate climatological normals for satellite data.
+
+    Computes daily climatological percentiles (5th and 95th) from multi-year
+    satellite time series to provide historical context for current observations.
+
+    Args:
+        df (pd.DataFrame): Multi-year satellite data with date, value, and year columns.
+
+    Returns:
+        pd.DataFrame: Daily climatological normals with columns:
+            - datetime: Day of year normalized to current year
+            - mn: 5th percentile (smoothed with 5-day window)
+            - mx: 95th percentile (smoothed with 5-day window)
+
+    Note:
+        - Uses median for central tendency calculation
+        - Applies 5-day rolling mean to smooth daily variability
+        - Normalizes all dates to current year for plotting overlay
+        - Excludes current year data from normal calculation
+    """
     df = df.assign(month=df.date.dt.month)
     df = df.assign(day=df.date.dt.day)
     cur_year = dt.date.today().year
@@ -117,7 +155,34 @@ def plot_indicator(fig, dat, **kwargs):
     return fig
 
 
-def plot_all(dfs: Dict[str, pd.DataFrame], climatology, **kwargs):
+def plot_all(
+    dfs: Dict[str, pd.DataFrame], climatology: bool, **kwargs: Any
+) -> go.Figure:
+    """
+    Create multi-panel time series plot of satellite indicators.
+
+    Generates a subplot figure showing multiple satellite-derived variables
+    with optional climatological context and multi-platform comparisons.
+
+    Args:
+        dfs (Dict[str, pd.DataFrame]): Dictionary mapping variable names to DataFrames.
+        climatology (bool): Whether to include climatological normal overlays.
+        **kwargs: Additional keyword arguments passed to plot_indicator.
+
+    Returns:
+        go.Figure: Multi-panel subplot with:
+            - One row per satellite variable
+            - Current year data highlighted
+            - Optional climatological percentile bands
+            - Platform-specific color coding
+            - Unified hover mode for cross-panel comparison
+
+    Note:
+        - Automatically adjusts height based on number of variables
+        - Uses consistent x-axis range (current year)
+        - Groups legend entries by satellite platform
+        - Applies standard dashboard styling
+    """
     fig = make_subplots(rows=len(dfs), cols=1)
     for idx, tup in enumerate(dfs.items(), start=1):
         v, df = tup
@@ -152,7 +217,35 @@ def lab_from_df(df, station):
     return element
 
 
-def plot_comparison(dat_x, dat_y, station=None):
+def plot_comparison(
+    dat_x: pd.DataFrame, dat_y: pd.DataFrame, station: Optional[str] = None
+) -> go.Figure:
+    """
+    Create scatter plot comparing two satellite or ground-based variables.
+
+    Generates a correlation plot between two time series, with temporal
+    color coding to show seasonal patterns in the relationship.
+
+    Args:
+        dat_x (pd.DataFrame): First variable data with date and value columns.
+        dat_y (pd.DataFrame): Second variable data with date and value columns.
+        station (Optional[str]): Station identifier for labeling. If None,
+            uses satellite variable names.
+
+    Returns:
+        go.Figure: Scatter plot with:
+            - X-axis: First variable values
+            - Y-axis: Second variable values
+            - Color: Day of year (seasonal gradient)
+            - Hover: Values and observation date
+            - Magma color scale for temporal progression
+
+    Note:
+        - Uses nearest-neighbor temporal matching (16-day tolerance)
+        - Color coding reveals seasonal relationships
+        - Useful for validation and correlation analysis
+        - Automatically generates appropriate axis labels
+    """
     lab_x = lab_from_df(dat_x, station)
     lab_y = lab_from_df(dat_y, None)
 

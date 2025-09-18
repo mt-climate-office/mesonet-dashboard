@@ -1,3 +1,18 @@
+"""
+Configuration Parameters for Montana Mesonet Dashboard
+
+This module defines all configuration parameters, mappings, and constants used
+throughout the Montana Mesonet Dashboard. It includes API endpoints, variable
+mappings, color schemes, and data processing parameters.
+
+Key Components:
+- API configuration and endpoints
+- Variable name mappings and translations
+- Color schemes for plotting
+- Satellite product mappings
+- Aggregation functions and time periods
+"""
+
 import datetime as dt
 import os
 from dataclasses import dataclass
@@ -22,6 +37,39 @@ else:
 
 @dataclass
 class params:
+    """
+    Configuration parameters and mappings for the Montana Mesonet Dashboard.
+
+    This dataclass contains all the configuration parameters needed for the
+    dashboard including API URLs, variable mappings, color schemes, and
+    data processing parameters. All attributes are class-level constants.
+
+    Attributes:
+        API_URL (str): Base URL for the Montana Mesonet API
+        START (dt.datetime): Default start time for data queries
+        default_vars (List[str]): Default variables to display
+        selected_vars (List[str]): Initially selected variables
+        description_to_element (Dict[str, str]): Maps display names to element codes
+        elements (List[str]): All available element codes
+        elem_labs (List[str]): All element display labels
+        agg_funcs (Dict[str, str]): Aggregation functions by variable
+        lab_swap (Dict[str, str]): Column name standardization mapping
+        short_to_long_map (Dict[str, str]): Short to long name mapping
+        dist_swap (Dict[str, str]): Distance unit conversions
+        elem_map (Dict[str, List[str]]): Variable to element code mapping
+        color_mapper (Dict[str, str]): Variable to color mapping
+        axis_mapper (Dict[str, str]): Variable to axis label mapping
+        endpoints (Dict[str, str]): API endpoint mapping by time period
+        derived_endpoints (Dict[str, str]): Derived data endpoint mapping
+        short_name_mapper (Dict[str, List[str]]): Short names for normals
+        wind_directions (List[str]): Compass directions for wind roses
+        satellite_var_mapper (Dict[str, str]): Satellite variable display names
+        satellite_product_map (Dict[str, str]): Satellite product name mapping
+        sat_axis_mapper (Dict[str, str]): Satellite variable axis labels
+        sat_color_mapper (Dict[str, str]): Satellite platform colors
+        sat_compare_mapper (Dict[str, str]): Satellite comparison mappings
+    """
+
     API_URL = API_URL
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
@@ -163,40 +211,40 @@ class params:
     }
 
     short_to_long_map = {
-        'air_temp_0200': 'Air Temperature [°F]',
-        'air_temp_0244': 'Air Temperature [°F]',
-        'ppt': 'Precipitation [in]',
-        'ppt_max_rate': 'Max Precip Rate [in/h]',
-        'bp': 'Atmospheric Pressure [mbar]',
-        'rh': 'Relative Humidity [%]',
-        'soil_temp_0005': 'Soil Temperature @ 2 in [°F]',
-        'soil_temp_0010': 'Soil Temperature @ 4 in [°F]',
-        'soil_temp_0020': 'Soil Temperature @ 8 in [°F]',
-        'soil_temp_0050': 'Soil Temperature @ 20 in [°F]',
-        'soil_temp_0091': 'Soil Temperature @ 36 in [°F]',
-        'soil_temp_0100': 'Soil Temperature @ 40 in [°F]',
-        'soil_vwc_0005': 'Soil VWC @ 2 in [%]',
-        'soil_vwc_0010': 'Soil VWC @ 4 in [%]',
-        'soil_vwc_0020': 'Soil VWC @ 8 in [%]',
-        'soil_vwc_0050': 'Soil VWC @ 20 in [%]',
-        'soil_vwc_0091': 'Soil VWC @ 36 in [%]',
-        'soil_vwc_0100': 'Soil VWC @ 40 in [%]',
-        'soil_ec_blk_0005': 'Bulk EC @ 2 in [mS/cm]',
-        'soil_ec_blk_0010': 'Bulk EC @ 4 in [mS/cm]',
-        'soil_ec_blk_0020': 'Bulk EC @ 8 in [mS/cm]',
-        'soil_ec_blk_0050': 'Bulk EC @ 20 in [mS/cm]',
-        'soil_ec_blk_0091': 'Bulk EC @ 36 in [mS/cm]',
-        'soil_ec_blk_0100': 'Bulk EC @ 40 in [mS/cm]',
-        'sol_rad': 'Solar Radiation [W/m²]',
-        'wind_dir_0244': 'Wind Direction [deg]',
-        'wind_dir_1000': 'Wind Direction [deg]',
-        'wind_spd_0244': 'Wind Speed [mi/hr]',
-        'wind_spd_1000': 'Wind Speed [mi/hr]',
-        'windgust_0244': 'Gust Speed [mi/hr]',
-        'windgust_1000': 'Gust Speed [mi/hr]',
-        'snow_depth': 'Snow Depth [in]',
+        "air_temp_0200": "Air Temperature [°F]",
+        "air_temp_0244": "Air Temperature [°F]",
+        "ppt": "Precipitation [in]",
+        "ppt_max_rate": "Max Precip Rate [in/h]",
+        "bp": "Atmospheric Pressure [mbar]",
+        "rh": "Relative Humidity [%]",
+        "soil_temp_0005": "Soil Temperature @ 2 in [°F]",
+        "soil_temp_0010": "Soil Temperature @ 4 in [°F]",
+        "soil_temp_0020": "Soil Temperature @ 8 in [°F]",
+        "soil_temp_0050": "Soil Temperature @ 20 in [°F]",
+        "soil_temp_0091": "Soil Temperature @ 36 in [°F]",
+        "soil_temp_0100": "Soil Temperature @ 40 in [°F]",
+        "soil_vwc_0005": "Soil VWC @ 2 in [%]",
+        "soil_vwc_0010": "Soil VWC @ 4 in [%]",
+        "soil_vwc_0020": "Soil VWC @ 8 in [%]",
+        "soil_vwc_0050": "Soil VWC @ 20 in [%]",
+        "soil_vwc_0091": "Soil VWC @ 36 in [%]",
+        "soil_vwc_0100": "Soil VWC @ 40 in [%]",
+        "soil_ec_blk_0005": "Bulk EC @ 2 in [mS/cm]",
+        "soil_ec_blk_0010": "Bulk EC @ 4 in [mS/cm]",
+        "soil_ec_blk_0020": "Bulk EC @ 8 in [mS/cm]",
+        "soil_ec_blk_0050": "Bulk EC @ 20 in [mS/cm]",
+        "soil_ec_blk_0091": "Bulk EC @ 36 in [mS/cm]",
+        "soil_ec_blk_0100": "Bulk EC @ 40 in [mS/cm]",
+        "sol_rad": "Solar Radiation [W/m²]",
+        "wind_dir_0244": "Wind Direction [deg]",
+        "wind_dir_1000": "Wind Direction [deg]",
+        "wind_spd_0244": "Wind Speed [mi/hr]",
+        "wind_spd_1000": "Wind Speed [mi/hr]",
+        "windgust_0244": "Gust Speed [mi/hr]",
+        "windgust_1000": "Gust Speed [mi/hr]",
+        "snow_depth": "Snow Depth [in]",
     }
-    
+
     dist_swap = {
         "-10 cm": "4 in",
         "-100 cm": "40 in",
