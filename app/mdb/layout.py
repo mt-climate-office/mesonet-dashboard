@@ -92,7 +92,7 @@ def build_banner(app_ref):
                     [
                         dbc.Button(
                             "GIVE FEEDBACK",
-                            href="https://airtable.com/embed/shrxlaYUu6DcyK98s?",
+                            href="https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN/form",
                             size="lg",
                             n_clicks=0,
                             id="feedback-button",

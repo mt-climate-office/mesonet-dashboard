@@ -127,8 +127,9 @@ def toggle_main_tab(station, tab, data, select_vars, stations):
             )
         )
 
-    network = stations[stations["station"] == station]["sub_network"].values[0]
     if tab == "current":
+        network = stations[stations["station"] == station]["sub_network"].values[0]
+
         title, table = get.get_station_latest(station)
         out = [
             dbc.Row(
@@ -187,8 +188,8 @@ def toggle_main_tab(station, tab, data, select_vars, stations):
     elif tab == "forecast":
         return weather_iframe(station, stations=stations)
     elif tab == "map":
-        station_fig = plt.plot_station(stations, station=station)
-        return dls.Bars(dcc.Graph(id="station-fig", figure=station_fig))
+        station_fig = make_station_iframe(station)
+        return station_fig
     else:
         return html.Div("Uh oh, something went wrong! Please try again!")
 
@@ -198,6 +199,32 @@ def get_data(station, elements):
     start = end - rd(days=7)
 
     return get.get_station_record(station, start, end, True, ",".join(elements))
+
+
+def make_station_iframe(station: str = "none") -> html.Div:
+    """
+    Create an embedded iframe displaying the Montana Mesonet station map.
+
+    Generates an HTML div containing an iframe that loads the interactive
+    station map from the Montana Mesonet API, with optional station highlighting.
+
+    Args:
+        station (str): Station identifier to highlight on the map.
+            Defaults to "none" for no highlighting.
+
+    Returns:
+        html.Div: Dash HTML div containing the embedded map iframe.
+
+    Note:
+        The iframe loads the station map from the Montana Mesonet API
+        and applies the "second-row" CSS class for styling.
+    """
+    return html.Div(
+        html.Iframe(
+            src=f"https://mesonet.climate.umt.edu/api/map/stations/?station={station}"
+        ),
+        className="second-row",
+    )
 
 
 @app.callback(
