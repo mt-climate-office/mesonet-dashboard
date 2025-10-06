@@ -3,12 +3,13 @@ import httpx
 import json
 import os
 
+
 def get_airtable_attachments(base_id, table_name, api_key):
     url = f"https://api.airtable.com/v0/{base_id}/{table_name}"
     headers = {"Authorization": f"Bearer {api_key}"}
     params = {
         "filterByFormula": "NOT({One-pager}='')",
-        "fields[]": ["Station", "One-pager"]
+        "fields[]": ["Station", "One-pager"],
     }
     results = []
     offset = None
@@ -30,14 +31,13 @@ def get_airtable_attachments(base_id, table_name, api_key):
                 break
     return results
 
+
 if __name__ == "__main__":
     attachments = get_airtable_attachments(
-        "app824YSpANyRDcto",
-        "tblromhLqOpbnliMh",
-        os.environ["AIRTABLE_API_KEY"]
+        "app824YSpANyRDcto", "tblromhLqOpbnliMh", os.environ["AIRTABLE_API_KEY"]
     )
-    
+
     with open("one-pagers.json", "w") as f:
         json.dump(attachments, f, indent=2)
-    
+
     print(f"Wrote {len(attachments)} attachments to one-pagers.json")

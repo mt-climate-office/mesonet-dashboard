@@ -2,6 +2,8 @@ import pathlib
 import time
 
 PATH = pathlib.Path("/app/static")
+
+
 def test():
     n = 0
     while True:
@@ -9,5 +11,6 @@ def test():
         pth.touch()
         time.sleep(60)
 
-if __name__ == "__main__": 
+
+if __name__ == "__main__":
     test()

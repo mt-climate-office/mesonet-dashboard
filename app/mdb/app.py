@@ -334,7 +334,22 @@ def update_br_card(
         return make_station_iframe(station_name), "map-tab"
     elif at == "meta-tab" and not switch_to_current:
         table = tab.make_metadata_table(stations, station)
-        return dash_table.DataTable(data=table, **lay.TABLE_STYLING), "meta-tab"
+        try:
+            pager = [x for x in params.one_pagers if x["station"] == station]
+            pager = pager[0]["url"]
+            table.insert(
+                2, {"Field": "Station One-Pager", "Value": f"[Click to View]({pager})"}
+            )
+        except (KeyError, IndexError):
+            pager = None
+        return dash_table.DataTable(
+            data=table,
+            columns=[
+                {"id": "Field", "name": "Field"},
+                {"id": "Value", "name": "Value", "presentation": "markdown"},
+            ],
+            **lay.TABLE_STYLING,
+        ), "meta-tab"
     else:
         try:
             network = stations[stations["station"] == station]["sub_network"].values[0]
@@ -1387,6 +1402,7 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
         radius="md",
         src=f"https://mesonet.climate.umt.edu/api/photos/{station}/{direction.lower()}?dt={dt}&force=True",
     )
+
 
 @app.callback(
     [Output("station-modal", "children"), Output("station-modal", "is_open")],

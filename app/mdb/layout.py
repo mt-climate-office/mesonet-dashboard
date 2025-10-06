@@ -32,7 +32,12 @@ TABLE_STYLING = {
     "style_cell": {"textAlign": "left"},
     "style_data": {"color": "black", "backgroundColor": "white"},
     "style_data_conditional": [
-        {"if": {"row_index": "odd"}, "backgroundColor": "rgb(220, 220, 220)"}
+        {"if": {"row_index": "odd"}, "backgroundColor": "rgb(220, 220, 220)"},
+        {
+            "if": {"column_id": "Value"},
+            "textDecoration": "none",
+            "color": "inherit",
+        }
     ],
 }
 
