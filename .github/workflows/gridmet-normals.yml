@@ -1,10 +1,7 @@
 name: Seasonal GridMet Normals Update
 on:
   schedule:
-    # Weekly at 6 AM UTC, Mondays, November-April
-    - cron: '0 6 * 11-12,1-4 1'
-    # Daily at 6 AM UTC, May-October
-    - cron: '0 6 * 5-10 *'
+    - cron: '0 0 * * 1'
   workflow_dispatch:  # Allow manual trigger
 
 jobs:

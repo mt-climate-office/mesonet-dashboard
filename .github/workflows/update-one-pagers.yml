@@ -2,7 +2,8 @@ name: Update One-Pagers
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight UTC
+    - cron: '0 */3 * * *'  # Runs daily at midnight UTC
+    - cron: '30 1-23/3 * * *'
   workflow_dispatch:  # Allows manual trigger
 
 jobs:
