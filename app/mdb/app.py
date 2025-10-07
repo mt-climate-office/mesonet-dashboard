@@ -37,6 +37,7 @@ import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
 import dash_mantine_components as dmc
 import pandas as pd
+import requests
 from dash import (
     Dash,
     Input,
@@ -335,7 +336,12 @@ def update_br_card(
     elif at == "meta-tab" and not switch_to_current:
         table = tab.make_metadata_table(stations, station)
         try:
-            pager = [x for x in params.one_pagers if x["station"] == station]
+            try:
+                one_pagers_url = "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/one-pagers.json"
+                one_pagers = requests.get(one_pagers_url).json()
+            except:  # noqa: E722
+                one_pagers = {}
+            pager = [x for x in one_pagers if x["station"] == station]
             pager = pager[0]["url"]
             table.insert(
                 2, {"Field": "Station One-Pager", "Value": f"[Click to View]({pager})"}

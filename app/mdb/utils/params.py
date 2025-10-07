@@ -35,12 +35,6 @@ else:
     )
     API_URL = "https://mesonet.climate.umt.edu/api/v2/"
 
-try:
-    one_pagers_url = "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/one-pagers.json"
-    one_pagers = requests.get(one_pagers_url).json()
-except:  # noqa: E722
-    one_pagers = {}
-
 
 @dataclass
 class params:
@@ -80,7 +74,7 @@ class params:
     API_URL = API_URL
 
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
-    one_pagers = one_pagers
+
     default_vars = [
         "Precipitation",
         "Reference ET",

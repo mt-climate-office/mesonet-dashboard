@@ -37,7 +37,7 @@ TABLE_STYLING = {
             "if": {"column_id": "Value"},
             "textDecoration": "none",
             "color": "inherit",
-        }
+        },
     ],
 }
 
