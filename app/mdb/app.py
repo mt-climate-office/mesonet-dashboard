@@ -105,13 +105,14 @@ def make_station_iframe(station: str = "none") -> html.Div:
 
     Note:
         The iframe loads the station map from the Montana Mesonet API
-        and applies the "second-row" CSS class for styling.
+        and is properly constrained to fit within the card container.
     """
     return html.Div(
         html.Iframe(
-            src=f"https://mesonet.climate.umt.edu/api/map/stations/?station={station}"
+            src=f"https://mesonet.climate.umt.edu/api/map/stations/?station={station}",
+            style={"width": "100%", "height": "300px", "border": "none"},
         ),
-        className="second-row",
+        style={"width": "100%", "height": "300px", "overflow": "hidden"},
     )
 
 
@@ -287,9 +288,9 @@ def update_banner_text(station: str, tab: str, stations: str) -> str:
 
 @app.callback(
     Output("bl-content", "children"),
-    Output("bl-tabs", "active_tab"),
+    Output("bl-tabs", "value"),
     [
-        Input("bl-tabs", "active_tab"),
+        Input("bl-tabs", "value"),
         Input("station-dropdown", "value"),
         Input("temp-station-data", "data"),
         State("mesonet-stations", "data"),
@@ -405,8 +406,8 @@ def update_br_card(
     State("temp-station-data", "data"),
     State("station-dropdown", "value"),
     State("hourly-switch", "value"),
-    State("dates", "start_date"),
-    State("dates", "end_date"),
+    State("start-date", "value"),
+    State("end-date", "value"),
     prevent_initial_callback=True,
 )
 def download_called_data(
@@ -450,7 +451,7 @@ def download_called_data(
 
 @app.callback(
     [
-        Output("select-vars", "options"),
+        Output("select-vars", "children"),
         Output("select-vars", "value"),
     ],
     [Input("station-dropdown", "value"), State("select-vars", "value")],
@@ -458,11 +459,11 @@ def download_called_data(
 @tracker.pause_update
 def update_select_vars(
     station: str, selected: Optional[List[str]]
-) -> Tuple[List[Dict[str, str]], List[str]]:
+) -> Tuple[List[dmc.Chip], List[str]]:
     """
     Update available variable options based on selected station.
 
-    Dynamically updates the variable selection checklist to show only
+    Dynamically updates the variable selection chips to show only
     variables available at the selected station, while preserving
     user selections where possible.
 
@@ -471,8 +472,8 @@ def update_select_vars(
         selected (Optional[List[str]]): Currently selected variables.
 
     Returns:
-        Tuple[List[Dict[str, str]], List[str]]:
-            - List of option dictionaries with 'value' and 'label' keys
+        Tuple[List[dmc.Chip], List[str]]:
+            - List of dmc.Chip components for available variables
             - List of selected variable names (filtered for availability)
 
     Note:
@@ -491,8 +492,10 @@ def update_select_vars(
             "Air Temperature",
         ]
     if not station:
-        options = [{"value": x, "label": x} for x in sorted(params.default_vars)]
-        return options, selected
+        chips = [
+            dmc.Chip(x, value=x, size="xs", variant="filled") for x in sorted(params.default_vars)
+        ]
+        return chips, selected
 
     elems = pd.read_csv(f"{params.API_URL}elements/{station}?type=csv")
     elems = elems["description_short"].tolist()
@@ -500,7 +503,8 @@ def update_select_vars(
     elems.append("Reference ET")
 
     selected = [x for x in selected if x in elems]
-    return [{"value": x, "label": x} for x in sorted(elems)], selected
+    chips = [dmc.Chip(x, value=x, size="xs", variant="filled") for x in sorted(elems)]
+    return chips, selected
 
 
 @app.callback(
@@ -780,8 +784,8 @@ def update_derived_control_panel(variable: str) -> List[Any]:
     Output("temp-station-data", "data"),
     [
         Input("station-dropdown", "value"),
-        Input("dates", "start_date"),
-        Input("dates", "end_date"),
+        Input("start-date", "value"),
+        Input("end-date", "value"),
         Input("hourly-switch", "value"),
         Input("select-vars", "value"),
         State("temp-station-data", "data"),
@@ -822,14 +826,35 @@ def get_latest_api_data(
     """
     if not station:
         return None
-    start = dt.datetime.strptime(start, "%Y-%m-%d").date()
-    end = dt.datetime.strptime(end, "%Y-%m-%d").date()
+
+    # Convert dates to proper format - handle different input formats
+    try:
+        if isinstance(start, str):
+            if "T" in start:
+                start = start.split("T")[0]  # Remove time component if present
+            start = dt.datetime.strptime(start, "%Y-%m-%d").date()
+        elif hasattr(start, "date"):
+            start = start.date()
+
+        if isinstance(end, str):
+            if "T" in end:
+                end = end.split("T")[0]  # Remove time component if present
+            end = dt.datetime.strptime(end, "%Y-%m-%d").date()
+        elif hasattr(end, "date"):
+            end = end.date()
+    except (ValueError, TypeError) as e:
+        print(f"Date parsing error: {e}, start: {start}, end: {end}")
+        return -1
 
     select_vars += ["Wind Speed", "Wind Direction"]
     elements = set(chain(*[params.elem_map[x] for x in select_vars]))
     elements = list(set([y for y in params.elements for x in elements if x in y]))
 
-    if tmp == -1 or not tmp or ctx.triggered_id in ["hourly-switch", "dates"]:
+    if (
+        tmp == -1
+        or not tmp
+        or ctx.triggered_id in ["hourly-switch", "start-date", "end-date"]
+    ):
         if "etr" in elements:
             has_etr = True
             elements.remove("etr")
@@ -979,7 +1004,7 @@ def render_station_plot(
     select_vars: List[str],
     station: str,
     period: str,
-    norm: Union[int, List[int]],
+    norm: bool,
     stations: str,
 ) -> Any:
     """
@@ -994,7 +1019,7 @@ def render_station_plot(
         select_vars (List[str]): List of selected variable names to plot.
         station (str): Selected station identifier.
         period (str): Temporal aggregation ('hourly', 'daily', 'raw').
-        norm (Union[int, List[int]]): GridMET normals toggle state.
+        norm (bool): GridMET normals toggle state (True if enabled).
         stations (str): JSON string containing station metadata.
 
     Returns:
@@ -1007,7 +1032,6 @@ def render_station_plot(
         - Supports climatological normal overlays for daily data
         - Handles multiple variable types with appropriate styling
     """
-    norm = [norm] if isinstance(norm, int) else norm
     if len(select_vars) == 0:
         return plt.make_nodata_figure("No variables selected")
     elif tmp_data and tmp_data != -1:
@@ -1029,7 +1053,7 @@ def render_station_plot(
             dat=data,
             config=config,
             station=station,
-            norm=(len(norm) == 1) and (period == "daily"),
+            norm=norm and (period == "daily"),
             top_of_hour=period != "raw",
             period=period,
         )
@@ -1090,47 +1114,57 @@ def update_dropdown_from_url(pth: str, stations: str) -> Optional[str]:
 
 
 @app.callback(
-    Output("ul-tabs", "children"),
+    Output("ul-tabs", "data"),
     Input("station-dropdown", "value"),
     State("mesonet-stations", "data"),
 )
-def enable_photo_tab(station: str, stations: str) -> List[dbc.Tab]:
+def enable_photo_tab(station: str, stations: str) -> List[Dict[str, Union[str, bool]]]:
     """
-    Enable photo tab for HydroMet stations with cameras.
+    Configure photo tab availability based on station network.
 
-    Dynamically adds the photo tab to the upper-left card when
-    a HydroMet station with camera equipment is selected.
+    Always shows the photo tab but disables it for AgriMet stations
+    since they don't have camera equipment.
 
     Args:
         station (str): Selected station identifier.
         stations (str): JSON string containing station metadata.
 
     Returns:
-        List[dbc.Tab]: List of tab components, including photo tab if applicable.
+        List[Dict[str, Union[str, bool]]]: List of tab data for SegmentedControl with disabled state.
 
     Note:
-        - Photo tab only available for HydroMet network stations
-        - AgriMet stations don't have camera equipment
+        - Photo tab always visible but disabled for AgriMet stations
+        - HydroMet stations have camera equipment so photo tab is enabled
         - Gracefully handles missing station data
         - Maintains consistent tab order across station types
     """
     tabs = [
-        dbc.Tab(label="Wind Rose", tab_id="wind-tab"),
-        dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
+        {"label": "Wind Rose", "value": "wind-tab"},
+        {"label": "Weather Forecast", "value": "wx-tab"},
     ]
-    stations = pd.read_json(stations, orient="records")
-    try:
-        network = stations[stations["station"] == station]["sub_network"].values[0]
-    except IndexError:
-        return tabs
-    if station and network == "HydroMet":
-        tabs.append(dbc.Tab(label="Photos", tab_id="photo-tab"))
+
+    # Always include photo tab, but disable for AgriMet
+    photo_disabled = True  # Default to disabled
+
+    if station:
+        try:
+            stations_df = pd.read_json(stations, orient="records")
+            network = stations_df[stations_df["station"] == station][
+                "sub_network"
+            ].values[0]
+            photo_disabled = network != "HydroMet"
+        except (IndexError, ValueError):
+            photo_disabled = True
+
+    tabs.append(
+        {"label": "Latest Photo", "value": "photo-tab", "disabled": photo_disabled}
+    )
 
     return tabs
 
 
 @app.callback(
-    Output("ul-tabs", "active_tab"),
+    Output("ul-tabs", "value"),
     Input("station-dropdown", "value"),
     State("mesonet-stations", "data"),
 )
@@ -1164,7 +1198,7 @@ def select_default_tab(station: str, stations: str) -> str:
 @app.callback(
     Output("ul-content", "children"),
     [
-        Input("ul-tabs", "active_tab"),
+        Input("ul-tabs", "value"),
         Input("station-dropdown", "value"),
         Input("temp-station-data", "data"),
         State("mesonet-stations", "data"),
@@ -1251,7 +1285,12 @@ def update_ul_card(
 
         row = stations[stations["station"] == station]
         url = f"https://forecast.weather.gov/MapClick.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
-        return html.Div(html.Iframe(src=url), className="second-row")
+        return html.Div(
+            html.Iframe(
+                src=url, style={"width": "100%", "height": "300px", "border": "none"}
+            ),
+            style={"width": "100%", "height": "300px", "overflow": "hidden"},
+        )
 
     else:
         tmp = pd.read_csv(
@@ -1282,11 +1321,14 @@ def update_ul_card(
                     {"value": "ss", "label": "South Sky"},
                 ]
 
-        buttons = dbc.RadioItems(
+        buttons = dmc.ChipGroup(
+            children=[
+                dmc.Chip(option["label"], value=option["value"], size="xs", variant="filled")
+                for option in options
+            ],
             id="photo-direction",
-            options=options,
-            inline=True,
             value="n",
+            multiple=False,
         )
 
         if len(tmp) != 0:
@@ -1313,45 +1355,55 @@ def update_ul_card(
                 x.replace(" Morning", "T09:00:00").replace(" Afternoon", "T15:00:00")
                 for x in options
             ]
-            sel = dbc.Select(
-                options=[{"label": k, "value": v} for k, v in zip(options, values)],
+            sel = dmc.Select(
+                data=[{"label": k, "value": v} for k, v in zip(options, values)],
                 id="photo-time",
                 value=values[0],
+                placeholder="Select photo time",
+                size="xs",
+                style={"minWidth": "180px"},
             )
         else:
             val = pd.Timestamp.today().strftime("%Y-%m-%d")
-            sel = (
-                dbc.Select(
-                    options=[{"label": val, "value": val}], id="photo-time", value=val
-                ),
+            sel = dmc.Select(
+                data=[{"label": val, "value": val}],
+                id="photo-time",
+                value=val,
+                placeholder="Select photo time",
+                size="xs",
+                style={"minWidth": "180px"},
             )
 
         return html.Div(
             [
-                dbc.Row(
-                    [dbc.Col(buttons), dbc.Col(sel, width=4)],
-                    justify="center",
+                dmc.Group(
+                    [
+                        dmc.Group([
+                            buttons
+                        ], spacing="xs", align="center"),
+                        dmc.Group([
+                            sel
+                        ], spacing="xs", align="center"),
+                    ],
+                    position="center",
                     align="center",
-                    className="h-50",
-                    style={"padding": "0rem 0rem 1rem 0rem"},
+                    spacing="lg",
+                    style={"marginBottom": "0.5rem"}
                 ),
-                html.Div(
+                dmc.Center(
                     dmc.Container(
-                        id="photo-figure",  # style={"height": "34vh", "width": "30vw"}
+                        id="photo-figure",
+                        style={"textAlign": "center"}
                     ),
-                    style={
-                        "display": "flex",
-                        "justify-content": "center",
-                        "align-items": "center",
-                    },
                 ),
-            ]
+            ],
+            style={"padding": "0.5rem", "height": "100%"}
         )
 
 
-@app.callback(Output("gridmet-switch", "options"), Input("hourly-switch", "value"))
+@app.callback(Output("gridmet-switch", "disabled"), Input("hourly-switch", "value"))
 @tracker.pause_update
-def disable_gridmet_switch(period: str) -> List[Dict[str, Union[str, int, bool]]]:
+def disable_gridmet_switch(period: str) -> bool:
     """
     Enable or disable gridMET normals based on temporal aggregation.
 
@@ -1362,7 +1414,7 @@ def disable_gridmet_switch(period: str) -> List[Dict[str, Union[str, int, bool]]
         period (str): Selected temporal aggregation ('hourly', 'daily', 'raw').
 
     Returns:
-        List[Dict[str, Union[str, int, bool]]]: Option configuration for the switch.
+        bool: True if switch should be disabled, False if enabled.
 
     Note:
         - Decorated with @tracker.pause_update to prevent callback loops
@@ -1370,9 +1422,7 @@ def disable_gridmet_switch(period: str) -> List[Dict[str, Union[str, int, bool]]
         - Disabled for sub-daily data where normals aren't applicable
         - Provides user feedback about when normals are available
     """
-    if period != "daily":
-        return [{"label": "gridMET Normals", "value": 1, "disabled": True}]
-    return [{"label": "gridMET Normals", "value": 1, "disabled": False}]
+    return period != "daily"
 
 
 @app.callback(
@@ -1605,7 +1655,7 @@ def change_display_tab_with_hash(hash: str, cur: str) -> str:
 
 
 @app.callback(
-    Output("station-dropdown", "options"),
+    Output("station-dropdown", "data"),
     Input("network-options", "value"),
     State("mesonet-stations", "data"),
 )
@@ -2270,7 +2320,8 @@ def update_annual_station_elements(station, cur_val):
 
 @app.callback(
     Output("hourly-switch", "value"),
-    Output("dates", "start_date"),
+    Output("start-date", "value"),
+    Output("end-date", "value"),
     Output("por-button", "children"),
     Input("por-button", "n_clicks"),
     State("station-dropdown", "value"),
@@ -2278,7 +2329,7 @@ def update_annual_station_elements(station, cur_val):
 )
 def set_dates_to_por(
     n_clicks: Optional[int], station: str, stations: str
-) -> Tuple[Union[str, Any], Union[dt.date, Any], Union[str, Any]]:
+) -> Tuple[Union[str, Any], Union[dt.date, Any], Union[dt.date, Any], Union[str, Any]]:
     """
     Toggle between period of record and recent data views.
 
@@ -2291,9 +2342,10 @@ def set_dates_to_por(
         stations (str): JSON string containing station metadata.
 
     Returns:
-        Tuple[Union[str, Any], Union[dt.date, Any], Union[str, Any]]:
+        Tuple[Union[str, Any], Union[dt.date, Any], Union[dt.date, Any], Union[str, Any]]:
             - Time aggregation setting ('daily' or 'hourly')
             - Start date (installation date or 2 weeks ago)
+            - End date (today)
             - Updated button text
 
     Note:
@@ -2303,7 +2355,7 @@ def set_dates_to_por(
         - Updates button text to indicate next action
     """
     if not n_clicks:
-        return no_update, no_update, no_update
+        return no_update, no_update, no_update, no_update
 
     if n_clicks % 2 == 1:
         # Odd clicks - show full period of record
@@ -2312,13 +2364,66 @@ def set_dates_to_por(
         return (
             "daily",
             dt.datetime.strptime(d, "%Y-%m-%d").date(),
+            dt.date.today(),
             "Display Latest 2 Weeks",
         )
     else:
         # Even clicks - show last 2 weeks
         today = dt.date.today()
         two_weeks_ago = today - dt.timedelta(days=14)
-        return "hourly", two_weeks_ago, "Display Period of Record"
+        return "hourly", two_weeks_ago, today, "Display Period of Record"
+
+
+@app.callback(
+    [
+        Output("sidebar-col", "lg"),
+        Output("sidebar-col", "xl"),
+        Output("main-plot-col", "lg"),
+        Output("main-plot-col", "xl"),
+        Output("sidebar-content", "style"),
+        Output("sidebar-expand-btn", "style"),
+    ],
+    [
+        Input("sidebar-collapse-btn", "n_clicks"),
+        Input("sidebar-expand-btn", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def toggle_sidebar(collapse_clicks, expand_clicks):
+    """
+    Toggle the sidebar between collapsed and expanded states.
+
+    Adjusts column sizes dynamically to provide more space for the main plot
+    when the sidebar is collapsed.
+    """
+    ctx_id = ctx.triggered_id
+
+    if ctx_id == "sidebar-collapse-btn":
+        # Collapsed state
+        return (
+            {"size": 0, "order": "first"},  # Hide sidebar column
+            {"size": 0, "order": "first"},
+            {"size": 9, "order": "second"},  # Larger main plot column
+            {"size": 9, "order": "second"},
+            {"height": "88vh", "overflow-y": "auto", "display": "none"},  # Hide sidebar
+            {"display": "block"},  # Show floating expand button
+        )
+    elif ctx_id == "sidebar-expand-btn":
+        # Expanded state
+        return (
+            {"size": 3, "order": "first"},  # Normal sidebar column
+            {"size": 3, "order": "first"},
+            {"size": 6, "order": "second"},  # Normal main plot column
+            {"size": 6, "order": "second"},
+            {
+                "height": "88vh",
+                "overflow-y": "auto",
+                "display": "block",
+            },  # Show sidebar
+            {"display": "none"},  # Hide floating expand button
+        )
+
+    return no_update, no_update, no_update, no_update, no_update, no_update
 
 
 # def generate_funding_info(req_funding, current_funding, station_name):
