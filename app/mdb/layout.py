@@ -236,11 +236,12 @@ def build_banner(app_ref: Any) -> dbc.Navbar:
                     [
                         dbc.Button(
                             "GIVE FEEDBACK",
-                            href="#",
+                            href="https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN/form",
                             size="lg",
                             n_clicks=0,
                             id="feedback-button",
                             className="me-md-2",
+                            target="_blank"
                         ),
                         dbc.Button(
                             "LEARN MORE",
@@ -1475,7 +1476,7 @@ def app_layout(app_ref, stations):
             ),
             dbc.Row(className="h-100", id="main-content"),
             generate_modal(),
-            feedback_iframe(),
+            # feedback_iframe(),
             dbc.Modal(
                 [],
                 id="no-funding-modal",

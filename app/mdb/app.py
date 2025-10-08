@@ -1489,32 +1489,32 @@ def toggle_modal(n1: Optional[int], is_open: bool) -> bool:
     return is_open
 
 
-@app.callback(
-    Output("feedback-modal", "is_open"),
-    [Input("feedback-button", "n_clicks")],
-    [State("feedback-modal", "is_open")],
-)
-def toggle_feedback(n1: Optional[int], is_open: bool) -> bool:
-    """
-    Toggle the feedback modal dialog.
+# @app.callback(
+#     Output("feedback-modal", "is_open"),
+#     [Input("feedback-button", "n_clicks")],
+#     [State("feedback-modal", "is_open")],
+# )
+# def toggle_feedback(n1: Optional[int], is_open: bool) -> bool:
+#     """
+#     Toggle the feedback modal dialog.
 
-    Controls the visibility of the feedback modal containing
-    the embedded feedback form for user submissions.
+#     Controls the visibility of the feedback modal containing
+#     the embedded feedback form for user submissions.
 
-    Args:
-        n1 (Optional[int]): Number of times feedback button was clicked.
-        is_open (bool): Current modal open state.
+#     Args:
+#         n1 (Optional[int]): Number of times feedback button was clicked.
+#         is_open (bool): Current modal open state.
 
-    Returns:
-        bool: Updated modal open state.
+#     Returns:
+#         bool: Updated modal open state.
 
-    Note:
-        - Toggles modal visibility when feedback button is clicked
-        - Returns current state if no button interaction
-    """
-    if n1:
-        return not is_open
-    return is_open
+#     Note:
+#         - Toggles modal visibility when feedback button is clicked
+#         - Returns current state if no button interaction
+#     """
+#     if n1:
+#         return not is_open
+#     return is_open
 
 
 @app.callback(
