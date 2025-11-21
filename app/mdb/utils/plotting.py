@@ -769,6 +769,23 @@ def plot_site(*args: List, dat: pd.DataFrame, config: pd.DataFrame, **kwargs):
         # don't update label.
         sub.update_yaxes(title_text=title_text, row=row, col=1)
 
+        # If this subplot represents snow depth, set y-axis minimum to 0 and ensure max is at least 1
+        if "snow" in ylab.lower() and "depth" in ylab.lower():
+            plt_orig = plots[ylab]
+            y_max_vals = []
+            for tr in getattr(plt_orig, "data", []):
+                try:
+                    ys = np.array(tr.y)
+                    ys = ys[~np.isnan(ys)]
+                    if ys.size > 0:
+                        y_max_vals.append(ys.max())
+                except Exception:
+                    continue
+            y_max = float(np.nanmax(y_max_vals)) if y_max_vals else 1.0
+            if y_max < 1.0:
+                y_max = 1.0
+            sub.update_yaxes(range=[0, y_max], row=row, col=1)
+
     height = 500 if len(plots) == 1 else 250 * len(plots)
     sub.update_layout(height=height)
     x_ticks = [
