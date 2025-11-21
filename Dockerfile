@@ -16,4 +16,4 @@ RUN poetry install --no-root
 COPY ./app /app
 RUN rm -rf ./.venv
 
-CMD gunicorn -b 0.0.0.0:80 --threads 10 mdb.app:server
+CMD ["gunicorn", "-b", "0.0.0.0:80", "--threads", "10", "mdb.app:server"]
