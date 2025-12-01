@@ -52,6 +52,8 @@ def make_metadata_table(station_df: pd.DataFrame, station: str) -> List[Dict[str
         ]
     ]
 
+    out["elevation"] = round(out["elevation"] * 3.281)
+
     out.columns = [
         "Station Name",
         "Long Name",
@@ -59,7 +61,7 @@ def make_metadata_table(station_df: pd.DataFrame, station: str) -> List[Dict[str
         "Sub Network",
         "Longitude",
         "Latitude",
-        "Elevation (m)",
+        "Elevation (ft)",
     ]
 
     out = out.T.reset_index()
