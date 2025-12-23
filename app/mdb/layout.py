@@ -99,7 +99,7 @@ def generate_modal() -> html.Div:
                         To display data on this tab, select a station from the dropdown on the left. Selecting the "Timeseries" button shows a timeseries of a given variable for the current year, with previous years plotted as grey lines in the background for context.
                         Selecting the "Comparison" button allows you to choose two variable to plot against one another for the current year. 
                         If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, please:
-                        - Email [colin.brust@mso.umt.edu](mailto:colin.brust@mso.umt.edu),
+                        - Email [james.seielstad@mso.umt.edu](mailto:james.seielstad@mso.umt.edu),
                         - Fill out our [feedback form](https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN/form),
                         - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
 
