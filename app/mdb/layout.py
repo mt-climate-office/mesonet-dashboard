@@ -304,7 +304,15 @@ def build_top_left_card() -> dmc.Paper:
                         fullWidth=True,
                     ),
                     dmc.Divider(),
-                    html.Div(id="ul-content", style={"flex": 1}),
+                    html.Div(
+                        id="ul-content",
+                        style={
+                            "flex": 1,
+                            "minHeight": "320px",
+                            "padding": "0.5rem 0.5rem 0.5rem 0.5rem",
+                            "overflow": "auto",
+                        },
+                    ),
                 ],
                 spacing="xs",
             )
