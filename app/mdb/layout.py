@@ -99,7 +99,7 @@ def generate_modal() -> html.Div:
                         To display data on this tab, select a station from the dropdown on the left. Selecting the "Timeseries" button shows a timeseries of a given variable for the current year, with previous years plotted as grey lines in the background for context.
                         Selecting the "Comparison" button allows you to choose two variable to plot against one another for the current year. 
                         If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, please:
-                        - Email [colin.brust@mso.umt.edu](mailto:colin.brust@mso.umt.edu),
+                        - Email [james.seielstad@mso.umt.edu](mailto:james.seielstad@mso.umt.edu),
                         - Fill out our [feedback form](https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN/form),
                         - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
 
@@ -241,7 +241,7 @@ def build_banner(app_ref: Any) -> dbc.Navbar:
                             n_clicks=0,
                             id="feedback-button",
                             className="me-md-2",
-                            target="_blank"
+                            target="_blank",
                         ),
                         dbc.Button(
                             "LEARN MORE",
@@ -271,7 +271,7 @@ def build_banner(app_ref: Any) -> dbc.Navbar:
     )
 
 
-def build_top_left_card() -> dbc.Card:
+def build_top_left_card() -> dmc.Paper:
     """
     Build the top-left card with wind rose, forecast, and photo tabs.
 
@@ -280,44 +280,50 @@ def build_top_left_card() -> dbc.Card:
     and enabled dynamically for HydroMet stations.
 
     Returns:
-        dbc.Card: Bootstrap card with tabbed content for wind/weather/photo data.
+        dmc.Paper: Mantine paper component with tabbed content for wind/weather/photo data.
 
     Note:
         - Wind rose tab shows aggregated wind conditions
         - Weather forecast tab embeds NWS forecast
         - Photo tab is only available for HydroMet stations with cameras
-        - Uses overflow clipping to maintain card dimensions
+        - Uses clean Mantine styling with proper tab boundaries
     """
-    return dbc.Card(
-        [
-            dbc.CardHeader(
-                dbc.Tabs(
-                    [
-                        dbc.Tab(label="Wind Rose", id="wind-tab"),
-                        dbc.Tab(label="Weather Forecast", id="wx-tab"),
-                        dbc.Tab(label="Latest Photo", id="photo-tab", disabled=True),
-                    ],
-                    id="ul-tabs",
-                    active_tab="wind-tab",
-                )
-            ),
-            dbc.CardBody(html.Div(id="ul-content")),
-            # dbc.Tooltip(
-            #     """ A wind rose shows the aggregated wind conditions over the selected time period.
-            #     The size of the colored boxes shows how frequently a range of wind speeds occurred,
-            #     the color of the box shows how fast those wind speeds were and the orientation of
-            #     the boxes on the wind rose shows which direction that wind was coming from.""",
-            #     target="wind-tab",
-            # ),
+    return dmc.Paper(
+        children=[
+            dmc.Stack(
+                [
+                    dmc.SegmentedControl(
+                        data=[
+                            {"label": "Wind Rose", "value": "wind-tab"},
+                            {"label": "Weather Forecast", "value": "wx-tab"},
+                            {"label": "Latest Photo", "value": "photo-tab"},
+                        ],
+                        id="ul-tabs",
+                        value="wind-tab",
+                        size="xs",
+                        fullWidth=True,
+                    ),
+                    dmc.Divider(),
+                    html.Div(
+                        id="ul-content",
+                        style={
+                            "flex": 1,
+                            "minHeight": "320px",
+                            "padding": "0.5rem 0.5rem 0.5rem 0.5rem",
+                            "overflow": "auto",
+                        },
+                    ),
+                ],
+                spacing="xs",
+            )
         ],
-        outline=True,
-        color="secondary",
-        className="h-100",
-        style={"overflow": "clip"},
+        shadow="sm",
+        p="sm",
+        style={"height": "100%", "overflow": "hidden"},
     )
 
 
-def build_bottom_left_card(station_fig: Any) -> dbc.Card:
+def build_bottom_left_card(station_fig: Any) -> dmc.Paper:
     """
     Build the bottom-left card with map, metadata, and current conditions tabs.
 
@@ -329,39 +335,48 @@ def build_bottom_left_card(station_fig: Any) -> dbc.Card:
         station_fig (Any): Initial station map figure or iframe component.
 
     Returns:
-        dbc.Card: Bootstrap card with tabbed content for station information.
+        dmc.Paper: Mantine paper component with tabbed content for station information.
 
     Note:
         - Map tab shows interactive station locations
         - Metadata tab displays station details and specifications
         - Current conditions tab shows latest observations and summaries
         - Default active tab is "data-tab" for current conditions
+        - Uses clean Mantine styling with proper tab boundaries
     """
-    return dbc.Card(
-        [
-            dbc.CardHeader(
-                dbc.Tabs(
-                    [
-                        dbc.Tab(label="Locator Map", tab_id="map-tab"),
-                        dbc.Tab(label="Station Metadata", tab_id="meta-tab"),
-                        dbc.Tab(label="Current Conditions", tab_id="data-tab"),
-                    ],
-                    id="bl-tabs",
-                    active_tab="data-tab",
-                )
-            ),
-            html.Div(
-                children=dbc.CardBody(
-                    id="bl-content",
-                    children=html.Div(id="station-fig", children=station_fig),
-                    className="card-text",
-                ),
-                # style={"overflow": "scroll"},
-            ),
+    return dmc.Paper(
+        children=[
+            dmc.Stack(
+                [
+                    dmc.SegmentedControl(
+                        data=[
+                            {"label": "Locator Map", "value": "map-tab"},
+                            {"label": "Station Metadata", "value": "meta-tab"},
+                            {"label": "Current Conditions", "value": "data-tab"},
+                        ],
+                        id="bl-tabs",
+                        value="data-tab",
+                        size="xs",
+                        fullWidth=True,
+                    ),
+                    dmc.Divider(),
+                    html.Div(
+                        id="bl-content",
+                        children=html.Div(id="station-fig", children=station_fig),
+                        style={
+                            "height": "300px",
+                            "overflow": "auto",
+                            "maxHeight": "300px",
+                        },
+                    ),
+                ],
+                spacing="xs",
+            )
         ],
         id="bl-card",
-        outline=True,
-        color="secondary",
+        shadow="sm",
+        p="sm",
+        style={"height": "100%", "maxHeight": "400px"},
     )
 
 
@@ -402,232 +417,240 @@ def make_station_dropdowns(
     )
 
 
-def build_dropdowns(stations: pd.DataFrame) -> dbc.Container:
+def build_control_sidebar(stations: pd.DataFrame) -> dmc.Stack:
     """
-    Build the main control panel with dropdowns and selection options.
+    Build the control sidebar with dropdowns and selection options using Dash Mantine Components.
 
     Creates a comprehensive control interface including station selection,
     date range picker, temporal aggregation options, network filters,
-    and variable selection checkboxes.
+    and variable selection checkboxes in a vertical sidebar layout.
 
     Args:
         stations (pd.DataFrame): DataFrame containing station metadata.
 
     Returns:
-        dbc.Container: Bootstrap container with organized control rows.
+        dmc.Stack: Mantine stack component with organized control sections.
 
     Note:
-        - First row: Station dropdown, date picker, period of record button
-        - Second row: Time aggregation, gridMET normals, network filters, help link
-        - Third row: Variable selection checkboxes with horizontal scrolling
-        - Includes tooltips for user guidance
-        - Uses responsive column widths for different screen sizes
+        - Station selection dropdown with search capability
+        - Date range picker for time period selection
+        - Time aggregation radio buttons (hourly/daily/raw)
+        - Network filter checkboxes (HydroMet/AgriMet)
+        - Variable selection with scrollable checkboxes
+        - Includes tooltips and help links for user guidance
+        - Collapsible design to save screen space
     """
-    checklist_input = dbc.InputGroup(
-        dbc.InputGroupText(
-            [
-                dbc.Checklist(
-                    inline=True,
-                    id="select-vars",
-                )
-            ],
-            style={"overflow-x": "scroll"},
-        ),
-        className="mb-3",
-        size="lg",
-    )
-
-    return dbc.Container(
+    return dmc.Stack(
         [
-            dbc.Row(
+            # Collapse/Expand Header
+            dmc.Group(
                 [
-                    dbc.Col(
-                        make_station_dropdowns(stations, "station-dropdown", None),
-                        width="auto",
-                    ),
-                    dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dcc.DatePickerRange(
-                                    id="dates",
-                                    month_format="MMMM Y",
-                                    start_date=dt.date.today() - rd(days=14),
-                                    end_date=dt.date.today(),
-                                    clearable=False,
-                                    max_date_allowed=dt.date.today(),
-                                    stay_open_on_select=False,
-                                )
-                            ]
-                        ),
-                        width="auto",
-                    ),
-                    dbc.Col(
-                        dbc.Button(
-                            "Display Period of Record",
-                            id="por-button",
-                        ),
-                        width="auto",
+                    dmc.Text("Controls", weight=700, size="md"),
+                    dmc.ActionIcon(
+                        DashIconify(icon="tabler:chevron-left", width=20),
+                        id="sidebar-collapse-btn",
+                        variant="subtle",
+                        size="sm",
                     ),
                 ],
-                style={"padding": "0.5rem"},  # Add some padding to the row
-                justify="around",
+                position="apart",
             ),
-            # html.Br(),
-            dbc.Row(
+            dmc.Divider(),
+            # Station Selection
+            dmc.Stack(
                 [
-                    dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dbc.RadioItems(
-                                    options=[
-                                        {"label": "Hourly", "value": "hourly"},
-                                        {"label": "Daily", "value": "daily"},
-                                        {"label": "Raw", "value": "raw"},
-                                    ],
-                                    inline=True,
-                                    id="hourly-switch",
-                                    value="hourly",
-                                ),
-                                dbc.Tooltip(
-                                    """Hourly and daily averages are pre-computed and will take much less time to render plots. 
-                                        It is not recommended to select a time period longer than 1 year for daily data, 3 months for hourly
-                                        data, or 2 weeks for raw data. Longer time selections could take up to a few minutes to load.""",
-                                    target="hourly-switch",
-                                ),
-                            ]
-                        ),
-                        width="auto",  # Adjust column width
-                    ),
-                    dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dbc.Checklist(
-                                    options=[
-                                        {
-                                            "label": "gridMET Normals",
-                                            "value": 1,
-                                            "disabled": True,
-                                        }
-                                    ],
-                                    inline=True,
-                                    id="gridmet-switch",
-                                    switch=True,
-                                    value=[],
-                                ),
-                                dbc.Tooltip(
-                                    "This toggle shows the 1991-2020 gridMET climate normals around each applicable variable to contextualize current conditions. **Note** This is only available on daily data.",
-                                    target="gridmet-switch",
-                                ),
-                            ]
-                        ),
-                        width="auto",  # Adjust column width
-                    ),
-                    dbc.Col(
-                        dbc.InputGroup(
-                            [
-                                dbc.Checklist(
-                                    options=[
-                                        {
-                                            "label": "HydroMet",
-                                            "value": "HydroMet",
-                                        },
-                                        {
-                                            "label": "AgriMet",
-                                            "value": "AgriMet",
-                                        },
-                                    ],
-                                    inline=True,
-                                    id="network-options",
-                                    value=["HydroMet", "AgriMet"],
-                                ),
-                                dbc.Tooltip(
-                                    """These checkboxes allow you to subset the stations listed in the dropdown. 
-                                        Leaving both boxes checked shows all possible stations. Checking either HydroMet or
-                                        AgriMet subsets selectable stations to only the respective network.""",
-                                    target="network-options",
-                                ),
-                            ]
-                        ),
-                        width="auto",
-                    ),
-                    dbc.Col(
-                        dbc.Button(
-                            "ABOUT THESE VARIABLES",
-                            href="https://climate.umt.edu/mesonet/variables/",
-                            target="_blank",
-                        ),
-                        width="auto",
+                    dmc.Text("Station Selection", weight=600, size="sm"),
+                    dmc.Select(
+                        data=[
+                            {"label": k, "value": v}
+                            for k, v in zip(stations["long_name"], stations["station"])
+                        ],
+                        id="station-dropdown",
+                        placeholder="Select a Mesonet Station...",
+                        searchable=True,
+                        clearable=True,
+                        size="sm",
                     ),
                 ],
-                style={"padding": "0.5rem"},  # Add some padding to the row
-                justify="around",
+                spacing="xs",
             ),
-            dbc.Row(
-                [dbc.Col(checklist_input, width="auto")],
-                style={"padding": "0.5rem"},  # Add some padding to the row
-                justify="around",
+            # Date Selection
+            dmc.Stack(
+                [
+                    dmc.Text("Date Range", weight=600, size="sm"),
+                    dmc.Group(
+                        [
+                            dmc.DatePicker(
+                                id="start-date",
+                                label="Start Date",
+                                value=dt.date.today() - rd(days=14),
+                                maxDate=dt.date.today(),
+                                size="xs",
+                                style={"flex": 1},
+                            ),
+                            dmc.DatePicker(
+                                id="end-date",
+                                label="End Date",
+                                value=dt.date.today(),
+                                maxDate=dt.date.today(),
+                                size="xs",
+                                style={"flex": 1},
+                            ),
+                        ],
+                        grow=True,
+                    ),
+                    dmc.Button(
+                        "Display Period of Record",
+                        id="por-button",
+                        variant="light",
+                        size="xs",
+                        fullWidth=True,
+                    ),
+                ],
+                spacing="xs",
+            ),
+            # Time Aggregation
+            dmc.Stack(
+                [
+                    dmc.Text("Time Aggregation", weight=600, size="sm"),
+                    dmc.ChipGroup(
+                        children=[
+                            dmc.Chip(
+                                "Hourly", value="hourly", size="xs", variant="filled"
+                            ),
+                            dmc.Chip(
+                                "Daily", value="daily", size="xs", variant="filled"
+                            ),
+                            dmc.Chip("Raw", value="raw", size="xs", variant="filled"),
+                        ],
+                        id="hourly-switch",
+                        multiple=False,
+                        value="hourly",
+                    ),
+                    dmc.Text(
+                        "Hourly and daily averages are pre-computed and will load faster. "
+                        "Avoid selecting periods longer than 1 year for daily, 3 months for hourly, "
+                        "or 2 weeks for raw data.",
+                        size="xs",
+                        color="dimmed",
+                        style={"fontStyle": "italic"},
+                    ),
+                ],
+                spacing="xs",
+            ),
+            # GridMET Normals Toggle
+            dmc.Stack(
+                [
+                    dmc.Text("Climate Normals", weight=600, size="sm"),
+                    dmc.Switch(
+                        label="Show gridMET Normals",
+                        id="gridmet-switch",
+                        size="sm",
+                        disabled=True,
+                    ),
+                    dmc.Text(
+                        "Shows 1991-2020 gridMET climate normals. Only available on daily data.",
+                        size="xs",
+                        color="dimmed",
+                        style={"fontStyle": "italic"},
+                    ),
+                ],
+                spacing="xs",
+            ),
+            # Network Selection
+            dmc.Stack(
+                [
+                    dmc.Text("Network Filter", weight=600, size="sm"),
+                    dmc.ChipGroup(
+                        children=[
+                            dmc.Chip(
+                                "HydroMet",
+                                value="HydroMet",
+                                size="xs",
+                                variant="filled",
+                            ),
+                            dmc.Chip(
+                                "AgriMet", value="AgriMet", size="xs", variant="filled"
+                            ),
+                        ],
+                        id="network-options",
+                        value=["HydroMet", "AgriMet"],
+                        multiple=True,
+                    ),
+                    dmc.Text(
+                        "Filter stations by network type. Leave both checked to show all stations.",
+                        size="xs",
+                        color="dimmed",
+                        style={"fontStyle": "italic"},
+                    ),
+                ],
+                spacing="xs",
+            ),
+            # Variable Selection
+            dmc.Stack(
+                [
+                    dmc.Text("Variables", weight=600, size="sm"),
+                    dmc.ScrollArea(
+                        children=[dmc.ChipGroup(id="select-vars", multiple=True)],
+                        h=200,
+                        type="scroll",
+                    ),
+                    dmc.Anchor(
+                        dmc.Button(
+                            "About These Variables",
+                            variant="subtle",
+                            size="xs",
+                            fullWidth=True,
+                        ),
+                        href="https://climate.umt.edu/mesonet/variables/",
+                        target="_blank",
+                    ),
+                ],
+                spacing="xs",
             ),
         ],
-        style={"padding": "0rem"},  # Adjust overall padding
-        fluid=True,
+        spacing="md",
+        style={"padding": "0.75rem"},
     )
 
 
-def build_right_card(stations: pd.DataFrame) -> dbc.Card:
+def build_main_plot_area() -> dmc.Paper:
     """
-    Build the main plotting card with controls and graph area.
+    Build the main plotting area without controls.
 
-    Creates the primary visualization card containing the control panel
-    in the header and the main plotting area in the body, with loading
-    indicators and data storage components.
-
-    Args:
-        stations (pd.DataFrame): DataFrame containing station metadata.
+    Creates the primary visualization area containing just the plotting
+    area with loading indicators and data storage components.
 
     Returns:
-        dbc.Card: Bootstrap card with controls header and plotting body.
+        dmc.Paper: Mantine paper component with plotting area.
 
     Note:
-        - Header contains all user controls (dropdowns, date pickers, etc.)
-        - Body contains the main plotting area with loading spinner
+        - Contains the main plotting area with loading spinner
         - Includes session storage for temporary station data
-        - Uses vertical scrolling for overflow content
-        - Maintains full height within parent container
+        - Uses full height within parent container with proper scrolling
+        - Clean design without header controls
     """
-    selectors = build_dropdowns(stations)
-
-    return dbc.Card(
-        [
-            dbc.CardHeader(selectors),
-            dbc.CardBody(
-                html.Div(
-                    [
-                        dls.Bars(
-                            children=[
-                                dcc.Store(
-                                    id="temp-station-data", storage_type="session"
-                                ),
-                                dcc.Graph(id="station-data"),
-                            ]
-                        )
-                    ]
-                )
-            ),
+    return dmc.Paper(
+        children=[
+            dls.Bars(
+                children=[
+                    dcc.Store(id="temp-station-data", storage_type="session"),
+                    dcc.Graph(id="station-data"),
+                ]
+            )
         ],
-        color="secondary",
-        outline=True,
-        className="h-100",
-        style={"overflow-y": "scroll", "overflow-x": "clip"},
+        shadow="sm",
+        p="md",
+        style={"height": "88vh", "overflow-y": "auto", "overflow-x": "hidden"},
     )
 
 
 def build_latest_content(station_fig: Any, stations: pd.DataFrame) -> List[dbc.Col]:
     """
-    Build the main station data view layout with responsive columns.
+    Build the main station data view layout with sidebar controls and main content.
 
-    Creates a two-column layout with the main plotting area on the right
-    and supplementary information cards on the left. Uses responsive
-    Bootstrap grid system for different screen sizes.
+    Creates a three-column layout with controls on the left, main plotting area
+    in the center, and supplementary information cards on the right.
 
     Args:
         station_fig (Any): Initial station map figure or component.
@@ -637,13 +660,64 @@ def build_latest_content(station_fig: Any, stations: pd.DataFrame) -> List[dbc.C
         List[dbc.Col]: List of Bootstrap column components for the layout.
 
     Note:
-        - Left column (4/12 on large screens): Wind/weather/photo and map/metadata/conditions cards
-        - Right column (8/12 on large screens): Main plotting area with controls
+        - Left column (3/12): Control sidebar with all user inputs
+        - Center column (6/12): Main plotting area
+        - Right column (3/12): Wind/weather/photo and map/metadata/conditions cards
         - Responsive design: stacks vertically on smaller screens
-        - Uses viewport height constraints (92vh) to prevent overflow
-        - Includes proper padding and spacing between elements
+        - Uses viewport height constraints (88vh) to prevent overflow
     """
     return [
+        # Control Sidebar (Left) - Collapsible
+        dbc.Col(
+            dmc.Paper(
+                children=[build_control_sidebar(stations)],
+                shadow="sm",
+                style={"height": "88vh", "overflow-y": "auto"},
+                id="sidebar-content",
+            ),
+            xs={"size": 12, "order": "first"},
+            sm={"size": 12, "order": "first"},
+            md={"size": 4, "order": "first"},
+            lg={"size": 3, "order": "first"},
+            xl={"size": 3, "order": "first"},
+            style={"padding": "0rem 0.25rem 0rem 0rem"},
+            id="sidebar-col",
+        ),
+        # Main Plot Area (Center)
+        dbc.Col(
+            html.Div(
+                [
+                    # Floating toggle button (visible when sidebar is collapsed)
+                    html.Div(
+                        dmc.ActionIcon(
+                            DashIconify(icon="tabler:menu-2", width=20),
+                            id="sidebar-expand-btn",
+                            variant="filled",
+                            color="blue",
+                            size="lg",
+                            style={"display": "none"},
+                        ),
+                        style={
+                            "position": "absolute",
+                            "top": "10px",
+                            "left": "10px",
+                            "zIndex": 1000,
+                        },
+                    ),
+                    build_main_plot_area(),
+                ],
+                id="latest-plots",
+                style={"position": "relative"},
+            ),
+            xs={"size": 12, "order": "second"},
+            sm={"size": 12, "order": "second"},
+            md={"size": 8, "order": "second"},
+            lg={"size": 6, "order": "second"},
+            xl={"size": 6, "order": "second"},
+            style={"padding": "0rem 0.25rem"},
+            id="main-plot-col",
+        ),
+        # Info Cards (Right)
         dbc.Col(
             [
                 dbc.Row(
@@ -659,30 +733,18 @@ def build_latest_content(station_fig: Any, stations: pd.DataFrame) -> List[dbc.C
                     id="bottom-card",
                 ),
             ],
-            xs={"size": 12, "order": "last", "offset": 0},
-            sm={"size": 12, "order": "last", "offset": 0},
-            md={"size": 12, "order": "last", "offset": 0},
-            lg={"size": 4, "order": "last", "offset": 0},
-            xl={"size": 4, "order": "last", "offset": 0},
-            style={"maxHeight": "92vh", "overflow-y": "scroll", "overflow-x": "clip"},
+            xs={"size": 12, "order": "last"},
+            sm={"size": 12, "order": "last"},
+            md={"size": 12, "order": "last"},
+            lg={"size": 3, "order": "last"},
+            xl={"size": 3, "order": "last"},
+            style={
+                "maxHeight": "88vh",
+                "overflow-y": "scroll",
+                "overflow-x": "clip",
+                "padding": "0rem 0rem 0rem 0.25rem",
+            },
             id="sub-cards",
-        ),
-        dbc.Col(
-            html.Div(
-                build_right_card(stations),
-                style={
-                    "height": "100%",
-                    "maxHeight": "92vh",
-                    # "overflow": "scroll",
-                },
-                id="latest-plots",
-            ),
-            xs={"size": 12, "order": "first", "offset": 0},
-            sm={"size": 12, "order": "first", "offset": 0},
-            md={"size": 12, "order": "first", "offset": 0},
-            lg={"size": 8, "order": "first", "offset": 0},
-            xl={"size": 8, "order": "first", "offset": 0},
-            style={"padding": "0rem 0.5rem 0rem 0rem"},
         ),
     ]
 
@@ -1325,15 +1387,21 @@ def build_satellite_dropdowns(
             xl=2,
         ),
         dbc.Col(
-            dbc.RadioItems(
-                options=[
-                    {"label": "Timeseries Plot", "value": "timeseries"},
-                    {"label": "Comparison Plot", "value": "compare"},
+            dmc.ChipGroup(
+                children=[
+                    dmc.Chip(
+                        "Timeseries Plot",
+                        value="timeseries",
+                        size="xs",
+                        variant="filled",
+                    ),
+                    dmc.Chip(
+                        "Comparison Plot", value="compare", size="xs", variant="filled"
+                    ),
                 ],
                 value="timeseries" if timeseries else "compare",
                 id="satellite-radio",
-                # inline=True,
-                # style={"padding": "0rem 0rem 0rem 5rem"},
+                multiple=False,
             ),
             xs=12,
             sm=12,
@@ -1407,72 +1475,32 @@ def app_layout(app_ref, stations):
             dcc.Store(data=stations, id="mesonet-stations", storage_type="memory"),
             dcc.Store(data="", id="triggered-by", storage_type="memory"),
             build_banner(app_ref),
-            dcc.Tabs(
-                style={"width": "100%", "font-size": "100%", "height": "4.5vh"},
+            dmc.Paper(
                 children=[
-                    dcc.Tab(
-                        label="Latest Data",
-                        id="station-tab",
+                    dmc.Tabs(
+                        children=[
+                            dmc.TabsList(
+                                [
+                                    dmc.Tab("Latest Data", value="station-tab"),
+                                    dmc.Tab("Ag Tools", value="derived-tab"),
+                                    dmc.Tab("Data Downloader", value="download-tab"),
+                                    dmc.Tab(
+                                        "Satellite Indicators", value="satellite-tab"
+                                    ),
+                                ],
+                                grow=True,
+                            ),
+                        ],
+                        id="main-display-tabs",
                         value="station-tab",
-                        style=dict(
-                            borderLeft="1px black solid",
-                            borderRight="0px black solid",
-                            **TAB_STYLE,
-                        ),
-                        selected_style=dict(
-                            borderLeft="1px black solid",
-                            borderRight="0.5px black solid",
-                            **SELECTED_STYLE,
-                        ),
-                    ),
-                    dcc.Tab(
-                        label="Ag Tools",
-                        id="derived-tab",
-                        value="derived-tab",
-                        style=dict(
-                            borderLeft="0.5px black solid",
-                            borderRight="0.5px black solid",
-                            **TAB_STYLE,
-                        ),
-                        selected_style=dict(
-                            borderLeft="0.5px black solid",
-                            borderRight="0.5px black solid",
-                            **SELECTED_STYLE,
-                        ),
-                    ),
-                    dcc.Tab(
-                        label="Data Downloader",
-                        id="download-tab",
-                        value="download-tab",
-                        style=dict(
-                            borderLeft="0.5px black solid",
-                            borderRight="0.5px black solid",
-                            **TAB_STYLE,
-                        ),
-                        selected_style=dict(
-                            borderLeft="0.5px black solid",
-                            borderRight="0.5px black solid",
-                            **SELECTED_STYLE,
-                        ),
-                    ),
-                    dcc.Tab(
-                        label="Satellite Indicators",
-                        id="satellite-tab",
-                        value="satellite-tab",
-                        style=dict(
-                            borderLeft="0px black solid",
-                            borderRight="1px black solid",
-                            **TAB_STYLE,
-                        ),
-                        selected_style=dict(
-                            borderLeft="0.5px black solid",
-                            borderRight="1px black solid",
-                            **SELECTED_STYLE,
-                        ),
-                    ),
+                        variant="outline",
+                        color="blue",
+                        style={"width": "100%"},
+                    )
                 ],
-                id="main-display-tabs",
-                value="station-tab",
+                shadow="sm",
+                p="xs",
+                style={"marginBottom": "0.25rem"},
             ),
             dbc.Row(className="h-100", id="main-content"),
             generate_modal(),
@@ -1497,7 +1525,7 @@ def app_layout(app_ref, stations):
         style={
             "height": "100%",
             "backgroundColor": "#E9ECEF",
-            "padding": "0rem 1.5rem 0rem 1.5rem",
+            "padding": "0rem 1rem 0rem 1rem",
             "overflow-y": "clip",
         },
     )

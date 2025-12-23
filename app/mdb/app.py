@@ -27,6 +27,7 @@ import datetime as dt
 import json
 import os
 import re
+from io import StringIO
 from itertools import chain, cycle
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -105,13 +106,14 @@ def make_station_iframe(station: str = "none") -> html.Div:
 
     Note:
         The iframe loads the station map from the Montana Mesonet API
-        and applies the "second-row" CSS class for styling.
+        and is properly constrained to fit within the card container.
     """
     return html.Div(
         html.Iframe(
-            src=f"https://mesonet.climate.umt.edu/api/map/stations/?station={station}"
+            src=f"https://mesonet.climate.umt.edu/api/map/stations/?station={station}",
+            style={"width": "100%", "height": "300px", "border": "none"},
         ),
-        className="second-row",
+        style={"width": "100%", "height": "300px", "overflow": "hidden"},
     )
 
 
@@ -203,7 +205,6 @@ class FileShare(DashShare):
             - Only saves when input indicates user action (> 0)
         """
         out_dir = Path("./share")
-
         if not out_dir.exists():
             out_dir.mkdir()
 
@@ -229,6 +230,7 @@ class FileShare(DashShare):
 
             with open(f"./{out_dir}/{hash}.json", "w") as json_file:
                 json.dump(state, json_file, indent=4)
+
         return input
 
 
@@ -274,7 +276,7 @@ def update_banner_text(station: str, tab: str, stations: str) -> str:
         - Gracefully handles missing stations with default title
         - Uses station's full display name from metadata
     """
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
     try:
         return (
             f"The Montana Mesonet Dashboard: {stations[stations['station'] == station].name.values[0]}"
@@ -287,9 +289,9 @@ def update_banner_text(station: str, tab: str, stations: str) -> str:
 
 @app.callback(
     Output("bl-content", "children"),
-    Output("bl-tabs", "active_tab"),
+    Output("bl-tabs", "value"),
     [
-        Input("bl-tabs", "active_tab"),
+        Input("bl-tabs", "value"),
         Input("station-dropdown", "value"),
         Input("temp-station-data", "data"),
         State("mesonet-stations", "data"),
@@ -322,7 +324,7 @@ def update_br_card(
         - Falls back to metadata tab if data is unavailable
         - Handles missing station data gracefully
     """
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
 
     if station == "" and at == "data-tab":
         at = "map-tab"
@@ -405,8 +407,8 @@ def update_br_card(
     State("temp-station-data", "data"),
     State("station-dropdown", "value"),
     State("hourly-switch", "value"),
-    State("dates", "start_date"),
-    State("dates", "end_date"),
+    State("start-date", "value"),
+    State("end-date", "value"),
     prevent_initial_callback=True,
 )
 def download_called_data(
@@ -441,7 +443,7 @@ def download_called_data(
         - Converts JSON data back to DataFrame for CSV export
     """
     if n_clicks and tmp_data:
-        data = pd.read_json(tmp_data, orient="records")
+        data = pd.read_json(StringIO(tmp_data), orient="records")
         name = (
             f"{station}_{time}_{start.replace('-', '')}_to_{end.replace('-', '')}.csv"
         )
@@ -450,7 +452,7 @@ def download_called_data(
 
 @app.callback(
     [
-        Output("select-vars", "options"),
+        Output("select-vars", "children"),
         Output("select-vars", "value"),
     ],
     [Input("station-dropdown", "value"), State("select-vars", "value")],
@@ -458,11 +460,11 @@ def download_called_data(
 @tracker.pause_update
 def update_select_vars(
     station: str, selected: Optional[List[str]]
-) -> Tuple[List[Dict[str, str]], List[str]]:
+) -> Tuple[List[dmc.Chip], List[str]]:
     """
     Update available variable options based on selected station.
 
-    Dynamically updates the variable selection checklist to show only
+    Dynamically updates the variable selection chips to show only
     variables available at the selected station, while preserving
     user selections where possible.
 
@@ -471,8 +473,8 @@ def update_select_vars(
         selected (Optional[List[str]]): Currently selected variables.
 
     Returns:
-        Tuple[List[Dict[str, str]], List[str]]:
-            - List of option dictionaries with 'value' and 'label' keys
+        Tuple[List[dmc.Chip], List[str]]:
+            - List of dmc.Chip components for available variables
             - List of selected variable names (filtered for availability)
 
     Note:
@@ -491,8 +493,10 @@ def update_select_vars(
             "Air Temperature",
         ]
     if not station:
-        options = [{"value": x, "label": x} for x in sorted(params.default_vars)]
-        return options, selected
+        chips = [
+            dmc.Chip(x, value=x, size="xs", variant="filled") for x in sorted(params.default_vars)
+        ]
+        return chips, selected
 
     elems = pd.read_csv(f"{params.API_URL}elements/{station}?type=csv")
     elems = elems["description_short"].tolist()
@@ -500,7 +504,8 @@ def update_select_vars(
     elems.append("Reference ET")
 
     selected = [x for x in selected if x in elems]
-    return [{"value": x, "label": x} for x in sorted(elems)], selected
+    chips = [dmc.Chip(x, value=x, size="xs", variant="filled") for x in sorted(elems)]
+    return chips, selected
 
 
 @app.callback(
@@ -780,8 +785,8 @@ def update_derived_control_panel(variable: str) -> List[Any]:
     Output("temp-station-data", "data"),
     [
         Input("station-dropdown", "value"),
-        Input("dates", "start_date"),
-        Input("dates", "end_date"),
+        Input("start-date", "value"),
+        Input("end-date", "value"),
         Input("hourly-switch", "value"),
         Input("select-vars", "value"),
         State("temp-station-data", "data"),
@@ -822,14 +827,35 @@ def get_latest_api_data(
     """
     if not station:
         return None
-    start = dt.datetime.strptime(start, "%Y-%m-%d").date()
-    end = dt.datetime.strptime(end, "%Y-%m-%d").date()
+
+    # Convert dates to proper format - handle different input formats
+    try:
+        if isinstance(start, str):
+            if "T" in start:
+                start = start.split("T")[0]  # Remove time component if present
+            start = dt.datetime.strptime(start, "%Y-%m-%d").date()
+        elif hasattr(start, "date"):
+            start = start.date()
+
+        if isinstance(end, str):
+            if "T" in end:
+                end = end.split("T")[0]  # Remove time component if present
+            end = dt.datetime.strptime(end, "%Y-%m-%d").date()
+        elif hasattr(end, "date"):
+            end = end.date()
+    except (ValueError, TypeError) as e:
+        print(f"Date parsing error: {e}, start: {start}, end: {end}")
+        return -1
 
     select_vars += ["Wind Speed", "Wind Direction"]
     elements = set(chain(*[params.elem_map[x] for x in select_vars]))
     elements = list(set([y for y in params.elements for x in elements if x in y]))
 
-    if tmp == -1 or not tmp or ctx.triggered_id in ["hourly-switch", "dates"]:
+    if (
+        tmp == -1
+        or not tmp
+        or ctx.triggered_id in ["hourly-switch", "start-date", "end-date"]
+    ):
         if "etr" in elements:
             has_etr = True
             elements.remove("etr")
@@ -848,7 +874,7 @@ def get_latest_api_data(
         except HTTPError:
             out = -1
         return out
-    tmp = pd.read_json(tmp, orient="records")
+    tmp = pd.read_json(StringIO(tmp), orient="records")
     if tmp.station.values[0] != station:
         if "etr" in elements:
             has_etr = True
@@ -935,7 +961,7 @@ def adjust_start_date(station: str, stations: str) -> Optional[dt.date]:
         - Uses station installation date as minimum
         - Ensures data requests are within valid ranges
     """
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
 
     if station:
         d = stations[stations["station"] == station]["date_installed"].values[0]
@@ -970,7 +996,7 @@ def enable_date_button(station: Optional[str]) -> bool:
         Input("select-vars", "value"),
         Input("station-dropdown", "value"),
         Input("hourly-switch", "value"),
-        Input("gridmet-switch", "value"),
+        Input("gridmet-switch", "checked"),
         State("mesonet-stations", "data"),
     ],
 )
@@ -979,7 +1005,7 @@ def render_station_plot(
     select_vars: List[str],
     station: str,
     period: str,
-    norm: Union[int, List[int]],
+    norm: bool,
     stations: str,
 ) -> Any:
     """
@@ -994,7 +1020,7 @@ def render_station_plot(
         select_vars (List[str]): List of selected variable names to plot.
         station (str): Selected station identifier.
         period (str): Temporal aggregation ('hourly', 'daily', 'raw').
-        norm (Union[int, List[int]]): GridMET normals toggle state.
+        norm (bool): GridMET normals toggle state (True if enabled).
         stations (str): JSON string containing station metadata.
 
     Returns:
@@ -1007,12 +1033,12 @@ def render_station_plot(
         - Supports climatological normal overlays for daily data
         - Handles multiple variable types with appropriate styling
     """
-    norm = [norm] if isinstance(norm, int) else norm
+
     if len(select_vars) == 0:
         return plt.make_nodata_figure("No variables selected")
     elif tmp_data and tmp_data != -1:
-        stations = pd.read_json(stations, orient="records")
-        data = pd.read_json(tmp_data, orient="records")
+        stations = pd.read_json(StringIO(stations), orient="records")
+        data = pd.read_json(StringIO(tmp_data), orient="records")
         data = data.assign(
             datetime=pd.to_datetime(data["datetime"], utc=True).dt.tz_convert(
                 "America/Denver"
@@ -1029,7 +1055,7 @@ def render_station_plot(
             dat=data,
             config=config,
             station=station,
-            norm=(len(norm) == 1) and (period == "daily"),
+            norm=norm and (period == "daily"),
             top_of_hour=period != "raw",
             period=period,
         )
@@ -1046,7 +1072,7 @@ def render_station_plot(
         """
         <b>Select Station</b> <br><br>
         
-        To get started, select a station from the dropdown above or the map to the right.
+        To get started, select a station from the dropdown above<br>or the map to the right.
         """
     )
 
@@ -1079,7 +1105,7 @@ def update_dropdown_from_url(pth: str, stations: str) -> Optional[str]:
     """
     stem = Path(pth).stem
 
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
     out = stations[stations["station"] == stem]
     if len(out) == 0:
         out = stations[stations["nwsli_id"] == stem]
@@ -1090,47 +1116,57 @@ def update_dropdown_from_url(pth: str, stations: str) -> Optional[str]:
 
 
 @app.callback(
-    Output("ul-tabs", "children"),
+    Output("ul-tabs", "data"),
     Input("station-dropdown", "value"),
     State("mesonet-stations", "data"),
 )
-def enable_photo_tab(station: str, stations: str) -> List[dbc.Tab]:
+def enable_photo_tab(station: str, stations: str) -> List[Dict[str, Union[str, bool]]]:
     """
-    Enable photo tab for HydroMet stations with cameras.
+    Configure photo tab availability based on station network.
 
-    Dynamically adds the photo tab to the upper-left card when
-    a HydroMet station with camera equipment is selected.
+    Always shows the photo tab but disables it for AgriMet stations
+    since they don't have camera equipment.
 
     Args:
         station (str): Selected station identifier.
         stations (str): JSON string containing station metadata.
 
     Returns:
-        List[dbc.Tab]: List of tab components, including photo tab if applicable.
+        List[Dict[str, Union[str, bool]]]: List of tab data for SegmentedControl with disabled state.
 
     Note:
-        - Photo tab only available for HydroMet network stations
-        - AgriMet stations don't have camera equipment
+        - Photo tab always visible but disabled for AgriMet stations
+        - HydroMet stations have camera equipment so photo tab is enabled
         - Gracefully handles missing station data
         - Maintains consistent tab order across station types
     """
     tabs = [
-        dbc.Tab(label="Wind Rose", tab_id="wind-tab"),
-        dbc.Tab(label="Weather Forecast", tab_id="wx-tab"),
+        {"label": "Wind Rose", "value": "wind-tab"},
+        {"label": "Weather Forecast", "value": "wx-tab"},
     ]
-    stations = pd.read_json(stations, orient="records")
-    try:
-        network = stations[stations["station"] == station]["sub_network"].values[0]
-    except IndexError:
-        return tabs
-    if station and network == "HydroMet":
-        tabs.append(dbc.Tab(label="Photos", tab_id="photo-tab"))
+
+    # Always include photo tab, but disable for AgriMet
+    photo_disabled = True  # Default to disabled
+
+    if station:
+        try:
+            stations_df = pd.read_json(StringIO(stations), orient="records")
+            network = stations_df[stations_df["station"] == station][
+                "sub_network"
+            ].values[0]
+            photo_disabled = network != "HydroMet"
+        except (IndexError, ValueError):
+            photo_disabled = True
+
+    tabs.append(
+        {"label": "Latest Photo", "value": "photo-tab", "disabled": photo_disabled}
+    )
 
     return tabs
 
 
 @app.callback(
-    Output("ul-tabs", "active_tab"),
+    Output("ul-tabs", "value"),
     Input("station-dropdown", "value"),
     State("mesonet-stations", "data"),
 )
@@ -1153,7 +1189,7 @@ def select_default_tab(station: str, stations: str) -> str:
         - AgriMet and other stations default to wind rose tab
         - Falls back to wind tab if station data is unavailable
     """
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
     try:
         network = stations[stations["station"] == station]["sub_network"].values[0]
     except IndexError:
@@ -1164,7 +1200,7 @@ def select_default_tab(station: str, stations: str) -> str:
 @app.callback(
     Output("ul-content", "children"),
     [
-        Input("ul-tabs", "active_tab"),
+        Input("ul-tabs", "value"),
         Input("station-dropdown", "value"),
         Input("temp-station-data", "data"),
         State("mesonet-stations", "data"),
@@ -1207,7 +1243,7 @@ def update_ul_card(
         if not tmp_data:
             return html.Div()
         if tmp_data != -1:
-            data = pd.read_json(tmp_data, orient="records")
+            data = pd.read_json(StringIO(tmp_data), orient="records")
             data = data.rename(columns=params.lab_swap)
             data = data.assign(
                 datetime=pd.to_datetime(data["datetime"], utc=True).dt.tz_convert(
@@ -1247,11 +1283,16 @@ def update_ul_card(
         )
 
     elif at == "wx-tab":
-        stations = pd.read_json(stations, orient="records")
+        stations = pd.read_json(StringIO(stations), orient="records")
 
         row = stations[stations["station"] == station]
         url = f"https://forecast.weather.gov/MapClick.php?lon={row['longitude'].values[0]}&lat={row['latitude'].values[0]}"
-        return html.Div(html.Iframe(src=url), className="second-row")
+        return html.Div(
+            html.Iframe(
+                src=url, style={"width": "100%", "height": "300px", "border": "none"}
+            ),
+            style={"width": "100%", "height": "300px", "overflow": "hidden"},
+        )
 
     else:
         tmp = pd.read_csv(
@@ -1282,11 +1323,15 @@ def update_ul_card(
                     {"value": "ss", "label": "South Sky"},
                 ]
 
-        buttons = dbc.RadioItems(
+        buttons = dmc.ChipGroup(
+            children=[
+                dmc.Chip(option["label"], value=option["value"], size="xs", variant="filled")
+                for option in options
+            ],
             id="photo-direction",
-            options=options,
-            inline=True,
             value="n",
+            multiple=False,
+            style={"flexWrap": "nowrap"}  # Force single row
         )
 
         if len(tmp) != 0:
@@ -1313,45 +1358,93 @@ def update_ul_card(
                 x.replace(" Morning", "T09:00:00").replace(" Afternoon", "T15:00:00")
                 for x in options
             ]
-            sel = dbc.Select(
-                options=[{"label": k, "value": v} for k, v in zip(options, values)],
+            sel = dmc.Select(
+                data=[{"label": k, "value": v} for k, v in zip(options, values)],
                 id="photo-time",
                 value=values[0],
+                placeholder="Select photo time",
+                size="xs",
+                style={"minWidth": "180px", "height": "28px", "padding": "0", "fontSize": "0.85rem"},
             )
         else:
             val = pd.Timestamp.today().strftime("%Y-%m-%d")
-            sel = (
-                dbc.Select(
-                    options=[{"label": val, "value": val}], id="photo-time", value=val
-                ),
+            sel = dmc.Select(
+                data=[{"label": val, "value": val}],
+                id="photo-time",
+                value=val,
+                placeholder="Select photo time",
+                size="xs",
+                style={"minWidth": "180px", "height": "28px", "padding": "0", "fontSize": "0.85rem"},
             )
 
         return html.Div(
             [
-                dbc.Row(
-                    [dbc.Col(buttons), dbc.Col(sel, width=4)],
-                    justify="center",
+                dmc.Group(
+                    [
+                        dmc.Group([
+                            buttons
+                        ], spacing="xs", align="center"),
+                        dmc.Group(
+                            [
+                                sel,
+                                dmc.Button(
+                                    "Full Screen",
+                                    id="photo-fullscreen-btn",
+                                    size="xs",
+                                    variant="outline",
+                                    style={"marginLeft": "0.5rem", "height": "28px", "fontSize": "0.85rem"}
+                                ),
+                            ],
+                            spacing="xs",
+                            align="center",
+                            position="center",
+                            style={
+                                "justifyContent": "center",
+                                "alignItems": "center",
+                                "marginBottom": "0.75rem",
+                                "display": "flex",
+                                "height": "40px"
+                            }
+                        ),
+                    ],
+                    position="center",
                     align="center",
-                    className="h-50",
-                    style={"padding": "0rem 0rem 1rem 0rem"},
+                    spacing="sm",
+                    style={"marginBottom": "0.25rem"}
                 ),
-                html.Div(
+                dmc.Center(
                     dmc.Container(
-                        id="photo-figure",  # style={"height": "34vh", "width": "30vw"}
+                        id="photo-figure",
+                        style={"textAlign": "center"}
                     ),
-                    style={
-                        "display": "flex",
-                        "justify-content": "center",
-                        "align-items": "center",
-                    },
                 ),
-            ]
+                    # Modal for full-screen photo
+                dmc.Modal(
+                    id="photo-modal",
+                    centered=True,
+                    size="60vw",
+                    overlayOpacity=0.7,
+                    overlayBlur=2,
+                    withCloseButton=True,
+                    opened=False,
+                    children=[
+                        dmc.Center(
+                            dmc.Image(
+                                id="photo-modal-img",
+                                radius="md",
+                                style={"maxWidth": "60vw", "maxHeight": "60vh"}
+                            )
+                        )
+                    ]
+                ),
+            ],
+            style={"padding": "0.5rem", "height": "100%"}
         )
 
 
-@app.callback(Output("gridmet-switch", "options"), Input("hourly-switch", "value"))
+@app.callback(Output("gridmet-switch", "disabled"), Input("hourly-switch", "value"))
 @tracker.pause_update
-def disable_gridmet_switch(period: str) -> List[Dict[str, Union[str, int, bool]]]:
+def disable_gridmet_switch(period: str) -> bool:
     """
     Enable or disable gridMET normals based on temporal aggregation.
 
@@ -1362,7 +1455,7 @@ def disable_gridmet_switch(period: str) -> List[Dict[str, Union[str, int, bool]]
         period (str): Selected temporal aggregation ('hourly', 'daily', 'raw').
 
     Returns:
-        List[Dict[str, Union[str, int, bool]]]: Option configuration for the switch.
+        bool: True if switch should be disabled, False if enabled.
 
     Note:
         - Decorated with @tracker.pause_update to prevent callback loops
@@ -1370,9 +1463,7 @@ def disable_gridmet_switch(period: str) -> List[Dict[str, Union[str, int, bool]]
         - Disabled for sub-daily data where normals aren't applicable
         - Provides user feedback about when normals are available
     """
-    if period != "daily":
-        return [{"label": "gridMET Normals", "value": 1, "disabled": True}]
-    return [{"label": "gridMET Normals", "value": 1, "disabled": False}]
+    return period != "daily"
 
 
 @app.callback(
@@ -1386,28 +1477,27 @@ def disable_gridmet_switch(period: str) -> List[Dict[str, Union[str, int, bool]]
 def update_photo_direction(station: str, direction: str, dt: str) -> Any:
     """
     Update the station photo based on direction and time selection.
-
-    Fetches and displays station camera images based on user-selected
-    viewing direction and timestamp.
-
-    Args:
-        station (str): Station identifier.
-        direction (str): Camera direction ('n', 's', 'e', 'w', etc.).
-        dt (str): Timestamp for photo retrieval.
-
-    Returns:
-        Any: Plotly figure containing the station photo.
-
-    Note:
-        - Supports multiple camera directions depending on station equipment
-        - Handles both morning and afternoon photo times
-        - Uses Montana Mesonet photo API for image retrieval
-        - Returns appropriate figure for display in dashboard
     """
     return dmc.Image(
         radius="md",
         src=f"https://mesonet.climate.umt.edu/api/photos/{station}/{direction.lower()}?dt={dt}&force=True",
+        id="photo-img",
+        style={"maxWidth": "100%", "maxHeight": "40vh"}
     )
+
+
+# Callback to open modal and show full-screen image when button is clicked
+@app.callback(
+    [Output("photo-modal", "opened"), Output("photo-modal-img", "src")],
+    [Input("photo-fullscreen-btn", "n_clicks")],
+    [State("station-dropdown", "value"), State("photo-direction", "value"), State("photo-time", "value")],
+    prevent_initial_call=True,
+)
+def show_fullscreen_photo(n_clicks, station, direction, dt):
+    if n_clicks:
+        src = f"https://mesonet.climate.umt.edu/api/photos/{station}/{direction.lower()}?dt={dt}&force=True"
+        return True, src
+    return False, None
 
 
 @app.callback(
@@ -1545,7 +1635,7 @@ def toggle_main_tab(sel: str, stations: str) -> List[Any]:
         - Download tab: Data export interface with station selection
         - Falls back to station tab for unknown selections
     """
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
 
     if sel == "station-tab":
         station_fig = make_station_iframe()
@@ -1605,7 +1695,7 @@ def change_display_tab_with_hash(hash: str, cur: str) -> str:
 
 
 @app.callback(
-    Output("station-dropdown", "options"),
+    Output("station-dropdown", "data"),
     Input("network-options", "value"),
     State("mesonet-stations", "data"),
 )
@@ -1631,7 +1721,7 @@ def subset_stations(opts: List[str], stations: str) -> List[Dict[str, str]]:
         - Uses regex matching for network filtering
         - Maintains consistent option format for dropdowns
     """
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
 
     if len(opts) == 0:
         sub = stations
@@ -1680,7 +1770,7 @@ def update_sat_selectors(
         graph = dls.Bars(dcc.Graph(id="satellite-plot"))
     else:
         graph = dls.Bars(dcc.Graph(id="satellite-compare"))
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
 
     return (
         lay.build_satellite_dropdowns(
@@ -1833,7 +1923,7 @@ def render_derived_plot(
     if len(select_vars) == 0:
         return plt.make_nodata_figure("No variables selected")
     elif data and data != -1:
-        data = pd.read_json(data, orient="records")
+        data = pd.read_json(StringIO(data), orient="records")
         data["datetime"] = pd.to_datetime(data["datetime"], utc=True).dt.tz_convert(
             "America/Denver"
         )
@@ -1966,7 +2056,7 @@ def update_downloader_elements(station, public, elements, stations):
     if station is None:
         return [], []
 
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
 
     elems_out = get.get_station_elements(station, public)
     derived_elems = [
@@ -2011,7 +2101,7 @@ def update_downloader_elements(station, public, elements, stations):
 def set_downloader_start_date(station, stations):
     if station is None:
         return no_update, no_update, no_update
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
     start = stations[stations["station"] == station]["date_installed"].values[0]
     return start, start, start
 
@@ -2115,7 +2205,7 @@ def download_data(n_clicks, data, station, start, end, period):
     if n_clicks and not data:
         return no_update, False, False
     if n_clicks:
-        data = pd.read_json(data, orient="records")
+        data = pd.read_json(StringIO(data), orient="records")
         name = f"{station}_{period}_{str(start).replace('-', '')}_to_{str(end).replace('-', '')}.csv"
         return dcc.send_data_frame(data.to_csv, name), True, False
 
@@ -2155,7 +2245,7 @@ def plot_downloaded_data(data):
 
     rm_cols = ["station", "datetime", "Contains Missing Data"]
 
-    data = pd.read_json(data, orient="records")
+    data = pd.read_json(StringIO(data), orient="records")
     use_cols = [x for x in data.columns if x not in rm_cols]
     out = []
     for col in use_cols:
@@ -2174,7 +2264,7 @@ def plot_downloaded_data(data):
 )
 def update_dl_map(plots, stations):
     if tracker.locked:
-        stations = pd.read_json(stations, orient="records")
+        stations = pd.read_json(StringIO(stations), orient="records")
         return plt.plot_station(stations=stations)
     return no_update
 
@@ -2188,7 +2278,7 @@ def update_dl_map(plots, stations):
 def update_swp_chips(station, stations, cur):
     if station is None:
         return cur
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
     children = [
         dmc.Chip(v, value=k, size="xs")
         for k, v in [
@@ -2216,7 +2306,7 @@ def update_swp_chips(station, stations, cur):
 def update_swp_if_station_doesnt_have(station, cur, stations):
     if station is None:
         return "soil_vwc"
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
     has_swp = stations[stations["station"] == station]["has_swp"].values[0]
 
     if cur in ["swp", "percent_saturation"] and has_swp:
@@ -2234,7 +2324,7 @@ def update_swp_if_station_doesnt_have(station, cur, stations):
     State("station-dropdown-derived", "value"),
 )
 def filter_to_only_swp_stations(variable, stations, cur_station):
-    stations = pd.read_json(stations, orient="records")
+    stations = pd.read_json(StringIO(stations), orient="records")
     if variable in ["swp", "percent_saturation"]:
         stations = stations[stations["has_swp"]]
 
@@ -2270,7 +2360,8 @@ def update_annual_station_elements(station, cur_val):
 
 @app.callback(
     Output("hourly-switch", "value"),
-    Output("dates", "start_date"),
+    Output("start-date", "value"),
+    Output("end-date", "value"),
     Output("por-button", "children"),
     Input("por-button", "n_clicks"),
     State("station-dropdown", "value"),
@@ -2278,7 +2369,7 @@ def update_annual_station_elements(station, cur_val):
 )
 def set_dates_to_por(
     n_clicks: Optional[int], station: str, stations: str
-) -> Tuple[Union[str, Any], Union[dt.date, Any], Union[str, Any]]:
+) -> Tuple[Union[str, Any], Union[dt.date, Any], Union[dt.date, Any], Union[str, Any]]:
     """
     Toggle between period of record and recent data views.
 
@@ -2291,9 +2382,10 @@ def set_dates_to_por(
         stations (str): JSON string containing station metadata.
 
     Returns:
-        Tuple[Union[str, Any], Union[dt.date, Any], Union[str, Any]]:
+        Tuple[Union[str, Any], Union[dt.date, Any], Union[dt.date, Any], Union[str, Any]]:
             - Time aggregation setting ('daily' or 'hourly')
             - Start date (installation date or 2 weeks ago)
+            - End date (today)
             - Updated button text
 
     Note:
@@ -2303,22 +2395,75 @@ def set_dates_to_por(
         - Updates button text to indicate next action
     """
     if not n_clicks:
-        return no_update, no_update, no_update
+        return no_update, no_update, no_update, no_update
 
     if n_clicks % 2 == 1:
         # Odd clicks - show full period of record
-        stations = pd.read_json(stations, orient="records")
+        stations = pd.read_json(StringIO(stations), orient="records")
         d = stations[stations["station"] == station]["date_installed"].values[0]
         return (
             "daily",
             dt.datetime.strptime(d, "%Y-%m-%d").date(),
+            dt.date.today(),
             "Display Latest 2 Weeks",
         )
     else:
         # Even clicks - show last 2 weeks
         today = dt.date.today()
         two_weeks_ago = today - dt.timedelta(days=14)
-        return "hourly", two_weeks_ago, "Display Period of Record"
+        return "hourly", two_weeks_ago, today, "Display Period of Record"
+
+
+@app.callback(
+    [
+        Output("sidebar-col", "lg"),
+        Output("sidebar-col", "xl"),
+        Output("main-plot-col", "lg"),
+        Output("main-plot-col", "xl"),
+        Output("sidebar-content", "style"),
+        Output("sidebar-expand-btn", "style"),
+    ],
+    [
+        Input("sidebar-collapse-btn", "n_clicks"),
+        Input("sidebar-expand-btn", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+)
+def toggle_sidebar(collapse_clicks, expand_clicks):
+    """
+    Toggle the sidebar between collapsed and expanded states.
+
+    Adjusts column sizes dynamically to provide more space for the main plot
+    when the sidebar is collapsed.
+    """
+    ctx_id = ctx.triggered_id
+
+    if ctx_id == "sidebar-collapse-btn":
+        # Collapsed state
+        return (
+            {"size": 0, "order": "first"},  # Hide sidebar column
+            {"size": 0, "order": "first"},
+            {"size": 9, "order": "second"},  # Larger main plot column
+            {"size": 9, "order": "second"},
+            {"height": "88vh", "overflow-y": "auto", "display": "none"},  # Hide sidebar
+            {"display": "block"},  # Show floating expand button
+        )
+    elif ctx_id == "sidebar-expand-btn":
+        # Expanded state
+        return (
+            {"size": 3, "order": "first"},  # Normal sidebar column
+            {"size": 3, "order": "first"},
+            {"size": 6, "order": "second"},  # Normal main plot column
+            {"size": 6, "order": "second"},
+            {
+                "height": "88vh",
+                "overflow-y": "auto",
+                "display": "block",
+            },  # Show sidebar
+            {"display": "none"},  # Hide floating expand button
+        )
+
+    return no_update, no_update, no_update, no_update, no_update, no_update
 
 
 # def generate_funding_info(req_funding, current_funding, station_name):
@@ -2353,7 +2498,7 @@ def set_dates_to_por(
 #     if station is None:
 #         return no_update
 #     dat = pd.read_csv(f"https://mesonet.climate.umt.edu/api/v2/stations/funding/?stations={station}&type=csv")
-#     stations = pd.read_json(stations, orient="records")
+#     stations = pd.read_json(StringIO(stations), orient="records")
 #     sub_network = stations[stations['station'] == station].sub_network.values[0]
 #     station_name = stations[stations['station'] == station].name.values[0]
 
@@ -2373,7 +2518,7 @@ def set_dates_to_por(
 # def open_no_funding_modal_derived(station, stations):
 #     if station is None:
 #         return no_update
-#     stations = pd.read_json(stations, orient="records")
+#     stations = pd.read_json(StringIO(stations), orient="records")
 #     try:
 #         funded = stations[stations['station'] == station].funded.values[0]
 #     except AttributeError:
@@ -2390,7 +2535,7 @@ def set_dates_to_por(
 # def open_no_funding_modal_satellite(station, stations):
 #     if station is None:
 #         return no_update
-#     stations = pd.read_json(stations, orient="records")
+#     stations = pd.read_json(StringIO(stations), orient="records")
 #     try:
 #         funded = stations[stations['station'] == station].funded.values[0]
 #     except AttributeError:
@@ -2407,7 +2552,7 @@ def set_dates_to_por(
 # def open_no_funding_modal_dl(station, stations):
 #     if station is None:
 #         return no_update
-#     stations = pd.read_json(stations, orient="records")
+#     stations = pd.read_json(StringIO(stations), orient="records")
 #     try:
 #         funded = stations[stations['station'] == station].funded.values[0]
 #     except AttributeError:

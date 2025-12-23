@@ -911,7 +911,17 @@ def plot_annual(dat: pd.DataFrame, colname: str):
     dat["Year"] = dat["datetime"].dt.year
     dat["date"] = dat["datetime"].dt.date
 
-    fig = px.line(dat, x="julian", y=colname, color="Year")
+    # If colname is Precipitation [in], plot annual cumulative sum
+    if colname == "Precipitation [in]":
+        dat = dat.sort_values(["Year", "julian"])
+        dat["cumsum"] = dat.groupby("Year")[colname].cumsum()
+        y_col = "cumsum"
+        y_label = "Annual Cumulative Precipitation [in]"
+    else:
+        y_col = colname
+        y_label = colname
+
+    fig = px.line(dat, x="julian", y=y_col, color="Year")
     # Get colors from OrRd palette
     years = dat["Year"].unique()
     n = len(years) - 1
@@ -941,7 +951,7 @@ def plot_annual(dat: pd.DataFrame, colname: str):
     )
 
     fig.update_traces(connectgaps=False)
-    fig.update_layout(xaxis_title="Day of Year", yaxis_title=colname)
+    fig.update_layout(xaxis_title="Day of Year", yaxis_title=y_label)
     return style_figure(fig, legend=True)
 
 
