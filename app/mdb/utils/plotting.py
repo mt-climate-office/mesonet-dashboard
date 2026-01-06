@@ -1009,8 +1009,7 @@ def plot_latest_ace_image(station, direction="N", dt=None):
 
     # Configure other layout
     fig.update_layout(
-        width=img_width * scale_factor,
-        height=img_height * scale_factor,
+        autosize=True,
         margin={"l": 0, "r": 0, "t": 0, "b": 0},
     )
 
