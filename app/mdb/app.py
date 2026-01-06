@@ -1475,7 +1475,7 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
     return dcc.Graph(
         id="photo-display-graph",
         figure=fig,
-        config={"displayModeBar": False},
+        config={"displayModeBar": False, "responsive": True},
         style={"height": "40vh", "width": "100%"},
     )
 

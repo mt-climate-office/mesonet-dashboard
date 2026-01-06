@@ -982,13 +982,16 @@ def plot_latest_ace_image(station, direction="N", dt=None):
     )
 
     # Configure axes
-    fig.update_xaxes(visible=False, range=[0, img_width * scale_factor])
+    fig.update_xaxes(
+        visible=False, range=[0, img_width * scale_factor], constrain="domain"
+    )
 
     fig.update_yaxes(
         visible=False,
         range=[0, img_height * scale_factor],
         # the scaleanchor attribute ensures that the aspect ratio stays constant
         scaleanchor="x",
+        constrain="domain",
     )
 
     # Add image
