@@ -1531,7 +1531,6 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
             style={
                 "width": "100%",
                 "height": "100%",
-                "maxHeight": "100%",
                 "display": "block",
                 "objectFit": "contain",
                 "borderRadius": "0.5rem",
@@ -1539,8 +1538,7 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
         ),
         style={
             "width": "100%",
-            "aspectRatio": "16 / 9",
-            "maxHeight": "clamp(220px, 38vh, 540px)",
+            "height": "clamp(220px, 38vh, 540px)",
             "overflow": "hidden",
             "backgroundColor": "transparent",
             "display": "flex",
