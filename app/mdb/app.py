@@ -1524,7 +1524,7 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
             style={"maxWidth": "520px", "width": "100%"},
         )
 
-    return dmc.Box(
+    return html.Div(
         html.Img(
             src=src,
             id="photo-img",
