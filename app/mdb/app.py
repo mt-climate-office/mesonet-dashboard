@@ -1498,10 +1498,7 @@ def build_photo_src(
         return None
 
     direction_key = (direction or "n").lower()
-    src = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction_key}"
-    if dt:
-        src = f"{src}?dt={dt}"
-    return src
+    return f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction_key}"
 
 
 @app.callback(
@@ -1528,32 +1525,17 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
         )
 
     return dmc.Box(
-        dmc.Stack(
-            [
-                dmc.Image(
-                    radius="md",
-                    src=src,
-                    id="photo-img",
-                    fit="contain",
-                    style={
-                        "width": "100%",
-                        "height": "100%",
-                        "maxHeight": "100%",
-                        "display": "block",
-                        "objectFit": "contain",
-                    },
-                ),
-                dmc.Anchor(
-                    "Open image directly",
-                    href=src,
-                    target="_blank",
-                    size="xs",
-                    underline=True,
-                    style={"alignSelf": "center"},
-                ),
-            ],
-            gap=6,
-            style={"width": "100%", "height": "100%"},
+        html.Img(
+            src=src,
+            id="photo-img",
+            style={
+                "width": "100%",
+                "height": "100%",
+                "maxHeight": "100%",
+                "display": "block",
+                "objectFit": "contain",
+                "borderRadius": "0.5rem",
+            },
         ),
         style={
             "width": "100%",
