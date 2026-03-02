@@ -1498,36 +1498,10 @@ def build_photo_src(
         return None
 
     direction_key = (direction or "n").lower()
-    src = (
-        f"https://mesonet.climate.umt.edu/api/v2/photos/"
-        f"{station}/{direction_key}/?force=True"
-    )
+    src = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction_key}"
     if dt:
-        src = f"{src}&dt={dt}"
+        src = f"{src}?dt={dt}"
     return src
-
-
-def resolve_photo_src(
-    station: Optional[str], direction: Optional[str], dt: Optional[str]
-) -> Tuple[Optional[str], Optional[str]]:
-    """
-    Resolve a photo URL and verify it returns an image.
-    """
-    src = build_photo_src(station, direction, dt)
-    if not src:
-        return None, "No station selected."
-
-    try:
-        response = requests.get(src, timeout=12, stream=True)
-        content_type = response.headers.get("Content-Type", "").lower()
-        is_image = response.status_code == 200 and content_type.startswith("image/")
-        response.close()
-        if is_image:
-            return src, None
-    except requests.RequestException:
-        pass
-
-    return None, "Image failed to load for this station, direction, or time."
 
 
 @app.callback(
@@ -1542,11 +1516,11 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
     """
     Update the station photo based on direction and time selection.
     """
-    src, error = resolve_photo_src(station, direction, dt)
+    src = build_photo_src(station, direction, dt)
     if not src:
         return dmc.Alert(
             title="Photo unavailable",
-            children=error or "Image failed to load.",
+            children="No station selected.",
             color="orange",
             variant="light",
             radius="md",
@@ -1554,17 +1528,24 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
         )
 
     return dmc.Box(
-        dmc.Image(
-            radius="md",
-            src=src,
-            id="photo-img",
-            fit="contain",
+        html.ObjectEl(
+            data=src,
+            type="image/*",
+            children=dmc.Alert(
+                title="Photo unavailable",
+                children="Image failed to load for this station, direction, or time.",
+                color="orange",
+                variant="light",
+                radius="md",
+                style={"maxWidth": "520px", "width": "100%"},
+            ),
             style={
                 "width": "100%",
                 "height": "100%",
                 "maxHeight": "100%",
                 "display": "block",
                 "objectFit": "contain",
+                "borderRadius": "0.5rem",
             },
         ),
         style={
@@ -1589,7 +1570,7 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
 )
 def show_fullscreen_photo(n_clicks, station, direction, dt):
     if n_clicks:
-        src, _ = resolve_photo_src(station, direction, dt)
+        src = build_photo_src(station, direction, dt)
         if src:
             return True, src
     return False, None
