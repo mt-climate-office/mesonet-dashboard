@@ -18,6 +18,7 @@ The module supports various plot types, normal overlays, sensor change annotatio
 and responsive design for the web dashboard.
 """
 
+import ast
 import os
 from pathlib import Path
 from typing import List, Optional
@@ -164,6 +165,180 @@ def merge_normal_data(v: str, df: pd.DataFrame, station: str) -> Optional[pd.Dat
     return None
 
 
+def _coerce_config_timestamp(value) -> Optional[pd.Timestamp]:
+    if value is None:
+        return None
+    if isinstance(value, str) and value.strip().lower() in {"none", "nan", ""}:
+        return None
+
+    ts = pd.to_datetime(value, errors="coerce")
+    if pd.isna(ts):
+        return None
+    if ts.tzinfo is None:
+        return ts.tz_localize("America/Denver")
+    return ts.tz_convert("America/Denver")
+
+
+def _normalize_outage_ranges(value) -> List[List[str]]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        val = value.strip()
+        if val.lower() in {"none", "nan", ""}:
+            return []
+        try:
+            value = ast.literal_eval(val)
+        except (ValueError, SyntaxError):
+            return []
+
+    if not isinstance(value, list):
+        return []
+
+    out = []
+    for item in value:
+        if isinstance(item, list):
+            cleaned = [str(x) for x in item if x is not None and str(x).strip() != ""]
+            if len(cleaned) > 0:
+                out.append(cleaned)
+    return out
+
+
+def _build_sensor_events(
+    config: pd.DataFrame, data_min: pd.Timestamp, default_width: pd.Timedelta
+) -> pd.DataFrame:
+    if config is None or len(config) == 0:
+        return pd.DataFrame()
+
+    events = []
+    for _, row in config.iterrows():
+        elem = str(row.get("elements", "Unknown Element"))
+
+        start = _coerce_config_timestamp(row.get("date_start"))
+        if start is not None and start >= data_min:
+            events.append(
+                {"reason": "added", "x0": start + rd(hours=12), "x1": None, "element": elem}
+            )
+
+        end = _coerce_config_timestamp(row.get("date_end"))
+        if end is not None and end >= data_min:
+            events.append(
+                {
+                    "reason": "removed",
+                    "x0": end + rd(hours=12),
+                    "x1": None,
+                    "element": elem,
+                }
+            )
+
+        for outage in _normalize_outage_ranges(row.get("outage_ranges")):
+            outage_start = _coerce_config_timestamp(outage[0] if len(outage) > 0 else None)
+            outage_end = _coerce_config_timestamp(outage[1] if len(outage) > 1 else None)
+            if outage_start is not None and outage_start >= data_min:
+                events.append(
+                    {
+                        "reason": "outage",
+                        "x0": outage_start + rd(hours=12),
+                        "x1": outage_end + rd(hours=12) if outage_end is not None else None,
+                        "element": elem,
+                    }
+                )
+            if outage_end is not None and outage_end >= data_min:
+                events.append(
+                    {
+                        "reason": "outage_end",
+                        "x0": outage_end + rd(hours=12),
+                        "x1": None,
+                        "element": elem,
+                    }
+                )
+
+    if len(events) == 0:
+        return pd.DataFrame()
+
+    events = pd.DataFrame(events)
+    events = (
+        events.groupby(["reason", "x0", "x1"], dropna=False)["element"]
+        .agg(lambda x: sorted(set(x)))
+        .reset_index()
+    )
+    events["x1"] = events["x1"].fillna(events["x0"] + default_width)
+    events["x1"] = np.where(
+        events["x1"] <= events["x0"], events["x0"] + default_width, events["x1"]
+    )
+    return events
+
+
+def _add_sensor_event_overlays(
+    fig: go.Figure, events: pd.DataFrame, y_min: float, y_max: float
+) -> go.Figure:
+    if events is None or len(events) == 0:
+        return fig
+
+    if pd.isna(y_min) or pd.isna(y_max):
+        y_min, y_max = 0, 1
+    if y_min == y_max:
+        y_min -= 1
+        y_max += 1
+
+    for _, event in events.iterrows():
+        x0 = pd.to_datetime(event["x0"])
+        x1 = pd.to_datetime(event["x1"])
+        date0 = x0.strftime("%Y-%m-%d")
+        date1 = x1.strftime("%Y-%m-%d")
+        elems = ",<br>".join(event["element"])
+
+        if event["reason"] == "added":
+            text = (
+                f"A sensor was added/replaced on {date0}, affecting the following "
+                f"elements:<br>{elems}"
+            )
+        elif event["reason"] == "removed":
+            text = (
+                f"A sensor was sunset/removed on {date0}, affecting the following "
+                f"elements:<br>{elems}"
+            )
+        elif event["reason"] == "outage_end":
+            text = (
+                f"A sensor outage ended on {date0}, affecting the following "
+                f"elements:<br>{elems}"
+            )
+        else:
+            if date0 == date1:
+                text = (
+                    f"A sensor outage was reported on {date0}, affecting the following "
+                    f"elements:<br>{elems}"
+                )
+            else:
+                text = (
+                    f"A sensor outage was reported on {date0} and lasted through {date1}, "
+                    f"affecting the following elements:<br>{elems}"
+                )
+
+        fig.add_vrect(
+            x0=x0,
+            x1=x1,
+            fillcolor="rgba(200,200,200,1)",
+            opacity=0.75,
+            line_width=0,
+            layer="below",
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=[x0, x0, x1, x1, x0],
+                y=[y_min, y_max, y_max, y_min, y_min],
+                fill="toself",
+                mode="lines",
+                line=dict(color="rgba(200,200,200,0.5)", width=0),
+                showlegend=False,
+                name="",
+                text=text,
+                opacity=0.5,
+            )
+        )
+
+    return fig
+
+
 def plot_soil(dat, config, **kwargs):
     cols = dat.columns[1:].tolist()
     dat = pd.concat(
@@ -179,18 +354,10 @@ def plot_soil(dat, config, **kwargs):
         x for x in config["elements"] if x in dat["elem_lab"].drop_duplicates().tolist()
     ]
     config = config.copy()[config["elements"].isin(valid_config_elems)]
-    sensor_additions = config[
-        pd.to_datetime(config["date_start"]).dt.tz_localize("America/Denver")
-        >= pd.to_datetime(dat["datetime"].min())
-    ]
-    sensor_additions = (
-        sensor_additions.groupby("date_start")
-        .agg(
-            {
-                "elements": lambda x: ",<br>".join(x),
-            }
-        )
-        .reset_index()
+    sensor_events = _build_sensor_events(
+        config=config,
+        data_min=pd.to_datetime(dat["datetime"].min()),
+        default_width=pd.Timedelta(hours=6),
     )
 
     fig = px.line(
@@ -213,41 +380,13 @@ def plot_soil(dat, config, **kwargs):
         connectgaps=False,
         hovertemplate="<b>Date</b>: %{x}<br>" + "<b>" + kwargs["txt"] + "</b>: %{y}",
     )
-    for _, row in sensor_additions.iterrows():
-        first = pd.to_datetime(row["date_start"]) + rd(hours=12)
-        second = first + rd(hours=6)
-        fig.add_vrect(
-            x0=first,
-            x1=second,
-            fillcolor="rgba(200,200,200,1)",
-            opacity=0.75,
-            line_width=0,
-            layer="below",
-            annotation_text=None,
-        )
-        # Add transparent trace for hovertext
-        # Add transparent trace for hovertext
-        fig.add_trace(
-            go.Scatter(
-                x=[first, first, second, second, first],
-                y=[
-                    dat["value"].min(),
-                    dat["value"].max(),
-                    dat["value"].max(),
-                    dat["value"].min(),
-                    dat["value"].min(),
-                ],
-                fill="toself",
-                mode="lines",
-                line=dict(color="rgba(200,200,200,0.5)", width=0),
-                showlegend=False,
-                name="",  # Add this line to remove "trace 1" from the legend
-                text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
-                opacity=0.5,
-            )
-        )
-        # Move the last trace (the transparent marker) to the frontmost layer
-        fig.data = fig.data[:-1] + (fig.data[-1],)
+
+    fig = _add_sensor_event_overlays(
+        fig=fig,
+        events=sensor_events,
+        y_min=dat["value"].min(),
+        y_max=dat["value"].max(),
+    )
 
     fig.update_layout(hovermode="x unified")
 
@@ -258,26 +397,23 @@ def plot_met(dat, config, **kwargs):
     elem_columns = [x for x in dat.columns if x not in ["datetime"]]
     valid_config_elems = [x for x in config["elements"] if x in elem_columns]
     config = config.copy()[config["elements"].isin(valid_config_elems)]
-    sensor_additions = config[
-        pd.to_datetime(config["date_start"]).dt.tz_localize("America/Denver")
-        >= pd.to_datetime(dat["datetime"].min())
-    ]
-    sensor_additions = (
-        sensor_additions.groupby("date_start")
-        .agg(
-            {
-                "elements": lambda x: ",\n".join(x),
-            }
-        )
-        .reset_index()
+    date_min = pd.to_datetime(dat["datetime"].min())
+    date_max = pd.to_datetime(dat["datetime"].max())
+    if (date_max - date_min) <= pd.Timedelta(days=31):
+        vrect_width = pd.Timedelta(hours=6)
+    else:
+        vrect_width = pd.Timedelta(hours=48)
+    sensor_events = _build_sensor_events(
+        config=config, data_min=date_min, default_width=vrect_width
     )
 
     # TODO: Debug cherry ridge temperature sensor swap
 
-    variable_text = dat.columns.tolist()[-1]
+    y_col = dat.columns.tolist()[-1]
+    variable_text = y_col
     station_name = kwargs["station"]["station"].values[0]
 
-    fig = px.line(dat, x="datetime", y=variable_text, markers=False)
+    fig = px.line(dat, x="datetime", y=y_col, markers=False)
 
     fig = fig.update_traces(line_color=kwargs["color"], connectgaps=False)
 
@@ -316,45 +452,12 @@ def plot_met(dat, config, **kwargs):
         fig.add_trace(mx_line)
         fig.add_trace(mn_line)
 
-    for _, row in sensor_additions.iterrows():
-        # Determine width based on date range
-        date_min = pd.to_datetime(dat["datetime"].min())
-        date_max = pd.to_datetime(dat["datetime"].max())
-        if (date_max - date_min) <= pd.Timedelta(days=31):
-            vrect_width = pd.Timedelta(hours=6)
-        else:
-            vrect_width = pd.Timedelta(hours=48)
-        first = pd.to_datetime(row["date_start"]) + rd(hours=12)
-        second = first + vrect_width
-
-        fig.add_vrect(
-            x0=first,
-            x1=second,
-            fillcolor="rgba(200,200,200,1)",
-            opacity=0.75,
-            line_width=0,
-            layer="below",
-        )
-        # Add transparent trace for hovertext
-        fig.add_trace(
-            go.Scatter(
-                x=[first, first, second, second, first],
-                y=[
-                    dat[variable_text].min(),
-                    dat[variable_text].max(),
-                    dat[variable_text].max(),
-                    dat[variable_text].min(),
-                    dat[variable_text].min(),
-                ],
-                fill="toself",
-                mode="lines",
-                line=dict(color="rgba(200,200,200,0.5)", width=0),
-                showlegend=False,
-                name="",
-                text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
-                opacity=0.5,
-            )
-        )
+    fig = _add_sensor_event_overlays(
+        fig=fig,
+        events=sensor_events,
+        y_min=dat[y_col].min(),
+        y_max=dat[y_col].max(),
+    )
 
     return fig
 
@@ -410,18 +513,10 @@ def plot_ppt(dat, config, **kwargs):
     elem_columns = [x for x in dat.columns if x not in ["datetime"]]
     valid_config_elems = [x for x in config["elements"] if x in elem_columns]
     config = config.copy()[config["elements"].isin(valid_config_elems)]
-    sensor_additions = config[
-        pd.to_datetime(config["date_start"]).dt.tz_localize("America/Denver")
-        >= pd.to_datetime(dat["datetime"].min())
-    ]
-    sensor_additions = (
-        sensor_additions.groupby("date_start")
-        .agg(
-            {
-                "elements": lambda x: ",\n".join(x),
-            }
-        )
-        .reset_index()
+    sensor_events = _build_sensor_events(
+        config=config,
+        data_min=pd.to_datetime(dat["datetime"].min()),
+        default_width=pd.Timedelta(hours=6),
     )
 
     station_name = kwargs["station"]["station"].values[0]
@@ -437,38 +532,12 @@ def plot_ppt(dat, config, **kwargs):
         norms = merge_normal_data(variable_text, dat, station_name)
         fig = add_boxplot_normals(fig, norms)
 
-    for _, row in sensor_additions.iterrows():
-        first = pd.to_datetime(row["date_start"]) + rd(hours=12)
-        second = first + rd(hours=6)
-
-        fig.add_vrect(
-            x0=first,
-            x1=second,
-            fillcolor="rgba(200,200,200,1)",
-            opacity=0.75,
-            line_width=0,
-            layer="below",
-        )
-        # Add transparent trace for hovertext
-        fig.add_trace(
-            go.Scatter(
-                x=[first, first, second, second, first],
-                y=[
-                    dat[variable_text].min(),
-                    dat[variable_text].max(),
-                    dat[variable_text].max(),
-                    dat[variable_text].min(),
-                    dat[variable_text].min(),
-                ],
-                fill="toself",
-                mode="lines",
-                line=dict(color="rgba(200,200,200,0.5)", width=0),
-                showlegend=False,
-                name="",
-                text=f"A sensor was added/replaced on {pd.to_datetime(row['date_start']).strftime('%Y-%m-%d')}, affecting the following elements:<br>{row['elements']}",
-                opacity=0.5,
-            )
-        )
+    fig = _add_sensor_event_overlays(
+        fig=fig,
+        events=sensor_events,
+        y_min=dat[variable_text].min(),
+        y_max=dat[variable_text].max(),
+    )
 
     return fig
 
@@ -982,16 +1051,13 @@ def plot_latest_ace_image(station, direction="N", dt=None):
     )
 
     # Configure axes
-    fig.update_xaxes(
-        visible=False, range=[0, img_width * scale_factor], constrain="domain"
-    )
+    fig.update_xaxes(visible=False, range=[0, img_width * scale_factor])
 
     fig.update_yaxes(
         visible=False,
         range=[0, img_height * scale_factor],
         # the scaleanchor attribute ensures that the aspect ratio stays constant
         scaleanchor="x",
-        constrain="domain",
     )
 
     # Add image
@@ -1012,7 +1078,8 @@ def plot_latest_ace_image(station, direction="N", dt=None):
 
     # Configure other layout
     fig.update_layout(
-        autosize=True,
+        width=img_width * scale_factor,
+        height=img_height * scale_factor,
         margin={"l": 0, "r": 0, "t": 0, "b": 0},
     )
 

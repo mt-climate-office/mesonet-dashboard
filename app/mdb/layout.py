@@ -364,19 +364,20 @@ def build_bottom_left_card(station_fig: Any) -> dmc.Paper:
                         id="bl-content",
                         children=html.Div(id="station-fig", children=station_fig),
                         style={
-                            "height": "300px",
+                            "flex": "1",
+                            "minHeight": "0",
                             "overflow": "auto",
-                            "maxHeight": "300px",
                         },
                     ),
                 ],
                 spacing="xs",
+                style={"height": "100%"},
             )
         ],
         id="bl-card",
         shadow="sm",
         p="sm",
-        style={"height": "100%", "maxHeight": "400px"},
+        style={"height": "100%", "display": "flex", "flexDirection": "column"},
     )
 
 

@@ -1405,13 +1405,22 @@ def update_ul_card(
                     spacing="sm",
                     style={"marginBottom": "0.25rem"}
                 ),
-                dmc.Center(
-                    dmc.Container(
-                        id="photo-figure",
-                        style={"textAlign": "center"}
-                    ),
+                html.Div(
+                    id="photo-figure",
+                    style={
+                        "textAlign": "center",
+                        "flex": "1",
+                        "minHeight": "0",
+                        "display": "flex",
+                        "alignItems": "center",
+                        "justifyContent": "center",
+                        "width": "100%",
+                        "cursor": "pointer",
+                        "maxHeight": "40vh",
+                        "overflow": "hidden",
+                    },
                 ),
-                    # Modal for full-screen photo
+                # Modal for full-screen photo
                 dmc.Modal(
                     id="photo-modal",
                     centered=True,
@@ -1431,7 +1440,12 @@ def update_ul_card(
                     ]
                 ),
             ],
-            style={"padding": "0.5rem", "height": "100%"}
+            style={
+                "padding": "0.5rem",
+                "height": "100%",
+                "display": "flex",
+                "flexDirection": "column",
+            },
         )
 
 
@@ -1471,24 +1485,32 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
     """
     Update the station photo based on direction and time selection.
     """
-    fig = plt.plot_latest_ace_image(station, direction=direction.lower(), dt=dt)
-    return dcc.Graph(
-        id="photo-display-graph",
-        figure=fig,
-        config={"displayModeBar": False, "responsive": True},
-        style={"height": "40vh", "width": "100%"},
+    return dmc.Box(
+        dmc.Image(
+            radius="md",
+            src=f"https://mesonet.climate.umt.edu/api/photos/{station}/{direction.lower()}?dt={dt}&force=True",
+            id="photo-img",
+            fit="contain",
+            style={"width": "100%", "height": "100%", "display": "block"},
+        ),
+        style={
+            "width": "100%",
+            "aspectRatio": "16 / 9",
+            "overflow": "hidden",
+            "backgroundColor": "transparent",
+        },
     )
 
 
 # Callback to open modal and show full-screen image when button is clicked
 @app.callback(
     [Output("photo-modal", "opened"), Output("photo-modal-img", "src")],
-    [Input("photo-display-graph", "clickData")],
+    [Input("photo-figure", "n_clicks")],
     [State("station-dropdown", "value"), State("photo-direction", "value"), State("photo-time", "value")],
     prevent_initial_call=True,
 )
-def show_fullscreen_photo(clickData, station, direction, dt):
-    if clickData:
+def show_fullscreen_photo(n_clicks, station, direction, dt):
+    if n_clicks:
         src = f"https://mesonet.climate.umt.edu/api/photos/{station}/{direction.lower()}?dt={dt}&force=True"
         return True, src
     return False, None
