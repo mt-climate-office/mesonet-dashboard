@@ -1405,36 +1405,51 @@ def update_ul_card(
                     spacing="sm",
                     style={"marginBottom": "0.25rem"}
                 ),
-                html.Div(
-                    id="photo-figure",
-                    style={
-                        "textAlign": "center",
-                        "flex": "1",
-                        "minHeight": "0",
-                        "display": "flex",
-                        "alignItems": "center",
-                        "justifyContent": "center",
-                        "width": "100%",
-                        "cursor": "pointer",
-                        "maxHeight": "40vh",
-                        "overflow": "hidden",
-                    },
+                dcc.Loading(
+                    type="default",
+                    color="#0b7285",
+                    children=html.Div(
+                        id="photo-figure",
+                        style={
+                            "textAlign": "center",
+                            "flex": "1",
+                            "minHeight": "0",
+                            "display": "flex",
+                            "alignItems": "center",
+                            "justifyContent": "center",
+                            "width": "100%",
+                            "cursor": "pointer",
+                            "maxHeight": "clamp(240px, 42vh, 560px)",
+                            "overflow": "hidden",
+                        },
+                    ),
                 ),
                 # Modal for full-screen photo
                 dmc.Modal(
                     id="photo-modal",
                     centered=True,
-                    size="60vw",
+                    size="92vw",
                     overlayOpacity=0.7,
                     overlayBlur=2,
                     withCloseButton=True,
                     opened=False,
                     children=[
-                        dmc.Center(
-                            dmc.Image(
-                                id="photo-modal-img",
-                                radius="md",
-                                style={"maxWidth": "60vw", "maxHeight": "60vh"}
+                        dcc.Loading(
+                            type="default",
+                            color="#0b7285",
+                            children=dmc.Center(
+                                dmc.Image(
+                                    id="photo-modal-img",
+                                    radius="md",
+                                    fit="contain",
+                                    style={
+                                        "width": "100%",
+                                        "maxWidth": "92vw",
+                                        "maxHeight": "86vh",
+                                        "height": "auto",
+                                        "objectFit": "contain",
+                                    },
+                                )
                             )
                         )
                     ]
@@ -1473,6 +1488,48 @@ def disable_gridmet_switch(period: str) -> bool:
     return period != "daily"
 
 
+def build_photo_src(
+    station: Optional[str], direction: Optional[str], dt: Optional[str]
+) -> Optional[str]:
+    """
+    Build a resilient station photo URL for the v2 Mesonet photo endpoint.
+    """
+    if not station:
+        return None
+
+    direction_key = (direction or "n").lower()
+    src = (
+        f"https://mesonet.climate.umt.edu/api/v2/photos/"
+        f"{station}/{direction_key}/?force=True"
+    )
+    if dt:
+        src = f"{src}&dt={dt}"
+    return src
+
+
+def resolve_photo_src(
+    station: Optional[str], direction: Optional[str], dt: Optional[str]
+) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Resolve a photo URL and verify it returns an image.
+    """
+    src = build_photo_src(station, direction, dt)
+    if not src:
+        return None, "No station selected."
+
+    try:
+        response = requests.get(src, timeout=12, stream=True)
+        content_type = response.headers.get("Content-Type", "").lower()
+        is_image = response.status_code == 200 and content_type.startswith("image/")
+        response.close()
+        if is_image:
+            return src, None
+    except requests.RequestException:
+        pass
+
+    return None, "Image failed to load for this station, direction, or time."
+
+
 @app.callback(
     Output("photo-figure", "children"),
     [
@@ -1485,19 +1542,40 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
     """
     Update the station photo based on direction and time selection.
     """
+    src, error = resolve_photo_src(station, direction, dt)
+    if not src:
+        return dmc.Alert(
+            title="Photo unavailable",
+            children=error or "Image failed to load.",
+            color="orange",
+            variant="light",
+            radius="md",
+            style={"maxWidth": "520px", "width": "100%"},
+        )
+
     return dmc.Box(
         dmc.Image(
             radius="md",
-            src=f"https://mesonet.climate.umt.edu/api/photos/{station}/{direction.lower()}?dt={dt}&force=True",
+            src=src,
             id="photo-img",
             fit="contain",
-            style={"width": "100%", "height": "100%", "display": "block"},
+            style={
+                "width": "100%",
+                "height": "100%",
+                "maxHeight": "100%",
+                "display": "block",
+                "objectFit": "contain",
+            },
         ),
         style={
             "width": "100%",
             "aspectRatio": "16 / 9",
+            "maxHeight": "clamp(220px, 38vh, 540px)",
             "overflow": "hidden",
             "backgroundColor": "transparent",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center",
         },
     )
 
@@ -1511,8 +1589,9 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
 )
 def show_fullscreen_photo(n_clicks, station, direction, dt):
     if n_clicks:
-        src = f"https://mesonet.climate.umt.edu/api/photos/{station}/{direction.lower()}?dt={dt}&force=True"
-        return True, src
+        src, _ = resolve_photo_src(station, direction, dt)
+        if src:
+            return True, src
     return False, None
 
 
