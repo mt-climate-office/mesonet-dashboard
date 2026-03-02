@@ -1387,13 +1387,6 @@ def update_ul_card(
                         dmc.Group(
                             [
                                 sel,
-                                dmc.Button(
-                                    "Full Screen",
-                                    id="photo-fullscreen-btn",
-                                    size="xs",
-                                    variant="outline",
-                                    style={"marginLeft": "0.5rem", "height": "28px", "fontSize": "0.85rem"}
-                                ),
                             ],
                             spacing="xs",
                             align="center",
@@ -1412,13 +1405,22 @@ def update_ul_card(
                     spacing="sm",
                     style={"marginBottom": "0.25rem"}
                 ),
-                dmc.Center(
-                    dmc.Container(
-                        id="photo-figure",
-                        style={"textAlign": "center"}
-                    ),
+                html.Div(
+                    id="photo-figure",
+                    style={
+                        "textAlign": "center",
+                        "flex": "1",
+                        "minHeight": "0",
+                        "display": "flex",
+                        "alignItems": "center",
+                        "justifyContent": "center",
+                        "width": "100%",
+                        "cursor": "pointer",
+                        "maxHeight": "40vh",
+                        "overflow": "hidden",
+                    },
                 ),
-                    # Modal for full-screen photo
+                # Modal for full-screen photo
                 dmc.Modal(
                     id="photo-modal",
                     centered=True,
@@ -1438,7 +1440,12 @@ def update_ul_card(
                     ]
                 ),
             ],
-            style={"padding": "0.5rem", "height": "100%"}
+            style={
+                "padding": "0.5rem",
+                "height": "100%",
+                "display": "flex",
+                "flexDirection": "column",
+            },
         )
 
 
@@ -1478,18 +1485,27 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
     """
     Update the station photo based on direction and time selection.
     """
-    return dmc.Image(
-        radius="md",
-        src=f"https://mesonet.climate.umt.edu/api/photos/{station}/{direction.lower()}?dt={dt}&force=True",
-        id="photo-img",
-        style={"maxWidth": "100%", "maxHeight": "40vh"}
+    return dmc.Box(
+        dmc.Image(
+            radius="md",
+            src=f"https://mesonet.climate.umt.edu/api/photos/{station}/{direction.lower()}?dt={dt}&force=True",
+            id="photo-img",
+            fit="contain",
+            style={"width": "100%", "height": "100%", "display": "block"},
+        ),
+        style={
+            "width": "100%",
+            "aspectRatio": "16 / 9",
+            "overflow": "hidden",
+            "backgroundColor": "transparent",
+        },
     )
 
 
 # Callback to open modal and show full-screen image when button is clicked
 @app.callback(
     [Output("photo-modal", "opened"), Output("photo-modal-img", "src")],
-    [Input("photo-fullscreen-btn", "n_clicks")],
+    [Input("photo-figure", "n_clicks")],
     [State("station-dropdown", "value"), State("photo-direction", "value"), State("photo-time", "value")],
     prevent_initial_call=True,
 )
