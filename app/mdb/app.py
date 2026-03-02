@@ -1528,25 +1528,32 @@ def update_photo_direction(station: str, direction: str, dt: str) -> Any:
         )
 
     return dmc.Box(
-        html.ObjectEl(
-            data=src,
-            type="image/*",
-            children=dmc.Alert(
-                title="Photo unavailable",
-                children="Image failed to load for this station, direction, or time.",
-                color="orange",
-                variant="light",
-                radius="md",
-                style={"maxWidth": "520px", "width": "100%"},
-            ),
-            style={
-                "width": "100%",
-                "height": "100%",
-                "maxHeight": "100%",
-                "display": "block",
-                "objectFit": "contain",
-                "borderRadius": "0.5rem",
-            },
+        dmc.Stack(
+            [
+                dmc.Image(
+                    radius="md",
+                    src=src,
+                    id="photo-img",
+                    fit="contain",
+                    style={
+                        "width": "100%",
+                        "height": "100%",
+                        "maxHeight": "100%",
+                        "display": "block",
+                        "objectFit": "contain",
+                    },
+                ),
+                dmc.Anchor(
+                    "Open image directly",
+                    href=src,
+                    target="_blank",
+                    size="xs",
+                    underline=True,
+                    style={"alignSelf": "center"},
+                ),
+            ],
+            gap=6,
+            style={"width": "100%", "height": "100%"},
         ),
         style={
             "width": "100%",
