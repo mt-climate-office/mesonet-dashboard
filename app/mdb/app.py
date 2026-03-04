@@ -1498,7 +1498,10 @@ def build_photo_src(
         return None
 
     direction_key = (direction or "n").lower()
-    return f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction_key}"
+    src = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction_key}"
+    if dt:
+        src = f"{src}?dt={dt}"
+    return src
 
 
 @app.callback(
