@@ -90,6 +90,27 @@ app.config["prevent_initial_callbacks"] = "initial_duplicate"
 server = app.server
 
 
+def station_is_unavailable(station: Optional[str]) -> bool:
+    """Return True when the selected station is temporarily unavailable."""
+    return station in params.unavailable_stations
+
+
+def make_station_unavailable_alert() -> dmc.Alert:
+    """Build a consistent alert for temporarily unavailable stations."""
+    return dmc.Alert(
+        children=params.unavailable_station_message,
+        color="orange",
+        variant="light",
+        radius="md",
+        style={"maxWidth": "720px", "width": "100%"},
+    )
+
+
+def make_station_unavailable_figure() -> Any:
+    """Build a placeholder figure for temporarily unavailable stations."""
+    return plt.make_nodata_figure(params.unavailable_station_message)
+
+
 def make_station_iframe(station: str = "none") -> html.Div:
     """
     Create an embedded iframe displaying the Montana Mesonet station map.
@@ -335,6 +356,8 @@ def update_br_card(
     if at == "map-tab" and not switch_to_current:
         station_name = station if station is not None else "none"
         return make_station_iframe(station_name), "map-tab"
+    if station_is_unavailable(station):
+        return make_station_unavailable_alert(), "data-tab" if switch_to_current else at
     elif at == "meta-tab" and not switch_to_current:
         table = tab.make_metadata_table(stations, station)
         try:
@@ -827,6 +850,8 @@ def get_latest_api_data(
     """
     if not station:
         return None
+    if station_is_unavailable(station):
+        return None
 
     # Convert dates to proper format - handle different input formats
     try:
@@ -1033,8 +1058,9 @@ def render_station_plot(
         - Supports climatological normal overlays for daily data
         - Handles multiple variable types with appropriate styling
     """
-
-    if len(select_vars) == 0:
+    if station_is_unavailable(station):
+        return make_station_unavailable_figure()
+    if not select_vars:
         return plt.make_nodata_figure("No variables selected")
     elif tmp_data and tmp_data != -1:
         stations = pd.read_json(StringIO(stations), orient="records")
@@ -1239,6 +1265,8 @@ def update_ul_card(
     #     return cur_content
     if station is None:
         return html.Div()
+    if station_is_unavailable(station):
+        return make_station_unavailable_alert()
     if at == "wind-tab":
         if not tmp_data:
             return html.Div()
