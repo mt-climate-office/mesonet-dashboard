@@ -73,11 +73,6 @@ class params:
 
     API_URL = API_URL
 
-    unavailable_stations = {"acedoggu", "acewetz", "acemissi"}
-    unavailable_station_message = (
-        "This station has experienced technical difficulties and is being assessed and repaired."
-    )
-
     START = dt.datetime.now() - rd.relativedelta(weeks=2)
 
     default_vars = [

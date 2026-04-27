@@ -90,27 +90,6 @@ app.config["prevent_initial_callbacks"] = "initial_duplicate"
 server = app.server
 
 
-def station_is_unavailable(station: Optional[str]) -> bool:
-    """Return True when the selected station is temporarily unavailable."""
-    return station in params.unavailable_stations
-
-
-def make_station_unavailable_alert() -> dmc.Alert:
-    """Build a consistent alert for temporarily unavailable stations."""
-    return dmc.Alert(
-        children=params.unavailable_station_message,
-        color="orange",
-        variant="light",
-        radius="md",
-        style={"maxWidth": "720px", "width": "100%"},
-    )
-
-
-def make_station_unavailable_figure() -> Any:
-    """Build a placeholder figure for temporarily unavailable stations."""
-    return plt.make_nodata_figure(params.unavailable_station_message)
-
-
 def make_station_iframe(station: str = "none") -> html.Div:
     """
     Create an embedded iframe displaying the Montana Mesonet station map.
@@ -356,8 +335,6 @@ def update_br_card(
     if at == "map-tab" and not switch_to_current:
         station_name = station if station is not None else "none"
         return make_station_iframe(station_name), "map-tab"
-    if station_is_unavailable(station):
-        return make_station_unavailable_alert(), "data-tab" if switch_to_current else at
     elif at == "meta-tab" and not switch_to_current:
         table = tab.make_metadata_table(stations, station)
         try:
@@ -569,8 +546,6 @@ def get_derived_data(
         - Automatically merges soil water potential data for soil variables
     """
     if not station or variable == "":
-        return None
-    if station_is_unavailable(station):
         return None
 
     if ctx.triggered_id == "gdd-selection":
@@ -852,8 +827,6 @@ def get_latest_api_data(
     """
     if not station:
         return None
-    if station_is_unavailable(station):
-        return None
 
     # Convert dates to proper format - handle different input formats
     try:
@@ -1060,8 +1033,6 @@ def render_station_plot(
         - Supports climatological normal overlays for daily data
         - Handles multiple variable types with appropriate styling
     """
-    if station_is_unavailable(station):
-        return make_station_unavailable_figure()
     if not select_vars:
         return plt.make_nodata_figure("No variables selected")
     elif tmp_data and tmp_data != -1:
@@ -1267,8 +1238,6 @@ def update_ul_card(
     #     return cur_content
     if station is None:
         return html.Div()
-    if station_is_unavailable(station):
-        return make_station_unavailable_alert()
     if at == "wind-tab":
         if not tmp_data:
             return html.Div()
@@ -1920,9 +1889,6 @@ def render_satellite_ts_plot(
         To get started, select a station from the dropdown.
         """
         )
-    if station_is_unavailable(station):
-        return make_station_unavailable_figure()
-
     if not elements:
         return plt.make_nodata_figure(
             """
@@ -2001,9 +1967,6 @@ def render_derived_plot(
         To get started, select a station from the dropdown.
         """
         )
-    if station_is_unavailable(station):
-        return make_station_unavailable_figure()
-
     if select_vars == "":
         if annual_var is None:
             return plt.make_nodata_figure("Select a variable for comparison...")
@@ -2049,8 +2012,6 @@ def update_compare2_options(station):
     options += [{"label": k, "value": v} for k, v in params.sat_compare_mapper.items()]
     if station is None:
         return options
-    if station_is_unavailable(station):
-        return options
 
     station_elements = pd.read_csv(
         f"https://mesonet.climate.umt.edu/api/v2/elements/{station}/?type=csv"
@@ -2090,8 +2051,6 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
         To get started, select a station from the dropdown.
         """
         )
-    if station_is_unavailable(station):
-        return make_station_unavailable_figure()
     if not (x_var and y_var):
         return plt.make_nodata_figure(
             """
@@ -2158,8 +2117,6 @@ def render_satellite_comp_plot(station, x_var, y_var, start_time, end_time):
 @tracker.pause_update
 def update_downloader_elements(station, public, elements, stations):
     if station is None:
-        return [], []
-    if station_is_unavailable(station):
         return [], []
 
     stations = pd.read_json(StringIO(stations), orient="records")
@@ -2242,8 +2199,6 @@ def downloader_data(n_clicks, station, elements, start, end, period, rmna):
         return no_update, False, False
     if start is None or station is None:
         return no_update, no_update, True
-    if station_is_unavailable(station):
-        return no_update, False, False
 
     start = dt.datetime.strptime(start, "%Y-%m-%d").date()
     end = dt.datetime.strptime(end, "%Y-%m-%d").date()
@@ -2312,12 +2267,8 @@ clientside_callback(
 def download_data(n_clicks, data, station, start, end, period):
     if n_clicks and not data:
         return no_update, False, False
-    if station_is_unavailable(station):
-        return no_update, False, False
     if n_clicks:
         data = pd.read_json(StringIO(data), orient="records")
-        if "station" in data.columns and station not in data["station"].dropna().unique():
-            return no_update, False, False
         name = f"{station}_{period}_{str(start).replace('-', '')}_to_{str(end).replace('-', '')}.csv"
         return dcc.send_data_frame(data.to_csv, name), True, False
 
@@ -2326,11 +2277,8 @@ def download_data(n_clicks, data, station, start, end, period):
     Output("dl-alert", "children"),
     Input("dl-data-button", "n_clicks"),
     Input("run-dl-request", "n_clicks"),
-    State("station-dropdown-dl", "value"),
 )
-def change_alert_text(dl_button, req_button, station):
-    if station_is_unavailable(station):
-        return params.unavailable_station_message
+def change_alert_text(dl_button, req_button):
     if ctx.triggered_id == "dl-data-button":
         return "Please 'Run Request' before attempting to download."
     return "Please select a station and variable first!"
@@ -2353,23 +2301,14 @@ def select_station_from_map(clickData):
 @app.callback(
     Output("dl-plots", "children"),
     Input("dl-data", "data"),
-    Input("station-dropdown-dl", "value"),
 )
-def plot_downloaded_data(data, station):
-    if station_is_unavailable(station):
-        return make_station_unavailable_alert()
-    if data is None or station is None:
-        return []
+def plot_downloaded_data(data):
+    if data is None:
+        return no_update
 
     rm_cols = ["station", "datetime", "Contains Missing Data"]
 
     data = pd.read_json(StringIO(data), orient="records")
-    if (
-        station is not None
-        and "station" in data.columns
-        and station not in data["station"].dropna().unique()
-    ):
-        return []
     use_cols = [x for x in data.columns if x not in rm_cols]
     out = []
     for col in use_cols:
@@ -2471,8 +2410,6 @@ def filter_to_only_swp_stations(variable, stations, cur_station):
 )
 def update_annual_station_elements(station, cur_val):
     if station is None:
-        return [], None
-    if station_is_unavailable(station):
         return [], None
     elements = get.get_station_elements(station, False)
 
