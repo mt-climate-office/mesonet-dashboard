@@ -14,26 +14,14 @@ Key Components:
 """
 
 import datetime as dt
-import os
 from dataclasses import dataclass
 
 import dateutil.relativedelta as rd
 import pandas as pd
 import requests
 
-on_server = os.getenv("ON_SERVER")
-
-if on_server is None or not on_server:
-    elements_df = pd.read_csv(
-        "https://mesonet.climate.umt.edu/api/v2/elements?type=csv"
-    )
-    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
-
-else:
-    elements_df = pd.read_csv(
-        "https://mesonet.climate.umt.edu/api/v2/elements?type=csv"
-    )
-    API_URL = "https://mesonet.climate.umt.edu/api/v2/"
+API_URL = "https://rtedqtj5uk.execute-api.us-west-2.amazonaws.com/"
+elements_df = pd.read_csv(f"{API_URL}elements?type=csv")
 
 
 @dataclass

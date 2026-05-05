@@ -3,7 +3,7 @@
 
 
 
-This repository contains the code used to host the Montana Mesonet dashboard. The dashboard uses the [Dash](https://plotly.com/dash) library to create interactive graphs displaying up to two weeks of data for a given mesonet station. The dashboard calls the [Montana Mesonet API](https://mesonet.climate.umt.edu/api/v2/docs) to obtain the station data. 
+This repository contains the code used to host the Montana Mesonet dashboard. The dashboard uses the [Dash](https://plotly.com/dash) library to create interactive graphs displaying up to two weeks of data for a given mesonet station. The dashboard calls the [Montana Mesonet API](https://rtedqtj5uk.execute-api.us-west-2.amazonaws.com/docs) to obtain the station data. 
 
 The application can be launched with `Docker` using the following commands:
 
