@@ -933,7 +933,7 @@ def plot_station(stations, station=None, zoom=4):
     )
 
     county_pth = (
-        str(Path("~/git/mesonet-dashboard/mt_counties.geojson").expanduser())
+        str(Path(__file__).resolve().parents[3] / "mt_counties.geojson")
         if on_server is None or not on_server
         else "/app/mt_counties.geojson"
     )
@@ -1027,9 +1027,9 @@ def plot_annual(dat: pd.DataFrame, colname: str):
 # Credit to https://plotly.com/python/images/#zoom-on-static-images
 def plot_latest_ace_image(station, direction="N", dt=None):
     if dt:
-        source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True&dt={dt}"
+        source = f"{params.API_URL}photos/{station}/{direction}/?force=True&dt={dt}"
     else:
-        source = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction}/?force=True"
+        source = f"{params.API_URL}photos/{station}/{direction}/?force=True"
 
     # Create figure
     fig = go.Figure()
