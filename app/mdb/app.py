@@ -110,7 +110,7 @@ def make_station_iframe(station: str = "none") -> html.Div:
     """
     return html.Div(
         html.Iframe(
-            src=f"https://mesonet.climate.umt.edu/api/map/stations/?station={station}",
+            src=f"{params.API_URL}map/stations/?station={station}",
             style={"width": "100%", "height": "300px", "border": "none"},
         ),
         style={"width": "100%", "height": "300px", "overflow": "hidden"},
@@ -1295,7 +1295,7 @@ def update_ul_card(
 
     else:
         tmp = pd.read_csv(
-            f"https://mesonet.climate.umt.edu/api/v2/deployments/{station}/?type=csv"
+            f"{params.API_URL}deployments/{station}/?type=csv"
         )
         tmp = tmp[tmp["type"] == "IP Camera"]
         if len(tmp) == 0:
@@ -1497,7 +1497,7 @@ def build_photo_src(
         return None
 
     direction_key = (direction or "n").lower()
-    src = f"https://mesonet.climate.umt.edu/api/v2/photos/{station}/{direction_key}"
+    src = f"{params.API_URL}photos/{station}/{direction_key}"
     if dt:
         src = f"{src}?dt={dt}"
     return src
@@ -2014,7 +2014,7 @@ def update_compare2_options(station):
         return options
 
     station_elements = pd.read_csv(
-        f"https://mesonet.climate.umt.edu/api/v2/elements/{station}/?type=csv"
+        f"{params.API_URL}elements/{station}/?type=csv"
     )
     station_elements = station_elements.sort_values("description_short")
     elements = [

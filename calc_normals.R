@@ -52,7 +52,7 @@ get_gridmet <- function(lat, lon, start_date, end_date, variable, name) {
 
 calc_normals <- function() {
   station_locs <- readr::read_csv(
-    "https://mesonet.climate.umt.edu/api/v2/stations/?type=csv",
+    "https://rtedqtj5uk.execute-api.us-west-2.amazonaws.com/stations/?type=csv",
     show_col_types = FALSE
   )
   
