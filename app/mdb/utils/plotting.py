@@ -225,43 +225,6 @@ def _interval_overlaps(
     return start <= range_end and end >= range_start
 
 
-def _row_active_at(row: dict, ts: pd.Timestamp) -> bool:
-    active_start = row["active_start"]
-    active_end = row["active_end"]
-    return (active_start is None or active_start <= ts) and (
-        active_end is None or active_end >= ts
-    )
-
-
-def _active_sensor_count(
-    config_rows: List[dict], element: str, ts: pd.Timestamp
-) -> int:
-    count = sum(
-        1
-        for row in config_rows
-        if row["element"] == element and _row_active_at(row, ts)
-    )
-    if count > 0:
-        return count
-    return sum(1 for row in config_rows if row["element"] == element)
-
-
-def _merge_outage_segments(segments: List[dict]) -> List[dict]:
-    if not segments:
-        return []
-
-    segments = sorted(segments, key=lambda x: (x["element"], x["x0"], x["x1"]))
-    merged = [segments[0].copy()]
-    for segment in segments[1:]:
-        prev = merged[-1]
-        if segment["element"] == prev["element"] and segment["x0"] <= prev["x1"]:
-            prev["x1"] = max(prev["x1"], segment["x1"])
-            prev["open_ended"] = prev["open_ended"] or segment["open_ended"]
-        else:
-            merged.append(segment.copy())
-    return merged
-
-
 def _build_sensor_events(
     config: pd.DataFrame,
     data_min: pd.Timestamp,
@@ -281,10 +244,7 @@ def _build_sensor_events(
         data_max = current_time
 
     events = []
-    config_rows = []
-    outage_records = []
-
-    for sensor_id, (_, row) in enumerate(config.iterrows()):
+    for _, row in config.iterrows():
         elem = str(row.get("elements", "Unknown Element"))
 
         start = _coerce_config_timestamp(row.get("date_start"))
@@ -319,15 +279,6 @@ def _build_sensor_events(
                 }
             )
 
-        config_rows.append(
-            {
-                "sensor_id": sensor_id,
-                "element": elem,
-                "active_start": start_event,
-                "active_end": end_event,
-            }
-        )
-
         for outage in _normalize_outage_ranges(row.get("outage_ranges")):
             outage_start = _coerce_config_timestamp(outage[0] if len(outage) > 0 else None)
             outage_end = _coerce_config_timestamp(outage[1] if len(outage) > 1 else None)
@@ -341,75 +292,15 @@ def _build_sensor_events(
             if outage_end_event <= outage_start_event:
                 outage_end_event = outage_start_event + default_width
 
-            outage_records.append(
-                {
-                    "sensor_id": sensor_id,
-                    "element": elem,
-                    "x0": outage_start_event,
-                    "x1": outage_end_event,
-                    "open_ended": outage_end is None,
-                }
-            )
-
-    if outage_records:
-        outage_df = pd.DataFrame(outage_records)
-        full_segments = []
-        partial_segments = []
-
-        for elem, elem_outages in outage_df.groupby("element"):
-            boundaries = sorted(
-                set(elem_outages["x0"].tolist() + elem_outages["x1"].tolist())
-            )
-            for start, end in zip(boundaries, boundaries[1:]):
-                if end <= start:
-                    continue
-
-                midpoint = start + ((end - start) / 2)
-                active_count = _active_sensor_count(config_rows, elem, midpoint)
-                outage_slice = elem_outages[
-                    (elem_outages["x0"] <= midpoint)
-                    & (elem_outages["x1"] > midpoint)
-                ]
-                outage_count = outage_slice["sensor_id"].nunique()
-
-                if active_count <= 0 or outage_count <= 0:
-                    continue
-
-                segment = {
-                    "element": elem,
-                    "x0": start,
-                    "x1": end,
-                    "open_ended": bool(outage_slice["open_ended"].any()),
-                }
-                if outage_count >= active_count:
-                    full_segments.append(segment)
-                else:
-                    partial_segments.append(segment)
-
-        for segment in _merge_outage_segments(full_segments):
-            if _interval_overlaps(segment["x0"], segment["x1"], data_min, data_max):
+            if _interval_overlaps(outage_start_event, outage_end_event, data_min, data_max):
                 events.append(
                     {
                         "reason": "outage",
-                        "x0": segment["x0"],
-                        "x1": segment["x1"],
-                        "element": segment["element"],
+                        "x0": outage_start_event,
+                        "x1": outage_end_event,
+                        "element": elem,
                         "masks_data": True,
-                        "open_ended": segment["open_ended"],
-                    }
-                )
-
-        for segment in _merge_outage_segments(partial_segments):
-            event_end = segment["x0"] + default_width
-            if _interval_overlaps(segment["x0"], event_end, data_min, data_max):
-                events.append(
-                    {
-                        "reason": "partial_outage",
-                        "x0": segment["x0"],
-                        "x1": event_end,
-                        "element": segment["element"],
-                        "masks_data": False,
-                        "open_ended": segment["open_ended"],
+                        "open_ended": outage_end is None,
                     }
                 )
 
@@ -458,17 +349,6 @@ def _add_sensor_event_overlays(
                 f"A sensor was sunset/removed on {date0}, affecting the following "
                 f"elements:<br>{elems}"
             )
-        elif event["reason"] == "partial_outage":
-            if bool(event.get("open_ended", False)):
-                text = (
-                    f"An ongoing sensor outage was reported on {date0}, but another "
-                    f"sensor for the same element remained available:<br>{elems}"
-                )
-            else:
-                text = (
-                    f"A sensor outage was reported on {date0}, but another sensor "
-                    f"for the same element remained available:<br>{elems}"
-                )
         elif event["reason"] == "outage_end":
             text = (
                 f"A sensor outage ended on {date0}, affecting the following "
@@ -585,6 +465,7 @@ def plot_soil(dat, config, **kwargs):
         data_max=pd.to_datetime(dat["datetime"].max()),
         default_width=pd.Timedelta(hours=6),
     )
+    y_min, y_max = _value_bounds(dat, cols)
     dat = _mask_data_for_outages(dat, sensor_events, cols)
     dat = pd.concat(
         [
@@ -617,8 +498,8 @@ def plot_soil(dat, config, **kwargs):
     fig = _add_sensor_event_overlays(
         fig=fig,
         events=sensor_events,
-        y_min=dat["value"].min(),
-        y_max=dat["value"].max(),
+        y_min=y_min,
+        y_max=y_max,
     )
 
     fig.update_layout(hovermode="x unified")
@@ -639,11 +520,12 @@ def plot_met(dat, config, **kwargs):
     sensor_events = _build_sensor_events(
         config=config, data_min=date_min, data_max=date_max, default_width=vrect_width
     )
+    y_col = dat.columns.tolist()[-1]
+    y_min, y_max = _value_bounds(dat, y_col)
     dat = _mask_data_for_outages(dat, sensor_events, elem_columns)
 
     # TODO: Debug cherry ridge temperature sensor swap
 
-    y_col = dat.columns.tolist()[-1]
     variable_text = y_col
     station_name = kwargs["station"]["station"].values[0]
 
@@ -686,7 +568,6 @@ def plot_met(dat, config, **kwargs):
         fig.add_trace(mx_line)
         fig.add_trace(mn_line)
 
-    y_min, y_max = _value_bounds(dat, y_col)
     fig = _add_sensor_event_overlays(
         fig=fig,
         events=sensor_events,
@@ -754,10 +635,11 @@ def plot_ppt(dat, config, **kwargs):
         data_max=pd.to_datetime(dat["datetime"].max()),
         default_width=pd.Timedelta(hours=6),
     )
+    variable_text = dat.columns.tolist()[-1]
+    y_min, y_max = _value_bounds(dat, variable_text)
     dat = _mask_data_for_outages(dat, sensor_events, elem_columns)
 
     station_name = kwargs["station"]["station"].values[0]
-    variable_text = dat.columns.tolist()[-1]
     # dat = dat.assign(datetime=dat.datetime.dt.date)
     fig = px.bar(dat, x="datetime", y=variable_text)
     fig.update_traces(
@@ -769,7 +651,6 @@ def plot_ppt(dat, config, **kwargs):
         norms = merge_normal_data(variable_text, dat, station_name)
         fig = add_boxplot_normals(fig, norms)
 
-    y_min, y_max = _value_bounds(dat, variable_text)
     fig = _add_sensor_event_overlays(
         fig=fig,
         events=sensor_events,
