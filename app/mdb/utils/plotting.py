@@ -258,7 +258,6 @@ def _build_sensor_events(
                     "x0": start_event,
                     "x1": start_event + default_width,
                     "element": elem,
-                    "masks_data": False,
                     "open_ended": False,
                 }
             )
@@ -274,7 +273,6 @@ def _build_sensor_events(
                     "x0": end_event,
                     "x1": end_event + default_width,
                     "element": elem,
-                    "masks_data": False,
                     "open_ended": False,
                 }
             )
@@ -299,7 +297,6 @@ def _build_sensor_events(
                         "x0": outage_start_event,
                         "x1": outage_end_event,
                         "element": elem,
-                        "masks_data": True,
                         "open_ended": outage_end is None,
                     }
                 )
@@ -310,7 +307,7 @@ def _build_sensor_events(
     events = pd.DataFrame(events)
     events = (
         events.groupby(
-            ["reason", "x0", "x1", "masks_data", "open_ended"], dropna=False
+            ["reason", "x0", "x1", "open_ended"], dropna=False
         )["element"]
         .agg(lambda x: sorted(set(x)))
         .reset_index()
@@ -396,49 +393,6 @@ def _add_sensor_event_overlays(
     return fig
 
 
-def _coerce_datetime_series(values) -> pd.Series:
-    datetimes = pd.to_datetime(values)
-    if datetimes.dt.tz is None:
-        return datetimes.dt.tz_localize("America/Denver")
-    return datetimes.dt.tz_convert("America/Denver")
-
-
-def _event_elements(event) -> set:
-    elements = event["element"]
-    if isinstance(elements, (list, tuple, set)):
-        return set(elements)
-    return {elements}
-
-
-def _mask_data_for_outages(
-    dat: pd.DataFrame, events: pd.DataFrame, value_columns: Optional[List[str]] = None
-) -> pd.DataFrame:
-    if events is None or len(events) == 0 or "masks_data" not in events.columns:
-        return dat
-
-    outage_events = events[events["masks_data"]]
-    if len(outage_events) == 0:
-        return dat
-
-    out = dat.copy()
-    datetimes = _coerce_datetime_series(out["datetime"])
-    value_columns = value_columns or [x for x in out.columns if x != "datetime"]
-
-    for _, event in outage_events.iterrows():
-        elements = _event_elements(event)
-        cols = [x for x in value_columns if x in elements]
-        if not cols:
-            continue
-
-        x0 = pd.to_datetime(event["x0"])
-        x1 = pd.to_datetime(event["x1"])
-        mask = (datetimes >= x0) & (datetimes <= x1)
-        for col in set(cols):
-            out.loc[mask, col] = np.nan
-
-    return out
-
-
 def _value_bounds(dat: pd.DataFrame, columns) -> tuple:
     columns = [columns] if isinstance(columns, str) else list(columns)
     columns = [x for x in columns if x in dat.columns]
@@ -466,7 +420,6 @@ def plot_soil(dat, config, **kwargs):
         default_width=pd.Timedelta(hours=6),
     )
     y_min, y_max = _value_bounds(dat, cols)
-    dat = _mask_data_for_outages(dat, sensor_events, cols)
     dat = pd.concat(
         [
             pd.DataFrame({"datetime": dat["datetime"], "elem_lab": x, "value": dat[x]})
@@ -522,7 +475,6 @@ def plot_met(dat, config, **kwargs):
     )
     y_col = dat.columns.tolist()[-1]
     y_min, y_max = _value_bounds(dat, y_col)
-    dat = _mask_data_for_outages(dat, sensor_events, elem_columns)
 
     # TODO: Debug cherry ridge temperature sensor swap
 
@@ -637,7 +589,6 @@ def plot_ppt(dat, config, **kwargs):
     )
     variable_text = dat.columns.tolist()[-1]
     y_min, y_max = _value_bounds(dat, variable_text)
-    dat = _mask_data_for_outages(dat, sensor_events, elem_columns)
 
     station_name = kwargs["station"]["station"].values[0]
     # dat = dat.assign(datetime=dat.datetime.dt.date)
