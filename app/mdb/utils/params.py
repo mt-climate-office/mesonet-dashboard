@@ -20,7 +20,7 @@ import dateutil.relativedelta as rd
 import pandas as pd
 import requests
 
-API_URL = "https://rtedqtj5uk.execute-api.us-west-2.amazonaws.com/"
+API_URL = "https://mesonet.climate.umt.edu/api/"
 elements_df = pd.read_csv(f"{API_URL}elements?type=csv")
 
 
