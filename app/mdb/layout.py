@@ -128,6 +128,72 @@ def generate_modal() -> html.Div:
     )
 
 
+def generate_outage_modal(app_ref: Any) -> html.Div:
+    """
+    Generate the partial-outage notice modal dialog.
+
+    Shown once per browser tab session (a clientside callback gates it on
+    sessionStorage) to alert visitors that some Mesonet stations are
+    currently offline.
+
+    Args:
+        app_ref (Any): Dash application reference for asset URL generation.
+
+    Returns:
+        html.Div: Modal dialog component with the outage notice.
+    """
+    return html.Div(
+        dbc.Modal(
+            [
+                dbc.ModalHeader(
+                    html.Img(
+                        src=app_ref.get_asset_url("MCO_logo.svg"),
+                        height="40px",
+                        alt="MCO Logo",
+                    )
+                ),
+                dbc.ModalBody(
+                    dbc.Alert(
+                        [
+                            html.H5(
+                                "Partial Mesonet Outage", className="alert-heading"
+                            ),
+                            dcc.Markdown(
+                                """
+                                We're currently experiencing a partial outage affecting data from some Montana Mesonet stations.
+                                Our team is actively working to restore service, and we expect affected stations to be back online
+                                by this evening (August 13).
+
+                                We apologize for any inconvenience and appreciate your patience.
+                                """
+                            ),
+                        ],
+                        color="warning",
+                    )
+                ),
+                dbc.ModalFooter(
+                    dbc.Button(
+                        "Got it",
+                        id="outage-modal-close",
+                        color="primary",
+                        n_clicks=0,
+                    )
+                ),
+            ],
+            id="outage-modal",
+            # Defaults open: the FileShare state-loader callback echoes
+            # app-layout's initial children back through itself on every
+            # load with no prevent_initial_call, so any is_open=True set by
+            # a clientside callback racing that round trip gets clobbered
+            # back to the static default. Baking the default in here makes
+            # that echo idempotent instead of a race.
+            is_open=True,
+            centered=True,
+            size="md",
+        )
+    )
+
+
 def feedback_iframe() -> html.Div:
     """
     Generate the feedback modal dialog with embedded form.
@@ -1505,6 +1571,7 @@ def app_layout(app_ref, stations):
             ),
             dbc.Row(className="h-100", id="main-content"),
             generate_modal(),
+            generate_outage_modal(app_ref),
             # feedback_iframe(),
             dbc.Modal(
                 [],

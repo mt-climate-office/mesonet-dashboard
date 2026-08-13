@@ -245,6 +245,9 @@ export function StationTimeseriesChart() {
     const datetimes = dataWithGaps.map((r) => r.datetime as string)
 
     const traces: Data[] = []
+    // Per-subplot annotations (e.g. soil-depth color chips). Collected as we
+    // build subplots, then assigned to layout.annotations at the end.
+    const annotations: NonNullable<Partial<Layout>['annotations']> = []
     const layout: Partial<Layout> = {
       autosize: true,
       margin: { l: 80, r: 20, t: 16, b: 40 },
@@ -280,11 +283,23 @@ export function StationTimeseriesChart() {
             })
           : sub.cols
 
+      const isSoilStack =
+        sub.v === 'Soil Temperature' || sub.v === 'Soil VWC' || sub.v === 'Bulk EC'
+
+      // Track depth → color so we can build the chip legend after the
+      // traces. Keyed by depth label (e.g. "4 in") so duplicate columns
+      // (LAB_SWAP can collapse multiple sensors onto one canonical label)
+      // collapse to a single chip.
+      const soilChips: Array<{ depth: string; color: string }> = []
+
       sortedCols.forEach((col) => {
         let traceColor = baseColor ?? '#444'
-        if (sub.v === 'Soil Temperature' || sub.v === 'Soil VWC' || sub.v === 'Bulk EC') {
+        if (isSoilStack) {
           const d = depthLabelFromColumn(col)
           traceColor = (d && SOIL_DEPTH_COLORS[d]) || '#666'
+          if (d && !soilChips.some((c) => c.depth === d)) {
+            soilChips.push({ depth: d, color: traceColor })
+          }
         } else if (isEtr) {
           traceColor = ETR_COLOR
         }
@@ -311,9 +326,13 @@ export function StationTimeseriesChart() {
           traces.push({
             type: 'scatter',
             mode: 'lines',
-            name: sortedCols.length > 1 ? (depthLabelFromColumn(col) ?? col) : sub.v,
+            // Soil traces use chip annotations instead of a legend, so
+            // suppress per-trace legend entries. Other multi-trace subplots
+            // (none today, but the structure allows it) still legend per
+            // depth.
+            name: isSoilStack ? (depthLabelFromColumn(col) ?? col) : sub.v,
             legendgroup: sub.v,
-            showlegend: sortedCols.length > 1,
+            showlegend: !isSoilStack && sortedCols.length > 1,
             x: datetimes,
             y: yVals,
             xaxis: xRef,
@@ -324,6 +343,45 @@ export function StationTimeseriesChart() {
           } as Data)
         }
       })
+
+      // Soil-depth color chips — small floating labels in the upper-right
+      // of the subplot, one per depth, filled with the trace color and
+      // rendered in white text. Subtle but unmistakable, matching the
+      // legacy dashboard's plot_soil annotation row.
+      if (isSoilStack && soilChips.length > 0) {
+        // Lay out 0.62..0.98 of the subplot's x domain (roughly the right
+        // ~35%, matching legacy `delta = (dmax - dmin) * 0.35 / 5`).
+        const xStart = 0.62
+        const xEnd = 0.98
+        const yPos = 0.92
+        const step =
+          soilChips.length === 1 ? 0 : (xEnd - xStart) / (soilChips.length - 1)
+        soilChips.forEach((chip, ci) => {
+          annotations.push({
+            text: chip.depth,
+            x: soilChips.length === 1 ? xEnd : xStart + step * ci,
+            y: yPos,
+            // `xref`/`yref` use the axis-reference form (`x`, `x2`, `y`, `y2`)
+            // with a `domain` suffix for fractional positioning within the
+            // subplot — NOT the layout-key form (`xaxis`, `yaxis`).
+            xref: `${xRef} domain` as never,
+            yref: `${yRef} domain` as never,
+            showarrow: false,
+            xanchor: 'center',
+            yanchor: 'middle',
+            font: {
+              size: 10,
+              color: '#ffffff',
+              family: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace',
+            },
+            bgcolor: chip.color,
+            bordercolor: 'rgba(255,255,255,0.7)',
+            borderwidth: 1,
+            borderpad: 2,
+            opacity: 0.92,
+          })
+        })
+      }
 
       // Optional GridMET normals overlay
       const norms = normalsByVar[sub.v]
@@ -431,6 +489,10 @@ export function StationTimeseriesChart() {
         anchor: idx === 0 ? 'y' : `y${subplotIx}`,
       }
     })
+
+    if (annotations.length > 0) {
+      layout.annotations = annotations
+    }
 
     // Compute a stable revision so the wrapper purges + re-plots when the
     // subplot count changes.

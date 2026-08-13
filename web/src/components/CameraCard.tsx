@@ -87,6 +87,31 @@ function defaultDirection(directions: PhotoDirection[]): string {
   return pref?.value ?? directions[0]?.value ?? 'n'
 }
 
+/**
+ * Canonical display order for the direction picker. Anything not in this
+ * list (rare — most stations are N/S/E/W/SNOW or N/S/NS/SS) sorts to the
+ * end alphabetically.
+ */
+const DIRECTION_ORDER: Record<string, number> = {
+  n: 0,
+  s: 1,
+  e: 2,
+  w: 3,
+  snow: 4,
+  ns: 5,
+  ss: 6,
+  g: 7,
+}
+
+function sortDirections(directions: PhotoDirection[]): PhotoDirection[] {
+  return [...directions].sort((a, b) => {
+    const ai = DIRECTION_ORDER[a.value.toLowerCase()] ?? 99
+    const bi = DIRECTION_ORDER[b.value.toLowerCase()] ?? 99
+    if (ai !== bi) return ai - bi
+    return a.value.localeCompare(b.value)
+  })
+}
+
 export function CameraCard() {
   const [station] = useStationParam()
   const catalog = usePhotoCatalog()
@@ -132,14 +157,17 @@ export function CameraCard() {
   // enhance the picker + time-dropdown when the catalog arrives.
   const usingFallback = !meta
   // Default to four cardinal directions until the metadata clarifies what
-  // this station actually has.
+  // this station actually has. Listed in canonical N/S/E/W order — same
+  // order applied to the metadata copy below via sortDirections.
   const fallbackDirections: PhotoDirection[] = [
     { value: 'n', label: 'North' },
-    { value: 'e', label: 'East' },
     { value: 's', label: 'South' },
+    { value: 'e', label: 'East' },
     { value: 'w', label: 'West' },
   ]
-  const directions = meta?.directions.length ? meta.directions : fallbackDirections
+  const directions = sortDirections(
+    meta?.directions.length ? meta.directions : fallbackDirections,
+  )
 
   // If the catalog is loaded and the station has no camera, surface that.
   if (catalog.data && !meta) {

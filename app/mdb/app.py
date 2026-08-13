@@ -1644,6 +1644,36 @@ def toggle_modal(n1: Optional[int], is_open: bool) -> bool:
     return is_open
 
 
+# Shows the outage modal once per browser tab session: the sessionStorage
+# flag survives in-tab station/callback churn but resets on a new tab, so
+# the notice reappears for a fresh visit without nagging on every callback.
+# Open (on load) and close (on button click) are combined into one callback
+# because the app sets prevent_initial_callbacks="initial_duplicate" globally,
+# which suppresses the initial firing of any output shared by two callbacks.
+# Triggered off "app-layout.children" (rather than e.g. mesonet-stations.data)
+# because FileShare's state-loader callback echoes that same prop back through
+# itself on every load with no prevent_initial_call; keying off it guarantees
+# we run after that echo settles instead of racing it.
+clientside_callback(
+    """
+    function(layoutChildren, closeClicks) {
+        const trigger = window.dash_clientside.callback_context.triggered[0];
+        if (trigger && trigger.prop_id === 'outage-modal-close.n_clicks') {
+            return false;
+        }
+        if (window.sessionStorage.getItem('outageModalShown')) {
+            return false;
+        }
+        window.sessionStorage.setItem('outageModalShown', '1');
+        return true;
+    }
+    """,
+    Output("outage-modal", "is_open"),
+    Input("app-layout", "children"),
+    Input("outage-modal-close", "n_clicks"),
+)
+
+
 # @app.callback(
 #     Output("feedback-modal", "is_open"),
 #     [Input("feedback-button", "n_clicks")],
