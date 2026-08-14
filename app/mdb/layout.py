@@ -27,6 +27,8 @@ from dash import dcc, html
 from dash_iconify import DashIconify
 from dateutil.relativedelta import relativedelta as rd
 
+from mdb.utils import outage
+
 TABLE_STYLING = {
     "css": [{"selector": "tr:first-child", "rule": "display: none"}],
     "style_cell": {"textAlign": "left"},
@@ -130,67 +132,79 @@ def generate_modal() -> html.Div:
 
 def generate_outage_modal(app_ref: Any) -> html.Div:
     """
-    Generate the partial-outage notice modal dialog.
+    Generate the outage notice modal dialog.
 
-    Shown once per browser tab session (a clientside callback gates it on
-    sessionStorage) to alert visitors that some Mesonet stations are
-    currently offline.
+    Content and the on/off switch come from ``outage.json`` on the main branch
+    of the mesonet-dashboard repo (see :mod:`mdb.utils.outage`), so posting or
+    clearing a notice is an edit to that file rather than a redeploy. When the
+    notice is inactive the modal renders empty and stays closed.
 
     Args:
         app_ref (Any): Dash application reference for asset URL generation.
 
     Returns:
-        html.Div: Modal dialog component with the outage notice.
-    """
-    return html.Div(
-        dbc.Modal(
-            [
-                dbc.ModalHeader(
-                    html.Img(
-                        src=app_ref.get_asset_url("MCO_logo.svg"),
-                        height="40px",
-                        alt="MCO Logo",
-                    )
-                ),
-                dbc.ModalBody(
-                    dbc.Alert(
-                        [
-                            html.H5(
-                                "Partial Mesonet Outage", className="alert-heading"
-                            ),
-                            dcc.Markdown(
-                                """
-                                We're currently experiencing a partial outage affecting data from some Montana Mesonet stations.
-                                Our team is actively working to restore service, and we expect affected stations to be back online
-                                by this evening (August 13).
+        html.Div: Modal dialog component with the outage notice, plus the
+            store the clientside gating callback reads.
 
-                                We apologize for any inconvenience and appreciate your patience.
-                                """
-                            ),
-                        ],
-                        color="warning",
-                    )
-                ),
-                dbc.ModalFooter(
-                    dbc.Button(
-                        "Got it",
-                        id="outage-modal-close",
-                        color="primary",
-                        n_clicks=0,
-                    )
-                ),
-            ],
-            id="outage-modal",
-            # Defaults open: the FileShare state-loader callback echoes
-            # app-layout's initial children back through itself on every
-            # load with no prevent_initial_call, so any is_open=True set by
-            # a clientside callback racing that round trip gets clobbered
-            # back to the static default. Baking the default in here makes
-            # that echo idempotent instead of a race.
-            is_open=True,
-            centered=True,
-            size="md",
-        )
+    Note:
+        The modal and its dismiss button are always rendered, even when there
+        is no notice, so the clientside callback's component IDs always exist.
+    """
+    config = outage.get_outage_config()
+    active = config["active"]
+
+    body = (
+        [
+            dbc.ModalHeader(
+                html.Img(
+                    src=app_ref.get_asset_url("MCO_logo.svg"),
+                    height="40px",
+                    alt="MCO Logo",
+                )
+            ),
+            dbc.ModalBody(
+                dbc.Alert(
+                    [
+                        html.H5(config["title"], className="alert-heading"),
+                        dcc.Markdown(config["message"]),
+                    ],
+                    color=config["color"],
+                )
+            ),
+            dbc.ModalFooter(
+                dbc.Button(
+                    config["button_text"],
+                    id="outage-modal-close",
+                    color="primary",
+                    n_clicks=0,
+                )
+            ),
+        ]
+        if active
+        else [dbc.Button(id="outage-modal-close", n_clicks=0, className="d-none")]
+    )
+
+    return html.Div(
+        [
+            dcc.Store(
+                id="outage-modal-config",
+                data={"active": active, "id": config["id"]},
+            ),
+            dbc.Modal(
+                body,
+                id="outage-modal",
+                # Defaults to the notice's own active state: the FileShare
+                # state-loader callback echoes app-layout's initial children
+                # back through itself on every load with no
+                # prevent_initial_call, so any is_open=True set by a
+                # clientside callback racing that round trip gets clobbered
+                # back to the static default. Baking the default in here makes
+                # that echo idempotent instead of a race.
+                is_open=active,
+                centered=True,
+                size="md",
+            ),
+        ]
     )
 
 

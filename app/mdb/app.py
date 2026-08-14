@@ -1647,6 +1647,8 @@ def toggle_modal(n1: Optional[int], is_open: bool) -> bool:
 # Shows the outage modal once per browser tab session: the sessionStorage
 # flag survives in-tab station/callback churn but resets on a new tab, so
 # the notice reappears for a fresh visit without nagging on every callback.
+# The flag is keyed on the notice's id from outage.json, so posting a new
+# notice re-shows the modal to visitors who dismissed the previous one.
 # Open (on load) and close (on button click) are combined into one callback
 # because the app sets prevent_initial_callbacks="initial_duplicate" globally,
 # which suppresses the initial firing of any output shared by two callbacks.
@@ -1656,21 +1658,26 @@ def toggle_modal(n1: Optional[int], is_open: bool) -> bool:
 # we run after that echo settles instead of racing it.
 clientside_callback(
     """
-    function(layoutChildren, closeClicks) {
+    function(layoutChildren, closeClicks, config) {
         const trigger = window.dash_clientside.callback_context.triggered[0];
         if (trigger && trigger.prop_id === 'outage-modal-close.n_clicks') {
             return false;
         }
-        if (window.sessionStorage.getItem('outageModalShown')) {
+        if (!config || !config.active) {
             return false;
         }
-        window.sessionStorage.setItem('outageModalShown', '1');
+        const key = 'outageModalShown:' + (config.id || '');
+        if (window.sessionStorage.getItem(key)) {
+            return false;
+        }
+        window.sessionStorage.setItem(key, '1');
         return true;
     }
     """,
     Output("outage-modal", "is_open"),
     Input("app-layout", "children"),
     Input("outage-modal-close", "n_clicks"),
+    State("outage-modal-config", "data"),
 )
 
 
