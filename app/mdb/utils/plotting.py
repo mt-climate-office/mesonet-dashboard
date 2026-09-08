@@ -287,7 +287,13 @@ def _build_sensor_events(
             outage_end_event = (
                 _event_timestamp(outage_end) if outage_end is not None else current_time
             )
+            capped_by_sensor_end = False
+            if end_event is not None and end_event < outage_end_event:
+                outage_end_event = end_event
+                capped_by_sensor_end = True
             if outage_end_event <= outage_start_event:
+                if capped_by_sensor_end and end_event < outage_start_event:
+                    continue
                 outage_end_event = outage_start_event + default_width
 
             if _interval_overlaps(outage_start_event, outage_end_event, data_min, data_max):
@@ -297,7 +303,7 @@ def _build_sensor_events(
                         "x0": outage_start_event,
                         "x1": outage_end_event,
                         "element": elem,
-                        "open_ended": outage_end is None,
+                        "open_ended": outage_end is None and not capped_by_sensor_end,
                     }
                 )
 
@@ -315,6 +321,145 @@ def _build_sensor_events(
     too_short = events["x1"] <= events["x0"]
     events.loc[too_short, "x1"] = events.loc[too_short, "x0"] + default_width
     return events
+
+
+def _coerce_datetime_series(values) -> pd.Series:
+    series = pd.to_datetime(values, errors="coerce")
+    if series.dt.tz is None:
+        return series.dt.tz_localize("America/Denver")
+    return series.dt.tz_convert("America/Denver")
+
+
+def _infer_observation_cadence(times: pd.Series) -> Optional[pd.Timedelta]:
+    times = times.dropna().sort_values().drop_duplicates()
+    if len(times) < 2:
+        return None
+
+    deltas = times.diff().dropna()
+    deltas = deltas[deltas > pd.Timedelta(0)]
+    if len(deltas) == 0:
+        return None
+
+    cadence = deltas.median()
+    if pd.isna(cadence) or cadence <= pd.Timedelta(0):
+        return None
+    return cadence
+
+
+def _merge_time_intervals(intervals) -> List[tuple]:
+    if len(intervals) == 0:
+        return []
+
+    intervals = sorted(intervals, key=lambda x: x[0])
+    merged = [intervals[0]]
+    for start, end in intervals[1:]:
+        prev_start, prev_end = merged[-1]
+        if start <= prev_end:
+            merged[-1] = (prev_start, max(prev_end, end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
+def _clip_interval(start, end, clip_start, clip_end) -> Optional[tuple]:
+    start = max(start, clip_start)
+    end = min(end, clip_end)
+    if end <= start:
+        return None
+    return start, end
+
+
+def _metric_na_intervals(
+    dat: pd.DataFrame, columns, start: pd.Timestamp, end: pd.Timestamp
+) -> List[tuple]:
+    columns = [columns] if isinstance(columns, str) else list(columns)
+    if dat is None or len(dat) == 0 or "datetime" not in dat.columns:
+        return []
+
+    columns = [x for x in columns if x in dat.columns]
+    if not columns:
+        return []
+
+    timestamps = _coerce_datetime_series(dat["datetime"])
+    work = dat.loc[:, columns].copy()
+    work = work.assign(datetime=timestamps)
+    work = work.dropna(subset=["datetime"]).sort_values("datetime")
+    if len(work) == 0:
+        return []
+
+    data_min = work["datetime"].min()
+    data_max = work["datetime"].max()
+    clip_start = max(start, data_min)
+    clip_end = min(end, data_max)
+    if clip_end <= clip_start:
+        return []
+
+    cadence = _infer_observation_cadence(work["datetime"])
+    if cadence is None:
+        window = work[
+            (work["datetime"] >= clip_start) & (work["datetime"] <= clip_end)
+        ]
+        if len(window) == 0 or not window.loc[:, columns].notna().any(axis=1).any():
+            return [(clip_start, clip_end)]
+        return []
+
+    intervals = []
+    window = work[
+        (work["datetime"] >= clip_start) & (work["datetime"] <= clip_end)
+    ].copy()
+    if len(window) == 0:
+        return [(clip_start, clip_end)]
+
+    metric_is_na = ~window.loc[:, columns].notna().any(axis=1)
+    for timestamp in window.loc[metric_is_na, "datetime"]:
+        clipped = _clip_interval(timestamp, timestamp + cadence, clip_start, clip_end)
+        if clipped is not None:
+            intervals.append(clipped)
+
+    threshold = cadence * 1.5
+    all_times = work["datetime"].tolist()
+    for previous, current in zip(all_times[:-1], all_times[1:]):
+        delta = current - previous
+        if delta <= threshold:
+            continue
+        clipped = _clip_interval(previous + cadence, current, clip_start, clip_end)
+        if clipped is not None:
+            intervals.append(clipped)
+
+    return _merge_time_intervals(intervals)
+
+
+def _filter_outage_events_to_metric_na(
+    events: pd.DataFrame, dat: pd.DataFrame, metric_columns
+) -> pd.DataFrame:
+    if events is None or len(events) == 0:
+        return events
+
+    filtered = []
+    for _, event in events.iterrows():
+        if event["reason"] != "outage":
+            filtered.append(event.to_dict())
+            continue
+
+        start = _coerce_config_timestamp(event["x0"])
+        end = _coerce_config_timestamp(event["x1"])
+        if start is None or end is None or end <= start:
+            continue
+
+        for interval_start, interval_end in _metric_na_intervals(
+            dat=dat, columns=metric_columns, start=start, end=end
+        ):
+            updated = event.to_dict()
+            updated["x0"] = interval_start
+            updated["x1"] = interval_end
+            updated["open_ended"] = bool(event.get("open_ended", False)) and (
+                interval_end == end
+            )
+            filtered.append(updated)
+
+    if len(filtered) == 0:
+        return pd.DataFrame(columns=events.columns)
+    return pd.DataFrame(filtered, columns=events.columns)
 
 
 def _add_sensor_event_overlays(
@@ -419,6 +564,9 @@ def plot_soil(dat, config, **kwargs):
         data_max=pd.to_datetime(dat["datetime"].max()),
         default_width=pd.Timedelta(hours=6),
     )
+    sensor_events = _filter_outage_events_to_metric_na(
+        events=sensor_events, dat=dat, metric_columns=cols
+    )
     y_min, y_max = _value_bounds(dat, cols)
     dat = pd.concat(
         [
@@ -474,6 +622,9 @@ def plot_met(dat, config, **kwargs):
         config=config, data_min=date_min, data_max=date_max, default_width=vrect_width
     )
     y_col = dat.columns.tolist()[-1]
+    sensor_events = _filter_outage_events_to_metric_na(
+        events=sensor_events, dat=dat, metric_columns=y_col
+    )
     y_min, y_max = _value_bounds(dat, y_col)
 
     # TODO: Debug cherry ridge temperature sensor swap
@@ -588,6 +739,9 @@ def plot_ppt(dat, config, **kwargs):
         default_width=pd.Timedelta(hours=6),
     )
     variable_text = dat.columns.tolist()[-1]
+    sensor_events = _filter_outage_events_to_metric_na(
+        events=sensor_events, dat=dat, metric_columns=variable_text
+    )
     y_min, y_max = _value_bounds(dat, variable_text)
 
     station_name = kwargs["station"]["station"].values[0]
