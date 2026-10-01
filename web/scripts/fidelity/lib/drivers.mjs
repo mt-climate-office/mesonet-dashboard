@@ -24,8 +24,8 @@ export function plotRole(p) {
 const LEGACY_CARDS = { top: '#ul-content', bottom: '#bl-content', sidebar: '#sidebar-content' }
 // New app: Paper containing the SegmentedControl with a given label.
 const NEW_CARDS = {
-  top: { segLabel: 'Wind', closest: '.mantine-Paper-root' },
-  bottom: { segLabel: 'Map', closest: '.mantine-Paper-root' },
+  top: { segLabel: 'Wind Rose', closest: '.mantine-Paper-root' },
+  bottom: { segLabel: 'Locator Map', closest: '.mantine-Paper-root' },
 }
 
 /** Resolve object-style card selectors inside the page into temp data attrs. */
