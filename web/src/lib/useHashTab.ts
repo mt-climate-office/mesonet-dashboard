@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
+import { DEFAULT_TAB, VISIBLE_TABS, type TabHash } from '../app/tabs'
 
-export const TAB_HASHES = ['latest', 'ag', 'downloader', 'satellite'] as const
-export type TabHash = (typeof TAB_HASHES)[number]
-export const DEFAULT_TAB: TabHash = 'latest'
+export { DEFAULT_TAB, type TabHash }
+
+/** Hashes of the routable tabs, in display order (from app/tabs.ts). */
+export const TAB_HASHES: readonly TabHash[] = VISIBLE_TABS.map((t) => t.hash as TabHash)
 
 const isTabHash = (v: string): v is TabHash =>
   (TAB_HASHES as readonly string[]).includes(v)

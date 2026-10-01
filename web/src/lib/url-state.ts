@@ -1,3 +1,47 @@
+/**
+ * URL query-state for every tab (nuqs). Each tab owns its own keys so state
+ * set on one tab never leaks into another; only the station is shared.
+ *
+ * Key map (query param → meaning):
+ *
+ *   Shared     s          station id
+ *
+ *   Latest     from, to   chart window (YYYY-MM-DD; pan/zoom writes these)
+ *              agg        hourly | daily | raw
+ *              vars       display-variable names, comma-separated
+ *              nets       map network filter
+ *              gridmet    overlay normals
+ *              card       top card: wind | forecast | photo
+ *              info       bottom card: map | metadata | current
+ *     (Latest keeps the un-prefixed legacy names because it is the most-shared
+ *      tab and existing links must keep working.)
+ *
+ *   Ag Tools   var        derived variable (etr, gdd, …)
+ *              crop       GDD crop
+ *              gdd_lo, gdd_hi  GDD slider thresholds
+ *              ag_time    hourly | daily
+ *              lt         livestock: adult | newborn
+ *              soilv      soil profile sub-variable
+ *              annv       annual comparison variable
+ *              ag_from, ag_to  date window
+ *
+ *   Downloader els        element codes
+ *              pub        show uncommon elements
+ *              rmna       remove flagged rows
+ *              period     monthly | daily | hourly
+ *              dl_from, dl_to  date window
+ *
+ *   Satellite  mode       ts | cmp
+ *              pct        show percentiles
+ *              sat_vars   satellite variable codes
+ *              cmpx, cmpy compare products
+ *              sat_from, sat_to  date window
+ *
+ * Legacy links: before namespacing, Ag/Downloader/Satellite read the shared
+ * `from`/`to` (and Ag `time`, Satellite `vars`). `migrateLegacyUrlState()`
+ * runs once at startup and, when the hash tab is one of those, renames the
+ * legacy keys to that tab's keys via history.replaceState.
+ */
 import {
   parseAsArrayOf,
   parseAsBoolean,
@@ -105,7 +149,7 @@ export function useAgToolsState() {
   const [gddLo, setGddLo] = useQueryState('gdd_lo', parseAsString)
   const [gddHi, setGddHi] = useQueryState('gdd_hi', parseAsString)
   const [time, setTime] = useQueryState(
-    'time',
+    'ag_time',
     parseAsStringEnum<AgTime>(AG_TIME_OPTIONS as unknown as AgTime[]).withDefault('daily'),
   )
   const [livestock, setLivestock] = useQueryState(
@@ -119,8 +163,8 @@ export function useAgToolsState() {
     parseAsString.withDefault('soil_vwc'),
   )
   const [annualVar, setAnnualVar] = useQueryState('annv', parseAsString)
-  const [from, setFrom] = useQueryState('from', parseAsString)
-  const [to, setTo] = useQueryState('to', parseAsString)
+  const [from, setFrom] = useQueryState('ag_from', parseAsString)
+  const [to, setTo] = useQueryState('ag_to', parseAsString)
 
   return {
     station,
@@ -175,8 +219,8 @@ export function useDownloaderState() {
       DL_PERIOD_OPTIONS as unknown as DlPeriod[],
     ).withDefault('daily'),
   )
-  const [from, setFrom] = useQueryState('from', parseAsString)
-  const [to, setTo] = useQueryState('to', parseAsString)
+  const [from, setFrom] = useQueryState('dl_from', parseAsString)
+  const [to, setTo] = useQueryState('dl_to', parseAsString)
 
   return {
     station,
@@ -217,13 +261,13 @@ export function useSatelliteState() {
     parseAsBoolean.withDefault(true),
   )
   const [vars, setVars] = useQueryState(
-    'vars',
+    'sat_vars',
     parseAsArrayOf(parseAsString, ',').withDefault(DEFAULT_SAT_VARS),
   )
   const [cmpX, setCmpX] = useQueryState('cmpx', parseAsString)
   const [cmpY, setCmpY] = useQueryState('cmpy', parseAsString)
-  const [from, setFrom] = useQueryState('from', parseAsString)
-  const [to, setTo] = useQueryState('to', parseAsString)
+  const [from, setFrom] = useQueryState('sat_from', parseAsString)
+  const [to, setTo] = useQueryState('sat_to', parseAsString)
 
   return {
     station,
@@ -243,4 +287,63 @@ export function useSatelliteState() {
     to,
     setTo,
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Legacy-key migration                                                        */
+/* -------------------------------------------------------------------------- */
+
+/** Per-tab renames applied to pre-namespacing links: [legacy, current]. */
+export const LEGACY_KEY_RENAMES: Readonly<
+  Record<string, ReadonlyArray<readonly [string, string]>>
+> = {
+  ag: [
+    ['from', 'ag_from'],
+    ['to', 'ag_to'],
+    ['time', 'ag_time'],
+  ],
+  downloader: [
+    ['from', 'dl_from'],
+    ['to', 'dl_to'],
+  ],
+  satellite: [
+    ['vars', 'sat_vars'],
+    ['from', 'sat_from'],
+    ['to', 'sat_to'],
+  ],
+}
+
+/**
+ * Pure part of the migration. Given a query string (with or without `?`) and
+ * the hash tab (with or without `#`), rename each legacy key to the tab's key
+ * when the new key is absent. Returns the new query string (`?…` or `''`), or
+ * `null` when nothing changed.
+ */
+export function migrateLegacySearch(search: string, hash: string): string | null {
+  const renames = LEGACY_KEY_RENAMES[hash.replace(/^#/, '').trim()]
+  if (!renames) return null
+  const params = new URLSearchParams(search)
+  let changed = false
+  for (const [legacy, next] of renames) {
+    const value = params.get(legacy)
+    if (value === null || params.has(next)) continue
+    params.delete(legacy)
+    params.set(next, value)
+    changed = true
+  }
+  if (!changed) return null
+  const qs = params.toString()
+  return qs ? `?${qs}` : ''
+}
+
+/**
+ * Rewrite the current URL in place (replaceState) if it carries legacy keys
+ * for the active tab. Call once, before nuqs first reads the location.
+ */
+export function migrateLegacyUrlState(): void {
+  if (typeof window === 'undefined') return
+  const { pathname, search, hash } = window.location
+  const next = migrateLegacySearch(search, hash)
+  if (next === null) return
+  window.history.replaceState(window.history.state, '', `${pathname}${next}${hash}`)
 }
