@@ -4,7 +4,7 @@ import { currentConditionsRows, formatWindDirection } from './currentConditions'
 describe('formatWindDirection', () => {
   it('matches legacy "{compass} ({deg} deg)"', () => {
     expect(formatWindDirection(357.3)).toBe('N (357.3 deg)')
-    expect(formatWindDirection(225)).toBe('SW (225 deg)')
+    expect(formatWindDirection(225)).toBe('SW (225.0 deg)')
   })
 })
 
