@@ -412,7 +412,7 @@ export function AgToolsTab() {
 
       <Card withBorder p="xs" style={{ flex: 1, minHeight: 540, display: 'flex' }}>
         <Box style={{ flex: 1, minHeight: 0, width: '100%' }}>
-          {!station ? (
+          {!station || (swpOnly && stationInfo && !hasSwp) ? (
             <Center h="100%">
               <Text c="dimmed" size="sm">
                 {state.station && !stations.data ? 'Loading stations…' : 'Pick a station to begin.'}
