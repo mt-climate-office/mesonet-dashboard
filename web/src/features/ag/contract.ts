@@ -161,7 +161,11 @@ export interface GddCutoffs {
 }
 
 export interface GddStage {
-  stage: number
+  /**
+   * Stage id as published: Haun number for wheat/barley (e.g. 0.5, 2), a
+   * label for other crops (e.g. "V1 (Emergence)", "BBCH Stage 39").
+   */
+  stage: number | string
   name: string | null
   description: string | null
   /** Cumulative GDD (°F·day, as published) at which this stage begins. */
@@ -220,16 +224,21 @@ export interface EtoSeries extends SeriesBase {
 
 export interface GddProjection {
   date: LocalDate[]
+  /** Median-normals (or forecast) daily GDD, °F·day. */
   daily: Nullable[]
   cumulative: Nullable[]
-  stage: (number | null)[]
+  /** Envelope from normals q25 / q75 temperatures (equal to `cumulative` on forecast days). */
+  cumulativeQ25: Nullable[]
+  cumulativeQ75: Nullable[]
+  stage: (number | string | null)[]
   stageName: (string | null)[]
   /** Which input drove each projected day. */
   basis: ('forecast' | 'normals')[]
 }
 
 export interface GddSeries extends SeriesBase {
-  crop: GddCrop
+  /** null for custom low/high cutoffs (the API's no-crop default). */
+  crop: GddCrop | null
   cutoffs: GddCutoffs
   date: LocalDate[]
   /** Daily GDD (°F·day, matching published stage tables). */
@@ -237,7 +246,7 @@ export interface GddSeries extends SeriesBase {
   /** Running sum from the first date; carries forward over missing days. */
   cumulative: Nullable[]
   /** Last stage whose `gdd` ≤ cumulative; null when no stage table. */
-  stage: (number | null)[]
+  stage: (number | string | null)[]
   stageName: (string | null)[]
   projected?: GddProjection
 }

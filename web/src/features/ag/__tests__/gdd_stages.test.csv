@@ -1,0 +1,108 @@
+# TEST-ONLY GDD stage tables. Provenance: mesonet-db-rds derived/combined_stages.tsv
+# (crop, stage, name, gdds; description dropped) plus derived/write_hemp_table.sql for hemp.
+# Workstream B vendors the production tables; corn has no stage table in either source.
+crop,stage,name,gdds
+barley,0.5,Emergence Date,176
+barley,1,Leaf 1 (Fully Extended),245
+barley,2,Leaf 2 (Fully Extended),384
+barley,3,Leaf 3 (Tillers Begin To Emerge),523
+barley,4,Leaf 4 (Fully Extended),662
+barley,5,Leaf 5 (Tillering Ends),801
+barley,6,Leaf 6 (Fully Extended),940
+barley,7,Leaf 7 (Fully Extended),1079
+barley,8,Flag Leaf Emerged (Collar Visible),1218
+barley,9,Boot Swelling Begins (Flag leaf stem elongated; Awns just peeking out of boot),1357
+barley,9.5,Mid-Boot (Head half emerged),1426
+barley,10,Head Emerged (Boot Complete) (Flowering Complete),1496
+barley,11,Heading Complete,1635
+barley,11.5,Kernel Watery Ripe,1745
+barley,12,Milky Ripe,NA
+barley,13,Mealy,NA
+barley,14,Kernel Hard,NA
+barley,15,Ripe,NA
+canola,Planting,NA,0
+canola,Seedling,NA,256
+canola,Rosette - 3rd Leaf,NA,396
+canola,Rosette - 4th Leaf,NA,727
+canola,Early Bud,NA,828
+canola,Late Bud,NA,932
+canola,Early Flower,NA,1165
+canola,Late Flower,NA,1397
+canola,Early Ripening,NA,1634
+canola,Late Ripening,NA,1874
+canola,Ripe,NA,NA
+sugarbeet,V1 (Emergence),NA,237
+sugarbeet,V2,NA,572
+sugarbeet,V3,NA,713
+sugarbeet,V4,NA,821
+sugarbeet,V5,NA,913
+sugarbeet,V6,NA,993
+sugarbeet,V7,NA,1066
+sugarbeet,V8,NA,1133
+sugarbeet,V9,NA,1195
+sugarbeet,V10,NA,1253
+sunflower,VE,NA,206
+sunflower,V1,NA,241
+sunflower,V2,NA,276
+sunflower,V3,NA,311
+sunflower,V4,NA,347
+sunflower,V5,NA,382
+sunflower,V6,NA,417
+sunflower,V7,NA,452
+sunflower,V8,NA,487
+sunflower,V9,NA,522
+sunflower,V10,NA,557
+sunflower,V11,NA,592
+sunflower,V12,NA,627
+sunflower,V13,NA,662
+sunflower,V14,NA,697
+sunflower,V15,NA,732
+sunflower,V16,NA,767
+sunflower,V17,NA,802
+sunflower,V18,NA,837
+sunflower,V19,NA,872
+sunflower,V20,NA,908
+sunflower,R1,NA,1048
+sunflower,R2,NA,1188
+sunflower,R3,NA,1328
+sunflower,R4,NA,1469
+sunflower,R5.1,NA,1609
+sunflower,R5.5,NA,1749
+sunflower,R6,NA,1889
+sunflower,R7,NA,2030
+sunflower,R8,NA,2170
+sunflower,R9,NA,2310
+wheat,0.5,Emergence Date,180
+wheat,1,Leaf 1 fully extended,252
+wheat,2,Leaf 2 fully extended,395
+wheat,3,Leaf 3 (Tillers Begin To Emerge),538
+wheat,4,Leaf 4,681
+wheat,5,Leaf 5 (Tillering ends),824
+wheat,6,Leaf 6 (Tillering ends),967
+wheat,7,Leaf 7 fully extended.,1110
+wheat,7.5,Flag Leaf Visible,1181
+wheat,8,Flag Leaf Emerged,1255
+wheat,9,Boot Swelling Begins,1396
+wheat,10,Boot Completed,1539
+wheat,10.2,Heading Begins,1567
+wheat,11,Headed (Head Extenstion Begins),1682
+wheat,11.4,Flowering Begins,1739
+wheat,11.6,Flowering Completed,1768
+wheat,12,Kernel Watery Ripe,1825
+wheat,13,Early Milk,NA
+wheat,14,Early Dough,NA
+wheat,14.5,Soft Dough,NA
+wheat,15,Hard Dough,NA
+wheat,15.4,Swathing can begin,NA
+wheat,15.6,Physiological Maturity,NA
+wheat,16,Ripe (Kernel Hard),NA
+wheat,16.4,Direct Combining,NA
+hemp,BBCH Stages 0-11,Initial Growth,600
+hemp,BBCH Stages 12-14,First Leaf Pear Forms,825
+hemp,BBCH Stages 15-17,Leaf Pairs 5-7 Emerge,1050
+hemp,BBCH Stages 18-19,Leaf Pairs 8-9 Emerge,1250
+hemp,BBCH Stage 39,Change of Phyllotaxis,1350
+hemp,BBCH Stage 51,Flower Primordia,1425
+hemp,BBCH Stage 59,"Pistillate flower formation, formed perigonal bract",1475
+hemp,BBCH Stage 60,Beginning of flowering-style formed,1550
+hemp,BBCH Stage 62,Spike,1650
