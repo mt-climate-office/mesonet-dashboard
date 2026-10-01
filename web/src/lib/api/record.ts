@@ -16,6 +16,8 @@ export interface RecordQuery {
   rmNa?: boolean
   naInfo?: boolean
   publicOnly?: boolean
+  /** API QC tier: 0 raw, 1 provisional, 2 quality-controlled (default). */
+  level?: 0 | 1 | 2
 }
 
 export const fmtDate = (d: Date | string): string =>
@@ -39,14 +41,15 @@ export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]
   const start = fmtDate(q.start)
   const end = q.end ? exclusiveEnd(q.end) : undefined
 
-  // `level=1` matches the legacy dashboard (provisional QC tier); the v2
-  // default is 2. Revisit when the fidelity audit settles it.
+  // Quality-controlled (level 2) by default. The legacy dashboard used
+  // level 1, which passes through flatlined sensors and false precip spikes
+  // (see mesonet-db-rds#189).
   const derivedQuery = {
     stations: q.station,
     elements: q.elements ?? '',
     start_time: start,
     end_time: end,
-    level: 1,
+    level: q.level ?? 2,
     rm_na: q.rmNa ?? true,
     na_info: q.naInfo ?? false,
   }
