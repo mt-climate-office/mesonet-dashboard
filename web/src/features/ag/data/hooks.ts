@@ -97,7 +97,10 @@ export function useNormals(station: string | null) {
     queryKey: ['ag', 'normals', station],
     queryFn: () => fetchDailyNormals(station!),
     enabled: !!station,
+    // Successes (incl. a genuine "no normals" null) are stable; failures
+    // throw, stay in the error state and are retried, never cached as data.
     staleTime: Infinity,
+    retry: 2,
   })
 }
 

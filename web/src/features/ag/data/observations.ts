@@ -296,12 +296,18 @@ export function parseStationMeta(
 
 /* --------------------------------------------------------------- fetchers */
 
+/**
+ * The API's specific "nothing matched" 404 details. FastAPI's generic
+ * `{"detail":"Not Found"}` (wrong route, unknown station) is NOT no-data.
+ */
+const NO_DATA_DETAIL = /No data available|Element '[^']+' not found/
+
 /** True for the API's "nothing matched" 404 (as opposed to a bad request). */
 export function isNoData(err: unknown): boolean {
   return (
     err instanceof HttpError &&
     err.status === 404 &&
-    /No data available|not found/i.test(err.message)
+    NO_DATA_DETAIL.test(err.message)
   )
 }
 

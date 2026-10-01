@@ -9,12 +9,14 @@ import keoghElements from '../__fixtures__/arskeogh.elements.csv?raw'
 import stationsCsv from '../__fixtures__/stations.csv?raw'
 import {
   dailyMetRequest,
+  isNoData,
   parseDailyMet,
   parseHourlyMet,
   parseSoilSeries,
   parseStationMeta,
 } from './observations'
 import { parseCsvRaw, parseHeader } from './parse'
+import { HttpError } from '../../../lib/api/http'
 import type { Station, StationElement } from '../../../lib/api/types'
 
 const meta = (station: string) => ({ station, level: 2 as const })
@@ -182,5 +184,18 @@ describe('parseStationMeta', () => {
   it('falls back to network when elements lack a wind sensor', () => {
     expect(parseStationMeta(st('arskeogh'), []).windHeightM).toBe(2.44)
     expect(parseStationMeta(st('acebozem'), []).windHeightM).toBe(10)
+  })
+})
+
+describe('isNoData', () => {
+  const e = (status: number, body: string) => new HttpError(status, 'u', body)
+  it('matches only the API no-data details', () => {
+    expect(isNoData(e(404, '{"detail":"No data available for the specified time period."}'))).toBe(true)
+    expect(isNoData(e(404, `{"detail":"Element 'sol_rad' not found in the data."}`))).toBe(true)
+  })
+  it('lets generic 404s and other statuses throw', () => {
+    expect(isNoData(e(404, '{"detail":"Not Found"}'))).toBe(false)
+    expect(isNoData(e(500, '{"detail":"No data available"}'))).toBe(false)
+    expect(isNoData(new Error('No data available'))).toBe(false)
   })
 })

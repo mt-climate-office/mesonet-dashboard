@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDailyNormals } from './normals'
+import { buildDailyNormals, fetchDailyNormals } from './normals'
 import { durationMs, fetchForecastDaily, parseGridpointDaily, type GridpointDoc } from './forecast'
 import { parseCsvRaw } from './parse'
 
@@ -20,6 +20,34 @@ describe('buildDailyNormals', () => {
     expect(d.tmaxC.q75).toBeCloseTo(5, 9)
     expect(d.prMm).toBeCloseTo(0.0157 * 25.4, 9)
     expect(d.petMm).toBeNull()
+  })
+})
+
+describe('fetchDailyNormals', () => {
+  const csv = `${HEADER}\n1,1,12,11,12.83,-10,32,3.74,19.67,daily,tmmn,x`
+  const stub = (status: (url: string) => number) =>
+    (async (u: RequestInfo | URL) => {
+      const s = status(String(u))
+      return new Response(s === 200 ? csv : 'err', { status: s })
+    }) as typeof fetch
+
+  it('404 for every file -> null (station has no normals)', async () => {
+    expect(await fetchDailyNormals('x', stub(() => 404))).toBeNull()
+  })
+  it('404 for some files -> nulls for those variables', async () => {
+    const n = await fetchDailyNormals('x', stub((u) => (u.endsWith('_tmmn.csv') ? 200 : 404)))
+    expect(n!.byMonthDay['01-01'].tminC.median).toBeCloseTo(((12.83 - 32) * 5) / 9, 9)
+    expect(n!.byMonthDay['01-01'].prMm).toBeNull()
+  })
+  it('5xx / 429 / network errors throw (so the query retries)', async () => {
+    await expect(fetchDailyNormals('x', stub(() => 503))).rejects.toThrow(/503/)
+    await expect(
+      fetchDailyNormals('x', stub((u) => (u.endsWith('_pr.csv') ? 429 : 200))),
+    ).rejects.toThrow(/429/)
+    const down = (async () => {
+      throw new TypeError('Failed to fetch')
+    }) as unknown as typeof fetch
+    await expect(fetchDailyNormals('x', down)).rejects.toThrow()
   })
 })
 

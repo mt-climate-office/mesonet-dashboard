@@ -46,19 +46,22 @@ export interface AnnualOptions {
   level?: QcLevel
   /** Max parallel requests (default 3). */
   concurrency?: number
-  /** Clip the current year at this date (default: today, Denver). */
+  /** Years starting after this date are not requested (default: today, Denver). */
   today?: LocalDate
 }
 
-/** One year's API rows → a full Jan 1 … Dec 31 (or `today`) axis. */
-export function parseAnnualYear(rows: RawRow[], year: number, lastDate?: LocalDate): AnnualYear {
+/**
+ * One year's API rows → a full Jan 1 … Dec 31 axis. Days without a row
+ * (future days, gaps, a future year with no rows) are null.
+ */
+export function parseAnnualYear(rows: RawRow[], year: number): AnnualYear {
   const header = rows.length
     ? Object.keys(rows[0]).find((h) => parseHeader(h) !== null)
     : undefined
   const conv = header ? toSi(parseHeader(header)!.unit) : (x: number) => x
   const byDate = new Map<LocalDate, RawRow>()
   for (const r of rows) byDate.set(denverLocal(parseApiDatetime(r.datetime)).date, r)
-  const end = lastDate && lastDate < `${year}-12-31` ? lastDate : `${year}-12-31`
+  const end = `${year}-12-31`
   const out: AnnualYear = { year, date: [], value: [], provisional: [] }
   for (let d = `${year}-01-01`; d <= end; d = addDays(d, 1)) {
     const r = byDate.get(d)
@@ -98,7 +101,7 @@ export async function getAnnualDaily(
   const today = opts.today ?? denverLocal(Date.now()).date
   const sorted = [...new Set(years)].sort((a, b) => a - b)
   const out = await pool(sorted, opts.concurrency ?? 3, async (year) => {
-    if (`${year}-01-01` > today) return parseAnnualYear([], year, today)
+    if (`${year}-01-01` > today) return parseAnnualYear([], year)
     const rows = await fetchRows({
       path: 'observations/daily/',
       query: {
@@ -110,7 +113,7 @@ export async function getAnnualDaily(
         end_time: `${year + 1}-01-01`, // exclusive
       },
     })
-    return parseAnnualYear(rows, year, today)
+    return parseAnnualYear(rows, year)
   })
   return { station, element, agg, level, source: 'api', years: out }
 }

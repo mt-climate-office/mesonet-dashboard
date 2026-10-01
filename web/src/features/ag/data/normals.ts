@@ -58,8 +58,10 @@ export function buildDailyNormals(
 }
 
 /**
- * Fetch the four normals CSVs for a station. A missing file contributes
- * nulls; returns null only when every file is missing.
+ * Fetch the four normals CSVs for a station. Only a 404 means "this file
+ * does not exist" (-> nulls for that variable); returns null only when all
+ * four are 404. Network errors, 5xx and 429 throw so the query retries
+ * instead of caching "no normals".
  */
 export async function fetchDailyNormals(
   station: string,
@@ -67,15 +69,16 @@ export async function fetchDailyNormals(
 ): Promise<DailyNormals | null> {
   const sets = await Promise.all(
     NORMAL_VARS.map(async (v) => {
-      try {
-        const r = await fetchImpl(`${NORMALS_BASE}/${station}_${v}.csv`)
-        if (!r.ok) return [v, []] as const
-        return [v, parseCsvRaw(await r.text())] as const
-      } catch {
-        return [v, []] as const
-      }
+      const url = `${NORMALS_BASE}/${station}_${v}.csv`
+      const r = await fetchImpl(url)
+      if (r.status === 404) return [v, null] as const
+      if (!r.ok) throw new Error(`normals ${url}: HTTP ${r.status}`)
+      return [v, parseCsvRaw(await r.text())] as const
     }),
   )
-  if (sets.every(([, rows]) => rows.length === 0)) return null
-  return buildDailyNormals(station, Object.fromEntries(sets))
+  if (sets.every(([, rows]) => rows === null)) return null
+  return buildDailyNormals(
+    station,
+    Object.fromEntries(sets.map(([v, rows]) => [v, rows ?? []])),
+  )
 }
