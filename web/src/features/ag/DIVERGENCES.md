@@ -135,9 +135,12 @@ is wanted.
   `write_hemp_table.sql`).
 - **Here:** an empty or missing `GddStageTable` gives `stage = null` and
   `stageName = null` on every row, never a fake "stage 0". When a table
-  exists, the API behaviour is kept: before the first threshold the row is
-  stage 0, named "Planted" if the table has names (and null otherwise, as for
-  sugarbeet and sunflower).
+  exists, the API behaviour is kept exactly: rows before the first threshold
+  are stage 0, and they are named "Planted" only if some row in the series
+  reached a *named* stage. Otherwise every name is null, which matches the API
+  dropping the `Stage Name` column (`derived.py:1045-1048`; this always
+  happens for canola, sugarbeet and sunflower, whose tables have no names).
+  `projectGdd` continues the observed series' naming.
 - **Tests:** `compute/gdd.test.ts`, corn branch of `checkStages`, and "crop
   without a stage table → null labels, not stage 0 (D-GDD-2)".
 
@@ -163,8 +166,11 @@ to ship.
 
 - **API:** when `crop` is given, `derived.py:58-62` ignores `low`/`high`.
 - **Here:** if `lowC`/`highC` are passed, they win, which supports the UI
-  threshold slider. The NDAWN switch is then off. Without them, the crop's
-  cutoffs from `derived.py:80-90` apply.
+  threshold slider. The series is then not a crop series (`crop = null`,
+  `ndawnSwitch = null`), and any bound left out falls back to the named crop's.
+  Without custom cutoffs, the crop's cutoffs from `derived.py:80-90` apply.
+  `GddSeries.ndawnSwitch` records whether the wheat/barley rule was applied,
+  and `projectGdd` follows that record rather than re-deriving it.
 - **Test:** `compute/gdd.test.ts`, "custom cutoffs in °C override the crop
   (D-GDD-5)".
 
@@ -181,3 +187,8 @@ to ship.
 - **feels_like with missing wind or RH:** falls back to air temperature, as
   the API's NaN handling does.
 - **Daily `epochMs`:** the UTC instant of local (America/Denver) midnight.
+- **Annual:** `groupByYear` accepts daily rows only. It throws on hourly
+  timestamps or duplicate dates. `hourlyToDaily(…, 'sum')` returns null for
+  any day with fewer valid hours than the local day has (23, 24 or 25 across
+  DST), unless `minHours` is passed, so a partial day never looks like a low
+  total. A mean needs one valid hour.

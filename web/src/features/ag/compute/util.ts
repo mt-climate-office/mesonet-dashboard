@@ -11,6 +11,15 @@ export function clean(x: number | null | undefined): Nullable {
   return typeof x === 'number' && Number.isFinite(x) ? x : null
 }
 
+/** Running sum that skips nulls (carrying the total forward); null until the first non-null value. */
+export function cumulativeSum(values: Nullable[], start: Nullable = null): Nullable[] {
+  let acc: Nullable = start
+  return values.map((v) => {
+    if (ok(v)) acc = (acc ?? 0) + v
+    return acc
+  })
+}
+
 /** Day of year (1–366) of a local date or local datetime string. */
 export function dayOfYear(local: LocalDate | LocalDateTime): number {
   const y = Number(local.slice(0, 4))
@@ -60,12 +69,30 @@ export function denverOffsetMinutes(epochMs: number): number {
  * changes at 02:00 local, so the offset at 00:00 MST (07:00Z) on the same
  * calendar day is the offset in force at midnight.
  */
+const midnightCache = new Map<LocalDate, number>()
+
 export function denverMidnightEpochMs(date: LocalDate): number {
-  const utcMidnight = dateToUtcMs(date)
-  return utcMidnight - denverOffsetMinutes(utcMidnight + 7 * 3_600_000) * 60_000
+  let v = midnightCache.get(date)
+  if (v === undefined) {
+    const utcMidnight = dateToUtcMs(date)
+    v = utcMidnight - denverOffsetMinutes(utcMidnight + 7 * 3_600_000) * 60_000
+    midnightCache.set(date, v)
+  }
+  return v
 }
 
-/** Epoch ms for each daily row (local midnight); daily contract inputs carry no epochMs. */
+const dailyEpochCache = new WeakMap<LocalDate[], number[]>()
+
+/**
+ * Epoch ms for each daily row (local midnight); daily contract inputs carry
+ * no epochMs. Memoised per input date array (and per date), so the builders
+ * over one DailyMet share the work; returns a fresh copy.
+ */
 export function dailyEpochMs(dates: LocalDate[]): number[] {
-  return dates.map(denverMidnightEpochMs)
+  let v = dailyEpochCache.get(dates)
+  if (!v) {
+    v = dates.map(denverMidnightEpochMs)
+    dailyEpochCache.set(dates, v)
+  }
+  return [...v]
 }

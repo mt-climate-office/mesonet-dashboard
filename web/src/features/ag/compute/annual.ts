@@ -5,11 +5,14 @@
  * variables).
  *
  * Day of year is the local (America/Denver) date's own DOY, so in leap years
- * Mar 1 is DOY 61 and Dec 31 is DOY 366. Hourly timestamps are grouped by
- * their local date (the first 10 characters).
+ * Mar 1 is DOY 61 and Dec 31 is DOY 366.
+ *
+ * {@link groupByYear} takes **daily** input only (one row per `YYYY-MM-DD`;
+ * it throws on hourly timestamps or duplicate dates). Aggregate hourly data
+ * first with {@link hourlyToDaily}.
  */
 import type { LocalDate, LocalDateTime, Nullable } from '../contract'
-import { dayOfYear, ok } from './util'
+import { cumulativeSum, dayOfYear, denverMidnightEpochMs, ok } from './util'
 
 /** Variables summed (not averaged) over time; their annual view is cumulative. */
 export const CUMULATIVE_VARIABLES: ReadonlySet<string> = new Set([
@@ -41,8 +44,9 @@ export interface AnnualOptions {
 
 /**
  * Group a daily series by local calendar year. Input rows may be unsorted;
- * each trace is returned in date order, and traces in year order. Duplicate
- * dates keep the last value.
+ * each trace is returned in date order, and traces in year order.
+ *
+ * @throws if a date is not `YYYY-MM-DD` or appears more than once.
  */
 export function groupByYear(
   dates: LocalDate[],
@@ -51,36 +55,49 @@ export function groupByYear(
 ): AnnualTrace[] {
   const byYear = new Map<number, Map<LocalDate, Nullable>>()
   dates.forEach((d, i) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+      throw new Error(`groupByYear expects daily YYYY-MM-DD dates, got "${d}" (use hourlyToDaily first)`)
+    }
     const y = Number(d.slice(0, 4))
     let m = byYear.get(y)
     if (!m) byYear.set(y, (m = new Map()))
-    m.set(d.slice(0, 10), ok(values[i]) ? values[i] : null)
+    if (m.has(d)) throw new Error(`groupByYear: duplicate date ${d}`)
+    m.set(d, ok(values[i]) ? values[i] : null)
   })
   return [...byYear.entries()]
     .sort(([a], [b]) => a - b)
     .map(([year, m]) => {
       const date = [...m.keys()].sort()
-      let vals = date.map((d) => m.get(d) ?? null)
-      if (opts.cumulative) {
-        let acc: Nullable = null
-        vals = vals.map((v) => {
-          if (ok(v)) acc = (acc ?? 0) + v
-          return acc
-        })
-      }
-      return { year, date, doy: date.map(dayOfYear), values: vals }
+      const raw = date.map((d) => m.get(d) ?? null)
+      return { year, date, doy: date.map(dayOfYear), values: opts.cumulative ? cumulativeSum(raw) : raw }
     })
+}
+
+/** Number of clock hours in a local (America/Denver) day: 23, 24 or 25. */
+export function hoursInLocalDay(date: LocalDate): number {
+  const next = new Date(Date.parse(`${date}T00:00Z`) + 86_400_000).toISOString().slice(0, 10)
+  return Math.round((denverMidnightEpochMs(next) - denverMidnightEpochMs(date)) / 3_600_000)
+}
+
+export interface HourlyToDailyOptions {
+  /**
+   * Minimum valid hours for a day to get a value; fewer → null. Defaults to
+   * every hour of the local day for `'sum'` (23/24/25 across DST, so a
+   * partial day never looks like a low total) and 1 for `'mean'`.
+   */
+  minHours?: number
 }
 
 /**
  * Aggregate an hourly series to local-date daily values (sum or mean of
- * non-null hours; null when a day has no values), for feeding
- * {@link groupByYear}.
+ * non-null hours), for feeding {@link groupByYear}. Hours are grouped by
+ * the local date of their timestamp (first 10 characters).
  */
 export function hourlyToDaily(
   time: LocalDateTime[],
   values: Nullable[],
   how: 'sum' | 'mean',
+  opts: HourlyToDailyOptions = {},
 ): { date: LocalDate[]; values: Nullable[] } {
   const acc = new Map<LocalDate, { sum: number; n: number }>()
   time.forEach((t, i) => {
@@ -98,7 +115,8 @@ export function hourlyToDaily(
     date,
     values: date.map((d) => {
       const a = acc.get(d)!
-      if (a.n === 0) return null
+      const min = opts.minHours ?? (how === 'sum' ? hoursInLocalDay(d) : 1)
+      if (a.n === 0 || a.n < min) return null
       return how === 'sum' ? a.sum : a.sum / a.n
     }),
   }

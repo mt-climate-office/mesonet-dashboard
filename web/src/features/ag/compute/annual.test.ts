@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupByYear, hourlyToDaily, isCumulativeVariable } from './annual'
+import { groupByYear, hourlyToDaily, hoursInLocalDay, isCumulativeVariable } from './annual'
 
 describe('groupByYear', () => {
   it('splits by local calendar year with leap-aware DOY', () => {
@@ -19,20 +19,39 @@ describe('groupByYear', () => {
     expect(out[1].values).toEqual([null, 5, 5])
   })
 
+  it('rejects hourly timestamps and duplicate dates', () => {
+    expect(() => groupByYear(['2025-07-01T00:00', '2025-07-01T23:00'], [1, 2])).toThrow(/hourlyToDaily/)
+    expect(() => groupByYear(['2025-07-01', '2025-07-01'], [1, 2])).toThrow(/duplicate/)
+  })
+
   it('NaN is treated as missing', () => {
     expect(groupByYear(['2025-01-01'], [NaN])[0].values).toEqual([null])
   })
 })
 
+function hours(date: string, n: number): string[] {
+  return Array.from({ length: n }, (_, h) => `${date}T${String(h).padStart(2, '0')}:00`)
+}
+
 describe('hourlyToDaily', () => {
-  it('groups by local date', () => {
-    const out = hourlyToDaily(
-      ['2025-07-01T23:00', '2025-07-01T22:00', '2025-07-02T00:00', '2025-07-03T00:00'],
-      [1, 2, 4, null],
-      'sum',
-    )
-    expect(out).toEqual({ date: ['2025-07-01', '2025-07-02', '2025-07-03'], values: [3, 4, null] })
-    expect(hourlyToDaily(['2025-07-01T00:00', '2025-07-01T01:00'], [1, 2], 'mean').values).toEqual([1.5])
+  it('groups by local date; sums need every hour of the local day', () => {
+    const t = [...hours('2025-07-01', 24), ...hours('2025-07-02', 23), '2025-07-03T00:00']
+    const v = t.map(() => 1)
+    v[30] = null as unknown as number
+    const out = hourlyToDaily(t, v, 'sum')
+    expect(out.date).toEqual(['2025-07-01', '2025-07-02', '2025-07-03'])
+    // Jul 2 has only 22 valid hours and Jul 3 one → null, not a low total.
+    expect(out.values).toEqual([24, null, null])
+    expect(hourlyToDaily(t, v, 'sum', { minHours: 1 }).values).toEqual([24, 22, 1])
+    expect(hourlyToDaily(t, v, 'mean').values).toEqual([1, 1, 1])
+  })
+
+  it('DST days have 23 / 25 hours', () => {
+    expect(hoursInLocalDay('2026-03-08')).toBe(23)
+    expect(hoursInLocalDay('2025-11-02')).toBe(25)
+    expect(hoursInLocalDay('2025-07-01')).toBe(24)
+    const spring = hourlyToDaily(hours('2026-03-08', 23), Array(23).fill(1), 'sum')
+    expect(spring.values).toEqual([23])
   })
 })
 

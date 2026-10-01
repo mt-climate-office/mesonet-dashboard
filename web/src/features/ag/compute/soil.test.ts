@@ -167,6 +167,27 @@ describe('soil semantics', () => {
     expect(out.kPa[0][3]).toBeNull()
   })
 
+  it('selects the FX row and finds porosity whatever the row order (FX + VG rows)', () => {
+    const vg = { r: 0.05, s: 0.45, a: 0.1, n: 1.3 }
+    const params: SoilParams[] = [
+      { station: 'x', depthCm: 10, model: 'VG', vg, source: 'vendored', release: 't' },
+      { station: 'x', depthCm: 10, model: 'FX', fx: FX, labVwcMin: 5, labVwcMax: 40, porosityPct: 40, source: 'vendored', release: 't' },
+    ]
+    const soil = synthetic('x', [20, 45])
+    const out = swp(soil, params)
+    expect(out.depthsCm).toEqual([10])
+    expect(out.kPa[0][0]).toBeCloseTo(fxInverse(0.2, FX)!, 12)
+    expect(out.clipped[0]).toEqual([false, true])
+    expect(percentSaturation(soil, params).pct[0]).toEqual([50, 100])
+    // Porosity on the VG row only, lab range on a separate row.
+    const split: SoilParams[] = [
+      { station: 'x', depthCm: 10, model: 'VG', vg, porosityPct: 40, labVwcMin: 5, labVwcMax: 30, source: 'vendored', release: 't' },
+      { station: 'x', depthCm: 10, model: 'FX', fx: FX, source: 'vendored', release: 't' },
+    ]
+    expect(percentSaturation(soil, split).pct[0]).toEqual([50, 100])
+    expect(swp(soil, split).clipped[0]).toEqual([false, true])
+  })
+
   it('no params for the station → depth omitted; NaN inversions → null', () => {
     expect(swp(synthetic('zzz', [10]), []).depthsCm).toEqual([])
     // θ above θs gives a negative base → NaN in the API → null here.
@@ -182,7 +203,11 @@ describe('soil semantics', () => {
     const soil = synthetic('x', [20, 20, 20, 20], [1, 0, -3, null])
     const mask = frozenMask(soil)
     expect(mask.frozen[0]).toEqual([false, true, true, false])
-    expect(applyFrozenMask([10], [[1, 2, 3, 4]], mask)).toEqual([[1, null, null, 4]])
+    expect(applyFrozenMask(soil, [[1, 2, 3, 4]], mask)).toEqual([[1, null, null, 4]])
+    // A different time axis must not be masked positionally.
+    expect(() => applyFrozenMask({ ...soil, epochMs: soil.epochMs.map((t) => t + 1) }, [[1, 2, 3, 4]], mask)).toThrow()
+    expect(() => applyFrozenMask({ ...soil, time: soil.time.slice(1), epochMs: soil.epochMs.slice(1) }, [[2, 3, 4]], mask)).toThrow()
+    expect(() => applyFrozenMask(soil, [[1, 2, 3]], mask)).toThrow()
     // Real fixture: January at 5 cm is frozen on some days.
     const jan = frozenMask(soilSeries('acebozem', 'daily', 'winter2526'))
     expect(jan.frozen[0].some(Boolean)).toBe(true)

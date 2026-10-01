@@ -37,8 +37,29 @@ export function fxInverse(theta: number, p: FxParams): Nullable {
   return clean(p.h * inner ** (1 / p.n))
 }
 
-function paramsFor(params: SoilParams[], station: string, depthCm: number): SoilParams | undefined {
-  return params.find((p) => p.station === station && p.depthCm === depthCm)
+function rowsFor(params: SoilParams[], station: string, depthCm: number): SoilParams[] {
+  return params.filter((p) => p.station === station && p.depthCm === depthCm)
+}
+
+/** The FX row for a station+depth (rows for other models are ignored). */
+function fxRowFor(params: SoilParams[], station: string, depthCm: number): SoilParams | undefined {
+  return rowsFor(params, station, depthCm).find((p) => p.model === 'FX' && p.fx != null)
+}
+
+/** Porosity for a station+depth from whichever row carries it. */
+function porosityFor(params: SoilParams[], station: string, depthCm: number): number | undefined {
+  return rowsFor(params, station, depthCm).find((p) => ok(p.porosityPct))?.porosityPct
+}
+
+/** Lab VWC range: the FX row's, else any row for the station+depth that has one. */
+function labRangeFor(params: SoilParams[], station: string, depthCm: number, fxRow: SoilParams) {
+  const src = ok(fxRow.labVwcMin) || ok(fxRow.labVwcMax)
+    ? fxRow
+    : rowsFor(params, station, depthCm).find((p) => ok(p.labVwcMin) || ok(p.labVwcMax))
+  return {
+    lo: ok(src?.labVwcMin) ? src.labVwcMin : -Infinity,
+    hi: ok(src?.labVwcMax) ? src.labVwcMax : Infinity,
+  }
 }
 
 /**
@@ -50,11 +71,10 @@ export function swp(soil: SoilSeries, params: SoilParams[]): SwpSeries {
   const kPa: Nullable[][] = []
   const clipped: boolean[][] = []
   soil.depthsCm.forEach((depth, d) => {
-    const p = paramsFor(params, soil.station, depth)
-    if (!p?.fx || p.model !== 'FX') return
+    const p = fxRowFor(params, soil.station, depth)
+    if (!p?.fx) return
     const fx = p.fx
-    const lo = ok(p.labVwcMin) ? p.labVwcMin : -Infinity
-    const hi = ok(p.labVwcMax) ? p.labVwcMax : Infinity
+    const { lo, hi } = labRangeFor(params, soil.station, depth, p)
     const vals: Nullable[] = []
     const flags: boolean[] = []
     for (const v of soil.vwcPct[d]) {
@@ -88,7 +108,7 @@ export function percentSaturation(soil: SoilSeries, params: SoilParams[]): Perce
   const depthsCm: number[] = []
   const pct: Nullable[][] = []
   soil.depthsCm.forEach((depth, d) => {
-    const por = paramsFor(params, soil.station, depth)?.porosityPct
+    const por = porosityFor(params, soil.station, depth)
     if (!ok(por)) return
     depthsCm.push(depth)
     pct.push(soil.vwcPct[d].map((v) => (ok(v) ? clean(Math.min(100, Math.max(0, (v / por) * 100))) : null)))
@@ -108,6 +128,7 @@ export interface FrozenMask {
   station: string
   depthsCm: number[]
   time: (LocalDate | LocalDateTime)[]
+  epochMs: number[]
   /** `frozen[d][i]` true where soil temperature at that depth ≤ 0 °C. Missing temperature → false. */
   frozen: boolean[][]
 }
@@ -117,18 +138,38 @@ export function frozenMask(soil: SoilSeries): FrozenMask {
     station: soil.station,
     depthsCm: [...soil.depthsCm],
     time: [...soil.time],
+    epochMs: [...soil.epochMs],
     frozen: soil.tempC.map((col) => col.map((t) => ok(t) && t <= 0)),
   }
 }
 
+/** The time axis and depths of a per-depth series (e.g. `SwpSeries`). */
+export interface DepthSeriesAxis {
+  depthsCm: number[]
+  time: (LocalDate | LocalDateTime)[]
+  epochMs: number[]
+}
+
 /**
- * Null out values where the soil is frozen. `depthsCm` are the depths of
- * `values` (e.g. `SwpSeries.depthsCm`); depths absent from the mask pass
- * through unchanged.
+ * Null out values where the soil is frozen. `values[d]` belongs to
+ * `axis.depthsCm[d]`; depths absent from the mask pass through unchanged.
+ *
+ * @throws if `axis` and `mask` do not share the same time axis (same length
+ * and identical `time` and `epochMs`), or a column's length differs.
  */
-export function applyFrozenMask(depthsCm: number[], values: Nullable[][], mask: FrozenMask): Nullable[][] {
+export function applyFrozenMask(axis: DepthSeriesAxis, values: Nullable[][], mask: FrozenMask): Nullable[][] {
+  const n = mask.time.length
+  const same =
+    axis.time.length === n &&
+    axis.epochMs.length === n &&
+    mask.epochMs.length === n &&
+    axis.time.every((t, i) => t === mask.time[i] && axis.epochMs[i] === mask.epochMs[i])
+  if (!same) throw new Error('applyFrozenMask: values and mask have different time axes')
+  if (values.length !== axis.depthsCm.length || values.some((col) => col.length !== n)) {
+    throw new Error('applyFrozenMask: values do not match the axis shape')
+  }
   return values.map((col, d) => {
-    const m = mask.frozen[mask.depthsCm.indexOf(depthsCm[d])]
+    const m = mask.frozen[mask.depthsCm.indexOf(axis.depthsCm[d])]
     return m ? col.map((v, i) => (m[i] ? null : v)) : [...col]
   })
 }

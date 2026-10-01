@@ -10,6 +10,7 @@ export {
   projectGdd,
   gddDayF,
   stageAt,
+  labelStages,
   cumulativeSum,
   GDD_CUTOFFS_F,
   DEFAULT_GDD_CUTOFFS_F,
@@ -26,8 +27,14 @@ export {
 export type { FeelsLikeValue } from './feelsLike'
 export { cciDaily, cciHourly, cciValueC, classifyCciC, classifyCciF } from './cci'
 export { swp, percentSaturation, frozenMask, applyFrozenMask, fxInverse } from './soil'
-export type { FrozenMask } from './soil'
-export { groupByYear, hourlyToDaily, isCumulativeVariable, CUMULATIVE_VARIABLES } from './annual'
-export type { AnnualTrace, AnnualOptions } from './annual'
+export type { FrozenMask, DepthSeriesAxis } from './soil'
+export {
+  groupByYear,
+  hourlyToDaily,
+  hoursInLocalDay,
+  isCumulativeVariable,
+  CUMULATIVE_VARIABLES,
+} from './annual'
+export type { AnnualTrace, AnnualOptions, HourlyToDailyOptions } from './annual'
 export * from './units'
 export { dayOfYear, denverMidnightEpochMs } from './util'

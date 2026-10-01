@@ -248,6 +248,13 @@ export interface GddSeries extends SeriesBase {
   /** Last stage whose `gdd` ≤ cumulative; null when no stage table. */
   stage: (number | string | null)[]
   stageName: (string | null)[]
+  /**
+   * The NDAWN wheat/barley rule as applied to this series: from the day the
+   * first-pass cumulative reaches Haun stage `atStage`, `cutoffs` replace
+   * `GddSeries.cutoffs`. null when not applied (other crops, custom cutoffs,
+   * or no stage table).
+   */
+  ndawnSwitch: { atStage: number; cutoffs: GddCutoffs } | null
   projected?: GddProjection
 }
 

@@ -9,7 +9,7 @@ import {
   type Window,
 } from '../__tests__/adapters'
 import { compareToFixture, parityLog, printParity } from '../__tests__/parity'
-import { cumulativeSum, gdd, gddDayF, projectGdd, stageAt } from './gdd'
+import { cumulativeSum, gdd, gddDayF, labelStages, projectGdd, stageAt } from './gdd'
 import { fToC } from './units'
 
 const STATIONS = ['acebozem', 'arskeogh', 'acecrowa']
@@ -128,7 +128,9 @@ function checkStages(
       continue
     }
     expect(normStage(stage[i])).toBe(apiStage)
+    // The API drops the Stage Name column when no row reached a named stage.
     if (apiName !== undefined) expect(name[i]).toBe(apiName)
+    else expect(name[i]).toBeNull()
     compared++
   }
   if (crop === 'wheat' || crop === 'barley') {
@@ -184,7 +186,8 @@ describe('gdd unit behaviour', () => {
     // The API ignores low/high when a crop is given; here explicit cutoffs win
     // (and disable the NDAWN switch).
     const out = gdd(met1([50], [104]), { crop: 'wheat', lowC: 10, highC: 30, stages: stageTable('wheat') })
-    expect(out.crop).toBe('wheat')
+    expect(out.crop).toBeNull()
+    expect(out.ndawnSwitch).toBeNull()
     // 10/30 °C = 50/86 °F → (50 + 86)/2 − 50 = 18
     expect(out.daily[0]).toBeCloseTo(18, 9)
     expect(out.cutoffs.lowC).toBeCloseTo(10, 9)
@@ -214,8 +217,35 @@ describe('gdd unit behaviour', () => {
     expect(out.stageName[n - 1]).toBe('Leaf 4')
   })
 
-  it('stage before the first threshold is 0 / "Planted" (names) or 0 / null', () => {
-    expect(stageAt(10, stageTable('wheat').stages)).toEqual({ stage: 0, name: 'Planted' })
+  it('"Planted" only when some row reached a named stage (API name rule)', () => {
+    const wheat = stageTable('wheat').stages
+    // No row reaches Emergence (180): names stay null, as the API drops them.
+    expect(labelStages([10, 50], wheat)).toEqual([
+      { stage: 0, name: null },
+      { stage: 0, name: null },
+    ])
+    expect(labelStages([10, 200], wheat)).toEqual([
+      { stage: 0, name: 'Planted' },
+      { stage: 0.5, name: 'Emergence Date' },
+    ])
+    expect(labelStages([10], wheat, true)).toEqual([{ stage: 0, name: 'Planted' }])
+    expect(labelStages([null], wheat, true)).toEqual([{ stage: null, name: null }])
+    const early = gdd(met1([40, 40], [60, 60]), { crop: 'wheat', stages: stageTable('wheat') })
+    expect(early.stage).toEqual([0, 0])
+    expect(early.stageName).toEqual([null, null])
+  })
+
+  it('records the NDAWN switch on the series', () => {
+    const w = gdd(met1([60], [90]), { crop: 'wheat', stages: stageTable('wheat') })
+    expect(w.ndawnSwitch?.atStage).toBe(2)
+    expect(w.ndawnSwitch?.cutoffs.highC).toBeCloseTo(fToC(95), 9)
+    expect(gdd(met1([60], [90]), { crop: 'wheat' }).ndawnSwitch).toBeNull()
+    expect(gdd(met1([60], [90]), { crop: 'corn', stages: stageTable('wheat') }).ndawnSwitch).toBeNull()
+    expect(gdd(met1([60], [90]), { crop: 'sunflower' }).cutoffs.highC).toBe(Infinity)
+  })
+
+  it('stage before the first threshold is stage 0', () => {
+    expect(stageAt(10, stageTable('wheat').stages)).toEqual({ stage: 0, name: null })
     expect(stageAt(10, stageTable('sugarbeet').stages)).toEqual({ stage: 0, name: null })
     expect(stageAt(0, stageTable('canola').stages)).toEqual({ stage: 'Planting', name: null })
   })
@@ -255,6 +285,29 @@ describe('projectGdd', () => {
     expect(proj.cumulativeQ25[2]).toBeCloseTo(30 + 23 + 10, 9)
     expect(proj.cumulativeQ75[2]).toBeCloseTo(30 + 23 + 40, 9)
     expect(proj.stage.every((s) => s === null)).toBe(true)
+  })
+
+  it('projection follows the series NDAWN decision, not the crop name', () => {
+    const stages = stageTable('wheat')
+    const hot: DailyNormals = {
+      station: 'x',
+      byMonthDay: { '05-02': { tminC: { q25: fToC(60), median: fToC(60), q75: fToC(60) }, tmaxC: { q25: fToC(90), median: fToC(90), q75: fToC(90) }, prMm: null, petMm: null } },
+    }
+    // 12 days of 33 → 396 ≥ Haun 2 (395): switched series.
+    const switched = gdd(met1(Array(12).fill(60), Array(12).fill(90), '2025-04-20'), { crop: 'wheat', stages })
+    expect(switched.ndawnSwitch).not.toBeNull()
+    expect(projectGdd(switched, hot, undefined, '2025-05-02', stages).daily[0]).toBeCloseTo(43, 9)
+    // Custom 32/70 °F cutoffs: crop null, no switch even with a wheat table.
+    const custom = gdd(met1(Array(12).fill(60), Array(12).fill(90), '2025-04-20'), {
+      crop: 'wheat',
+      lowC: 0,
+      highC: fToC(70),
+      stages,
+    })
+    expect(custom.crop).toBeNull()
+    expect(projectGdd(custom, hot, undefined, '2025-05-02', stages).daily[0]).toBeCloseTo(33, 9)
+    // Labels carry "Planted"-style naming from the observed series.
+    expect(projectGdd(switched, hot, undefined, '2025-05-02', stages).stageName[0]).toBe('Leaf 2 fully extended')
   })
 
   it('returns an empty projection when `through` is not after the series', () => {

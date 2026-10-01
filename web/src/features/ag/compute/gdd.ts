@@ -31,7 +31,7 @@ import type {
   Nullable,
 } from '../contract'
 import { cToF, fToC } from './units'
-import { addDays, ok } from './util'
+import { addDays, cumulativeSum, ok } from './util'
 
 /** Crop cutoffs in °F, verbatim from derived.py:80-90. */
 export const GDD_CUTOFFS_F = {
@@ -81,8 +81,9 @@ function sortedStages(table: GddStageTable | undefined): GddStage[] {
 
 /**
  * Last stage whose threshold ≤ cumulative (pandas `merge_asof`, backward).
- * Below the first threshold: stage 0 and name "Planted" (or null if the table
- * has no names), as derived.py:1041-1048. No table → nulls (D-GDD-2).
+ * Below the first threshold: stage 0 with a null name (derived.py:1041-1043;
+ * see {@link labelStages} for the "Planted" fill). No table or no cumulative
+ * → nulls (D-GDD-2).
  */
 export function stageAt(cumulative: Nullable, stages: GddStage[]): StageLabel {
   if (stages.length === 0 || !ok(cumulative)) return { stage: null, name: null }
@@ -91,18 +92,28 @@ export function stageAt(cumulative: Nullable, stages: GddStage[]): StageLabel {
     if (s.gdd <= cumulative) hit = s
     else break
   }
-  if (hit) return { stage: hit.stage, name: hit.name }
-  return { stage: 0, name: stages.some((s) => s.name != null) ? 'Planted' : null }
+  return hit ? { stage: hit.stage, name: hit.name } : { stage: 0, name: null }
 }
 
-/** Running sum that skips nulls; null until the first non-null value. */
-export function cumulativeSum(values: Nullable[], start: Nullable = null): Nullable[] {
-  let acc: Nullable = start
-  return values.map((v) => {
-    if (ok(v)) acc = (acc ?? 0) + v
-    return acc
-  })
+/**
+ * Stage labels for a run of cumulative values, with the API's name rule
+ * (derived.py:1045-1048): if any row reached a named stage, rows below the
+ * first threshold are named "Planted"; otherwise every name stays null (the
+ * API drops the column). `named` forces the fill (e.g. a projection whose
+ * observed series already reached a named stage).
+ */
+export function labelStages(cumulative: Nullable[], stages: GddStage[], named = false): StageLabel[] {
+  const labels = cumulative.map((c) => stageAt(c, stages))
+  if (named || labels.some((l) => l.name != null)) {
+    const first = stages[0]?.gdd
+    cumulative.forEach((c, i) => {
+      if (ok(c) && first != null && c < first) labels[i] = { stage: 0, name: 'Planted' }
+    })
+  }
+  return labels
 }
+
+export { cumulativeSum }
 
 function stageNumber(s: number | string | null): number | null {
   if (typeof s === 'number') return s
@@ -114,21 +125,23 @@ interface Resolved {
   crop: GddCrop | null
   lowF: number
   highF: number
-  /** Post-switch cutoffs when the NDAWN rule applies. */
+  /** Post-switch upper cutoff when the NDAWN rule applies. */
   switchHighF: number | null
 }
 
 function resolveCutoffs(opts: GddOptions): Resolved {
-  const crop = opts.crop ?? null
   if (opts.lowC != null || opts.highC != null) {
-    const [dl, dh] = crop ? GDD_CUTOFFS_F[crop] : DEFAULT_GDD_CUTOFFS_F
+    // Custom cutoffs: not a crop series (contract: crop null). An omitted
+    // bound falls back to the named crop's (or the 50/86 °F default).
+    const [dl, dh] = opts.crop ? GDD_CUTOFFS_F[opts.crop] : DEFAULT_GDD_CUTOFFS_F
     return {
-      crop,
+      crop: null,
       lowF: opts.lowC != null ? cToF(opts.lowC) : dl,
       highF: opts.highC != null ? cToF(opts.highC) : dh,
       switchHighF: null,
     }
   }
+  const crop = opts.crop ?? null
   if (crop) {
     const [lowF, highF] = GDD_CUTOFFS_F[crop]
     const switchHighF = NDAWN_SWITCH.has(crop)
@@ -139,9 +152,8 @@ function resolveCutoffs(opts: GddOptions): Resolved {
   return { crop, lowF: DEFAULT_GDD_CUTOFFS_F[0], highF: DEFAULT_GDD_CUTOFFS_F[1], switchHighF: null }
 }
 
-function cutoffsC(r: Resolved): GddCutoffs {
-  return { lowC: fToC(r.lowF), highC: r.highF === Infinity ? Infinity : fToC(r.highF) }
-}
+// fToC(Infinity) === Infinity, so open-ended caps need no special case.
+const cutoffsC = (lowF: number, highF: number): GddCutoffs => ({ lowC: fToC(lowF), highC: fToC(highF) })
 
 /** Growing degree days (°F·day) with cumulative sum and crop stages. */
 export function gdd(met: DailyMet, opts: GddOptions = {}): GddSeries {
@@ -158,11 +170,11 @@ export function gdd(met: DailyMet, opts: GddOptions = {}): GddSeries {
   let daily = met.date.map((_, i) => dayGdd(i, r.highF))
   let cumulative = cumulativeSum(daily)
 
-  if (r.switchHighF != null && stages.length > 0) {
+  const switchHigh = stages.length > 0 ? r.switchHighF : null
+  if (switchHigh != null) {
     // NDAWN (derived.py:1049-1059): rows whose first-pass stage is ≥ 2 use
     // the post-switch cap. First-pass cumulative is identical to the final
     // one up to the switch day, so the switch day itself is the same.
-    const switchHigh = r.switchHighF
     const firstPass = cumulative.map((c) => stageNumber(stageAt(c, stages).stage))
     daily = daily.map((d, i) => {
       const s = firstPass[i]
@@ -172,18 +184,20 @@ export function gdd(met: DailyMet, opts: GddOptions = {}): GddSeries {
   }
 
   // D-GDD-1: labels always come from the final cumulative.
-  const labels = cumulative.map((c) => stageAt(c, stages))
+  const labels = labelStages(cumulative, stages)
   return {
     station: met.station,
     level: met.level,
     provisional: [...met.provisional],
     crop: r.crop,
-    cutoffs: cutoffsC(r),
+    cutoffs: cutoffsC(r.lowF, r.highF),
     date: [...met.date],
     daily,
     cumulative,
     stage: labels.map((l) => l.stage),
     stageName: labels.map((l) => l.name),
+    ndawnSwitch:
+      switchHigh != null ? { atStage: NDAWN_SWITCH_STAGE, cutoffs: cutoffsC(r.lowF, switchHigh) } : null,
   }
 }
 
@@ -225,15 +239,10 @@ export function projectGdd(
 
   const table = sortedStages(stages)
   const lowF = cToF(series.cutoffs.lowC)
-  const baseHighF = series.cutoffs.highC === Infinity ? Infinity : cToF(series.cutoffs.highC)
-  const isDefaultCrop =
-    series.crop != null &&
-    Math.abs(lowF - GDD_CUTOFFS_F[series.crop][0]) < 1e-9 &&
-    Math.abs(baseHighF - GDD_CUTOFFS_F[series.crop][1]) < 1e-9
-  const switchHighF =
-    series.crop && NDAWN_SWITCH.has(series.crop) && isDefaultCrop && table.length > 0
-      ? GDD_CUTOFFS_F[`${series.crop as 'wheat' | 'barley'}2`][1]
-      : null
+  const baseHighF = cToF(series.cutoffs.highC)
+  // The switch decision is the series' own, recorded by gdd().
+  const sw = table.length > 0 ? series.ndawnSwitch : null
+  const switchHighF = sw ? cToF(sw.cutoffs.highC) : null
 
   const fc = new Map<LocalDate, { tmin: Nullable; tmax: Nullable }>()
   forecast?.date.forEach((d, i) => fc.set(d, { tmin: forecast.tminC[i], tmax: forecast.tmaxC[i] }))
@@ -255,7 +264,7 @@ export function projectGdd(
       // reaches stage 2 (and every later day stays switched).
       const firstPass = acc[track] + gddDayF(cToF(tminC), cToF(tmaxC), lowF, baseHighF)
       const s = stageNumber(stageAt(firstPass, table).stage)
-      if (s != null && s >= NDAWN_SWITCH_STAGE) highF = switchHighF
+      if (sw && s != null && s >= sw.atStage) highF = switchHighF
     }
     const g = gddDayF(cToF(tminC), cToF(tmaxC), lowF, highF)
     acc[track] += g
@@ -273,15 +282,15 @@ export function projectGdd(
     const g = step('median', tmin('median'), tmax('median'))
     step('q25', tmin('q25'), tmax('q25'))
     step('q75', tmin('q75'), tmax('q75'))
-    const label = stageAt(acc.median, table)
     out.date.push(d)
     out.daily.push(g)
     out.cumulative.push(acc.median)
     out.cumulativeQ25.push(acc.q25)
     out.cumulativeQ75.push(acc.q75)
-    out.stage.push(label.stage)
-    out.stageName.push(label.name)
     out.basis.push(fromForecast ? 'forecast' : 'normals')
   }
+  const labels = labelStages(out.cumulative, table, series.stageName.some((n) => n != null))
+  out.stage = labels.map((l) => l.stage)
+  out.stageName = labels.map((l) => l.name)
   return out
 }
