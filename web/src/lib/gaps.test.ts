@@ -39,6 +39,19 @@ describe('insertGaps', () => {
     expect(out[4]).toBe(rows[3])
   })
 
+  it('stamps gap rows in the neighbouring rows\' UTC offset', () => {
+    const rows = [
+      row('2026-10-01 08:00:00-06:00', 1),
+      row('2026-10-01 09:00:00-06:00', 2),
+      row('2026-10-01 10:00:00-06:00', 3),
+      row('2026-10-01 14:00:00-06:00', 4),
+    ]
+    const out = insertGaps(rows)
+    expect(out).toHaveLength(5)
+    expect(out[3].datetime).toBe('2026-10-01 11:00:00-06:00')
+    expect(out[3]['Air Temperature [°F]']).toBeNull()
+  })
+
   it('respects thresholdRatio', () => {
     const rows = [
       row('2026-06-01T00:00:00Z'),
