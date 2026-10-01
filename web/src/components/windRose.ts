@@ -50,3 +50,16 @@ export function speedBins(rawSpeeds: readonly number[], n = 8): SpeedBins {
   })
   return { cuts, numBins, binFor, labels }
 }
+
+/**
+ * First and last local calendar date of the fetched rows ("YYYY-MM-DD"), for
+ * the legacy title "Wind Data from {start} to {end}". API datetimes are
+ * America/Denver wall clock ("2026-10-01 10:00:00-06:00"), so the date is the
+ * leading 10 characters. Null when no row has a date.
+ */
+export function windDateSpan(datetimes: readonly string[]): [string, string] | null {
+  const days = datetimes.map((d) => d.slice(0, 10)).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+  if (days.length === 0) return null
+  days.sort()
+  return [days[0], days[days.length - 1]]
+}

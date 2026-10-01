@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { quantileCuts, speedBins } from './windRose'
+import { quantileCuts, speedBins, windDateSpan } from './windRose'
 
 describe('quantileCuts', () => {
   it('takes floor-index quantiles', () => {
@@ -47,5 +47,14 @@ describe('speedBins', () => {
     expect(b.labels).toEqual(['3', '4', ''])
     const nonEmpty = b.labels.filter(Boolean)
     expect(new Set(nonEmpty).size).toBe(nonEmpty.length)
+  })
+})
+
+describe('windDateSpan', () => {
+  it('returns the min and max local dates', () => {
+    expect(
+      windDateSpan(['2026-09-30 23:00:00-06:00', '2026-09-17 00:00:00-06:00', '2026-10-01']),
+    ).toEqual(['2026-09-17', '2026-10-01'])
+    expect(windDateSpan([])).toBeNull()
   })
 })

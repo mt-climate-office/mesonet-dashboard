@@ -1,16 +1,20 @@
 import { useMemo, useState } from 'react'
 import {
+  Alert,
   Box,
+  Button,
   Center,
+  Chip,
   Group,
   Image,
   Loader,
-  SegmentedControl,
+  Modal,
   Select,
   Stack,
   Text,
   Tooltip,
 } from '@mantine/core'
+import { IconDownload } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import { API_URL } from '../lib/config'
 import { usePhotoCatalog } from '../hooks/usePhotoCatalog'
@@ -59,11 +63,11 @@ function buildPhotoOptions(startDate: string): PhotoSlot[] {
   const morningOnlyToday = hhmm >= '0930' && hhmm < '1530'
 
   const out: PhotoSlot[] = []
+  // Every day back to the camera's start date, like legacy. The Select is
+  // searchable and renders a limited window (PHOTO_OPTION_LIMIT), so long
+  // records stay fast.
   let cursor = start.startOf('day')
   const stop = dayjs(lastDay).startOf('day')
-  // Cap to 2 years back so the dropdown stays usable for old stations.
-  const earliest = stop.subtract(2, 'year')
-  if (cursor.isBefore(earliest)) cursor = earliest
 
   while (!cursor.isAfter(stop)) {
     const ymd = cursor.format('YYYY-MM-DD')
@@ -103,6 +107,29 @@ const DIRECTION_ORDER: Record<string, number> = {
   g: 7,
 }
 
+/**
+ * Legacy direction labels (app.py update_ul_card). The /photos catalog is
+ * the source of truth for which directions exist; these are only the words
+ * shown, falling back to the catalog's own label.
+ */
+const LEGACY_DIRECTION_LABELS: Record<string, string> = {
+  n: 'North',
+  s: 'South',
+  e: 'East',
+  w: 'West',
+  ns: 'North Sky',
+  ss: 'South Sky',
+  g: 'Ground',
+  snow: 'Snow',
+}
+
+function directionLabel(d: PhotoDirection): string {
+  return LEGACY_DIRECTION_LABELS[d.value.toLowerCase()] ?? d.label ?? d.value
+}
+
+/** Rendered options in the (searchable) photo-time Select. */
+const PHOTO_OPTION_LIMIT = 400
+
 function sortDirections(directions: PhotoDirection[]): PhotoDirection[] {
   return [...directions].sort((a, b) => {
     const ai = DIRECTION_ORDER[a.value.toLowerCase()] ?? 99
@@ -127,6 +154,7 @@ export function CameraCard() {
   const [stationKey, setStationKey] = useState<string | null>(station)
   const [direction, setDirection] = useState<string>('n')
   const [photoTime, setPhotoTime] = useState<string | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
 
   if (station !== stationKey) {
     setStationKey(station)
@@ -144,11 +172,11 @@ export function CameraCard() {
   // ----- Empty / no-station state -----
   if (!station) {
     return (
-      <Center h="100%">
-        <Text c="dimmed" size="sm">
-          Pick a station to view its camera.
-        </Text>
-      </Center>
+      <Box p="xs">
+        <Alert color="orange" variant="light" title="Photo unavailable">
+          No station selected.
+        </Alert>
+      </Box>
     )
   }
 
@@ -193,12 +221,6 @@ export function CameraCard() {
   const displaySrc = `${API_URL}photos/${station}/${dirSlug}/?force=True&web=true${dtParam}`
   const originalSrc = `${API_URL}photos/${station}/${dirSlug}/?force=True${dtParam}`
 
-  // Single-row direction picker; for stations with many directions
-  // (e.g. five with SNOW), use the SegmentedControl in compact mode.
-  const directionData = directions.map((d) => ({
-    value: d.value,
-    label: d.value.toUpperCase(),
-  }))
 
   const downloadOriginal = async () => {
     try {
@@ -222,16 +244,23 @@ export function CameraCard() {
     }
   }
 
+  const label = directionLabel(
+    directions.find((d) => d.value === activeDir) ?? { value: activeDir, label: activeDir },
+  )
+  const alt = `${station} ${label} camera ${activeTime ?? ''}`
+
   return (
     <Stack gap={6} h="100%" p="xs">
-      <Group gap={6} wrap="nowrap" align="center" justify="space-between">
-        <SegmentedControl
-          size="xs"
-          value={activeDir}
-          onChange={setDirection}
-          data={directionData}
-          style={{ flexShrink: 0 }}
-        />
+      <Chip.Group multiple={false} value={activeDir} onChange={(v) => setDirection(v as string)}>
+        <Group gap={4} justify="center">
+          {directions.map((d) => (
+            <Chip key={d.value} value={d.value} size="xs" variant="filled">
+              {directionLabel(d)}
+            </Chip>
+          ))}
+        </Group>
+      </Chip.Group>
+      <Group gap={6} wrap="nowrap" align="center" justify="center">
         {options.length > 0 ? (
           <Select
             size="xs"
@@ -241,6 +270,7 @@ export function CameraCard() {
             placeholder="Select photo time"
             allowDeselect={false}
             searchable
+            limit={PHOTO_OPTION_LIMIT}
             comboboxProps={{ withinPortal: true }}
             styles={{ root: { flex: 1, minWidth: 0 } }}
           />
@@ -253,16 +283,16 @@ export function CameraCard() {
           </Group>
         ) : null}
       </Group>
-      <Tooltip label="Click to download original" withinPortal openDelay={400}>
+      <Tooltip label="Click to enlarge" withinPortal openDelay={400}>
         <Box
           role="button"
           tabIndex={0}
-          aria-label={`Download original ${activeDir.toUpperCase()} photo for ${station}`}
-          onClick={downloadOriginal}
+          aria-label={`Enlarge ${label} photo for ${station}`}
+          onClick={() => setModalOpen(true)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault()
-              downloadOriginal()
+              setModalOpen(true)
             }
           }}
           style={{
@@ -275,7 +305,7 @@ export function CameraCard() {
           <Image
             key={`${station}/${activeDir}/${activeTime ?? 'latest'}`}
             src={displaySrc}
-            alt={`${station} ${activeDir.toUpperCase()} camera ${activeTime ?? ''}`}
+            alt={alt}
             fit="contain"
             h="100%"
             w="100%"
@@ -283,6 +313,35 @@ export function CameraCard() {
           />
         </Box>
       </Tooltip>
+      {/* Legacy photo-modal: centered, 92vw, image up to 86vh. */}
+      <Modal
+        opened={modalOpen}
+        onClose={() => setModalOpen(false)}
+        centered
+        size="92vw"
+        overlayProps={{ backgroundOpacity: 0.7, blur: 2 }}
+        title={`${station} · ${label}${activeTime ? ` · ${activeTime.replace('T', ' ')}` : ''}`}
+      >
+        <Stack gap="sm" align="center">
+          <Image
+            src={displaySrc}
+            alt={alt}
+            fit="contain"
+            radius="md"
+            mah="86vh"
+            w="100%"
+            fallbackSrc=""
+          />
+          <Button
+            variant="light"
+            size="xs"
+            leftSection={<IconDownload size={14} />}
+            onClick={downloadOriginal}
+          >
+            Download original
+          </Button>
+        </Stack>
+      </Modal>
     </Stack>
   )
 }
