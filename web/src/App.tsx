@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { AppShell, Center, Loader, Tabs } from '@mantine/core'
 import { Banner } from './components/Banner'
 import { HelpModal } from './components/HelpModal'
+import { GlobalNotices } from './components/GlobalNotices'
 import { VISIBLE_TABS } from './app/tabs'
 import { useHashTab } from './lib/useHashTab'
 import { migrateLegacyUrlState } from './lib/url-state'
@@ -25,6 +26,7 @@ export function App() {
         <Banner />
       </AppShell.Header>
       <HelpModal />
+      <GlobalNotices />
       <AppShell.Main
         style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
       >

@@ -4,9 +4,9 @@ import dayjs from 'dayjs'
 import { useStationLatest } from '../hooks/useStationLatest'
 import { usePptSummary } from '../hooks/usePptSummary'
 import { useStations } from '../hooks/useStations'
-import { useStationParam } from '../lib/url-state'
 import { degToCompass } from '../lib/params'
 import { META_COLUMNS } from '../lib/csv'
+import { useResolvedStation } from './useResolvedStation'
 
 function fmtNum(v: number): string {
   if (Math.abs(v) >= 100) return v.toFixed(0)
@@ -15,7 +15,7 @@ function fmtNum(v: number): string {
 }
 
 export function CurrentConditionsCard() {
-  const [station] = useStationParam()
+  const station = useResolvedStation()
   const { data: stations } = useStations()
   const { data, isLoading, isError, error } = useStationLatest(station)
   const ppt = usePptSummary(station)

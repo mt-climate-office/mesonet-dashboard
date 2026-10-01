@@ -22,6 +22,7 @@ import { useStationElements } from '../hooks/useStationElements'
 import { DEFAULT_VARS, ELEM_MAP, SELECTED_VARS } from '../lib/params'
 import { useLatestTabState } from '../lib/url-state'
 import { API_DOCS_URL } from '../lib/config'
+import { useResolvedStation } from './useResolvedStation'
 
 const DATE_FMT = 'YYYY-MM-DD'
 
@@ -31,7 +32,7 @@ const twoWeeksAgo = () => dayjs().startOf('day').subtract(14, 'day')
 export function Sidebar() {
   const stations = useStations()
   const state = useLatestTabState()
-  const stationElements = useStationElements(state.station)
+  const stationElements = useStationElements(useResolvedStation())
 
   // Build network options from the live catalog rather than a hardcoded list,
   // so e.g. a future "Cooperator" sub_network shows up automatically.
