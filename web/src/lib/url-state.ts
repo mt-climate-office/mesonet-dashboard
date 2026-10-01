@@ -8,11 +8,14 @@
  *
  *   Latest     from, to   chart window (YYYY-MM-DD; pan/zoom writes these)
  *              agg        hourly | daily | raw
- *              vars       display-variable names, comma-separated
+ *              vars       display-variable names, comma-separated (absent =
+ *                         the 5 defaults; `vars=` = explicitly none)
  *              nets       map network filter
  *              gridmet    overlay normals
- *              card       top card: wind | forecast | photo
- *              info       bottom card: map | metadata | current
+ *              card       top card: wind | forecast | photo (absent = auto:
+ *                         photo for HydroMet, else wind)
+ *              info       bottom card: map | metadata | current (absent =
+ *                         auto: current with a station, else map)
  *     (Latest keeps the un-prefixed legacy names because it is the most-shared
  *      tab and existing links must keep working.)
  *
@@ -55,14 +58,17 @@ import {
   useQueryStates,
 } from 'nuqs'
 import type { AggPeriod } from './params'
+import { SELECTED_VARS } from './params/latest'
 
 const AGG_OPTIONS = ['hourly', 'daily', 'raw'] as const
 type LatestAgg = (typeof AGG_OPTIONS)[number]
 
 const NETWORK_OPTIONS = ['HydroMet', 'AgriMet', 'Cooperator'] as const
 
-const TOP_CARDS = ['wind', 'forecast', 'photo'] as const
-const BOTTOM_CARDS = ['map', 'metadata', 'current'] as const
+export const TOP_CARDS = ['wind', 'forecast', 'photo'] as const
+export type TopCard = (typeof TOP_CARDS)[number]
+export const BOTTOM_CARDS = ['map', 'metadata', 'current'] as const
+export type BottomCard = (typeof BOTTOM_CARDS)[number]
 
 /**
  * URL state for the Latest Data tab. Returns one stable object so consumers
@@ -76,10 +82,10 @@ export function useLatestTabState() {
     'agg',
     parseAsStringEnum<LatestAgg>(AGG_OPTIONS as unknown as LatestAgg[]).withDefault('hourly'),
   )
-  const [vars, setVars] = useQueryState(
-    'vars',
-    parseAsArrayOf(parseAsString, ',').withDefault([]),
-  )
+  // No default: absent (null) means "the default selection", while an empty
+  // `vars=` means the user deselected everything ("No variables selected").
+  const [rawVars, setVars] = useQueryState('vars', parseAsArrayOf(parseAsString, ','))
+  const vars: string[] = rawVars ?? [...SELECTED_VARS]
   const [nets, setNets] = useQueryState(
     'nets',
     parseAsArrayOf(parseAsString, ',').withDefault([...NETWORK_OPTIONS]),
@@ -88,18 +94,23 @@ export function useLatestTabState() {
     'gridmet',
     parseAsBoolean.withDefault(false),
   )
-  const [topCard, setTopCard] = useQueryState(
-    'card',
-    parseAsStringEnum([...TOP_CARDS]).withDefault('wind'),
-  )
-  const [bottomCard, setBottomCard] = useQueryState(
-    'info',
-    parseAsStringEnum([...BOTTOM_CARDS]).withDefault('map'),
-  )
+  // No defaults: null = "auto" (legacy network-aware defaults, resolved in
+  // LatestDataTab). Picking a new station resets both to auto, like legacy's
+  // select_default_tab / update_br_card.
+  const [topCard, setTopCard] = useQueryState('card', parseAsStringEnum([...TOP_CARDS]))
+  const [bottomCard, setBottomCard] = useQueryState('info', parseAsStringEnum([...BOTTOM_CARDS]))
+
+  /** User picked a station (dropdown / map): reset the cards to auto. */
+  const selectStation = (next: string | null) => {
+    void setS(next)
+    void setTopCard(null)
+    void setBottomCard(null)
+  }
 
   return {
     station: s,
     setStation: setS,
+    selectStation,
     from,
     setFrom,
     to,
@@ -107,6 +118,8 @@ export function useLatestTabState() {
     agg,
     setAgg,
     vars,
+    /** False when `vars` is absent from the URL (the default selection). */
+    varsSet: rawVars !== null,
     setVars,
     nets,
     setNets,
