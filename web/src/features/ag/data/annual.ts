@@ -29,6 +29,12 @@ export interface AnnualYear {
   /** SI units (°C, mm, W/m², m/s, %). */
   value: Nullable[]
   provisional: boolean[]
+  /**
+   * The API value-column label the year came from (US units, e.g.
+   * `Total Precipitation [in]`), so the display edge can convert back from
+   * SI and label the axis. null when the year had no rows.
+   */
+  header: string | null
 }
 
 export interface AnnualDaily {
@@ -62,7 +68,7 @@ export function parseAnnualYear(rows: RawRow[], year: number): AnnualYear {
   const byDate = new Map<LocalDate, RawRow>()
   for (const r of rows) byDate.set(denverLocal(parseApiDatetime(r.datetime)).date, r)
   const end = `${year}-12-31`
-  const out: AnnualYear = { year, date: [], value: [], provisional: [] }
+  const out: AnnualYear = { year, date: [], value: [], provisional: [], header: header ?? null }
   for (let d = `${year}-01-01`; d <= end; d = addDays(d, 1)) {
     const r = byDate.get(d)
     const v = r && header ? toNum(r[header]) : null

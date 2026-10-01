@@ -158,6 +158,18 @@ describe('parseSoilSeries', () => {
     expect(s.time[0]).toBe('2026-01-01T00:00')
     close(s.vwcPct[3][0], 11.0)
   })
+
+  it('parses Bulk EC per depth; a request without EC columns gives all-null EC', () => {
+    const csv = [
+      'station,datetime,Average Soil VWC @ -5 cm [%],Average Bulk EC @ -5 cm [mS/cm],Average Soil Temperature @ -10 cm [°F],provisional',
+      'x,2026-09-20 00:00:00-06:00,31.1,0.115,57.5,False',
+    ].join('\n')
+    const s = parseSoilSeries(parseCsvRaw(csv), { ...meta('x'), period: 'daily' })
+    expect(s.depthsCm).toEqual([5, 10])
+    expect(s.ecMsCm).toEqual([[0.115], [null]])
+    const noEc = parseSoilSeries(parseCsvRaw(bozSoilDaily), { ...meta('acebozem'), period: 'daily' })
+    expect(noEc.ecMsCm?.every((col) => col.every((v) => v === null))).toBe(true)
+  })
 })
 
 describe('parseStationMeta', () => {

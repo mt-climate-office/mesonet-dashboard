@@ -74,7 +74,9 @@ export const HOURLY_MET_ELEMENTS = {
 } as const
 
 export const SOIL_ELEMENTS = {
-  elements: ['soil_vwc', 'soil_temp'],
+  // soil_ec_blk feeds the Soil Profile heatmap's EC view; stations without
+  // EC simply omit the columns (→ all-null `ecMsCm`).
+  elements: ['soil_vwc', 'soil_temp', 'soil_ec_blk'],
   agg_func: ['avg'],
 } as const
 
@@ -233,7 +235,7 @@ export function parseHourlyMet(rows: RawRow[], meta: SeriesMeta): HourlyMet {
   }
 }
 
-/** `/observations/{daily,hourly}` soil_vwc + soil_temp (avg) → SoilSeries. */
+/** `/observations/{daily,hourly}` soil_vwc + soil_temp + soil_ec_blk (avg) → SoilSeries. */
 export function parseSoilSeries(
   rows: RawRow[],
   meta: SeriesMeta & { period: 'daily' | 'hourly' },
@@ -242,12 +244,14 @@ export function parseSoilSeries(
   const f = meta.period === 'daily' ? dailyFrame(rows) : hourlyFrame(rows)
   const vwc = new Map<number, Column>()
   const temp = new Map<number, Column>()
+  const ec = new Map<number, Column>()
   for (const c of cols) {
     if (c.parsed.agg !== 'Average' && c.parsed.agg !== null) continue
     const d = depthCm(c.parsed)
     if (d === null) continue
     if (c.parsed.name === 'Soil VWC') vwc.set(d, c)
     else if (c.parsed.name === 'Soil Temperature') temp.set(d, c)
+    else if (c.parsed.name === 'Bulk EC') ec.set(d, c)
   }
   const depthsCm = [...new Set([...vwc.keys(), ...temp.keys()])].sort((a, b) => a - b)
   return {
@@ -259,6 +263,7 @@ export function parseSoilSeries(
     epochMs: f.epochMs,
     vwcPct: depthsCm.map((d) => pluck(f, vwc.get(d))),
     tempC: depthsCm.map((d) => pluck(f, temp.get(d))),
+    ecMsCm: depthsCm.map((d) => pluck(f, ec.get(d))),
   }
 }
 
