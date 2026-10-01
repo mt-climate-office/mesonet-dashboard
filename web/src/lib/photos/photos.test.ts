@@ -209,7 +209,7 @@ describe('fetchers', () => {
   const schedule = parseSchedule(RAW)
   const cam = schedule.stations.get('acebozem')!
 
-  it('latest lists today + yesterday UTC per current view; 404/errors → empty', async () => {
+  it('latest lists three UTC days per current view; 404/errors → empty', async () => {
     const urls: string[] = []
     vi.stubGlobal('fetch', async (url: string) => {
       urls.push(url)
@@ -218,12 +218,29 @@ describe('fetchers', () => {
       return new Response('', { status: 404 })
     })
     const frames = await fetchLatestFrames(schedule, cam, Date.UTC(2026, 9, 1, 22))
-    expect(urls).toHaveLength(6)
+    expect(urls).toHaveLength(9)
     expect(urls[0]).toBe(
-      `${B}?list-type=2&prefix=${encodeURIComponent('photos/webp/large/acebozem/acebozem_N_20260930')}`,
+      `${B}?list-type=2&prefix=${encodeURIComponent('photos/webp/large/acebozem/acebozem_N_20260929')}`,
     )
     expect(urls.every((u) => !u.includes('/api/'))).toBe(true)
     expect(frames).toHaveLength(2)
+  })
+
+  it("covers local yesterday in the evening, when UTC is a day ahead", async () => {
+    const urls: string[] = []
+    vi.stubGlobal('fetch', async (url: string) => {
+      urls.push(url)
+      return new Response('', { status: 404 })
+    })
+    // 2026-10-01 18:30 MDT = 2026-10-02 00:30Z; local yesterday is Sep 30,
+    // whose slots (15:00Z, 21:00Z) live in the Sep 30 UTC listing.
+    await fetchLatestFrames(schedule, cam, Date.UTC(2026, 9, 2, 0, 30))
+    expect(urls.some((u) => u.includes(encodeURIComponent('acebozem_N_20260930')))).toBe(true)
+  })
+
+  it('throws when every listing fails (archive unreachable)', async () => {
+    vi.stubGlobal('fetch', async () => new Response('down', { status: 503 }))
+    await expect(fetchLatestFrames(schedule, cam, Date.UTC(2026, 9, 1, 22))).rejects.toThrow()
   })
 
   it('confirmDerived keeps only derived frames the bucket lists', async () => {

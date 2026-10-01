@@ -65,8 +65,8 @@ export function CameraCard() {
     [latest.data],
   )
   const date = dateSel ?? (newestLatest != null ? localYmd(newestLatest) : today)
-  // Today and yesterday are always covered by the latest listings (UTC
-  // today + yesterday span both local days); older days by the manifest.
+  // Today and yesterday come from the latest listings (three UTC days, which
+  // span both local days at any hour); older days from the manifest.
   const recent = date >= yesterday
   const past = usePastDayFrames(cam ? station : null, recent ? null : date)
   const source = recent ? latest : past
