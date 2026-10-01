@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   Alert,
   Box,
@@ -14,162 +14,74 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { IconDownload } from '@tabler/icons-react'
-import dayjs from 'dayjs'
-import { API_URL } from '../lib/config'
-import { usePhotoCatalog } from '../hooks/usePhotoCatalog'
-import type { PhotoDirection } from '../lib/api'
+import { DatePickerInput } from '@mantine/dates'
+import { IconCalendar, IconDownload } from '@tabler/icons-react'
+import {
+  addDays,
+  basename,
+  directionLabel,
+  formatLocal,
+  framesFor,
+  localToUtcMs,
+  localToday,
+  localYmd,
+  tokensOf,
+  useLatestFrames,
+  usePastDayFrames,
+  usePhotoSchedule,
+  viewsBetween,
+  type PhotoFrame,
+} from '../lib/photos'
 import { useResolvedStation } from './useResolvedStation'
 
-const MORNING = '09:00:00'
-const AFTERNOON = '15:00:00'
-
-// Compute "now" in America/Denver as a YYYY-MM-DD string + HHmm string,
-// without pulling in dayjs's timezone plugin. The Intl API does the work.
-const DENVER_DATE_FMT = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'America/Denver',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-})
-const DENVER_HHMM_FMT = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'America/Denver',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-})
-
-function denverNow(): { ymd: string; hhmm: string } {
-  const now = new Date()
-  return {
-    ymd: DENVER_DATE_FMT.format(now), // "YYYY-MM-DD"
-    hhmm: DENVER_HHMM_FMT.format(now).replace(':', ''), // "HHMM"
-  }
-}
-
-interface PhotoSlot {
-  /** ISO local-time value for the API's `dt` param, e.g. `2026-05-05T15:00:00`. */
-  value: string
-  /** User-facing label for the dropdown. */
-  label: string
-}
-
-function buildPhotoOptions(startDate: string): PhotoSlot[] {
-  const { ymd: lastDay, hhmm } = denverNow()
-  const start = dayjs(startDate)
-  if (!start.isValid()) return []
-
-  const dropToday = hhmm < '0930'
-  const morningOnlyToday = hhmm >= '0930' && hhmm < '1530'
-
-  const out: PhotoSlot[] = []
-  // Every day back to the camera's start date, like legacy. The Select is
-  // searchable and renders a limited window (PHOTO_OPTION_LIMIT), so long
-  // records stay fast.
-  let cursor = start.startOf('day')
-  const stop = dayjs(lastDay).startOf('day')
-
-  while (!cursor.isAfter(stop)) {
-    const ymd = cursor.format('YYYY-MM-DD')
-    const isToday = ymd === lastDay
-    const includeAfternoon = !isToday || (!dropToday && !morningOnlyToday)
-    const includeMorning = !isToday || !dropToday
-    if (includeMorning) {
-      out.push({ value: `${ymd}T${MORNING}`, label: `${ymd} Morning` })
-    }
-    if (includeAfternoon) {
-      out.push({ value: `${ymd}T${AFTERNOON}`, label: `${ymd} Afternoon` })
-    }
-    cursor = cursor.add(1, 'day')
-  }
-  return out.reverse()
-}
-
-function defaultDirection(directions: PhotoDirection[]): string {
-  // Match legacy behavior: prefer N if available.
-  const pref = directions.find((d) => d.value.toLowerCase() === 'n')
-  return pref?.value ?? directions[0]?.value ?? 'n'
-}
-
 /**
- * Canonical display order for the direction picker. Anything not in this
- * list (rare — most stations are N/S/E/W/SNOW or N/S/NS/SS) sorts to the
- * end alphabetically.
+ * Station camera card. Everything comes from the data2 photo archive:
+ * the schedule says which views the camera shoots; the newest two days come
+ * from live bucket listings, older days from the station's monthly manifest.
  */
-const DIRECTION_ORDER: Record<string, number> = {
-  n: 0,
-  s: 1,
-  e: 2,
-  w: 3,
-  snow: 4,
-  ns: 5,
-  ss: 6,
-  g: 7,
-}
-
-/**
- * Legacy direction labels (app.py update_ul_card). The /photos catalog is
- * the source of truth for which directions exist; these are only the words
- * shown, falling back to the catalog's own label.
- */
-const LEGACY_DIRECTION_LABELS: Record<string, string> = {
-  n: 'North',
-  s: 'South',
-  e: 'East',
-  w: 'West',
-  ns: 'North Sky',
-  ss: 'South Sky',
-  g: 'Ground',
-  snow: 'Snow',
-}
-
-function directionLabel(d: PhotoDirection): string {
-  return LEGACY_DIRECTION_LABELS[d.value.toLowerCase()] ?? d.label ?? d.value
-}
-
-/** Rendered options in the (searchable) photo-time Select. */
-const PHOTO_OPTION_LIMIT = 400
-
-function sortDirections(directions: PhotoDirection[]): PhotoDirection[] {
-  return [...directions].sort((a, b) => {
-    const ai = DIRECTION_ORDER[a.value.toLowerCase()] ?? 99
-    const bi = DIRECTION_ORDER[b.value.toLowerCase()] ?? 99
-    if (ai !== bi) return ai - bi
-    return a.value.localeCompare(b.value)
-  })
-}
-
 export function CameraCard() {
   const station = useResolvedStation()
-  const catalog = usePhotoCatalog()
-  const meta = useMemo(
-    () =>
-      catalog.data?.find(
-        (m) => m.station.toLowerCase() === (station ?? '').toLowerCase(),
-      ) ?? null,
-    [catalog.data, station],
-  )
+  const schedule = usePhotoSchedule()
+  const cam = station ? schedule.data?.stations.get(station) : undefined
+  const latest = useLatestFrames(station)
 
-  // Reset direction & photo-time when station changes — without a useEffect.
+  // Reset picks when the station changes — without a useEffect.
   const [stationKey, setStationKey] = useState<string | null>(station)
-  const [direction, setDirection] = useState<string>('n')
-  const [photoTime, setPhotoTime] = useState<string | null>(null)
+  const [dateSel, setDateSel] = useState<string | null>(null)
+  const [direction, setDirection] = useState<string | null>(null)
+  const [slotSel, setSlotSel] = useState<number | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-
   if (station !== stationKey) {
     setStationKey(station)
-    setDirection(meta ? defaultDirection(meta.directions) : 'n')
-    setPhotoTime(null)
+    setDateSel(null)
+    setDirection(null)
+    setSlotSel(null)
   }
 
-  const options = useMemo(
-    () => (meta ? buildPhotoOptions(meta.startDate) : []),
-    [meta],
+  const today = localToday()
+  const yesterday = addDays(today, -1)
+  const newestLatest = useMemo(
+    () => (latest.data ?? []).reduce<number | null>((m, f) => (m == null || f.slotUtcMs > m ? f.slotUtcMs : m), null),
+    [latest.data],
   )
+  const date = dateSel ?? (newestLatest != null ? localYmd(newestLatest) : today)
+  // Today and yesterday are always covered by the latest listings (UTC
+  // today + yesterday span both local days); older days by the manifest.
+  const recent = date >= yesterday
+  const past = usePastDayFrames(cam ? station : null, recent ? null : date)
+  const source = recent ? latest : past
 
-  const activeTime = photoTime ?? options[0]?.value ?? null
+  const dayFrames = useMemo(() => framesFor(source.data ?? [], date), [source.data, date])
+  // Chips: the directions that have frames that day; with none (still
+  // loading, or an empty day), the views the schedule had on that day.
+  const tokens = useMemo(() => {
+    if (!cam) return []
+    if (dayFrames.length) return tokensOf(dayFrames)
+    return recent
+      ? cam.currentViews.map((v) => v.token)
+      : viewsBetween(cam, localToUtcMs(date), localToUtcMs(addDays(date, 1))).map((v) => v.token)
+  }, [cam, recent, date, dayFrames])
 
-  // ----- Empty / no-station state -----
   if (!station) {
     return (
       <Box p="xs">
@@ -179,197 +91,147 @@ export function CameraCard() {
       </Box>
     )
   }
-
-  // The /photos/ catalog 503s on cold-start (AirTable Lambda warm-up). Don't
-  // block the image on it — show the latest N photo immediately and progressively
-  // enhance the picker + time-dropdown when the catalog arrives.
-  const usingFallback = !meta
-  // Default to four cardinal directions until the metadata clarifies what
-  // this station actually has. Listed in canonical N/S/E/W order — same
-  // order applied to the metadata copy below via sortDirections.
-  const fallbackDirections: PhotoDirection[] = [
-    { value: 'n', label: 'North' },
-    { value: 's', label: 'South' },
-    { value: 'e', label: 'East' },
-    { value: 'w', label: 'West' },
-  ]
-  const directions = sortDirections(
-    meta?.directions.length ? meta.directions : fallbackDirections,
-  )
-
-  // If the catalog is loaded and the station has no camera, surface that.
-  if (catalog.data && !meta) {
+  if (schedule.isPending) {
     return (
-      <Center h="100%" px="md">
-        <Text c="dimmed" size="xs" ta="center">
-          No camera images are available for this station.
-        </Text>
+      <Center h="100%">
+        <Loader size="sm" />
       </Center>
     )
   }
+  if (schedule.isError) {
+    return <Message>Camera schedule unavailable.</Message>
+  }
+  if (!cam || (cam.currentViews.length === 0 && cam.periods.length === 0)) {
+    return <Message>No camera images are available for this station.</Message>
+  }
 
-  // Effective direction — fall back if the URL state has a stale value.
-  const activeDir = directions.some((d) => d.value === direction)
-    ? direction
-    : defaultDirection(directions)
+  const labelOf = (t: string) => cam.allLabels[t] ?? directionLabel(t)
+  const activeDir =
+    direction && tokens.includes(direction) ? direction : tokens.includes('N') ? 'N' : (tokens[0] ?? 'N')
+  const dirFrames = dayFrames.filter((f) => f.token === activeDir)
+  const active: PhotoFrame | undefined = dirFrames.find((f) => f.slotUtcMs === slotSel) ?? dirFrames[0]
+  const label = labelOf(activeDir)
+  const stamp = active ? formatLocal(active.slotUtcMs) : ''
+  const alt = `${station} ${label} camera ${stamp}`
+  const minDate = cam.firstMonth ? `${cam.firstMonth}-01` : undefined
 
-  // The path enum on the new API is strict-lowercase. The catalog returns
-  // direction values capitalized ("N", "SNOW") for display; lowercase before
-  // building the URL.
-  const dirSlug = activeDir.toLowerCase()
-  const dtParam = activeTime ? `&dt=${encodeURIComponent(activeTime)}` : ''
-  const displaySrc = `${API_URL}photos/${station}/${dirSlug}/?force=True&web=true${dtParam}`
-  const originalSrc = `${API_URL}photos/${station}/${dirSlug}/?force=True${dtParam}`
-
-
-  const downloadOriginal = async () => {
+  const download = async () => {
+    if (!active) return
     try {
-      const r = await fetch(originalSrc)
+      const r = await fetch(active.webpUrl)
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
-      const blob = await r.blob()
-      const objectUrl = URL.createObjectURL(blob)
+      const objectUrl = URL.createObjectURL(await r.blob())
       const a = document.createElement('a')
       a.href = objectUrl
-      // Prefer the API's own filename (it carries the actual capture
-      // timestamp, e.g. `aceloman_2026-05-05T090000_N.jpg`) when the server
-      // exposes Content-Disposition. Fall back to a synthesized name.
-      a.download = pickFilename(r.headers, station, dirSlug, activeTime, blob.type)
+      a.download = basename(active.webpUrl)
       document.body.appendChild(a)
       a.click()
       a.remove()
       setTimeout(() => URL.revokeObjectURL(objectUrl), 5_000)
     } catch {
-      // CORS unset upstream → open in a new tab so the user can save manually.
-      window.open(originalSrc, '_blank', 'noreferrer')
+      window.open(active.webpUrl, '_blank', 'noreferrer')
     }
   }
-
-  const label = directionLabel(
-    directions.find((d) => d.value === activeDir) ?? { value: activeDir, label: activeDir },
-  )
-  const alt = `${station} ${label} camera ${activeTime ?? ''}`
 
   return (
     <Stack gap={6} h="100%" p="xs">
       <Chip.Group multiple={false} value={activeDir} onChange={(v) => setDirection(v as string)}>
         <Group gap={4} justify="center">
-          {directions.map((d) => (
-            <Chip key={d.value} value={d.value} size="xs" variant="filled">
-              {directionLabel(d)}
+          {tokens.map((t) => (
+            <Chip key={t} value={t} size="xs" variant="filled">
+              {labelOf(t)}
             </Chip>
           ))}
         </Group>
       </Chip.Group>
       <Group gap={6} wrap="nowrap" align="center" justify="center">
-        {options.length > 0 ? (
+        <DatePickerInput
+          size="xs"
+          value={date}
+          onChange={(v) => {
+            setDateSel(v ? String(v) : null)
+            setSlotSel(null)
+          }}
+          minDate={minDate}
+          maxDate={today}
+          valueFormat="MMM D, YYYY"
+          leftSection={<IconCalendar size={14} />}
+          aria-label="Photo date"
+          popoverProps={{ withinPortal: true }}
+          styles={{ root: { flex: '0 0 auto', width: 140 } }}
+        />
+        {dirFrames.length > 0 ? (
           <Select
             size="xs"
-            value={activeTime}
-            onChange={(v) => setPhotoTime(v)}
-            data={options}
-            placeholder="Select photo time"
+            aria-label="Photo time"
+            value={active ? String(active.slotUtcMs) : null}
+            onChange={(v) => setSlotSel(v ? Number(v) : null)}
+            data={dirFrames.map((f) => ({ value: String(f.slotUtcMs), label: formatLocal(f.slotUtcMs) }))}
             allowDeselect={false}
-            searchable
-            limit={PHOTO_OPTION_LIMIT}
             comboboxProps={{ withinPortal: true }}
             styles={{ root: { flex: 1, minWidth: 0 } }}
           />
-        ) : usingFallback && catalog.isFetching ? (
-          <Group gap={4} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-            <Loader size="xs" />
-            <Text size="xs" c="dimmed" truncate>
-              Loading photo times…
-            </Text>
-          </Group>
-        ) : null}
+        ) : (
+          <Box style={{ flex: 1 }} />
+        )}
       </Group>
-      <Tooltip label="Click to enlarge" withinPortal openDelay={400}>
-        <Box
-          role="button"
-          tabIndex={0}
-          aria-label={`Enlarge ${label} photo for ${station}`}
-          onClick={() => setModalOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              setModalOpen(true)
-            }
-          }}
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflow: 'hidden',
-            cursor: 'pointer',
-          }}
-        >
-          <Image
-            key={`${station}/${activeDir}/${activeTime ?? 'latest'}`}
-            src={displaySrc}
-            alt={alt}
-            fit="contain"
-            h="100%"
-            w="100%"
-            fallbackSrc=""
-          />
-        </Box>
-      </Tooltip>
+      {source.isPending && !source.data ? (
+        <Center style={{ flex: 1 }}>
+          <Loader size="sm" />
+        </Center>
+      ) : !active ? (
+        <Message>
+          {source.isError
+            ? 'Camera images could not be loaded.'
+            : `No camera images are available for ${label} on this date.`}
+        </Message>
+      ) : (
+        <Tooltip label="Click to enlarge" withinPortal openDelay={400}>
+          <Box
+            role="button"
+            tabIndex={0}
+            aria-label={`Enlarge ${label} photo for ${station}`}
+            onClick={() => setModalOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                setModalOpen(true)
+              }
+            }}
+            style={{ flex: 1, minHeight: 0, overflow: 'hidden', cursor: 'pointer' }}
+          >
+            <Image key={active.webpUrl} src={active.webpUrl} alt={alt} fit="contain" h="100%" w="100%" fallbackSrc="" />
+          </Box>
+        </Tooltip>
+      )}
       {/* Legacy photo-modal: centered, 92vw, image up to 86vh. */}
       <Modal
-        opened={modalOpen}
+        opened={modalOpen && !!active}
         onClose={() => setModalOpen(false)}
         centered
         size="92vw"
         overlayProps={{ backgroundOpacity: 0.7, blur: 2 }}
-        title={`${station} · ${label}${activeTime ? ` · ${activeTime.replace('T', ' ')}` : ''}`}
+        title={`${station} · ${label}${stamp ? ` · ${stamp}` : ''}`}
       >
-        <Stack gap="sm" align="center">
-          <Image
-            src={displaySrc}
-            alt={alt}
-            fit="contain"
-            radius="md"
-            mah="86vh"
-            w="100%"
-            fallbackSrc=""
-          />
-          <Button
-            variant="light"
-            size="xs"
-            leftSection={<IconDownload size={14} />}
-            onClick={downloadOriginal}
-          >
-            Download original
-          </Button>
-        </Stack>
+        {active && (
+          <Stack gap="sm" align="center">
+            <Image src={active.webpUrl} alt={alt} fit="contain" radius="md" mah="86vh" w="100%" fallbackSrc="" />
+            <Button variant="light" size="xs" leftSection={<IconDownload size={14} />} onClick={download}>
+              Download original
+            </Button>
+          </Stack>
+        )}
       </Modal>
     </Stack>
   )
 }
 
-/**
- * Decide what filename to write to disk.
- *
- * 1. If the server exposed Content-Disposition with a filename, honor it —
- *    that filename already carries the capture timestamp.
- * 2. Otherwise synthesize one from station + direction + selected dt + a
- *    sensible extension based on the response Content-Type.
- */
-function pickFilename(
-  headers: Headers,
-  station: string,
-  direction: string,
-  dt: string | null,
-  blobType: string,
-): string {
-  const cd = headers.get('content-disposition') ?? ''
-  const m = cd.match(/filename\*?=(?:UTF-8''|"|')?([^"';]+)/i)
-  if (m && m[1]) {
-    return decodeURIComponent(m[1].trim())
-  }
-  const ct = (headers.get('content-type') ?? blobType ?? '').toLowerCase()
-  const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : 'jpg'
-  const stamp = dt
-    ? dt.replace(/[:T-]/g, '').slice(0, 14)
-    : dayjs().format('YYYYMMDDHHmmss')
-  return `${station}_${stamp}_${direction.toUpperCase()}.${ext}`
+function Message({ children }: { children: ReactNode }) {
+  return (
+    <Center h="100%" px="md" style={{ flex: 1 }}>
+      <Text c="dimmed" size="xs" ta="center">
+        {children}
+      </Text>
+    </Center>
+  )
 }

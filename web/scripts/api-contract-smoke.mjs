@@ -38,7 +38,7 @@ const HIDDEN = {
   },
 }
 
-/* Ag/Latest/Downloader/Photos call sites, with a light representative request. */
+/* Ag/Latest/Downloader call sites (photos come from the data2 archive, not the API), with a light representative request. */
 const d = (n) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10)
 const USED = [
   ['/stations/', { type: 'csv' }],
@@ -47,8 +47,6 @@ const USED = [
   ['/latest/', { stations: 'acebozem', type: 'csv' }],
   ['/config/{station}/', {}, { station: 'acebozem' }],
   ['/derived/ppt/', { stations: 'acebozem', type: 'csv' }],
-  ['/photos/', { type: 'csv' }],
-  ['/photos/{station}/{direction}/', { force: 'True', web: 'true' }, { station: 'aceabsar', direction: 'n' }],
   ['/observations/', { stations: 'acebozem', elements: 'air_temp', start_time: d(2), end_time: d(1), level: 1, rm_na: true, public: true, type: 'csv' }],
   ['/observations/hourly/', { stations: 'acebozem', elements: 'air_temp,rh,sol_rad,wind_spd', agg_func: 'avg', start_time: d(2), end_time: d(1), level: 2, type: 'csv' }],
   ['/observations/daily/', { stations: 'acebozem', elements: 'air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd', agg_func: 'min,max,avg,min,max,avg,avg,avg', start_time: d(4), end_time: d(1), level: 2, type: 'csv' }],
