@@ -162,14 +162,15 @@ export interface GddCutoffs {
 
 export interface GddStage {
   /**
-   * Numeric stage: the Haun number for wheat/barley (drives the NDAWN
-   * threshold switch at 2), otherwise a 1-based ordinal in gdd order.
+   * Stage id: the Haun number for wheat/barley (drives the NDAWN threshold
+   * switch at 2); for other crops the data layer uses a 1-based ordinal in
+   * gdd order, while hand-built/test tables may carry the published label.
    */
-  stage: number
+  stage: number | string
   /**
    * Published stage label as the API serves it in "Growth Stage", e.g.
    * "0.5", "V1 (Emergence)", "Rosette - 3rd Leaf", "BBCH Stages 12-14".
-   * Always set by the data layer; optional only for hand-built test tables.
+   * Always set by the data layer; compute emits `code ?? stage` as the label.
    */
   code?: string
   name: string | null
@@ -230,16 +231,21 @@ export interface EtoSeries extends SeriesBase {
 
 export interface GddProjection {
   date: LocalDate[]
+  /** Median-normals (or forecast) daily GDD, °F·day. */
   daily: Nullable[]
   cumulative: Nullable[]
-  stage: (number | null)[]
+  /** Envelope from normals q25 / q75 temperatures (equal to `cumulative` on forecast days). */
+  cumulativeQ25: Nullable[]
+  cumulativeQ75: Nullable[]
+  stage: (number | string | null)[]
   stageName: (string | null)[]
   /** Which input drove each projected day. */
   basis: ('forecast' | 'normals')[]
 }
 
 export interface GddSeries extends SeriesBase {
-  crop: GddCrop
+  /** null for custom low/high cutoffs (the API's no-crop default). */
+  crop: GddCrop | null
   cutoffs: GddCutoffs
   date: LocalDate[]
   /** Daily GDD (°F·day, matching published stage tables). */
@@ -247,8 +253,15 @@ export interface GddSeries extends SeriesBase {
   /** Running sum from the first date; carries forward over missing days. */
   cumulative: Nullable[]
   /** Last stage whose `gdd` ≤ cumulative; null when no stage table. */
-  stage: (number | null)[]
+  stage: (number | string | null)[]
   stageName: (string | null)[]
+  /**
+   * The NDAWN wheat/barley rule as applied to this series: from the day the
+   * first-pass cumulative reaches Haun stage `atStage`, `cutoffs` replace
+   * `GddSeries.cutoffs`. null when not applied (other crops, custom cutoffs,
+   * or no stage table).
+   */
+  ndawnSwitch: { atStage: number; cutoffs: GddCutoffs } | null
   projected?: GddProjection
 }
 
