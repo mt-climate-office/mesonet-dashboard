@@ -11,4 +11,4 @@ export const API_DOCS_URL = 'https://mesonet2.climate.umt.edu/api/v2/docs'
 export const LEGACY_DASHBOARD_URL = 'https://mesonet.climate.umt.edu/dash'
 
 export const FEEDBACK_URL =
-  'https://airtable.com/appUFCcxV0aoFaohE/shr5Y3hkNRP1YwZWv'
+  'https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN'
