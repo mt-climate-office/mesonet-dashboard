@@ -161,7 +161,17 @@ export interface GddCutoffs {
 }
 
 export interface GddStage {
+  /**
+   * Numeric stage: the Haun number for wheat/barley (drives the NDAWN
+   * threshold switch at 2), otherwise a 1-based ordinal in gdd order.
+   */
   stage: number
+  /**
+   * Published stage label as the API serves it in "Growth Stage", e.g.
+   * "0.5", "V1 (Emergence)", "Rosette - 3rd Leaf", "BBCH Stages 12-14".
+   * Always set by the data layer; optional only for hand-built test tables.
+   */
+  code?: string
   name: string | null
   description: string | null
   /** Cumulative GDD (°F·day, as published) at which this stage begins. */

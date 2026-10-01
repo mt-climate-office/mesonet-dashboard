@@ -50,8 +50,13 @@ export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]
     rm_na: q.rmNa ?? true,
     na_info: q.naInfo ?? false,
   }
-  // /derived/* has no `public` parameter; observations do.
-  const baseQuery = { ...derivedQuery, public: q.publicOnly ?? true }
+  // /derived/* has no `public` parameter; observations do. Raw
+  // `/observations/` has no `na_info` (only the hourly/daily aggregates do).
+  const { na_info, ...noNaInfo } = derivedQuery
+  const baseQuery = {
+    ...(q.period === 'raw' ? noNaInfo : { ...noNaInfo, na_info }),
+    public: q.publicOnly ?? true,
+  }
 
   const observations =
     q.elements && q.elements !== ''

@@ -5,6 +5,7 @@
  */
 import { API_URL } from '../config'
 import { buildQuery, parseCsv } from '../csv'
+import { PARAM_ALLOWLIST } from './paramAllowlist'
 import type { ObservationRow } from './types'
 
 /** Non-2xx response from the API. `status` drives retry decisions. */
@@ -17,9 +18,83 @@ export class HttpError extends Error {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Query-param allowlist (generated from the OpenAPI spec; see gen:api)        */
+/* -------------------------------------------------------------------------- */
+
+const TEMPLATES = Object.keys(PARAM_ALLOWLIST).map((tpl) => ({
+  tpl,
+  re: new RegExp(
+    `^${tpl
+      .replace(/^\/|\/$/g, '')
+      .split('/')
+      .map((seg) => (/^\{\w+\}$/.test(seg) ? '[^/]+' : seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+      .join('/')}$`,
+  ),
+  // Literal segments outrank `{param}` segments when several templates match.
+  specificity: tpl.split('/').filter((s) => s && !s.startsWith('{')).length,
+}))
+
+/** OpenAPI path template for an app path (`observations/daily` → `/observations/daily/`). */
+export function matchEndpoint(path: string): string | null {
+  const p = path.split('?')[0].replace(/^\/|\/$/g, '')
+  let best: (typeof TEMPLATES)[number] | null = null
+  for (const t of TEMPLATES) {
+    if (t.re.test(p) && (!best || t.specificity > best.specificity)) best = t
+  }
+  return best?.tpl ?? null
+}
+
+/** Query keys `buildQuery` would actually send (it drops undefined/null/''). */
+const sentKeys = (query: Record<string, unknown>) =>
+  Object.keys(query).filter((k) => {
+    const v = query[k]
+    return v !== undefined && v !== null && v !== ''
+  })
+
+export interface ParamViolation {
+  endpoint: string | null
+  unknown: string[]
+}
+
+/** Params not allowed for `path` by the spec (or `endpoint: null` if the path is unknown). */
+export function checkParams(path: string, query: Record<string, unknown>): ParamViolation | null {
+  const endpoint = matchEndpoint(path)
+  if (!endpoint) return { endpoint: null, unknown: sentKeys(query) }
+  const allowed = PARAM_ALLOWLIST[endpoint]
+  const unknown = sentKeys(query).filter((k) => !allowed.includes(k))
+  return unknown.length ? { endpoint, unknown } : null
+}
+
+/**
+ * Enforce the allowlist. Dev (and tests): console.error + throw, so a bad
+ * param (the `premade` class of bug) fails loudly. Prod: drop the offending
+ * params, warn, and send the rest. Unknown endpoints throw in dev and pass
+ * through untouched in prod.
+ */
+export function enforceAllowlist(
+  path: string,
+  query: Record<string, unknown>,
+  dev: boolean = import.meta.env.DEV,
+): Record<string, unknown> {
+  const v = checkParams(path, query)
+  if (!v) return query
+  const msg = v.endpoint
+    ? `API param allowlist: ${v.endpoint} does not accept ${v.unknown.join(', ')}`
+    : `API param allowlist: unknown endpoint "${path}" (not in openapi.json or HIDDEN routes)`
+  if (dev) {
+    console.error(msg)
+    throw new Error(msg)
+  }
+  console.warn(`${msg}${v.endpoint ? ' — dropped' : ''}`)
+  if (!v.endpoint) return query
+  return Object.fromEntries(Object.entries(query).filter(([k]) => !v.unknown.includes(k)))
+}
+
 /** Absolute API URL for `path` (leading slash optional) plus encoded query. */
 export function buildUrl(path: string, query: Record<string, unknown> = {}): string {
-  return `${API_URL}${path.replace(/^\//, '')}${buildQuery(query as never)}`
+  const q = enforceAllowlist(path, query)
+  return `${API_URL}${path.replace(/^\//, '')}${buildQuery(q as never)}`
 }
 
 export async function fetchText(

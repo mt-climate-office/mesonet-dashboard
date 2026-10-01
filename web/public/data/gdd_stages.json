@@ -1,0 +1,656 @@
+{
+ "units": "degF_day",
+ "release": "mesonet-db-rds@dc5518a",
+ "crops": {
+  "wheat": [
+   {
+    "stage": 0.5,
+    "code": "0.5",
+    "name": "Emergence Date",
+    "description": "Emergence is defined here as the date leaf 1 reaches half of its length (Stage 0.5). The GDD required from planting until emergence depends on planting depth, soil water, soil temperature, surface residue, and soil type. Predicting emergence is the most uncertain part of this model.",
+    "gdd": 180
+   },
+   {
+    "stage": 1,
+    "code": "1",
+    "name": "Leaf 1 fully extended",
+    "description": "Leaf 1 is fully developed when the second leaf is visible in the rolled part of leaf 1.",
+    "gdd": 252
+   },
+   {
+    "stage": 2,
+    "code": "2",
+    "name": "Leaf 2 fully extended",
+    "description": "Leaf 2 is fully developed when the third leaf is visible in the rolled part of leaf 2. This is the same concept for leaves 2 through 7.",
+    "gdd": 395
+   },
+   {
+    "stage": 3,
+    "code": "3",
+    "name": "Leaf 3 (Tillers Begin To Emerge)",
+    "description": "Tillering begins at a Haun stage of 2.0 to 2.5, but tillers are not visible until Haun stage of 3.0-3.5",
+    "gdd": 538
+   },
+   {
+    "stage": 4,
+    "code": "4",
+    "name": "Leaf 4",
+    "description": "Leaf 4 fully extended",
+    "gdd": 681
+   },
+   {
+    "stage": 5,
+    "code": "5",
+    "name": "Leaf 5 (Tillering ends)",
+    "description": "Cool, moist weather, and abundant N fertilizer will extend tillering period",
+    "gdd": 824
+   },
+   {
+    "stage": 6,
+    "code": "6",
+    "name": "Leaf 6 (Tillering ends)",
+    "description": "Cool, moist weather, and abundant N fertilizer will extend tillering period",
+    "gdd": 967
+   },
+   {
+    "stage": 7,
+    "code": "7",
+    "name": "Leaf 7 fully extended.",
+    "description": "Severe drought stessed plants may pass directly to stage 9.",
+    "gdd": 1110
+   },
+   {
+    "stage": 7.5,
+    "code": "7.5",
+    "name": "Flag Leaf Visible",
+    "description": null,
+    "gdd": 1181
+   },
+   {
+    "stage": 8,
+    "code": "8",
+    "name": "Flag Leaf Emerged",
+    "description": "The flag leaf (Leaf 8) is fully developed when the flag leaf collar is visible",
+    "gdd": 1255
+   },
+   {
+    "stage": 9,
+    "code": "9",
+    "name": "Boot Swelling Begins",
+    "description": "Flag leaf stem elongates elevating the flag leaf above the previous leaf. This usually ends with the first signs of boot swelling.",
+    "gdd": 1396
+   },
+   {
+    "stage": 10,
+    "code": "10",
+    "name": "Boot Completed",
+    "description": "Complete when awns become visible at the flag leaf collar.",
+    "gdd": 1539
+   },
+   {
+    "stage": 10.2,
+    "code": "10.2",
+    "name": "Heading Begins",
+    "description": "Heading begins when the head begins to emerge through the flag leaf collar.",
+    "gdd": 1567
+   },
+   {
+    "stage": 11,
+    "code": "11",
+    "name": "Headed (Head Extenstion Begins)",
+    "description": "Heading is complete when the head has completely cleared the collar and head extension begins. Head extension refers to continued growth of the stem which raises the head about the flag leaf. Head extension is usually complete when flowering begins.",
+    "gdd": 1682
+   },
+   {
+    "stage": 11.4,
+    "code": "11.4",
+    "name": "Flowering Begins",
+    "description": "Flowering or anthesis begins about in the middle of the head, and simultaneously progresses toward the top and the bottom of the head.",
+    "gdd": 1739
+   },
+   {
+    "stage": 11.6,
+    "code": "11.6",
+    "name": "Flowering Completed",
+    "description": "Most tillers (T0, T1, T2 tillers) flower within a few days of the main stem. Later-emerging tillers flower later, and are the most common source of green \"\"nuisance\"\" heads at swathing time.",
+    "gdd": 1768
+   },
+   {
+    "stage": 12,
+    "code": "12",
+    "name": "Kernel Watery Ripe",
+    "description": "During watery ripe stage the kernel length and width are established, but little dry matter is accumulated.",
+    "gdd": 1825
+   }
+  ],
+  "barley": [
+   {
+    "stage": 0.5,
+    "code": "0.5",
+    "name": "Emergence Date",
+    "description": "Emergence is defined as the date leaf 1 reaches half of its length (Stage 0.5). The GDD required from planting until emergence depends on planting depth, soil water content, soil temperature, surface residue, and soil type. Predicting emergence is the most uncertain part of this model.",
+    "gdd": 176
+   },
+   {
+    "stage": 1,
+    "code": "1",
+    "name": "Leaf 1 (Fully Extended)",
+    "description": "Leaf 1 is fully developed when the second leaf is just visible in the rolled part of leaf 1.",
+    "gdd": 245
+   },
+   {
+    "stage": 2,
+    "code": "2",
+    "name": "Leaf 2 (Fully Extended)",
+    "description": "Leaf 2 is fully developed when the third leaf is just visible in the rolled part of leaf 2. This is the same concept for leaves 3 through 7.",
+    "gdd": 384
+   },
+   {
+    "stage": 3,
+    "code": "3",
+    "name": "Leaf 3 (Tillers Begin To Emerge)",
+    "description": "Tillering begins at Haun stage 2.0 to 2.5, but tillers are not visible until Haun stage 3.0-3.5.",
+    "gdd": 523
+   },
+   {
+    "stage": 4,
+    "code": "4",
+    "name": "Leaf 4 (Fully Extended)",
+    "description": null,
+    "gdd": 662
+   },
+   {
+    "stage": 5,
+    "code": "5",
+    "name": "Leaf 5 (Tillering Ends)",
+    "description": null,
+    "gdd": 801
+   },
+   {
+    "stage": 6,
+    "code": "6",
+    "name": "Leaf 6 (Fully Extended)",
+    "description": null,
+    "gdd": 940
+   },
+   {
+    "stage": 7,
+    "code": "7",
+    "name": "Leaf 7 (Fully Extended)",
+    "description": "Drought stressed plants may pass directly to stage 9, either because leaf 8 does not grow or because it does not develop.",
+    "gdd": 1079
+   },
+   {
+    "stage": 8,
+    "code": "8",
+    "name": "Flag Leaf Emerged (Collar Visible)",
+    "description": "The flag leaf (Leaf 8) is fully developed when the flag leaf collar is visible. Flag leaf stem elongation begins.",
+    "gdd": 1218
+   },
+   {
+    "stage": 9,
+    "code": "9",
+    "name": "Boot Swelling Begins (Flag leaf stem elongated; Awns just peeking out of boot)",
+    "description": "Awns just peeking out of boot. Flag leaf stem has elongated elevating the flag leaf above the previous leaf. Elongation usually ends with the first signs of boot swelling.",
+    "gdd": 1357
+   },
+   {
+    "stage": 9.5,
+    "code": "9.5",
+    "name": "Mid-Boot (Head half emerged)",
+    "description": "Flowering in barley begins when about 1 inch of the awns are above the flag leaf collar. This is a major difference with spring wheat which doesn't begin flowering until 3 to 4 days after the head has cleared the flag leaf collar.",
+    "gdd": 1426
+   },
+   {
+    "stage": 10,
+    "code": "10",
+    "name": "Head Emerged (Boot Complete) (Flowering Complete)",
+    "description": "Flowering is complete when the head has emerged (cleared the flag leaf collar). Head stem elongation begins.",
+    "gdd": 1496
+   },
+   {
+    "stage": 11,
+    "code": "11",
+    "name": "Heading Complete",
+    "description": "Head stem elongation completed.",
+    "gdd": 1635
+   },
+   {
+    "stage": 11.5,
+    "code": "11.5",
+    "name": "Kernel Watery Ripe",
+    "description": "Watery ripe means the kernel length and width are established, but little dry matter has been accumulated.",
+    "gdd": 1745
+   }
+  ],
+  "canola": [
+   {
+    "stage": 1,
+    "code": "Planting",
+    "name": null,
+    "description": null,
+    "gdd": 0
+   },
+   {
+    "stage": 2,
+    "code": "Seedling",
+    "name": null,
+    "description": null,
+    "gdd": 256
+   },
+   {
+    "stage": 3,
+    "code": "Rosette - 3rd Leaf",
+    "name": null,
+    "description": null,
+    "gdd": 396
+   },
+   {
+    "stage": 4,
+    "code": "Rosette - 4th Leaf",
+    "name": null,
+    "description": null,
+    "gdd": 727
+   },
+   {
+    "stage": 5,
+    "code": "Early Bud",
+    "name": null,
+    "description": null,
+    "gdd": 828
+   },
+   {
+    "stage": 6,
+    "code": "Late Bud",
+    "name": null,
+    "description": null,
+    "gdd": 932
+   },
+   {
+    "stage": 7,
+    "code": "Early Flower",
+    "name": null,
+    "description": null,
+    "gdd": 1165
+   },
+   {
+    "stage": 8,
+    "code": "Late Flower",
+    "name": null,
+    "description": null,
+    "gdd": 1397
+   },
+   {
+    "stage": 9,
+    "code": "Early Ripening",
+    "name": null,
+    "description": null,
+    "gdd": 1634
+   },
+   {
+    "stage": 10,
+    "code": "Late Ripening",
+    "name": null,
+    "description": null,
+    "gdd": 1874
+   }
+  ],
+  "corn": [],
+  "sugarbeet": [
+   {
+    "stage": 1,
+    "code": "V1 (Emergence)",
+    "name": null,
+    "description": "Emergence. Cotyledons emerged and no evidence of first and second leaf initials",
+    "gdd": 237
+   },
+   {
+    "stage": 2,
+    "code": "V2",
+    "name": null,
+    "description": "Two true leaves unrolled and no evidence of three leaf stage. These are the first two leaves that develop simultaneously. At this stage and subsequent stages the cotyledons are no longer counted as leaves.",
+    "gdd": 572
+   },
+   {
+    "stage": 3,
+    "code": "V3",
+    "name": null,
+    "description": "Three true leaves unrolled and no evidence of four leaf stage.",
+    "gdd": 713
+   },
+   {
+    "stage": 4,
+    "code": "V4",
+    "name": null,
+    "description": "Four true leaves unrolled and no evidence of five leaf stage.",
+    "gdd": 821
+   },
+   {
+    "stage": 5,
+    "code": "V5",
+    "name": null,
+    "description": "Five true leaves unrolled and no evidence of six leaf stage.",
+    "gdd": 913
+   },
+   {
+    "stage": 6,
+    "code": "V6",
+    "name": null,
+    "description": "Six true leaves unrolled and no evidence of seven leaf stage.",
+    "gdd": 993
+   },
+   {
+    "stage": 7,
+    "code": "V7",
+    "name": null,
+    "description": "Seven true leaves unrolled and no evidence of eight leaf stage.",
+    "gdd": 1066
+   },
+   {
+    "stage": 8,
+    "code": "V8",
+    "name": null,
+    "description": "Eight true leaves unrolled and no evidence of nine leaf stage.",
+    "gdd": 1133
+   },
+   {
+    "stage": 9,
+    "code": "V9",
+    "name": null,
+    "description": "Nine true leaves unrolled and no evidence of ten leaf stage.",
+    "gdd": 1195
+   },
+   {
+    "stage": 10,
+    "code": "V10",
+    "name": null,
+    "description": "Ten true leaves unrolled and no evidence of eleventh leaf stage.",
+    "gdd": 1253
+   }
+  ],
+  "sunflower": [
+   {
+    "stage": 1,
+    "code": "VE",
+    "name": null,
+    "description": null,
+    "gdd": 206
+   },
+   {
+    "stage": 2,
+    "code": "V1",
+    "name": null,
+    "description": null,
+    "gdd": 241
+   },
+   {
+    "stage": 3,
+    "code": "V2",
+    "name": null,
+    "description": null,
+    "gdd": 276
+   },
+   {
+    "stage": 4,
+    "code": "V3",
+    "name": null,
+    "description": null,
+    "gdd": 311
+   },
+   {
+    "stage": 5,
+    "code": "V4",
+    "name": null,
+    "description": null,
+    "gdd": 347
+   },
+   {
+    "stage": 6,
+    "code": "V5",
+    "name": null,
+    "description": null,
+    "gdd": 382
+   },
+   {
+    "stage": 7,
+    "code": "V6",
+    "name": null,
+    "description": null,
+    "gdd": 417
+   },
+   {
+    "stage": 8,
+    "code": "V7",
+    "name": null,
+    "description": null,
+    "gdd": 452
+   },
+   {
+    "stage": 9,
+    "code": "V8",
+    "name": null,
+    "description": null,
+    "gdd": 487
+   },
+   {
+    "stage": 10,
+    "code": "V9",
+    "name": null,
+    "description": null,
+    "gdd": 522
+   },
+   {
+    "stage": 11,
+    "code": "V10",
+    "name": null,
+    "description": null,
+    "gdd": 557
+   },
+   {
+    "stage": 12,
+    "code": "V11",
+    "name": null,
+    "description": null,
+    "gdd": 592
+   },
+   {
+    "stage": 13,
+    "code": "V12",
+    "name": null,
+    "description": null,
+    "gdd": 627
+   },
+   {
+    "stage": 14,
+    "code": "V13",
+    "name": null,
+    "description": null,
+    "gdd": 662
+   },
+   {
+    "stage": 15,
+    "code": "V14",
+    "name": null,
+    "description": null,
+    "gdd": 697
+   },
+   {
+    "stage": 16,
+    "code": "V15",
+    "name": null,
+    "description": null,
+    "gdd": 732
+   },
+   {
+    "stage": 17,
+    "code": "V16",
+    "name": null,
+    "description": null,
+    "gdd": 767
+   },
+   {
+    "stage": 18,
+    "code": "V17",
+    "name": null,
+    "description": null,
+    "gdd": 802
+   },
+   {
+    "stage": 19,
+    "code": "V18",
+    "name": null,
+    "description": null,
+    "gdd": 837
+   },
+   {
+    "stage": 20,
+    "code": "V19",
+    "name": null,
+    "description": null,
+    "gdd": 872
+   },
+   {
+    "stage": 21,
+    "code": "V20",
+    "name": null,
+    "description": null,
+    "gdd": 908
+   },
+   {
+    "stage": 22,
+    "code": "R1",
+    "name": null,
+    "description": null,
+    "gdd": 1048
+   },
+   {
+    "stage": 23,
+    "code": "R2",
+    "name": null,
+    "description": null,
+    "gdd": 1188
+   },
+   {
+    "stage": 24,
+    "code": "R3",
+    "name": null,
+    "description": null,
+    "gdd": 1328
+   },
+   {
+    "stage": 25,
+    "code": "R4",
+    "name": null,
+    "description": null,
+    "gdd": 1469
+   },
+   {
+    "stage": 26,
+    "code": "R5.1",
+    "name": null,
+    "description": null,
+    "gdd": 1609
+   },
+   {
+    "stage": 27,
+    "code": "R5.5",
+    "name": null,
+    "description": null,
+    "gdd": 1749
+   },
+   {
+    "stage": 28,
+    "code": "R6",
+    "name": null,
+    "description": null,
+    "gdd": 1889
+   },
+   {
+    "stage": 29,
+    "code": "R7",
+    "name": null,
+    "description": null,
+    "gdd": 2030
+   },
+   {
+    "stage": 30,
+    "code": "R8",
+    "name": null,
+    "description": null,
+    "gdd": 2170
+   },
+   {
+    "stage": 31,
+    "code": "R9",
+    "name": null,
+    "description": null,
+    "gdd": 2310
+   }
+  ],
+  "hemp": [
+   {
+    "stage": 1,
+    "code": "BBCH Stages 0-11",
+    "name": "Initial Growth",
+    "description": null,
+    "gdd": 600
+   },
+   {
+    "stage": 2,
+    "code": "BBCH Stages 12-14",
+    "name": "First Leaf Pear Forms",
+    "description": null,
+    "gdd": 825
+   },
+   {
+    "stage": 3,
+    "code": "BBCH Stages 15-17",
+    "name": "Leaf Pairs 5-7 Emerge",
+    "description": null,
+    "gdd": 1050
+   },
+   {
+    "stage": 4,
+    "code": "BBCH Stages 18-19",
+    "name": "Leaf Pairs 8-9 Emerge",
+    "description": null,
+    "gdd": 1250
+   },
+   {
+    "stage": 5,
+    "code": "BBCH Stage 39",
+    "name": "Change of Phyllotaxis",
+    "description": null,
+    "gdd": 1350
+   },
+   {
+    "stage": 6,
+    "code": "BBCH Stage 51",
+    "name": "Flower Primordia",
+    "description": null,
+    "gdd": 1425
+   },
+   {
+    "stage": 7,
+    "code": "BBCH Stage 59",
+    "name": "Pistillate flower formation, formed perigonal bract",
+    "description": null,
+    "gdd": 1475
+   },
+   {
+    "stage": 8,
+    "code": "BBCH Stage 60",
+    "name": "Beginning of flowering-style formed",
+    "description": null,
+    "gdd": 1550
+   },
+   {
+    "stage": 9,
+    "code": "BBCH Stage 62",
+    "name": "Spike",
+    "description": null,
+    "gdd": 1650
+   }
+  ]
+ }
+}
