@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
       // GitHub Pages serves this file with a 404 status when no static asset
-      // matches the requested path. We translate `/mesonet-dashboard/<id>`
-      // into `/mesonet-dashboard/?s=<id>` so deep links from the legacy app
-      // resolve to the rebuilt dashboard.
+      // matches the requested path. We translate `<base>/<id>` into
+      // `<base>/?s=<id>` so deep links from the legacy app resolve to the
+      // rebuilt dashboard. `__BASE__` is filled in at build (vite.config.ts).
       (function () {
-        var base = '/mesonet-dashboard'
+        var base = '__BASE__'
         var path = window.location.pathname
         if (path.indexOf(base + '/') !== 0) {
           window.location.replace(base + '/' + window.location.search + window.location.hash)
