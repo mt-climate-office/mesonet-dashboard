@@ -27,3 +27,6 @@ dist-ssr
 scripts/audit-screens
 test-results
 playwright-report
+
+# Local build check output
+dist-check
