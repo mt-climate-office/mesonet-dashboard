@@ -36,7 +36,9 @@ export const TABS = [
   { hash: 'latest', label: 'Latest Data', component: LatestDataTab, eager: true },
   { hash: 'ag', label: 'Ag Tools', component: AgToolsTab },
   { hash: 'downloader', label: 'Data Downloader', component: DownloaderTab },
-  { hash: 'satellite', label: 'Satellite Indicators', component: SatelliteTab },
+  // Hidden in Wave 3 (code kept): `#satellite` falls back to Latest, where
+  // GlobalNotices links to the legacy dashboard's satellite view.
+  { hash: 'satellite', label: 'Satellite Indicators', component: SatelliteTab, hidden: true },
 ] as const satisfies readonly TabDef[]
 
 export type TabHash = (typeof TABS)[number]['hash']
