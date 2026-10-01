@@ -15,11 +15,20 @@ import {
 } from '../../lib/params'
 import { useStationRecord } from '../../hooks/useStationRecord'
 import { useStationElements } from '../../hooks/useStationElements'
+import { useStationConfig } from '../../hooks/useStationConfig'
 import { useLatestTabState } from '../../lib/url-state'
 import { fetchNormals, mergeNormals } from '../../lib/normals'
 import { insertGaps } from '../../lib/gaps'
 import { SOIL_DEPTH_COLOR } from '../../lib/params'
 import type { ObservationRow } from '../../lib/api'
+import {
+  explodeInstruments,
+  formatWallClock,
+  sensorEventText,
+  sensorEventsForSubplot,
+  type RawInstrument,
+  type SubplotKind,
+} from '../../lib/sensorEvents'
 
 const TWO_WEEKS = 14
 
@@ -27,6 +36,31 @@ const TWO_WEEKS = 14
 const SOIL_DEPTH_COLORS = SOIL_DEPTH_COLOR
 
 const ETR_COLOR = '#FF0000'
+
+// Legacy `_add_sensor_event_overlays` styling.
+const SENSOR_EVENT_FILL = 'rgba(200,200,200,1)'
+const SENSOR_EVENT_OPACITY = 0.75
+
+/** Finite min/max over `cols`, with legacy's fallbacks (NaN → 0..1, flat → ±1). */
+function valueBounds(
+  rows: ReadonlyArray<Record<string, unknown>>,
+  cols: readonly string[],
+): [number, number] {
+  let lo = Infinity
+  let hi = -Infinity
+  for (const r of rows) {
+    for (const c of cols) {
+      const v = r[c]
+      if (typeof v === 'number' && Number.isFinite(v)) {
+        if (v < lo) lo = v
+        if (v > hi) hi = v
+      }
+    }
+  }
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [0, 1]
+  if (lo === hi) return [lo - 1, hi + 1]
+  return [lo, hi]
+}
 
 interface SubplotInfo {
   v: string
@@ -36,6 +70,15 @@ interface SubplotInfo {
 export function StationTimeseriesChart() {
   const state = useLatestTabState()
   const stationElements = useStationElements(state.station)
+  // Sensor deployment history → grey added/removed/outage overlays.
+  const stationConfig = useStationConfig(state.station)
+  const sensorConfig = useMemo(
+    () =>
+      explodeInstruments(
+        stationConfig.data?.instruments as unknown as RawInstrument[] | undefined,
+      ),
+    [stationConfig.data],
+  )
 
   const period: AggPeriod = state.agg
 
@@ -211,6 +254,8 @@ export function StationTimeseriesChart() {
     // Per-subplot annotations (e.g. soil-depth color chips). Collected as we
     // build subplots, then assigned to layout.annotations at the end.
     const annotations: NonNullable<Partial<Layout>['annotations']> = []
+    // Sensor-change vrects, one set per subplot.
+    const shapes: NonNullable<Partial<Layout>['shapes']> = []
     const layout: Partial<Layout> = {
       autosize: true,
       margin: { l: 80, r: 20, t: 16, b: 40 },
@@ -426,6 +471,59 @@ export function StationTimeseriesChart() {
         }
       }
 
+      // Sensor added/removed/outage overlays (legacy plot_met / plot_soil /
+      // plot_ppt; plot_etr has none). Drawn below the traces, with an
+      // invisible-ish polygon trace carrying the hover text.
+      if (!isEtr && sensorConfig.length > 0) {
+        const kind: SubplotKind = isSoilStack ? 'soil' : isPpt ? 'ppt' : 'met'
+        const rawRows = data as ReadonlyArray<Record<string, unknown>>
+        const events = sensorEventsForSubplot({
+          kind,
+          columns: sub.cols,
+          config: sensorConfig,
+          rows: rawRows,
+        })
+        if (events.length > 0) {
+          const [yMin, yMax] = valueBounds(rawRows, sub.cols)
+          for (const e of events) {
+            const x0 = formatWallClock(e.x0)
+            const x1 = formatWallClock(e.x1)
+            shapes.push({
+              type: 'rect',
+              xref: xRef as never,
+              yref: `${yRef} domain` as never,
+              x0,
+              x1,
+              y0: 0,
+              y1: 1,
+              fillcolor: SENSOR_EVENT_FILL,
+              opacity: SENSOR_EVENT_OPACITY,
+              line: { width: 0 },
+              layer: 'below',
+            })
+            const text = sensorEventText(e)
+            traces.push({
+              type: 'scatter',
+              mode: 'lines',
+              x: [x0, x0, x1, x1, x0],
+              y: [yMin, yMax, yMax, yMin, yMin],
+              fill: 'toself',
+              // 'fills' (the toself default) never fires in unified hover.
+              hoveron: 'points',
+              fillcolor: 'rgba(200,200,200,0.5)',
+              line: { color: 'rgba(200,200,200,0.5)', width: 0 },
+              opacity: 0.5,
+              showlegend: false,
+              name: '',
+              text: [text, text, text, text, text],
+              hovertemplate: '%{text}<extra></extra>',
+              xaxis: xRef,
+              yaxis: yRef,
+            } as Data)
+          }
+        }
+      }
+
       // Y-axis title (replaces <br> with HTML so Plotly renders it)
       let title = AXIS_MAPPER[sub.v] ?? sub.v
       if ((sub.v === 'Precipitation' || sub.v === 'Reference ET') && period === 'daily') {
@@ -456,13 +554,16 @@ export function StationTimeseriesChart() {
     if (annotations.length > 0) {
       layout.annotations = annotations
     }
+    if (shapes.length > 0) {
+      layout.shapes = shapes
+    }
 
     // Compute a stable revision so the wrapper purges + re-plots when the
     // subplot count changes.
     const revision = orderedSubs.length * 1000 + (dataWithGaps.length % 1000)
 
     return { data: traces, layout, revision }
-  }, [data, state.vars, normalsByVar, period])
+  }, [data, state.vars, normalsByVar, period, sensorConfig])
 
   if (!state.station) {
     return (

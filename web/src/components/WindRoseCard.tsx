@@ -77,7 +77,9 @@ export function WindRoseCard() {
     }
     if (rows.length === 0) return null
 
-    const speeds = rows.map((r) => r.spd)
+    // Legacy rounds speeds to whole mph before `qcut(q=8, duplicates="drop")`,
+    // so bin edges are integers and bins never repeat.
+    const speeds = rows.map((r) => Math.round(r.spd))
     const cuts = quantileBins(speeds, 8)
     // dedupe cuts so closely-spaced bins collapse (mirrors duplicates="drop")
     const uniqueCuts: number[] = []
@@ -87,6 +89,8 @@ export function WindRoseCard() {
       }
     }
     const numBins = uniqueCuts.length + 1
+    const minSpd = Math.min(...speeds)
+    const maxSpd = Math.max(...speeds)
 
     function binFor(spd: number): number {
       for (let i = 0; i < uniqueCuts.length; i++) {
@@ -95,10 +99,12 @@ export function WindRoseCard() {
       return uniqueCuts.length
     }
 
+    // Bins hold whole numbers: bin 0 is [min, cut0], bin b is (cut[b-1], cut[b]],
+    // so its smallest member is cut[b-1] + 1. Single-value bins read "7".
     function binLabel(b: number): string {
-      const lo = b === 0 ? Math.min(...speeds) : uniqueCuts[b - 1]
-      const hi = b === uniqueCuts.length ? Math.max(...speeds) : uniqueCuts[b]
-      return `${lo.toFixed(0)} – ${hi.toFixed(0)}`
+      const lo = b === 0 ? minSpd : uniqueCuts[b - 1] + 1
+      const hi = b === uniqueCuts.length ? maxSpd : uniqueCuts[b]
+      return lo >= hi ? `${hi}` : `${lo} – ${hi}`
     }
 
     // Aggregate counts by (compass dir, bin)
@@ -118,6 +124,8 @@ export function WindRoseCard() {
     // Build one trace per bin so the legend reads as speed categories.
     const traces: Data[] = []
     for (let b = 0; b < numBins; b++) {
+      // An empty top bin happens when the max speed is itself a cut point.
+      if (![...counts.values()].some((c) => c.bin === b)) continue
       const r: number[] = []
       const theta: string[] = []
       for (const dir of WIND_DIRECTIONS) {
@@ -126,14 +134,14 @@ export function WindRoseCard() {
         theta.push(dir)
       }
       const colorIx = Math.floor((b / Math.max(1, numBins - 1)) * (PLASMA_R.length - 1))
-      const sample = [...counts.values()].find((c) => c.bin === b)
+      const label = binLabel(b)
       traces.push({
         type: 'barpolar',
         r,
         theta,
-        name: sample?.binLabel ?? `${b}`,
+        name: label,
         marker: { color: PLASMA_R[colorIx] },
-        hovertemplate: `<b>${sample?.binLabel ?? ''} mph</b><br>%{theta}: %{r}<extra></extra>`,
+        hovertemplate: `<b>${label} mph</b><br>%{theta}: %{r}<extra></extra>`,
       } as Data)
     }
 
