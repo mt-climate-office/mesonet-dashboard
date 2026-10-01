@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { checkParams, enforceAllowlist, matchEndpoint } from './http'
-import { getDerived, getDerivedSoil } from './derived'
+import { derivedSwpRequest } from './derived'
 import {
   getElements,
   getPptSummary,
@@ -102,14 +102,13 @@ describe('existing call sites respect the allowlist', () => {
     },
   )
 
-  it('getDerived / getDerivedSoil (daily + hourly)', async () => {
+  it('derivedSwpRequest (daily + hourly, level 2)', () => {
     for (const time of ['daily', 'hourly'] as const) {
-      for (const variable of ['etr', 'feels_like', 'cci', 'swp', 'soil_vwc']) {
-        await getDerived({ station: 'acebozem', variable, start: '2026-01-01', end: '2026-01-02', time })
-      }
-      await getDerivedSoil({ station: 'acebozem', variable: 'soil_vwc', start: '2026-01-01', end: '2026-01-02', time })
+      const r = derivedSwpRequest({ station: 'acebozem', start: '2026-01-01', end: '2026-01-02', time, level: 2 })
+      expect(r.path).toBe(`derived/${time}/`)
+      expect(r.query.elements).toBe('swp')
+      expect(checkParams(r.path, { ...r.query, type: 'csv' })).toBeNull()
     }
-    await getDerived({ station: 'acebozem', variable: 'gdd', crop: 'wheat', start: '2026-01-01', end: '2026-01-02', time: 'daily' })
   })
 
   it('Ag data layer requests', () => {

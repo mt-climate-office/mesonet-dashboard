@@ -18,7 +18,9 @@ describe('parseAnnualYear', () => {
     expect(y.value.slice(0, 4)).toEqual([25.4, null, 12.7, null])
     expect(y.value.slice(4).every((v) => v === null)).toBe(true)
     expect(y.provisional.slice(0, 4)).toEqual([false, false, true, false])
+    expect(y.header).toBe('Total Precipitation [in]')
     expect(parseAnnualYear([], 2024).date).toHaveLength(366)
+    expect(parseAnnualYear([], 2024).header).toBeNull()
   })
 })
 

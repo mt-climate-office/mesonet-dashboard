@@ -2,8 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 import type { HourlyMet } from '../contract'
 import { dailyMet, hasFixture, hourlyMet, rows, type Window } from '../__tests__/adapters'
 import { compareToFixture, printParity } from '../__tests__/parity'
-import { cciDaily, cciHourly, cciValueC, cciWindCorrection, classifyCciC, classifyCciF } from './cci'
-import { classifyCci } from './legacy'
+import { cciDaily, cciHourly, cciValueC, cciWindCorrection, classifyCciC } from './cci'
 import { cToF, fToC } from './units'
 
 const STATIONS = ['acebozem', 'arskeogh', 'acecrowa']
@@ -61,8 +60,7 @@ describe('cci semantics', () => {
     expect(cciHourly(met).valueC[0]).not.toBeNull()
   })
 
-  it('classification: legacy re-export, °C wrapper and newborn thresholds', () => {
-    expect(classifyCci).toBe(classifyCciF)
+  it('classification: °C wrapper and newborn thresholds', () => {
     expect(classifyCciC(fToC(100), 'adult')).toBe('Severe')
     expect(classifyCciC(fToC(30), 'adult')).toBe('Mild')
     expect(classifyCciC(fToC(30), 'newborn')).toBe('Moderate')

@@ -69,12 +69,53 @@ function LegacyStateNotice() {
   return null
 }
 
+const SATELLITE_HASH = '#satellite'
+
+/** Legacy dashboard view that replaces the hidden Satellite tab. */
+const legacySatelliteUrl = () => `${LEGACY_DASHBOARD_URL}${SATELLITE_HASH}`
+
+/**
+ * The Satellite tab is hidden (app/tabs.ts), so `#satellite` links land on
+ * Latest. Say so once, with a link to the legacy satellite view, and swap the
+ * hash for `#latest` so the address bar matches what is shown.
+ */
+function SatelliteHiddenNotice() {
+  useEffect(() => {
+    const check = () => {
+      if (window.location.hash !== SATELLITE_HASH) return
+      const { pathname, search } = window.location
+      window.history.replaceState(window.history.state, '', `${pathname}${search}#latest`)
+      notifications.show({
+        id: 'satellite-hidden',
+        title: 'Satellite indicators moved',
+        color: 'blue',
+        autoClose: false,
+        withCloseButton: true,
+        message: (
+          <Text size="sm">
+            Satellite indicators aren&apos;t available in this dashboard yet. Open them in the{' '}
+            <Anchor href={legacySatelliteUrl()} target="_blank" rel="noopener noreferrer" size="sm">
+              previous dashboard
+            </Anchor>
+            .
+          </Text>
+        ),
+      })
+    }
+    check()
+    window.addEventListener('hashchange', check)
+    return () => window.removeEventListener('hashchange', check)
+  }, [])
+  return null
+}
+
 /** App-wide, tab-independent notices and URL fix-ups. Mounted once in App. */
 export function GlobalNotices() {
   return (
     <>
       <OutageModal />
       <LegacyStateNotice />
+      <SatelliteHiddenNotice />
       <StationParamResolver />
     </>
   )

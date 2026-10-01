@@ -105,6 +105,12 @@ export interface SoilSeries extends SeriesBase {
   epochMs: number[]
   vwcPct: Nullable[][]
   tempC: Nullable[][]
+  /**
+   * Bulk electrical conductivity, mS/cm, per depth (same indexing as
+   * `vwcPct`). Optional: absent when the request did not ask for EC; a depth
+   * whose sensor reports no EC is all-null.
+   */
+  ecMsCm?: Nullable[][]
 }
 
 /** Fredlund–Xing fit. `h` is the residual suction parameter, kPa. */
@@ -152,8 +158,8 @@ export type GddCrop =
 
 /**
  * GDD temperature cutoffs. Stored in °C per the SI convention; the UI slider
- * works in °F and converts at the edge. (Legacy °F defaults live in
- * `lib/params` `GDD_CROP_THRESHOLDS`.)
+ * works in °F and converts at the edge. (Crop defaults in °F:
+ * `compute/gdd.ts` `GDD_CUTOFFS_F`.)
  */
 export interface GddCutoffs {
   lowC: number
