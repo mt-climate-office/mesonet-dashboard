@@ -28,8 +28,12 @@ export function isCurrentConditionsColumn(col: string): boolean {
   )
 }
 
-/** Legacy "{compass} ({deg} deg)", e.g. "N (357.3 deg)". */
-export const formatWindDirection = (deg: number): string => `${degToCompass(deg)} (${deg} deg)`
+/**
+ * Legacy "{compass} ({deg} deg)", e.g. "N (357.3 deg)". Legacy formats a
+ * pandas float, so whole degrees keep their ".0" ("E (90.0 deg)").
+ */
+export const formatWindDirection = (deg: number): string =>
+  `${degToCompass(deg)} (${Number.isInteger(deg) ? deg.toFixed(1) : deg} deg)`
 
 /**
  * Current-conditions rows in legacy order: Timestamp, then the kept columns

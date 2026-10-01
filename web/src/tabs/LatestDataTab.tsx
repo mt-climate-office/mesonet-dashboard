@@ -84,7 +84,9 @@ export function LatestDataTab() {
   }, [stations.data, state.nets, state.station])
 
   return (
-    <Grid gutter="sm" m={0} w="100%" style={{ flex: 1, minHeight: 0 }}>
+    // `overflow-x: clip` trims the Grid gutter's negative margins (6 px of
+    // sideways scroll on phones) without creating a scroll container.
+    <Grid gutter="sm" m={0} w="100%" style={{ flex: 1, minHeight: 0, overflowX: 'clip' }}>
       <Grid.Col
         span={{ base: 12, md: 4, lg: 3 }}
         style={{ borderRight: '1px solid var(--mantine-color-gray-3)' }}
