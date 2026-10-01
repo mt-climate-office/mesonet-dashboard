@@ -158,7 +158,8 @@ describe('fetchDownload', () => {
     ])
     expect(res.rows[0]).toMatchObject({
       datetime: '2026-08-01',
-      'Reference ET (a=0.23) [in]': 0.3,
+      // only 2 of 31 August days → no monthly total
+      'Reference ET (a=0.23) [in]': null,
       'Feels Like Temperature [°F]': 65,
       [M]: true,
       'Days With Data': 2,

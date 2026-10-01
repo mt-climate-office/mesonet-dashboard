@@ -8,6 +8,13 @@
  *   - SUM precipitation and Reference ET, MEAN everything else,
  *   - month datetime = first of the month,
  *   - "Contains Missing Data" = any day in the month flagged.
+ * Completeness rules (stricter than legacy, which summed whatever existed):
+ *   - a SUMMED column is null for a month unless every calendar day of that
+ *     month has a non-null value (a 1-of-31-day ETr "total" is misleading);
+ *     months only partly inside the requested range are therefore blank;
+ *   - MEANS use the available days;
+ *   - "Contains Missing Data" is also true when any value column is null on
+ *     any day, or any calendar day has no row at all.
  * Differences from legacy (intentional):
  *   - every numeric column is aggregated; legacy silently dropped columns not
  *     in its hard-coded label list (and the station column);
@@ -18,6 +25,8 @@
  *     "Days With Data";
  *   - aggregated values are rounded to 3 decimals (the API's precision).
  */
+
+import { MISSING_DATA_COLUMN } from './csv'
 
 export type Row = Record<string, unknown>
 
@@ -57,6 +66,14 @@ export function localMonthKey(datetime: unknown): string | null {
 
 const round3 = (v: number) => Math.round(v * 1000) / 1000
 
+/** Calendar days in a `YYYY-MM` month. */
+export function daysInMonth(key: string): number {
+  const [y, m] = key.split('-').map(Number)
+  return new Date(Date.UTC(y, m, 0)).getUTCDate()
+}
+
+const isBlank = (v: unknown) => v === null || v === undefined || v === ''
+
 /** Aggregate daily rows to monthly rows. Pure; input order does not matter. */
 export function aggregateMonthly(rows: ReadonlyArray<Row>): Row[] {
   // First-seen column order across all rows (derived/observation rows from an
@@ -74,6 +91,8 @@ export function aggregateMonthly(rows: ReadonlyArray<Row>): Row[] {
   const valueCols = columns.filter(
     (c) => c !== 'datetime' && c !== DAYS_WITH_DATA_COLUMN && !DROP_COLUMNS.has(c),
   )
+  // Numeric measurement columns (drive completeness / missing-data checks).
+  const numericCols = valueCols.filter((c) => rows.some((r) => typeof r[c] === 'number'))
 
   const groups = new Map<string, Row[]>()
   for (const r of rows) {
@@ -90,6 +109,7 @@ export function aggregateMonthly(rows: ReadonlyArray<Row>): Row[] {
   const out: Row[] = []
   for (const key of [...groups.keys()].sort()) {
     const g = groups.get(key)!
+    const nDays = daysInMonth(key)
     const row: Row = {}
     for (const col of columns) {
       if (DROP_COLUMNS.has(col) || col === DAYS_WITH_DATA_COLUMN) continue
@@ -97,16 +117,21 @@ export function aggregateMonthly(rows: ReadonlyArray<Row>): Row[] {
         row.datetime = `${key}-01`
         continue
       }
+      if (col === MISSING_DATA_COLUMN) continue
       if (!valueCols.includes(col)) continue
-      row[col] = aggregateColumn(col, g)
+      row[col] = aggregateColumn(col, g, nDays)
     }
+    const apiFlagged = g.some((r) => r[MISSING_DATA_COLUMN] === true)
+    const gapDay =
+      g.length < nDays || numericCols.some((c) => g.some((r) => isBlank(r[c])))
+    row[MISSING_DATA_COLUMN] = apiFlagged || gapDay
     row[DAYS_WITH_DATA_COLUMN] = g.length
     out.push(row)
   }
   return out
 }
 
-function aggregateColumn(col: string, group: ReadonlyArray<Row>): unknown {
+function aggregateColumn(col: string, group: ReadonlyArray<Row>, nDays: number): unknown {
   const values = group.map((r) => r[col]).filter((v) => v !== null && v !== undefined && v !== '')
   if (values.length === 0) return null
   if (values.every((v) => typeof v === 'boolean')) return values.some(Boolean)
@@ -116,5 +141,6 @@ function aggregateColumn(col: string, group: ReadonlyArray<Row>): unknown {
     return values[0]
   }
   const sum = nums.reduce((a, b) => a + b, 0)
-  return round3(isSummedColumn(col) ? sum : sum / nums.length)
+  if (isSummedColumn(col)) return nums.length >= nDays ? round3(sum) : null
+  return round3(sum / nums.length)
 }

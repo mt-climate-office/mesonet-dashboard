@@ -330,7 +330,9 @@ export function DownloaderTab() {
                   <Text size="xs" c="dimmed">
                     Monthly values are computed from daily data: precipitation and
                     Reference ET are summed, other variables averaged. "Days With
-                    Data" shows how many days each month includes.
+                    Data" shows how many days each month includes. Totals are left
+                    blank for any month missing a day (including months only partly
+                    inside the date range).
                   </Text>
                 )}
               </Stack>

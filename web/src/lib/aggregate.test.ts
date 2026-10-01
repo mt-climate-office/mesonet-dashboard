@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   aggregateMonthly,
   DAYS_WITH_DATA_COLUMN,
+  daysInMonth,
   isSummedColumn,
   localMonthKey,
 } from './aggregate'
@@ -16,6 +17,12 @@ const day = (d: string, extra: Record<string, unknown>) => ({
   datetime: `${d} 00:00:00-06:00`,
   ...extra,
 })
+
+/** Every day of a month, with per-day values from `f(dayOfMonth)`. */
+const month = (ym: string, f: (d: number) => Record<string, unknown>) =>
+  Array.from({ length: daysInMonth(ym) }, (_, i) =>
+    day(`${ym}-${String(i + 1).padStart(2, '0')}`, f(i + 1)),
+  )
 
 describe('isSummedColumn', () => {
   it('sums precipitation totals and reference ET only', () => {
@@ -42,12 +49,34 @@ describe('localMonthKey', () => {
   })
 })
 
+describe('daysInMonth', () => {
+  it('knows month lengths and leap years', () => {
+    expect(daysInMonth('2026-08')).toBe(31)
+    expect(daysInMonth('2026-09')).toBe(30)
+    expect(daysInMonth('2024-02')).toBe(29)
+    expect(daysInMonth('2026-02')).toBe(28)
+  })
+})
+
 describe('aggregateMonthly', () => {
+  // Full August: complete. Full September except one null precip day.
   const rows = [
-    day('2026-08-30', { [T]: 60, [P]: 0.1, [ET]: 0.15, [M]: false, provisional: false, obs_count: 288 }),
-    day('2026-08-31', { [T]: 70, [P]: 0.25, [ET]: 0.2, [M]: true, provisional: false, obs_count: 280 }),
-    day('2026-09-01', { [T]: 50, [P]: null, [ET]: 0.1, [M]: false, provisional: true, obs_count: 288 }),
-    day('2026-09-02', { [T]: null, [P]: 0.3, [ET]: 0.11, [M]: false, provisional: false, obs_count: 288 }),
+    ...month('2026-08', (d) => ({
+      [T]: d <= 15 ? 60 : 70,
+      [P]: 0.1,
+      [ET]: 0.2,
+      [M]: false,
+      provisional: false,
+      obs_count: 288,
+    })),
+    ...month('2026-09', (d) => ({
+      [T]: 50,
+      [P]: d === 10 ? null : 0.1,
+      [ET]: 0.1,
+      [M]: false,
+      provisional: d === 30,
+      obs_count: 288,
+    })),
   ]
   const out = aggregateMonthly(rows)
 
@@ -55,25 +84,50 @@ describe('aggregateMonthly', () => {
     expect(out.map((r) => r.datetime)).toEqual(['2026-08-01', '2026-09-01'])
   })
 
-  it('sums precip/ET and averages the rest, ignoring nulls', () => {
-    expect(out[0][P]).toBeCloseTo(0.35)
-    expect(out[0][ET]).toBeCloseTo(0.35)
-    expect(out[0][T]).toBe(65)
-    expect(out[1][P]).toBeCloseTo(0.3)
+  it('sums precip/ET for complete months and averages the rest', () => {
+    expect(out[0][P]).toBeCloseTo(3.1)
+    expect(out[0][ET]).toBeCloseTo(6.2)
+    expect(out[0][T]).toBeCloseTo((15 * 60 + 16 * 70) / 31, 3)
+  })
+
+  it('leaves a sum null when any day of the month is missing, but keeps means', () => {
+    expect(out[1][P]).toBeNull()
+    expect(out[1][ET]).toBeCloseTo(3.0)
     expect(out[1][T]).toBe(50)
   })
 
-  it('ORs flag columns and keeps the station', () => {
-    expect(out[0][M]).toBe(true)
-    expect(out[1][M]).toBe(false)
+  it('flags missing data from a null day as well as the API flag', () => {
+    expect(out[0][M]).toBe(false)
+    expect(out[1][M]).toBe(true)
+    const apiFlag = aggregateMonthly(month('2026-08', (d) => ({ [T]: 1, [M]: d === 3 })))
+    expect(apiFlag[0][M]).toBe(true)
+  })
+
+  it('treats absent days (partial month / dropped rows) as incomplete', () => {
+    const partial = aggregateMonthly(
+      month('2026-08', () => ({ [P]: 0.1, [T]: 5, [M]: false })).slice(14),
+    )
+    expect(partial[0][DAYS_WITH_DATA_COLUMN]).toBe(17)
+    expect(partial[0][P]).toBeNull()
+    expect(partial[0][T]).toBe(5)
+    expect(partial[0][M]).toBe(true)
+  })
+
+  it('reproduces the arskeogh Aug 2026 case: 1-of-31-day ETr is not a total', () => {
+    const res = aggregateMonthly(month('2026-08', (d) => ({ [ET]: d === 1 ? 0.147 : null })))
+    expect(res[0][ET]).toBeNull()
+    expect(res[0][M]).toBe(true)
+  })
+
+  it('ORs provisional and keeps the station', () => {
     expect(out[0].provisional).toBe(false)
     expect(out[1].provisional).toBe(true)
     expect(out[0].station).toBe('acebozem')
   })
 
-  it('adds Days With Data and drops obs_count', () => {
-    expect(out[0][DAYS_WITH_DATA_COLUMN]).toBe(2)
-    expect(out[1][DAYS_WITH_DATA_COLUMN]).toBe(2)
+  it('adds Days With Data (row count) last and drops obs_count', () => {
+    expect(out[0][DAYS_WITH_DATA_COLUMN]).toBe(31)
+    expect(out[1][DAYS_WITH_DATA_COLUMN]).toBe(30)
     expect('obs_count' in out[0]).toBe(false)
     expect(Object.keys(out[0]).at(-1)).toBe(DAYS_WITH_DATA_COLUMN)
   })
@@ -85,9 +139,10 @@ describe('aggregateMonthly', () => {
     ])
     expect(res[0]['Feels Like Temperature [°F]']).toBe(5)
     expect(res[0][T]).toBe(2)
+    expect(res[0][M]).toBe(true)
   })
 
-  it('returns null for an all-missing column and rounds to 3 decimals', () => {
+  it('returns null for an all-missing column and rounds means to 3 decimals', () => {
     const res = aggregateMonthly([
       day('2026-08-01', { a: 1, b: null }),
       day('2026-08-02', { a: 1, b: null }),
