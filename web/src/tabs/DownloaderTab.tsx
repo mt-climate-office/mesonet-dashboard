@@ -24,6 +24,7 @@ import {
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import { useStations } from '../hooks/useStations'
+import { useResolvedStation } from '../components/useResolvedStation'
 import { useStationElements } from '../hooks/useStationElements'
 import { useDownloaderState } from '../lib/url-state'
 import { toCsv } from '../lib/csv'
@@ -68,7 +69,9 @@ export function DownloaderTab() {
   const stations = useStations()
   // "Show uncommon" OFF → public=true (common elements only); ON → the full
   // list (public=false), as legacy `get_station_elements(public=not checked)`.
-  const stationElements = useStationElements(state.station, !state.showUncommon)
+  // `?s=` may briefly hold an NWSLI / mis-cased id; query only a real station.
+  const station = useResolvedStation()
+  const stationElements = useStationElements(station, !state.showUncommon)
 
   const [result, setResult] = useState<{ query: DownloadQuery; data: DownloadResult } | null>(
     null,
@@ -91,8 +94,8 @@ export function DownloaderTab() {
   }, [stations.data])
 
   const stationMeta = useMemo(
-    () => stations.data?.find((s) => s.station === state.station) ?? null,
-    [stations.data, state.station],
+    () => stations.data?.find((s) => s.station === station) ?? null,
+    [stations.data, station],
   )
   const installDate = stationMeta?.date_installed
     ? String(stationMeta.date_installed).slice(0, 10)
@@ -163,7 +166,7 @@ export function DownloaderTab() {
         : null
   const span = dateError ? 0 : daySpan(startDate, endDate)
   const largeHourly = state.period === 'hourly' && span > HOURLY_CONFIRM_DAYS
-  const runKey = `${state.station}|${startDate}|${endDate}|${state.period}`
+  const runKey = `${station}|${startDate}|${endDate}|${state.period}`
   const [confirmedKey, setConfirmedKey] = useState<string | null>(null)
   const needsConfirm = largeHourly && confirmedKey !== runKey
 
@@ -177,7 +180,7 @@ export function DownloaderTab() {
   )
 
   const handleRun = useCallback(async () => {
-    if (!state.station || selectedElements.length === 0) {
+    if (!station || selectedElements.length === 0) {
       setHint('Please select a station and at least one variable first!')
       return
     }
@@ -194,7 +197,7 @@ export function DownloaderTab() {
     setIsLoading(true)
     setError(null)
     const query: DownloadQuery = {
-      station: state.station,
+      station,
       start: startDate,
       end: endDate,
       period: state.period,
@@ -211,7 +214,7 @@ export function DownloaderTab() {
       setIsLoading(false)
     }
   }, [
-    state.station,
+    station,
     state.period,
     selectedElements,
     startDate,
