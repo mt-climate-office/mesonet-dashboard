@@ -1,17 +1,41 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath } from 'node:url'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+
+// Path the app is served under. GitHub Pages project site by default;
+// override with VITE_BASE (e.g. `/dash/`) when hosting elsewhere.
+const base = process.env.VITE_BASE ?? '/mesonet-dashboard/'
+
+// public/ files are copied verbatim, so substitute the base into the
+// GitHub Pages 404 deep-link shim after the bundle is written.
+function shim404Base(): Plugin {
+  let outDir = 'dist'
+  return {
+    name: 'shim-404-base',
+    apply: 'build',
+    configResolved(c) {
+      outDir = c.build.outDir
+    },
+    writeBundle() {
+      const file = join(outDir, '404.html')
+      const html = readFileSync(file, 'utf8')
+      writeFileSync(file, html.replaceAll('__BASE__', base.replace(/\/+$/, '')))
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [react()],
-  base: '/mesonet-dashboard/',
+  plugins: [react(), shim404Base()],
+  base,
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   build: {
-    outDir: '../docs',
+    outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
     rollupOptions: {
