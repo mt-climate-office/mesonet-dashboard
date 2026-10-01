@@ -37,6 +37,11 @@ export function parseCsv<T extends Record<string, unknown>>(
     dynamicTyping: true,
     skipEmptyLines: true,
     transformHeader: labSwap ? (h) => LAB_SWAP[h] ?? h : undefined,
+    // The v2 API writes Python-style `True`/`False`; papaparse's
+    // dynamicTyping only recognises `true`/`TRUE`/`false`/`FALSE`, so
+    // lower-case exact matches here (transform runs before dynamicTyping)
+    // and they come back as real booleans. A bare "False" string is truthy.
+    transform: (v) => (v === 'True' ? 'true' : v === 'False' ? 'false' : v),
   })
   if (result.errors.length > 0) {
     const first = result.errors[0]
