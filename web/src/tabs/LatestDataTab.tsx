@@ -66,7 +66,9 @@ export function LatestDataTab() {
   const latest = useStationLatest(resolved)
   let bottomCard: BottomCard = state.bottomCard ?? (resolved ? 'current' : 'map')
   if (bottomCard === 'current' && !state.station) bottomCard = 'map'
-  if (bottomCard === 'current' && state.bottomCard === null && latest.isError) {
+  // Only when there's nothing to show: a failed background refetch keeps the
+  // previous data, and shouldn't move the user off Current Conditions.
+  if (bottomCard === 'current' && state.bottomCard === null && latest.isError && !latest.data) {
     bottomCard = 'metadata'
   }
 

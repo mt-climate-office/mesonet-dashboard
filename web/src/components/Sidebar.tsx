@@ -96,10 +96,12 @@ export function Sidebar() {
       ? s.date_installed.slice(0, 10)
       : null
   })()
+  // Stations without a valid install date fall back to 2017-01-01 (the
+  // network's first year); use the same start when reading the toggle back.
+  const porStart = installed ?? '2017-01-01'
   const showingPor =
-    installed !== null &&
     state.agg === 'daily' &&
-    startDate === installed &&
+    startDate === porStart &&
     endDate === today().format(DATE_FMT)
   const togglePeriodOfRecord = () => {
     if (showingPor) {
@@ -107,7 +109,7 @@ export function Sidebar() {
       setDateRange(null, null)
     } else {
       void state.setAgg('daily')
-      setDateRange(installed ?? '2017-01-01', today().format(DATE_FMT))
+      setDateRange(porStart, today().format(DATE_FMT))
     }
   }
 
