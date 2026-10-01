@@ -19,9 +19,10 @@ import { IconCalendar, IconHistory } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import { useStations } from '../hooks/useStations'
 import { useStationElements } from '../hooks/useStationElements'
-import { DEFAULT_VARS, ELEM_MAP, SELECTED_VARS } from '../lib/params'
+import { DEFAULT_VARS, latestVarsFromElements } from '../lib/params'
 import { useLatestTabState } from '../lib/url-state'
 import { API_DOCS_URL } from '../lib/config'
+import { useResolvedStation } from './useResolvedStation'
 
 const DATE_FMT = 'YYYY-MM-DD'
 
@@ -31,7 +32,7 @@ const twoWeeksAgo = () => dayjs().startOf('day').subtract(14, 'day')
 export function Sidebar() {
   const stations = useStations()
   const state = useLatestTabState()
-  const stationElements = useStationElements(state.station)
+  const stationElements = useStationElements(useResolvedStation())
 
   // Build network options from the live catalog rather than a hardcoded list,
   // so e.g. a future "Cooperator" sub_network shows up automatically.
@@ -53,19 +54,23 @@ export function Sidebar() {
       .map((s) => ({ value: s.station, label: `${s.name} (${s.sub_network})` }))
   }, [stations.data, state.nets])
 
-  const availableVars = useMemo(() => {
-    if (!stationElements.data) return [...DEFAULT_VARS]
-    const present = new Set<string>()
-    for (const row of stationElements.data) {
-      for (const [displayVar, prefixes] of Object.entries(ELEM_MAP)) {
-        if (prefixes.some((p) => row.element.startsWith(p))) {
-          present.add(displayVar)
-        }
-      }
-    }
-    present.add('Reference ET')
-    return [...DEFAULT_VARS].filter((v) => present.has(v))
-  }, [stationElements.data])
+  // Legacy update_select_vars: no station → the sorted defaults; with a
+  // station → its elements' description_short (text before "@"), deduped,
+  // plus Reference ET, sorted. `ppt_corrected` is deliberately not offered
+  // (see DIVERGENCES.md).
+  const availableVars = useMemo(
+    () =>
+      stationElements.data
+        ? latestVarsFromElements(stationElements.data)
+        : [...DEFAULT_VARS].sort(),
+    [stationElements.data],
+  )
+
+  // The current selection, filtered to what the station offers (legacy
+  // filters on station change). An empty selection stays empty.
+  const selectedVars = stationElements.data
+    ? state.vars.filter((v) => availableVars.includes(v))
+    : state.vars
 
   // Mantine v8 DatePickerInput speaks YYYY-MM-DD strings natively, so we keep
   // the round-trip in string form and avoid the Date-zone footguns.
@@ -78,17 +83,34 @@ export function Sidebar() {
   }
 
   const setStation = (val: string | null) => {
-    state.setStation(val)
+    state.selectStation(val)
   }
 
-  // Use the actual station install date for the period-of-record button.
-  const periodOfRecord = () => {
+  // Period-of-record toggle (legacy set_dates_to_por): "Display Period of
+  // Record" → daily, install date..today, and the label flips to "Display
+  // Latest 2 Weeks", which restores hourly, today−14d..today. The state is
+  // read back from the URL, so a shared POR link shows the right label.
+  const installed = (() => {
     const s = stations.data?.find((row) => row.station === state.station)
-    const installed =
-      s?.date_installed && /^\d{4}-\d{2}-\d{2}/.test(s.date_installed)
-        ? s.date_installed.slice(0, 10)
-        : '2017-01-01'
-    setDateRange(installed, today().format(DATE_FMT))
+    return s?.date_installed && /^\d{4}-\d{2}-\d{2}/.test(s.date_installed)
+      ? s.date_installed.slice(0, 10)
+      : null
+  })()
+  // Stations without a valid install date fall back to 2017-01-01 (the
+  // network's first year); use the same start when reading the toggle back.
+  const porStart = installed ?? '2017-01-01'
+  const showingPor =
+    state.agg === 'daily' &&
+    startDate === porStart &&
+    endDate === today().format(DATE_FMT)
+  const togglePeriodOfRecord = () => {
+    if (showingPor) {
+      void state.setAgg('hourly')
+      setDateRange(null, null)
+    } else {
+      void state.setAgg('daily')
+      setDateRange(porStart, today().format(DATE_FMT))
+    }
   }
 
   return (
@@ -106,7 +128,7 @@ export function Sidebar() {
           </Text>
           <Select
             placeholder={
-              stations.isLoading ? 'Loading stations…' : 'Pick a station'
+              stations.isLoading ? 'Loading stations…' : 'Select a Mesonet Station...'
             }
             value={state.station}
             onChange={setStation}
@@ -137,6 +159,10 @@ export function Sidebar() {
               ))}
             </Group>
           </Chip.Group>
+          <Text size="xs" c="dimmed">
+            Filter stations by network type. Leave both checked to show all
+            stations.
+          </Text>
         </Stack>
 
         <Stack gap={4}>
@@ -162,10 +188,10 @@ export function Sidebar() {
             variant="light"
             size="xs"
             leftSection={<IconHistory size={14} />}
-            onClick={periodOfRecord}
+            onClick={togglePeriodOfRecord}
             disabled={!state.station}
           >
-            Period of record
+            {showingPor ? 'Display Latest 2 Weeks' : 'Display Period of Record'}
           </Button>
         </Stack>
 
@@ -183,13 +209,21 @@ export function Sidebar() {
               { value: 'raw', label: 'Raw' },
             ]}
           />
+          <Text size="xs" c="dimmed">
+            Hourly and daily averages are pre-computed and will load faster.
+            Avoid selecting periods longer than 1 year for daily, 3 months for
+            hourly, or 2 weeks for raw data.
+          </Text>
           <Tooltip
-            label="GridMET 30-year normals are only available on daily aggregation."
+            label="Shows 1991-2020 gridMET climate normals. Only available on daily data."
             withinPortal
+            multiline
+            w={240}
           >
             <Switch
               size="xs"
-              label="GridMET normals overlay"
+              mt={4}
+              label="Show gridMET Normals"
               checked={state.gridmet}
               onChange={(e) => state.setGridmet(e.currentTarget.checked)}
               disabled={state.agg !== 'daily'}
@@ -203,25 +237,29 @@ export function Sidebar() {
           <Text fw={600} size="sm">
             Variables
           </Text>
-          <Text size="xs" c="dimmed">
-            Pick the variables you want plotted. Defaults reflect what the
-            station reports.
-          </Text>
-          <Chip.Group
-            multiple
-            value={
-              state.vars.length > 0 ? state.vars : [...SELECTED_VARS]
-            }
-            onChange={(v) => state.setVars(v as string[])}
+          <ScrollArea.Autosize mah={200} type="auto" offsetScrollbars>
+            <Chip.Group
+              multiple
+              value={selectedVars}
+              onChange={(v) => void state.setVars(v as string[])}
+            >
+              <Group gap={6}>
+                {availableVars.map((v) => (
+                  <Chip key={v} value={v} size="xs" variant="filled">
+                    {v}
+                  </Chip>
+                ))}
+              </Group>
+            </Chip.Group>
+          </ScrollArea.Autosize>
+          <Anchor
+            href="https://climate.umt.edu/mesonet/variables/"
+            target="_blank"
+            rel="noreferrer"
+            size="xs"
           >
-            <Group gap={6}>
-              {availableVars.map((v) => (
-                <Chip key={v} value={v} size="xs" variant="filled">
-                  {v}
-                </Chip>
-              ))}
-            </Group>
-          </Chip.Group>
+            About These Variables
+          </Anchor>
         </Stack>
 
         <Divider />

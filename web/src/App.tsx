@@ -1,19 +1,15 @@
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
 import { AppShell, Center, Loader, Tabs } from '@mantine/core'
 import { Banner } from './components/Banner'
 import { HelpModal } from './components/HelpModal'
-import { LatestDataTab } from './tabs/LatestDataTab'
+import { GlobalNotices } from './components/GlobalNotices'
+import { VISIBLE_TABS } from './app/tabs'
 import { useHashTab } from './lib/useHashTab'
+import { migrateLegacyUrlState } from './lib/url-state'
 
-const AgToolsTab = lazy(() =>
-  import('./tabs/AgToolsTab').then((m) => ({ default: m.AgToolsTab })),
-)
-const DownloaderTab = lazy(() =>
-  import('./tabs/DownloaderTab').then((m) => ({ default: m.DownloaderTab })),
-)
-const SatelliteTab = lazy(() =>
-  import('./tabs/SatelliteTab').then((m) => ({ default: m.SatelliteTab })),
-)
+// Rename pre-namespacing query keys before nuqs reads the URL. This module is
+// evaluated before main.tsx calls createRoot().render().
+migrateLegacyUrlState()
 
 const TabFallback = (
   <Center style={{ flex: 1, height: '100%' }}>
@@ -30,6 +26,7 @@ export function App() {
         <Banner />
       </AppShell.Header>
       <HelpModal />
+      <GlobalNotices />
       <AppShell.Main
         style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}
       >
@@ -43,29 +40,23 @@ export function App() {
           }}
         >
           <Tabs.List px="md">
-            <Tabs.Tab value="latest">Latest Data</Tabs.Tab>
-            <Tabs.Tab value="ag">Ag Tools</Tabs.Tab>
-            <Tabs.Tab value="downloader">Data Downloader</Tabs.Tab>
-            <Tabs.Tab value="satellite">Satellite Indicators</Tabs.Tab>
+            {VISIBLE_TABS.map((t) => (
+              <Tabs.Tab key={t.hash} value={t.hash}>
+                {t.label}
+              </Tabs.Tab>
+            ))}
           </Tabs.List>
-          <Tabs.Panel value="latest">
-            <LatestDataTab />
-          </Tabs.Panel>
-          <Tabs.Panel value="ag">
-            <Suspense fallback={TabFallback}>
-              <AgToolsTab />
-            </Suspense>
-          </Tabs.Panel>
-          <Tabs.Panel value="downloader">
-            <Suspense fallback={TabFallback}>
-              <DownloaderTab />
-            </Suspense>
-          </Tabs.Panel>
-          <Tabs.Panel value="satellite">
-            <Suspense fallback={TabFallback}>
-              <SatelliteTab />
-            </Suspense>
-          </Tabs.Panel>
+          {VISIBLE_TABS.map(({ hash, component: Component, eager }) => (
+            <Tabs.Panel key={hash} value={hash}>
+              {eager ? (
+                <Component />
+              ) : (
+                <Suspense fallback={TabFallback}>
+                  <Component />
+                </Suspense>
+              )}
+            </Tabs.Panel>
+          ))}
         </Tabs>
       </AppShell.Main>
     </AppShell>

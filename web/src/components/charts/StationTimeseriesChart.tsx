@@ -1,23 +1,36 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Center, Loader, Stack, Text } from '@mantine/core'
+import { Box, Center, Loader, Stack, Text } from '@mantine/core'
 import dayjs from 'dayjs'
 import type { Data, Layout } from 'plotly.js'
 import { Plot, type PlotRelayoutEvent } from '../../lib/plotly'
 import { PLOT_CONFIG } from '../../lib/plotConfig'
 import {
-  AXIS_MAPPER,
   COLOR_MAPPER,
-  ELEM_MAP,
-  SELECTED_VARS,
+  depthLabelFromColumn,
+  latestAxisTitle,
+  latestElementCodes,
+  latestVariableForColumn,
+  latestVarsFromElements,
   type AggPeriod,
 } from '../../lib/params'
 import { useStationRecord } from '../../hooks/useStationRecord'
 import { useStationElements } from '../../hooks/useStationElements'
+import { useStationConfig } from '../../hooks/useStationConfig'
+import { useStations } from '../../hooks/useStations'
+import { useResolvedStation } from '../useResolvedStation'
 import { useLatestTabState } from '../../lib/url-state'
 import { fetchNormals, mergeNormals } from '../../lib/normals'
 import { insertGaps } from '../../lib/gaps'
 import { SOIL_DEPTH_COLOR } from '../../lib/params'
 import type { ObservationRow } from '../../lib/api'
+import {
+  explodeInstruments,
+  formatWallClock,
+  sensorEventText,
+  sensorEventsForSubplot,
+  type RawInstrument,
+  type SubplotKind,
+} from '../../lib/sensorEvents'
 
 const TWO_WEEKS = 14
 
@@ -25,44 +38,44 @@ const TWO_WEEKS = 14
 const SOIL_DEPTH_COLORS = SOIL_DEPTH_COLOR
 
 const ETR_COLOR = '#FF0000'
+// Plotly's default first colour, which legacy px.bar uses for precipitation.
+const PPT_COLOR = '#636efa'
 
-function isWindSpeed(label: string) {
-  return /Wind Speed/.test(label)
-}
-function isPrecip(label: string) {
-  return /Precipitation/.test(label)
-}
-function isReferenceEt(label: string) {
-  return /Reference ET/.test(label)
-}
+// Legacy plot_site sizes the figure 500 px for one panel, else 250 px per
+// panel, inside a scrolling column. We fill the column instead, but never let
+// a panel shrink below this, so long selections scroll rather than squash.
+const MIN_PANEL_PX = 200
 
-// Map a column header to the user-facing display variable.
-function variableForColumn(col: string): string | null {
-  if (col === 'Air Temperature [°F]') return 'Air Temperature'
-  if (col === 'Atmospheric Pressure [mbar]') return 'Atmospheric Pressure'
-  if (col === 'Relative Humidity [%]') return 'Relative Humidity'
-  if (col === 'Solar Radiation [W/m²]') return 'Solar Radiation'
-  if (col === 'Snow Depth [in]' || col === 'Snow Depth [in.]')
-    return 'Snow Depth'
-  if (col.startsWith('Soil Temperature')) return 'Soil Temperature'
-  if (col.startsWith('Soil VWC')) return 'Soil VWC'
-  if (col.startsWith('Bulk EC')) return 'Bulk EC'
-  if (col.startsWith('Gust Speed')) return 'Gust Speed'
-  if (isWindSpeed(col)) return 'Wind Speed'
-  if (col.startsWith('Wind Direction')) return 'Wind Direction'
-  if (col === 'Max Precip Rate [in/h]' || col === 'Max Precip Rate [in/hr]')
-    return 'Max Precip Rate'
-  if (isPrecip(col)) return 'Precipitation'
-  if (isReferenceEt(col)) return 'Reference ET'
-  if (col === 'Well Water Level [in]') return 'Well Water Level'
-  if (col === 'Well Water Temperature [°F]') return 'Well Water Temperature'
-  return null
-}
+/** Legacy make_nodata_figure texts (app.py render_station_plot). */
+export const NO_DATA_TITLE = 'No data available for selected station and dates'
+export const NO_DATA_HINT = 'Either change the date range or select a new station.'
 
-// "Soil Temperature @ 4 in [°F]" → "4 in"
-function depthLabelFromColumn(col: string): string | null {
-  const m = col.match(/@\s*([0-9]+\s*in)/)
-  return m ? m[1].replace(/\s+/g, ' ') : null
+/** "YYYY-MM-DD" that dayjs can parse; malformed ?from/?to are treated as no data. */
+const isIsoDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && dayjs(v).isValid()
+
+// Legacy `_add_sensor_event_overlays` styling.
+const SENSOR_EVENT_FILL = 'rgba(200,200,200,1)'
+const SENSOR_EVENT_OPACITY = 0.75
+
+/** Finite min/max over `cols`, with legacy's fallbacks (NaN → 0..1, flat → ±1). */
+function valueBounds(
+  rows: ReadonlyArray<Record<string, unknown>>,
+  cols: readonly string[],
+): [number, number] {
+  let lo = Infinity
+  let hi = -Infinity
+  for (const r of rows) {
+    for (const c of cols) {
+      const v = r[c]
+      if (typeof v === 'number' && Number.isFinite(v)) {
+        if (v < lo) lo = v
+        if (v > hi) hi = v
+      }
+    }
+  }
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [0, 1]
+  if (lo === hi) return [lo - 1, hi + 1]
+  return [lo, hi]
 }
 
 interface SubplotInfo {
@@ -72,44 +85,54 @@ interface SubplotInfo {
 
 export function StationTimeseriesChart() {
   const state = useLatestTabState()
-  const stationElements = useStationElements(state.station)
+  // Only query once `?s=` is a real station id (NWSLI links resolve first).
+  const station = useResolvedStation()
+  const stations = useStations()
+  const stationElements = useStationElements(station)
+  // Sensor deployment history → grey added/removed/outage overlays.
+  const stationConfig = useStationConfig(station)
+  const sensorConfig = useMemo(
+    () =>
+      explodeInstruments(
+        stationConfig.data?.instruments as unknown as RawInstrument[] | undefined,
+      ),
+    [stationConfig.data],
+  )
 
   const period: AggPeriod = state.agg
 
-  const elementsQuery = useMemo(() => {
-    const vars =
-      state.vars.length > 0 ? state.vars : ([...SELECTED_VARS] as string[])
-    const codes = new Set<string>()
-    for (const v of vars) {
-      const prefixes = ELEM_MAP[v]
-      if (!prefixes) continue
-      if (v === 'Reference ET') continue // fetched via has_etr
-      for (const p of prefixes) codes.add(p)
-    }
-    if (stationElements.data && codes.size > 0) {
-      const have = new Set(stationElements.data.map((r) => r.element))
-      const filtered = [...codes].filter((c) =>
-        [...have].some((h) => h === c || h.startsWith(`${c}_`)),
-      )
-      return filtered.length > 0 ? filtered.join(',') : [...codes].join(',')
-    }
-    return [...codes].join(',')
+  // The selection (absent `vars` = the 5 defaults), filtered to what the
+  // station offers, in selection order (legacy update_select_vars). An empty
+  // selection is "No variables selected", not the defaults.
+  const requestedVars = useMemo(() => {
+    if (!stationElements.data) return state.vars
+    const available = new Set(latestVarsFromElements(stationElements.data))
+    return state.vars.filter((v) => available.has(v))
   }, [state.vars, stationElements.data])
+  const requestedKey = requestedVars.join(',')
 
-  const wantsEtr = useMemo(() => {
-    const vars =
-      state.vars.length > 0 ? state.vars : ([...SELECTED_VARS] as string[])
-    return vars.includes('Reference ET')
-  }, [state.vars])
+  const elementsQuery = useMemo(
+    () => latestElementCodes(requestedVars, stationElements.data).join(','),
+    [requestedVars, stationElements.data],
+  )
+
+  const wantsEtr = requestedVars.includes('Reference ET')
 
   const start =
     state.from ?? dayjs().subtract(TWO_WEEKS, 'day').format('YYYY-MM-DD')
   const end = state.to ?? dayjs().format('YYYY-MM-DD')
+  const datesValid = isIsoDate(start) && isIsoDate(end) && start <= end
+
+  // Wait for the element list (it decides which codes to send) unless it
+  // failed, so one selection makes one request.
+  const elementsReady = !!stationElements.data || stationElements.isError
+  const canQuery =
+    !!station && elementsReady && datesValid && requestedVars.length > 0
 
   const { data, isLoading, isError, error } = useStationRecord(
-    state.station
+    canQuery && station
       ? {
-          station: state.station,
+          station,
           start,
           end,
           period,
@@ -163,7 +186,7 @@ export function StationTimeseriesChart() {
   // so we can reset state inline (avoids triggering setState inside an
   // effect just to clear). React preserves a top-level setState during
   // render as the "derive state from props" idiom.
-  const normalsKey = `${state.station}|${state.gridmet}|${state.agg}|${state.vars.join(',')}`
+  const normalsKey = `${station}|${state.gridmet}|${state.agg}|${requestedKey}`
   const [lastNormalsKey, setLastNormalsKey] = useState(normalsKey)
   if (lastNormalsKey !== normalsKey) {
     setLastNormalsKey(normalsKey)
@@ -177,18 +200,16 @@ export function StationTimeseriesChart() {
 
   useEffect(() => {
     let cancelled = false
-    if (!state.gridmet || state.agg !== 'daily' || !state.station || !data) {
+    if (!state.gridmet || state.agg !== 'daily' || !station || !data) {
       return
     }
-    const requested =
-      state.vars.length > 0 ? state.vars : ([...SELECTED_VARS] as string[])
-    const targets = requested.filter((v) =>
+    const targets = requestedVars.filter((v) =>
       ['Precipitation', 'Reference ET', 'Air Temperature', 'Relative Humidity'].includes(
         v,
       ),
     )
     Promise.all(
-      targets.map(async (v) => [v, await fetchNormals(state.station!, v)] as const),
+      targets.map(async (v) => [v, await fetchNormals(station, v)] as const),
     ).then((entries) => {
       if (cancelled) return
       const next: NormalsMap = {}
@@ -198,13 +219,12 @@ export function StationTimeseriesChart() {
     return () => {
       cancelled = true
     }
-  }, [state.gridmet, state.agg, state.station, state.vars, data])
+    // requestedKey stands in for requestedVars (stable across renders).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.gridmet, state.agg, station, requestedKey, data])
 
   const figure = useMemo(() => {
     if (!data || data.length === 0) return null
-
-    const requestedVars =
-      state.vars.length > 0 ? state.vars : ([...SELECTED_VARS] as string[])
 
     // Insert null rows wherever the API skipped a missing observation, so
     // `connectgaps: false` actually breaks the line at gaps. The cadence is
@@ -217,11 +237,17 @@ export function StationTimeseriesChart() {
     const dataKeys = Object.keys(sample).filter(
       (k) => k !== 'station' && k !== 'datetime',
     )
+    const hasValues = (col: string) =>
+      dataWithGaps.some((r) => {
+        const v = (r as Record<string, unknown>)[col]
+        return typeof v === 'number' && Number.isFinite(v)
+      })
 
     const columnsByVar = new Map<string, string[]>()
     for (const col of dataKeys) {
-      const v = variableForColumn(col)
+      const v = latestVariableForColumn(col)
       if (!v || !requestedVars.includes(v)) continue
+      if (!hasValues(col)) continue
       const list = columnsByVar.get(v) ?? []
       // Avoid pushing the same canonical column name twice (LAB_SWAP can map
       // multiple sensor heights to one canonical label).
@@ -229,12 +255,27 @@ export function StationTimeseriesChart() {
       columnsByVar.set(v, list)
     }
 
-    // Honor the user's visible-var ordering from requestedVars, but only
-    // include the ones we actually have columns for.
-    const orderedSubs: SubplotInfo[] = requestedVars
-      .filter((v) => columnsByVar.has(v))
-      .map((v) => ({ v, cols: columnsByVar.get(v)! }))
+    // One panel per selected variable, in selection order. A variable with no
+    // data keeps an empty panel with legacy's "not available" note
+    // (plot_site / add_nodata_lab) instead of being dropped.
+    const orderedSubs: SubplotInfo[] = requestedVars.map((v) => ({
+      v,
+      cols: columnsByVar.get(v) ?? [],
+    }))
     if (orderedSubs.length === 0) return null
+
+    // Legacy forces every x axis to [min date − 1 day, max date + 1 day].
+    const dayStrings = dataWithGaps
+      .map((r) => String(r.datetime).slice(0, 10))
+      .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+      .sort()
+    const xRange =
+      dayStrings.length > 0
+        ? [
+            dayjs(dayStrings[0]).subtract(1, 'day').format('YYYY-MM-DD'),
+            dayjs(dayStrings[dayStrings.length - 1]).add(1, 'day').format('YYYY-MM-DD'),
+          ]
+        : undefined
 
     // Compute explicit yaxis domains. This mirrors make_subplots() better
     // than Plotly's automatic grid layout.
@@ -248,6 +289,8 @@ export function StationTimeseriesChart() {
     // Per-subplot annotations (e.g. soil-depth color chips). Collected as we
     // build subplots, then assigned to layout.annotations at the end.
     const annotations: NonNullable<Partial<Layout>['annotations']> = []
+    // Sensor-change vrects, one set per subplot.
+    const shapes: NonNullable<Partial<Layout>['shapes']> = []
     const layout: Partial<Layout> = {
       autosize: true,
       margin: { l: 80, r: 20, t: 16, b: 40 },
@@ -270,6 +313,7 @@ export function StationTimeseriesChart() {
       const bottom = top - subHeight
 
       const baseColor = COLOR_MAPPER[sub.v]
+      const noData = sub.cols.length === 0
       const isPpt = sub.v === 'Precipitation'
       const isEtr = sub.v === 'Reference ET'
 
@@ -293,7 +337,7 @@ export function StationTimeseriesChart() {
       const soilChips: Array<{ depth: string; color: string }> = []
 
       sortedCols.forEach((col) => {
-        let traceColor = baseColor ?? '#444'
+        let traceColor = baseColor ?? (isPpt ? PPT_COLOR : '#444')
         if (isSoilStack) {
           const d = depthLabelFromColumn(col)
           traceColor = (d && SOIL_DEPTH_COLORS[d]) || '#666'
@@ -309,6 +353,16 @@ export function StationTimeseriesChart() {
           return typeof v === 'number' ? v : null
         }) as Array<number | null>
 
+        // Legacy hover labels: "Precipitation Total" / "Reference ET Total"
+        // for bars, the variable for soil panels, the column for the rest.
+        const hoverLabel = isPpt
+          ? 'Precipitation Total'
+          : isEtr
+            ? 'Reference ET Total'
+            : isSoilStack
+              ? sub.v
+              : col
+        const hovertemplate = `<b>Date</b>: %{x}<br><b>${hoverLabel}</b>: %{y}<extra></extra>`
         if (isPpt || isEtr) {
           traces.push({
             type: 'bar',
@@ -320,17 +374,16 @@ export function StationTimeseriesChart() {
             xaxis: xRef,
             yaxis: yRef,
             marker: { color: traceColor },
-            hovertemplate: '%{x|%b %d, %Y %H:%M}<br>%{y:.2f}<extra></extra>',
+            hovertemplate,
           } as Data)
         } else {
           traces.push({
             type: 'scatter',
             mode: 'lines',
-            // Soil traces use chip annotations instead of a legend, so
-            // suppress per-trace legend entries. Other multi-trace subplots
-            // (none today, but the structure allows it) still legend per
-            // depth.
-            name: isSoilStack ? (depthLabelFromColumn(col) ?? col) : sub.v,
+            // Full column names, like legacy (soil depths read
+            // "Soil VWC @ 2 in [%]"); soil depths are keyed by the chip
+            // annotations below rather than a legend.
+            name: col,
             legendgroup: sub.v,
             showlegend: !isSoilStack && sortedCols.length > 1,
             x: datetimes,
@@ -339,7 +392,7 @@ export function StationTimeseriesChart() {
             yaxis: yRef,
             line: { color: traceColor, width: 1.5 },
             connectgaps: false,
-            hovertemplate: '%{x|%b %d, %Y %H:%M}<br>%{y:.2f}<extra></extra>',
+            hovertemplate,
           } as Data)
         }
       })
@@ -385,7 +438,7 @@ export function StationTimeseriesChart() {
 
       // Optional GridMET normals overlay
       const norms = normalsByVar[sub.v]
-      if (norms) {
+      if (norms && !noData) {
         const merged = mergeNormals(dataWithGaps as ObservationRow[], norms)
         // Skip if no overlap.
         const hasAny = merged.some(
@@ -401,7 +454,7 @@ export function StationTimeseriesChart() {
               x,
               y: merged.map((r) => r.mx),
               marker: { color: 'black', symbol: 'triangle-down', size: 6 },
-              name: '75th pct (1991-2020)',
+              name: '75th Percentile',
               showlegend: false,
               xaxis: xRef,
               yaxis: yRef,
@@ -413,7 +466,7 @@ export function StationTimeseriesChart() {
               x,
               y: merged.map((r) => r.avg),
               marker: { color: 'black', symbol: 'circle', size: 5 },
-              name: 'Median (1991-2020)',
+              name: 'Median',
               showlegend: false,
               xaxis: xRef,
               yaxis: yRef,
@@ -425,7 +478,7 @@ export function StationTimeseriesChart() {
               x,
               y: merged.map((r) => r.mn),
               marker: { color: 'black', symbol: 'triangle-up', size: 6 },
-              name: '25th pct (1991-2020)',
+              name: '25th Percentile',
               showlegend: false,
               xaxis: xRef,
               yaxis: yRef,
@@ -439,7 +492,7 @@ export function StationTimeseriesChart() {
               x,
               y: merged.map((r) => r.mx),
               line: { dash: 'dash', color: 'black', width: 1 },
-              name: 'Avg max',
+              name: `Average Max.<br>${sub.cols[0] ?? sub.v}`,
               showlegend: false,
               xaxis: xRef,
               yaxis: yRef,
@@ -451,10 +504,10 @@ export function StationTimeseriesChart() {
               x,
               y: merged.map((r) => r.mn),
               line: { dash: 'dash', color: 'black', width: 1 },
-              name: 'Avg min',
+              name: `Average Min.<br>${sub.cols[0] ?? sub.v}`,
               showlegend: false,
               fill: 'tonexty',
-              fillcolor: 'rgba(107,107,107,0.25)',
+              fillcolor: 'rgba(107,107,107,0.4)',
               xaxis: xRef,
               yaxis: yRef,
               hoverinfo: 'skip',
@@ -463,21 +516,110 @@ export function StationTimeseriesChart() {
         }
       }
 
-      // Y-axis title (replaces <br> with HTML so Plotly renders it)
-      let title = AXIS_MAPPER[sub.v] ?? sub.v
-      if ((sub.v === 'Precipitation' || sub.v === 'Reference ET') && period === 'daily') {
-        title = title.replace('(inches)', '(in/day)')
-      } else if ((sub.v === 'Precipitation' || sub.v === 'Reference ET') && period === 'hourly') {
-        title = title.replace('(inches)', '(in/hr)')
+      // Sensor added/removed/outage overlays (legacy plot_met / plot_soil /
+      // plot_ppt; plot_etr has none). Drawn below the traces, with an
+      // invisible-ish polygon trace carrying the hover text.
+      if (!isEtr && !noData && sensorConfig.length > 0) {
+        const kind: SubplotKind = isSoilStack ? 'soil' : isPpt ? 'ppt' : 'met'
+        const rawRows = data as ReadonlyArray<Record<string, unknown>>
+        const events = sensorEventsForSubplot({
+          kind,
+          columns: sub.cols,
+          config: sensorConfig,
+          rows: rawRows,
+        })
+        if (events.length > 0) {
+          const [yMin, yMax] = valueBounds(rawRows, sub.cols)
+          for (const e of events) {
+            const x0 = formatWallClock(e.x0)
+            const x1 = formatWallClock(e.x1)
+            shapes.push({
+              type: 'rect',
+              xref: xRef as never,
+              yref: `${yRef} domain` as never,
+              x0,
+              x1,
+              y0: 0,
+              y1: 1,
+              fillcolor: SENSOR_EVENT_FILL,
+              opacity: SENSOR_EVENT_OPACITY,
+              line: { width: 0 },
+              layer: 'below',
+            })
+            const text = sensorEventText(e)
+            traces.push({
+              type: 'scatter',
+              mode: 'lines',
+              x: [x0, x0, x1, x1, x0],
+              y: [yMin, yMax, yMax, yMin, yMin],
+              fill: 'toself',
+              // 'fills' (the toself default) never fires in unified hover.
+              hoveron: 'points',
+              fillcolor: 'rgba(200,200,200,0.5)',
+              line: { color: 'rgba(200,200,200,0.5)', width: 0 },
+              opacity: 0.5,
+              showlegend: false,
+              name: '',
+              text: [text, text, text, text, text],
+              hovertemplate: '%{text}<extra></extra>',
+              xaxis: xRef,
+              yaxis: yRef,
+            } as Data)
+          }
+        }
+      }
+
+      if (noData) {
+        // Plotly only draws a subplot that some trace references, so give the
+        // empty panel an invisible placeholder (legacy: an empty px.line).
+        traces.push({
+          type: 'scatter',
+          mode: 'lines',
+          x: [datetimes[0], datetimes[datetimes.length - 1]],
+          y: [null, null],
+          xaxis: xRef,
+          yaxis: yRef,
+          name: sub.v,
+          showlegend: false,
+          hoverinfo: 'skip',
+        } as Data)
+        annotations.push({
+          text: `<b>${sub.v} data are not available for this time period.</b>`,
+          x: 0.5,
+          y: 0.5,
+          xref: `${xRef} domain` as never,
+          yref: `${yRef} domain` as never,
+          showarrow: false,
+          xanchor: 'center',
+          yanchor: 'middle',
+          font: { color: 'black', size: 14 },
+          bgcolor: 'white',
+          bordercolor: '#c7c7c7',
+        })
+      }
+
+      // Snow depth: y from 0 to at least 1 (legacy plot_site).
+      let yRange: [number, number] | undefined
+      if (sub.v === 'Snow Depth' && !noData) {
+        let hi = -Infinity
+        for (const r of dataWithGaps as ReadonlyArray<Record<string, unknown>>) {
+          for (const c of sub.cols) {
+            const v = r[c]
+            if (typeof v === 'number' && Number.isFinite(v) && v > hi) hi = v
+          }
+        }
+        yRange = [0, Math.max(1, hi)]
       }
 
       ;(layout as Record<string, unknown>)[yaxisKey] = {
-        title: { text: title, standoff: 4 },
+        title: { text: latestAxisTitle(sub.v, period), standoff: 4 },
         domain: [Math.max(0, bottom), Math.min(1, top)],
         automargin: true,
         showgrid: true,
         gridcolor: 'rgba(120,120,120,0.25)',
         anchor: idx === 0 ? 'x' : `x${subplotIx}`,
+        ...(noData ? { showticklabels: false, range: [0, 1] } : {}),
+        ...(yRange ? { range: yRange } : {}),
       }
 
       ;(layout as Record<string, unknown>)[xaxisKey] = {
@@ -487,33 +629,62 @@ export function StationTimeseriesChart() {
         gridcolor: 'rgba(120,120,120,0.25)',
         matches: idx === 0 ? undefined : 'x',
         anchor: idx === 0 ? 'y' : `y${subplotIx}`,
+        ...(idx === 0 && xRange ? { range: xRange } : {}),
       }
     })
 
     if (annotations.length > 0) {
       layout.annotations = annotations
     }
+    if (shapes.length > 0) {
+      layout.shapes = shapes
+    }
 
     // Compute a stable revision so the wrapper purges + re-plots when the
     // subplot count changes.
     const revision = orderedSubs.length * 1000 + (dataWithGaps.length % 1000)
 
-    return { data: traces, layout, revision }
-  }, [data, state.vars, normalsByVar, period])
+    return { data: traces, layout, revision, panels: N }
+    // requestedKey stands in for requestedVars (stable across renders).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, requestedKey, normalsByVar, period, sensorConfig])
+
+  // Empty states follow legacy render_station_plot: "No variables selected"
+  // wins over the station check.
+  if (state.vars.length === 0 || (station && stationElements.data && requestedVars.length === 0)) {
+    return <EmptyState title="No variables selected" />
+  }
 
   if (!state.station) {
     return (
+      <EmptyState
+        title="Select Station"
+        hint="To get started, select a station from the dropdown or the map."
+      />
+    )
+  }
+
+  if (!station) {
+    // `?s=` is set but not (yet) a catalog id: wait for the catalog and the
+    // NWSLI resolver, then say so if it still doesn't match.
+    return (
       <Center h="100%">
-        <Stack gap="xs" align="center">
+        {stations.data ? (
           <Text c="dimmed" size="sm">
-            Pick a station from the sidebar or map.
+            Station not found.
           </Text>
-        </Stack>
+        ) : (
+          <Loader />
+        )}
       </Center>
     )
   }
 
-  if (isLoading) {
+  if (!datesValid) {
+    return <EmptyState title={NO_DATA_TITLE} hint={NO_DATA_HINT} />
+  }
+
+  if (!elementsReady || isLoading) {
     return (
       <Center h="100%">
         <Loader />
@@ -521,34 +692,40 @@ export function StationTimeseriesChart() {
     )
   }
 
-  if (isError) {
-    return (
-      <Center h="100%" px="md">
-        <Text c="red" size="sm">
-          {(error as Error)?.message ?? 'Failed to fetch observations.'}
-        </Text>
-      </Center>
-    )
-  }
-
-  if (!figure) {
-    return (
-      <Center h="100%">
-        <Text c="dimmed" size="sm">
-          No observations in the selected range.
-        </Text>
-      </Center>
-    )
+  if (isError || !figure) {
+    // Details go to the console; the user gets legacy's no-data message.
+    if (isError) console.error('Latest Data request failed:', error)
+    return <EmptyState title={NO_DATA_TITLE} hint={NO_DATA_HINT} />
   }
 
   return (
-    <Plot
-      data={figure.data}
-      layout={figure.layout}
-      config={PLOT_CONFIG}
-      revision={figure.revision}
-      onRelayout={handleRelayout}
-      style={{ width: '100%', height: '100%' }}
-    />
+    <Box h="100%" style={{ overflowY: 'auto' }}>
+      <Plot
+        data={figure.data}
+        layout={figure.layout}
+        config={PLOT_CONFIG}
+        revision={figure.revision}
+        onRelayout={handleRelayout}
+        style={{ width: '100%', height: '100%', minHeight: figure.panels * MIN_PANEL_PX }}
+      />
+    </Box>
+  )
+}
+
+/** Legacy make_nodata_figure-style message (bold title, optional hint). */
+function EmptyState({ title, hint }: { title: string; hint?: string }) {
+  return (
+    <Center h="100%" px="md">
+      <Stack gap="xs" align="center" maw={420}>
+        <Text fw={700} size="md" ta="center">
+          {title}
+        </Text>
+        {hint && (
+          <Text size="sm" ta="center">
+            {hint}
+          </Text>
+        )}
+      </Stack>
+    </Center>
   )
 }

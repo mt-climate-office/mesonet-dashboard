@@ -12,9 +12,11 @@ import { IconExternalLink, IconHelp, IconShare3 } from '@tabler/icons-react'
 import { FEEDBACK_URL } from '../lib/config'
 import { useStations } from '../hooks/useStations'
 import { useStationParam } from '../lib/url-state'
+import { useHashTab } from '../lib/useHashTab'
 
 export function Banner() {
   const [station] = useStationParam()
+  const [tab] = useHashTab()
   const stations = useStations()
   const stationName = stations.data?.find((s) => s.station === station)?.name ?? null
 
@@ -32,9 +34,11 @@ export function Banner() {
     }
   }
 
-  const title = stationName
-    ? `Montana Mesonet Dashboard — ${stationName}`
-    : 'Montana Mesonet Dashboard'
+  // Legacy update_banner_text: the station name only on the Latest Data tab.
+  const title =
+    stationName && tab === 'latest'
+      ? `The Montana Mesonet Dashboard: ${stationName}`
+      : 'The Montana Mesonet Dashboard'
 
   return (
     <Group justify="space-between" h="100%" px="md" wrap="nowrap">

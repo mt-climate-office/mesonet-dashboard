@@ -1,99 +1,26 @@
 import { useMemo } from 'react'
 import { Center, Divider, Loader, ScrollArea, Stack, Table, Text } from '@mantine/core'
-import dayjs from 'dayjs'
 import { useStationLatest } from '../hooks/useStationLatest'
 import { usePptSummary } from '../hooks/usePptSummary'
 import { useStations } from '../hooks/useStations'
-import { useStationParam } from '../lib/url-state'
-import { degToCompass } from '../lib/params'
-import { META_COLUMNS } from '../lib/csv'
-
-function fmtNum(v: number): string {
-  if (Math.abs(v) >= 100) return v.toFixed(0)
-  if (Math.abs(v) >= 10) return v.toFixed(1)
-  return v.toFixed(2)
-}
+import { currentConditionsRows } from './currentConditions'
+import { useResolvedStation } from './useResolvedStation'
 
 export function CurrentConditionsCard() {
-  const [station] = useStationParam()
+  const station = useResolvedStation()
   const { data: stations } = useStations()
   const { data, isLoading, isError, error } = useStationLatest(station)
-  const ppt = usePptSummary(station)
-
   const network = useMemo(
     () => stations?.find((s) => s.station === station)?.sub_network ?? null,
     [stations, station],
   )
+  // Legacy requests the precipitation summary for HydroMet stations only
+  // (derived/ppt 422s for AgriMet).
+  const ppt = usePptSummary(network === 'HydroMet' ? station : null)
 
   const rows = useMemo(() => {
     if (!data || data.length === 0) return [] as Array<readonly [string, string]>
-    const latest = data[0] as Record<string, unknown>
-    const ts = latest.datetime as string | undefined
-
-    // Compute Real Feel (wind chill / heat index proxy from legacy formula).
-    const airT = latest['Air Temperature [°F]']
-    const windSpdKey =
-      Object.keys(latest).find((k) => k.startsWith('Wind Speed')) ?? ''
-    const windSpd = windSpdKey ? latest[windSpdKey] : null
-    let realFeel: number | null = null
-    if (typeof airT === 'number' && typeof windSpd === 'number' && windSpd > 0) {
-      realFeel =
-        35.74 +
-        0.6215 * airT -
-        35.75 * Math.pow(windSpd, 0.16) +
-        0.4275 * airT * Math.pow(windSpd, 0.16)
-    }
-
-    // Display order — keep Air Temp + Real Feel + RH near the top, then wind,
-    // pressure, solar, soil/precip after.
-    const ordered: Array<readonly [string, string]> = []
-    const seen = new Set<string>()
-    const push = (k: string, v: string) => {
-      if (seen.has(k)) return
-      seen.add(k)
-      ordered.push([k, v] as const)
-    }
-
-    const formatVal = (k: string, v: unknown): string => {
-      if (k.startsWith('Wind Direction') && typeof v === 'number') {
-        return `${degToCompass(v)} (${v.toFixed(0)}°)`
-      }
-      if (typeof v === 'number') return fmtNum(v)
-      return String(v ?? '')
-    }
-
-    const priority = [
-      'Air Temperature [°F]',
-      // Real Feel inserted manually
-      'Relative Humidity [%]',
-      'Wind Speed [mi/hr]',
-      'Gust Speed [mi/hr]',
-      'Wind Direction [deg]',
-      'Atmospheric Pressure [mbar]',
-      'Solar Radiation [W/m²]',
-      'Precipitation [in]',
-      'Snow Depth [in]',
-    ]
-    for (const k of priority) {
-      const v = latest[k]
-      if (v === null || v === undefined || v === '') continue
-      push(k, formatVal(k, v))
-      if (k === 'Air Temperature [°F]' && realFeel !== null) {
-        push('Real Feel [°F]', fmtNum(realFeel))
-      }
-    }
-    // Then everything else (soil temp/vwc/ec etc.)
-    for (const [k, v] of Object.entries(latest)) {
-      if (META_COLUMNS.has(k)) continue
-      if (v === null || v === undefined || v === '') continue
-      if (seen.has(k)) continue
-      push(k, formatVal(k, v))
-    }
-
-    if (ts) {
-      ordered.push(['Timestamp', dayjs(ts).format('MMM D, YYYY h:mm A')] as const)
-    }
-    return ordered
+    return currentConditionsRows(data[0] as Record<string, unknown>)
   }, [data])
 
   const pptRows = useMemo(() => {
@@ -129,10 +56,12 @@ export function CurrentConditionsCard() {
     )
   }
   if (isError) {
+    // Details to the console; legacy's no-data text for the user.
+    console.error('Latest observation request failed:', error)
     return (
       <Center h="100%" px="md">
-        <Text c="red" size="xs">
-          {(error as Error)?.message ?? 'Failed to load latest data.'}
+        <Text fw={700} size="sm" ta="center">
+          No data available for selected dates.
         </Text>
       </Center>
     )
@@ -153,12 +82,18 @@ export function CurrentConditionsCard() {
         <Text fw={700} size="sm" ta="center">
           Latest Data Summary
         </Text>
-        <Table withRowBorders={false} striped="even" verticalSpacing={2} fz="xs">
+        <Table
+          withRowBorders={false}
+          striped="odd"
+          stripedColor="rgb(220,220,220)"
+          verticalSpacing={2}
+          fz="xs"
+        >
           <Table.Tbody>
             {rows.map(([name, value]) => (
               <Table.Tr key={name}>
                 <Table.Td>{name}</Table.Td>
-                <Table.Td ta="right" fw={500}>
+                <Table.Td fw={500}>
                   {value}
                 </Table.Td>
               </Table.Tr>
@@ -172,12 +107,18 @@ export function CurrentConditionsCard() {
             <Text fw={700} size="sm" ta="center">
               Precipitation Summary
             </Text>
-            <Table withRowBorders={false} striped="even" verticalSpacing={2} fz="xs">
+            <Table
+          withRowBorders={false}
+          striped="odd"
+          stripedColor="rgb(220,220,220)"
+          verticalSpacing={2}
+          fz="xs"
+        >
               <Table.Tbody>
                 {pptRows.map(([name, value]) => (
                   <Table.Tr key={name}>
                     <Table.Td>{name}</Table.Td>
-                    <Table.Td ta="right" fw={500}>
+                    <Table.Td fw={500}>
                       {value}
                     </Table.Td>
                   </Table.Tr>

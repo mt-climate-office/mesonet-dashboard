@@ -1,6 +1,5 @@
-import { lazy, Suspense, useEffect, useMemo } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import {
-  Anchor,
   Box,
   Button,
   Card,
@@ -16,48 +15,42 @@ import {
   Text,
 } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
+import { notifications } from '@mantine/notifications'
 import { IconCalendar, IconInfoCircle } from '@tabler/icons-react'
 import dayjs from 'dayjs'
 import { useStations } from '../hooks/useStations'
 import { useStationElements } from '../hooks/useStationElements'
-import { useDerived, useDerivedSoil } from '../hooks/useDerived'
-import { useStationRecord } from '../hooks/useStationRecord'
-import { useAgToolsState } from '../lib/url-state'
+import { useResolvedStation } from '../components/useResolvedStation'
+import { AG_VAR_DEFAULT, useAgToolsState } from '../lib/url-state'
+import { elementLabel } from './downloader/labels'
+import { stationHasSwp, stationsWithSwp } from '../lib/stations'
+import { DERIVED_VAR_OPTIONS, GDD_CROPS, SOIL_VAR_OPTIONS } from '../lib/params'
+import type { AgVariable } from '../features/ag/ui/AgVariableView'
+import type { GddCrop } from '../features/ag/contract'
+import type { SoilProfileVar } from '../features/ag/figures/soil'
+// Small, dependency-free modules: safe to import eagerly. Everything heavy
+// (compute, data, figures, Plotly) sits behind the lazy AgVariableView.
+import { GDD_CUTOFFS_F } from '../features/ag/compute/gdd'
+import { learnMoreUrl } from '../features/ag/ui/learnMore'
+import { PROJECTION_OPTIONS } from '../features/ag/ui/projection'
 import {
-  DERIVED_VAR_OPTIONS,
-  GDD_CROPS,
-  GDD_CROP_THRESHOLDS,
-  SOIL_VAR_OPTIONS,
-} from '../lib/params'
+  SLIDER_MIN,
+  SLIDER_NONE,
+  parseGddCutoffs,
+  sliderWrites,
+  toSlider,
+} from '../features/ag/ui/gddCutoffs'
 
-const DerivedChart = lazy(() =>
-  import('../components/charts/DerivedChart').then((m) => ({
-    default: m.DerivedChart,
-  })),
-)
+const AgVariableView = lazy(() => import('../features/ag/ui/AgVariableView'))
 
 const DATE_FMT = 'YYYY-MM-DD'
 const today = () => dayjs().startOf('day')
 const oneYearAgo = () => dayjs().startOf('day').subtract(365, 'day')
 
-const LEARN_MORE_BASE = 'https://climate.umt.edu/mesonet/ag_tools/'
-const LEARN_MORE_MAP: Record<string, string> = {
-  gdd: 'gdds',
-  'soil_temp,soil_ec_blk': 'soil_profile',
-  cci: 'risk',
-  etr: 'etr',
-  feels_like: 'feels_like',
-  swp: 'swp',
-  percent_saturation: 'percent_saturation',
-  annual: '',
-}
-
-function learnMoreUrl(variable: string, crop: string | null) {
-  const slug = LEARN_MORE_MAP[variable] ?? ''
-  const url = slug ? `${LEARN_MORE_BASE}${slug}/` : LEARN_MORE_BASE
-  if (variable === 'gdd' && crop) return `${url}#${crop}-growing-degree-days`
-  return url
-}
+const AG_VARIABLES = new Set<string>(DERIVED_VAR_OPTIONS.map((o) => o.value))
+const SWP_ONLY = new Set(['swp', 'percent_saturation'])
+const TIME_AGG_VARS = new Set(['etr', 'feels_like', 'cci', 'swp', 'percent_saturation'])
+const CROPS = new Set(GDD_CROPS.map((c) => c.value))
 
 const SuspenseFallback = (
   <Center h="100%">
@@ -65,105 +58,65 @@ const SuspenseFallback = (
   </Center>
 )
 
+const fmtCutoff = (f: number) => (Number.isFinite(f) ? `${f} °F` : 'no upper cutoff')
+
 export function AgToolsTab() {
   const state = useAgToolsState()
   const stations = useStations()
-  const stationElements = useStationElements(state.station)
+  // `?s=` may briefly hold an NWSLI / mis-cased id; only query a real station.
+  const station = useResolvedStation()
+  const stationElements = useStationElements(state.variable === 'annual' ? station : null)
+  const stationInfo = useMemo(
+    () => stations.data?.find((s) => s.station === station),
+    [stations.data, station],
+  )
 
-  // Build station options.
+  const variable = (AG_VARIABLES.has(state.variable) ? state.variable : AG_VAR_DEFAULT) as AgVariable
+  const crop = (CROPS.has(state.crop ?? '') ? state.crop : 'wheat') as GddCrop
+  const cropLabel = GDD_CROPS.find((c) => c.value === crop)?.label ?? crop
+  const swpOnly = SWP_ONLY.has(variable)
+  const hasSwp = stationHasSwp(stationInfo)
+
+  // Station picker: SWP / percent saturation list only has_swp stations
+  // (legacy filter_to_only_swp_stations).
   const stationOptions = useMemo(() => {
     if (!stations.data) return []
-    return stations.data
+    const list = swpOnly ? stationsWithSwp(stations.data) : stations.data
+    return list
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((s) => ({ value: s.station, label: `${s.name} (${s.sub_network})` }))
-  }, [stations.data])
+  }, [stations.data, swpOnly])
 
-  // Auto-set GDD slider when crop changes — but only if user hasn't manually
-  // overridden via the slider (we detect that via the gdd_lo/gdd_hi URL keys).
+  // An ineligible station for SWP / saturation is cleared, with a notice
+  // (legacy filter_to_only_swp_stations clears it silently).
   useEffect(() => {
-    if (state.variable !== 'gdd') return
-    if (state.gddLo != null || state.gddHi != null) return
-    const thresh = GDD_CROP_THRESHOLDS[state.crop ?? 'wheat']
-    if (!thresh) return
-    state.setGddLo(String(thresh[0]))
-    state.setGddHi(String(thresh[1]))
-    // we want this to fire only when crop or variable changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.variable, state.crop])
+    if (!swpOnly || !stationInfo || hasSwp) return
+    notifications.show({
+      id: 'ag-swp-station-cleared',
+      color: 'yellow',
+      title: 'Station cleared',
+      message: `${stationInfo.name} has no soil water potential sensors. Pick a station with soil water potential to see this variable.`,
+      autoClose: 10000,
+    })
+    void state.setStation(null)
+  }, [swpOnly, stationInfo, hasSwp, state])
 
-  const startDate = state.from ?? oneYearAgo().format(DATE_FMT)
-  const endDate = state.to ?? today().format(DATE_FMT)
+  // Soil profile: SWP / saturation sub-variables only at has_swp stations.
+  const soilOptions = useMemo(
+    () => SOIL_VAR_OPTIONS.filter((o) => hasSwp || !SWP_ONLY.has(o.value)),
+    [hasSwp],
+  )
+  const soilVar = (
+    soilOptions.some((o) => o.value === state.soilVar) ? state.soilVar : 'soil_vwc'
+  ) as SoilProfileVar
+  useEffect(() => {
+    if (variable !== 'soil_temp,soil_ec_blk' || !stationInfo) return
+    if (state.soilVar !== soilVar) void state.setSoilVar(soilVar)
+  }, [variable, stationInfo, state, soilVar])
 
-  // ---------------- Data fetching dispatch ----------------
-  // Variable controls which fetch hook is active. Hooks are always called
-  // (rules of hooks); pass null to disable a query.
-  const isSoilProfile = state.variable === 'soil_temp,soil_ec_blk'
-  const isAnnual = state.variable === 'annual'
-
-  const derivedQuery =
-    state.station && state.variable && !isSoilProfile && !isAnnual
-      ? {
-          station: state.station,
-          variable: state.variable,
-          start: startDate,
-          end: endDate,
-          // GDD is a daily-only derived element on the new API; force it
-          // even if the URL still has time=hourly from a previous variable.
-          time: state.variable === 'gdd' ? 'daily' as const : state.time,
-          crop: state.variable === 'gdd' ? (state.crop ?? 'wheat') : undefined,
-        }
-      : null
-  const derivedQ = useDerived(derivedQuery)
-
-  // Soil profile uses observations + derived merge. We pick variable based on
-  // soilVar selection (but always fetch all soil columns so flips between
-  // soil sub-variables don't refetch).
-  const soilQuery =
-    state.station && isSoilProfile
-      ? {
-          station: state.station,
-          variable: 'soil_temp,soil_ec_blk,soil_vwc',
-          start: startDate,
-          end: endDate,
-          time: state.time,
-        }
-      : null
-  const soilQ = useDerivedSoil(soilQuery)
-
-  // Annual comparison fetches the entire period of record for one element. We
-  // use the station's actual install date when available rather than a hard-
-  // coded epoch, since some stations only go back to 2018.
-  const annualStart = useMemo(() => {
-    if (!stations.data || !state.station) return '2017-01-01'
-    const s = stations.data.find((row) => row.station === state.station)
-    if (s?.date_installed && /^\d{4}-\d{2}-\d{2}/.test(s.date_installed)) {
-      return s.date_installed.slice(0, 10)
-    }
-    return '2017-01-01'
-  }, [stations.data, state.station])
-  const annualQuery =
-    state.station && isAnnual && state.annualVar
-      ? {
-          station: state.station,
-          start: annualStart,
-          end: today().format(DATE_FMT),
-          period: 'daily' as const,
-          elements: state.annualVar,
-          rmNa: true,
-          publicOnly: false,
-        }
-      : null
-  const annualQ = useStationRecord(annualQuery)
-
-  // Find the column to plot for annual comparison (first non-station/datetime).
-  const annualColumn = useMemo(() => {
-    if (!annualQ.data || annualQ.data.length === 0) return ''
-    const sample = annualQ.data[0] as Record<string, unknown>
-    return Object.keys(sample).find((k) => k !== 'station' && k !== 'datetime') ?? ''
-  }, [annualQ.data])
-
-  // Annual variable options come from the station's element catalog.
+  // Annual comparison options from the station's element catalog; default to
+  // the first (legacy update_annual_station_elements).
   const annualOptions = useMemo(() => {
     if (!stationElements.data) return []
     const seen = new Set<string>()
@@ -171,41 +124,67 @@ export function AgToolsTab() {
     for (const e of stationElements.data) {
       if (seen.has(e.element)) continue
       seen.add(e.element)
-      out.push({ value: e.element, label: e.description_short })
+      // cm → in, m → ft like legacy get_station_elements (params.dist_swap).
+      out.push({ value: e.element, label: elementLabel(e.description_short) })
     }
-    return out.sort((a, b) => a.label.localeCompare(b.label))
+    return out.sort((a, b) =>
+      a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: 'base' }),
+    )
   }, [stationElements.data])
-
-  // Reset gdd_lo/hi when variable changes away from gdd.
-  const setVariable = (v: string | null) => {
-    if (!v) return
-    if (v !== 'gdd') {
-      state.setGddLo(null)
-      state.setGddHi(null)
+  useEffect(() => {
+    if (variable !== 'annual' || annualOptions.length === 0) return
+    if (!annualOptions.some((o) => o.value === state.annualVar)) {
+      void state.setAnnualVar(annualOptions[0].value, { history: 'replace' })
     }
-    state.setVariable(v)
-  }
+  }, [variable, annualOptions, state])
 
+  const startDate = state.from ?? oneYearAgo().format(DATE_FMT)
+  const endDate = state.to ?? today().format(DATE_FMT)
+
+  // GDD cutoffs: none in the URL → the crop's (compute GDD_CUTOFFS_F, which
+  // match the API); moving the slider writes custom cutoffs.
+  const cropCutoffs = GDD_CUTOFFS_F[crop]
+  const cut = parseGddCutoffs(crop, state.gddLo, state.gddHi)
+  const { loF: gddLoF, hiF: gddHiF, custom } = cut
+  // Legacy auto-set pairs and invalid values are stripped from the URL once.
+  const stripLo = variable === 'gdd' && cut.strip.lo
+  const stripHi = variable === 'gdd' && cut.strip.hi
+  useEffect(() => {
+    if (stripLo) void state.setGddLo(null, { history: 'replace' })
+    if (stripHi) void state.setGddHi(null, { history: 'replace' })
+  }, [stripLo, stripHi, state])
+  const sliderValue: [number, number] = [
+    toSlider(gddLoF ?? cropCutoffs[0]),
+    toSlider(gddHiF ?? cropCutoffs[1]),
+  ]
+  const [drag, setDrag] = useState<[number, number] | null>(null)
+
+  // A user's variable change resets the dependent controls to their defaults
+  // like legacy (app.py ~567-599): crop wheat (and its cutoffs), time
+  // aggregation daily, soil variable VWC. Only this handler resets, so the
+  // explicit URL params of a deep link survive the initial load.
+  const setVariable = (v: string | null) => {
+    if (!v || v === variable) return
+    void state.setGddLo(null)
+    void state.setGddHi(null)
+    void state.setCrop(null)
+    void state.setTime(null)
+    void state.setSoilVar(null)
+    void state.setVariable(v)
+  }
   const setDateRange = (from: string | null, to: string | null) => {
-    state.setFrom(from && from.length > 0 ? from : null)
-    state.setTo(to && to.length > 0 ? to : null)
+    void state.setFrom(from && from.length > 0 ? from : null)
+    void state.setTo(to && to.length > 0 ? to : null)
   }
 
-  // ---------------- Layout helpers ----------------
-  const showGdd = state.variable === 'gdd'
-  const showSoilSubvar = isSoilProfile
-  const showLivestock = state.variable === 'cci'
-  // GDD is a daily-only derived element on the new API. Surface the time-
-  // aggregation toggle only for variables the API supports at both cadences.
-  const showTimeAgg = ['etr', 'feels_like', 'cci'].includes(state.variable)
-  const showAnnual = isAnnual
+  const showGdd = variable === 'gdd'
+  const showSoilSubvar = variable === 'soil_temp,soil_ec_blk'
+  const showLivestock = variable === 'cci'
+  const showTimeAgg = TIME_AGG_VARS.has(variable)
+  const showAnnual = variable === 'annual'
+  const learnHref = learnMoreUrl(variable, crop)
+  const ndawn = crop === 'wheat' || crop === 'barley'
 
-  const gddLow = state.gddLo ? Number(state.gddLo) : 50
-  const gddHigh = state.gddHi ? Number(state.gddHi) : 86
-
-  const learnHref = learnMoreUrl(state.variable, state.crop)
-
-  // ---------------- Render ----------------
   return (
     <Box p="sm" w="100%" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <Card withBorder p="md" mb="sm">
@@ -217,10 +196,14 @@ export function AgToolsTab() {
               </Text>
               <Select
                 placeholder={
-                  stations.isLoading ? 'Loading stations…' : 'Pick a station'
+                  stations.isLoading
+                    ? 'Loading stations…'
+                    : swpOnly
+                      ? 'Pick a station with soil water potential'
+                      : 'Pick a station'
                 }
                 value={state.station}
-                onChange={(v) => state.setStation(v)}
+                onChange={(v) => void state.setStation(v)}
                 data={stationOptions}
                 searchable
                 clearable
@@ -233,26 +216,23 @@ export function AgToolsTab() {
                     Variable
                   </Text>
                   <Select
-                    value={state.variable}
+                    value={variable}
                     onChange={setVariable}
                     data={DERIVED_VAR_OPTIONS}
                     allowDeselect={false}
                   />
                 </Stack>
-                <Anchor
+                <Button
+                  component="a"
                   href={learnHref}
                   target="_blank"
                   rel="noreferrer"
+                  variant="light"
                   size="sm"
+                  leftSection={<IconInfoCircle size={16} />}
                 >
-                  <Button
-                    variant="light"
-                    size="sm"
-                    leftSection={<IconInfoCircle size={16} />}
-                  >
-                    Learn More
-                  </Button>
-                </Anchor>
+                  Learn More
+                </Button>
               </Group>
             </Stack>
           </Grid.Col>
@@ -266,15 +246,12 @@ export function AgToolsTab() {
                 type="range"
                 value={[startDate, endDate]}
                 onChange={(v) => {
-                  const arr = (Array.isArray(v) ? v : [null, null]) as [
-                    string | null,
-                    string | null,
-                  ]
+                  const arr = (Array.isArray(v) ? v : [null, null]) as [string | null, string | null]
                   setDateRange(arr[0], arr[1])
                 }}
                 valueFormat="MMM D, YYYY"
                 leftSection={<IconCalendar size={16} />}
-                maxDate={today().add(1, 'day').format(DATE_FMT)}
+                maxDate={today().format(DATE_FMT)}
                 allowSingleDateInRange
               />
               {showTimeAgg && (
@@ -285,7 +262,7 @@ export function AgToolsTab() {
                   <SegmentedControl
                     size="xs"
                     value={state.time}
-                    onChange={(v) => state.setTime(v as never)}
+                    onChange={(v) => void state.setTime(v as never)}
                     data={[
                       { value: 'hourly', label: 'Hourly' },
                       { value: 'daily', label: 'Daily' },
@@ -301,7 +278,7 @@ export function AgToolsTab() {
                   <Chip.Group
                     multiple={false}
                     value={state.livestock}
-                    onChange={(v) => state.setLivestock(v as never)}
+                    onChange={(v) => void state.setLivestock(v as never)}
                   >
                     <Group gap="xs">
                       <Chip value="adult" size="xs">
@@ -326,13 +303,12 @@ export function AgToolsTab() {
                   </Text>
                   <Chip.Group
                     multiple={false}
-                    value={state.crop ?? 'wheat'}
+                    value={crop}
                     onChange={(v) => {
-                      const crop = v as string
-                      state.setCrop(crop)
-                      // Reset slider so the threshold table is re-applied.
-                      state.setGddLo(null)
-                      state.setGddHi(null)
+                      void state.setCrop(v as string)
+                      // A new crop starts from its own cutoffs.
+                      void state.setGddLo(null)
+                      void state.setGddHi(null)
                     }}
                   >
                     <Group gap={4}>
@@ -343,26 +319,68 @@ export function AgToolsTab() {
                       ))}
                     </Group>
                   </Chip.Group>
-                  <Text fw={600} size="sm" mt="xs">
-                    Temperature range
-                  </Text>
+                  <Group justify="space-between" mt="xs" gap="xs">
+                    <Text fw={600} size="sm">
+                      Temperature cutoffs
+                    </Text>
+                    {custom && (
+                      <Button
+                        size="compact-xs"
+                        variant="subtle"
+                        onClick={() => {
+                          void state.setGddLo(null)
+                          void state.setGddHi(null)
+                        }}
+                      >
+                        Reset to {cropLabel.toLowerCase()} cutoffs
+                      </Button>
+                    )}
+                  </Group>
                   <RangeSlider
-                    min={30}
-                    max={100}
+                    min={SLIDER_MIN}
+                    max={SLIDER_NONE}
                     step={1}
                     minRange={1}
-                    value={[gddLow, gddHigh]}
-                    onChange={(val) => {
-                      state.setGddLo(String(val[0]))
-                      state.setGddHi(String(val[1]))
+                    value={drag ?? sliderValue}
+                    onChange={setDrag}
+                    onChangeEnd={(val) => {
+                      setDrag(null)
+                      // Only a thumb that moved is written; an untouched
+                      // open cap stays ∞.
+                      const w = sliderWrites(crop, sliderValue, val)
+                      if (w.lo !== undefined) void state.setGddLo(w.lo)
+                      if (w.hi !== undefined) void state.setGddHi(w.hi)
                     }}
+                    label={(v) => (v >= SLIDER_NONE ? 'no upper cutoff' : `${v}°F`)}
                     marks={[
                       { value: 30, label: '30°F' },
                       { value: 50, label: '50°F' },
                       { value: 70, label: '70°F' },
                       { value: 90, label: '90°F' },
+                      { value: SLIDER_NONE, label: 'none' },
                     ]}
                     mb="md"
+                    aria-label="GDD temperature cutoffs"
+                  />
+                  <Text size="xs" c="dimmed" data-testid="gdd-cutoff-mode">
+                    {custom
+                      ? `Custom cutoffs: ${gddLoF ?? cropCutoffs[0]} °F to ${fmtCutoff(gddHiF ?? cropCutoffs[1])}. Growth-stage labels are not shown.`
+                      : `${cropLabel} cutoffs: ${cropCutoffs[0]} °F to ${fmtCutoff(cropCutoffs[1])}` +
+                        (ndawn
+                          ? `, switching to ${GDD_CUTOFFS_F[`${crop as 'wheat' | 'barley'}2`][1]} °F at Haun stage 2 (NDAWN).`
+                          : '.') +
+                        ' Move the slider for custom cutoffs.'}
+                  </Text>
+                  <Text fw={600} size="sm">
+                    Projection
+                  </Text>
+                  <Select
+                    size="xs"
+                    value={state.gddProj}
+                    onChange={(v) => v && void state.setGddProj(v as never)}
+                    data={PROJECTION_OPTIONS}
+                    allowDeselect={false}
+                    aria-label="GDD projection horizon"
                   />
                 </>
               )}
@@ -373,11 +391,11 @@ export function AgToolsTab() {
                   </Text>
                   <Chip.Group
                     multiple={false}
-                    value={state.soilVar ?? 'soil_vwc'}
-                    onChange={(v) => state.setSoilVar(v as string)}
+                    value={soilVar}
+                    onChange={(v) => void state.setSoilVar(v as string)}
                   >
                     <Group gap={4}>
-                      {SOIL_VAR_OPTIONS.map((s) => (
+                      {soilOptions.map((s) => (
                         <Chip key={s.value} value={s.value} size="xs">
                           {s.label}
                         </Chip>
@@ -395,12 +413,12 @@ export function AgToolsTab() {
                     placeholder={
                       stationElements.isLoading
                         ? 'Loading…'
-                        : !state.station
+                        : !station
                           ? 'Pick a station first'
                           : 'Select a variable'
                     }
                     value={state.annualVar}
-                    onChange={(v) => state.setAnnualVar(v)}
+                    onChange={(v) => void state.setAnnualVar(v)}
                     data={annualOptions}
                     searchable
                     nothingFoundMessage="No matching elements"
@@ -412,56 +430,42 @@ export function AgToolsTab() {
         </Grid>
       </Card>
 
-      <Card withBorder p="xs" style={{ flex: 1, minHeight: 320, display: 'flex' }}>
+      <Card withBorder p="xs" style={{ flex: 1, minHeight: 540, display: 'flex' }}>
         <Box style={{ flex: 1, minHeight: 0, width: '100%' }}>
-          {!state.station ? (
+          {!station || (swpOnly && stationInfo && !hasSwp) ? (
             <Center h="100%">
-              <Stack gap="xs" align="center">
+              {state.station && !stations.data ? (
                 <Text c="dimmed" size="sm">
-                  Pick a station to begin.
+                  Loading stations…
                 </Text>
-              </Stack>
+              ) : (
+                // Legacy no-station figure (app.py:1999-2006).
+                <Stack gap="md" align="center" data-testid="ag-no-station">
+                  <Text fw={700}>Select Station</Text>
+                  <Text c="dimmed" size="sm">
+                    To get started, select a station from the dropdown.
+                  </Text>
+                </Stack>
+              )}
             </Center>
           ) : (
             <Suspense fallback={SuspenseFallback}>
-              {isSoilProfile ? (
-                <DerivedChart
-                  variable="soil_temp,soil_ec_blk"
-                  data={soilQ.data}
-                  isLoading={soilQ.isLoading}
-                  isError={soilQ.isError}
-                  error={soilQ.error}
-                  soilVar={state.soilVar ?? 'soil_vwc'}
-                />
-              ) : isAnnual ? (
-                state.annualVar ? (
-                  <DerivedChart
-                    variable="annual"
-                    data={annualQ.data}
-                    isLoading={annualQ.isLoading}
-                    isError={annualQ.isError}
-                    error={annualQ.error}
-                    annualColumn={annualColumn}
-                  />
-                ) : (
-                  <Center h="100%">
-                    <Text c="dimmed" size="sm">
-                      Select a comparison variable to continue.
-                    </Text>
-                  </Center>
-                )
-              ) : (
-                <DerivedChart
-                  variable={state.variable}
-                  data={derivedQ.data}
-                  isLoading={derivedQ.isLoading}
-                  isError={derivedQ.isError}
-                  error={derivedQ.error}
-                  newborn={state.livestock === 'newborn'}
-                  gddLow={gddLow}
-                  gddHigh={gddHigh}
-                />
-              )}
+              <AgVariableView
+                variable={variable}
+                station={station}
+                stationInfo={stationInfo}
+                start={startDate <= endDate ? startDate : endDate}
+                end={endDate}
+                period={showTimeAgg ? state.time : 'daily'}
+                livestock={state.livestock}
+                crop={crop}
+                cropLabel={cropLabel}
+                gddLoF={gddLoF}
+                gddHiF={gddHiF}
+                gddProj={state.gddProj}
+                soilVar={soilVar}
+                annualVar={state.annualVar}
+              />
             </Suspense>
           )}
         </Box>
