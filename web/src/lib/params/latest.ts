@@ -190,7 +190,9 @@ export const WIND_DIRECTIONS = [
  * Mirrors plotting.deg_to_compass.
  */
 export function degToCompass(deg: number): string {
-  const ix = Math.round(deg / 22.5) % 16
+  // Legacy int(num / 22.5 + 0.5): same float arithmetic, so boundary values
+  // land in the same sector.
+  const ix = Math.trunc(deg / 22.5 + 0.5) % 16
   return WIND_DIRECTIONS[ix]
 }
 

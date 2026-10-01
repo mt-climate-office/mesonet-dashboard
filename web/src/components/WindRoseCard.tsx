@@ -85,8 +85,8 @@ export function WindRoseCard() {
     // Build one trace per bin so the legend reads as speed categories.
     const traces: Data[] = []
     for (let b = 0; b < numBins; b++) {
-      // An empty top bin happens when the max speed is itself a cut point.
-      if (![...counts.values()].some((c) => c.bin === b)) continue
+      // Every qcut bin gets a trace, even an empty one (legacy groups by the
+      // categorical, so empty categories appear with zero counts).
       const r: number[] = []
       const theta: string[] = []
       for (const dir of WIND_DIRECTIONS) {
@@ -94,7 +94,8 @@ export function WindRoseCard() {
         r.push(cell?.count ?? 0)
         theta.push(dir)
       }
-      const colorIx = Math.floor((b / Math.max(1, numBins - 1)) * (PLASMA_R.length - 1))
+      // px.bar_polar assigns Plasma_r colours in category order.
+      const colorIx = traces.length % PLASMA_R.length
       const label = labels[b]
       traces.push({
         type: 'barpolar',

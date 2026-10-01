@@ -78,6 +78,7 @@ This file lists the places where the React dashboard (`web/`) deliberately behav
 - **New:**
   - The title wraps onto two lines at 14 px, because the card is narrower than legacy's.
   - The rose uses its own `wind_spd,wind_dir` request (with `rm_na=true`) instead of riding on the main record.
+  - The speed bins are identical to legacy's (numpy half-even rounding, `pd.qcut(q=8)` linear-quantile edges). The legend shows the whole-mph speeds in each bin ("4 – 6") instead of pandas interval text ("(3.75, 6.0]").
 
 ### Plot layout (LDP-001, LDP-002, LDP-021, MOB-002)
 - **Legacy:** fixed 500 px (one panel) or 250 px per panel, in an 88vh scroll column. The x axes were independent but forced to the same range.
