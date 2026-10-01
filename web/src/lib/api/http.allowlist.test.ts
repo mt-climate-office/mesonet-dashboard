@@ -82,32 +82,25 @@ describe('existing call sites respect the allowlist', () => {
     await getStationConfig('acebozem')
   })
 
-  it.each(['hourly', 'daily', 'monthly'] as AggPeriod[])('getStationRecord %s', async (period) => {
-    await getStationRecord({
-      station: 'acebozem',
-      start: '2026-01-01',
-      end: '2026-01-02',
-      period,
-      elements: 'air_temp',
-      hasEtr: true,
-      derivedElems: ['feels_like'],
-    })
-    expect(seen.length).toBe(3)
-  })
-
-  it('getStationRecord raw: /observations/ has no na_info (flagged)', async () => {
-    const err = vi.spyOn(console, 'error').mockImplementation(() => {})
-    await expect(
-      getStationRecord({
+  it.each(['hourly', 'daily', 'monthly', 'raw'] as AggPeriod[])(
+    'getStationRecord %s passes the allowlist',
+    async (period) => {
+      await getStationRecord({
         station: 'acebozem',
         start: '2026-01-01',
         end: '2026-01-02',
-        period: 'raw',
+        period,
         elements: 'air_temp',
-      }),
-    ).rejects.toThrow(/\/observations\/ does not accept na_info/)
-    err.mockRestore()
-  })
+        hasEtr: true,
+        derivedElems: ['feels_like'],
+        naInfo: true,
+      })
+      expect(seen.length).toBe(3)
+      const obs = new URL(seen[0], 'http://x')
+      // Raw /observations/ has no na_info; the aggregate endpoints keep it.
+      expect(obs.searchParams.has('na_info')).toBe(period !== 'raw')
+    },
+  )
 
   it('getDerived / getDerivedSoil (daily + hourly)', async () => {
     for (const time of ['daily', 'hourly'] as const) {
