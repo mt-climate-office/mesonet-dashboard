@@ -37,6 +37,8 @@ import {
   downloadFilename,
   HOURLY_CONFIRM_DAYS,
   HOURLY_DEFAULT_DAYS,
+  clampStart,
+  dateRangeError,
   SWP_CODES,
   fetchDownload,
   QC_LEVEL_OPTIONS,
@@ -51,8 +53,8 @@ const DownloaderPreviewChart = lazy(() =>
     default: m.DownloaderPreviewChart,
   })),
 )
-const StationMap = lazy(() =>
-  import('../components/StationMap').then((m) => ({ default: m.StationMap })),
+const DownloaderMap = lazy(() =>
+  import('./downloader/DownloaderMap').then((m) => ({ default: m.DownloaderMap })),
 )
 
 const SuspenseFallback = (
@@ -156,14 +158,17 @@ export function DownloaderTab() {
         ? installDate
         : hourlyDefault
       : (installDate ?? dayjs().subtract(365, 'day').format(DATE_FMT))
-  const startDate = state.from ?? defaultStart
+  // A start before the install date (old links, typed dates) is clamped to
+  // the install date, as legacy's DatePicker minDate did, with a small note.
+  const { start: startDate, clamped: startClamped } = clampStart(
+    state.from ?? defaultStart,
+    installDate,
+  )
   const endDate = state.to ?? today
-  const dateError =
-    startDate > endDate
-      ? 'Start date must be on or before the end date.'
-      : installDate && startDate < installDate
-        ? `Start date is before this station was installed (${installDate}).`
-        : null
+  const dateError = useMemo(
+    () => dateRangeError(startDate, endDate, startClamped, installDate),
+    [startDate, endDate, startClamped, installDate],
+  )
   const span = dateError ? 0 : daySpan(startDate, endDate)
   const largeHourly = state.period === 'hourly' && span > HOURLY_CONFIRM_DAYS
   const runKey = `${station}|${startDate}|${endDate}|${state.period}`
@@ -367,6 +372,11 @@ export function DownloaderTab() {
                   {dateError}
                 </Text>
               )}
+              {startClamped && !dateError && (
+                <Text size="xs" c="dimmed" mt={-6} data-testid="dl-start-clamped">
+                  Start date moved to {installDate}, when this station was installed.
+                </Text>
+              )}
               {largeHourly && (
                 <Alert icon={<IconAlertCircle size={16} />} color="yellow" variant="light" p="xs">
                   <Text size="xs">
@@ -429,7 +439,7 @@ export function DownloaderTab() {
           <Paper withBorder style={{ overflow: 'hidden', minHeight: 280, flex: 1 }}>
             {stations.data ? (
               <Suspense fallback={SuspenseFallback}>
-                <StationMap
+                <DownloaderMap
                   stations={stations.data}
                   selected={state.station}
                   onSelect={selectStation}
@@ -460,6 +470,28 @@ export function DownloaderTab() {
           </Box>
         </Card>
       </Group>
+      {/* Funder attribution (legacy dmc.Footer: 40px, #129dff, bold). Rendered
+          in the tab flow rather than position:fixed so it never covers the
+          controls or preview on small screens. */}
+      <Box
+        component="footer"
+        mt="sm"
+        px="sm"
+        py={6}
+        data-testid="dl-funding-footer"
+        style={{
+          minHeight: 40,
+          background: '#129dff',
+          color: '#000',
+          display: 'flex',
+          alignItems: 'center',
+          borderRadius: 4,
+        }}
+      >
+        <Text fw={800} size="sm" c="#000">
+          Supported by Bureau of Land Management (RM-CESU Award L16AC00359)
+        </Text>
+      </Box>
     </Box>
   )
 }
