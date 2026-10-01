@@ -24,7 +24,7 @@ const shimFetch: typeof fetch = async (input, init) => {
 
 describe.skipIf(!live)('live Ag data sources', () => {
   it('soil params: default (data2 → vendored) and forced vendored', async () => {
-    const auto = await loadSoilParams({ vendoredBase: VENDORED, fetchImpl: shimFetch })
+    const auto = await loadSoilParams({ vendoredBase: VENDORED, fetchImpl: shimFetch, data2Enabled: true })
     const vend = await loadSoilParams({ vendoredBase: VENDORED, fetchImpl: shimFetch, only: 'vendored' })
     console.log('soil params:', auto.source, auto.release, 'data2Release:', auto.data2Release ?? '(unreachable)')
     expect(vend.rows.length).toBe(507)
@@ -33,7 +33,7 @@ describe.skipIf(!live)('live Ag data sources', () => {
   }, 30_000)
 
   it('GDD stages: data2 (expected 404 today) falls back to vendored', async () => {
-    const auto = await loadGddStages({ vendoredBase: VENDORED, fetchImpl: shimFetch })
+    const auto = await loadGddStages({ vendoredBase: VENDORED, fetchImpl: shimFetch, data2Enabled: true })
     console.log('gdd stages:', auto.source, auto.release)
     expect(auto.tables.wheat.stages.length).toBeGreaterThan(10)
   }, 30_000)

@@ -12,6 +12,15 @@ export const DATA2_SOILS_LATEST = `${DATA2_BASE}soils/processed/latest/`
 export const DATA2_GDD_STAGES = `${DATA2_BASE}derived/gdd_stages.json`
 export const DATA2_TIMEOUT_MS = 2500
 
+/**
+ * Whether the default loaders probe data2 at all. data2 does not publish
+ * `derived/gdd_stages.json` or the soils manifest yet, so every probe is a
+ * console 404 before the vendored fallback. Until data2 publishes, the app
+ * goes straight to the vendored files; flip this to `true` then. The data2
+ * code paths stay tested (`deps.data2Enabled` / `deps.only = 'data2'`).
+ */
+export const DATA2_STATIC_ENABLED = false
+
 export type StaticSource = 'data2' | 'vendored'
 
 /** Injected for tests / Node; defaults to the global fetch. */
@@ -22,6 +31,12 @@ export interface StaticDeps {
   timeoutMs?: number
   /** Skip one source (testing / diagnostics). */
   only?: StaticSource
+  /** Override `DATA2_STATIC_ENABLED` for the default (data2 → vendored) order. */
+  data2Enabled?: boolean
+}
+
+export function data2Enabled(deps?: StaticDeps): boolean {
+  return deps?.data2Enabled ?? DATA2_STATIC_ENABLED
 }
 
 export function vendoredBase(deps?: StaticDeps): string {

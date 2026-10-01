@@ -12,6 +12,7 @@ import {
   DATA2_TIMEOUT_MS,
   type StaticDeps,
   type StaticSource,
+  data2Enabled,
   getJson,
   vendoredBase,
 } from './staticSource'
@@ -91,10 +92,11 @@ export async function loadData2GddStages(deps?: StaticDeps): Promise<GddStagesBu
   return parseGddStagesJson(j, 'data2', 'data2')
 }
 
-/** data2 first, vendored fallback. */
+/** data2 first (when `DATA2_STATIC_ENABLED`), vendored fallback. */
 export async function loadGddStages(deps: StaticDeps = {}): Promise<GddStagesBundle> {
   if (deps.only === 'vendored') return loadVendoredGddStages(deps)
   if (deps.only === 'data2') return loadData2GddStages(deps)
+  if (!data2Enabled(deps)) return loadVendoredGddStages(deps)
   try {
     return await loadData2GddStages(deps)
   } catch {

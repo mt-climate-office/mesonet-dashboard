@@ -24,7 +24,8 @@ maximum absolute difference of 0.0005 in the fixture's units:
 | CCI (daily and hourly) | 0.1 °F | 0.0005 °F | 3 × 4 (2 API 404s) |
 | GDD daily and cumulative (default + 7 crops) | exact to 3 dp | 0.0005 °F·day | 3 × 2 × 8 |
 | GDD stage labels | exact | exact (except D-GDD-1/2/4) | 3 × 2 × 6 crops |
-| Percent saturation | — | 0.0005 % | 2 × 4 |
+| Percent saturation (vendored porosity, acebozem/arskeogh) | — | 0.0005 % | 2 × 4 |
+| Percent saturation (API porosity, D-PS-1; incl. mdamalta) | — | 0.0005 % | 3 × 2 |
 
 When the API returns 404 because `sol_rad` is missing for the whole window
 (arskeogh winter, daily and hourly, for ETo and CCI), compute returns an
@@ -83,8 +84,9 @@ Supporting evidence:
 - The vendored parameters reproduce the lab retention data
   (`<station>.soil-raw.csv`) with θ RMSE < 0.01 (test "vendored params
   reproduce the lab retention data").
-- Percent saturation, which uses porosity from the same release, matches to
-  0.0005 %.
+- Percent saturation with porosity from the same release matches to
+  0.0005 % **at these two stations**, whose porosities equal the DB's. That
+  does not hold network-wide; see D-PS-1.
 
 So the SWP gap comes from the parameters, not the code. Per the brief, the
 tolerance is **not** loosened. These cores are listed in
@@ -108,6 +110,51 @@ legacy fits are closer to the lab measurement than the θr = 0 vendored fits.
 Choosing the parameter source is a decision for workstream B and the
 orchestrator: data2 `mesonet/soils/…` should serve the DB parameters if parity
 is wanted.
+
+### D-PS-1: percent saturation uses the API DB porosity, not mesonet-soils (data divergence)
+
+The formula is a verbatim port (`derived.py:302-359`,
+`clip(VWC / porosity · 100, 0, 100)`), and the VWC is the same level-2
+observation the API uses. The porosity is what differed (AG-PS-001: mdamalta
+1.4–18 percentage points below `/derived` at 4/8/20 in, plus a 36 in trace
+the API does not have).
+
+Root cause: a data-source difference, not a mapping or unit bug. Depths map
+1:1 (10/20/50/91 cm ↔ `Porosity @ -10/-20/-50/-91 cm`), both sources are
+Vol%, and the code was correct. mdamalta's porosity in the API DB is
+58.95 / 61.8 / 48.47 % at 10 / 20 / 50 cm and **absent at 91 cm**. The
+vendored mesonet-soils `2026-09-25` release has 62.64 / 67.06 / 54.46 /
+66.92 %.
+
+Survey (`scripts/fixtures/porosity-survey.mjs`; one keep=true request per
+station, 2026-09-01..30, level 2, serialized): **31 of 91 has_swp stations
+match at every depth, and 60 differ**. Of the 329 depths with both values,
+171 agree to 0.005 and 158 differ. The API/vendored ratio has a median of
+0.900 (IQR 0.899–0.918): most BLM/MDA stations look systematically scaled by
+about 0.9. The DB lacks porosity at 47 depths that vendored has (mostly
+91 cm; also acedupuy, acehuntl and aceingom at 50 cm; all of mdagildf), and
+has 5 that vendored lacks (acerapl2 at all depths, nctbirne at 91 cm). Some DB
+values are implausibly low, 14–20 % (blmterry, mdabench, mdafroid, wsrabsaw,
+wsrboydw, wsrmelvi), and pin the API's saturation at 100 %. Vendored
+acechest at 100 cm has porosity 0.
+
+Fix (the smallest that matches the API everywhere): percent saturation is
+still computed client-side from the level-2 VWC, but the **porosity comes
+from the API**. `ui/porositySource.ts` reads it from `/derived/{daily,hourly}?elements=percent_saturation&keep=true`
+(the `Porosity @ … [%]` columns, row by row) and keeps only the depths the API
+reports. `POROSITY_SOURCE = 'vendored'` is the one-line switch back to
+`compute` `percentSaturation()` over mesonet-soils, mirroring `SWP_SOURCE`
+(D-SWP-2). Which porosity is physically right (for example, whether the DB
+values are 0.9 × HYPROP initial water content, or bad rows such as blmterry)
+is for the mesonet-soils and mesonet-db-rds maintainers to decide.
+
+- **Tests:** `ui/porositySource.test.ts` checks golden parity with API
+  porosity for acebozem, arskeogh and **mdamalta** (daily season2025, hourly
+  jul2025; mdamalta fixtures from `capture.mjs --only mdamalta`). It also
+  asserts that mdamalta's vendored porosity still differs, so a parameter
+  refresh that fixes this fails the test and prompts the switch.
+- **Live:** the harness `ag/percent-saturation` comparison passes at every
+  station, mdamalta included.
 
 ### D-GDD-1: wheat and barley stage labels are recomputed after the NDAWN switch
 
@@ -209,8 +256,33 @@ Ag Tools is now computed in the browser from raw `/observations` (QC level
 - **SWP stays on the API** (`/derived/{daily,hourly}?elements=swp`) until
   mesonet-db-rds#186 resolves (D-SWP-2). `ui/swpSource.ts` `SWP_SOURCE` is the
   one-line switch to the tested client path (`compute` `swp()`). Percent
-  saturation is client-side (porosity from mesonet-soils; matches the API to
-  0.0005 %).
+  saturation is computed client-side from VWC, with the **porosity from the
+  API** (`keep=true` Porosity columns; D-PS-1, switch `POROSITY_SOURCE`), so
+  it matches `/derived` at every has_swp station (to 0.0005 %).
+- **`var` is always in the URL.** The rebuild briefly defaulted to `etr`
+  and dropped `var=etr` from links as the default; those links now open
+  the legacy default (Growing Degree Days). `var` is now written even when
+  it equals the default, so links name their variable explicitly.
+- **Variable default and reset** match legacy: the default variable is
+  Growing Degree Days, and changing the variable resets crop (wheat), custom
+  GDD cutoffs, time aggregation (daily) and soil variable (VWC), as in
+  `app.py` ~567-599. Explicit URL params in a deep link are kept on the
+  initial load; only a user's change of variable resets them.
+- **SWP annotations** match legacy: boxed "Field Capacity" (top-left) and
+  "Wilting Point" (bottom-left) labels. The grey bands also have dashed
+  0.33 / 15 bar reference lines, which legacy did not draw.
+- **Plot size and x range.** The chart fills its card (at least 540 px) and
+  the x axis fits the data (Plotly autorange), instead of legacy's fixed
+  500 px height and [first − 1 day, last + 1 day] range. A fixed pad would
+  fight the GDD projection, which extends the axis past the last observation.
+  Derived data are cached in memory (TanStack Query), not in session storage.
+- **No-station state** uses the legacy text: "Select Station" / "To get
+  started, select a station from the dropdown."
+- **Static data sources.** `data/staticSource.ts` `DATA2_STATIC_ENABLED =
+  false`: the soil parameters and GDD stage tables load straight from the
+  vendored `public/data/` files, with no data2 probes (and no console 404s),
+  until data2 publishes `derived/gdd_stages.json` and the soils manifest. The
+  data2 paths stay implemented and tested (`deps.data2Enabled`).
 - **GDD cutoffs.** The slider shows the crop's cutoffs from `GDD_CUTOFFS_F`
   (what the API computes, incl. wheat/barley 32–70 °F switching to 32–95 °F at
   Haun stage 2), not the legacy slider table (wheat/barley 32–95, hemp 34–100,
@@ -241,7 +313,9 @@ Ag Tools is now computed in the browser from raw `/observations` (QC level
   shows e.g. "Solar radiation unavailable for this period." (ETr, CCI; e.g.
   arskeogh with its dead pyranometer) instead of an empty plot; partial gaps
   get a note and stay gaps (hourly ETo is null, not 0: D-ETO-1).
-- **Annual comparison.** One `/observations/daily` request per year (level 2,
+- **Annual comparison.** Option labels show depths and heights in US units,
+  like legacy `dist_swap` ("Soil VWC @ 4 in", "Air Temperature @ 6.6 ft"),
+  and are naturally sorted. One `/observations/daily` request per year (level 2,
   daily mean; daily total for precipitation), drawn as each year arrives
   (legacy: one full-record request). The current year is black, width 3; prior
   years are Viridis samples (the pre-Wave-3 palette; legacy used YlGnBu).

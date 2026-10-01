@@ -141,15 +141,20 @@ type AgTime = (typeof AG_TIME_OPTIONS)[number]
 const AG_LIVESTOCK_OPTIONS = ['adult', 'newborn'] as const
 type AgLivestock = (typeof AG_LIVESTOCK_OPTIONS)[number]
 
-const AG_VAR_DEFAULT = 'etr'
+// Legacy default (layout.py:1151): Growing Degree Days.
+export const AG_VAR_DEFAULT = 'gdd'
 export const GDD_PROJ_OPTIONS = ['season', '30', '60', 'off'] as const
 export type GddProjHorizon = (typeof GDD_PROJ_OPTIONS)[number]
 
 export function useAgToolsState() {
   const [station, setStation] = useQueryState('s', parseAsString)
+  // Always written to the URL (clearOnDefault: false) so shared links name
+  // the variable explicitly and survive future default changes. Links from
+  // before the default moved etr → gdd that omit `var` now open GDD
+  // (documented in features/ag/DIVERGENCES.md).
   const [variable, setVariable] = useQueryState(
     'var',
-    parseAsString.withDefault(AG_VAR_DEFAULT),
+    parseAsString.withDefault(AG_VAR_DEFAULT).withOptions({ clearOnDefault: false }),
   )
   const [crop, setCrop] = useQueryState('crop', parseAsString.withDefault('wheat'))
   const [gddLo, setGddLo] = useQueryState('gdd_lo', parseAsString)
