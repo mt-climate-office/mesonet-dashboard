@@ -33,16 +33,10 @@ export const GDD_CROPS: { value: string; label: string }[] = [
   { value: 'hemp', label: 'Hemp' },
 ]
 
-/** Crop → [base, max] temperature thresholds, °F. */
-export const GDD_CROP_THRESHOLDS: Record<string, [number, number]> = {
-  canola: [41, 100],
-  corn: [50, 86],
-  sunflower: [44, 100],
-  wheat: [32, 95],
-  barley: [32, 95],
-  sugarbeet: [34, 86],
-  hemp: [34, 100],
-}
+// Crop GDD cutoffs live in the compute library (`features/ag/compute/gdd.ts`
+// `GDD_CUTOFFS_F`, verbatim from the API incl. the wheat/barley NDAWN switch).
+// The legacy slider table (wheat/barley 32–95, hemp 34–100, sunflower 44–100)
+// disagreed with what the API computes and was removed in Wave 3.
 
 export const SOIL_VAR_OPTIONS: { value: string; label: string }[] = [
   { value: 'soil_blk_ec', label: 'Electrical Conductivity' },

@@ -1,73 +1,45 @@
 /* -------------------------------------------------------------------------- */
-/* Ag Tools — derived endpoints                                               */
+/* Ag Tools — /derived (soil water potential only)                            */
 /* -------------------------------------------------------------------------- */
-import { fetchCsv, mergeOn } from './http'
+/**
+ * Every Ag Tools variable is computed client-side from raw observations
+ * (`features/ag/compute`) except soil water potential, which stays on the
+ * API's `/derived` endpoint (server-side soil parameters) until
+ * mesonet-db-rds#186 resolves: the public mesonet-soils fits diverge strongly
+ * from the API's at the dry end (DIVERGENCES.md D-SWP-2). The switch lives in
+ * `features/ag/ui/swpSource.ts` (`SWP_SOURCE`).
+ */
 import { exclusiveEnd } from './record'
-import type { ObservationRow } from './types'
 
-export interface DerivedQuery {
+export interface DerivedSwpQuery {
   station: string
-  variable: string
-  /** YYYY-MM-DD */
+  /** Inclusive local start date, YYYY-MM-DD. */
   start: string
-  /** YYYY-MM-DD */
+  /** Inclusive local end date, YYYY-MM-DD. */
   end: string
-  /** 'daily' | 'hourly' */
   time: 'daily' | 'hourly'
-  /** Crop name for GDD; ignored otherwise. */
-  crop?: string
+  /** QC level (Ag Tools default: 2). */
+  level: 0 | 1 | 2
 }
 
 /**
- * Fetch derived/observation series for the Ag Tools tab.
- * Mirrors get_data.get_derived from the legacy app.
- *
- * - Soil variables (soil_temp, soil_ec_blk, soil_vwc) hit /observations/{time}.
- * - Everything else (etr, gdd, feels_like, cci, swp, percent_saturation) hits /derived/{time}.
- *
- * Note on GDD: the new RDS API ignores `low`/`high` query params (verified
- * empirically against /derived/daily). The slider in the UI therefore drives
- * client-side recomputation in DerivedChart from the Tmax/Tmin columns the
- * API returns when `keep=true` is set. We send `keep=true` only for `gdd`
- * since other endpoints don't honor it (and it makes the response wider).
+ * `/derived/{daily,hourly}?elements=swp` request (CSV; positive bar
+ * magnitudes per depth, columns `Soil Water Potential @ -5 cm [bar]` …).
+ * Returned as a request so callers can fetch it with raw (un-renamed)
+ * headers.
  */
-export async function getDerived(q: DerivedQuery): Promise<ObservationRow[]> {
-  const isObservation =
-    q.variable.includes('soil_temp') ||
-    q.variable.includes('soil_ec_blk') ||
-    q.variable.includes('soil_vwc')
-  const path = isObservation
-    ? `observations/${q.time}`
-    : `derived/${q.time}`
-
-  const baseQuery: Record<string, unknown> = {
-    stations: q.station,
-    start_time: q.start,
-    end_time: exclusiveEnd(q.end),
-    elements: q.variable,
-    rm_na: true,
+export function derivedSwpRequest(q: DerivedSwpQuery): {
+  path: string
+  query: Record<string, string | number | boolean>
+} {
+  return {
+    path: `derived/${q.time}/`,
+    query: {
+      stations: q.station,
+      start_time: q.start,
+      end_time: exclusiveEnd(q.end),
+      elements: 'swp',
+      level: q.level,
+    },
   }
-  if (!isObservation) baseQuery.alpha = 0.23
-  if (q.crop) baseQuery.crop = q.crop
-  // `keep=true` returns the underlying inputs alongside the derived value.
-  // For GDD we use it to recompute against the slider thresholds; for
-  // feels_like it surfaces Wind Chill / Heat Index so the chart can color
-  // each marker by which regime the value came from.
-  if (q.variable === 'gdd' || q.variable === 'feels_like') baseQuery.keep = true
-
-  return fetchCsv<ObservationRow>(path, baseQuery)
-}
-
-/**
- * Convenience for the Soil Profile plot. Fetches the soil observation series
- * (temp/EC/VWC) and merges with the derived percent_saturation + swp series so
- * the heatmap can switch between any of the five soil sub-variables without
- * refetching.
- */
-export async function getDerivedSoil(q: Omit<DerivedQuery, 'crop'>): Promise<ObservationRow[]> {
-  const [obs, derived] = await Promise.all([
-    getDerived({ ...q, variable: q.variable }),
-    getDerived({ ...q, variable: 'percent_saturation,swp' }),
-  ])
-  return mergeOn(obs, derived, ['station', 'datetime'])
 }

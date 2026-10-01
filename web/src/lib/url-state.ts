@@ -18,7 +18,8 @@
  *
  *   Ag Tools   var        derived variable (etr, gdd, …)
  *              crop       GDD crop
- *              gdd_lo, gdd_hi  GDD slider thresholds
+ *              gdd_lo, gdd_hi  custom GDD cutoffs, °F (absent = the crop's)
+ *              gdd_proj   GDD projection horizon: season | 30 | 60 | off
  *              ag_time    hourly | daily
  *              lt         livestock: adult | newborn
  *              soilv      soil profile sub-variable
@@ -141,6 +142,8 @@ const AG_LIVESTOCK_OPTIONS = ['adult', 'newborn'] as const
 type AgLivestock = (typeof AG_LIVESTOCK_OPTIONS)[number]
 
 const AG_VAR_DEFAULT = 'etr'
+export const GDD_PROJ_OPTIONS = ['season', '30', '60', 'off'] as const
+export type GddProjHorizon = (typeof GDD_PROJ_OPTIONS)[number]
 
 export function useAgToolsState() {
   const [station, setStation] = useQueryState('s', parseAsString)
@@ -166,6 +169,10 @@ export function useAgToolsState() {
     parseAsString.withDefault('soil_vwc'),
   )
   const [annualVar, setAnnualVar] = useQueryState('annv', parseAsString)
+  const [gddProj, setGddProj] = useQueryState(
+    'gdd_proj',
+    parseAsStringEnum<GddProjHorizon>([...GDD_PROJ_OPTIONS]).withDefault('season'),
+  )
   const [from, setFrom] = useQueryState('ag_from', parseAsString)
   const [to, setTo] = useQueryState('ag_to', parseAsString)
 
@@ -188,6 +195,8 @@ export function useAgToolsState() {
     setSoilVar,
     annualVar,
     setAnnualVar,
+    gddProj,
+    setGddProj,
     from,
     setFrom,
     to,
