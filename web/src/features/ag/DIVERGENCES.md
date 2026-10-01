@@ -259,6 +259,10 @@ Ag Tools is now computed in the browser from raw `/observations` (QC level
   saturation is computed client-side from VWC, with the **porosity from the
   API** (`keep=true` Porosity columns; D-PS-1, switch `POROSITY_SOURCE`), so
   it matches `/derived` at every has_swp station (to 0.0005 %).
+- **`var` is always in the URL.** The rebuild briefly defaulted to `etr`
+  and dropped `var=etr` from links as the default; those links now open
+  the legacy default (Growing Degree Days). `var` is now written even when
+  it equals the default, so links name their variable explicitly.
 - **Variable default and reset** match legacy: the default variable is
   Growing Degree Days, and changing the variable resets crop (wheat), custom
   GDD cutoffs, time aggregation (daily) and soil variable (VWC), as in
