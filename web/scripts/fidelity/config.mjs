@@ -103,6 +103,7 @@ export const LATEST_SCENARIOS = [
     // sensor add/remove/outage overlays (acebento: pyranometer swap 2026-05-14,
     // 50 cm TDR outage from 2026-05-19, 100 cm outage ending 2026-05-26)
     id: 'sensor-overlay',
+    onlyRoles: ['sensor-change'],
     label: 'Daily 2026-05-01..2026-06-15 (sensor-change overlays)',
     legacy: [
       { chip: ['hourly-switch', 'Daily'] },
