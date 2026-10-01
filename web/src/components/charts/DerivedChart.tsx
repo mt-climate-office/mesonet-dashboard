@@ -8,8 +8,12 @@ import {
   GDD_STAGE_COLORS,
   PALETTE_VIRIDIS,
   sampleSequential,
+  depthInchesFromLabel,
+  depthLabelFromCol,
+  depthOrder,
 } from '../../lib/params'
 import type { ObservationRow } from '../../lib/api'
+import { classifyCci, methodBGdd } from '../../features/ag/compute/legacy'
 
 /* -------------------------------------------------------------------------- */
 /* Helper utilities                                                           */
@@ -160,22 +164,6 @@ function buildFeelsLikeFigure(data: ObservationRow[]) {
 /* GDD chart — daily GDD bar + cumulative line w/ growth-stage marker colors. */
 /* -------------------------------------------------------------------------- */
 
-/**
- * "Method B" growing degree day:
- *   Tmin' = max(low, Tmin)   // floor
- *   Tmax' = min(high, Tmax)  // cap
- *   GDD   = max(0, (Tmin' + Tmax') / 2 - low)
- *
- * Used because the new RDS API ignores `low`/`high` query params and always
- * uses its per-crop default thresholds. To make the slider responsive, we
- * recompute from Tmax/Tmin (which the API does return when `keep=true`).
- */
-function methodBGdd(tmin: number, tmax: number, low: number, high: number): number {
-  const lo = Math.max(low, tmin)
-  const hi = Math.min(high, tmax)
-  return Math.max(0, (lo + hi) / 2 - low)
-}
-
 function buildGddFigure(
   data: ObservationRow[],
   low: number,
@@ -288,28 +276,6 @@ function buildGddFigure(
 /* Livestock CCI chart                                                        */
 /* -------------------------------------------------------------------------- */
 
-function classifyCci(value: number, newborn: boolean): keyof typeof CCI_RISK_COLORS {
-  if (value >= 113) return 'Extreme Danger'
-  if (value >= 105) return 'Extreme'
-  if (value >= 96) return 'Severe'
-  if (value >= 87) return 'Moderate'
-  if (value >= 77) return 'Mild'
-  if (newborn) {
-    if (value >= 42) return 'No Stress'
-    if (value >= 32) return 'Mild'
-    if (value >= 23) return 'Moderate'
-    if (value >= 14) return 'Severe'
-    if (value >= 5) return 'Extreme'
-    return 'Extreme Danger'
-  }
-  if (value >= 33) return 'No Stress'
-  if (value >= 14) return 'Mild'
-  if (value >= -4) return 'Moderate'
-  if (value >= -22) return 'Severe'
-  if (value >= -40) return 'Extreme'
-  return 'Extreme Danger'
-}
-
 function buildCciFigure(data: ObservationRow[], newborn: boolean) {
   const sorted = [...data].sort((a, b) =>
     String(a.datetime).localeCompare(String(b.datetime)),
@@ -366,16 +332,6 @@ function buildCciFigure(data: ObservationRow[], newborn: boolean) {
 // log Y reversed so the smaller numbers — wetter — render at the top).
 const SWP_FIELD_CAPACITY = 0.33
 const SWP_WILTING_POINT = 15
-
-function depthLabelFromCol(c: string): string {
-  const m = c.match(/@\s*(-?\d+)\s*(cm|in)/)
-  return m ? (m[2] === 'in' ? `${m[1]} in` : `${m[1]} cm`) : c
-}
-
-function depthInchesFromLabel(label: string): number {
-  const m = label.match(/(-?\d+)/)
-  return m ? Math.abs(parseInt(m[1], 10)) : 0
-}
 
 function buildSwpFigure(data: ObservationRow[]) {
   const sorted = [...data].sort((a, b) =>
@@ -579,12 +535,6 @@ function buildPercentSatFigure(data: ObservationRow[]) {
 /* -------------------------------------------------------------------------- */
 /* Soil Profile heatmap                                                       */
 /* -------------------------------------------------------------------------- */
-
-function depthOrder(label: string): number {
-  // Accept "-5 cm" or "5 in" — sort by depth (shallow → deep, ie. less negative or smaller positive on top).
-  const m = label.match(/(-?\d+)/)
-  return m ? Math.abs(parseInt(m[1], 10)) : 0
-}
 
 /**
  * Heatmap palettes — perceptually uniform and CVD-safe.

@@ -9,6 +9,8 @@ import {
   COLOR_MAPPER,
   ELEM_MAP,
   SELECTED_VARS,
+  depthLabelFromColumn,
+  variableForColumn,
   type AggPeriod,
 } from '../../lib/params'
 import { useStationRecord } from '../../hooks/useStationRecord'
@@ -25,45 +27,6 @@ const TWO_WEEKS = 14
 const SOIL_DEPTH_COLORS = SOIL_DEPTH_COLOR
 
 const ETR_COLOR = '#FF0000'
-
-function isWindSpeed(label: string) {
-  return /Wind Speed/.test(label)
-}
-function isPrecip(label: string) {
-  return /Precipitation/.test(label)
-}
-function isReferenceEt(label: string) {
-  return /Reference ET/.test(label)
-}
-
-// Map a column header to the user-facing display variable.
-function variableForColumn(col: string): string | null {
-  if (col === 'Air Temperature [°F]') return 'Air Temperature'
-  if (col === 'Atmospheric Pressure [mbar]') return 'Atmospheric Pressure'
-  if (col === 'Relative Humidity [%]') return 'Relative Humidity'
-  if (col === 'Solar Radiation [W/m²]') return 'Solar Radiation'
-  if (col === 'Snow Depth [in]' || col === 'Snow Depth [in.]')
-    return 'Snow Depth'
-  if (col.startsWith('Soil Temperature')) return 'Soil Temperature'
-  if (col.startsWith('Soil VWC')) return 'Soil VWC'
-  if (col.startsWith('Bulk EC')) return 'Bulk EC'
-  if (col.startsWith('Gust Speed')) return 'Gust Speed'
-  if (isWindSpeed(col)) return 'Wind Speed'
-  if (col.startsWith('Wind Direction')) return 'Wind Direction'
-  if (col === 'Max Precip Rate [in/h]' || col === 'Max Precip Rate [in/hr]')
-    return 'Max Precip Rate'
-  if (isPrecip(col)) return 'Precipitation'
-  if (isReferenceEt(col)) return 'Reference ET'
-  if (col === 'Well Water Level [in]') return 'Well Water Level'
-  if (col === 'Well Water Temperature [°F]') return 'Well Water Temperature'
-  return null
-}
-
-// "Soil Temperature @ 4 in [°F]" → "4 in"
-function depthLabelFromColumn(col: string): string | null {
-  const m = col.match(/@\s*([0-9]+\s*in)/)
-  return m ? m[1].replace(/\s+/g, ' ') : null
-}
 
 interface SubplotInfo {
   v: string
