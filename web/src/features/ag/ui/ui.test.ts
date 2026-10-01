@@ -6,6 +6,8 @@ import { dailyMet, soilParams, soilSeries } from '../__tests__/adapters'
 import { annualTraces, coverage, partialNote, profileValues, unavailableMessage } from './derive'
 import { LEARN_MORE_BASE, learnMoreUrl } from './learnMore'
 import { projectionThrough } from './projection'
+import { HI_NONE, SLIDER_NONE, parseGddCutoffs, sliderWrites, toSlider } from './gddCutoffs'
+import { soilProfileFigure } from '../figures'
 import { SWP_SOURCE, swpFromApiRows, swpFromParams } from './swpSource'
 
 describe('learnMoreUrl (legacy slugs, app.py ~686-717)', () => {
@@ -164,5 +166,49 @@ describe('annualTraces', () => {
     expect(a.traces).toHaveLength(1)
     expect(a.traces[0].values).toEqual([32, 50])
     expect(a.cumulative).toBe(false)
+  })
+})
+
+describe('GDD cutoff URL state', () => {
+  it('legacy auto-set pairs are crop defaults and get stripped', () => {
+    const pairs = { wheat: ['32', '95'], barley: ['32', '95'], hemp: ['34', '100'], sunflower: ['44', '100'], sugarbeet: ['34', '86'], canola: ['41', '100'], corn: ['50', '86'] } as const
+    for (const [crop, [lo, hi]] of Object.entries(pairs)) {
+      expect(parseGddCutoffs(crop as never, lo, hi)).toEqual({ loF: null, hiF: null, custom: false, strip: { lo: true, hi: true } })
+    }
+  })
+  it('invalid or out-of-range values are ignored and stripped', () => {
+    expect(parseGddCutoffs('wheat', 'abc', null)).toMatchObject({ custom: false, strip: { lo: true, hi: false } })
+    expect(parseGddCutoffs('wheat', '40', '500')).toMatchObject({ loF: 40, hiF: null, custom: true, strip: { lo: false, hi: true } })
+    expect(parseGddCutoffs('corn', '90', '60')).toMatchObject({ custom: false, strip: { lo: true, hi: true } })
+  })
+  it('real custom cutoffs; "none" is an explicit open cap; crop-equal bounds are not custom', () => {
+    expect(parseGddCutoffs('wheat', '40', '86')).toMatchObject({ loF: 40, hiF: 86, custom: true })
+    expect(parseGddCutoffs('corn', null, HI_NONE)).toMatchObject({ loF: null, hiF: Infinity, custom: true })
+    expect(parseGddCutoffs('corn', '50', null)).toMatchObject({ loF: null, custom: false, strip: { lo: true, hi: false } })
+    expect(parseGddCutoffs('hemp', null, null)).toEqual({ loF: null, hiF: null, custom: false, strip: { lo: false, hi: false } })
+  })
+  it('slider writes only the moved thumb; an untouched open cap stays ∞', () => {
+    const start: [number, number] = [32, toSlider(Infinity)]
+    expect(start[1]).toBe(SLIDER_NONE)
+    expect(sliderWrites('hemp', start, [40, SLIDER_NONE])).toEqual({ lo: '40' })
+    expect(sliderWrites('sunflower', [44, SLIDER_NONE], [44, 90])).toEqual({ hi: '90' })
+    expect(sliderWrites('sunflower', [44, 90], [44, SLIDER_NONE])).toEqual({ hi: null })
+    expect(sliderWrites('corn', [50, 86], [50, SLIDER_NONE])).toEqual({ hi: HI_NONE })
+    expect(sliderWrites('corn', [40, 86], [50, 86])).toEqual({ lo: null })
+  })
+})
+
+describe('soil profile without an EC sensor', () => {
+  it('frozen cells do not keep EC-less depths alive → empty figure', () => {
+    const soil = soilSeries('acebozem', 'daily', 'winter2526')
+    const noEc = { ...soil, ecMsCm: soil.depthsCm.map(() => soil.time.map(() => null)) }
+    const v = profileValues('soil_blk_ec', noEc, {})!
+    expect(v.depthsCm).toEqual([])
+    const fig = soilProfileFigure({ variable: 'soil_blk_ec', time: soil.time, depthsCm: v.depthsCm, values: v.values, frozen: v.frozen, period: 'daily' })
+    expect(fig.data).toEqual([])
+    // A depth with some EC keeps its frozen cells.
+    const someEc = { ...soil, ecMsCm: soil.depthsCm.map((_, d) => soil.time.map((_, i) => (d === 0 && i === 0 ? 0.1 : null))) }
+    const w = profileValues('soil_blk_ec', someEc, {})!
+    expect(w.depthsCm).toEqual([soil.depthsCm[0]])
   })
 })

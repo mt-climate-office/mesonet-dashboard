@@ -138,6 +138,12 @@ export interface SoilProfileInput {
   values: Nullable[][]
   /** `frozen[d][i]`: cells hidden by the frozen-soil mask (drawn grey). */
   frozen?: boolean[][]
+  /**
+   * `hasData[d]`: the variable had a value at depth `d` before masking. A
+   * depth without data is dropped even when frozen cells exist there (no EC
+   * probe ≠ frozen EC). Defaults to "has data" when omitted.
+   */
+  hasData?: boolean[]
   period: Period
 }
 
@@ -151,7 +157,11 @@ export function soilProfileFigure(input: SoilProfileInput): Figure {
   const meta = PROFILE_META[input.variable]
   const keep = input.depthsCm
     .map((_, d) => d)
-    .filter((d) => input.values[d].some((v) => v != null) || input.frozen?.[d]?.some(Boolean))
+    .filter(
+      (d) =>
+        input.hasData?.[d] !== false &&
+        (input.values[d].some((v) => v != null) || !!input.frozen?.[d]?.some(Boolean)),
+    )
   if (keep.length === 0 || input.time.length === 0) return { data: [], layout: { ...baseLayout } }
 
   const x = xValues(input.time)

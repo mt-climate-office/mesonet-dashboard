@@ -110,29 +110,35 @@ export function profileValues(
   const axis = { depthsCm: soil.depthsCm, time: soil.time, epochMs: soil.epochMs }
   const frozenFor = (depths: number[]) =>
     depths.map((d) => mask.frozen[mask.depthsCm.indexOf(d)] ?? soil.time.map(() => false))
-  const done = (depthsCm: number[], values: Nullable[][], masked: boolean): ProfileValues => {
-    const frozen = masked ? frozenFor(depthsCm) : depthsCm.map(() => soil.time.map(() => false))
-    return { depthsCm, values, frozen, anyFrozen: frozen.some((r) => r.some(Boolean)) }
+  // A depth is kept only if the selected variable has at least one value
+  // there *before* masking; otherwise a sensor-less depth (e.g. no EC probe)
+  // would show up as all-grey "frozen" cells.
+  const done = (depthsCm: number[], raw: Nullable[][], masked: boolean): ProfileValues => {
+    const keep = depthsCm.map((_, d) => d).filter((d) => raw[d].some((v) => v != null))
+    const kept = keep.map((d) => depthsCm[d])
+    const shown = masked ? applyFrozenMask({ ...axis, depthsCm: kept }, keep.map((d) => raw[d]), mask) : keep.map((d) => raw[d])
+    const frozen = masked ? frozenFor(kept) : kept.map(() => soil.time.map(() => false))
+    return { depthsCm: kept, values: shown, frozen, anyFrozen: frozen.some((r) => r.some(Boolean)) }
   }
   switch (variable) {
     case 'soil_temp':
       return done(soil.depthsCm, soil.tempC.map((col) => col.map((v) => cToF(v))), false)
     case 'soil_vwc':
-      return done(soil.depthsCm, applyFrozenMask(axis, soil.vwcPct, mask), true)
+      return done(soil.depthsCm, soil.vwcPct, true)
     case 'soil_blk_ec': {
       const ec = soil.ecMsCm ?? soil.depthsCm.map(() => soil.time.map(() => null))
-      return done(soil.depthsCm, applyFrozenMask(axis, ec, mask), true)
+      return done(soil.depthsCm, ec, true)
     }
     case 'swp': {
       const s = extra.swp
       if (!s) return null
       const bar = s.kPa.map((col) => col.map((v) => kPaToBar(v)))
-      return done(s.depthsCm, applyFrozenMask(s, bar, mask), true)
+      return done(s.depthsCm, bar, true)
     }
     case 'percent_saturation': {
       const p = extra.pct
       if (!p) return null
-      return done(p.depthsCm, applyFrozenMask(p, p.pct, mask), true)
+      return done(p.depthsCm, p.pct, true)
     }
   }
 }

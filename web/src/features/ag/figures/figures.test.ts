@@ -212,6 +212,9 @@ describe('soil figures', () => {
     const swpFig = soilProfileFigure({ variable: 'swp', time: ['d'], depthsCm: [5], values: [[10]], period: 'daily' })
     expect((tr(swpFig, 0).z as number[][])[0][0]).toBeCloseTo(1, 10)
     expect(soilProfileFigure({ variable: 'soil_blk_ec', time: ['d'], depthsCm: [5], values: [[null]], period: 'daily' }).data).toEqual([])
+    expect(
+      soilProfileFigure({ variable: 'soil_blk_ec', time: ['d'], depthsCm: [5], values: [[null]], frozen: [[true]], hasData: [false], period: 'daily' }).data,
+    ).toEqual([])
   })
 })
 

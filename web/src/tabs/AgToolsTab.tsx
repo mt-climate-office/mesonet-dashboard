@@ -32,6 +32,13 @@ import type { SoilProfileVar } from '../features/ag/figures/soil'
 import { GDD_CUTOFFS_F } from '../features/ag/compute/gdd'
 import { learnMoreUrl } from '../features/ag/ui/learnMore'
 import { PROJECTION_OPTIONS } from '../features/ag/ui/projection'
+import {
+  SLIDER_MIN,
+  SLIDER_NONE,
+  parseGddCutoffs,
+  sliderWrites,
+  toSlider,
+} from '../features/ag/ui/gddCutoffs'
 
 const AgVariableView = lazy(() => import('../features/ag/ui/AgVariableView'))
 
@@ -43,8 +50,6 @@ const AG_VARIABLES = new Set<string>(DERIVED_VAR_OPTIONS.map((o) => o.value))
 const SWP_ONLY = new Set(['swp', 'percent_saturation'])
 const TIME_AGG_VARS = new Set(['etr', 'feels_like', 'cci', 'swp', 'percent_saturation'])
 const CROPS = new Set(GDD_CROPS.map((c) => c.value))
-const SLIDER_MIN = 30
-const SLIDER_MAX = 100
 
 const SuspenseFallback = (
   <Center h="100%">
@@ -52,8 +57,6 @@ const SuspenseFallback = (
   </Center>
 )
 
-/** Slider position for a cutoff: open-ended caps (∞) sit at the right end. */
-const clampSlider = (f: number) => Math.min(SLIDER_MAX, Math.max(SLIDER_MIN, f))
 const fmtCutoff = (f: number) => (Number.isFinite(f) ? `${f} °F` : 'no upper cutoff')
 
 export function AgToolsTab() {
@@ -139,12 +142,18 @@ export function AgToolsTab() {
   // GDD cutoffs: none in the URL → the crop's (compute GDD_CUTOFFS_F, which
   // match the API); moving the slider writes custom cutoffs.
   const cropCutoffs = GDD_CUTOFFS_F[crop]
-  const gddLoF = state.gddLo != null && state.gddLo !== '' ? Number(state.gddLo) : null
-  const gddHiF = state.gddHi != null && state.gddHi !== '' ? Number(state.gddHi) : null
-  const custom = gddLoF != null || gddHiF != null
+  const cut = parseGddCutoffs(crop, state.gddLo, state.gddHi)
+  const { loF: gddLoF, hiF: gddHiF, custom } = cut
+  // Legacy auto-set pairs and invalid values are stripped from the URL once.
+  const stripLo = variable === 'gdd' && cut.strip.lo
+  const stripHi = variable === 'gdd' && cut.strip.hi
+  useEffect(() => {
+    if (stripLo) void state.setGddLo(null, { history: 'replace' })
+    if (stripHi) void state.setGddHi(null, { history: 'replace' })
+  }, [stripLo, stripHi, state])
   const sliderValue: [number, number] = [
-    clampSlider(gddLoF ?? cropCutoffs[0]),
-    clampSlider(gddHiF ?? cropCutoffs[1]),
+    toSlider(gddLoF ?? cropCutoffs[0]),
+    toSlider(gddHiF ?? cropCutoffs[1]),
   ]
   const [drag, setDrag] = useState<[number, number] | null>(null)
 
@@ -322,29 +331,33 @@ export function AgToolsTab() {
                   </Group>
                   <RangeSlider
                     min={SLIDER_MIN}
-                    max={SLIDER_MAX}
+                    max={SLIDER_NONE}
                     step={1}
                     minRange={1}
                     value={drag ?? sliderValue}
                     onChange={setDrag}
                     onChangeEnd={(val) => {
                       setDrag(null)
-                      void state.setGddLo(String(val[0]))
-                      void state.setGddHi(String(val[1]))
+                      // Only a thumb that moved is written; an untouched
+                      // open cap stays ∞.
+                      const w = sliderWrites(crop, sliderValue, val)
+                      if (w.lo !== undefined) void state.setGddLo(w.lo)
+                      if (w.hi !== undefined) void state.setGddHi(w.hi)
                     }}
-                    label={(v) => `${v}°F`}
+                    label={(v) => (v >= SLIDER_NONE ? 'no upper cutoff' : `${v}°F`)}
                     marks={[
                       { value: 30, label: '30°F' },
                       { value: 50, label: '50°F' },
                       { value: 70, label: '70°F' },
                       { value: 90, label: '90°F' },
+                      { value: SLIDER_NONE, label: 'none' },
                     ]}
                     mb="md"
                     aria-label="GDD temperature cutoffs"
                   />
                   <Text size="xs" c="dimmed" data-testid="gdd-cutoff-mode">
                     {custom
-                      ? `Custom cutoffs ${gddLoF ?? cropCutoffs[0]}–${gddHiF ?? fmtCutoff(cropCutoffs[1])} °F: growth-stage labels are not shown.`
+                      ? `Custom cutoffs: ${gddLoF ?? cropCutoffs[0]} °F to ${fmtCutoff(gddHiF ?? cropCutoffs[1])}. Growth-stage labels are not shown.`
                       : `${cropLabel} cutoffs: ${cropCutoffs[0]} °F to ${fmtCutoff(cropCutoffs[1])}` +
                         (ndawn
                           ? `, switching to ${GDD_CUTOFFS_F[`${crop as 'wheat' | 'barley'}2`][1]} °F at Haun stage 2 (NDAWN).`

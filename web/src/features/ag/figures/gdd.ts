@@ -36,7 +36,7 @@ export function gddFigure(series: GddSeries, opts: GddFigureOptions): Figure {
   const x = series.date
   const hoverStage = (i: number): string => {
     if (opts.stageMode === 'custom') return 'n/a (custom cutoffs)'
-    if (opts.stageMode === 'no-table') return `No stage table for ${opts.cropLabel ?? 'this crop'}`
+    if (opts.stageMode === 'no-table') return `No stage table for ${(opts.cropLabel ?? 'this crop').toLowerCase()}`
     return stageText(series.stage[i], series.stageName[i]) || '—'
   }
   const stageLabels = x.map((_, i) => hoverStage(i))
