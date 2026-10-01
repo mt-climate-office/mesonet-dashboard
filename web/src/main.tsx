@@ -19,7 +19,7 @@ import { queryClient } from './lib/queryClient'
  * the app see a consistent URL shape. Runs synchronously before React mounts
  * so the first render already has the station selected.
  *
- * In production (GitHub Pages) the matching `docs/404.html` redirects unknown
+ * In production (GitHub Pages) the matching `public/404.html` (built into the Pages artifact) redirects unknown
  * paths to the index with the same `?s=` translation. In dev (Vite SPA
  * fallback) we never see a 404 so the translation happens here.
  */
