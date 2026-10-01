@@ -2,7 +2,7 @@
 // and return a normalized capture { url, plots, cards, tables, log, shots, ... }.
 import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'
-import { legacyUrl, newAppUrl, TIMEOUTS } from '../config.mjs'
+import { legacyUrl, newAppUrl, TIMEOUTS, QC_LEVEL } from '../config.mjs'
 import { openPage, settle, waitForPlot, extract } from './browser.mjs'
 import { ensureDir, slug } from './util.mjs'
 
@@ -322,7 +322,10 @@ export async function captureLegacyDownloader(browser, target, station, sc, rang
     await dashSetProps(page, 'download-elements', { value: res.elementsUsed })
     await dashSetProps(page, 'dl-timeperiod', { value: sc.period })
     await dashSetProps(page, 'dl-start', { value: range.start })
-    await dashSetProps(page, 'dl-end', { value: range.end })
+    // Legacy's end date is exclusive (API end_time); the new app's is inclusive
+    // (intentional, hotfix). Ask legacy for end+1 so both cover the same days.
+    res.legacyEnd = range.legacyEnd ?? range.end
+    await dashSetProps(page, 'dl-end', { value: res.legacyEnd })
     await settle(log)
     res.legacyProps = {
       elements: (await dashGetProps(page, 'download-elements'))?.value,
@@ -350,7 +353,7 @@ export async function captureLegacyDownloader(browser, target, station, sc, rang
 
 export async function captureNewDownloader(browser, target, station, sc, range, outDir) {
   const { ctx, page, log } = await openPage(browser)
-  const params = { els: sc.elements, period: sc.period, from: range.start, to: range.end }
+  const params = { els: sc.elements, period: sc.period, qc: sc.qc ?? QC_LEVEL, from: range.start, to: range.end }
   const res = { target: target.label, station, scenario: sc.id, url: newAppUrl(target, station, { tab: 'downloader', params }) }
   try {
     await page.goto(res.url, { waitUntil: 'domcontentloaded', timeout: TIMEOUTS.nav })

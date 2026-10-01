@@ -20,7 +20,8 @@ export function normX(x) {
   const s = String(x).trim().replace(' ', 'T')
   const m = s.match(/^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2})(?::\d{2}(?:\.\d+)?)?)?/)
   if (!m) return s
-  return m[2] && m[2] !== '00:00' ? `${m[1]}T${m[2]}` : m[2] ? `${m[1]}T00:00` : m[1]
+  // midnight == date-only so daily series ('2026-09-01' vs '2026-09-01 00:00:00-06:00') align
+  return m[2] && m[2] !== '00:00' ? `${m[1]}T${m[2]}` : m[1]
 }
 
 const num = (v) => {
@@ -51,9 +52,31 @@ function describe(plot) {
       const base = `${ax} | ${t.name || '(unnamed)'} | ${t.type}`
       counts[base] = (counts[base] ?? 0) + 1
       const key = counts[base] > 1 ? `${base} #${counts[base]}` : base
-      const fuzzy = `${normLabel(ax)}|${normLabel(t.name)}|${counts[base]}`
-      return { ...t, axisTitle: ax, key, fuzzy }
+      return { ...t, axisTitle: ax, key, fuzzyBase: fuzzyName(ax, t.name) }
     })
+    .map((t, _i, all) => {
+      const n = all.filter((u) => u.fuzzyBase === t.fuzzyBase && u.axisTitle === t.axisTitle)
+      const k = n.indexOf(t) + 1
+      return { ...t, fuzzy: `${t.fuzzyBase}|${k}` }
+    })
+}
+
+/**
+ * Fuzzy trace identity across apps: normalized subplot family + depth token
+ * ("2 in", "-5 cm") or "__main__" when the trace is the subplot's own variable
+ * (legacy names those '' while the new app names them "Air Temperature").
+ */
+function fuzzyName(axisTitle, name) {
+  const ax = normLabel(axisTitle).replace(/\b(temp|temperature)\b/, 'temp')
+  const nm = normLabel(name)
+    .replace(/\btemperature\b/, 'temp')
+    .replace(/\bpercentile\b/, 'pct')
+    .replace(/\baverage\b/, 'avg')
+    .replace(/^(avg (max|min))\b.*/, '$1')
+  const depth = String(name ?? '').match(/(-?\d+(?:\.\d+)?)\s*(in|cm|ft|m)\b/)
+  if (depth) return `${ax}|${depth[1].replace('-', '')}${depth[2]}`
+  if (!nm || nm.startsWith(ax) || ax.startsWith(nm)) return `${ax}|__main__`
+  return `${ax}|${nm}`
 }
 
 /** Diff two series. Returns stats + status. */
@@ -89,10 +112,13 @@ export function diffSeries(a, b, tol = TOLERANCE) {
   xa.forEach((x, i) => ma.set(x, ya[i]))
   const mb = new Map()
   xb.forEach((x, i) => mb.set(x, yb[i]))
-  const onlyA = xa.filter((x) => !mb.has(x))
-  const onlyB = xb.filter((x) => !ma.has(x))
+  // A point present on one side only but null there (gap marker inserted for
+  // plotting, or an all-NA row) is not a difference.
+  const onlyA = xa.filter((x) => !mb.has(x) && num(ma.get(x)) !== null)
+  const onlyB = xb.filter((x) => !ma.has(x) && num(mb.get(x)) !== null)
   let nDiff = 0
   let nullMismatch = 0
+  let caseOnly = 0 // 'False' vs 'false' (CSV booleans): WARN
   let maxAbs = 0
   let worstX = null
   const samples = []
@@ -104,10 +130,15 @@ export function diffSeries(a, b, tol = TOLERANCE) {
     const na = num(va)
     const nb = num(mb.get(x))
     if (na === null && nb === null) {
-      if (typeof va === 'string' && va !== mb.get(x)) {
-        nDiff++
-        diffXs.push(x)
-        if (samples.length < 5) samples.push({ x, a: va, b: mb.get(x) })
+      const sa_ = va == null ? '' : String(va)
+      const sb_ = mb.get(x) == null ? '' : String(mb.get(x))
+      if (sa_ !== sb_) {
+        if (sa_.toLowerCase() === sb_.toLowerCase()) caseOnly++
+        else {
+          nDiff++
+          diffXs.push(x)
+          if (samples.length < 5) samples.push({ x, a: va, b: mb.get(x) })
+        }
       }
       continue
     }
@@ -146,7 +177,7 @@ export function diffSeries(a, b, tol = TOLERANCE) {
   const commonSorted = sa.filter((x) => mb.has(x))
   const edgeSet = new Set(commonSorted.slice(-(tol.edgePoints ?? 2)))
   const edgeDiffOnly = diffXs.length > 0 && diffXs.every((x) => edgeSet.has(x))
-  if (diffXs.length && edgeDiffOnly) status = 'WARN'
+  if ((diffXs.length && edgeDiffOnly) || caseOnly) status = 'WARN'
   if ((diffXs.length && !edgeDiffOnly) || onlyInteriorA.length || onlyInteriorB.length) status = 'FAIL'
   return {
     status,
@@ -162,6 +193,7 @@ export function diffSeries(a, b, tol = TOLERANCE) {
     nDiff,
     nullMismatch,
     edgeDiffOnly,
+    caseOnly,
     maxAbs: +maxAbs.toPrecision(4),
     worstX,
     samples,
@@ -243,7 +275,9 @@ export function compareText(a, b, { volatile = [/\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2
   }
   const A = parse(a)
   const B = parse(b)
-  const d = setDiff(A.plain, B.plain)
+  // card-switcher control labels rendered inside the card itself (either app)
+  const CONTROL = new Set(['Map', 'Station', 'Current', 'Wind', 'Forecast', 'Photo', 'Wind Rose', 'Weather Forecast', 'Latest Photo', 'Locator Map', 'Station Metadata', 'Current Conditions'])
+  const d = setDiff(A.plain.filter((l) => !CONTROL.has(l)), B.plain.filter((l) => !CONTROL.has(l)))
   const isVol = (l) => volatile.some((r) => r.test(l))
   const keys = setDiff([...A.kv.keys()], [...B.kv.keys()])
   const valueDiffs = []
@@ -339,7 +373,9 @@ export function compareCsv(A, B) {
   return {
     status: worst(
       A.download.filename === B.download.filename ? 'PASS' : 'WARN',
-      cols.onlyA.length || cols.onlyB.length ? 'FAIL' : 'PASS',
+      // legacy's unnamed pandas index column ('') is a legacy artifact (DLF-002);
+      // columns missing from B FAIL, extra columns in B only WARN
+      cols.onlyA.filter((c) => c !== '').length ? 'FAIL' : cols.onlyB.length ? 'WARN' : 'PASS',
       ra.length === rb.length ? 'PASS' : 'FAIL',
       columns.map((c) => c.status),
     ),

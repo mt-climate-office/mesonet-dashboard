@@ -50,15 +50,26 @@ export function legacyUrl(target, station, hash = '') {
 }
 
 /**
- * New-app deep link. Keys mirror web/src/lib/url-state.ts as of origin/main
- * (s, agg, gridmet, card, info, vars; ag: var, crop, time, lt, soilv, annv;
- * downloader: els, period, pub, rmna, from, to). Update here after Wave 1a.
+ * New-app deep link. Keys mirror web/src/lib/url-state.ts (post Wave 1a):
+ *   latest: s, from, to, agg, vars, nets, gridmet, card, info
+ *   ag: var, crop, gdd_lo, gdd_hi, gdd_proj, ag_time, lt, soilv, annv, ag_from, ag_to
+ *   downloader: els, period, pub, qc (0|1|2, replaces rmna), dl_from, dl_to
+ * Drivers pass logical names; TAB_KEYS maps per-tab from/to onto the real keys.
  */
+export const TAB_KEYS = {
+  latest: { from: 'from', to: 'to' },
+  ag: { from: 'ag_from', to: 'ag_to', time: 'ag_time' },
+  downloader: { from: 'dl_from', to: 'dl_to' },
+  satellite: { from: 'sat_from', to: 'sat_to' },
+}
+
 export function newAppUrl(target, station, { tab = 'latest', params = {} } = {}) {
   const b = target.base.replace(/\/$/, '') + '/'
   const q = new URLSearchParams()
   if (station) q.set('s', station)
-  for (const [k, v] of Object.entries(params)) {
+  const keys = TAB_KEYS[tab] ?? {}
+  for (const [k0, v] of Object.entries(params)) {
+    const k = keys[k0] ?? k0
     if (v === undefined || v === null) continue
     q.set(k, Array.isArray(v) ? v.join(',') : String(v))
   }
@@ -88,6 +99,18 @@ export const LATEST_SCENARIOS = [
     newParams: { agg: 'daily', gridmet: true },
   },
   { id: 'daily', label: 'Daily (no normals)', legacy: [{ chip: ['hourly-switch', 'Daily'] }], newParams: { agg: 'daily' } },
+  {
+    // sensor add/remove/outage overlays (acebento: pyranometer swap 2026-05-14,
+    // 50 cm TDR outage from 2026-05-19, 100 cm outage ending 2026-05-26)
+    id: 'sensor-overlay',
+    label: 'Daily 2026-05-01..2026-06-15 (sensor-change overlays)',
+    legacy: [
+      { chip: ['hourly-switch', 'Daily'] },
+      { setProps: ['start-date', { value: '2026-05-01' }] },
+      { setProps: ['end-date', { value: '2026-06-15' }] },
+    ],
+    newParams: { agg: 'daily', from: '2026-05-01', to: '2026-06-15' },
+  },
   { id: 'raw', label: 'Raw', legacy: [{ chip: ['hourly-switch', 'Raw'] }], newParams: { agg: 'raw' } },
   // top cards
   { id: 'card-wind', label: 'Top card: Wind rose', legacy: [{ seg: ['ul-tabs', 'Wind Rose'] }], newParams: { card: 'wind' } },
@@ -114,19 +137,27 @@ export const DOWNLOADER_SCENARIOS = [
  * `derived` = /derived endpoint params; `newParams` = new-app URL params.
  */
 export const AG_SCENARIOS = [
-  { id: 'etr', derived: { period: 'daily', elements: 'etr' }, newParams: { var: 'etr' } },
-  { id: 'gdd-wheat', derived: { period: 'daily', elements: 'gdd', crop: 'wheat' }, newParams: { var: 'gdd', crop: 'wheat' } },
-  { id: 'gdd-corn', derived: { period: 'daily', elements: 'gdd', crop: 'corn' }, newParams: { var: 'gdd', crop: 'corn' } },
-  { id: 'feels-like', derived: { period: 'hourly', elements: 'feels_like' }, newParams: { var: 'feels_like', time: 'hourly' } },
-  { id: 'cci', derived: { period: 'hourly', elements: 'cci' }, newParams: { var: 'cci', time: 'hourly' } },
-  { id: 'swp', derived: { period: 'daily', elements: 'swp' }, newParams: { var: 'swp' }, needsSwp: true },
+  { id: 'etr', outputs: 'Reference ET', derived: { period: 'daily', elements: 'etr' }, newParams: { var: 'etr' } },
+  { id: 'gdd-wheat', outputs: 'GDD', derived: { period: 'daily', elements: 'gdd', crop: 'wheat' }, newParams: { var: 'gdd', crop: 'wheat' } },
+  { id: 'gdd-corn', outputs: 'GDD', derived: { period: 'daily', elements: 'gdd', crop: 'corn' }, newParams: { var: 'gdd', crop: 'corn' } },
+  { id: 'feels-like', outputs: 'Feels', derived: { period: 'hourly', elements: 'feels_like' }, newParams: { var: 'feels_like', ag_time: 'hourly' } },
+  { id: 'cci', outputs: 'Comprehensive|CCI', derived: { period: 'hourly', elements: 'cci' }, newParams: { var: 'cci', ag_time: 'hourly' } },
+  { id: 'swp', outputs: 'Water Potential', derived: { period: 'daily', elements: 'swp' }, newParams: { var: 'swp' }, needsSwp: true },
   {
     id: 'percent-saturation',
+    outputs: 'Saturation',
     derived: { period: 'daily', elements: 'percent_saturation' },
     newParams: { var: 'percent_saturation' },
     needsSwp: true,
   },
 ]
+
+/**
+ * QC level. The new app defaults to level 2 everywhere (intentional divergence;
+ * legacy prod = level 1). Start local legacy with MESONET_LEVEL=2 (audit shim)
+ * for like-for-like UI comparisons. Used by api-parity (B side) and ag (/derived).
+ */
+export const QC_LEVEL = Number(process.env.FIDELITY_LEVEL ?? 2)
 
 /** Numeric tolerances for the comparator. */
 export const TOLERANCE = {

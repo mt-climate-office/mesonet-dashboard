@@ -13,15 +13,18 @@ export const API_PARITY_SCENARIOS = [
   { id: 'daily', period: 'daily', days: 14, legacyPremade: true },
   { id: 'hourly-nopremade', period: 'hourly', days: 14, legacyPremade: false },
   { id: 'daily-nopremade', period: 'daily', days: 14, legacyPremade: false },
+  // informational: how much level 2 (new-app default) removes vs prod level 1
+  { id: 'hourly-l2', period: 'hourly', days: 14, legacyPremade: true, level: 2 },
+  { id: 'daily-l2', period: 'daily', days: 14, legacyPremade: true, level: 2 },
 ]
 
-function url(base, station, sc, range, premade) {
+function url(base, station, sc, range, premade, level) {
   const q = new URLSearchParams({
     stations: station,
     elements: API_PARITY_ELEMENTS,
     start_time: range.start,
     end_time: range.end,
-    level: '1',
+    level: String(level),
     type: 'csv',
     rm_na: 'True',
     na_info: 'False',
@@ -32,8 +35,9 @@ function url(base, station, sc, range, premade) {
 }
 
 export async function compareApi(station, sc, range) {
-  const ua = url(API.legacy, station, sc, range, sc.legacyPremade)
-  const ub = url(API.v2, station, sc, range, false)
+  // A = what prod legacy sends (level 1); B = mesonet2 at sc.level (default: level 1 too, like-for-like)
+  const ua = url(API.legacy, station, sc, range, sc.legacyPremade, 1)
+  const ub = url(API.v2, station, sc, range, false, sc.level ?? 1)
   const [ra, rb] = await Promise.all([fetchText(ua), fetchText(ub)])
   const out = { urls: [ua, ub], status: 'PASS' }
   if (!ra.ok || !rb.ok) {
