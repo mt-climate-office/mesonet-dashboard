@@ -22,8 +22,9 @@ export function insertGaps(
 ): ObservationRow[] {
   if (rows.length < 3) return rows
 
-  // Pre-parse timestamps once so we don't pay the cost twice.
-  const times = rows.map((r) => Date.parse(String(r.datetime)))
+  // Pre-parse timestamps once so we don't pay the cost twice. The API sends
+  // "2026-10-01 10:00:00-06:00"; the `T` form parses in every browser.
+  const times = rows.map((r) => Date.parse(String(r.datetime).replace(' ', 'T')))
 
   // Detect cadence via median pairwise delta.
   const deltas: number[] = []
@@ -57,10 +58,24 @@ export function insertGaps(
       const gapTimeMs = times[i - 1] + cadence
       out.push({
         ...nullTemplate,
-        datetime: new Date(gapTimeMs).toISOString(),
+        datetime: formatLike(String(rows[i - 1].datetime), gapTimeMs),
       } as ObservationRow)
     }
     out.push(rows[i])
   }
   return out
+}
+
+/**
+ * Format `ms` with the same UTC offset as `like`. Plotly plots date strings
+ * at their wall-clock time and ignores offsets, so a synthetic row stamped
+ * in UTC would land 6–7 h away from its `-06:00` neighbours.
+ */
+function formatLike(like: string, ms: number): string {
+  const m = like.match(/([+-])(\d{2}):?(\d{2})$/)
+  if (!m) return new Date(ms).toISOString()
+  const offsetMin = (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3]))
+  const wall = new Date(ms + offsetMin * 60_000).toISOString().slice(0, 19)
+  const sep = like.includes('T') ? 'T' : ' '
+  return `${wall.replace('T', sep)}${m[1]}${m[2]}:${m[3]}`
 }
