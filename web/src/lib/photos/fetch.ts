@@ -43,21 +43,25 @@ export async function listDay(
 }
 
 /**
- * Latest frames: today + yesterday (UTC) for every current direction. A day
- * whose listing fails contributes nothing rather than sinking the card.
+ * Latest frames for every current direction, covering local (America/Denver)
+ * today and yesterday. Three UTC days are needed: in the evening the UTC date
+ * is already a day ahead, so local yesterday starts two UTC days back. A day
+ * whose listing fails contributes nothing, but if every listing fails the
+ * archive is unreachable and we throw so the card shows its load error.
  */
 export async function fetchLatestFrames(
   schedule: PhotoSchedule,
   cam: StationCamera,
   now = Date.now(),
 ): Promise<PhotoFrame[]> {
-  const days = [utcYmd(now - DAY_MS), utcYmd(now)]
-  const lists = await Promise.all(
-    cam.currentViews.flatMap((v) =>
-      days.map((d) => listDay(schedule, cam, v.token, d).catch(() => [] as PhotoFrame[])),
-    ),
+  const days = [utcYmd(now - 2 * DAY_MS), utcYmd(now - DAY_MS), utcYmd(now)]
+  const results = await Promise.allSettled(
+    cam.currentViews.flatMap((v) => days.map((d) => listDay(schedule, cam, v.token, d))),
   )
-  return lists.flat()
+  if (results.length > 0 && results.every((r) => r.status === 'rejected')) {
+    throw (results[0] as PromiseRejectedResult).reason
+  }
+  return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
 }
 
 /**
