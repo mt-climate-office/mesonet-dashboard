@@ -1,0 +1,15 @@
+# TEST-ONLY soil hydraulic parameters for the golden SWP / percent-saturation tests.
+# Provenance: mesonet-soils build/processed/2026-09-25/compat/soil_parameters.csv (model=FX)
+# and soil_porosity.csv, rows for acebozem and arskeogh, copied verbatim and reshaped
+# (depth mm below surface -> depth_cm; params JSON -> columns). The API's DB parameters
+# are not public and may be legacy fits for some cores; see DIVERGENCES.md.
+# The lab VWC clip range is NOT here: tests take it from <station>.soil-raw.csv.
+station,depth_cm,r,s,n,m,h,porosity,release
+acebozem,5,0,0.4893555,0.99883597,0.79274342,15.024752,47.74,2026-09-25
+acebozem,10,0,0.47732107,0.89788116,0.87189566,17.362501,46.98,2026-09-25
+acebozem,20,0,0.46326408,0.94819335,0.78014688,16.481696,45.94,2026-09-25
+acebozem,50,0,0.49815896,0.96461224,0.83880734,10.63237,48.58,2026-09-25
+acebozem,100,0,0.43460751,1.5942077,0.70764479,16.051372,44.04,2026-09-25
+arskeogh,10,0,0.45877793,1.0014656,0.83043424,7.1271039,45.1,2026-09-25
+arskeogh,20,0,0.51818822,0.82093508,0.95004303,5.7686017,49.78,2026-09-25
+arskeogh,50,0,0.46656946,1.2239298,0.77653474,9.9817686,46.35,2026-09-25
