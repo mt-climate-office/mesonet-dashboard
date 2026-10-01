@@ -137,7 +137,14 @@ async function runDownloader(browser, A, B) {
   const scenarios = pickScenarios(DOWNLOADER_SCENARIOS)
   for (const st of stations) {
     for (const sc of scenarios) {
-      const range = rangeDays(sc.days)
+      // end two days back so legacy's end+1 is still < today (legacy turns
+      // end==today into "now", which would add a partial day)
+      const end = daysAgo(2)
+      let start = isoDate(daysAgo(sc.days, end))
+      // both apps refuse dates before installation (legacy via DatePicker minDate)
+      const inst = stationInfo[st]?.date_installed
+      if (inst && start < inst) start = inst
+      const range = { start, end: isoDate(end), legacyEnd: isoDate(daysAgo(1)) }
       const capA = A.kind === 'legacy' ? captureLegacyDownloader : captureNewDownloader
       const capB = B.kind === 'legacy' ? captureLegacyDownloader : captureNewDownloader
       const [ca, cb] = await Promise.all([
@@ -175,7 +182,7 @@ async function runAg(browser, N) {
       const range = rangeDays(sc.derived.period === 'hourly' ? 7 : 30)
       const [derived, cap] = await Promise.all([fetchDerived(st, sc, range), captureNewAg(browser, N, st, sc, range, join(dir, 'shots'))])
       await saveCapture(dir, `${st}-${sc.id}-new`, cap)
-      const comparison = compareAg(cap, derived)
+      const comparison = compareAg(cap, derived, sc)
       const item = { station: st, scenario: sc.id, status: comparison.status, summary: summarize(comparison), comparison, urls: [derived.url, cap.url], shots: [cap.shot] }
       run.items.push(item)
       console.log(`[ag] ${st} ${sc.id}: ${item.status} ${item.summary}`)
@@ -255,7 +262,8 @@ if (!args['report-only']) {
 }
 await rebuildReport()
 // exit non-zero if anything failed (useful for the cutover gate)
-const runs = await Promise.all(compares.map((c) => readJson(join(OUT, c, 'results.json'), null)))
+const gate = args['report-only'] ? ['api-parity', 'data-parity', 'ui-latest', 'ui-downloader', 'ag'] : compares
+const runs = await Promise.all(gate.map((c) => readJson(join(OUT, c, 'results.json'), null)))
 const overall = worst(runs.filter(Boolean).flatMap((r) => r.items.map((i) => i.status)))
 console.log(`overall: ${overall}`)
 if (overall === 'FAIL' || overall === 'ERROR') process.exitCode = process.exitCode || 1
