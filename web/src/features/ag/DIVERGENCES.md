@@ -192,3 +192,67 @@ to ship.
   any day with fewer valid hours than the local day has (23, 24 or 25 across
   DST), unless `minHours` is passed, so a partial day never looks like a low
   total. A mean needs one valid hour.
+
+## UI divergences vs the legacy dashboard (Wave 3)
+
+Ag Tools is now computed in the browser from raw `/observations` (QC level
+2) with the library above; the figures live in `figures/`, the views in
+`ui/`. Differences a user can see, compared with the legacy Dash app
+(`app/mdb/app.py`, `utils/plot_derived.py`):
+
+- **Data source and QC.** Every variable except soil water potential is
+  computed client-side from level-2 observations (legacy: `/derived` at the
+  API's default level). Live check, last 30 days (2026-09-02..10-01) vs
+  `/derived/daily` (level 2, no `premade`): max |Δ| ETo 0.0005 in, GDD (corn)
+  0 (≤ 1e-13), feels-like 0.0004 °F, CCI 0.0005 °F at acebozem, arskeogh and
+  acecrowa (`ui/crosscheck.live.test.ts`).
+- **SWP stays on the API** (`/derived/{daily,hourly}?elements=swp`) until
+  mesonet-db-rds#186 resolves (D-SWP-2). `ui/swpSource.ts` `SWP_SOURCE` is the
+  one-line switch to the tested client path (`compute` `swp()`). Percent
+  saturation is client-side (porosity from mesonet-soils; matches the API to
+  0.0005 %).
+- **GDD cutoffs.** The slider shows the crop's cutoffs from `GDD_CUTOFFS_F`
+  (what the API computes, incl. wheat/barley 32–70 °F switching to 32–95 °F at
+  Haun stage 2), not the legacy slider table (wheat/barley 32–95, hemp 34–100,
+  sunflower 44–100), which never matched the API's numbers. Open-ended caps
+  (sunflower, hemp) sit at the slider's right end and read "no upper cutoff".
+  Moving the slider switches to **custom cutoffs** (URL `gdd_lo`/`gdd_hi`),
+  which drop growth-stage labels (the stage tables assume the crop's cutoffs);
+  the UI says so and offers "Reset to <crop> cutoffs".
+- **GDD stages** come from the vendored stage tables; hover shows
+  "<stage> – <name>". Corn has no public stage table (D-GDD-2), so corn shows
+  "No stage table for corn" (legacy showed the API DB's corn stages).
+- **GDD projection (new).** When the window ends today, a projection runs
+  through the chosen horizon (URL `gdd_proj`): default **end of season
+  (Oct 31)**, falling back to +60 days when fewer than 14 days remain; also
+  +30 / +60 days / off. NWS forecast days (dotted) then the 1991–2020 gridMET
+  normals median (dashed) with a 25th–75th percentile band. A failed NWS
+  forecast degrades to normals only, with a note.
+- **Soil profile frozen mask.** Same rule as legacy (soil temperature ≤ 32 °F
+  hides VWC, EC, SWP and saturation), but masked cells are drawn light grey
+  with a legend note instead of blank. The profile is always daily (legacy hid
+  the time toggle and reset it to daily). Only has_swp stations offer the SWP
+  and saturation chips (legacy `update_swp_chips`); EC comes from
+  `soil_ec_blk` observations.
+- **SWP / saturation station filter.** Only has_swp stations are listed (as
+  legacy `filter_to_only_swp_stations`); an ineligible station is cleared
+  **with a notification** (legacy cleared it silently).
+- **Missing sensors.** A window where a required input is entirely missing
+  shows e.g. "Solar radiation unavailable for this period." (ETr, CCI; e.g.
+  arskeogh with its dead pyranometer) instead of an empty plot; partial gaps
+  get a note and stay gaps (hourly ETo is null, not 0: D-ETO-1).
+- **Annual comparison.** One `/observations/daily` request per year (level 2,
+  daily mean; daily total for precipitation), drawn as each year arrives
+  (legacy: one full-record request). The current year is black, width 3; prior
+  years are Viridis samples (the pre-Wave-3 palette; legacy used YlGnBu).
+  Precipitation is cumulative and stops at the last observed day rather than
+  running flat to Dec 31. The y label keeps the sensor height
+  ("Air Temperature @ 2 m [°F]").
+- **Learn More.** Same slugs as legacy (gdd → `gdds/#<crop>-growing-degree-days`,
+  soil profile → `soil_profile/`, cci → `risk/`, others pass through), except
+  Annual, which links the base Ag Tools page instead of legacy's `ag_tools//`.
+- **Date picker** ends at today (legacy allowed tomorrow).
+- **Colors** (CCI YlOrRd ramp, GDD sand/indigo, Viridis heatmaps) are the
+  pre-Wave-3 dashboard's CVD-safe palettes, unchanged in Wave 3.
+- **Satellite tab** is hidden; `#satellite` links open Latest with a notice
+  linking the legacy satellite view.
