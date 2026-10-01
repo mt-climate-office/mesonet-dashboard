@@ -23,11 +23,27 @@ import {
   IconPlayerPlay,
 } from '@tabler/icons-react'
 import dayjs from 'dayjs'
-import Papa from 'papaparse'
 import { useStations } from '../hooks/useStations'
 import { useStationElements } from '../hooks/useStationElements'
 import { useDownloaderState } from '../lib/url-state'
-import { getStationRecord, type ObservationRow } from '../lib/api'
+import { toCsv } from '../lib/csv'
+import {
+  DEFAULT_QC_LEVEL,
+  DERIVED_CODES,
+  DERIVED_OPTIONS,
+  daySpan,
+  derivedOptionsFor,
+  downloadFilename,
+  HOURLY_CONFIRM_DAYS,
+  HOURLY_DEFAULT_DAYS,
+  SWP_CODES,
+  fetchDownload,
+  QC_LEVEL_OPTIONS,
+  type DownloadQuery,
+  type DownloadResult,
+  type QcLevel,
+} from './downloader/request'
+import { elementLabel } from './downloader/labels'
 
 const DownloaderPreviewChart = lazy(() =>
   import('../components/charts/DownloaderPreviewChart').then((m) => ({
@@ -45,19 +61,26 @@ const SuspenseFallback = (
 )
 
 const DATE_FMT = 'YYYY-MM-DD'
-const today = () => dayjs().startOf('day')
-
-const DERIVED_ELEMENTS = new Set(['feels_like', 'etr', 'swp', 'percent_saturation', 'cci'])
+const todayStr = () => dayjs().format(DATE_FMT)
 
 export function DownloaderTab() {
   const state = useDownloaderState()
   const stations = useStations()
-  const stationElements = useStationElements(state.station)
+  // "Show uncommon" OFF → public=true (common elements only); ON → the full
+  // list (public=false), as legacy `get_station_elements(public=not checked)`.
+  const stationElements = useStationElements(state.station, !state.showUncommon)
 
-  const [data, setData] = useState<ObservationRow[] | null>(null)
+  const [result, setResult] = useState<{ query: DownloadQuery; data: DownloadResult } | null>(
+    null,
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
   const [hint, setHint] = useState<string | null>(null)
+
+  // QC level: explicit `qc`, else legacy `rmna=true` → fully QC'd (2), else
+  // the dashboard default (also 2).
+  const qcLevel: QcLevel = state.qcLevel ?? (state.removeFlagged ? 2 : DEFAULT_QC_LEVEL)
+  const qcInfo = QC_LEVEL_OPTIONS.find((o) => o.value === qcLevel)!
 
   const stationOptions = useMemo(() => {
     if (!stations.data) return []
@@ -67,89 +90,158 @@ export function DownloaderTab() {
       .map((s) => ({ value: s.station, label: `${s.name} (${s.sub_network})` }))
   }, [stations.data])
 
-  // Filter element list against the showUncommon toggle. The legacy app passed
-  // `public=!showUncommon` so when "Show Uncommon" is OFF we only get common
-  // public elements; when ON we get the full list. Our /elements endpoint
-  // already returns the full list, so we filter client-side by checking if
-  // the description starts with the element-style label.
-  const elementOptions = useMemo(() => {
+  const stationMeta = useMemo(
+    () => stations.data?.find((s) => s.station === state.station) ?? null,
+    [stations.data, state.station],
+  )
+  const installDate = stationMeta?.date_installed
+    ? String(stationMeta.date_installed).slice(0, 10)
+    : null
+  // has_swp is a real boolean since parseCsv types True/False.
+  const hasSwp = stationMeta?.has_swp === true
+
+  const standardOptions = useMemo(() => {
     if (!stationElements.data) return []
     const seen = new Set<string>()
     const out: { value: string; label: string }[] = []
     for (const e of stationElements.data) {
-      if (seen.has(e.element)) continue
+      if (seen.has(e.element) || DERIVED_CODES.has(e.element)) continue
       seen.add(e.element)
-      out.push({ value: e.element, label: e.description_short })
+      out.push({ value: e.element, label: elementLabel(e.description_short) })
     }
-    return out.sort((a, b) => a.label.localeCompare(b.label))
+    return out.sort((a, b) =>
+      a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: 'base' }),
+    )
   }, [stationElements.data])
 
-  const startDate =
-    state.from ??
-    today()
-      .subtract(state.period === 'hourly' ? 14 : 365, 'day')
-      .format(DATE_FMT)
-  const endDate = state.to ?? today().format(DATE_FMT)
+  const elementData = useMemo(
+    () => [
+      { group: 'Standard elements', items: standardOptions },
+      {
+        group: 'Derived variables',
+        items: derivedOptionsFor(hasSwp).map((o) => ({ value: o.value, label: o.label })),
+      },
+    ],
+    [standardOptions, hasSwp],
+  )
 
-  const setDateRange = useCallback(
-    (from: string | null, to: string | null) => {
-      state.setFrom(from && from.length > 0 ? from : null)
-      state.setTo(to && to.length > 0 ? to : null)
+  // Drop selections the current station / uncommon filter doesn't offer
+  // (legacy did the same). Until the lists load, keep the URL selection.
+  // SWP-only derived variables at a non-SWP station are dropped with a
+  // visible notice (old `els=swp,…` links).
+  const { selectedElements, droppedSwp } = useMemo(() => {
+    let els = state.elements
+    let dropped: string[] = []
+    if (stationMeta && !hasSwp) {
+      dropped = els.filter((e) => SWP_CODES.has(e))
+      els = els.filter((e) => !SWP_CODES.has(e))
+    }
+    if (stationElements.data) {
+      const valid = new Set(standardOptions.map((o) => o.value))
+      els = els.filter((e) => DERIVED_CODES.has(e) || valid.has(e))
+    }
+    return { selectedElements: els, droppedSwp: dropped }
+  }, [state.elements, standardOptions, stationElements.data, stationMeta, hasSwp])
+
+  const today = todayStr()
+  // Daily/monthly default to the install date (legacy). Hourly defaults to
+  // the last 30 days instead — years of hourly rows is rarely intended.
+  const hourlyDefault = dayjs().subtract(HOURLY_DEFAULT_DAYS - 1, 'day').format(DATE_FMT)
+  const defaultStart =
+    state.period === 'hourly'
+      ? installDate && installDate > hourlyDefault
+        ? installDate
+        : hourlyDefault
+      : (installDate ?? dayjs().subtract(365, 'day').format(DATE_FMT))
+  const startDate = state.from ?? defaultStart
+  const endDate = state.to ?? today
+  const dateError =
+    startDate > endDate
+      ? 'Start date must be on or before the end date.'
+      : installDate && startDate < installDate
+        ? `Start date is before this station was installed (${installDate}).`
+        : null
+  const span = dateError ? 0 : daySpan(startDate, endDate)
+  const largeHourly = state.period === 'hourly' && span > HOURLY_CONFIRM_DAYS
+  const runKey = `${state.station}|${startDate}|${endDate}|${state.period}`
+  const [confirmedKey, setConfirmedKey] = useState<string | null>(null)
+  const needsConfirm = largeHourly && confirmedKey !== runKey
+
+  const selectStation = useCallback(
+    (v: string | null) => {
+      state.setStation(v)
+      // Legacy resets the start to the new station's install date.
+      state.setFrom(null)
     },
     [state],
   )
 
   const handleRun = useCallback(async () => {
-    if (!state.station || state.elements.length === 0) {
+    if (!state.station || selectedElements.length === 0) {
       setHint('Please select a station and at least one variable first!')
+      return
+    }
+    if (dateError) {
+      setHint(dateError)
+      return
+    }
+    if (needsConfirm) {
+      // First click on a >1-year hourly range arms it; the second runs it.
+      setConfirmedKey(runKey)
       return
     }
     setHint(null)
     setIsLoading(true)
     setError(null)
+    const query: DownloadQuery = {
+      station: state.station,
+      start: startDate,
+      end: endDate,
+      period: state.period,
+      elements: selectedElements,
+      level: qcLevel,
+    }
     try {
-      const stdElems = state.elements.filter((e) => !DERIVED_ELEMENTS.has(e))
-      const derivedElems = state.elements.filter((e) => DERIVED_ELEMENTS.has(e))
-      const out = await getStationRecord({
-        station: state.station,
-        start: startDate,
-        end: endDate,
-        period: state.period,
-        elements: stdElems.join(','),
-        hasEtr: false,
-        derivedElems: derivedElems.length > 0 ? derivedElems : undefined,
-        rmNa: state.removeFlagged,
-        naInfo: true,
-        publicOnly: !state.showUncommon,
-      })
-      setData(out)
+      const data = await fetchDownload(query)
+      setResult({ query, data })
     } catch (err) {
       setError(err as Error)
-      setData(null)
+      setResult(null)
     } finally {
       setIsLoading(false)
     }
-  }, [state, startDate, endDate])
+  }, [
+    state.station,
+    state.period,
+    selectedElements,
+    startDate,
+    endDate,
+    qcLevel,
+    dateError,
+    needsConfirm,
+    runKey,
+  ])
 
   const handleDownload = useCallback(() => {
-    if (!data || data.length === 0) {
-      setHint('Run a request first before attempting to download.')
+    if (!result || result.data.rows.length === 0) {
+      setHint("Please 'Run Request' before attempting to download.")
       return
     }
     setHint(null)
-    const csv = Papa.unparse(data as unknown as Record<string, unknown>[])
+    const { query, data } = result
+    const csv = toCsv(data.rows, data.columns)
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    const safeStart = startDate.replace(/-/g, '')
-    const safeEnd = endDate.replace(/-/g, '')
     a.href = url
-    a.download = `${state.station ?? 'mesonet'}_${state.period}_${safeStart}_to_${safeEnd}.csv`
+    a.download = downloadFilename(query.station, query.period, query.start, query.end)
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     setTimeout(() => URL.revokeObjectURL(url), 0)
-  }, [data, startDate, endDate, state.station, state.period])
+  }, [result])
+
+  const rows = result?.data.rows
 
   return (
     <Box p="sm" w="100%" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -161,63 +253,66 @@ export function DownloaderTab() {
         >
           <Card withBorder p="md">
             <Stack gap="sm">
+              <Select
+                label="Station"
+                placeholder={
+                  stations.isLoading ? 'Loading stations…' : 'Pick a station'
+                }
+                value={state.station}
+                onChange={selectStation}
+                data={stationOptions}
+                searchable
+                clearable
+                nothingFoundMessage={stations.isError ? 'Failed to load' : 'No matches'}
+                leftSection={stations.isLoading ? <Loader size="xs" /> : null}
+              />
+
+              <MultiSelect
+                label="Variables"
+                placeholder={
+                  !state.station
+                    ? 'Pick a station first'
+                    : stationElements.isLoading
+                      ? 'Loading…'
+                      : 'Select one or more variables'
+                }
+                value={selectedElements}
+                onChange={(v) => state.setElements(v)}
+                data={state.station ? elementData : []}
+                searchable
+                clearable
+                hidePickedOptions
+                nothingFoundMessage="No matching elements"
+              />
+
+              <Switch
+                label="Show uncommon variables"
+                size="sm"
+                checked={state.showUncommon}
+                onChange={(e) => state.setShowUncommon(e.currentTarget.checked)}
+              />
+
               <Stack gap={4}>
-                <Text fw={600} size="sm">
-                  Station
+                <Text fw={500} size="sm">
+                  Quality control
                 </Text>
-                <Select
-                  placeholder={
-                    stations.isLoading ? 'Loading stations…' : 'Pick a station'
-                  }
-                  value={state.station}
-                  onChange={(v) => state.setStation(v)}
-                  data={stationOptions}
-                  searchable
-                  clearable
-                  nothingFoundMessage={stations.isError ? 'Failed to load' : 'No matches'}
-                  leftSection={stations.isLoading ? <Loader size="xs" /> : null}
+                <SegmentedControl
+                  size="xs"
+                  fullWidth
+                  value={String(qcLevel)}
+                  onChange={(v) => state.setQcLevel(Number(v) as QcLevel)}
+                  data={QC_LEVEL_OPTIONS.map((o) => ({
+                    value: String(o.value),
+                    label: o.label,
+                  }))}
                 />
+                <Text size="xs" c="dimmed">
+                  {qcInfo.description}
+                </Text>
               </Stack>
 
               <Stack gap={4}>
-                <Text fw={600} size="sm">
-                  Variables
-                </Text>
-                <MultiSelect
-                  placeholder={
-                    !state.station
-                      ? 'Pick a station first'
-                      : stationElements.isLoading
-                        ? 'Loading…'
-                        : 'Select one or more variables'
-                  }
-                  value={state.elements}
-                  onChange={(v) => state.setElements(v)}
-                  data={elementOptions}
-                  searchable
-                  clearable
-                  hidePickedOptions
-                  nothingFoundMessage="No matching elements"
-                />
-              </Stack>
-
-              <Group gap="md" grow>
-                <Switch
-                  label="Show uncommon variables"
-                  size="sm"
-                  checked={state.showUncommon}
-                  onChange={(e) => state.setShowUncommon(e.currentTarget.checked)}
-                />
-                <Switch
-                  label="Remove flagged data"
-                  size="sm"
-                  checked={state.removeFlagged}
-                  onChange={(e) => state.setRemoveFlagged(e.currentTarget.checked)}
-                />
-              </Group>
-
-              <Stack gap={4}>
-                <Text fw={600} size="sm">
+                <Text fw={500} size="sm">
                   Time aggregation
                 </Text>
                 <SegmentedControl
@@ -231,28 +326,68 @@ export function DownloaderTab() {
                     { value: 'hourly', label: 'Hourly' },
                   ]}
                 />
+                {state.period === 'monthly' && (
+                  <Text size="xs" c="dimmed">
+                    Monthly values are computed from daily data: precipitation and
+                    Reference ET are summed, other variables averaged. "Days With
+                    Data" shows how many days each month includes. Totals are left
+                    blank for any month missing a day (including months only partly
+                    inside the date range).
+                  </Text>
+                )}
               </Stack>
 
-              <Stack gap={4}>
-                <Text fw={600} size="sm">
-                  Date range
-                </Text>
+              <Group grow gap="xs" align="flex-start">
                 <DatePickerInput
-                  type="range"
-                  value={[startDate, endDate]}
-                  onChange={(v) => {
-                    const arr = (Array.isArray(v) ? v : [null, null]) as [
-                      string | null,
-                      string | null,
-                    ]
-                    setDateRange(arr[0], arr[1])
-                  }}
+                  label="Start date"
+                  value={startDate}
+                  onChange={(v) => state.setFrom(v ? String(v).slice(0, 10) : null)}
                   valueFormat="MMM D, YYYY"
                   leftSection={<IconCalendar size={16} />}
-                  maxDate={today().format(DATE_FMT)}
-                  allowSingleDateInRange
+                  minDate={installDate ?? undefined}
+                  maxDate={today}
+                  error={dateError ? true : undefined}
                 />
-              </Stack>
+                <DatePickerInput
+                  label="End date"
+                  value={endDate}
+                  onChange={(v) => state.setTo(v ? String(v).slice(0, 10) : null)}
+                  valueFormat="MMM D, YYYY"
+                  leftSection={<IconCalendar size={16} />}
+                  minDate={installDate ?? undefined}
+                  maxDate={today}
+                  error={dateError ? true : undefined}
+                />
+              </Group>
+              {dateError && (
+                <Text size="xs" c="red" mt={-6} role="alert">
+                  {dateError}
+                </Text>
+              )}
+              {largeHourly && (
+                <Alert icon={<IconAlertCircle size={16} />} color="yellow" variant="light" p="xs">
+                  <Text size="xs">
+                    This hourly request spans {span.toLocaleString()} days (about{' '}
+                    {(span * 24).toLocaleString()} rows per variable) and may be slow.{' '}
+                    {needsConfirm
+                      ? 'Run Request will ask you to confirm; or shorten the range.'
+                      : 'Click "Confirm large request" to fetch it.'}
+                  </Text>
+                </Alert>
+              )}
+              {droppedSwp.length > 0 && (
+                <Alert icon={<IconAlertCircle size={16} />} color="yellow" variant="light" p="xs">
+                  <Text size="xs">
+                    {droppedSwp
+                      .map((c) => DERIVED_OPTIONS.find((o) => o.value === c)?.label ?? c)
+                      .join(' and ')}{' '}
+                    {droppedSwp.length > 1 ? 'are' : 'is'} not available at{' '}
+                    {stationMeta?.name ?? state.station} (no soil water potential
+                    parameters), so {droppedSwp.length > 1 ? 'they were' : 'it was'} removed
+                    from the request.
+                  </Text>
+                </Alert>
+              )}
 
               <Group gap="xs">
                 <Button
@@ -262,14 +397,14 @@ export function DownloaderTab() {
                   variant="filled"
                   flex={1}
                 >
-                  Run Request
+                  {largeHourly && !needsConfirm ? 'Confirm large request' : 'Run Request'}
                 </Button>
                 <Button
                   leftSection={<IconDownload size={16} />}
                   onClick={handleDownload}
                   variant="light"
                   flex={1}
-                  disabled={!data || data.length === 0}
+                  disabled={!rows || rows.length === 0}
                 >
                   Download CSV
                 </Button>
@@ -280,15 +415,11 @@ export function DownloaderTab() {
                   {hint}
                 </Alert>
               )}
-              {error && (
-                <Alert
-                  icon={<IconAlertCircle size={16} />}
-                  color="red"
-                  variant="light"
-                >
-                  {error.message}
+              {result?.data.warnings.map((w) => (
+                <Alert key={w} icon={<IconAlertCircle size={16} />} color="yellow" variant="light">
+                  {w}
                 </Alert>
-              )}
+              ))}
             </Stack>
           </Card>
 
@@ -298,7 +429,7 @@ export function DownloaderTab() {
                 <StationMap
                   stations={stations.data}
                   selected={state.station}
-                  onSelect={state.setStation}
+                  onSelect={selectStation}
                 />
               </Suspense>
             ) : (
@@ -313,10 +444,11 @@ export function DownloaderTab() {
           p="xs"
           style={{ flex: 1, minWidth: 320, minHeight: 480, display: 'flex' }}
         >
-          <Box style={{ flex: 1, minHeight: 0, width: '100%' }}>
+          <Box style={{ flex: 1, minHeight: 0, width: '100%', overflowY: 'auto' }}>
             <Suspense fallback={SuspenseFallback}>
               <DownloaderPreviewChart
-                data={data ?? undefined}
+                data={rows}
+                period={result?.query.period ?? state.period}
                 isLoading={isLoading}
                 isError={!!error}
                 error={error}

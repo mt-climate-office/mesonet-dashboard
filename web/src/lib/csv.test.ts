@@ -43,6 +43,38 @@ describe('parseCsv', () => {
     expect(rows[1]['Air Temperature [°F]']).toBeNull()
   })
 
+  it('turns the API\'s Python-style True/False into booleans (/stations row)', () => {
+    const csv = [
+      'station,name,date_installed,sub_network,longitude,latitude,elevation,county,mesowest_id,gwic_id,nwsli_id,has_swp,funded',
+      'aceabsar,Absarokee,2021-06-02,HydroMet,-109.61,45.56,1400.4,Stillwater,,,KEEM8,True,False',
+    ].join('\n')
+    const [row] = parseCsv<Record<string, unknown>>(csv)
+    expect(row.has_swp).toBe(true)
+    expect(row.funded).toBe(false)
+    expect(row.nwsli_id).toBe('KEEM8')
+    expect(row.mesowest_id).toBeNull()
+  })
+
+  it('types provisional / has_na flag columns from True/False', () => {
+    const csv = [
+      'station,datetime,Precipitation [in],has_na,obs_count,provisional',
+      'acebozem,2026-08-28 00:00:00-06:00,0.0,False,288,True',
+      'acebozem,2026-08-29 00:00:00-06:00,0.369,True,280,False',
+    ].join('\n')
+    const rows = parseCsv<Record<string, unknown>>(csv, { labSwap: false })
+    expect(rows.map((r) => r.provisional)).toEqual([true, false])
+    expect(rows.map((r) => r.has_na)).toEqual([false, true])
+    // datetimes stay verbatim strings
+    expect(rows[0].datetime).toBe('2026-08-28 00:00:00-06:00')
+  })
+
+  it('only converts exact matches', () => {
+    const [row] = parseCsv<Record<string, unknown>>('a,b,c\nTrue story,FALSE,tRuE')
+    expect(row.a).toBe('True story')
+    expect(row.b).toBe(false)
+    expect(row.c).toBe('tRuE')
+  })
+
   it('passes unknown headers through', () => {
     const rows = parseCsv<Record<string, unknown>>('foo,bar\n1,x')
     expect(rows).toEqual([{ foo: 1, bar: 'x' }])
