@@ -95,7 +95,9 @@ function summarize(cmp) {
 async function runLatest(browser, compare, A, B, scenarios, { fuzzy }) {
   const dir = join(OUT, compare)
   const run = { compare, A: `${A.label} <${A.base}>`, B: `${B.label} <${B.base}>`, started: new Date().toISOString(), items: [] }
-  const work = stations.flatMap((st) => scenarios.map((sc) => ({ st, sc })))
+  // scenarios can be limited to stations with a matrix role (e.g. sensor-overlay -> sensor-change)
+  const applies = (st, sc) => !sc.onlyRoles || (stationInfo[st]?.roles ?? []).some((r) => sc.onlyRoles.includes(r))
+  const work = stations.flatMap((st) => scenarios.filter((sc) => applies(st, sc)).map((sc) => ({ st, sc })))
   await pool(work, concurrency, async ({ st, sc }) => {
     const cap = (T) =>
       T.kind === 'legacy' ? captureLegacyLatest(browser, T, st, sc, join(dir, 'shots')) : captureNewLatest(browser, T, st, sc, join(dir, 'shots'))
@@ -225,9 +227,27 @@ async function rebuildReport() {
   const runs = []
   for (const d of await readdir(OUT).catch(() => [])) {
     const r = await readJson(join(OUT, d, 'results.json'), null)
-    if (r) runs.push(r)
+    if (Array.isArray(r)) {
+      // mobile.mjs output: one row per page x width
+      runs.push({
+        compare: 'mobile',
+        A: 'new app (legacy-latest row = local legacy reference)',
+        B: 'viewport 375 / 768 px',
+        started: '',
+        notes: 'WARN = horizontal page overflow (scrollWidth > innerWidth).',
+        items: r.map((x) => ({
+          station: `${x.width}px`,
+          scenario: x.id,
+          status: x.error ? 'ERROR' : x.horizontalOverflow ? 'WARN' : 'PASS',
+          summary: x.error ?? `scrollWidth ${x.scrollWidth}/${x.innerWidth}${x.offenders?.length ? `; ${x.offenders[0]}` : ''}`,
+          comparison: { alerts: x.alerts, bad: x.bad },
+          shots: [x.shot],
+          urls: [x.url],
+        })),
+      })
+    } else if (r?.items) runs.push(r)
   }
-  const order = ['api-parity', 'data-parity', 'ui-latest', 'ui-downloader', 'ag']
+  const order = ['api-parity', 'data-parity', 'ui-latest', 'ui-downloader', 'ag', 'mobile']
   runs.sort((a, b) => order.indexOf(a.compare) - order.indexOf(b.compare))
   const file = join(OUT, 'report.html')
   await writeFile(file, renderReport(runs, file, { note: `stations: ${stations.join(', ')}` }))

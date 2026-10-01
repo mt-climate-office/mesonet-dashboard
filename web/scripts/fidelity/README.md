@@ -36,12 +36,16 @@ node scripts/fidelity/run.mjs --report-only --out DIR   # rebuild DIR/report.htm
 - **Driving controls.** Legacy controls that are hard to click (dmc DatePicker, MultiSelect, the Downloader station dropdown) are driven through the component's Dash `setProps`, found via the React fiber (`dashSetProps` / `dashGetProps` in `lib/drivers.mjs`).
 - **New-app URLs.** New-app deep links are built in `config.mjs#newAppUrl`. Update that one place when the Wave 1a url-state keys change (`vars` → `lv`/`sv`, per-tab `from`/`to`).
 
+## Mobile check
+
+`NEW_URL=... node scripts/fidelity/mobile.mjs [--out DIR] [--station acebozem] [--no-legacy]` screenshots Latest, Current Conditions, Ag (GDD), the Downloader and a malformed-date link (ES-005) at 375 and 768 px. It records horizontal page overflow (scrollWidth > innerWidth, plus the elements responsible) in `DIR/mobile/results.json`. `report.html` shows the results as a `mobile` section.
+
 ## Comparator conventions
 
 - Daily x values are normalized to the date (midnight equals date-only). Points that appear on one side only and are null there (gap markers) are ignored.
 - `ag` compares only each scenario's derived *output* columns (`outputs` regex). Depth columns match traces by depth (cm→in: 5→2, 10→4, 20→8, 50→20, 91→36, 100→40). The `/derived` `end_time` is sent as end+1 because the new app's range is inclusive.
 - Downloader: legacy gets end+1 for the same reason (its filename therefore shows end+1). Ranges end 2 days back, because legacy turns end==today into "now". The start is clamped to `date_installed`. Legacy's unnamed index column is ignored. Extra B columns and case-only boolean differences WARN.
-- The `sensor-overlay` Latest scenario runs a daily view over 2026-05-01..06-15. It is meant for acebento, which has sensor events in that window.
+- The `sensor-overlay` Latest scenario runs a daily view over 2026-05-01..06-15. It runs only for stations with the `sensor-change` role (`onlyRoles`), i.e. acebento.
 
 ## Station matrix
 
