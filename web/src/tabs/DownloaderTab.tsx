@@ -38,6 +38,7 @@ import {
   HOURLY_CONFIRM_DAYS,
   HOURLY_DEFAULT_DAYS,
   clampStart,
+  dateRangeError,
   SWP_CODES,
   fetchDownload,
   QC_LEVEL_OPTIONS,
@@ -164,8 +165,10 @@ export function DownloaderTab() {
     installDate,
   )
   const endDate = state.to ?? today
-  const dateError =
-    startDate > endDate ? 'Start date must be on or before the end date.' : null
+  const dateError = useMemo(
+    () => dateRangeError(startDate, endDate, startClamped, installDate),
+    [startDate, endDate, startClamped, installDate],
+  )
   const span = dateError ? 0 : daySpan(startDate, endDate)
   const largeHourly = state.period === 'hourly' && span > HOURLY_CONFIRM_DAYS
   const runKey = `${station}|${startDate}|${endDate}|${state.period}`

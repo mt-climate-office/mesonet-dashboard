@@ -284,3 +284,19 @@ export function clampStart(
   if (installDate && start < installDate) return { start: installDate, clamped: true }
   return { start, clamped: false }
 }
+
+/**
+ * Inline date-range error. When the start was clamped to the install date and
+ * that lands after the end, say so (the user's own start was before the end).
+ */
+export function dateRangeError(
+  start: string,
+  end: string,
+  clamped: boolean,
+  installDate: string | null,
+): string | null {
+  if (start <= end) return null
+  if (clamped && installDate)
+    return `This station was installed on ${installDate}; choose an end date on or after it.`
+  return 'Start date must be on or before the end date.'
+}

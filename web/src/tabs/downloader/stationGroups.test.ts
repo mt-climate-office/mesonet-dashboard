@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Station } from '../../lib/api'
 import { DL_MARKER_COLORS, groupStations } from './stationGroups'
-import { clampStart } from './request'
+import { clampStart, dateRangeError } from './request'
 
 const st = (
   station: string,
@@ -58,5 +58,18 @@ describe('clampStart', () => {
     expect(clampStart('2015-01-01', '2017-06-01')).toEqual({ start: '2017-06-01', clamped: true })
     expect(clampStart('2018-01-01', '2017-06-01')).toEqual({ start: '2018-01-01', clamped: false })
     expect(clampStart('2018-01-01', null)).toEqual({ start: '2018-01-01', clamped: false })
+  })
+})
+
+describe('dateRangeError', () => {
+  it('distinguishes a clamped start past the end from a plain inverted range', () => {
+    const c = clampStart('2015-01-01', '2017-06-01')
+    expect(dateRangeError(c.start, '2016-01-01', c.clamped, '2017-06-01')).toBe(
+      'This station was installed on 2017-06-01; choose an end date on or after it.',
+    )
+    expect(dateRangeError('2024-05-01', '2024-04-01', false, '2017-06-01')).toBe(
+      'Start date must be on or before the end date.',
+    )
+    expect(dateRangeError(c.start, '2018-01-01', c.clamped, '2017-06-01')).toBeNull()
   })
 })
