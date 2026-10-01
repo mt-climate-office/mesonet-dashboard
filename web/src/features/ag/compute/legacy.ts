@@ -4,6 +4,7 @@
  * supersedes these; until then DerivedChart keeps calling them. Units are the
  * chart's display units (°F), not the contract's SI.
  */
+import type { CciClass } from '../contract'
 
 /**
  * "Method B" growing degree day:
@@ -21,17 +22,8 @@ export function methodBGdd(tmin: number, tmax: number, low: number, high: number
   return Math.max(0, (lo + hi) / 2 - low)
 }
 
-/** Livestock CCI risk classes; keys of `CCI_RISK_COLORS` in lib/params. */
-export type CciRiskClass =
-  | 'No Stress'
-  | 'Mild'
-  | 'Moderate'
-  | 'Severe'
-  | 'Extreme'
-  | 'Extreme Danger'
-
 /** Classify a Comprehensive Climate Index value (°F) into a risk class. */
-export function classifyCci(value: number, newborn: boolean): CciRiskClass {
+export function classifyCci(value: number, newborn: boolean): CciClass {
   if (value >= 113) return 'Extreme Danger'
   if (value >= 105) return 'Extreme'
   if (value >= 96) return 'Severe'
