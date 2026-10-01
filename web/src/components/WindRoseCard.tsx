@@ -6,7 +6,8 @@ import { Plot } from '../lib/plotly'
 import { PLOT_CONFIG } from '../lib/plotConfig'
 import { degToCompass, WIND_DIRECTIONS } from '../lib/params'
 import { useStationRecord } from '../hooks/useStationRecord'
-import { useStationParam } from '../lib/url-state'
+import { useResolvedStation } from './useResolvedStation'
+import { speedBins } from './windRose'
 
 const PLASMA_R = [
   '#0d0887',
@@ -28,19 +29,8 @@ interface BinRow {
   count: number
 }
 
-function quantileBins(values: number[], n = 8): number[] {
-  if (values.length === 0) return []
-  const sorted = [...values].sort((a, b) => a - b)
-  const cuts: number[] = []
-  for (let i = 1; i < n; i++) {
-    const idx = Math.floor((sorted.length * i) / n)
-    cuts.push(sorted[idx])
-  }
-  return cuts
-}
-
 export function WindRoseCard() {
-  const [station] = useStationParam()
+  const station = useResolvedStation()
   const start = dayjs().subtract(1, 'day').format('YYYY-MM-DD')
   const end = dayjs().format('YYYY-MM-DD')
 
@@ -77,35 +67,8 @@ export function WindRoseCard() {
     }
     if (rows.length === 0) return null
 
-    // Legacy rounds speeds to whole mph before `qcut(q=8, duplicates="drop")`,
-    // so bin edges are integers and bins never repeat.
-    const speeds = rows.map((r) => Math.round(r.spd))
-    const cuts = quantileBins(speeds, 8)
-    // dedupe cuts so closely-spaced bins collapse (mirrors duplicates="drop")
-    const uniqueCuts: number[] = []
-    for (const c of cuts) {
-      if (uniqueCuts.length === 0 || c > uniqueCuts[uniqueCuts.length - 1]) {
-        uniqueCuts.push(c)
-      }
-    }
-    const numBins = uniqueCuts.length + 1
-    const minSpd = Math.min(...speeds)
-    const maxSpd = Math.max(...speeds)
-
-    function binFor(spd: number): number {
-      for (let i = 0; i < uniqueCuts.length; i++) {
-        if (spd <= uniqueCuts[i]) return i
-      }
-      return uniqueCuts.length
-    }
-
-    // Bins hold whole numbers: bin 0 is [min, cut0], bin b is (cut[b-1], cut[b]],
-    // so its smallest member is cut[b-1] + 1. Single-value bins read "7".
-    function binLabel(b: number): string {
-      const lo = b === 0 ? minSpd : uniqueCuts[b - 1] + 1
-      const hi = b === uniqueCuts.length ? maxSpd : uniqueCuts[b]
-      return lo >= hi ? `${hi}` : `${lo} – ${hi}`
-    }
+    // Rounded whole-mph quantile bins (legacy qcut); see ./windRose.
+    const { numBins, binFor, labels } = speedBins(rows.map((r) => r.spd))
 
     // Aggregate counts by (compass dir, bin)
     const counts = new Map<string, BinRow>()
@@ -117,7 +80,7 @@ export function WindRoseCard() {
       if (existing) {
         existing.count += 1
       } else {
-        counts.set(key, { dir: compass, bin: b, binLabel: binLabel(b), count: 1 })
+        counts.set(key, { dir: compass, bin: b, binLabel: labels[b], count: 1 })
       }
     }
 
@@ -134,7 +97,7 @@ export function WindRoseCard() {
         theta.push(dir)
       }
       const colorIx = Math.floor((b / Math.max(1, numBins - 1)) * (PLASMA_R.length - 1))
-      const label = binLabel(b)
+      const label = labels[b]
       traces.push({
         type: 'barpolar',
         r,

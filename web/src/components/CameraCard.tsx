@@ -14,8 +14,8 @@ import {
 import dayjs from 'dayjs'
 import { API_URL } from '../lib/config'
 import { usePhotoCatalog } from '../hooks/usePhotoCatalog'
-import { useStationParam } from '../lib/url-state'
 import type { PhotoDirection } from '../lib/api'
+import { useResolvedStation } from './useResolvedStation'
 
 const MORNING = '09:00:00'
 const AFTERNOON = '15:00:00'
@@ -113,7 +113,7 @@ function sortDirections(directions: PhotoDirection[]): PhotoDirection[] {
 }
 
 export function CameraCard() {
-  const [station] = useStationParam()
+  const station = useResolvedStation()
   const catalog = usePhotoCatalog()
   const meta = useMemo(
     () =>

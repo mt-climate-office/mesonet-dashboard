@@ -27,6 +27,14 @@ export function stationHasSwp(station: Pick<Station, 'has_swp'> | null | undefin
   return !!station && isTrueFlag(station.has_swp)
 }
 
+/** True when `id` is exactly a catalog station id. */
+export function isKnownStation(
+  id: string | null | undefined,
+  stations: readonly Pick<Station, 'station'>[],
+): boolean {
+  return !!id && stations.some((s) => s.station === id)
+}
+
 /**
  * Resolve a `?s=` value to a station id. Mirrors the legacy `/dash/<id>`
  * lookup (station id first, then NWSLI id), but case-insensitive so

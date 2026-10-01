@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isTrueFlag, resolveStationId, stationHasSwp, stationsWithSwp } from './stations'
+import { isKnownStation, isTrueFlag, resolveStationId, stationHasSwp, stationsWithSwp } from './stations'
 
 const stations = [
   { station: 'aceabsar', nwsli_id: 'KEEM8', has_swp: 'True' as unknown as boolean },
@@ -63,5 +63,14 @@ describe('resolveStationId', () => {
     expect(resolveStationId('nope', stations)).toBeNull()
     expect(resolveStationId('', stations)).toBeNull()
     expect(resolveStationId(null, stations)).toBeNull()
+  })
+})
+
+describe('isKnownStation', () => {
+  it('matches exact catalog ids only', () => {
+    expect(isKnownStation('aceabsar', stations)).toBe(true)
+    expect(isKnownStation('KEEM8', stations)).toBe(false)
+    expect(isKnownStation('ACEABSAR', stations)).toBe(false)
+    expect(isKnownStation(null, stations)).toBe(false)
   })
 })

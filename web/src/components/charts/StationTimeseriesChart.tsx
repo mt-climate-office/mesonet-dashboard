@@ -16,6 +16,8 @@ import {
 import { useStationRecord } from '../../hooks/useStationRecord'
 import { useStationElements } from '../../hooks/useStationElements'
 import { useStationConfig } from '../../hooks/useStationConfig'
+import { useStations } from '../../hooks/useStations'
+import { useResolvedStation } from '../useResolvedStation'
 import { useLatestTabState } from '../../lib/url-state'
 import { fetchNormals, mergeNormals } from '../../lib/normals'
 import { insertGaps } from '../../lib/gaps'
@@ -69,9 +71,12 @@ interface SubplotInfo {
 
 export function StationTimeseriesChart() {
   const state = useLatestTabState()
-  const stationElements = useStationElements(state.station)
+  // Only query once `?s=` is a real station id (NWSLI links resolve first).
+  const station = useResolvedStation()
+  const stations = useStations()
+  const stationElements = useStationElements(station)
   // Sensor deployment history → grey added/removed/outage overlays.
-  const stationConfig = useStationConfig(state.station)
+  const stationConfig = useStationConfig(station)
   const sensorConfig = useMemo(
     () =>
       explodeInstruments(
@@ -113,9 +118,9 @@ export function StationTimeseriesChart() {
   const end = state.to ?? dayjs().format('YYYY-MM-DD')
 
   const { data, isLoading, isError, error } = useStationRecord(
-    state.station
+    station
       ? {
-          station: state.station,
+          station,
           start,
           end,
           period,
@@ -169,7 +174,7 @@ export function StationTimeseriesChart() {
   // so we can reset state inline (avoids triggering setState inside an
   // effect just to clear). React preserves a top-level setState during
   // render as the "derive state from props" idiom.
-  const normalsKey = `${state.station}|${state.gridmet}|${state.agg}|${state.vars.join(',')}`
+  const normalsKey = `${station}|${state.gridmet}|${state.agg}|${state.vars.join(',')}`
   const [lastNormalsKey, setLastNormalsKey] = useState(normalsKey)
   if (lastNormalsKey !== normalsKey) {
     setLastNormalsKey(normalsKey)
@@ -183,7 +188,7 @@ export function StationTimeseriesChart() {
 
   useEffect(() => {
     let cancelled = false
-    if (!state.gridmet || state.agg !== 'daily' || !state.station || !data) {
+    if (!state.gridmet || state.agg !== 'daily' || !station || !data) {
       return
     }
     const requested =
@@ -194,7 +199,7 @@ export function StationTimeseriesChart() {
       ),
     )
     Promise.all(
-      targets.map(async (v) => [v, await fetchNormals(state.station!, v)] as const),
+      targets.map(async (v) => [v, await fetchNormals(station, v)] as const),
     ).then((entries) => {
       if (cancelled) return
       const next: NormalsMap = {}
@@ -204,7 +209,7 @@ export function StationTimeseriesChart() {
     return () => {
       cancelled = true
     }
-  }, [state.gridmet, state.agg, state.station, state.vars, data])
+  }, [state.gridmet, state.agg, station, state.vars, data])
 
   const figure = useMemo(() => {
     if (!data || data.length === 0) return null
@@ -573,6 +578,22 @@ export function StationTimeseriesChart() {
             Pick a station from the sidebar or map.
           </Text>
         </Stack>
+      </Center>
+    )
+  }
+
+  if (!station) {
+    // `?s=` is set but not (yet) a catalog id: wait for the catalog and the
+    // NWSLI resolver, then say so if it still doesn't match.
+    return (
+      <Center h="100%">
+        {stations.data ? (
+          <Text c="dimmed" size="sm">
+            Station not found.
+          </Text>
+        ) : (
+          <Loader />
+        )}
       </Center>
     )
   }
