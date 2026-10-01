@@ -96,6 +96,7 @@ export function diffSeries(a, b, tol = TOLERANCE) {
   let maxAbs = 0
   let worstX = null
   const samples = []
+  const diffXs = []
   let common = 0
   for (const [x, va] of ma) {
     if (!mb.has(x)) continue
@@ -105,18 +106,21 @@ export function diffSeries(a, b, tol = TOLERANCE) {
     if (na === null && nb === null) {
       if (typeof va === 'string' && va !== mb.get(x)) {
         nDiff++
+        diffXs.push(x)
         if (samples.length < 5) samples.push({ x, a: va, b: mb.get(x) })
       }
       continue
     }
     if (na === null || nb === null) {
       nullMismatch++
+      diffXs.push(x)
       if (samples.length < 5) samples.push({ x, a: va ?? null, b: mb.get(x) ?? null })
       continue
     }
     const d = Math.abs(na - nb)
     if (d > tol.abs && d > tol.rel * Math.max(Math.abs(na), Math.abs(nb))) {
       nDiff++
+      diffXs.push(x)
       if (d > maxAbs) {
         maxAbs = d
         worstX = x
@@ -136,7 +140,14 @@ export function diffSeries(a, b, tol = TOLERANCE) {
   const onlyInteriorB = onlyB.filter(interior)
   let status = 'PASS'
   if (onlyA.length || onlyB.length) status = 'WARN'
-  if (nDiff || nullMismatch || onlyInteriorA.length || onlyInteriorB.length) status = 'FAIL'
+  // Differences only in the last `tol.edgePoints` common timestamps are the
+  // still-accumulating / just-aggregated current periods (prod's premade
+  // tables lag the latest hour; captures are seconds-minutes apart): WARN.
+  const commonSorted = sa.filter((x) => mb.has(x))
+  const edgeSet = new Set(commonSorted.slice(-(tol.edgePoints ?? 2)))
+  const edgeDiffOnly = diffXs.length > 0 && diffXs.every((x) => edgeSet.has(x))
+  if (diffXs.length && edgeDiffOnly) status = 'WARN'
+  if ((diffXs.length && !edgeDiffOnly) || onlyInteriorA.length || onlyInteriorB.length) status = 'FAIL'
   return {
     status,
     nA: xa.length,
@@ -150,6 +161,7 @@ export function diffSeries(a, b, tol = TOLERANCE) {
     edgeOnlyB: onlyB.length - onlyInteriorB.length,
     nDiff,
     nullMismatch,
+    edgeDiffOnly,
     maxAbs: +maxAbs.toPrecision(4),
     worstX,
     samples,

@@ -4,7 +4,8 @@
 //   node scripts/fidelity/run.mjs --compare data-parity[,ui-latest,ui-downloader,ag]
 //        [--stations acebozem,lololowr] [--scenarios default,daily]
 //        [--out DIR] [--a prodLegacy] [--b localLegacy] [--legacy localLegacy]
-//        [--concurrency 1] [--headed] [--report-only]
+//        [--concurrency 1] [--headed] [--report-only] [--recompare]
+//   --recompare: data-parity/ui-latest only; re-diff saved captures without a browser
 //
 // Comparisons:
 //   api-parity     legacy API vs mesonet2 v2, raw /observations (no browser)
@@ -99,9 +100,17 @@ async function runLatest(browser, compare, A, B, scenarios, { fuzzy }) {
     const cap = (T) =>
       T.kind === 'legacy' ? captureLegacyLatest(browser, T, st, sc, join(dir, 'shots')) : captureNewLatest(browser, T, st, sc, join(dir, 'shots'))
     // A and B in parallel (different servers) to minimize capture-time skew.
-    const [ca, cb] = await Promise.all([cap(A), cap(B)])
-    await saveCapture(dir, `${st}-${sc.id}-A`, ca)
-    await saveCapture(dir, `${st}-${sc.id}-B`, cb)
+    let ca, cb
+    if (args.recompare) {
+      // re-run only the comparator on saved captures (after comparator changes)
+      ca = await readJson(join(dir, 'captures', `${slug(`${st}-${sc.id}-A`)}.json`), null)
+      cb = await readJson(join(dir, 'captures', `${slug(`${st}-${sc.id}-B`)}.json`), null)
+      if (!ca || !cb) return
+    } else {
+      ;[ca, cb] = await Promise.all([cap(A), cap(B)])
+      await saveCapture(dir, `${st}-${sc.id}-A`, ca)
+      await saveCapture(dir, `${st}-${sc.id}-B`, cb)
+    }
     const comparison = compareCaptures(ca, cb, { fuzzy })
     const item = {
       station: st,

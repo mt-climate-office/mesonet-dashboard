@@ -175,8 +175,13 @@ async function legacyStep(page, log, step) {
     if (!ok) await dashSetProps(page, step.switch, { checked: true })
   } else if (step.seg) {
     const [group, label] = step.seg
-    const loc = page.locator(`#${group} label`).filter({ hasText: label })
-    await loc.first().click()
+    const loc = page.locator(`#${group} label`).filter({ hasText: label }).first()
+    // e.g. "Latest Photo" is disabled for AgriMet (app.py:1117-1164): record, don't fail
+    const ok = await loc
+      .click({ timeout: 10_000 })
+      .then(() => true)
+      .catch(() => false)
+    if (!ok) return 'disabled-or-missing'
   } else if (step.setProps) {
     await dashSetProps(page, step.setProps[0], step.setProps[1])
   } else if (step.click) {

@@ -134,6 +134,8 @@ export const TOLERANCE = {
   rel: Number(process.env.FIDELITY_REL_TOL ?? 2e-4),
   /** fraction of points allowed to differ before a trace is a FAIL (vs WARN) */
   maxDiffFrac: 0.0,
+  /** trailing common points where value diffs only WARN (latest-period skew) */
+  edgePoints: Number(process.env.FIDELITY_EDGE_POINTS ?? 2),
 }
 
 /** Timeouts (ms). Dash on prod can be slow; photos/ is ~25-80 s. */
