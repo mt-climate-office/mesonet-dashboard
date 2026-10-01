@@ -14,17 +14,29 @@ export const META_COLUMNS: ReadonlySet<string> = new Set([
   'obs_count',
 ])
 
+export interface ParseCsvOptions {
+  /**
+   * Apply the LAB_SWAP header rename (default true). The Data Downloader
+   * passes false so exported CSVs keep the API's exact headers, including
+   * sensor heights/depths (legacy parity).
+   */
+  labSwap?: boolean
+}
+
 /**
- * Parse a CSV string into typed rows. Applies LAB_SWAP rename so consumers
- * can use canonical column names ("Air Temperature [°F]" etc.) without
- * worrying about which sensor height a station has.
+ * Parse a CSV string into typed rows. By default applies LAB_SWAP rename so
+ * consumers can use canonical column names ("Air Temperature [°F]" etc.)
+ * without worrying about which sensor height a station has.
  */
-export function parseCsv<T extends Record<string, unknown>>(text: string): T[] {
+export function parseCsv<T extends Record<string, unknown>>(
+  text: string,
+  { labSwap = true }: ParseCsvOptions = {},
+): T[] {
   const result = Papa.parse<Record<string, unknown>>(text, {
     header: true,
     dynamicTyping: true,
     skipEmptyLines: true,
-    transformHeader: (h) => LAB_SWAP[h] ?? h,
+    transformHeader: labSwap ? (h) => LAB_SWAP[h] ?? h : undefined,
   })
   if (result.errors.length > 0) {
     const first = result.errors[0]
@@ -46,4 +58,25 @@ export function buildQuery(
     parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(val).replace(/%2C/g, ',')}`)
   }
   return parts.length ? `?${parts.join('&')}` : ''
+}
+
+/** Column the Downloader exposes for the API's `has_na` flag (legacy name). */
+export const MISSING_DATA_COLUMN = 'Contains Missing Data'
+
+/**
+ * Serialize rows to CSV text with an explicit column order (papaparse
+ * `unparse`). Values are written as-is, so API datetime strings such as
+ * `2026-08-28 00:00:00-06:00` are not reformatted; null/undefined → empty.
+ */
+export function toCsv(
+  rows: ReadonlyArray<Record<string, unknown>>,
+  columns: string[],
+): string {
+  return Papa.unparse(
+    {
+      fields: columns,
+      data: rows.map((r) => columns.map((c) => r[c] ?? null)),
+    },
+    { newline: '\n' },
+  )
 }

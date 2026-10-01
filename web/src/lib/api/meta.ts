@@ -13,8 +13,17 @@ export const getStations = () => fetchCsv<Station>('stations')
 
 export const getElements = () => fetchCsv<ElementMeta>('elements')
 
-export const getStationElements = (station: string) =>
-  fetchCsv<StationElement>(`elements/${station}/`)
+/**
+ * Elements a station reports. `publicOnly` maps to the API's `public` flag
+ * (API default true = common, public-facing elements only); pass `false` for
+ * the full list including uncommon/diagnostic elements. Omitting it sends no
+ * `public` param, so existing callers are unchanged.
+ */
+export const getStationElements = (station: string, publicOnly?: boolean) =>
+  fetchCsv<StationElement>(
+    `elements/${station}/`,
+    publicOnly === undefined ? {} : { public: publicOnly },
+  )
 
 export const getStationLatest = (station: string) =>
   fetchCsv<ObservationRow>('latest', { stations: station })

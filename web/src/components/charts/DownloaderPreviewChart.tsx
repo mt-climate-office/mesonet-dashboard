@@ -3,99 +3,112 @@ import { Center, Loader, Text } from '@mantine/core'
 import type { Data, Layout } from 'plotly.js'
 import { Plot } from '../../lib/plotly'
 import { PLOT_CONFIG } from '../../lib/plotConfig'
-import type { ObservationRow } from '../../lib/api'
-import { META_COLUMNS } from '../../lib/csv'
+import { META_COLUMNS, MISSING_DATA_COLUMN } from '../../lib/csv'
+import { DAYS_WITH_DATA_COLUMN } from '../../lib/aggregate'
+import { withGaps } from '../../tabs/downloader/previewRows'
+
+type Row = Record<string, unknown>
 
 interface Props {
-  data: ObservationRow[] | undefined
+  data: ReadonlyArray<Row> | undefined
+  period: 'monthly' | 'daily' | 'hourly'
   isLoading: boolean
   isError: boolean
   error: unknown
 }
 
-const RM_COLS = new Set([...META_COLUMNS, 'Contains Missing Data'])
+/** Bookkeeping columns that are exported but not plotted. */
+const RM_COLS = new Set([...META_COLUMNS, MISSING_DATA_COLUMN, DAYS_WITH_DATA_COLUMN])
 
-const baseLayout: Partial<Layout> = {
-  autosize: true,
-  margin: { l: 80, r: 30, t: 20, b: 40 },
-  hovermode: 'x unified',
-  showlegend: false,
-  plot_bgcolor: 'rgba(0,0,0,0)',
-  paper_bgcolor: 'rgba(0,0,0,0)',
-  font: { size: 11 },
+const SUBPLOT_PX = 200
+const MARGIN = { l: 80, r: 30, t: 20, b: 40 }
+
+const HOVER_FMT: Record<Props['period'], string> = {
+  monthly: '%b %Y',
+  daily: '%b %d, %Y',
+  hourly: '%b %d, %Y %H:%M',
 }
 
 /**
- * Multi-row stacked plot: one Plotly subplot per requested element column.
- * Mirrors the legacy `plot_downloaded_data` callback's behavior.
+ * One stacked subplot per exported column, legacy `make_single_plot` look:
+ * black line, gaps not connected, y-axis titled with the column name.
  */
-export function DownloaderPreviewChart({ data, isLoading, isError, error }: Props) {
+export function DownloaderPreviewChart({ data, period, isLoading, isError, error }: Props) {
   const figure = useMemo(() => {
     if (!data || data.length === 0) return null
-    const sample = data[0] as Record<string, unknown>
-    const cols = Object.keys(sample).filter((k) => !RM_COLS.has(k))
+    const colSet = new Set<string>()
+    for (const r of data) for (const k of Object.keys(r)) if (!RM_COLS.has(k)) colSet.add(k)
+    const cols = [...colSet].filter((c) => data.some((r) => typeof r[c] === 'number'))
     if (cols.length === 0) return null
 
-    const datetimes = data.map((r) => r.datetime as string)
+    const rows = period === 'monthly' ? data.slice() : withGaps(data)
+    const x = rows.map((r) => r.datetime as string)
 
     const N = cols.length
-    const VSPACE = 0.04
-    const totalSpace = 1 - VSPACE * (N - 1)
-    const subHeight = totalSpace / N
+    const height = Math.max(400, N * SUBPLOT_PX + MARGIN.t + MARGIN.b)
+    const gapPx = 40
+    const plotPx = height - MARGIN.t - MARGIN.b
+    const vspace = N > 1 ? Math.min(0.08, gapPx / plotPx) : 0
+    const subHeight = (1 - vspace * (N - 1)) / N
 
     const traces: Data[] = []
-    const layout: Partial<Layout> = { ...baseLayout }
+    const layout: Partial<Layout> = {
+      autosize: true,
+      height,
+      margin: MARGIN,
+      hovermode: 'x unified',
+      showlegend: false,
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      font: { size: 11 },
+    }
 
     cols.forEach((col, idx) => {
-      const subplotIx = idx + 1
-      const xRef = idx === 0 ? 'x' : `x${subplotIx}`
-      const yRef = idx === 0 ? 'y' : `y${subplotIx}`
-      const xaxisKey = idx === 0 ? 'xaxis' : `xaxis${subplotIx}`
-      const yaxisKey = idx === 0 ? 'yaxis' : `yaxis${subplotIx}`
-
-      const top = 1 - idx * (subHeight + VSPACE)
+      const n = idx + 1
+      const suffix = idx === 0 ? '' : String(n)
+      const top = 1 - idx * (subHeight + vspace)
       const bottom = top - subHeight
 
-      const yvals = data.map((r) => {
-        const v = (r as Record<string, unknown>)[col]
-        return typeof v === 'number' ? v : null
-      }) as Array<number | null>
-
-      const isPpt = /Precipitation|GDDs/.test(col) || /Reference ET/.test(col)
-
       traces.push({
-        type: isPpt ? 'bar' : 'scatter',
-        mode: isPpt ? undefined : 'lines',
-        x: datetimes,
-        y: yvals,
-        xaxis: xRef,
-        yaxis: yRef,
-        line: isPpt ? undefined : { width: 1.5 },
+        type: 'scatter',
+        mode: period === 'monthly' ? 'lines+markers' : 'lines',
+        x,
+        y: rows.map((r) => (typeof r[col] === 'number' ? (r[col] as number) : null)),
+        xaxis: `x${suffix}`,
+        yaxis: `y${suffix}`,
+        line: { color: 'black', width: 1.5 },
+        marker: { color: 'black', size: 5 },
         connectgaps: false,
         name: col,
-        hovertemplate: '%{x|%b %d, %Y %H:%M}<br>%{y:.2f}<extra></extra>',
+        hovertemplate: `%{x|${HOVER_FMT[period]}}<br>%{y:.3~f}<extra></extra>`,
       } as Data)
 
-      ;(layout as Record<string, unknown>)[yaxisKey] = {
+      ;(layout as Record<string, unknown>)[`yaxis${suffix}`] = {
         title: { text: col, standoff: 4 },
         domain: [Math.max(0, bottom), Math.min(1, top)],
         automargin: true,
         showgrid: true,
         gridcolor: 'rgba(120,120,120,0.25)',
-        anchor: idx === 0 ? 'x' : `x${subplotIx}`,
+        anchor: `x${suffix}`,
       }
-      ;(layout as Record<string, unknown>)[xaxisKey] = {
+      ;(layout as Record<string, unknown>)[`xaxis${suffix}`] = {
         type: 'date',
-        showticklabels: idx === N - 1,
+        ...(period === 'monthly' && rows.length <= 36
+          ? { dtick: 'M1', tickformat: '%b %Y' }
+          : {}),
+        showticklabels: true,
         showgrid: true,
         gridcolor: 'rgba(120,120,120,0.25)',
         matches: idx === 0 ? undefined : 'x',
-        anchor: idx === 0 ? 'y' : `y${subplotIx}`,
+        anchor: `y${suffix}`,
       }
     })
 
-    return { data: traces, layout, revision: cols.length * 1000 + (data.length % 1000) }
-  }, [data])
+    const first = String(x[0] ?? '')
+    const last = String(x[x.length - 1] ?? '')
+    const revision = hash(`${period}|${cols.join('|')}|${rows.length}|${first}|${last}`)
+    return { data: traces, layout, height, revision }
+  }, [data, period])
 
   if (isLoading) {
     return (
@@ -138,7 +151,14 @@ export function DownloaderPreviewChart({ data, isLoading, isError, error }: Prop
       layout={figure.layout}
       config={PLOT_CONFIG}
       revision={figure.revision}
-      style={{ width: '100%', height: '100%' }}
+      style={{ width: '100%', height: figure.height }}
     />
   )
+}
+
+/** Small string hash for the Plot `revision` (forces re-plot on new data). */
+function hash(s: string): number {
+  let h = 0
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0
+  return h
 }
