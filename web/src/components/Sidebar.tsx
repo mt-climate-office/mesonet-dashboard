@@ -21,6 +21,7 @@ import { useStations } from '../hooks/useStations'
 import { useStationElements } from '../hooks/useStationElements'
 import { DEFAULT_VARS, ELEM_MAP, SELECTED_VARS } from '../lib/params'
 import { useLatestTabState } from '../lib/url-state'
+import { API_DOCS_URL } from '../lib/config'
 
 const DATE_FMT = 'YYYY-MM-DD'
 
@@ -229,7 +230,7 @@ export function Sidebar() {
           <Text size="xs" c="dimmed">
             Data is served on demand from the{' '}
             <Anchor
-              href="https://rtedqtj5uk.execute-api.us-west-2.amazonaws.com/docs"
+              href={API_DOCS_URL}
               target="_blank"
               rel="noreferrer"
             >

@@ -35,9 +35,9 @@ export default defineConfig({
     // calls API_URL directly.
     proxy: {
       '/_api': {
-        target: 'https://rtedqtj5uk.execute-api.us-west-2.amazonaws.com',
+        target: 'https://mesonet2.climate.umt.edu',
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/_api/, ''),
+        rewrite: (p) => p.replace(/^\/_api/, '/api/v2'),
       },
     },
   },

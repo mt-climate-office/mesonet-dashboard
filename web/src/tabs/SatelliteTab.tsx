@@ -38,7 +38,7 @@ const oneYearAgo = () => dayjs().startOf('day').subtract(1, 'year')
  * series from a private Neo4j box at fcfc-mesonet-db2.cfc.umt.edu over bolt:
  * which the browser cannot reach (no public bolt port forwarding, no CORS).
  * We confirmed the new RDS-backed REST API has no /satellite* endpoints
- * (verified via GET https://rtedqtj5uk.execute-api.us-west-2.amazonaws.com/openapi.json),
+ * (verified via GET https://mesonet2.climate.umt.edu/api/v2/openapi.json),
  * so the data layer cannot exist client-side until that migration completes.
  *
  * The full UI shell is rendered so users can see what the tab will look like

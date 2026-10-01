@@ -4,6 +4,7 @@ import type { Data, Layout } from 'plotly.js'
 import { Plot } from '../../lib/plotly'
 import { PLOT_CONFIG } from '../../lib/plotConfig'
 import type { ObservationRow } from '../../lib/api'
+import { META_COLUMNS } from '../../lib/csv'
 
 interface Props {
   data: ObservationRow[] | undefined
@@ -12,7 +13,7 @@ interface Props {
   error: unknown
 }
 
-const RM_COLS = new Set(['station', 'datetime', 'Contains Missing Data', 'has_na'])
+const RM_COLS = new Set([...META_COLUMNS, 'Contains Missing Data'])
 
 const baseLayout: Partial<Layout> = {
   autosize: true,

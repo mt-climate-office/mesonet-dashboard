@@ -6,6 +6,7 @@ import { usePptSummary } from '../hooks/usePptSummary'
 import { useStations } from '../hooks/useStations'
 import { useStationParam } from '../lib/url-state'
 import { degToCompass } from '../lib/params'
+import { META_COLUMNS } from '../lib/csv'
 
 function fmtNum(v: number): string {
   if (Math.abs(v) >= 100) return v.toFixed(0)
@@ -83,7 +84,7 @@ export function CurrentConditionsCard() {
     }
     // Then everything else (soil temp/vwc/ec etc.)
     for (const [k, v] of Object.entries(latest)) {
-      if (k === 'station' || k === 'datetime') continue
+      if (META_COLUMNS.has(k)) continue
       if (v === null || v === undefined || v === '') continue
       if (seen.has(k)) continue
       push(k, formatVal(k, v))
