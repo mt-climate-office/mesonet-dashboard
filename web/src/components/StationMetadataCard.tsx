@@ -78,18 +78,19 @@ export function StationMetadataCard() {
 
   return (
     <ScrollArea h="100%" type="auto">
-      <Table withRowBorders={false} striped="even" verticalSpacing={4} fz="xs">
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Field</Table.Th>
-            <Table.Th ta="right">Value</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
+      {/* Legacy TABLE_STYLING: no header row, left aligned, grey odd rows. */}
+      <Table
+        withRowBorders={false}
+        striped="odd"
+        stripedColor="rgb(220,220,220)"
+        verticalSpacing={4}
+        fz="xs"
+      >
         <Table.Tbody>
           {rows.map(([k, v]) => (
             <Table.Tr key={k}>
               <Table.Td>{k}</Table.Td>
-              <Table.Td ta="right" fw={500}>
+              <Table.Td fw={500}>
                 {v}
               </Table.Td>
             </Table.Tr>

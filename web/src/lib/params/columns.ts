@@ -118,3 +118,20 @@ export function depthInchesFromLabel(label: string): number {
 
 /** Sort key for depth labels (shallow → deep). Same as `depthInchesFromLabel`. */
 export const depthOrder = depthInchesFromLabel
+
+/**
+ * Latest-tab variant of `variableForColumn` that also covers every element
+ * the station element list can offer (legacy chips are built from
+ * description_short, so e.g. VPD and Well EC must map too). Known columns map
+ * as above; `Precipitation (fill-corrected)` (ppt_corrected) maps to nothing;
+ * anything else falls back to the header text before "@" / "[", which is the
+ * element's description_short, i.e. the chip name.
+ */
+export function latestVariableForColumn(col: string): string | null {
+  if (col === 'station' || col === 'datetime' || col === 'provisional') return null
+  if (/fill-corrected/i.test(col)) return null
+  const known = variableForColumn(col)
+  if (known) return known
+  const name = col.split('@')[0].split('[')[0].trim()
+  return name || null
+}

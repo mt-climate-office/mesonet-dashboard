@@ -7,7 +7,8 @@ import { PLOT_CONFIG } from '../lib/plotConfig'
 import { degToCompass, WIND_DIRECTIONS } from '../lib/params'
 import { useStationRecord } from '../hooks/useStationRecord'
 import { useResolvedStation } from './useResolvedStation'
-import { speedBins } from './windRose'
+import { useLatestTabState } from '../lib/url-state'
+import { speedBins, windDateSpan } from './windRose'
 
 const PLASMA_R = [
   '#0d0887',
@@ -31,18 +32,19 @@ interface BinRow {
 
 export function WindRoseCard() {
   const station = useResolvedStation()
-  const start = dayjs().subtract(1, 'day').format('YYYY-MM-DD')
-  const end = dayjs().format('YYYY-MM-DD')
+  const state = useLatestTabState()
+  // Same window and aggregation as the main plot (legacy builds the rose from
+  // the cached station record, app.py update_ul_card).
+  const start = state.from ?? dayjs().subtract(14, 'day').format('YYYY-MM-DD')
+  const end = state.to ?? dayjs().format('YYYY-MM-DD')
 
-  // Fetch yesterday + today of hourly wind data, then keep the trailing 24h
-  // below.
-  const { data, isLoading, isError } = useStationRecord(
+  const { data, isLoading, isError, error } = useStationRecord(
     station
       ? {
           station,
           start,
           end,
-          period: 'hourly',
+          period: state.agg,
           elements: 'wind_spd,wind_dir',
           rmNa: true,
           publicOnly: true,
@@ -52,13 +54,9 @@ export function WindRoseCard() {
 
   const figure = useMemo(() => {
     if (!data || data.length === 0) return null
-    // "2026-10-01 10:00:00-06:00" → ISO so every browser parses it.
-    const times = data.map((r) => Date.parse(String(r.datetime).replace(' ', 'T')))
-    // Trailing 24h, anchored to the newest observation.
-    const cutoff = Math.max(...times.filter(Number.isFinite)) - 24 * 60 * 60 * 1000
+    const span = windDateSpan(data.map((r) => String(r.datetime)))
     const rows: Array<{ dir: number; spd: number }> = []
-    for (const [i, r] of data.entries()) {
-      if (Number.isFinite(times[i]) && times[i] <= cutoff) continue
+    for (const r of data) {
       const dir = (r as Record<string, unknown>)['Wind Direction [deg]']
       const spd = (r as Record<string, unknown>)['Wind Speed [mi/hr]']
       if (typeof dir === 'number' && typeof spd === 'number' && Number.isFinite(dir) && Number.isFinite(spd)) {
@@ -87,8 +85,8 @@ export function WindRoseCard() {
     // Build one trace per bin so the legend reads as speed categories.
     const traces: Data[] = []
     for (let b = 0; b < numBins; b++) {
-      // An empty top bin happens when the max speed is itself a cut point.
-      if (![...counts.values()].some((c) => c.bin === b)) continue
+      // Every qcut bin gets a trace, even an empty one (legacy groups by the
+      // categorical, so empty categories appear with zero counts).
       const r: number[] = []
       const theta: string[] = []
       for (const dir of WIND_DIRECTIONS) {
@@ -96,7 +94,8 @@ export function WindRoseCard() {
         r.push(cell?.count ?? 0)
         theta.push(dir)
       }
-      const colorIx = Math.floor((b / Math.max(1, numBins - 1)) * (PLASMA_R.length - 1))
+      // px.bar_polar assigns Plasma_r colours in category order.
+      const colorIx = traces.length % PLASMA_R.length
       const label = labels[b]
       traces.push({
         type: 'barpolar',
@@ -110,9 +109,22 @@ export function WindRoseCard() {
 
     const layout: Partial<Layout> = {
       autosize: true,
-      margin: { l: 20, r: 20, t: 20, b: 20 },
+      margin: { l: 20, r: 20, t: span ? 64 : 20, b: 20 },
+      ...(span
+        ? {
+            title: {
+              // Legacy is one line at 15 px; the card is narrower, so wrap.
+              text: `<b>Wind Data from ${span[0]}<br>to ${span[1]}</b>`,
+              x: 0.5,
+              y: 0.96,
+              xanchor: 'center',
+              yanchor: 'top',
+              font: { family: 'Courier New, monospace', size: 14, color: 'black' },
+            },
+          }
+        : {}),
       polar: {
-        radialaxis: { ticksuffix: '', angle: 45, dtick: 'auto' },
+        radialaxis: { ticksuffix: '', angle: 45, nticks: 4, tickfont: { size: 9 } },
         angularaxis: {
           direction: 'clockwise',
           rotation: 90,
@@ -129,15 +141,8 @@ export function WindRoseCard() {
     return { data: traces, layout, revision: data.length }
   }, [data])
 
-  if (!station) {
-    return (
-      <Center h="100%">
-        <Text c="dimmed" size="sm">
-          Pick a station to see its wind rose.
-        </Text>
-      </Center>
-    )
-  }
+  // Legacy shows an empty card until a station is picked.
+  if (!station) return null
   if (isLoading) {
     return (
       <Center h="100%">
@@ -146,10 +151,11 @@ export function WindRoseCard() {
     )
   }
   if (isError || !figure) {
+    if (isError) console.error('Wind rose request failed:', error)
     return (
       <Center h="100%" px="md">
-        <Text c="dimmed" size="xs" ta="center">
-          No wind data available for the last 24 hours.
+        <Text fw={700} size="sm" ta="center">
+          No data available for selected dates.
         </Text>
       </Center>
     )
