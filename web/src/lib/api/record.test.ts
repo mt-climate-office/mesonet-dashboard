@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { exclusiveEnd, fmtDate } from './record'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { exclusiveEnd, fmtDate, getStationRecord } from './record'
 import { mergeOn } from './http'
 import type { ObservationRow } from './types'
 
@@ -43,5 +43,44 @@ describe('mergeOn', () => {
   it('returns the other side when one is empty', () => {
     expect(mergeOn([], r, ['station'])).toBe(r)
     expect(mergeOn(l, [], ['station'])).toBe(l)
+  })
+})
+
+describe('getStationRecord QC level', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  const capture = () => {
+    const urls: string[] = []
+    vi.stubGlobal('fetch', async (url: string) => {
+      urls.push(url)
+      return new Response('station,datetime\n', { status: 200 })
+    })
+    return urls
+  }
+
+  it('defaults to level 2 for observations and derived ETr', async () => {
+    const urls = capture()
+    await getStationRecord({
+      station: 'acebozem',
+      start: '2026-09-01',
+      end: '2026-09-02',
+      period: 'daily',
+      elements: 'air_temp',
+      hasEtr: true,
+    })
+    expect(urls).toHaveLength(2)
+    for (const u of urls) expect(new URL(u, 'http://x').searchParams.get('level')).toBe('2')
+  })
+
+  it('honors an explicit level', async () => {
+    const urls = capture()
+    await getStationRecord({
+      station: 'acebozem',
+      start: '2026-09-01',
+      period: 'hourly',
+      elements: 'air_temp',
+      level: 1,
+    })
+    expect(new URL(urls[0], 'http://x').searchParams.get('level')).toBe('1')
   })
 })
