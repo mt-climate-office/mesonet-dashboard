@@ -1,0 +1,36 @@
+{
+  "generated_by": "web/src/features/ag/data/vendor-static.mjs",
+  "captured_at": "2026-10-01",
+  "files": {
+    "soil_params.json": {
+      "source_repo": "mt-climate-office/mesonet-soils",
+      "source_paths": [
+        "build/processed/2026-09-25/compat/soil_parameters.csv",
+        "build/processed/2026-09-25/compat/soil_porosity.csv",
+        "build/processed/2026-09-25/compat/soil_raw_data.csv"
+      ],
+      "source_commit": "18672c337fdb44c84de049be18aeafa94b2cd9e8",
+      "build_generator_sha": "18672c337fdb44c84de049be18aeafa94b2cd9e8",
+      "build_generator_dirty": true,
+      "release": "2026-09-25",
+      "build_generated_at": "2026-09-26T00:03:07Z",
+      "rows": 507,
+      "transform": "One row per (station, depth). depthCm = -depth/10. fx = FX params[0] (r,s,n,m,h; h kPa), vg = VG params[0] (r,s,a,n; a 1/kPa), porosityPct = HYPROP initial water content (Vol%), labVwcMin/MaxPct = min/max of soil_raw_data.vwc × 100 for that (station, depth).",
+      "data2_url": "https://data2.climate.umt.edu/mesonet/soils/processed/latest/compat/",
+      "license": "Montana Climate Office / Montana Mesonet soil laboratory data; public, see https://climate.umt.edu/about/agreement/"
+    },
+    "gdd_stages.json": {
+      "source_repo": "mt-climate-office/mesonet-db-rds",
+      "source_paths": [
+        "derived/combined_stages.tsv",
+        "derived/write_hemp_table.sql"
+      ],
+      "source_commit": "dc5518a01332543b0ccefd1180487cbb7dbec34c",
+      "source_dirty": false,
+      "transform": "Keyed by crop; stages with NA gdds dropped and sorted by gdd (as the API does). `stage` is the Haun number for wheat/barley, else a 1-based ordinal; `code` is the published stage label. Corn has no table (empty list).",
+      "known_differences": "Deployed derived.stages labels hemp stage 1 \"BBCH Stage 11\"; write_hemp_table.sql says \"BBCH Stages 0-11\". Vendored from the SQL.",
+      "data2_url": "https://data2.climate.umt.edu/mesonet/derived/gdd_stages.json (planned)",
+      "license": "Montana Climate Office; stage tables compiled from NDAWN / extension publications."
+    }
+  }
+}
