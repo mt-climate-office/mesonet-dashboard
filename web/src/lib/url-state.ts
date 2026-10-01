@@ -31,7 +31,7 @@
  *                         rmna=true with no qc maps to qc=2)
  *              period     monthly | daily | hourly
  *              dl_from, dl_to  date window
- *              qc         QC level 0 raw | 1 provisional | 2 quality-controlled
+ *              qc         QC level 0 raw | 1 provisional | 2 quality-controlled (default)
  *
  *   Satellite  mode       ts | cmp
  *              pct        show percentiles
@@ -225,7 +225,7 @@ export function useDownloaderState() {
   )
   const [from, setFrom] = useQueryState('dl_from', parseAsString)
   const [to, setTo] = useQueryState('dl_to', parseAsString)
-  // QC level; null = not set (the tab falls back to rmna, then level 1).
+  // QC level; null = not set (the tab falls back to rmna=true → 2, then the default, 2).
   const [qcLevel, setQcLevel] = useQueryState(
     'qc',
     parseAsNumberLiteral(DL_QC_LEVELS),

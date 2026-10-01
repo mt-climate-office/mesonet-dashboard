@@ -25,8 +25,13 @@ export type DlPeriod = 'monthly' | 'daily' | 'hourly'
 /** QC tier (`level`): 0 raw, 1 provisional, 2 fully quality-controlled. */
 export type QcLevel = 0 | 1 | 2
 
-/** Same tier the Latest tab requests (`lib/api/record.ts`). */
-export const DEFAULT_QC_LEVEL: QcLevel = 1
+/**
+ * Dashboard-wide default: fully quality-controlled. Intentional divergence
+ * from legacy (level 1): provisional data keeps gauge artefacts, e.g.
+ * arskeogh Aug 2026 precip is 13.8 in at level 1 vs 0.86 in at level 2
+ * (mesonet-db-rds#189).
+ */
+export const DEFAULT_QC_LEVEL: QcLevel = 2
 
 export const QC_LEVEL_OPTIONS: ReadonlyArray<{ value: QcLevel; label: string; description: string }> = [
   {
@@ -38,23 +43,52 @@ export const QC_LEVEL_OPTIONS: ReadonlyArray<{ value: QcLevel; label: string; de
     value: 1,
     label: 'Provisional',
     description:
-      'Hard range breaches removed at ingest. Same tier the Latest Data tab shows.',
+      'Only hard range breaches removed at ingest; values the daily QC checks would reject (spikes, stuck sensors, wind-affected precipitation) are kept.',
   },
   {
     value: 2,
     label: 'Quality-controlled',
     description:
-      'Fully cleaned by the daily QC pipeline (step, persistence, wind-affected precipitation, …). Rows the pipeline has not reached yet are served provisionally and marked in the "provisional" column.',
+      'Recommended. Fully cleaned by the daily QC pipeline (step, persistence, wind-affected precipitation, …). Rows the pipeline has not reached yet (usually the last day) are served provisionally and marked in the "provisional" column.',
   },
 ]
 
 /** Derived variables offered in the element picker (legacy "DERIVED VARIABLES"). */
-export const DERIVED_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+export interface DerivedOption {
+  value: string
+  label: string
+  /** Only offered at stations with soil-water-potential parameters (`has_swp`). */
+  requiresSwp?: boolean
+}
+
+export const DERIVED_OPTIONS: ReadonlyArray<DerivedOption> = [
   { value: 'feels_like', label: 'Feels Like Temperature' },
   { value: 'etr', label: 'Reference ET' },
   { value: 'cci', label: 'Livestock Risk Index' },
+  // Legacy had these commented out of the picker but still treated them as
+  // derived, so old `els=swp,…` links rely on them. Monthly = mean.
+  { value: 'swp', label: 'Soil Water Potential', requiresSwp: true },
+  { value: 'percent_saturation', label: 'Percent Saturation', requiresSwp: true },
 ]
 export const DERIVED_CODES: ReadonlySet<string> = new Set(DERIVED_OPTIONS.map((o) => o.value))
+export const SWP_CODES: ReadonlySet<string> = new Set(
+  DERIVED_OPTIONS.filter((o) => o.requiresSwp).map((o) => o.value),
+)
+
+/** Derived options a station can offer. */
+export function derivedOptionsFor(hasSwp: boolean): DerivedOption[] {
+  return DERIVED_OPTIONS.filter((o) => hasSwp || !o.requiresSwp)
+}
+
+/** Hourly requests default to this many days back (not the install date). */
+export const HOURLY_DEFAULT_DAYS = 30
+/** Hourly ranges longer than this need a second click to confirm. */
+export const HOURLY_CONFIRM_DAYS = 366
+
+/** Inclusive day count between two YYYY-MM-DD dates. */
+export function daySpan(start: string, end: string): number {
+  return Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000) + 1
+}
 
 /** Legacy dropped this unless the logger pressure element was asked for. */
 const LOGGER_PRESSURE_COLUMN = 'Logger Reference Pressure [mbar]'
@@ -166,7 +200,8 @@ function sortValueKeys(rows: Row[]): Row[] {
     const keys = Object.keys(r)
     const fixed: string[] = keys.filter((k) => k === 'station' || k === 'datetime')
     const flags = keys.filter((k) => TRAILING_COLUMNS.includes(k))
-    const values = keys.filter((k) => !fixed.includes(k) && !flags.includes(k)).sort()
+    const values = keys.filter((k) => !fixed.includes(k) && !flags.includes(k))
+      .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))
     const out: Row = {}
     for (const k of [...fixed, ...values, ...flags]) out[k] = r[k]
     return out

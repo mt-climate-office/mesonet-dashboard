@@ -31,7 +31,12 @@ import {
   DEFAULT_QC_LEVEL,
   DERIVED_CODES,
   DERIVED_OPTIONS,
+  daySpan,
+  derivedOptionsFor,
   downloadFilename,
+  HOURLY_CONFIRM_DAYS,
+  HOURLY_DEFAULT_DAYS,
+  SWP_CODES,
   fetchDownload,
   QC_LEVEL_OPTIONS,
   type DownloadQuery,
@@ -72,8 +77,8 @@ export function DownloaderTab() {
   const [error, setError] = useState<Error | null>(null)
   const [hint, setHint] = useState<string | null>(null)
 
-  // QC level: explicit `qc`, else legacy `rmna=true` → fully QC'd, else the
-  // tier the Latest tab uses.
+  // QC level: explicit `qc`, else legacy `rmna=true` → fully QC'd (2), else
+  // the dashboard default (also 2).
   const qcLevel: QcLevel = state.qcLevel ?? (state.removeFlagged ? 2 : DEFAULT_QC_LEVEL)
   const qcInfo = QC_LEVEL_OPTIONS.find((o) => o.value === qcLevel)!
 
@@ -85,11 +90,15 @@ export function DownloaderTab() {
       .map((s) => ({ value: s.station, label: `${s.name} (${s.sub_network})` }))
   }, [stations.data])
 
-  const installDate = useMemo(() => {
-    const st = stations.data?.find((s) => s.station === state.station)
-    const d = st?.date_installed
-    return d ? String(d).slice(0, 10) : null
-  }, [stations.data, state.station])
+  const stationMeta = useMemo(
+    () => stations.data?.find((s) => s.station === state.station) ?? null,
+    [stations.data, state.station],
+  )
+  const installDate = stationMeta?.date_installed
+    ? String(stationMeta.date_installed).slice(0, 10)
+    : null
+  // has_swp is a real boolean since parseCsv types True/False.
+  const hasSwp = stationMeta?.has_swp === true
 
   const standardOptions = useMemo(() => {
     if (!stationElements.data) return []
@@ -108,21 +117,43 @@ export function DownloaderTab() {
   const elementData = useMemo(
     () => [
       { group: 'Standard elements', items: standardOptions },
-      { group: 'Derived variables', items: DERIVED_OPTIONS.map((o) => ({ ...o })) },
+      {
+        group: 'Derived variables',
+        items: derivedOptionsFor(hasSwp).map((o) => ({ value: o.value, label: o.label })),
+      },
     ],
-    [standardOptions],
+    [standardOptions, hasSwp],
   )
 
   // Drop selections the current station / uncommon filter doesn't offer
-  // (legacy did the same). Until the list loads, keep the URL selection.
-  const selectedElements = useMemo(() => {
-    if (!stationElements.data) return state.elements
-    const valid = new Set(standardOptions.map((o) => o.value))
-    return state.elements.filter((e) => DERIVED_CODES.has(e) || valid.has(e))
-  }, [state.elements, standardOptions, stationElements.data])
+  // (legacy did the same). Until the lists load, keep the URL selection.
+  // SWP-only derived variables at a non-SWP station are dropped with a
+  // visible notice (old `els=swp,…` links).
+  const { selectedElements, droppedSwp } = useMemo(() => {
+    let els = state.elements
+    let dropped: string[] = []
+    if (stationMeta && !hasSwp) {
+      dropped = els.filter((e) => SWP_CODES.has(e))
+      els = els.filter((e) => !SWP_CODES.has(e))
+    }
+    if (stationElements.data) {
+      const valid = new Set(standardOptions.map((o) => o.value))
+      els = els.filter((e) => DERIVED_CODES.has(e) || valid.has(e))
+    }
+    return { selectedElements: els, droppedSwp: dropped }
+  }, [state.elements, standardOptions, stationElements.data, stationMeta, hasSwp])
 
   const today = todayStr()
-  const startDate = state.from ?? installDate ?? dayjs().subtract(365, 'day').format(DATE_FMT)
+  // Daily/monthly default to the install date (legacy). Hourly defaults to
+  // the last 30 days instead — years of hourly rows is rarely intended.
+  const hourlyDefault = dayjs().subtract(HOURLY_DEFAULT_DAYS - 1, 'day').format(DATE_FMT)
+  const defaultStart =
+    state.period === 'hourly'
+      ? installDate && installDate > hourlyDefault
+        ? installDate
+        : hourlyDefault
+      : (installDate ?? dayjs().subtract(365, 'day').format(DATE_FMT))
+  const startDate = state.from ?? defaultStart
   const endDate = state.to ?? today
   const dateError =
     startDate > endDate
@@ -130,6 +161,11 @@ export function DownloaderTab() {
       : installDate && startDate < installDate
         ? `Start date is before this station was installed (${installDate}).`
         : null
+  const span = dateError ? 0 : daySpan(startDate, endDate)
+  const largeHourly = state.period === 'hourly' && span > HOURLY_CONFIRM_DAYS
+  const runKey = `${state.station}|${startDate}|${endDate}|${state.period}`
+  const [confirmedKey, setConfirmedKey] = useState<string | null>(null)
+  const needsConfirm = largeHourly && confirmedKey !== runKey
 
   const selectStation = useCallback(
     (v: string | null) => {
@@ -147,6 +183,11 @@ export function DownloaderTab() {
     }
     if (dateError) {
       setHint(dateError)
+      return
+    }
+    if (needsConfirm) {
+      // First click on a >1-year hourly range arms it; the second runs it.
+      setConfirmedKey(runKey)
       return
     }
     setHint(null)
@@ -169,7 +210,17 @@ export function DownloaderTab() {
     } finally {
       setIsLoading(false)
     }
-  }, [state.station, state.period, selectedElements, startDate, endDate, qcLevel, dateError])
+  }, [
+    state.station,
+    state.period,
+    selectedElements,
+    startDate,
+    endDate,
+    qcLevel,
+    dateError,
+    needsConfirm,
+    runKey,
+  ])
 
   const handleDownload = useCallback(() => {
     if (!result || result.data.rows.length === 0) {
@@ -311,6 +362,30 @@ export function DownloaderTab() {
                   {dateError}
                 </Text>
               )}
+              {largeHourly && (
+                <Alert icon={<IconAlertCircle size={16} />} color="yellow" variant="light" p="xs">
+                  <Text size="xs">
+                    This hourly request spans {span.toLocaleString()} days (about{' '}
+                    {(span * 24).toLocaleString()} rows per variable) and may be slow.{' '}
+                    {needsConfirm
+                      ? 'Run Request will ask you to confirm; or shorten the range.'
+                      : 'Click "Confirm large request" to fetch it.'}
+                  </Text>
+                </Alert>
+              )}
+              {droppedSwp.length > 0 && (
+                <Alert icon={<IconAlertCircle size={16} />} color="yellow" variant="light" p="xs">
+                  <Text size="xs">
+                    {droppedSwp
+                      .map((c) => DERIVED_OPTIONS.find((o) => o.value === c)?.label ?? c)
+                      .join(' and ')}{' '}
+                    {droppedSwp.length > 1 ? 'are' : 'is'} not available at{' '}
+                    {stationMeta?.name ?? state.station} (no soil water potential
+                    parameters), so {droppedSwp.length > 1 ? 'they were' : 'it was'} removed
+                    from the request.
+                  </Text>
+                </Alert>
+              )}
 
               <Group gap="xs">
                 <Button
@@ -320,7 +395,7 @@ export function DownloaderTab() {
                   variant="filled"
                   flex={1}
                 >
-                  Run Request
+                  {largeHourly && !needsConfirm ? 'Confirm large request' : 'Run Request'}
                 </Button>
                 <Button
                   leftSection={<IconDownload size={16} />}

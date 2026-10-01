@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  daySpan,
+  derivedOptionsFor,
+  SWP_CODES,
   downloadFilename,
   fetchDownload,
   orderColumns,
@@ -25,6 +28,34 @@ describe('splitElements', () => {
       std: ['air_temp_0200', 'ppt'],
       derived: ['etr', 'cci'],
     })
+  })
+})
+
+describe('SWP-only derived variables', () => {
+  it('treats swp / percent_saturation as derived (old links keep working)', () => {
+    expect(splitElements(['swp', 'percent_saturation', 'ppt'])).toEqual({
+      std: ['ppt'],
+      derived: ['swp', 'percent_saturation'],
+    })
+  })
+  it('offers them only at has_swp stations', () => {
+    expect(derivedOptionsFor(false).map((o) => o.value)).toEqual(['feels_like', 'etr', 'cci'])
+    expect(derivedOptionsFor(true).map((o) => o.value)).toEqual([
+      'feels_like',
+      'etr',
+      'cci',
+      'swp',
+      'percent_saturation',
+    ])
+    expect([...SWP_CODES]).toEqual(['swp', 'percent_saturation'])
+  })
+})
+
+describe('daySpan', () => {
+  it('counts inclusive days', () => {
+    expect(daySpan('2026-09-01', '2026-09-01')).toBe(1)
+    expect(daySpan('2026-09-02', '2026-10-01')).toBe(30)
+    expect(daySpan('2024-01-01', '2024-12-31')).toBe(366)
   })
 })
 
