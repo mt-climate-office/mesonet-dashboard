@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Anchor, List, Modal, Text, Title } from '@mantine/core'
+import { API_DOCS_URL } from '../lib/config'
 
 const HELP_EVENT = 'open-help-modal'
 
@@ -67,7 +68,7 @@ export function HelpModal() {
       <Text size="sm" mt={4}>
         Station data is served on demand from the{' '}
         <Anchor
-          href="https://rtedqtj5uk.execute-api.us-west-2.amazonaws.com/docs"
+          href={API_DOCS_URL}
           target="_blank"
           rel="noreferrer"
         >

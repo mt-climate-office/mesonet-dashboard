@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getPhotoCatalog, type PhotoMeta } from '../lib/api'
+import { getPhotoCatalog, HttpError, type PhotoMeta } from '../lib/api'
 
 /**
  * Catalog of every station that has cameras, with each station's install
@@ -20,8 +20,7 @@ export function usePhotoCatalog() {
     // cold start. 6 attempts × ~500 ms = 3 s of patience covers the typical
     // warm-up.
     retry: (failureCount, error) => {
-      const msg = (error as Error)?.message ?? ''
-      if (/HTTP 4\d\d/.test(msg)) return false
+      if (error instanceof HttpError && error.status < 500) return false
       return failureCount < 6
     },
     retryDelay: (attempt) => Math.min(500 * (attempt + 1), 3000),

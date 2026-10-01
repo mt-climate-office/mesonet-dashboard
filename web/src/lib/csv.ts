@@ -2,6 +2,19 @@ import Papa from 'papaparse'
 import { LAB_SWAP } from './params'
 
 /**
+ * Bookkeeping columns the API returns alongside element values (v2 adds
+ * `provisional`; `na_info=true` adds `has_na`/`obs_count`). Never plot or
+ * tabulate these as variables.
+ */
+export const META_COLUMNS: ReadonlySet<string> = new Set([
+  'station',
+  'datetime',
+  'provisional',
+  'has_na',
+  'obs_count',
+])
+
+/**
  * Parse a CSV string into typed rows. Applies LAB_SWAP rename so consumers
  * can use canonical column names ("Air Temperature [°F]" etc.) without
  * worrying about which sensor height a station has.

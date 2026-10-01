@@ -68,11 +68,21 @@ export interface StationConfig {
   instruments?: InstrumentEntry[]
 }
 
+/** Non-2xx response from the API. `status` drives retry decisions. */
+export class HttpError extends Error {
+  readonly status: number
+  constructor(status: number, url: string, body: string) {
+    super(`HTTP ${status} on ${url}: ${body}`)
+    this.name = 'HttpError'
+    this.status = status
+  }
+}
+
 async function fetchText(path: string, query: Record<string, unknown> = {}): Promise<string> {
   const url = `${API_URL}${path.replace(/^\//, '')}${buildQuery(query as never)}`
   const r = await fetch(url, { headers: { Accept: 'text/csv,application/json' } })
   if (!r.ok) {
-    throw new Error(`HTTP ${r.status} on ${url}: ${await r.text().catch(() => '')}`)
+    throw new HttpError(r.status, url, await r.text().catch(() => ''))
   }
   return r.text()
 }
@@ -81,7 +91,7 @@ async function fetchJson<T>(path: string, query: Record<string, unknown> = {}): 
   const url = `${API_URL}${path.replace(/^\//, '')}${buildQuery(query as never)}`
   const r = await fetch(url, { headers: { Accept: 'application/json' } })
   if (!r.ok) {
-    throw new Error(`HTTP ${r.status} on ${url}: ${await r.text().catch(() => '')}`)
+    throw new HttpError(r.status, url, await r.text().catch(() => ''))
   }
   return (await r.json()) as T
 }
@@ -185,24 +195,36 @@ const fmtDate = (d: Date | string): string =>
   typeof d === 'string' ? d : d.toISOString().slice(0, 10)
 
 /**
+ * The v2 API treats `end_time` as an exclusive cutoff (a bare date means
+ * midnight at the start of that day). The UI's end dates are inclusive, so
+ * shift them forward one day before sending.
+ */
+function exclusiveEnd(d: Date | string): string {
+  const [y, m, day] = fmtDate(d).split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, day + 1)).toISOString().slice(0, 10)
+}
+
+/**
  * Mirrors get_data.get_station_record. Returns the time series CSV joined with
  * derived elements (e.g. etr) when has_etr / derived_elems are set.
  */
 export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]> {
   const start = fmtDate(q.start)
-  const end = q.end ? fmtDate(q.end) : undefined
+  const end = q.end ? exclusiveEnd(q.end) : undefined
 
-  const baseQuery = {
+  // `level=1` matches the legacy dashboard (provisional QC tier); the v2
+  // default is 2. Revisit when the fidelity audit settles it.
+  const derivedQuery = {
     stations: q.station,
     elements: q.elements ?? '',
     start_time: start,
     end_time: end,
     level: 1,
     rm_na: q.rmNa ?? true,
-    premade: true,
     na_info: q.naInfo ?? false,
-    public: q.publicOnly ?? true,
   }
+  // /derived/* has no `public` parameter; observations do.
+  const baseQuery = { ...derivedQuery, public: q.publicOnly ?? true }
 
   const observations =
     q.elements && q.elements !== ''
@@ -211,17 +233,24 @@ export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]
 
   let merged = observations
 
+  // ETr rides along with the observations; if the derived call fails, keep
+  // the observations rather than failing the whole record.
   if (q.hasEtr) {
-    const etr = await fetchCsv<ObservationRow>(DERIVED_ENDPOINTS[q.period], {
-      ...baseQuery,
-      elements: 'etr',
-    })
-    merged = mergeOn(merged, etr, ['station', 'datetime'])
+    try {
+      const etr = await fetchCsv<ObservationRow>(DERIVED_ENDPOINTS[q.period], {
+        ...derivedQuery,
+        elements: 'etr',
+      })
+      merged = mergeOn(merged, etr, ['station', 'datetime'])
+    } catch (err) {
+      if (observations.length === 0) throw err
+      console.warn('Reference ET request failed; showing observations only.', err)
+    }
   }
 
   if (q.derivedElems && q.derivedElems.length > 0) {
     const derived = await fetchCsv<ObservationRow>(DERIVED_ENDPOINTS[q.period], {
-      ...baseQuery,
+      ...derivedQuery,
       elements: q.derivedElems.join(','),
     })
     merged = mergeOn(merged, derived, ['station', 'datetime'])
@@ -289,12 +318,11 @@ export async function getDerived(q: DerivedQuery): Promise<ObservationRow[]> {
   const baseQuery: Record<string, unknown> = {
     stations: q.station,
     start_time: q.start,
-    end_time: q.end,
+    end_time: exclusiveEnd(q.end),
     elements: q.variable,
-    alpha: 0.23,
-    premade: true,
     rm_na: true,
   }
+  if (!isObservation) baseQuery.alpha = 0.23
   if (q.crop) baseQuery.crop = q.crop
   // `keep=true` returns the underlying inputs alongside the derived value.
   // For GDD we use it to recompute against the slider thresholds; for

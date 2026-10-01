@@ -41,11 +41,11 @@ function quantileBins(values: number[], n = 8): number[] {
 
 export function WindRoseCard() {
   const [station] = useStationParam()
-  const start = dayjs().subtract(24, 'hour').format('YYYY-MM-DD')
+  const start = dayjs().subtract(1, 'day').format('YYYY-MM-DD')
   const end = dayjs().format('YYYY-MM-DD')
 
-  // Fetch ~24h of hourly wind data for the rose. Matches the legacy "Wind"
-  // tab's data scope.
+  // Fetch yesterday + today of hourly wind data, then keep the trailing 24h
+  // below.
   const { data, isLoading, isError } = useStationRecord(
     station
       ? {
@@ -62,8 +62,13 @@ export function WindRoseCard() {
 
   const figure = useMemo(() => {
     if (!data || data.length === 0) return null
+    // "2026-10-01 10:00:00-06:00" → ISO so every browser parses it.
+    const times = data.map((r) => Date.parse(String(r.datetime).replace(' ', 'T')))
+    // Trailing 24h, anchored to the newest observation.
+    const cutoff = Math.max(...times.filter(Number.isFinite)) - 24 * 60 * 60 * 1000
     const rows: Array<{ dir: number; spd: number }> = []
-    for (const r of data) {
+    for (const [i, r] of data.entries()) {
+      if (Number.isFinite(times[i]) && times[i] <= cutoff) continue
       const dir = (r as Record<string, unknown>)['Wind Direction [deg]']
       const spd = (r as Record<string, unknown>)['Wind Speed [mi/hr]']
       if (typeof dir === 'number' && typeof spd === 'number' && Number.isFinite(dir) && Number.isFinite(spd)) {
