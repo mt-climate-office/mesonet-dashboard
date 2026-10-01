@@ -1,0 +1,33 @@
+element,description,description_short,base_units,us_units,sort_order
+soil_temp_0010,Soil temperature at 10 cm below surface,Soil Temperature @ -10 cm,degC,degF,8.0
+ppt_max_rate,Maximum precipiation rate,Max Precip Rate,mm hr^-1,in hr^-1,4.0
+ppt_max_rate,Maximum precipiation rate,Max Precip Rate,mm hr^-1,in hr^-1,4.0
+vpd_atmo,Vapor pressure deficit,VPD,kPa,millibar,26.0
+vpd_atmo,Vapor pressure deficit,VPD,kPa,millibar,26.0
+soil_vwc_0050,Soil volumetric water content at 50 cm below surface,Soil VWC @ -50 cm,percent,percent,16.0
+soil_vwc_0091,Soil volumetric water content at 91 cm below surface,Soil VWC @ -91 cm,percent,percent,17.0
+wind_dir_0244,Wind direction at 8 ft,Wind Direction @ 8 ft,arcdeg,arcdeg,28.0
+wind_dir_0244,Wind direction at 8 ft,Wind Direction @ 8 ft,arcdeg,arcdeg,28.0
+soil_vwc_0010,Soil volumetric water content at 10 cm below surface,Soil VWC @ -10 cm,percent,percent,14.0
+soil_temp_0050,Soil temperature at 50 cm below surface,Soil Temperature @ -50 cm,degC,degF,10.0
+wind_spd_0244,Wind speed at 8 ft,Wind Speed @ 8 ft,m s^-1,mi hr^-1,30.0
+wind_spd_0244,Wind speed at 8 ft,Wind Speed @ 8 ft,m s^-1,mi hr^-1,30.0
+soil_ec_blk_0091,Bulk soil electrical conductivity at 91 cm below surface,Bulk EC @ -91 cm,mS cm^-1,mS cm^-1,23.0
+windgust_0244,Maximum wind gust speed since previous report at 8 ft,Gust Speed @ 8 ft,m s^-1,mi hr^-1,32.0
+windgust_0244,Maximum wind gust speed since previous report at 8 ft,Gust Speed @ 8 ft,m s^-1,mi hr^-1,32.0
+soil_temp_0091,Soil temperature at 91 cm below surface,Soil Temperature @ -91 cm,degC,degF,11.0
+soil_ec_blk_0020,Bulk soil electrical conductivity at 20 cm below surface,Bulk EC @ -20 cm,mS cm^-1,mS cm^-1,21.0
+sol_rad,Solar radiation,Solar Radiation,W m^-2,W m^-2,25.0
+sol_rad,Solar radiation,Solar Radiation,W m^-2,W m^-2,25.0
+bp,Atmospheric Pressure,Atmospheric Pressure,kPa,millibar,5.0
+bp,Atmospheric Pressure,Atmospheric Pressure,kPa,millibar,5.0
+soil_vwc_0020,Soil volumetric water content at 20 cm below surface,Soil VWC @ -20 cm,percent,percent,15.0
+air_temp_0244,Air Temperature at 8 feet,Air Temperature @ 8 ft,degC,degF,2.0
+air_temp_0244,Air Temperature at 8 feet,Air Temperature @ 8 ft,degC,degF,2.0
+rh,Relative humidity,Relative Humidity,percent,percent,6.0
+rh,Relative humidity,Relative Humidity,percent,percent,6.0
+ppt,Net precipitation since previous report,Precipitation,mm,in,3.0
+ppt,Net precipitation since previous report,Precipitation,mm,in,3.0
+soil_temp_0020,Soil temperature at 20 cm below surface,Soil Temperature @ -20 cm,degC,degF,9.0
+soil_ec_blk_0010,Bulk soil electrical conductivity at 10 cm below surface,Bulk EC @ -10 cm,mS cm^-1,mS cm^-1,20.0
+soil_ec_blk_0050,Bulk soil electrical conductivity at 50 cm below surface,Bulk EC @ -50 cm,mS cm^-1,mS cm^-1,22.0

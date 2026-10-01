@@ -1,0 +1,184 @@
+station,datetime,Maximum Air Temperature [°F],Minimum Air Temperature [°F],GDDs [GDD °F],Cumulative GDDs [GDD °F],Stage Name,Growth Stage
+arskeogh,2025-04-01 00:00:00-06:00,40.82,30.74,4.41,4.41,Planted,0.0
+arskeogh,2025-04-02 00:00:00-06:00,45.86,32.36,7.11,11.52,Planted,0.0
+arskeogh,2025-04-03 00:00:00-06:00,48.56,26.06,8.28,19.8,Planted,0.0
+arskeogh,2025-04-04 00:00:00-06:00,41.72,23.72,4.86,24.66,Planted,0.0
+arskeogh,2025-04-05 00:00:00-06:00,53.24,22.28,10.62,35.28,Planted,0.0
+arskeogh,2025-04-06 00:00:00-06:00,63.32,29.12,15.66,50.94,Planted,0.0
+arskeogh,2025-04-07 00:00:00-06:00,71.24,33.08,19.54,70.48,Planted,0.0
+arskeogh,2025-04-08 00:00:00-06:00,66.2,41.36,21.78,92.26,Planted,0.0
+arskeogh,2025-04-09 00:00:00-06:00,61.52,35.42,16.47,108.73,Planted,0.0
+arskeogh,2025-04-10 00:00:00-06:00,64.4,35.06,17.73,126.46,Planted,0.0
+arskeogh,2025-04-11 00:00:00-06:00,78.98,44.24,25.12,151.58,Planted,0.0
+arskeogh,2025-04-12 00:00:00-06:00,67.46,47.12,25.29,176.87,Emergence Date,0.5
+arskeogh,2025-04-13 00:00:00-06:00,46.76,32.72,7.74,184.61,Emergence Date,0.5
+arskeogh,2025-04-14 00:00:00-06:00,52.88,27.86,10.44,195.05,Emergence Date,0.5
+arskeogh,2025-04-15 00:00:00-06:00,72.86,29.3,19.0,214.05,Emergence Date,0.5
+arskeogh,2025-04-16 00:00:00-06:00,64.04,35.42,17.73,231.78,Emergence Date,0.5
+arskeogh,2025-04-17 00:00:00-06:00,44.06,32.0,6.03,237.81,Emergence Date,0.5
+arskeogh,2025-04-18 00:00:00-06:00,47.84,28.04,7.92,245.73,Leaf 1 (Fully Extended),1.0
+arskeogh,2025-04-19 00:00:00-06:00,60.26,27.32,14.13,259.86,Leaf 1 (Fully Extended),1.0
+arskeogh,2025-04-20 00:00:00-06:00,59.54,38.48,17.01,276.87,Leaf 1 (Fully Extended),1.0
+arskeogh,2025-04-21 00:00:00-06:00,51.8,36.68,12.24,289.11,Leaf 1 (Fully Extended),1.0
+arskeogh,2025-04-22 00:00:00-06:00,52.34,34.52,11.43,300.54,Leaf 1 (Fully Extended),1.0
+arskeogh,2025-04-23 00:00:00-06:00,51.62,30.2,9.81,310.35,Leaf 1 (Fully Extended),1.0
+arskeogh,2025-04-24 00:00:00-06:00,49.28,40.82,13.05,323.4,Leaf 1 (Fully Extended),1.0
+arskeogh,2025-04-25 00:00:00-06:00,57.2,36.86,15.03,338.43,Leaf 1 (Fully Extended),1.0
+arskeogh,2025-04-26 00:00:00-06:00,66.2,44.78,23.49,361.92,Leaf 1 (Fully Extended),1.0
+arskeogh,2025-04-27 00:00:00-06:00,71.96,42.44,25.2,387.12,Leaf 2 (Fully Extended),2.0
+arskeogh,2025-04-28 00:00:00-06:00,54.5,36.68,13.59,400.71,Leaf 2 (Fully Extended),2.0
+arskeogh,2025-04-29 00:00:00-06:00,68.72,33.62,19.17,419.88,Leaf 2 (Fully Extended),2.0
+arskeogh,2025-04-30 00:00:00-06:00,58.1,46.04,20.07,439.95,Leaf 2 (Fully Extended),2.0
+arskeogh,2025-05-01 00:00:00-06:00,58.64,40.1,17.37,457.32,Leaf 2 (Fully Extended),2.0
+arskeogh,2025-05-02 00:00:00-06:00,67.1,36.5,19.8,477.12,Leaf 2 (Fully Extended),2.0
+arskeogh,2025-05-03 00:00:00-06:00,78.44,43.34,28.89,506.01,Leaf 2 (Fully Extended),2.0
+arskeogh,2025-05-04 00:00:00-06:00,82.94,49.82,34.38,540.39,Leaf 3 (Tillers Begin To Emerge),3.0
+arskeogh,2025-05-05 00:00:00-06:00,65.66,45.32,23.49,563.88,Leaf 3 (Tillers Begin To Emerge),3.0
+arskeogh,2025-05-06 00:00:00-06:00,56.12,44.78,18.45,582.33,Leaf 3 (Tillers Begin To Emerge),3.0
+arskeogh,2025-05-07 00:00:00-06:00,73.58,43.16,26.37,608.7,Leaf 3 (Tillers Begin To Emerge),3.0
+arskeogh,2025-05-08 00:00:00-06:00,80.96,49.46,33.21,641.91,Leaf 3 (Tillers Begin To Emerge),3.0
+arskeogh,2025-05-09 00:00:00-06:00,78.98,54.5,34.74,676.65,Leaf 3 (Tillers Begin To Emerge),3.0
+arskeogh,2025-05-10 00:00:00-06:00,88.34,54.32,39.33,715.98,Leaf 4 (Fully Extended),4.0
+arskeogh,2025-05-11 00:00:00-06:00,89.42,56.84,41.13,757.11,Leaf 4 (Fully Extended),4.0
+arskeogh,2025-05-12 00:00:00-06:00,90.14,56.3,41.22,798.33,Leaf 4 (Fully Extended),4.0
+arskeogh,2025-05-13 00:00:00-06:00,70.88,50.0,28.44,826.77,Leaf 4 (Fully Extended),4.0
+arskeogh,2025-05-14 00:00:00-06:00,60.98,46.22,21.6,848.37,Leaf 4 (Fully Extended),4.0
+arskeogh,2025-05-15 00:00:00-06:00,59.36,43.52,19.44,867.81,Leaf 5 (Tillering Ends),5.0
+arskeogh,2025-05-16 00:00:00-06:00,60.44,46.94,21.69,889.5,Leaf 5 (Tillering Ends),5.0
+arskeogh,2025-05-17 00:00:00-06:00,68.72,43.88,24.3,913.8,Leaf 5 (Tillering Ends),5.0
+arskeogh,2025-05-18 00:00:00-06:00,59.0,44.24,19.62,933.42,Leaf 5 (Tillering Ends),5.0
+arskeogh,2025-05-19 00:00:00-06:00,47.3,41.18,12.24,945.66,Leaf 5 (Tillering Ends),5.0
+arskeogh,2025-05-20 00:00:00-06:00,58.82,40.28,17.55,963.21,Leaf 5 (Tillering Ends),5.0
+arskeogh,2025-05-21 00:00:00-06:00,64.04,40.28,20.16,983.37,Leaf 5 (Tillering Ends),5.0
+arskeogh,2025-05-22 00:00:00-06:00,70.52,39.38,22.95,1006.32,Leaf 6 (Fully Extended),6.0
+arskeogh,2025-05-23 00:00:00-06:00,66.2,49.64,25.92,1032.24,Leaf 6 (Fully Extended),6.0
+arskeogh,2025-05-24 00:00:00-06:00,64.76,46.22,23.49,1055.73,Leaf 6 (Fully Extended),6.0
+arskeogh,2025-05-25 00:00:00-06:00,68.36,45.68,25.02,1080.75,Leaf 6 (Fully Extended),6.0
+arskeogh,2025-05-26 00:00:00-06:00,70.16,48.74,27.45,1108.2,Leaf 6 (Fully Extended),6.0
+arskeogh,2025-05-27 00:00:00-06:00,73.4,46.76,28.08,1136.28,Leaf 7 (Fully Extended),7.0
+arskeogh,2025-05-28 00:00:00-06:00,74.12,55.22,32.67,1168.95,Leaf 7 (Fully Extended),7.0
+arskeogh,2025-05-29 00:00:00-06:00,76.46,46.94,29.7,1198.65,Leaf 7 (Fully Extended),7.0
+arskeogh,2025-05-30 00:00:00-06:00,80.96,50.0,33.48,1232.13,Leaf 7 (Fully Extended),7.0
+arskeogh,2025-05-31 00:00:00-06:00,84.38,50.9,35.64,1267.77,Leaf 7 (Fully Extended),7.0
+arskeogh,2025-06-01 00:00:00-06:00,84.92,54.32,37.62,1305.39,Flag Leaf Emerged (Collar Visible),8.0
+arskeogh,2025-06-02 00:00:00-06:00,60.44,46.4,21.42,1326.81,Flag Leaf Emerged (Collar Visible),8.0
+arskeogh,2025-06-03 00:00:00-06:00,65.48,41.36,21.42,1348.23,Flag Leaf Emerged (Collar Visible),8.0
+arskeogh,2025-06-04 00:00:00-06:00,66.92,44.96,23.94,1372.17,Flag Leaf Emerged (Collar Visible),8.0
+arskeogh,2025-06-05 00:00:00-06:00,71.6,46.22,26.91,1399.08,Flag Leaf Emerged (Collar Visible),8.0
+arskeogh,2025-06-06 00:00:00-06:00,77.0,46.58,29.79,1428.87,Flag Leaf Emerged (Collar Visible),8.0
+arskeogh,2025-06-07 00:00:00-06:00,71.78,58.1,32.94,1461.81,Boot Swelling Begins (Flag leaf stem elongated; Awns just peeking out of boot),9.0
+arskeogh,2025-06-08 00:00:00-06:00,73.58,54.68,32.13,1493.94,Boot Swelling Begins (Flag leaf stem elongated; Awns just peeking out of boot),9.0
+arskeogh,2025-06-09 00:00:00-06:00,88.88,47.12,36.0,1529.94,Mid-Boot (Head half emerged),9.5
+arskeogh,2025-06-10 00:00:00-06:00,87.8,63.32,43.56,1573.5,Mid-Boot (Head half emerged),9.5
+arskeogh,2025-06-11 00:00:00-06:00,85.82,61.88,41.85,1615.35,Head Emerged (Boot Complete) (Flowering Complete),10.0
+arskeogh,2025-06-12 00:00:00-06:00,67.28,54.68,28.98,1644.33,Head Emerged (Boot Complete) (Flowering Complete),10.0
+arskeogh,2025-06-13 00:00:00-06:00,79.34,57.92,36.63,1680.96,Head Emerged (Boot Complete) (Flowering Complete),10.0
+arskeogh,2025-06-14 00:00:00-06:00,84.02,57.2,38.61,1719.57,Head Emerged (Boot Complete) (Flowering Complete),10.0
+arskeogh,2025-06-15 00:00:00-06:00,87.44,58.28,40.86,1760.43,Head Emerged (Boot Complete) (Flowering Complete),10.0
+arskeogh,2025-06-16 00:00:00-06:00,77.18,56.84,35.01,1795.44,Heading Complete,11.0
+arskeogh,2025-06-17 00:00:00-06:00,78.44,54.86,34.65,1830.09,Heading Complete,11.0
+arskeogh,2025-06-18 00:00:00-06:00,85.64,55.04,38.34,1868.43,Heading Complete,11.0
+arskeogh,2025-06-19 00:00:00-06:00,89.96,56.48,41.22,1909.65,Kernel Watery Ripe,11.5
+arskeogh,2025-06-20 00:00:00-06:00,84.38,59.9,40.14,1949.79,Kernel Watery Ripe,11.5
+arskeogh,2025-06-21 00:00:00-06:00,75.92,55.76,33.84,1983.63,Kernel Watery Ripe,11.5
+arskeogh,2025-06-22 00:00:00-06:00,66.74,45.68,24.21,2007.84,Kernel Watery Ripe,11.5
+arskeogh,2025-06-23 00:00:00-06:00,71.42,41.18,24.3,2032.14,Kernel Watery Ripe,11.5
+arskeogh,2025-06-24 00:00:00-06:00,80.6,50.9,33.75,2065.89,Kernel Watery Ripe,11.5
+arskeogh,2025-06-25 00:00:00-06:00,84.38,57.02,38.7,2104.59,Kernel Watery Ripe,11.5
+arskeogh,2025-06-26 00:00:00-06:00,91.4,55.76,41.58,2146.17,Kernel Watery Ripe,11.5
+arskeogh,2025-06-27 00:00:00-06:00,88.88,61.16,43.02,2189.19,Kernel Watery Ripe,11.5
+arskeogh,2025-06-28 00:00:00-06:00,81.32,58.46,37.89,2227.08,Kernel Watery Ripe,11.5
+arskeogh,2025-06-29 00:00:00-06:00,80.96,55.76,36.36,2263.44,Kernel Watery Ripe,11.5
+arskeogh,2025-06-30 00:00:00-06:00,84.56,53.78,37.17,2300.61,Kernel Watery Ripe,11.5
+arskeogh,2025-07-01 00:00:00-06:00,94.28,58.64,44.46,2345.07,Kernel Watery Ripe,11.5
+arskeogh,2025-07-02 00:00:00-06:00,99.14,68.18,49.59,2394.66,Kernel Watery Ripe,11.5
+arskeogh,2025-07-03 00:00:00-06:00,96.26,71.96,51.48,2446.14,Kernel Watery Ripe,11.5
+arskeogh,2025-07-04 00:00:00-06:00,86.0,68.0,45.0,2491.14,Kernel Watery Ripe,11.5
+arskeogh,2025-07-05 00:00:00-06:00,83.12,59.0,39.06,2530.2,Kernel Watery Ripe,11.5
+arskeogh,2025-07-06 00:00:00-06:00,81.86,55.4,36.63,2566.83,Kernel Watery Ripe,11.5
+arskeogh,2025-07-07 00:00:00-06:00,82.04,62.24,40.14,2606.97,Kernel Watery Ripe,11.5
+arskeogh,2025-07-08 00:00:00-06:00,96.08,60.08,45.54,2652.51,Kernel Watery Ripe,11.5
+arskeogh,2025-07-09 00:00:00-06:00,100.58,65.84,48.42,2700.93,Kernel Watery Ripe,11.5
+arskeogh,2025-07-10 00:00:00-06:00,93.92,67.64,48.78,2749.71,Kernel Watery Ripe,11.5
+arskeogh,2025-07-11 00:00:00-06:00,76.82,56.12,34.47,2784.18,Kernel Watery Ripe,11.5
+arskeogh,2025-07-12 00:00:00-06:00,91.58,50.72,39.15,2823.33,Kernel Watery Ripe,11.5
+arskeogh,2025-07-13 00:00:00-06:00,94.64,64.04,47.34,2870.67,Kernel Watery Ripe,11.5
+arskeogh,2025-07-14 00:00:00-06:00,99.14,63.68,47.34,2918.01,Kernel Watery Ripe,11.5
+arskeogh,2025-07-15 00:00:00-06:00,72.86,54.86,31.86,2949.87,Kernel Watery Ripe,11.5
+arskeogh,2025-07-16 00:00:00-06:00,62.42,51.62,25.02,2974.89,Kernel Watery Ripe,11.5
+arskeogh,2025-07-17 00:00:00-06:00,79.16,54.32,34.74,3009.63,Kernel Watery Ripe,11.5
+arskeogh,2025-07-18 00:00:00-06:00,78.98,59.18,37.08,3046.71,Kernel Watery Ripe,11.5
+arskeogh,2025-07-19 00:00:00-06:00,92.48,63.86,46.17,3092.88,Kernel Watery Ripe,11.5
+arskeogh,2025-07-20 00:00:00-06:00,84.74,61.52,41.13,3134.01,Kernel Watery Ripe,11.5
+arskeogh,2025-07-21 00:00:00-06:00,86.9,60.8,41.85,3175.86,Kernel Watery Ripe,11.5
+arskeogh,2025-07-22 00:00:00-06:00,74.12,60.44,35.28,3211.14,Kernel Watery Ripe,11.5
+arskeogh,2025-07-23 00:00:00-06:00,75.74,59.72,35.73,3246.87,Kernel Watery Ripe,11.5
+arskeogh,2025-07-24 00:00:00-06:00,87.62,58.28,40.95,3287.82,Kernel Watery Ripe,11.5
+arskeogh,2025-07-25 00:00:00-06:00,94.64,67.1,48.87,3336.69,Kernel Watery Ripe,11.5
+arskeogh,2025-07-26 00:00:00-06:00,91.22,64.94,46.08,3382.77,Kernel Watery Ripe,11.5
+arskeogh,2025-07-27 00:00:00-06:00,88.88,61.52,43.2,3425.97,Kernel Watery Ripe,11.5
+arskeogh,2025-07-28 00:00:00-06:00,80.96,61.16,39.06,3465.03,Kernel Watery Ripe,11.5
+arskeogh,2025-07-29 00:00:00-06:00,83.12,62.6,40.86,3505.89,Kernel Watery Ripe,11.5
+arskeogh,2025-07-30 00:00:00-06:00,77.54,61.52,37.53,3543.42,Kernel Watery Ripe,11.5
+arskeogh,2025-07-31 00:00:00-06:00,85.64,60.8,41.22,3584.64,Kernel Watery Ripe,11.5
+arskeogh,2025-08-01 00:00:00-06:00,86.72,64.4,43.56,3628.2,Kernel Watery Ripe,11.5
+arskeogh,2025-08-02 00:00:00-06:00,90.14,59.72,42.93,3671.13,Kernel Watery Ripe,11.5
+arskeogh,2025-08-03 00:00:00-06:00,86.18,62.6,42.39,3713.52,Kernel Watery Ripe,11.5
+arskeogh,2025-08-04 00:00:00-06:00,91.4,61.7,44.55,3758.07,Kernel Watery Ripe,11.5
+arskeogh,2025-08-05 00:00:00-06:00,83.48,63.14,41.31,3799.38,Kernel Watery Ripe,11.5
+arskeogh,2025-08-06 00:00:00-06:00,89.42,60.44,42.93,3842.31,Kernel Watery Ripe,11.5
+arskeogh,2025-08-07 00:00:00-06:00,84.2,55.4,37.8,3880.11,Kernel Watery Ripe,11.5
+arskeogh,2025-08-08 00:00:00-06:00,69.8,59.54,32.67,3912.78,Kernel Watery Ripe,11.5
+arskeogh,2025-08-09 00:00:00-06:00,74.66,59.54,35.1,3947.88,Kernel Watery Ripe,11.5
+arskeogh,2025-08-10 00:00:00-06:00,84.02,53.42,36.72,3984.6,Kernel Watery Ripe,11.5
+arskeogh,2025-08-11 00:00:00-06:00,81.5,58.82,38.16,4022.76,Kernel Watery Ripe,11.5
+arskeogh,2025-08-12 00:00:00-06:00,85.82,58.1,39.96,4062.72,Kernel Watery Ripe,11.5
+arskeogh,2025-08-13 00:00:00-06:00,96.08,60.98,45.99,4108.71,Kernel Watery Ripe,11.5
+arskeogh,2025-08-14 00:00:00-06:00,82.4,65.66,42.03,4150.74,Kernel Watery Ripe,11.5
+arskeogh,2025-08-15 00:00:00-06:00,90.32,61.34,43.83,4194.57,Kernel Watery Ripe,11.5
+arskeogh,2025-08-16 00:00:00-06:00,88.34,62.96,43.65,4238.22,Kernel Watery Ripe,11.5
+arskeogh,2025-08-17 00:00:00-06:00,90.5,59.54,43.02,4281.24,Kernel Watery Ripe,11.5
+arskeogh,2025-08-18 00:00:00-06:00,87.8,61.34,42.57,4323.81,Kernel Watery Ripe,11.5
+arskeogh,2025-08-19 00:00:00-06:00,101.48,64.76,47.88,4371.69,Kernel Watery Ripe,11.5
+arskeogh,2025-08-20 00:00:00-06:00,96.8,69.98,50.49,4422.18,Kernel Watery Ripe,11.5
+arskeogh,2025-08-21 00:00:00-06:00,81.68,66.2,41.94,4464.12,Kernel Watery Ripe,11.5
+arskeogh,2025-08-22 00:00:00-06:00,74.66,59.18,34.92,4499.04,Kernel Watery Ripe,11.5
+arskeogh,2025-08-23 00:00:00-06:00,74.84,51.08,30.96,4530.0,Kernel Watery Ripe,11.5
+arskeogh,2025-08-24 00:00:00-06:00,76.64,49.82,31.23,4561.23,Kernel Watery Ripe,11.5
+arskeogh,2025-08-25 00:00:00-06:00,81.32,49.1,33.21,4594.44,Kernel Watery Ripe,11.5
+arskeogh,2025-08-26 00:00:00-06:00,85.28,52.16,36.72,4631.16,Kernel Watery Ripe,11.5
+arskeogh,2025-08-27 00:00:00-06:00,86.0,56.48,39.24,4670.4,Kernel Watery Ripe,11.5
+arskeogh,2025-08-28 00:00:00-06:00,85.46,62.6,42.03,4712.43,Kernel Watery Ripe,11.5
+arskeogh,2025-08-29 00:00:00-06:00,81.5,62.78,40.14,4752.57,Kernel Watery Ripe,11.5
+arskeogh,2025-08-30 00:00:00-06:00,80.24,60.98,38.61,4791.18,Kernel Watery Ripe,11.5
+arskeogh,2025-08-31 00:00:00-06:00,84.2,56.12,38.16,4829.34,Kernel Watery Ripe,11.5
+arskeogh,2025-09-01 00:00:00-06:00,91.04,56.3,41.67,4871.01,Kernel Watery Ripe,11.5
+arskeogh,2025-09-02 00:00:00-06:00,90.32,60.44,43.38,4914.39,Kernel Watery Ripe,11.5
+arskeogh,2025-09-03 00:00:00-06:00,71.42,48.56,27.99,4942.38,Kernel Watery Ripe,11.5
+arskeogh,2025-09-04 00:00:00-06:00,69.44,51.08,28.26,4970.64,Kernel Watery Ripe,11.5
+arskeogh,2025-09-05 00:00:00-06:00,66.74,40.64,21.69,4992.33,Kernel Watery Ripe,11.5
+arskeogh,2025-09-06 00:00:00-06:00,74.3,39.74,25.02,5017.35,Kernel Watery Ripe,11.5
+arskeogh,2025-09-07 00:00:00-06:00,82.76,47.12,32.94,5050.29,Kernel Watery Ripe,11.5
+arskeogh,2025-09-08 00:00:00-06:00,86.72,60.08,41.4,5091.69,Kernel Watery Ripe,11.5
+arskeogh,2025-09-09 00:00:00-06:00,84.74,54.14,37.44,5129.13,Kernel Watery Ripe,11.5
+arskeogh,2025-09-10 00:00:00-06:00,90.86,59.54,43.2,5172.33,Kernel Watery Ripe,11.5
+arskeogh,2025-09-11 00:00:00-06:00,85.28,61.7,41.49,5213.82,Kernel Watery Ripe,11.5
+arskeogh,2025-09-12 00:00:00-06:00,81.14,60.08,38.61,5252.43,Kernel Watery Ripe,11.5
+arskeogh,2025-09-13 00:00:00-06:00,76.28,59.36,35.82,5288.25,Kernel Watery Ripe,11.5
+arskeogh,2025-09-14 00:00:00-06:00,82.4,53.06,35.73,5323.98,Kernel Watery Ripe,11.5
+arskeogh,2025-09-15 00:00:00-06:00,79.88,54.86,35.37,5359.35,Kernel Watery Ripe,11.5
+arskeogh,2025-09-16 00:00:00-06:00,74.3,53.24,31.77,5391.12,Kernel Watery Ripe,11.5
+arskeogh,2025-09-17 00:00:00-06:00,72.32,55.4,31.86,5422.98,Kernel Watery Ripe,11.5
+arskeogh,2025-09-18 00:00:00-06:00,72.86,48.2,28.53,5451.51,Kernel Watery Ripe,11.5
+arskeogh,2025-09-19 00:00:00-06:00,74.66,48.92,29.79,5481.3,Kernel Watery Ripe,11.5
+arskeogh,2025-09-20 00:00:00-06:00,80.96,48.92,32.94,5514.24,Kernel Watery Ripe,11.5
+arskeogh,2025-09-21 00:00:00-06:00,87.44,52.7,38.07,5552.31,Kernel Watery Ripe,11.5
+arskeogh,2025-09-22 00:00:00-06:00,69.98,53.78,29.88,5582.19,Kernel Watery Ripe,11.5
+arskeogh,2025-09-23 00:00:00-06:00,75.56,46.94,29.25,5611.44,Kernel Watery Ripe,11.5
+arskeogh,2025-09-24 00:00:00-06:00,86.18,50.9,36.54,5647.98,Kernel Watery Ripe,11.5
+arskeogh,2025-09-25 00:00:00-06:00,84.2,47.12,33.66,5681.64,Kernel Watery Ripe,11.5
+arskeogh,2025-09-26 00:00:00-06:00,75.2,53.96,32.58,5714.22,Kernel Watery Ripe,11.5
+arskeogh,2025-09-27 00:00:00-06:00,80.78,45.86,31.32,5745.54,Kernel Watery Ripe,11.5
+arskeogh,2025-09-28 00:00:00-06:00,89.24,49.82,37.53,5783.07,Kernel Watery Ripe,11.5
+arskeogh,2025-09-29 00:00:00-06:00,84.2,57.2,38.7,5821.77,Kernel Watery Ripe,11.5
+arskeogh,2025-09-30 00:00:00-06:00,86.9,58.82,40.86,5862.63,Kernel Watery Ripe,11.5
