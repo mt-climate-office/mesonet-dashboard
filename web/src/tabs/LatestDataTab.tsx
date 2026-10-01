@@ -8,8 +8,7 @@ import { CameraCard } from '../components/CameraCard'
 import { ForecastCard } from '../components/ForecastCard'
 import { useLatestTabState, type BottomCard, type TopCard } from '../lib/url-state'
 import { useStations } from '../hooks/useStations'
-import { useQuery } from '@tanstack/react-query'
-import { getPhotoCatalog } from '../lib/api'
+import { hasCamera, usePhotoSchedule } from '../lib/photos'
 import { useStationLatest } from '../hooks/useStationLatest'
 import { useResolvedStation } from '../components/useResolvedStation'
 
@@ -34,31 +33,21 @@ export function LatestDataTab() {
   const stations = useStations()
   const resolved = useResolvedStation()
   const stationRow = stations.data?.find((s) => s.station === resolved) ?? null
-  const isHydroMet = stationRow?.sub_network === 'HydroMet'
-  // Legacy enables "Latest Photo" only for HydroMet (app.py enable_photo_tab).
-  // We also enable it when the /photos catalog lists the station, so a camera
-  // at a non-HydroMet station isn't hidden (none exist as of 2026-10). The
-  // catalog is only fetched to decide that for non-HydroMet stations.
-  // Same cache entry as usePhotoCatalog (CameraCard), but gated.
-  const catalog = useQuery({
-    queryKey: ['photo-catalog'],
-    queryFn: getPhotoCatalog,
-    staleTime: 60 * 60 * 1000,
-    enabled: !!resolved && !!stationRow && !isHydroMet,
-  })
-  const inCatalog =
-    !!resolved &&
-    !!catalog.data?.some((m) => m.station.toLowerCase() === resolved.toLowerCase())
-  const photoEnabled = !!resolved && (isHydroMet || inCatalog)
+  // Latest Photo is enabled when the data2 camera schedule has a current
+  // period with views for the station (legacy keyed it to HydroMet). If the
+  // schedule can't load, the card stays reachable and says so.
+  const schedule = usePhotoSchedule()
+  const camera = hasCamera(schedule.data, resolved)
+  const photoEnabled = !!resolved && (camera || schedule.isError)
 
   // Card defaults (legacy select_default_tab / update_br_card): with no
-  // explicit `card`/`info` in the URL, the top card is the photo for HydroMet
-  // stations and the wind rose otherwise; the bottom card is Current
-  // Conditions with a station, the map without one. A disabled photo choice
-  // falls back to the wind rose.
-  const autoTop: TopCard = photoEnabled && isHydroMet ? 'photo' : 'wind'
+  // explicit `card`/`info` in the URL, the top card is the photo when the
+  // station has a camera and the wind rose otherwise; the bottom card is
+  // Current Conditions with a station, the map without one. A disabled photo
+  // choice falls back to the wind rose (once the schedule has answered).
+  const autoTop: TopCard = camera ? 'photo' : 'wind'
   let topCard: TopCard = state.topCard ?? autoTop
-  if (topCard === 'photo' && !photoEnabled) topCard = 'wind'
+  if (topCard === 'photo' && !photoEnabled && (!resolved || !schedule.isPending)) topCard = 'wind'
 
   // Current Conditions with no station falls back to the map; when the latest
   // request fails, the auto default falls back to the metadata card (legacy

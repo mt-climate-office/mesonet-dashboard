@@ -9,7 +9,6 @@ import {
   getStationLatest,
   getStations,
 } from './meta'
-import { getPhotoCatalog } from './photos'
 import { getStationRecord } from './record'
 import {
   dailyMetRequest,
@@ -71,13 +70,12 @@ describe('existing call sites respect the allowlist', () => {
   })
   afterEach(() => vi.unstubAllGlobals())
 
-  it('meta + photos', async () => {
+  it('meta', async () => {
     await getStations()
     await getElements()
     await getStationElements('acebozem')
     await getStationLatest('acebozem')
     await getPptSummary('acebozem')
-    await getPhotoCatalog()
     vi.stubGlobal('fetch', async () => Response.json({}))
     await getStationConfig('acebozem')
   })

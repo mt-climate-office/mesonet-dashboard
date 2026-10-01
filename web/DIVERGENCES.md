@@ -37,26 +37,26 @@ This file lists the places where the React dashboard (`web/`) deliberately behav
 - **New:** an in-app MapLibre map on the Carto positron basemap. Clicking a marker selects the station. Legacy's click callback was dead, so its iframe map never selected anything.
 - **Why:** one map component for both tabs, no external iframe, and working selection. The USGS relief tiles, county lines and the co-located colour are not ported.
 
-### Photo directions come from the `/photos` catalog (LDT-010, LDT-013)
-- **Legacy:** guessed directions from the camera model on `/deployments/{station}`. EC-ScoutIP gave N/S/E/W/Snow, other models N/S/North Sky/South Sky, and no camera N/S/Ground.
-- **New:** the `/photos/` catalog lists the directions each station actually has. For example, acebozem (EC-IRB2-2x) has seven. The chips use legacy's human labels (North, South, East, West, North Sky, South Sky, Ground, Snow) and fall back to the catalog label.
-- **No camera in the catalog:** we show "No camera images are available for this station" instead of legacy's three blind chips with a single "today" option.
-- **Why:** the catalog is the source of truth. The model rule mislabels newer cameras.
+### Photos come from the data2 archive, not the API (LDT-010, LDT-011, LDT-012, LDT-013, LDT-014)
+- **Legacy:** directions guessed from the camera model on `/deployments/{station}` (EC-ScoutIP gave N/S/E/W/Snow, other models N/S/North Sky/South Sky, no camera N/S/Ground). The time list was every 09:00/15:00 "Morning/Afternoon" slot back to the camera start date, and each image came from `{API}photos/{station}/{dir}?dt=…`.
+- **New:** everything comes from the Mesonet photo archive at `https://data2.climate.umt.edu/mesonet/photos/` (CORS-open CDN). The app makes no `/photos` API requests.
+  - **Cameras and directions:** from the camera registry `photos/schedule/schedule.json`. A station has a camera when it has a current schedule period (`until: null`) with views. The direction chips show the views that have frames on the chosen day. On a day with no frames they show the views the schedule had that day, so a past date can show views the camera has since dropped (for example acecrowa's North Sky and South Sky before 2026-09-07). Labels use legacy's words (North, South, East, West, North Sky, South Sky, Ground, Snow).
+  - **Times:** a date picker (from the camera's `first_month` to today) and a Select of the frames that actually exist that day, newest first, labelled in Mountain Time (for example "Oct 1, 2026 3:00 PM"). The default is the newest frame. Schedules change over time (acebozem went from 09:00/15:00 to 09:00/12:00/15:00 on 2026-09-20), and the list follows whatever was really captured.
+  - **Where frames come from:** today and yesterday (Mountain Time) use live S3 listings of `photos/webp/large/{station}/{station}_{TOKEN}_{YYYYMMDD}`, one UTC day per direction for UTC today and yesterday, refreshed every 5 minutes. Older days use the station's monthly manifest `photos/manifest/{station}/{station}_{YYYY-MM}.csv`. Some manifest rows leave `webp_large` blank. For those, the WebP path is worked out from `slot_utc` (or the capture time snapped to the hour) and checked against a listing before it is shown, because most of those WebPs don't exist.
+  - **Image:** the display image is the `webp_large` WebP for the chosen slot.
+- **No camera in the schedule:** the "Latest Photo" choice is disabled. If a shared link asks for the photo card anyway, it shows "No camera images are available for this station." Legacy showed three blind chips and a single "today" option. If `schedule.json` can't load, the card says "Camera schedule unavailable." There is no API fallback.
+- **Why:** the archive is the source of truth. It is fast (the schedule file is about 5 KB), while the API `/photos/` catalog took 22–80 s and lagged reality: nine cameras that were live in September 2026 were missing from it. The old 09:00/15:00 assumption also missed the new midday slot.
 
-### Photo tab enabled when the catalog lists the station (LDT-002)
-- **Same as legacy:** "Latest Photo" is disabled for non-HydroMet stations.
-- **New:** it is also enabled when the `/photos` catalog lists the station, so a camera at a non-HydroMet station is never hidden. No such station exists as of 2026-10.
+### Photo tab enabled when the station has a camera (LDT-002, LDT-003)
+- **Legacy:** "Latest Photo" was enabled only for HydroMet stations, and it was the default top card for them.
+- **New:** "Latest Photo" is enabled when the data2 camera schedule lists the station with a current period. It is the default top card for those stations, as legacy made it the default for camera stations. Every scheduled camera is at a HydroMet station today. While the schedule loads, the auto default is Wind Rose. An explicit `card=photo` waits for the schedule.
 
 ### Photo modal (LDT-015)
 - **Same as legacy:** clicking the photo opens a centered 92vw modal.
-- **New:** the modal also has a "Download original" button. It fetches the full-resolution image and falls back to opening it in a new tab.
-
-### Photo time list (LDT-011)
-- **Same as legacy:** every Morning/Afternoon slot back to the camera's start date, with the same 09:30/15:30 cutoffs.
-- **New:** the Select is searchable and renders at most 400 options at a time.
+- **New:** the modal has a "Download original" button. It downloads the same large WebP the card shows (`photos/webp/large/…_{slot_utc}.webp`) and saves it under that file's own name, for example `acebozem_N_20261001T150000Z.webp`. If the fetch fails, the image opens in a new tab.
 
 ### Card defaults are "auto" (LDT-003, LDB-001, LDB-002)
-- **Same as legacy:** with no `card`/`info` in the URL, the top card is Latest Photo for HydroMet stations and Wind Rose otherwise. The bottom card is Current Conditions with a station and Locator Map without one. Choosing a station from the dropdown or the map resets both cards to auto.
+- **Same as legacy:** with no `card`/`info` in the URL, the top card is Latest Photo for stations with a camera and Wind Rose otherwise. The bottom card is Current Conditions with a station and Locator Map without one. Choosing a station from the dropdown or the map resets both cards to auto.
 - **New:** an explicit `card=`/`info=` in a shared link is honoured.
 
 ### Current Conditions failure falls back to metadata (LDB-010)
