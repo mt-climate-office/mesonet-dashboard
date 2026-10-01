@@ -21,7 +21,8 @@ import dayjs from 'dayjs'
 import { useStations } from '../hooks/useStations'
 import { useStationElements } from '../hooks/useStationElements'
 import { useResolvedStation } from '../components/useResolvedStation'
-import { useAgToolsState } from '../lib/url-state'
+import { AG_VAR_DEFAULT, useAgToolsState } from '../lib/url-state'
+import { elementLabel } from './downloader/labels'
 import { stationHasSwp, stationsWithSwp } from '../lib/stations'
 import { DERIVED_VAR_OPTIONS, GDD_CROPS, SOIL_VAR_OPTIONS } from '../lib/params'
 import type { AgVariable } from '../features/ag/ui/AgVariableView'
@@ -70,7 +71,7 @@ export function AgToolsTab() {
     [stations.data, station],
   )
 
-  const variable = (AG_VARIABLES.has(state.variable) ? state.variable : 'etr') as AgVariable
+  const variable = (AG_VARIABLES.has(state.variable) ? state.variable : AG_VAR_DEFAULT) as AgVariable
   const crop = (CROPS.has(state.crop ?? '') ? state.crop : 'wheat') as GddCrop
   const cropLabel = GDD_CROPS.find((c) => c.value === crop)?.label ?? crop
   const swpOnly = SWP_ONLY.has(variable)
@@ -123,7 +124,8 @@ export function AgToolsTab() {
     for (const e of stationElements.data) {
       if (seen.has(e.element)) continue
       seen.add(e.element)
-      out.push({ value: e.element, label: e.description_short })
+      // cm → in, m → ft like legacy get_station_elements (params.dist_swap).
+      out.push({ value: e.element, label: elementLabel(e.description_short) })
     }
     return out.sort((a, b) =>
       a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: 'base' }),
@@ -157,12 +159,17 @@ export function AgToolsTab() {
   ]
   const [drag, setDrag] = useState<[number, number] | null>(null)
 
+  // A user's variable change resets the dependent controls to their defaults
+  // like legacy (app.py ~567-599): crop wheat (and its cutoffs), time
+  // aggregation daily, soil variable VWC. Only this handler resets, so the
+  // explicit URL params of a deep link survive the initial load.
   const setVariable = (v: string | null) => {
-    if (!v) return
-    if (v !== 'gdd') {
-      void state.setGddLo(null)
-      void state.setGddHi(null)
-    }
+    if (!v || v === variable) return
+    void state.setGddLo(null)
+    void state.setGddHi(null)
+    void state.setCrop(null)
+    void state.setTime(null)
+    void state.setSoilVar(null)
     void state.setVariable(v)
   }
   const setDateRange = (from: string | null, to: string | null) => {
@@ -427,9 +434,19 @@ export function AgToolsTab() {
         <Box style={{ flex: 1, minHeight: 0, width: '100%' }}>
           {!station || (swpOnly && stationInfo && !hasSwp) ? (
             <Center h="100%">
-              <Text c="dimmed" size="sm">
-                {state.station && !stations.data ? 'Loading stations…' : 'Pick a station to begin.'}
-              </Text>
+              {state.station && !stations.data ? (
+                <Text c="dimmed" size="sm">
+                  Loading stations…
+                </Text>
+              ) : (
+                // Legacy no-station figure (app.py:1999-2006).
+                <Stack gap="md" align="center" data-testid="ag-no-station">
+                  <Text fw={700}>Select Station</Text>
+                  <Text c="dimmed" size="sm">
+                    To get started, select a station from the dropdown.
+                  </Text>
+                </Stack>
+              )}
             </Center>
           ) : (
             <Suspense fallback={SuspenseFallback}>

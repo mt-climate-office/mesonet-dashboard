@@ -12,6 +12,7 @@ import {
   type VendoredSoilJson,
 } from './soilParams'
 import { parseCsvRaw } from './parse'
+import { DATA2_BASE, DATA2_STATIC_ENABLED } from './staticSource'
 
 const soilJson = JSON.parse(soilJsonText) as VendoredSoilJson
 const stagesJson = JSON.parse(stagesJsonText) as GddStagesJson
@@ -109,6 +110,7 @@ describe('loadSoilParams source selection', () => {
   it('falls back to vendored when data2 is missing (404 / SPA HTML 200)', async () => {
     const b = await loadSoilParams({
       vendoredBase: VENDORED,
+      data2Enabled: true,
       fetchImpl: stubFetch({
         ...vendoredRoutes,
         'https://data2.climate.umt.edu/mesonet/soils/processed/latest/manifest.json': [
@@ -125,6 +127,7 @@ describe('loadSoilParams source selection', () => {
   it('uses vendored when data2 advertises the same release', async () => {
     const b = await loadSoilParams({
       vendoredBase: VENDORED,
+      data2Enabled: true,
       fetchImpl: stubFetch({
         ...vendoredRoutes,
         'https://data2.climate.umt.edu/mesonet/soils/processed/latest/manifest.json': [
@@ -142,6 +145,7 @@ describe('loadSoilParams source selection', () => {
     const base = 'https://data2.climate.umt.edu/mesonet/soils/processed/latest/'
     const b = await loadSoilParams({
       vendoredBase: VENDORED,
+      data2Enabled: true,
       fetchImpl: stubFetch({
         ...vendoredRoutes,
         [`${base}manifest.json`]: [200, 'application/json', '{"release_id":"2027-01-01"}'],
@@ -158,6 +162,23 @@ describe('loadSoilParams source selection', () => {
     expect(b.release).toBe('2027-01-01')
     expect(b.rows).toHaveLength(1)
     expect(b.rows[0]).toMatchObject({ station: 'z', depthCm: 20, source: 'data2', labVwcMax: 40 })
+  })
+})
+
+describe('DATA2_STATIC_ENABLED gate', () => {
+  it('is off until data2 publishes; the default loaders then never fetch data2', async () => {
+    expect(DATA2_STATIC_ENABLED).toBe(false)
+    const seen: string[] = []
+    const f = stubFetch(vendoredRoutes)
+    const spy: typeof fetch = (input, init) => {
+      seen.push(String(input))
+      return f(input, init)
+    }
+    const soil = await loadSoilParams({ vendoredBase: VENDORED, fetchImpl: spy })
+    const stages = await loadGddStages({ vendoredBase: VENDORED, fetchImpl: spy })
+    expect(soil.source).toBe('vendored')
+    expect(stages.source).toBe('vendored')
+    expect(seen.some((u) => u.startsWith(DATA2_BASE))).toBe(false)
   })
 })
 
@@ -188,13 +209,14 @@ describe('GDD stage tables', () => {
     }
   })
   it('loader falls back to vendored when data2 404s', async () => {
-    const r = await loadGddStages({ vendoredBase: VENDORED, fetchImpl: stubFetch(vendoredRoutes) })
+    const r = await loadGddStages({ vendoredBase: VENDORED, data2Enabled: true, fetchImpl: stubFetch(vendoredRoutes) })
     expect(r.source).toBe('vendored')
     expect(r.release).toMatch(/^mesonet-db-rds@/)
   })
   it('loader prefers data2 when present', async () => {
     const r = await loadGddStages({
       vendoredBase: VENDORED,
+      data2Enabled: true,
       fetchImpl: stubFetch({
         ...vendoredRoutes,
         'https://data2.climate.umt.edu/mesonet/derived/gdd_stages.json': [

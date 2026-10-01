@@ -141,7 +141,8 @@ type AgTime = (typeof AG_TIME_OPTIONS)[number]
 const AG_LIVESTOCK_OPTIONS = ['adult', 'newborn'] as const
 type AgLivestock = (typeof AG_LIVESTOCK_OPTIONS)[number]
 
-const AG_VAR_DEFAULT = 'etr'
+// Legacy default (layout.py:1151): Growing Degree Days.
+export const AG_VAR_DEFAULT = 'gdd'
 export const GDD_PROJ_OPTIONS = ['season', '30', '60', 'off'] as const
 export type GddProjHorizon = (typeof GDD_PROJ_OPTIONS)[number]
 

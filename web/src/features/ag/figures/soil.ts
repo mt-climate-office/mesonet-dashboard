@@ -58,16 +58,21 @@ export function swpFigure(series: SwpSeries, period: Period): Figure {
     )
   }
   traces.push(...depthLines(series.epochMs, series.time, series.depthsCm, bar, period, '-%{y:.2f} bar'))
-  const note = (text: string, y: number, boxed = true) => ({
+  // Legacy plot_swp (plot_derived.py ~517-548): boxed labels in the top-left
+  // (wet end; the axis is reversed) and bottom-left (dry end) corners.
+  const note = (text: string, y: 0 | 1) => ({
     text,
-    x: 0.01,
+    x: 0,
     y,
     xref: 'paper' as const,
     yref: 'paper' as const,
     showarrow: false,
-    bgcolor: boxed ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.6)',
-    ...(boxed ? { bordercolor: '#444', borderwidth: 1, borderpad: 4 } : {}),
-    font: { size: 10 },
+    align: 'left' as const,
+    font: { size: 14, color: 'black' },
+    bgcolor: 'rgba(255,255,255,0.8)',
+    bordercolor: 'black',
+    borderwidth: 2,
+    borderpad: 4,
   })
   const layout: Partial<Layout> = {
     ...baseLayout,
@@ -80,7 +85,7 @@ export function swpFigure(series: SwpSeries, period: Period): Figure {
       tickprefix: '-',
     },
     xaxis: { type: 'date' },
-    annotations: [note('Saturated', 0.985), note('Plant-Available Water', 0.5, false), note('Wilting / Unavailable', 0.02)],
+    annotations: [note('Field Capacity', 1), note('Wilting Point', 0)],
   }
   return { data: traces, layout }
 }

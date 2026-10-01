@@ -11,7 +11,10 @@
  * shift them, but QC tiers can still be reprocessed upstream — re-run this
  * script and review the diff if golden tests start drifting.
  *
- * Usage: node scripts/fixtures/capture.mjs [--out <dir>]
+ * Usage: node scripts/fixtures/capture.mjs [--out <dir>] [--only <station>]
+ *
+ * `--only <station>` captures just that station and merges it into the
+ * existing manifest (the other stations' files are left untouched).
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -32,7 +35,18 @@ const STATIONS = [
   { id: 'acebozem', why: 'HydroMet, has_swp, 10 m wind, 5 soil depths' },
   { id: 'arskeogh', why: 'AgriMet, has_swp, 2.44 m (8 ft) wind' },
   { id: 'acecrowa', why: 'HydroMet without soil water parameters' },
+  // Percent-saturation only (AG-PS-001): soil inputs + /derived output.
+  {
+    id: 'mdamalta',
+    why: 'has_swp; API DB porosity differs from mesonet-soils and the API has none at 91 cm (AG-PS-001)',
+    psOnly: true,
+  },
 ]
+
+const ONLY = (() => {
+  const i = process.argv.indexOf('--only')
+  return i > -1 ? process.argv[i + 1] : null
+})()
 
 // end is exclusive (v2 `end_time` semantics).
 const WINDOWS = {
@@ -49,8 +63,21 @@ const WINDOWS = {
 const GDD_CROPS = ['wheat', 'barley', 'canola', 'corn', 'sugarbeet', 'sunflower', 'hemp']
 
 /** Each request: [file stem, path, params]. */
-function requestsFor(station, hasSwp) {
+function requestsFor(station, hasSwp, psOnly = false) {
   const reqs = []
+  if (psOnly) {
+    for (const [period, w] of [['daily', WINDOWS.daily[0]], ['hourly', WINDOWS.hourly[0]]]) {
+      const base = { stations: station, start_time: w.start, end_time: w.end, level: LEVEL }
+      const tag = `${station}.${period}.${w.name}`
+      reqs.push([`${tag}.obs-soil`, `observations/${period}/`, {
+        ...base, elements: 'soil_vwc,soil_temp', agg_func: 'avg',
+      }])
+      reqs.push([`${tag}.derived-percent_saturation`, `derived/${period}/`, {
+        ...base, elements: 'percent_saturation', keep: true,
+      }])
+    }
+    return reqs
+  }
   for (const w of WINDOWS.daily) {
     const base = { stations: station, start_time: w.start, end_time: w.end, level: LEVEL }
     const tag = `${station}.daily.${w.name}`
@@ -119,7 +146,7 @@ async function get(u, attempt = 0) {
 
 fs.mkdirSync(OUT, { recursive: true })
 const stationsCsv = await get(url('stations/', {}))
-fs.writeFileSync(path.join(OUT, 'stations.csv'), stationsCsv)
+if (!ONLY) fs.writeFileSync(path.join(OUT, 'stations.csv'), stationsCsv)
 const header = stationsCsv.split('\n')[0].split(',')
 const swpIdx = header.indexOf('has_swp')
 const swpBy = Object.fromEntries(
@@ -129,18 +156,22 @@ const swpBy = Object.fromEntries(
   }),
 )
 
-const manifest = {
-  captured_at: new Date().toISOString(),
-  api: API,
-  level: LEVEL,
-  units: 'us (API default)',
-  stations: STATIONS,
-  windows: WINDOWS,
-  files: {},
-}
+const manifestPath = path.join(OUT, 'manifest.json')
+const manifest = ONLY && fs.existsSync(manifestPath)
+  ? { ...JSON.parse(fs.readFileSync(manifestPath, 'utf8')), stations: STATIONS, windows: WINDOWS }
+  : {
+      captured_at: new Date().toISOString(),
+      api: API,
+      level: LEVEL,
+      units: 'us (API default)',
+      stations: STATIONS,
+      windows: WINDOWS,
+      files: {},
+    }
 
 for (const s of STATIONS) {
-  for (const [stem, p, params] of requestsFor(s.id, swpBy[s.id])) {
+  if (ONLY && s.id !== ONLY) continue
+  for (const [stem, p, params] of requestsFor(s.id, swpBy[s.id], s.psOnly)) {
     const u = url(p, params)
     try {
       const body = await get(u)
@@ -154,4 +185,4 @@ for (const s of STATIONS) {
     }
   }
 }
-fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
+fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')

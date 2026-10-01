@@ -186,6 +186,11 @@ describe('soil figures', () => {
     const i = s.kPa[1].findIndex((v) => v != null)
     expect((tr(fig, 6).y as number[])[i]).toBeCloseTo(s.kPa[1][i]! / 100, 10)
     expect(fig.layout.yaxis).toMatchObject({ type: 'log', autorange: 'reversed', tickprefix: '-' })
+    // Legacy boxed corner labels (plot_derived.py ~517-548).
+    expect(fig.layout.annotations).toEqual([
+      expect.objectContaining({ text: 'Field Capacity', x: 0, y: 1, xref: 'paper', yref: 'paper', borderwidth: 2, bordercolor: 'black' }),
+      expect.objectContaining({ text: 'Wilting Point', x: 0, y: 0, xref: 'paper', yref: 'paper', borderwidth: 2, bordercolor: 'black' }),
+    ])
   })
 
   it('soilProfileFigure: drops all-null depths; frozen cells get a grey layer', () => {

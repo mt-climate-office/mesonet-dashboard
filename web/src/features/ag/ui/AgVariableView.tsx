@@ -21,7 +21,6 @@ import {
   fToC,
   gdd,
   GDD_CUTOFFS_F,
-  percentSaturation,
   projectGdd,
 } from '../compute'
 import {
@@ -33,7 +32,6 @@ import {
   useGddStages,
   useHourlyMet,
   useNormals,
-  useSoilParams,
   useSoilSeries,
   useStationMeta,
 } from '../data'
@@ -53,6 +51,7 @@ import type { GddProjHorizon } from '../../../lib/url-state'
 import { AgChart } from './AgChart'
 import { annualTraces, coverage, partialNote, profileValues, unavailableMessage } from './derive'
 import { projectionThrough } from './projection'
+import { POROSITY_SOURCE, usePercentSaturation } from './porositySource'
 import { SWP_SOURCE, useSwpSeries } from './swpSource'
 
 export type AgVariable =
@@ -231,18 +230,24 @@ function SoilView(props: AgViewProps & { variable: 'soil_temp,soil_ec_blk' | 'sw
   const needsSwp = sub === 'swp'
   const needsPct = sub === 'percent_saturation'
   const swpQ = useSwpSeries(soil.data, needsSwp ? q : null)
-  const params = useSoilParams(needsPct ? station : null)
+  const pctQ = usePercentSaturation(soil.data, needsPct ? q : null)
 
   const result = useMemo(() => {
     const s = soil.data
     if (!s) return null
     if (s.time.length === 0 || s.depthsCm.length === 0) return { empty: 'No soil data for the current selection.' }
-    const pct = needsPct && params.data ? percentSaturation(s, params.data.rows) : undefined
+    const pct = needsPct ? pctQ.data : undefined
     if (needsPct && pct && pct.depthsCm.length === 0)
       return { empty: 'No soil porosity parameters for this station, so percent saturation is unavailable.' }
     if (needsSwp && swpQ.data && swpQ.data.depthsCm.length === 0)
       return { empty: 'No soil water potential for this station and period.' }
     const notes: ReactNode[] = []
+    if (needsPct)
+      notes.push(
+        POROSITY_SOURCE === 'api'
+          ? 'Percent saturation uses the Mesonet API’s soil porosity for each depth.'
+          : 'Percent saturation uses published mesonet-soils porosity for each depth.',
+      )
     if (needsSwp)
       notes.push(
         SWP_SOURCE === 'api'
@@ -261,12 +266,12 @@ function SoilView(props: AgViewProps & { variable: 'soil_temp,soil_ec_blk' | 'sw
     const figure = soilProfileFigure({ variable: sub, time: s.time, depthsCm: v.depthsCm, values: v.values, frozen: v.frozen, period })
     if (figure.data.length === 0) return { empty: 'This station has no data for the selected soil variable in this period.' }
     return { figure, notes }
-  }, [soil.data, needsPct, needsSwp, params.data, swpQ.data, isProfile, sub, period])
+  }, [soil.data, needsPct, needsSwp, pctQ.data, swpQ.data, isProfile, sub, period])
 
   return (
     <AgChart
-      loading={soil.isLoading || (needsSwp && swpQ.isLoading) || (needsPct && params.isLoading)}
-      error={soil.error ?? (needsSwp ? swpQ.error : null) ?? (needsPct ? params.error : null)}
+      loading={soil.isLoading || (needsSwp && swpQ.isLoading) || (needsPct && pctQ.isLoading)}
+      error={soil.error ?? (needsSwp ? swpQ.error : null) ?? (needsPct ? pctQ.error : null)}
       empty={result?.empty}
       figure={result?.figure}
       notes={result?.notes}

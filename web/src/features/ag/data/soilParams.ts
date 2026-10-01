@@ -10,6 +10,8 @@
  *     byte-for-byte the same data, so it is used without re-downloading the
  *     2.3 MB `soil_raw_data.csv` (source `'vendored'`).
  *  2. Otherwise / on any failure or timeout: `public/data/soil_params.json`.
+ *
+ * Step 1 is skipped while `DATA2_STATIC_ENABLED` is false (staticSource.ts).
  */
 import type { FxParams, SoilParams, VgParams } from '../contract'
 import { parseCsvRaw, toNum } from './parse'
@@ -18,6 +20,7 @@ import {
   DATA2_TIMEOUT_MS,
   type StaticDeps,
   type StaticSource,
+  data2Enabled,
   getJson,
   getText,
   vendoredBase,
@@ -159,7 +162,7 @@ export async function loadData2SoilParams(
   }
 }
 
-/** data2 first, vendored fallback. Never throws unless both fail. */
+/** data2 first (when `DATA2_STATIC_ENABLED`), vendored fallback. Never throws unless both fail. */
 export async function loadSoilParams(deps: StaticDeps = {}): Promise<SoilParamsBundle> {
   if (deps.only === 'vendored') return loadVendoredSoilParams(deps)
   if (deps.only === 'data2') {
@@ -167,6 +170,7 @@ export async function loadSoilParams(deps: StaticDeps = {}): Promise<SoilParamsB
     if ('notNewer' in r) throw new Error('unreachable')
     return r
   }
+  if (!data2Enabled(deps)) return loadVendoredSoilParams(deps)
   const vendored = loadVendoredSoilParams(deps)
   // Avoid an unhandled rejection if data2 wins and vendored fails.
   vendored.catch(() => undefined)
