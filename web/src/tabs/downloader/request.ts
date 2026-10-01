@@ -272,3 +272,15 @@ export async function fetchDownload(q: DownloadQuery): Promise<DownloadResult> {
   if (q.period === 'monthly') rows = aggregateMonthly(rows)
   return { rows, columns: orderColumns(rows), warnings }
 }
+
+/**
+ * Clamp a start date (YYYY-MM-DD) to the station install date, as legacy's
+ * DatePicker `minDate` did. Returns the effective date and whether it moved.
+ */
+export function clampStart(
+  start: string,
+  installDate: string | null,
+): { start: string; clamped: boolean } {
+  if (installDate && start < installDate) return { start: installDate, clamped: true }
+  return { start, clamped: false }
+}
