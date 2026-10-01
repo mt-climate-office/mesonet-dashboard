@@ -351,6 +351,12 @@ Audited `origin/wave1a/foundations` @ `137d0d9d` against legacy `app/mdb` (local
 
 Sensor-overlay scenario (acebento/acebozem, daily 2026-05-01..06-15): neither app drew boxes in that window, so values matched. This is inconclusive for SC-*, which were audited by code.
 
+**Re-run after `fix/latest-gaps` (2026-10-01, local legacy L2):** ui-latest 88 items: 0 PASS / 85 WARN / 3 FAIL / 0 ERROR. Timeseries and wind-rose numbers are identical everywhere (WARN = label wording, advisory card text). The 3 FAILs:
+- `lololowr sensor-overlay`: the wind rose has one extra day, because the new app's end date is inclusive (LDC-017). Legacy's rose stops at 06-14.
+- `acecedar sensor-overlay` and `bozmtest sensor-overlay`: both apps show the no-data state. Legacy draws it as a blank Plotly figure, the new app as text (ES-004).
+
+The run used `scripts/fidelity/lib/drivers.mjs` with `NEW_CARDS` segment labels updated to "Wind Rose" / "Locator Map". **The committed harness still looks for "Wind"/"Map" and needs that one-line change.**
+
 ## Prioritized gap list
 
 P1 = user-visible wrong data or broken feature · P2 = missing feature/behaviour · P3 = cosmetic/wording. Paths: legacy relative to `app/mdb/`, new relative to `web/src/`.
