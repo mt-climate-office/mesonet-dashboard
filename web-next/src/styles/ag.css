@@ -20,6 +20,8 @@
 .ag-row { display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap; }
 .ag-grow { flex: 1; min-width: 12rem; }
 .ag-learn { gap: 0.35rem; min-height: 34px; }
+.ag-retry { min-height: 28px; font-size: 0.74rem; margin-left: 0.4rem; }
+.ag-retry-row { display: flex; justify-content: center; margin-top: -0.5rem; }
 .ag-reset { align-self: flex-start; font-size: 0.74rem; }
 
 /* Chart card. */

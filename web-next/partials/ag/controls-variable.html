@@ -59,6 +59,7 @@
 </template>
 
 <template x-if="tab.variable === 'annual'">
+  <div class="ag-stack">
   <div class="ctl-field" data-testid="ag-annual-var"
        x-data="timeSelect({ options: () => annualOptions(), value: () => tab.annualVar,
                onChange: (v) => setAnnual(v), label: 'Comparison variable', emptyText: annualEmptyText() })">
@@ -69,5 +70,8 @@
         <option :value="opt.value" :selected="isSelected(opt.value)" x-text="opt.label"></option>
       </template>
     </select>
+  </div>
+  <p class="ctl-error" x-show="elementsFailed()" data-testid="ag-annual-error">Variables could not be loaded.
+    <button type="button" class="nav-btn ag-retry" @click="retryElements()">Retry</button></p>
   </div>
 </template>

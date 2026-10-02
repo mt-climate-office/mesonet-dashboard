@@ -8,6 +8,8 @@ import { resolveAgTab, type AgTab } from '../../core/ag/view/tab'
 import { type AgView, viewAnnouncement } from '../../core/ag/view/results'
 import { denverToday } from '../../core/ag/data/parse'
 import * as C from '../../core/charts'
+import { getStationElements } from '../../core/api'
+import { AG_TTL, agKeys } from '../../core/ag/view/keys'
 import { announce } from '../shell/live'
 
 /** The Ag selection for the current URL and station. */
@@ -19,6 +21,10 @@ export function windowQuery(t: AgTab): { station: string; start: string; end: st
   const station = Alpine.store('station').id
   return station ? { station, start: t.start, end: t.end } : null
 }
+
+/** The station's element list (Annual comparison options), shared by the controls and the Annual card. */
+export const elementsResource = (station: string) =>
+  Alpine.store('data').cached(agKeys.elements(station), () => getStationElements(station), { ttl: AG_TTL.elements })
 
 /** Resource data without the reactive proxy (compute reads every element). */
 export const raw = <T>(v: T): T => (v == null ? v : Alpine.raw(v))

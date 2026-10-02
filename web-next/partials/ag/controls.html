@@ -61,26 +61,28 @@
   </div>
 
   <div class="ag-col">
-    <fieldset class="ctl-fieldset" data-testid="ag-dates"
-              x-data="dateRange({ value: () => ({ start: tab.start, end: tab.end }),
-                      onChange: (r) => setDates(r), max: () => today(), label: 'Date range' })">
-      <legend class="ctl-legend" x-text="label"></legend>
-      <div class="ctl-row">
-        <div class="ctl-field">
-          <label class="ctl-label" :for="ids.start">Start</label>
-          <input type="date" class="ctl-input" :id="ids.start" :min="min()" :max="max()"
-                 :value="start" :aria-invalid="invalid('start')"
-                 :aria-describedby="describedBy()" @change="setStart($event)">
+    <template x-if="tab.showDates">
+      <fieldset class="ctl-fieldset" data-testid="ag-dates"
+                x-data="dateRange({ value: () => ({ start: tab.start, end: tab.end }),
+                        onChange: (r) => setDates(r), max: () => today(), label: 'Date range' })">
+        <legend class="ctl-legend" x-text="label"></legend>
+        <div class="ctl-row">
+          <div class="ctl-field">
+            <label class="ctl-label" :for="ids.start">Start</label>
+            <input type="date" class="ctl-input" :id="ids.start" :min="min()" :max="max()"
+                   :value="start" :aria-invalid="invalid('start')"
+                   :aria-describedby="describedBy()" @change="setStart($event)">
+          </div>
+          <div class="ctl-field">
+            <label class="ctl-label" :for="ids.end">End</label>
+            <input type="date" class="ctl-input" :id="ids.end" :min="min()" :max="max()"
+                   :value="end" :aria-invalid="invalid('end')"
+                   :aria-describedby="describedBy()" @change="setEnd($event)">
+          </div>
         </div>
-        <div class="ctl-field">
-          <label class="ctl-label" :for="ids.end">End</label>
-          <input type="date" class="ctl-input" :id="ids.end" :min="min()" :max="max()"
-                 :value="end" :aria-invalid="invalid('end')"
-                 :aria-describedby="describedBy()" @change="setEnd($event)">
-        </div>
-      </div>
-      <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
-    </fieldset>
+        <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
+      </fieldset>
+    </template>
 
     <template x-if="tab.showTimeAgg">
       <fieldset class="ctl-seg" data-testid="ag-time"

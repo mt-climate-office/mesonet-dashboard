@@ -1,6 +1,9 @@
 <!-- Annual comparison card body (ui/ag/agAnnualView.ts). -->
 <div class="ag-view" x-data="agAnnualView" data-testid="ag-chart">
   <!-- @include partials/ag/status.html -->
+  <div class="ag-retry-row" x-show="view.status === 'error'">
+    <button type="button" class="nav-btn ag-retry" @click="retry()" data-testid="ag-retry">Retry</button>
+  </div>
   <template x-if="view.status === 'ready'">
     <div class="chart ag-chart" data-testid="ag-chart-annual"
          x-data="chart({ ...charts.annual, model: () => view.model })"></div>

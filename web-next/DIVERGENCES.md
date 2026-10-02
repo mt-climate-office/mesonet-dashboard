@@ -799,3 +799,7 @@ The Ag tab UI (`partials/ag/*`, `ui/ag/*`, logic in `core/ag/view/tab.ts`, `resu
 
 ### Fetching
 - **New:** the tab's components mount only while `#ag` is open, so nothing fetches from another tab (the cache keeps the data for the next visit). Cache keys encode station, window, period and QC level (`core/ag/view/keys.ts`). A degraded NWS forecast is retried on the next read after 5 minutes (web/: a 5-minute `staleTime`).
+
+### Annual comparison controls
+- **web/:** the date range stays visible (and is ignored); a failed element list shows an empty select.
+- **New:** the date range is hidden for Annual. A failed element list says "Variables could not be loaded." in the control and the card, each with Retry. The card waits for the station's element list and never fetches years for a comparison variable the station does not offer (a stale `annv` after a station change); it draws the first option meanwhile, which is what the URL is corrected to.

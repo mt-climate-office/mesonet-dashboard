@@ -238,6 +238,14 @@ export function soilView(i: SoilInputs): AgView<SoilChart> {
 
 /* --------------------------------------------------------------- Annual */
 
+export const ELEMENTS_ERROR = 'Variables could not be loaded.'
+
+/** Annual card while the station's element list is loading or failed; null once loaded. */
+export function elementsGate<M>(res: Loaded<unknown>): AgView<M> | null {
+  if (res.data !== undefined) return null
+  return res.status === 'error' ? view('error', ELEMENTS_ERROR) : view('loading', null)
+}
+
 /** Years to request, newest first: from the install year (or 5 years back) to `currentYear`. */
 export function annualYears(dateInstalled: string | null | undefined, currentYear: number): number[] {
   const y = Number(String(dateInstalled ?? '').slice(0, 4))

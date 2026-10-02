@@ -4,7 +4,7 @@ import type { AnnualDaily } from '../data'
 import { parseCsvRaw } from '../data/parse'
 import { dailyMet, fixtureText, hourlyMet, soilSeries, stageTable, stationMeta } from '../__tests__/adapters'
 import { parseGddCutoffs } from './gddCutoffs'
-import { annualView, annualYears, gate, gddView, metView, soilView, viewAnnouncement, type Loaded } from './results'
+import { ELEMENTS_ERROR, annualView, annualYears, elementsGate, gate, gddView, metView, soilView, viewAnnouncement, type Loaded } from './results'
 
 const met = dailyMet('acebozem', 'season2025')
 const meta = stationMeta('acebozem')
@@ -105,6 +105,7 @@ describe('annual', () => {
   it('years from install (or 5 back), newest first', () => {
     expect(annualYears('2023-08-27', 2026)).toEqual([2026, 2025, 2024, 2023])
     expect(annualYears(null, 2026)).toHaveLength(6)
+    expect(annualYears(undefined, 2026)).toEqual([2026, 2025, 2024, 2023, 2022, 2021])
   })
   it('progressive: draws loaded years while others load; no element → prompt', () => {
     expect(annualView(null, [], [], 2026).message).toBe('Select a comparison variable to continue.')
@@ -122,4 +123,10 @@ describe('annual', () => {
 it('announcements', () => {
   expect(viewAnnouncement('Growing Degree Days', { status: 'ready', message: null }, 'Bozeman')).toBe('Growing Degree Days chart updated for Bozeman.')
   expect(viewAnnouncement('Reference ET', { status: 'loading', message: null }, 'Bozeman')).toBeNull()
+})
+
+it('elementsGate: loading, failed (with its own message), loaded', () => {
+  expect(elementsGate(loading)?.status).toBe('loading')
+  expect(elementsGate({ status: 'error', data: undefined, error: new Error('x') })).toMatchObject({ status: 'error', message: ELEMENTS_ERROR })
+  expect(elementsGate(ok([]))).toBeNull()
 })

@@ -4,10 +4,8 @@
  * and clears a station without SWP sensors for the SWP variables (with a toast).
  */
 import Alpine from 'alpinejs'
-import { getStationElements } from '../../core/api'
 import type { RangeValue } from '../../core/controls/rangeModel'
 import { DERIVED_VAR_OPTIONS, GDD_CROPS } from '../../core/params/ag'
-import { AG_TTL, agKeys } from '../../core/ag/view/keys'
 import { learnMoreUrl } from '../../core/ag/view/learnMore'
 import { PROJECTION_OPTIONS } from '../../core/ag/view/projection'
 import { SLIDER_MAX, SLIDER_MIN } from '../../core/ag/view/gddCutoffs'
@@ -26,16 +24,20 @@ import {
 } from '../../core/ag/view/tab'
 import type { UrlState } from '../../core/url-schema'
 import { component } from '../component'
-import { currentTab, raw } from './shared'
+import { currentTab, elementsResource, raw } from './shared'
 
 const set = (patch: Partial<UrlState>) => Alpine.store('url').set(patch)
 
-/** The station's element list (Annual comparison only), or null while not needed / loading. */
-function elementOptions(): { value: string; label: string }[] | null {
+/** The element-list resource while Annual is shown for a confirmed station, else null. */
+function elements() {
   const id = Alpine.store('station').id
-  if (!id || currentTab().variable !== 'annual') return null
-  const res = Alpine.store('data').cached(agKeys.elements(id), () => getStationElements(id), { ttl: AG_TTL.elements })
-  return res.data ? annualOptions(raw(res.data)) : null
+  return id && currentTab().variable === 'annual' ? elementsResource(id) : null
+}
+
+/** Annual comparison options, or null while not needed / loading / failed. */
+function elementOptions(): { value: string; label: string }[] | null {
+  const res = elements()
+  return res?.data ? annualOptions(raw(res.data)) : null
 }
 
 export function agControls() {
@@ -84,7 +86,14 @@ export function agControls() {
       return this.tab.swpOnly ? 'Pick a station with soil water potential' : 'Pick a station'
     },
     annualOptions: () => elementOptions() ?? [],
+    /** The element list failed (no cached data): show the error and a Retry button. */
+    elementsFailed(): boolean {
+      const res = elements()
+      return !!res && res.status === 'error' && res.data === undefined
+    },
+    retryElements: () => elements()?.refresh(),
     annualEmptyText(): string {
+      if (this.elementsFailed()) return 'Unavailable'
       return Alpine.store('station').id ? 'Loading…' : 'Pick a station first'
     },
     learnHref(): string {

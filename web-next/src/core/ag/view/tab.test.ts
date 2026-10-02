@@ -3,6 +3,7 @@ import type { Station, StationElement } from '../../api'
 import { readUrlState } from '../../url-schema'
 import { agKeys, forecastNeedsRetry } from './keys'
 import {
+  annualElement,
   annualOptions,
   chartState,
   cropPatch,
@@ -142,4 +143,17 @@ it('variableGroup + chartState', () => {
   expect(chartState(swp, 'acecrowa', 'acecrowa', true)).toBe('no-station')
   expect(chartState({ swpOnly: false, hasSwp: false }, 'acecrowa', 'acecrowa', true)).toBe('chart')
   expect(chartState({ swpOnly: false, hasSwp: false }, null, null, true)).toBe('no-station')
+})
+
+it('annualElement: waits for the list; a stale annv falls to the first option', () => {
+  expect(annualElement('ppt', null)).toBeNull()
+  expect(annualElement('ppt', [{ value: 'air_temp' }])).toBe('air_temp')
+  expect(annualElement('ppt', [{ value: 'air_temp' }, { value: 'ppt' }])).toBe('ppt')
+  expect(annualElement(null, [{ value: 'ppt' }])).toBe('ppt')
+  expect(annualElement('ppt', [])).toBeNull()
+})
+
+it('date range hidden for Annual only', () => {
+  expect(resolveAgTab(url('?var=annual'), BOZ, TODAY).showDates).toBe(false)
+  expect(resolveAgTab(url('?var=etr'), BOZ, TODAY).showDates).toBe(true)
 })

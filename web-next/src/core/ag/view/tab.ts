@@ -43,6 +43,8 @@ export interface AgTab {
   swpOnly: boolean
   hasSwp: boolean
   showTimeAgg: boolean
+  /** Annual comparison ignores the window, so its date range is hidden. */
+  showDates: boolean
   /** Effective period (daily unless the toggle is shown). */
   period: Period
   livestock: 'adult' | 'newborn'
@@ -78,6 +80,7 @@ export function resolveAgTab(url: AgUrl, station: Station | undefined, today: Lo
     swpOnly: SWP_ONLY.has(variable),
     hasSwp,
     showTimeAgg,
+    showDates: variable !== 'annual',
     period: showTimeAgg ? url.ag_time : 'daily',
     livestock: url.lt,
     soilOptions,
@@ -178,6 +181,17 @@ export function urlFixups(
     patch.annv = annual[0].value
   }
   return Object.keys(patch).length > 0 ? patch : null
+}
+
+/**
+ * The element the Annual card fetches, once the station's element list has
+ * loaded (null before): `annv` if the list offers it, else its first option,
+ * which is what the `urlFixups` write will set. A stale `annv` from another
+ * station never fetches, and the card does not wait on the URL write.
+ */
+export function annualElement(annv: string | null, options: { value: string }[] | null): string | null {
+  if (!options) return null
+  return annv && options.some((o) => o.value === annv) ? annv : (options[0]?.value ?? null)
 }
 
 /** Toast text when an SWP variable clears a station without SWP sensors. */
