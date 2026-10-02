@@ -17,10 +17,12 @@ import { multiselect } from './ui/controls/multiselect'
 import { rangeSlider } from './ui/controls/rangeSlider'
 import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
+import { downloaderMap, stationMap } from './ui/map/presets'
 import { navMeta } from './ui/shell/navMeta'
 import { tabBar } from './ui/shell/tabBar'
 import './styles/app.css'
 import './ui/controls/controls.css'
+import './ui/map/map.css'
 
 /* 1. URL fix-ups, before any store reads `location`. ---------------------- */
 
@@ -56,5 +58,9 @@ Alpine.data('timeSelect', timeSelect)
 Alpine.data('segmented', segmented)
 Alpine.data('chips', chips)
 Alpine.data('rangeSlider', rangeSlider)
+
+// Station maps (ui/map/presets.ts): x-data="stationMap({ stations, selected, onSelect })".
+Alpine.data('stationMap', stationMap)
+Alpine.data('downloaderMap', downloaderMap)
 
 Alpine.start()
