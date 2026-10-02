@@ -1,0 +1,86 @@
+<!doctype html>
+<!-- Manual / Playwright review page for ui/map: both station-map presets on
+     the live /stations API (dev proxy /_api), with theme, network-filter and
+     keyboard-picker controls. Same CSP as index.html (minus the anti-flash
+     hash: this page has no inline script). ?theme=dark|light|high-contrast;
+     ?fixture=xss renames a station to markup to prove popups render text.
+     Not part of the app build; serve with Vite at /src/ui/map/demo.html. -->
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com;
+    worker-src 'self' blob:;
+    style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com;
+    font-src https://cdn.jsdelivr.net;
+    img-src 'self' data: blob: https://cdn.jsdelivr.net https://data2.climate.umt.edu https://api.weather.gov;
+    connect-src 'self' https://mesonet2.climate.umt.edu https://data2.climate.umt.edu https://api.weather.gov https://raw.githubusercontent.com https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://s3.amazonaws.com https://cdn.jsdelivr.net https://unpkg.com;
+    base-uri 'self';
+    form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Maps · MT Mesonet</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.css"
+        integrity="sha384-q7EDwLXBfakVimqzBJqFCTxpgy7B18buhebV158qkVMCEVAaUnU3fQTEfWgYz+7g"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.7.1/theme/mco-theme.css"
+        integrity="sha384-dktZyfU+lLz1JEFe+npkBVrH8FsSdtYYOPC7bJQtZwEJnvD3IiENV+UUgyXeFpnl"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="./demo.css">
+  <script type="module" src="./demo.ts"></script>
+</head>
+<body>
+<main id="main" tabindex="-1" x-data>
+  <h1>Station maps</h1>
+  <p class="demo-lede">Both presets share one host. Status: <span data-testid="status" x-text="$store.demo.status"></span>.
+    Selected: <code data-testid="selected" x-text="$store.demo.selected ?? 'none'"></code></p>
+
+  <div class="demo-controls">
+    <div class="seg-btns" role="group" aria-label="Theme">
+      <template x-for="t in $store.demo.themes" :key="t">
+        <button type="button" class="nav-btn" :data-theme-btn="t" :aria-pressed="String($store.demo.theme === t)"
+                @click="$store.demo.setTheme(t)" x-text="t"></button>
+      </template>
+    </div>
+    <div class="seg-btns" role="group" aria-label="Networks shown">
+      <template x-for="n in $store.demo.networks" :key="n">
+        <button type="button" class="nav-btn" :data-net="n" :aria-pressed="String($store.demo.netOn(n))"
+                @click="$store.demo.toggleNet(n)" x-text="n"></button>
+      </template>
+    </div>
+    <label class="demo-pick">Station
+      <select data-testid="picker" @change="$store.demo.select($event.target.value || null)">
+        <option value="">(none)</option>
+        <template x-for="s in $store.demo.sorted" :key="s.station">
+          <option :value="s.station" :selected="s.station === $store.demo.selected" x-text="`${s.name} (${s.station})`"></option>
+        </template>
+      </select>
+    </label>
+  </div>
+
+  <section aria-labelledby="h-latest">
+    <h2 id="h-latest">stationMap (Latest card)</h2>
+    <div class="demo-map" data-testid="station-map"
+         x-data="stationMap({ stations: () => $store.demo.stations, selected: () => $store.demo.selected,
+                 visible: () => $store.demo.visible, onSelect: (id) => $store.demo.select(id) })"></div>
+  </section>
+  <section aria-labelledby="h-dl">
+    <h2 id="h-dl">downloaderMap (Downloader)</h2>
+    <div class="demo-map" data-testid="downloader-map"
+         x-data="downloaderMap({ stations: () => $store.demo.stations, selected: () => $store.demo.selected,
+                 visible: () => $store.demo.visible, onSelect: (id) => $store.demo.select(id) })"></div>
+  </section>
+</main>
+
+  <script src="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.js"
+          integrity="sha384-MYTfGytf3SxNyO7ZAu/U0wHCcs3NpqE92Q3wBz5PQhat8kEA/wbwb9qY6H/JLyuR"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.7.1/core/mco-core.js"
+          integrity="sha384-ZOGCREEJsO8sY1wJ7eS/Q7K7NdZAHF+LxSMoO3ZGqBtEVISX3616cGomCW418hXH"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.7.1/map/mco-map.js"
+          integrity="sha384-0aF67+MSXmcocGs8r3qiehgDNzgXo9F48olS5OX575wO2llw2cuGcqLpd6+L7D76"
+          crossorigin="anonymous"></script>
+</body>
+</html>

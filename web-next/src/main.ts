@@ -18,6 +18,7 @@ import { multiselect } from './ui/controls/multiselect'
 import { rangeSlider } from './ui/controls/rangeSlider'
 import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
+import { downloaderMap, stationMap } from './ui/map/presets'
 import { globalNotices } from './ui/shell/globalNotices'
 import { helpDialog } from './ui/shell/helpDialog'
 import { navMeta } from './ui/shell/navMeta'
@@ -25,6 +26,7 @@ import { outageNotice } from './ui/shell/outageNotice'
 import { tabBar } from './ui/shell/tabBar'
 import './styles/app.css'
 import './ui/controls/controls.css'
+import './ui/map/map.css'
 import './ui/charts/chart.css'
 
 /* 1. URL fix-ups, before any store reads `location`. ---------------------- */
@@ -66,8 +68,12 @@ Alpine.data('segmented', segmented)
 Alpine.data('chips', chips)
 Alpine.data('rangeSlider', rangeSlider)
 
+// Station maps (ui/map/presets.ts): x-data="stationMap({ stations, selected, onSelect })".
+Alpine.data('stationMap', stationMap)
+Alpine.data('downloaderMap', downloaderMap)
+
 // Charts (W1): the one ECharts host; ECharts itself loads lazily on the first
-// render. x-data="chart({ builder, table, label, model: () => …, onZoom })".
+// render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".
 Alpine.data('chart', chart)
 
 Alpine.start()

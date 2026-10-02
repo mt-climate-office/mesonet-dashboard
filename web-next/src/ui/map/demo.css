@@ -1,0 +1,10 @@
+/* Demo-page layout only (src/ui/map/demo.html). */
+main { max-width: 72rem; margin: 0 auto; padding: 1.25rem max(1rem, env(safe-area-inset-left)) 3rem; }
+h1 { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.25rem; }
+h2 { font-size: 0.95rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+.demo-lede { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.75rem; }
+.demo-controls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+.demo-pick { font-size: 0.8rem; color: var(--text-secondary); display: flex; gap: 0.4rem; align-items: center; }
+.demo-pick select { max-width: 16rem; font: inherit; }
+.demo-map { height: 420px; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+@media (max-width: 640px) { .demo-map { height: 360px; } }
