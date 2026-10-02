@@ -28,6 +28,10 @@ import './styles/app.css'
 import './ui/controls/controls.css'
 import './ui/map/map.css'
 import './ui/charts/chart.css'
+// Latest Data (W2 layout/sidebar/timeseries).
+import { latestSidebar } from './ui/latest/sidebar'
+import { latestTimeseries } from './ui/latest/timeseries'
+import './styles/latest.css'
 
 /* 1. URL fix-ups, before any store reads `location`. ---------------------- */
 
@@ -75,5 +79,9 @@ Alpine.data('downloaderMap', downloaderMap)
 // Charts (W1): the one ECharts host; ECharts itself loads lazily on the first
 // render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".
 Alpine.data('chart', chart)
+
+// Latest Data (W2 layout/sidebar/timeseries): partials/latest/index.html.
+Alpine.data('latestSidebar', latestSidebar)
+Alpine.data('latestTimeseries', latestTimeseries)
 
 Alpine.start()

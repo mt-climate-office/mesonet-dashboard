@@ -10,6 +10,7 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 | `agGdd.ts` | `gddChart`/`gddTable` (`GddModel`), `stageLines`, `gddAxisMax`, `GDD_NAMES` |
 | `agSoil.ts` | `soilProfileChart`/`soilProfileTable` (`SoilProfileModel`), `swpChart`/`swpTable`, `percentSaturationChart`/`percentSaturationTable` |
 | `agAnnual.ts` | `annualChart`/`annualTable` (`AnnualModel`) |
+| `latestTimeseries.ts` | `latestTimeseriesChart`/`latestTimeseriesTable` (`LatestTimeseriesModel`: core/models/timeseries + view/extent), `latestTimeseriesHeight(n, compact)` |
 | `theme.ts` | `readChartTheme(name, getVar)` (kit tokens → `ChartTheme`), `echartsTheme(t)`, `paint(t, role)` (palette role → color) |
 
 W2 adds `timeseries.ts`, `windRose.ts`, `downloaderPreview.ts` the same way.
