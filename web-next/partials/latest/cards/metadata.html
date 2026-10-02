@@ -1,0 +1,23 @@
+<!-- Station Metadata pane (x-data="metadataCard", ui/latest/cards/metadataCard.ts): legacy rows,
+     no header row; the one-pager is a link. -->
+<div class="lc-pane lc-scroll" x-data="metadataCard" data-testid="metadata-card">
+  <template x-if="state === 'none'"><p class="lc-message">Pick a station for its metadata.</p></template>
+  <template x-if="state === 'loading'"><p class="lc-message" role="status">Loading…</p></template>
+  <template x-if="state === 'missing'"><p class="lc-message">Station not found.</p></template>
+  <template x-if="state === 'ready'">
+    <table class="lc-table">
+      <caption class="sr-only">Station metadata</caption>
+      <tbody>
+        <template x-for="r in rows" :key="r.label">
+          <tr>
+            <th scope="row" x-text="r.label"></th>
+            <td>
+              <template x-if="r.href"><a class="lc-link" :href="r.href" target="_blank" rel="noopener noreferrer"><span x-text="r.value"></span><span class="sr-only"> (opens in a new tab)</span></a></template>
+              <template x-if="!r.href"><span x-text="r.value"></span></template>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+  </template>
+</div>

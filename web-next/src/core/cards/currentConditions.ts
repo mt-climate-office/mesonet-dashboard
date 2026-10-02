@@ -1,6 +1,26 @@
-/** Pure helpers for the Current Conditions card (legacy get_station_latest). */
-import dayjs from 'dayjs'
+/**
+ * Pure helpers for the Current Conditions card: the latest-observation rows
+ * (legacy get_station_latest) and the HydroMet Precipitation Summary
+ * (legacy get_ppt_summary, `/derived/ppt/`).
+ */
 import { degToCompass } from '../params'
+import { parseWallClock } from '../sensorEvents'
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/**
+ * API local stamp ("2026-10-01 13:15:00-06:00") → "Oct 1, 2026 1:15 PM", read
+ * as Mountain wall clock (the offset is ignored, so every viewer sees MT).
+ * Unparseable input comes back unchanged.
+ */
+export function formatLatestStamp(ts: string): string {
+  const ms = parseWallClock(ts)
+  if (ms === null) return ts
+  const d = new Date(ms)
+  const h = d.getUTCHours()
+  const mm = String(d.getUTCMinutes()).padStart(2, '0')
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()} ${h % 12 || 12}:${mm} ${h < 12 ? 'AM' : 'PM'}`
+}
 
 /**
  * Rows legacy get_station_latest keeps (params.elem_labs, after lab_swap):
@@ -47,7 +67,7 @@ export function currentConditionsRows(
   const out: Array<readonly [string, string]> = []
   const ts = latest.datetime
   if (typeof ts === 'string' && ts) {
-    out.push(['Timestamp', dayjs(ts).isValid() ? dayjs(ts).format('MMM D, YYYY h:mm A') : ts])
+    out.push(['Timestamp', formatLatestStamp(ts)])
   }
   for (const [k, v] of Object.entries(latest)) {
     if (!isCurrentConditionsColumn(k)) continue
@@ -70,4 +90,20 @@ export function currentConditionsRows(
     out.push(['Real Feel [°F]', String(Math.round(realFeel * 100) / 100)] as const)
   }
   return out
+}
+
+/**
+ * Precipitation Summary rows from the first `/derived/ppt/` row: every
+ * numeric column but `station`, as "{value.toFixed(2)} in", in reverse column
+ * order (legacy melts then reverses, newest window first). Blanks are dropped.
+ */
+export function pptSummaryRows(summary: Record<string, unknown> | undefined): Array<readonly [string, string]> {
+  if (!summary) return []
+  const out: Array<readonly [string, string]> = []
+  for (const [k, v] of Object.entries(summary)) {
+    if (k === 'station' || v === null || v === undefined || v === '') continue
+    const num = typeof v === 'number' ? v : Number(v)
+    if (Number.isFinite(num)) out.push([k, `${num.toFixed(2)} in`] as const)
+  }
+  return out.reverse()
 }

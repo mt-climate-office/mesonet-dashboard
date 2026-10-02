@@ -1,0 +1,16 @@
+<!-- Wind Rose pane (x-data="windRoseCard", ui/latest/cards/windRoseCard.ts). Empty without a
+     station (legacy); the chart host renders the polar bars and their sr-only table. -->
+<div class="lc-pane" x-data="windRoseCard" data-testid="wind-rose-card">
+  <template x-if="state === 'loading'">
+    <p class="lc-message" role="status">Loading wind data…</p>
+  </template>
+  <template x-if="state === 'empty'">
+    <p class="lc-message lc-strong">No data available for selected dates.</p>
+  </template>
+  <template x-if="state === 'ready'">
+    <div class="lc-rose">
+      <h3 class="lc-title" x-text="title" data-testid="wind-rose-title"></h3>
+      <div class="chart lc-rose-chart" x-data="chart(roseChart())" data-testid="wind-rose-chart"></div>
+    </div>
+  </template>
+</div>

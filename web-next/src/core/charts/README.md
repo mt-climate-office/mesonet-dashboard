@@ -10,9 +10,10 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 | `agGdd.ts` | `gddChart`/`gddTable` (`GddModel`), `stageLines`, `gddAxisMax`, `GDD_NAMES` |
 | `agSoil.ts` | `soilProfileChart`/`soilProfileTable` (`SoilProfileModel`), `swpChart`/`swpTable`, `percentSaturationChart`/`percentSaturationTable` |
 | `agAnnual.ts` | `annualChart`/`annualTable` (`AnnualModel`) |
+| `windRose.ts` | `windRoseChart`/`windRoseTable` (`WindRoseModel` from `core/models/windRose`), `windRoseTitle`, `binName` |
 | `theme.ts` | `readChartTheme(name, getVar)` (kit tokens → `ChartTheme`), `echartsTheme(t)`, `paint(t, role)` (palette role → color) |
 
-W2 adds `timeseries.ts`, `windRose.ts`, `downloaderPreview.ts` the same way.
+W2 adds `timeseries.ts` and `downloaderPreview.ts` the same way.
 
 ## Shared helpers (internal to this folder)
 

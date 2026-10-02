@@ -1,0 +1,88 @@
+/* Latest tab cards (partials/latest/cards/*, ui/latest/cards/*): card switcher, pane sizes,
+   messages, forecast periods, photo picker and dialog, metadata/current tables. The card
+   border comes from the Latest tab's card section. Kit tokens only, no hexes. */
+
+.lc { display: flex; flex-direction: column; min-width: 0; height: 100%; }
+.lc-switch { padding: 0.5rem; }
+/* kit-override: kit .seg-btns hug their content; the card switcher spans the card (legacy fullWidth). */
+.lc-switch .seg-btns { width: 100%; }
+.lc-switch .seg-btn { flex: 1 1 0; justify-content: center; text-align: center; white-space: normal; line-height: 1.15; height: auto; }
+
+/* Legacy card heights: top max(300px, 40vh); bottom fills the column, at least 320px. */
+.lc-body { position: relative; min-height: 0; }
+.lc-body-top { height: max(300px, 40vh); }
+.lc-bottom { flex: 1; }
+.lc-body-bottom { flex: 1; min-height: 320px; display: flex; flex-direction: column; }
+.lc-pane { height: 100%; min-height: 0; display: flex; flex-direction: column; }
+.lc-body-bottom > .lc-pane { flex: 1; height: auto; }
+.lc-scroll { overflow-y: auto; }
+.lc-map { flex: 1; min-height: 320px; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+
+.lc-message {
+  margin: auto; padding: 1rem; max-width: 22rem;
+  text-align: center; font-size: 0.8rem; color: var(--text-muted);
+}
+.lc-message p + p { margin-top: 0.5rem; }
+.lc-strong { font-weight: 700; color: var(--text-primary); font-size: 0.875rem; }
+.lc-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: center; }
+.lc-alert {
+  margin: 0.5rem; padding: 0.6rem 0.75rem; font-size: 0.8rem; color: var(--text-secondary);
+  border: 1px solid var(--border); border-left: 3px solid var(--accent-line); border-radius: var(--radius-md);
+}
+.lc-alert strong { display: block; color: var(--text-primary); }
+.lc-title { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin: 0; }
+/* Underlined, not color-only (WCAG 1.4.1). */
+.lc-link { color: var(--accent-line); text-decoration: underline; text-underline-offset: 2px; font-size: 0.78rem; }
+
+/* Wind rose: title above the chart, chart fills the rest of the pane. */
+.lc-rose { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.lc-rose .lc-title { text-align: center; padding: 0 0.5rem; font-family: var(--font-mono); font-size: 0.78rem; }
+.lc-rose-chart { flex: 1; min-height: 0; --chart-height: calc(max(300px, 40vh) - 1.5rem); --chart-height-compact: calc(max(300px, 40vh) - 1.5rem); }
+
+/* Forecast: a horizontal strip of period cards (scrollable, keyboard-focusable). */
+.lc-forecast { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 0 0.5rem 0.5rem; gap: 0.35rem; }
+.lc-forecast-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.lc-forecast-head .lc-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lc-periods { display: flex; gap: 0.4rem; overflow-x: auto; list-style: none; margin: 0; padding: 0 0 0.35rem; flex: 1; align-items: stretch; }
+.lc-period {
+  flex: 0 0 5.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+  padding: 0.4rem 0.25rem; text-align: center;
+  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-raised);
+}
+.lc-period.is-night { background: var(--bg-deep); }
+.lc-period img { width: 40px; height: 40px; border-radius: var(--radius-sm); }
+.lc-period-name { font-size: 0.72rem; font-weight: 600; color: var(--text-primary); line-height: 1.2; }
+.lc-period-temp { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
+.lc-period-short { font-size: 0.68rem; color: var(--text-secondary); line-height: 1.25; }
+.lc-period-pop { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-secondary); }
+
+/* Photo: chips, pickers, then the image filling the rest. */
+.lc-photo { padding: 0 0.5rem 0.5rem; gap: 0.35rem; }
+.lc-photo-controls { display: flex; flex-direction: column; gap: 0.35rem; }
+.lc-chips { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: center; }
+.lc-chip { min-height: 28px; padding: 3px 10px; font-size: 0.74rem; }
+.lc-photo-pickers { display: grid; grid-template-columns: auto 1fr; gap: 0.5rem; align-items: start; }
+.lc-photo-pickers .ctl-field { min-width: 0; }
+.lc-photo-pickers .ctl-error:empty { display: none; }
+.lc-photo-frame {
+  flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+  padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: var(--radius-md);
+}
+.lc-photo-frame img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--radius-md); }
+/* Legacy photo modal: 92vw wide, image up to 86vh. */
+.lc-photo-modal-box { width: min(92vw, 1600px); max-height: calc(100dvh - 2rem); }
+.lc-photo-modal-body { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+.lc-photo-modal-body img { max-width: 100%; max-height: 78vh; object-fit: contain; border-radius: var(--radius-md); }
+
+/* Metadata / Current Conditions tables: no header row, left aligned, striped (legacy TABLE_STYLING). */
+.lc-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.lc-table + .lc-table { margin-top: 0.75rem; }
+.lc-table th, .lc-table td { text-align: left; padding: 0.3rem 0.6rem; vertical-align: top; }
+.lc-table th { font-weight: 400; color: var(--text-secondary); }
+.lc-table td { font-weight: 500; color: var(--text-primary); font-family: var(--font-mono); font-size: 0.74rem; overflow-wrap: anywhere; }
+.lc-table tbody tr:nth-child(odd) { background: var(--bg-raised); }
+.lc-caption { caption-side: top; padding: 0.4rem; font-weight: 700; font-size: 0.85rem; color: var(--text-primary); text-align: center; }
+
+@media (hover: none) {
+  .lc-chip { min-height: 40px; }
+}

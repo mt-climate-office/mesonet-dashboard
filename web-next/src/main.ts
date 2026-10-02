@@ -19,6 +19,13 @@ import { rangeSlider } from './ui/controls/rangeSlider'
 import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
 import { downloaderMap, stationMap } from './ui/map/presets'
+import { bottomCard } from './ui/latest/cards/bottomCard'
+import { currentCard } from './ui/latest/cards/currentCard'
+import { forecastCard } from './ui/latest/cards/forecastCard'
+import { metadataCard } from './ui/latest/cards/metadataCard'
+import { photoCard } from './ui/latest/cards/photoCard'
+import { topCard } from './ui/latest/cards/topCard'
+import { windRoseCard } from './ui/latest/cards/windRoseCard'
 import { globalNotices } from './ui/shell/globalNotices'
 import { helpDialog } from './ui/shell/helpDialog'
 import { navMeta } from './ui/shell/navMeta'
@@ -28,6 +35,7 @@ import './styles/app.css'
 import './ui/controls/controls.css'
 import './ui/map/map.css'
 import './ui/charts/chart.css'
+import './styles/cards.css'
 
 /* 1. URL fix-ups, before any store reads `location`. ---------------------- */
 
@@ -75,5 +83,15 @@ Alpine.data('downloaderMap', downloaderMap)
 // Charts (W1): the one ECharts host; ECharts itself loads lazily on the first
 // render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".
 Alpine.data('chart', chart)
+
+// Latest cards (W2; partials/latest/cards/*): top and bottom card switchers
+// and their panes. The Locator Map pane uses stationMap above.
+Alpine.data('topCard', topCard)
+Alpine.data('windRoseCard', windRoseCard)
+Alpine.data('forecastCard', forecastCard)
+Alpine.data('photoCard', photoCard)
+Alpine.data('bottomCard', bottomCard)
+Alpine.data('metadataCard', metadataCard)
+Alpine.data('currentCard', currentCard)
 
 Alpine.start()
