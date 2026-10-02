@@ -701,3 +701,50 @@ and the preview on small screens. It wraps to two lines at 375px.
 
 ### Footer
 - **New:** every tab ends with "Data from the Montana Mesonet, quality-controlled and served by the Mesonet API." and "Montana Climate Office · climate.umt.edu" (HOUSE-STYLE §1 voice), with underlined links. The Downloader's BLM funding footer stays on that tab only.
+
+## Maps
+
+The station maps (`ui/map/`) replace both web/ maps (`components/StationMap.tsx`
+and `tabs/downloader/DownloaderMap.tsx`) with one host and two presets.
+This section supersedes the colour and basemap notes in "MapLibre locator map"
+and DL-018 above.
+
+- **Basemap and relief (ST-004, DL-018).** Legacy and web/ used USGS
+  shaded-relief tiles (Downloader) or Positron only (Latest). web-next uses the
+  kit's CARTO Dark Matter or Positron basemap for the current theme (high
+  contrast uses Dark Matter), with the kit hillshade (AWS terrain DEM, `igor`).
+  **Why:** house style §7; USGS relief is light-only and US-only.
+- **Boundaries.** County lines, tribal lands (labelled from z6) and the state
+  line come from the kit's GeoJSON, vendored in `public/geo/` (kit v0.7.1). They
+  replace `public/mt_counties.geojson`. CARTO's own `boundary_county` layer is
+  hidden. The Downloader draws counties heavier, as legacy emphasised them; the
+  Latest map uses the kit default.
+- **Marker colours and shapes (DL-018).** The legacy colours (AgriMet
+  `#00cc96`, HydroMet `#7A7AFB`, co-located `#FB7A7A`, selected `#FFD700`) are
+  replaced by `core/palette` `NETWORK_COLOR` and `NETWORK_SHAPE`. HydroMet is a
+  filled dot, AgriMet a hollow dot and Cooperator a thin ring, so the network
+  still reads in grayscale. A co-located site is one marker: the inner dot is
+  the first network and the outer ring is the second network's colour (the
+  palette has no co-located colour). The selected station gets a
+  `--selection-ring` ring. The legend is a kit `.mco-panel` with text labels;
+  it collapses on phones.
+- **Clicking a co-located marker** selects its first station (alphabetical, as
+  in legacy). Clicking it again selects the next one, so a pointer can reach
+  every station at the site. Legacy always took the first.
+- **Popup.** Hovering a marker lists every station at that point with its name,
+  network and elevation (m). This replaces the Downloader's "Station(s): …"
+  text and Latest's name/elevation popup. web/ also pinned a popup on the
+  selected station; web-next does not, and the ring marks the selection.
+  Popups are built with DOM `textContent`, never HTML.
+- **Only Latest moves the camera on selection.** Selecting a station there flies
+  to it, at zoom 8 or closer. The move is instant under reduced motion and on
+  first load. The Downloader never re-centres, as in legacy.
+- **Framing.** Both maps fit `MCO.map.MT_FIT_BOUNDS` at any size. A zoom floor
+  stops zooming out past Montana, a fit button resets the view, and rotation is
+  off.
+- **Accessibility (new).** The map container has `role="application"` and a
+  label. A polite live region announces selection changes. A hidden table lists
+  the visible stations (name, network, county), each with a select button. The
+  table takes one Tab stop; the arrow keys and Home/End move within it.
+  Focusing a station's button shows its popup and a focus-coloured halo on the
+  map.
