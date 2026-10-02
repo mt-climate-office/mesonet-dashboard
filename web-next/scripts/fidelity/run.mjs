@@ -105,9 +105,15 @@ function summarize(c) {
   return bits.join('; ')
 }
 
+/** Write DIR/<compare>/results.json; a partial run (--stations/--scenarios) keeps the other items. */
 async function writeRun(run) {
   run.finished = new Date().toISOString()
-  await writeJson(join(OUT, run.compare, 'results.json'), run)
+  const file = join(OUT, run.compare, 'results.json')
+  const prior = args.stations || args.scenarios ? (await readJson(file, null))?.items ?? [] : []
+  const id = (i) => `${i.station}|${i.scenario}`
+  const fresh = new Set(run.items.map(id))
+  const items = [...prior.filter((i) => !fresh.has(id(i))), ...run.items]
+  await writeJson(file, { ...run, items: prior.length ? items.sort((a, b) => matrix.findIndex((m) => m.station === a.station) - matrix.findIndex((m) => m.station === b.station)) : run.items })
 }
 
 /* ------------------------------------------------------------- comparisons */
@@ -151,10 +157,12 @@ async function runLatest(browser) {
       else {
         cmp = { figures: figurePairs(ca, cb), cards: {}, palette: paletteCheck(cb.figures, cb.palette) }
         for (const k of ['top', 'bottom']) cmp.cards[k] = compareCard(ca.cards?.[k], cb.cards?.[k])
+        // The map pane is compared as data (mapCheck), not as text (web/ and web-next legends differ by design).
+        if (cb.map) cmp.cards.bottom = { status: 'PASS', note: 'map pane: see the map check' }
         // web/ draws the wind-rose title inside the Plotly figure; web-next as a heading in the card.
         const roseTitle = ca.figures.find((f) => f.role === 'windrose')?.title
         if (roseTitle) {
-          const text = (cb.cards?.top?.lines ?? []).join(' ').replace(/\s+/g, ' ')
+          const text = (cb.cards?.top?.titles ?? []).join(' ')
           cmp.cards.windTitle = text.includes(roseTitle) ? { status: 'PASS' } : { status: 'WARN', note: `title "${roseTitle}" not in web-next card`, lines: { onlyA: [roseTitle], onlyB: [] } }
         }
         cmp.map = await mapCheck(cb.map, st, sc.id === 'info-map')

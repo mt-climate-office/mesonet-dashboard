@@ -24,9 +24,9 @@ node scripts/fidelity/run.mjs --report-only    # rebuild DIR/report.html and DIR
 FIDELITY_DEBUG=1 node scripts/fidelity/run.mjs …   # print each wait step
 ```
 
-- **Needs** `npm ci` in `web-next/` and `npm ci --ignore-scripts` in `web/` (Playwright comes from
-  `../web/node_modules` via `createRequire`; web-next adds no dependency) and an installed Chrome
-  (`channel: 'chrome'`; `FIDELITY_CHROMIUM=/path` overrides).
+- **Needs** `npm ci` in `web-next/` (its `playwright` dev dependency), `npm ci --ignore-scripts`
+  in `web/` (to serve it), and an installed Chrome (`channel: 'chrome'`;
+  `FIDELITY_CHROMIUM=/path` overrides).
 - **Output** (default: the session scratchpad `…/fidelity-next`, env `FIDELITY_OUT`):
   `DIR/<compare>/results.json`, `captures/*.json` (every extracted figure, card and log),
   `shots/*.png`, `files/*.csv`; `DIR/results.json` (summary) and `DIR/report.html`

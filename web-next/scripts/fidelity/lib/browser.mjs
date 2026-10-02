@@ -1,15 +1,12 @@
-// Playwright (borrowed from ../web/node_modules; web-next adds no dependency), the
-// instrumented page (console errors, request log, quiet-period settle) and screenshots.
-import { createRequire } from 'node:module'
+// Playwright (web-next's dev dependency), the instrumented page (console errors, request
+// log, quiet-period settle) and screenshots.
 import { join } from 'node:path'
-import { WEB_DIR, TIMEOUTS } from '../config.mjs'
+import { chromium } from 'playwright'
+import { TIMEOUTS } from '../config.mjs'
 import { ensureDir, slug, sleep } from './util.mjs'
-
-const require = createRequire(join(WEB_DIR, 'package.json'))
 
 /** Installed Chrome (channel 'chrome'); FIDELITY_CHROMIUM=/path overrides. */
 export async function launch({ headless = true } = {}) {
-  const { chromium } = require('playwright')
   if (process.env.FIDELITY_CHROMIUM) return chromium.launch({ headless, executablePath: process.env.FIDELITY_CHROMIUM })
   return chromium.launch({ headless, channel: 'chrome' })
 }

@@ -63,8 +63,13 @@ async function waitQuiet(page, log, kind) {
 
 async function messages(page, kind) {
   return page.evaluate((kind) => {
-    const sel = kind === 'web' ? '.mantine-Alert-root, .mantine-Notification-root' : '[data-testid="ag-notes"] li, [data-testid="ag-empty"], [data-testid="ag-error"], .dl-msg, [data-testid="notices"]'
-    return [...document.querySelectorAll(sel)].filter((e) => e.offsetParent !== null).map((e) => e.innerText.replace(/\s+/g, ' ').trim()).filter(Boolean)
+    // web/ empty states are plain Mantine Text; web-next's are ag-empty / ag-error.
+    const sel = kind === 'web' ? '.mantine-Alert-root, .mantine-Notification-root, .mantine-Text-root' : '[data-testid="ag-notes"] li, [data-testid="ag-empty"], [data-testid="ag-error"], .dl-msg, [data-testid="notices"]'
+    return [...document.querySelectorAll(sel)]
+      .filter((e) => e.offsetParent !== null)
+      .map((e) => [e, e.innerText.replace(/\s+/g, ' ').trim()])
+      .filter(([e, t]) => t && (!e.classList.contains('mantine-Text-root') || (!e.closest('.mantine-Alert-root') && /^No .*(data|selection)/i.test(t))))
+      .map(([, t]) => t)
   }, kind)
 }
 
@@ -120,7 +125,7 @@ export function captureLatest(browser, target, station, sc, outDir) {
 const webAgReady = () =>
   [...document.querySelectorAll('.js-plotly-plot')].some((g) => g.data?.length) ||
   !!document.querySelector('.mantine-Alert-root') ||
-  /Select Station|unavailable|No data|Select a comparison/.test(document.querySelector('main')?.innerText ?? '')
+  /Select Station|unavailable|No data|No soil|No stage|Select a comparison/.test(document.querySelector('main')?.innerText ?? '')
 
 const nextAgReady = () => {
   const vis = (s) => [...document.querySelectorAll(s)].some((e) => e.offsetParent !== null)

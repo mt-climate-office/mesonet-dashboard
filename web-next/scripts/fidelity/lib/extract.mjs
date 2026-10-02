@@ -57,7 +57,8 @@ export function extractPlotly(page) {
           }
         })
         const spans = (L.shapes ?? [])
-          .filter((s) => s.type === 'rect' && String(s.xref ?? '').startsWith('x') && s.yref === 'paper')
+          // sensor spans: data-x rects spanning the panel height (yref 'paper' or 'y3 domain')
+          .filter((s) => s.type === 'rect' && /^x\d*$/.test(String(s.xref ?? 'x')) && /paper|domain/.test(String(s.yref ?? '')))
           .map((s) => ({ x0: String(s.x0), x1: String(s.x1) }))
         return {
           host: host(gd),
@@ -255,7 +256,7 @@ export function extractCards(page, sel) {
     // Control labels, date pickers and the map legend are UI chrome; the wind-rose title is checked
     // against web/'s Plotly title separately.
     const SKIP =
-      'svg, .js-plotly-plot, .chart, .maplibregl-map, .mco-panel, select, label, .sr-only, template, legend, [class*="DatePickerInput"], [class*="DateInput"], [data-testid="wind-rose-title"]'
+      'svg, .js-plotly-plot, .chart, .maplibregl-map, .mco-panel, select, .ctl-label, .mantine-InputWrapper-label, .sr-only, template, legend, [class*="DatePickerInput"], [class*="DateInput"], [data-testid="wind-rose-title"]'
     const hidden = (el, skip = SKIP) => {
       if (el?.closest?.(skip)) return true
       for (let e = el; e && e !== document.body; e = e.parentElement) {
@@ -282,6 +283,7 @@ export function extractCards(page, sel) {
       }
       out[k] = {
         lines: visibleText(el),
+        titles: [...el.querySelectorAll('h2, h3')].map((h) => h.textContent.replace(/\s+/g, ' ').trim()),
         tables: [...el.querySelectorAll('table')]
           .filter((t) => !hidden(t))
           .map((t) => [...t.querySelectorAll('tr')].map((tr) => [...tr.children].map((c) => visibleText(c).join(' ')))),
@@ -339,7 +341,7 @@ export function paletteColors(page, base) {
         keys.forEach((k) => walk(v[k], depth + 1))
       }
     }
-    for (const [k, v] of Object.entries(P)) if (typeof v !== 'function') walk(v)
+    for (const v of Object.values(P)) if (typeof v !== 'function') walk(v)
     for (const d of [2, 4, 6, 8, 12, 20, 24, 28, 30, 36, 40]) add(P.depthColor?.(d, theme))
     for (let n = 1; n <= 16; n++) (P.binColors?.(n, theme) ?? []).forEach(add)
     for (let n = 1; n <= 40; n++) (P.yearColors?.(n, theme) ?? []).forEach(add)
