@@ -1,0 +1,59 @@
+/* Side drawer (ui/layout/drawer.ts; kit candidate .mco-drawer, KIT-NOTES.md).
+   [data-presentation] is set by the JS:
+     inline   in the flex row beside the content; slides by margin (content
+              reflows), sticky under the navbar with its own scroll
+     overlay  fixed over the content at --z-drawer, with the scrim
+   Closed = slid out + visibility:hidden, the visibility flip delayed until the
+   slide ends so it animates out but leaves the tab order and the AT tree.
+   .no-anim suppresses the slide for the state applied on page load.
+   Shared panel parts (.dash-panel-head/-title/-body) are styled here and
+   reused by the sheet. */
+
+.dash-drawer {
+  --drawer-w: 21rem;
+  --drawer-ease: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 0 0 var(--drawer-w); width: var(--drawer-w);
+  position: sticky; top: var(--chrome-h, 52px);
+  height: calc(100dvh - var(--chrome-h, 52px));
+  display: flex; flex-direction: column;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  padding-left: env(safe-area-inset-left);
+  margin-left: calc(-1 * var(--drawer-w));
+  visibility: hidden;
+  transition: margin-left var(--drawer-ease), visibility 0s linear 0.22s;
+}
+.dash-drawer.is-open { margin-left: 0; visibility: visible; transition: margin-left var(--drawer-ease), visibility 0s; }
+
+.dash-drawer[data-presentation="overlay"] {
+  position: fixed; z-index: var(--z-drawer);
+  top: var(--chrome-h, 52px); bottom: 0; left: 0;
+  height: auto; width: min(var(--drawer-w), 88vw);
+  margin-left: 0;
+  box-shadow: var(--shadow);
+  transform: translateX(-100%);
+  transition: transform var(--drawer-ease), visibility 0s linear 0.22s;
+}
+.dash-drawer[data-presentation="overlay"].is-open { transform: none; transition: transform var(--drawer-ease), visibility 0s; }
+.dash-drawer.no-anim { transition: none; }
+
+/* The sheet's drag handle has no job in a drawer. */
+.dash-drawer .dash-sheet-handle { display: none; }
+
+/* Shared panel parts (drawer + sheet). */
+.dash-panel-head {
+  position: relative; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  min-height: 52px; padding: 0.5rem 0.75rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-glass);
+}
+.dash-panel-title { font-size: var(--fs-md); font-weight: 600; color: var(--text-primary); }
+.dash-panel-body {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 0.75rem 1rem 1.25rem;
+  display: flex; flex-direction: column; gap: 1.1rem;
+}
+
+/* Scrim (kit .mco-scrim is fixed at --z-map-panel, one tier under the drawer). */
+.dash-scrim { -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }

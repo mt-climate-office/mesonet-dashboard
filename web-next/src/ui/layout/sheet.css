@@ -1,0 +1,39 @@
+/* Bottom sheet (ui/layout/sheet.ts; kit candidate .mco-sheet, KIT-NOTES.md),
+   after mesonet-explorer's #station-sheet. Sits on the tab bar (bottom:
+   --tabbar-h) at --z-detail, under the chrome tiers, over the scrim.
+   data-state="peek" | "full"; .enter/.leaving slide it. The head is the drag
+   target (touch-action: none); the body scrolls on its own and contains its
+   overscroll so a fling never scrolls the page behind. */
+
+.dash-sheet {
+  --sheet-ease: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  position: fixed; z-index: var(--z-detail);
+  left: 0; right: 0; bottom: var(--tabbar-h, 0px);
+  display: flex; flex-direction: column;
+  max-height: min(64dvh, 34rem);
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow);
+  padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  overscroll-behavior: contain;
+  transform: translateY(0);
+  transition: transform var(--sheet-ease), max-height var(--sheet-ease);
+}
+.dash-sheet[hidden] { display: none; }
+.dash-sheet[data-state="full"] { max-height: calc(100dvh - var(--chrome-h, 52px) - var(--tabbar-h, 0px) - 0.5rem); }
+.dash-sheet.enter, .dash-sheet.leaving { transform: translateY(calc(100% + var(--tabbar-h, 0px))); }
+.dash-sheet.no-anim { transition: none; }
+
+.dash-sheet .dash-panel-head { justify-content: center; touch-action: none; padding-top: 0.9rem; }
+.dash-sheet .dash-panel-title { flex: 1; }
+/* Covers the head (except the close button) so a tap or drag anywhere on it works. */
+.dash-sheet-handle {
+  position: absolute; inset: 0 52px 0 0;
+  display: flex; justify-content: center; align-items: flex-start;
+  padding-top: 6px;
+  background: none; border: 0; cursor: grab;
+  touch-action: none;
+}
+.dash-sheet-grab { width: 40px; height: 4px; border-radius: 999px; background: var(--ctrl-border); }
+.dash-sheet .modal-close { position: relative; } /* above the handle in the stacking order */

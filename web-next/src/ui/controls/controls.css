@@ -150,6 +150,8 @@
 /* ── Touch: ≥40px targets (WCAG 2.5.5, HOUSE-STYLE §5.5) ───────────────── */
 @media (hover: none) {
   .ctl-input, .ctl-chip, .ctl-option, .ctl-check { min-height: 40px; }
+  /* ≥ 16 px text in fields: iOS Safari zooms the page into any smaller focused input. */
+  .ctl-input { font-size: var(--fs-md, 1rem); }
   .ctl-clear { width: 40px; height: 40px; }
   .ctl-check input { width: 20px; height: 20px; }
   .ctl-range-row > input[type="range"] { min-height: 40px; }

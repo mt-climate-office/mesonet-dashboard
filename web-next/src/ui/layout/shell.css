@@ -1,0 +1,43 @@
+/* Shell layout (partials/shell.html; DESIGN.md "Layout ladder"):
+     compact  ≤ 640 px wide or ≤ 560 px tall (MCO.viewport.COMPACT_MQ): one column,
+              bottom tab bar, picker = bottom sheet
+     tablet   641–1059 px: section row, picker = overlay drawer
+     desktop  ≥ 1060 px: section row, picker = in-flow drawer beside the content
+   The station picker and the content column share one flex row (.dash-shell). */
+
+.dash-shell { flex: 1; display: flex; align-items: flex-start; min-width: 0; }
+.dash-content {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+  min-height: calc(100dvh - var(--chrome-h, 52px));
+}
+.dash-content > main { flex: 1; min-width: 0; }
+
+/* Navbar: the station switcher takes the free width and truncates; nothing wraps. */
+.mco-navbar { flex-wrap: nowrap; } /* kit-override: one row at every width (the kit wraps; DESIGN.md "Navbar") */
+.mco-navbar > .controls { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
+.dash-switcher {
+  flex-shrink: 1; min-width: 0; max-width: min(100%, 22rem); /* kit-override: .nav-btn never shrinks */
+  font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary);
+}
+.dash-switcher-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.dash-switcher-caret { flex-shrink: 0; opacity: 0.8; }
+
+/* Station header above the sections. */
+.dash-station { padding: 1rem max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left)); }
+.dash-station-name { font-size: var(--fs-xl); font-weight: 600; line-height: 1.15; color: var(--text-primary); }
+.dash-station-meta { margin-top: 0.2rem; font-size: var(--fs-sm); color: var(--text-muted); }
+
+/* The region that view transitions cross-fade (ui/layout/transition.css). */
+.dash-section-host { view-transition-name: dash-section; min-width: 0; }
+
+.dash-section-head { margin-bottom: 0.75rem; }
+.dash-section-title { font-size: var(--fs-lg); font-weight: 600; color: var(--text-primary); }
+.dash-section-note { margin-top: 0.15rem; font-size: var(--fs-sm); color: var(--text-muted); }
+
+@media (max-width: 640px), (max-height: 560px) {
+  .dash-station { padding-top: 0.75rem; }
+  .dash-station-name { font-size: var(--fs-lg); }
+  .dash-station-meta { font-size: var(--fs-xs); }
+  .tab-panel { padding-top: 0.75rem; }
+}

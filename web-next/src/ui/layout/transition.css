@@ -1,0 +1,34 @@
+/* View Transitions (ui/layout/transition.ts). Only the section region
+   (.dash-section-host, view-transition-name: dash-section) moves: a 180 ms
+   cross-fade with a 12 px slide whose direction follows the tab order
+   (html[data-vt-dir]). The page root (navbar, tab bar) does not animate.
+   dash-morph is the tapped tile growing into the destination heading.
+   Reduced motion: none of this (the kit's blanket clamp, plus JS skips
+   startViewTransition, so this block is belt and braces). */
+
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; }
+
+::view-transition-old(dash-section),
+::view-transition-new(dash-section) {
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+::view-transition-old(dash-section) { animation-name: dash-vt-out; }
+::view-transition-new(dash-section) { animation-name: dash-vt-in; }
+html[data-vt-dir="back"]::view-transition-old(dash-section) { animation-name: dash-vt-out-back; }
+html[data-vt-dir="back"]::view-transition-new(dash-section) { animation-name: dash-vt-in-back; }
+
+@keyframes dash-vt-out { to { opacity: 0; transform: translateX(-12px); } }
+@keyframes dash-vt-in { from { opacity: 0; transform: translateX(12px); } }
+@keyframes dash-vt-out-back { to { opacity: 0; transform: translateX(12px); } }
+@keyframes dash-vt-in-back { from { opacity: 0; transform: translateX(-12px); } }
+
+::view-transition-group(dash-morph) { animation-duration: 240ms; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
+}
