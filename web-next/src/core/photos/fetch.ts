@@ -66,13 +66,16 @@ export async function fetchLatestFrames(
 
 /**
  * Keep only the derived frames (manifest `webp_large` blank) whose WebP the
- * bucket actually lists. One listing per (token, UTC day) the frames touch;
- * a failed listing drops that day's derived frames.
+ * bucket actually lists. One listing per (token, UTC day) the frames touch
+ * (a 404 lists nothing). A failed listing drops that day's derived frames,
+ * or with `strict` rejects, so a caller's cache does not keep a partial
+ * answer as final.
  */
 export async function confirmDerived(
   schedule: PhotoSchedule,
   cam: StationCamera,
   frames: PhotoFrame[],
+  opts: { strict?: boolean } = {},
 ): Promise<PhotoFrame[]> {
   const derived = frames.filter((f) => f.derived)
   if (derived.length === 0) return frames
@@ -80,7 +83,8 @@ export async function confirmDerived(
   const lists = await Promise.all(
     pairs.map((p) => {
       const [token, day] = p.split('|')
-      return listDay(schedule, cam, token, day).catch(() => [] as PhotoFrame[])
+      const listing = listDay(schedule, cam, token, day)
+      return opts.strict ? listing : listing.catch(() => [] as PhotoFrame[])
     }),
   )
   const exists = new Set(lists.flat().map((f) => f.webpUrl))

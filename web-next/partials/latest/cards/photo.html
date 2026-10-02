@@ -1,0 +1,66 @@
+<!-- Latest Photo pane (x-data="photoCard", ui/latest/cards/photoCard.ts). data2 archive only:
+     every image is a photos/webp/large/ WebP. Direction chips (aria-pressed), the day and the
+     frames that exist that day; the image button opens a kit dialog with "Download original". -->
+<div class="lc-pane lc-photo" x-data="photoCard" data-testid="photo-card">
+  <template x-if="state === 'none'">
+    <div class="lc-alert" role="note"><strong>Photo unavailable</strong> No station selected.</div>
+  </template>
+  <template x-if="hasControls">
+    <div class="lc-photo-controls">
+      <div class="lc-chips" role="group" aria-label="Camera direction" data-testid="photo-directions">
+        <template x-for="t in pick ? pick.tokens : []" :key="t">
+          <button type="button" class="nav-btn lc-chip" :aria-pressed="String(pick.direction === t)"
+                  @click="selectDirection(t)" x-text="pick.labels[t]"></button>
+        </template>
+      </div>
+      <div class="lc-photo-pickers">
+        <div class="ctl-field" x-data="dateInput({ value: () => day, onChange: (d) => selectDay(d), min: () => minDay(), max: () => today, label: 'Photo date' })">
+          <label class="ctl-label" :for="ids.input" x-text="label"></label>
+          <input type="date" class="ctl-input" :id="ids.input" :min="min()" :max="max()"
+                 :value="draft" :aria-invalid="invalid()" :aria-describedby="describedBy()"
+                 @change="set($event)" data-testid="photo-date">
+          <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
+        </div>
+        <div class="ctl-field" x-data="timeSelect({ options: () => timeOptions(), value: () => timeValue(), onChange: (v) => selectTime(v), label: 'Photo time', emptyText: 'No photos this day' })">
+          <label class="ctl-label" :for="ids.select" x-text="label"></label>
+          <select class="ctl-input ctl-select" :id="ids.select" :disabled="isEmpty()" @change="set($event)" data-testid="photo-time">
+            <template x-if="isEmpty()"><option value="" x-text="emptyText"></option></template>
+            <template x-for="opt in options()" :key="opt.value">
+              <option :value="opt.value" :selected="isSelected(opt.value)" x-text="opt.label"></option>
+            </template>
+          </select>
+        </div>
+      </div>
+    </div>
+  </template>
+  <template x-if="state === 'loading'">
+    <p class="lc-message" role="status">Loading photos…</p>
+  </template>
+  <template x-if="state === 'message'">
+    <p class="lc-message" x-text="message()" data-testid="photo-message"></p>
+  </template>
+  <template x-if="state === 'ready'">
+    <button type="button" class="lc-photo-frame" @click="enlarge()" title="Click to enlarge"
+            :aria-label="'Enlarge ' + pick.label + ' photo for ' + station" aria-haspopup="dialog">
+      <img :src="pick.active.webpUrl" :alt="pick.alt" data-testid="photo-image">
+    </button>
+  </template>
+  <dialog class="mco-modal lc-photo-modal" x-ref="dialog" aria-labelledby="photo-modal-title" data-testid="photo-modal">
+    <div class="info-modal-box lc-photo-modal-box">
+      <div class="info-modal-header">
+        <h2 class="info-modal-title" id="photo-modal-title" x-text="title()"></h2>
+        <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+      </div>
+      <template x-if="pick && pick.active">
+        <div class="lc-photo-modal-body">
+          <img :src="pick.active.webpUrl" :alt="pick.alt">
+          <a class="nav-btn lc-download" :href="pick.active.webpUrl" :download="fileName()" target="_blank" rel="noopener noreferrer"
+             @click="download($event)" data-testid="photo-download">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+            <span>Download original</span>
+          </a>
+        </div>
+      </template>
+    </div>
+  </dialog>
+</div>

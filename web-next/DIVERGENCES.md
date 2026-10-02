@@ -784,6 +784,137 @@ ECharts host (`ui/charts/chart.ts`) and the Ag builders (`core/charts/ag*.ts`) v
 - **New:** each chart has an `.sr-only` table twin (date/time column plus the plotted values, "—" for missing, "frozen" for masked soil cells) and an `aria-label` on the canvas. Animations run only on first draw, and not at all under reduced motion.
 - **Why:** HOUSE-STYLE §5.
 
+## Latest Data
+
+Layout, sidebar and station plot (`partials/latest/index.html`, `ui/latest/{sidebar,timeseries}.ts`,
+`core/latest`, `core/charts/latestTimeseries.ts`). IDs refer to `web/scripts/fidelity/CHECKLIST.md`.
+Plotted values were checked against web/ point for point: acebozem hourly, mdamalta daily and arskeogh raw, all at level 2, with no differences.
+
+### Layout (LDC-001, LDC-002, LDP-002, LDP-021, MOB-002)
+- **Same as web/:** sidebar about 1/4, plot about 1/2 and cards about 1/4 on wide screens. On wide screens the card column is viewport-tall, and the bottom card fills the rest of it.
+- **New:**
+  - 768–1199 px: the sidebar and plot sit side by side, with the two cards in a row under them. Below 768 px everything stacks.
+  - The plot is as tall as its panels need (190 px per panel, 340 px for a single panel, 160 px on phones), and the page scrolls. The plot has no inner scroll box.
+  - The sidebar has a "Controls" heading (LDC-001), but it still cannot collapse (LDC-002 stays a gap).
+- **Why:** one scroll container is easier to use on touch screens. Collapsing matters less now that the card column wraps below 1200 px.
+
+### Station picker (ST-001)
+- **web/:** a searchable Select whose labels read "{name} ({sub_network})".
+- **New:**
+  - The kit-style combobox lists stations under network headings, with the plain name as the label and the id beside it.
+  - Typing also matches the NWSLI id and the county.
+  - The selected station stays in the list when the network filter hides its network, as it stays on the map.
+- **Why:** with the headings, the network suffix only repeated itself. The NWSLI search covers the old `/dash/<NWSLI>` users.
+
+### Network filter (ST-002, ST-003)
+- **Same as web/:** chips come from the catalog's networks, all are on by default, and turning every chip off shows every station.
+- **New:** turning every catalog network back on clears `nets` from the URL. A network that has no chip (Cooperator, while the catalog has none) is dropped from the stored value. The filter applies to the picker and the locator map through `core/latest/stations.ts`.
+
+### Date range (LDC-003, LDC-004)
+- **web/:** one Mantine range picker with a maxDate of today. It had no minimum, which replicated the legacy bug LDC-004.
+- **New:**
+  - Start and End are two native date inputs, bounded from the station's install date to today, with an inline error for an invalid range.
+  - Choosing the default window (the last 14 days ending today) clears `from`/`to`, so the view keeps rolling forward.
+  - A malformed `?from`/`?to` shows empty inputs and the no-data message.
+- **Why:** native inputs are accessible and mobile friendly. The bound fixes LDC-004 (legacy bug not ported).
+
+### Variable chips (LDC-011 to LDC-014)
+- **Same as web/:** the chip set (station elements or the sorted defaults), `ppt_corrected` excluded, `vars=` means "No variables selected", and the list scrolls past about 200 px.
+- **New:**
+  - Panels follow the order of selection: a chip turned on adds its panel at the bottom. web/ reordered the panels to chip order once any chip changed.
+  - Variables the current station lacks stay in `vars`, so they come back at the next station that has them.
+  - The five defaults, in default order, store as an absent `vars`.
+
+### gridMET switch (LDC-009)
+- **New:** a native checkbox with `role="switch"`. The help text is always visible under it instead of in a hover tooltip.
+- **Why:** hover-only text is unreachable on touch screens and by keyboard.
+
+### One time axis, zoom and the URL (LDP-001, LDP-003)
+- **web/:** Plotly subplots with `matches: 'x'`, x range forced to [first day − 1, last day + 1], and drag pan or zoom writing `from`/`to`. A double click reset the view to the defaults.
+- **New:**
+  - One ECharts grid per variable, with every x axis on one shared dataZoom: shift+wheel, pinch, the slider on wide screens, and drag pan on desktop. The hover line is linked across all panels.
+  - On load, back/forward or a sidebar change, the visible window is exactly the URL dates, from 00:00 on the start date to the end of the end date. The axis extends one window length on either side, capped at the install date and tomorrow.
+  - `from`/`to` are the day-granular *fetch* window. Zooming or panning inside the loaded days changes neither the URL nor the data, and the view is never snapped to whole days, so raw data zooms below a day. Once the view reaches past the loaded days, `from`/`to` become the days the view touches, clamped to install date … today, and the data refetches while the view stays where the user left it (`core/latest/view.ts#zoomWindow`). A reload shows the whole URL window.
+  - The previous plot stays on screen, marked "Updating…", while a new window for the same station loads.
+  - There is no double-click reset. The date inputs and "Display Latest 2 Weeks" do that job.
+- **Why:** with the ±1 day padding, every refetch would have widened the URL by two days.
+
+### Panel styling (LDP-007, LDP-009, LDP-010, LDP-011, LDP-013, LDP-016)
+- **New:**
+  - Colors come from `core/palette` ("House style"): variable families, Blues precipitation bars, YlOrRd ETr bars and batlow soil depths.
+  - The soil depth labels (LDP-013) are a key row above the panel (a line swatch plus "2 in") instead of white text on colored chips. White text failed contrast on the light depth colors.
+  - A panel with several columns of one variable (for example Air Temperature at 2 m and 8 ft) gives each column its own dash and a key row. Legacy colored them identically.
+  - Bars are at least 1 px wide, so raw 5–15 minute precipitation stays visible over a week.
+  - The Snow Depth axis runs from 0 to a round number at or above max(1, data max) (LDP-016 range with a readable top tick).
+  - Daily values sit at local noon, as in the Ag charts.
+
+### Hover (LDP-008, LDP-009, LDP-010)
+- **web/:** an x-unified hover per subplot showing the raw `%{y}`.
+- **New:**
+  - One tooltip for the hovered time across every panel, grouped under each variable's name.
+  - Soil rows show the depth ("2 in: 13.11 %"). Precipitation and ETr keep the legacy "Precipitation Total" / "Reference ET Total".
+  - Values are rounded to 2 decimals, or 3 below 0.1, and carry their unit.
+
+### gridMET normals (LDP-018, LDP-019)
+- **Same as web/:** the data and joins: the q25-of-min to q75-of-max band for Air Temperature and RH, and the 75th/median/25th markers for Precipitation and ETr.
+- **New:**
+  - The band and dashed edges use the palette `NORMALS` role (a `--text-dim` tint) instead of black lines over `rgba(107,107,107,0.4)`. The markers are `--text-dim`, not black, so they show in the dark themes.
+  - A chart-wide key names them ("gridMET normal (1991–2020)", "▼ 75th ● median ▲ 25th pct. normal"). Hovering shows the normal range or percentile values.
+
+### Sensor-change overlays (SC-008)
+- **web/:** a grey `rgba(200,200,200,1)` rectangle plus an invisible hover polygon over the data range.
+- **New:**
+  - A hatched full-height span in the palette `SENSOR_EVENT` role, with a "Sensor change" key at the top of the chart.
+  - The legacy hover text (SC-009, verbatim) appears in the axis tooltip whenever the hovered time falls inside a span on that panel.
+- **Why:** the hatch keeps the overlay readable without color (HOUSE-STYLE §6). One axis tooltip replaces the polygon trick.
+
+### Accessible table twin
+- **New:** the plot's `.sr-only` table holds at most the first 500 time steps, then a row reading "Showing first 500 of N rows; use the Data Downloader for the full record."
+- **Why:** a raw window spanning weeks would otherwise build tens of thousands of cells.
+
+### Announcements
+- **New:** when a new station, window or aggregation finishes loading, the live region says "Chart updated: {station}, {hourly|daily|raw} data, {start} to {end}, {n} variables." Plotly had no announcement.
+- **Why:** HOUSE-STYLE §5.1 (canvas changes are invisible to screen readers).
+
+## Latest cards
+
+Top card (Wind Rose / Weather Forecast / Latest Photo) and bottom card (Locator Map / Station Metadata / Current Conditions). Card defaults, the camera-schedule rule for Latest Photo, data2-only photos and the NWS forecast cards are carried over from web/ (LDT-002, LDT-003, LDT-009 to LDT-015, LDB-002, LDB-010 above); this section lists what changes versus web/.
+
+### Card switchers
+- **web/:** Mantine `SegmentedControl`s.
+- **New:** the kit segmented control (a radio fieldset in `.seg-btns`): arrow keys move between cards, a disabled Latest Photo is skipped, and each pick writes `?card=` / `?info=`. Labels and order are unchanged (LDT-001, LDB-001).
+- **Why:** kit first; native radio keyboard behaviour.
+
+### No Wind Rose flash before the photo
+- **web/:** with no `?card=`, the top card drew the Wind Rose (and requested its data) while the camera schedule loaded, then switched to Latest Photo for camera stations.
+- **New:** the auto choice shows "Loading…" until the schedule answers, then the Photo or the Wind Rose. An explicit `?card=` renders at once.
+- **Why:** one less request and no content swap for camera stations; the final card is the same (`core/cards/cardDefaults.ts`).
+
+### Wind rose
+- **web/:** Plotly barpolar, Plasma_r bins, title in Courier New over the polar plot, hover "{bin} mph / {dir}: {count}", legend names without units.
+- **New:** ECharts stacked polar bars with batlow bin colors (palette "wind-rose bins"); the title "Wind Data from {start} to {end}" is a heading above the chart (Space Mono); the legend names carry the unit ("4 – 6 mph") and wrap to two rows instead of paging; an `.sr-only` table twin lists the counts per direction and bin. Counts, bins, labels and the window/aggregation rule are unchanged (LDT-005 to LDT-007).
+- **Why:** house palette and fonts; all bins visible in a narrow card; HOUSE-STYLE §5.
+
+### Weather Forecast
+- **web/:** Mantine period cards with a hover tooltip for the detailed forecast and a drop icon for the precipitation chance; the raw request error as the failure text.
+- **New:** kit-token period cards in a keyboard-scrollable strip; the detailed forecast is the card's `title` and is in the accessible name; precipitation chance as "30%". On failure: "The NWS forecast is unavailable right now.", a Retry button and the NWS page link. Icons are shown only from `https://api.weather.gov/` (the page CSP's only image host for NWS).
+- **Why:** text-only rendering of API strings, a recoverable failure state.
+
+### Latest Photo
+- **web/:** Mantine chips, date picker popover, Select and Modal.
+- **New:** `aria-pressed` direction chips, a native date input bounded by the camera's first month and today, a native select of the frames that exist that day, and a kit `<dialog class="mco-modal">` (Esc and backdrop close, focus returns to the image button). "Download original" is in the dialog and saves the shown `webp_large` WebP under its archive basename, as web/ did. It is a link (`download` = basename); the WebP is prefetched as a blob when the dialog opens and saved without awaiting in the click, so the user gesture holds (Safari); if the blob is not ready the link opens the WebP in a new tab instead of web/'s late `window.open`. A past day whose derived WebPs cannot be confirmed shows the frames the manifest names and is retried later instead of being cached as final. The image is a `<button>`, so Enter/Space open the dialog.
+- **Why:** kit components; native controls are keyboard and screen-reader complete.
+
+### Current Conditions timestamp
+- **web/:** `dayjs(ts)` formatted the API stamp in the browser's time zone ("MMM D, YYYY h:mm A"), and Safari could not parse the space-separated stamp with an offset.
+- **New:** the stamp is read as Mountain wall clock by hand (`formatLatestStamp`), same format, so every viewer sees Mountain Time.
+- **Why:** ARCHITECTURE "Time" (all stamps MT, no `new Date(string)`).
+
+### Tables
+- **web/:** Mantine tables, odd rows `rgb(220,220,220)` (legacy TABLE_STYLING).
+- **New:** odd rows `--bg-raised`; row labels are `<th scope="row">`; values in Space Mono. Rows, order and values are unchanged (LDB-003 to LDB-009); the Precipitation Summary is still HydroMet only.
+- **Why:** house tokens in all three themes.
+
 ## Ag Tools (web-next)
 
 The Ag tab UI (`partials/ag/*`, `ui/ag/*`, logic in `core/ag/view/tab.ts`, `results.ts`, `keys.ts`) vs `web/src/tabs/AgToolsTab.tsx` + `features/ag/ui/AgVariableView.tsx`. Data, compute, texts and URL behaviour are unchanged (computed client-side from level-2 observations; only `/derived` requests are `elements=swp` and the `percent_saturation&keep=true` porosity rows).
