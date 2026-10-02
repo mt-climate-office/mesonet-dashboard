@@ -8,7 +8,7 @@ import type { NwsForecast, Station } from '../../../core/api'
 import type { Resource } from '../../../core/cache'
 import { forecastDetailUrl, forecastHeading, forecastRows, type ForecastCardRow } from '../../../core/cards'
 import { component } from '../../component'
-import { nwsForecast } from './resources'
+import { nwsForecast } from '../../station/resources'
 
 export function forecastCard() {
   return component({

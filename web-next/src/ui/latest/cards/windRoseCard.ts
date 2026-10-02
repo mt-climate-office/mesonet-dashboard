@@ -11,7 +11,7 @@ import { windRoseChart, windRoseTable, windRoseTitle } from '../../../core/chart
 import { buildWindRoseModel, type WindRoseModel } from '../../../core/models/windRose'
 import type { ChartBindings } from '../../charts/chart'
 import { component } from '../../component'
-import { windObs } from './resources'
+import { windObs } from '../../station/resources'
 
 export function windRoseCard() {
   return component({

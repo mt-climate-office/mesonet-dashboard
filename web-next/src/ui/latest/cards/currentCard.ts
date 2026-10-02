@@ -6,7 +6,7 @@
 import Alpine from 'alpinejs'
 import { currentConditionsRows, pptSummaryRows } from '../../../core/cards'
 import { component } from '../../component'
-import { latestObs, pptSummary } from './resources'
+import { latestObs, pptSummary } from '../../station/resources'
 
 type Row = readonly [string, string]
 

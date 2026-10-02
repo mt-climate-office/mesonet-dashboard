@@ -10,7 +10,7 @@ import { visibleStationIds } from '../../../core/latest/stations'
 import { BOTTOM_CARDS, type BottomCard } from '../../../core/url-schema'
 import type { SegmentedOption } from '../../controls/segmented'
 import { component } from '../../component'
-import { latestObs } from './resources'
+import { latestObs } from '../../station/resources'
 
 export function bottomCard() {
   return component({

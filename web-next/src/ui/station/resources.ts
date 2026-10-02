@@ -1,12 +1,13 @@
 /**
- * The Latest cards' fetches, each one `$store.data.cached` call with its key
+ * Per-station fetches shared by the sections (Now, About, the Compare cards),
+ * each one `$store.data.cached` call with its key
  * and TTL (ARCHITECTURE "Data flow"). Keys encode every fetcher input.
  * Components call these from getters; the cache dedupes repeated reads.
  */
 import Alpine from 'alpinejs'
-import { fetchNwsForecast, getPptSummary, getStationLatest, getStationRecord, type ObservationRow } from '../../../core/api'
-import type { Resource } from '../../../core/cache'
-import { fetchOnePagers, ONE_PAGERS_STALE_MS, type WindRoseRequest } from '../../../core/cards'
+import { fetchNwsForecast, getPptSummary, getStationLatest, getStationRecord, type ObservationRow } from '../../core/api'
+import type { Resource } from '../../core/cache'
+import { fetchOnePagers, ONE_PAGERS_STALE_MS, type WindRoseRequest } from '../../core/cards'
 import {
   confirmDerived,
   fetchLatestFrames,
@@ -16,7 +17,7 @@ import {
   type PhotoFrame,
   type PhotoSchedule,
   type StationCamera,
-} from '../../../core/photos'
+} from '../../core/photos'
 
 const MIN = 60_000
 const cached = <T>(key: string, fn: () => Promise<T>, ttl: number): Resource<T> =>

@@ -5,7 +5,7 @@
 import Alpine from 'alpinejs'
 import { findOnePager, metadataRows, type MetadataRow } from '../../../core/cards'
 import { component } from '../../component'
-import { onePagers } from './resources'
+import { onePagers } from '../../station/resources'
 
 export function metadataCard() {
   return component({

@@ -273,7 +273,7 @@ API base is `https://mesonet.climate.umt.edu/api/` (`utils/params.py:23`), writt
 
 | ID | Feature / expected behavior | Legacy ref | Auto | web/ status | web-next status |
 |---|---|---|---|---|---|
-| OP-001 | One-pagers fetched on each Metadata tab render from `https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/one-pagers.json` (list of `{station, url}`) | `app.py:341-346` | H | match — same one-pagers.json, 30-min in-memory cache (links expire) (components/onePagers.ts:8-43, StationMetadataCard.tsx:14-22) | intentional divergence — same one-pagers.json, 30-min $store.data cache + http(s) URL filter (core/cards/onePagers.ts, ui/latest/cards/resources.ts:54); DIVERGENCES "Latest cards › Station one-pager link (OP-001)" (W4a) |
+| OP-001 | One-pagers fetched on each Metadata tab render from `https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/one-pagers.json` (list of `{station, url}`) | `app.py:341-346` | H | match — same one-pagers.json, 30-min in-memory cache (links expire) (components/onePagers.ts:8-43, StationMetadataCard.tsx:14-22) | intentional divergence — same one-pagers.json, 30-min $store.data cache + http(s) URL filter (core/cards/onePagers.ts, ui/station/resources.ts:54); DIVERGENCES "Latest cards › Station one-pager link (OP-001)" (W4a) |
 | OP-002 | If found, a row "Station One-Pager" with markdown "[Click to View]({url})" is inserted at index 2 (after Long Name). Missing station or fetch error means no row | `app.py:346-352` | H | match — "Station One-Pager" / "Click to View" after Long Name; missing → no row (StationMetadataCard.tsx:52-69) | match — "Station One-Pager"/"Click to View" after Long Name (core/cards/metadata.ts:28); harness: latest PASS, card table rows/values equal to web/ (73 tables) |
 
 ## 16. URL / deep-link / share behaviors
@@ -409,7 +409,7 @@ P1 = wrong data / broken · P2 = missing feature · P3 = cosmetic, wording or un
 | P3 | LDB-007 | Real Feel row omitted when wind ≤ 0; legacy still shows 35.74 + 0.6215T at calm wind | `src/core/cards/currentConditions.ts:84-91` | Compute whenever T and V are finite, or document |
 | P3 | LDT-015 | Photo dialog image max-height 78vh (legacy 86vh; the CSS comment says 86vh) | `src/styles/cards.css:72-76` | Use 86vh or document 78vh |
 | P3 | LDB-003 | Extra County and NWSLI ID rows and "—" for blanks are undocumented | `src/core/cards/metadata.ts:24-36` | Document under "Current Conditions rows"/"Tables" or drop |
-| P3 | OP-001 | one-pagers.json cached 30 min in memory (legacy fetched each render); undocumented | `src/ui/latest/cards/resources.ts:54` | Document (the behaviour is sound) |
+| P3 | OP-001 | one-pagers.json cached 30 min in memory (legacy fetched each render); undocumented | `src/ui/station/resources.ts:54` | Document (the behaviour is sound) |
 | P3 | LDB-009 | Precipitation Summary rounds to 2 decimals ("0.10 in"); the " in" suffix is documented, the rounding is not | `src/core/cards/currentConditions.ts:100-108` | One clause in "Current Conditions rows" |
 
 ### Ag Tools
