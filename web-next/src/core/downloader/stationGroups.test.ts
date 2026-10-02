@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Station } from '../api'
-import { DL_MARKER_COLORS, groupStations } from './stationGroups'
+import { groupStations } from './stationGroups'
 import { clampStart, dateRangeError } from './request'
 
 const st = (
@@ -33,22 +33,19 @@ const STATIONS = [
 ]
 
 describe('groupStations', () => {
-  it('merges co-located stations and colours by network (legacy plot_station)', () => {
+  it('merges co-located stations (legacy plot_station)', () => {
     const g = groupStations(STATIONS, null)
     expect(g).toHaveLength(3)
     const boz = g.find((x) => x.codes.includes('acebozem'))!
     expect(boz.codes).toEqual(['acebozem', 'bozmtest'])
     expect(boz.longNames).toEqual(['Bozeman (HydroMet)', 'Bozeman Test (AgriMet)'])
-    expect(boz.color).toBe(DL_MARKER_COLORS.coLocated)
-    expect(g.find((x) => x.codes[0] === 'lololowr')!.color).toBe(DL_MARKER_COLORS.HydroMet)
-    expect(g.find((x) => x.codes[0] === 'arskeogh')!.color).toBe(DL_MARKER_COLORS.AgriMet)
+    expect(g.find((x) => x.codes[0] === 'lololowr')!.longNames).toEqual(['Lolo Lower (HydroMet)'])
   })
 
-  it('marks the group holding the selected station gold', () => {
+  it('marks the group holding the selected station', () => {
     const g = groupStations(STATIONS, 'bozmtest')
     const boz = g.find((x) => x.codes.includes('bozmtest'))!
     expect(boz.selected).toBe(true)
-    expect(boz.color).toBe(DL_MARKER_COLORS.selected)
     expect(g.filter((x) => x.selected)).toHaveLength(1)
   })
 })

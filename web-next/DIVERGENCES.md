@@ -914,3 +914,52 @@ Top card (Wind Rose / Weather Forecast / Latest Photo) and bottom card (Locator 
 - **web/:** Mantine tables, odd rows `rgb(220,220,220)` (legacy TABLE_STYLING).
 - **New:** odd rows `--bg-raised`; row labels are `<th scope="row">`; values in Space Mono. Rows, order and values are unchanged (LDB-003 to LDB-009); the Precipitation Summary is still HydroMet only.
 - **Why:** house tokens in all three themes.
+
+## Downloader (web-next)
+
+Supersedes the web/ notes above only where stated. CSV output is byte-identical
+to web/ for the same request (checked for acebozem and lololowr × daily /
+hourly / monthly, derived-only, `qc=0/1`, `rmna=true`, default hourly dates,
+a confirmed > 366-day hourly range, a clamped start and `pub=true`); request,
+join, monthly and CSV code is the same `core/downloader/request.ts`,
+`core/aggregate.ts` and `core/csv.ts`.
+
+- **Variables picker.** A grouped checkbox panel (`multiselect`: filter box,
+  "Standard elements" / "Derived variables", per-group Select all, removable
+  chips) replaces the Mantine dropdown. Ticking options writes `els` in option
+  order; a URL's own order is kept until the user edits it.
+- **"Show uncommon variables"** is a native checkbox with `role="switch"`.
+- **Dates** are two native date inputs bounded by the install date and today.
+  The control shows its own bound/order error; when an old link's start was
+  clamped past the end, the install-specific message is shown under it too.
+  Browser form validation is off so Run always reports the problem inline.
+- **Run waits for the station catalog.** Run is disabled while a `?s=` station
+  is still being confirmed, so an early click no longer says "Please select a
+  station…" for a station that is set.
+- **Messages** are kit-styled inline notes (⚠ + text, accent edge), not
+  coloured Mantine alerts; Run/Download hints keep their web/ wording.
+- **Preview chart (DL-017).** ECharts small multiples, one grid per column,
+  linked x zoom and axis pointer, the column name as each panel's title above
+  the plot (not a rotated y title). Lines use the palette's preview cycle
+  (`previewColor`, Tol bright) instead of black; lines break at gaps,
+  monthly panels add markers. The canvas grows 200 px per column. A
+  `.sr-only` table twin lists every timestamp with data.
+- **Live region (new).** Run announces "Requesting … data for {station}…" and
+  then "Request finished: N rows, M columns. Download CSV is ready." (or no
+  data / failed).
+- **Funding footer (DL-020)** keeps its text, bold weight, 40 px height and
+  in-flow placement, but is filled with the kit `--accent` / `--text-on-accent`
+  tokens instead of `#129dff` on black (tokens only; legible in all themes).
+- **Run always refetches.** Download requests bypass `$store.data` (the one
+  exception to the shared cache): the component keeps only the latest result,
+  drops it when the station changes, and ignores a response from an older Run.
+- **Run is disabled while the date inputs hold an invalid draft**, and the
+  message under Run (no station/variable, bad dates, "Run Request" first)
+  clears as soon as the inputs fix it, not only on the next click. When the
+  clamped-start install message applies, the date control's own error is
+  hidden (`dateRange` `showError`) so only that message shows.
+- **Variables that fail to load** show "Variables could not be loaded." with a
+  Retry button (web/ showed an empty list).
+- **Monthly preview** ticks once per month ("Jan 2025", "Feb 2025", …) when
+  the range is 36 months or less, as legacy's `dtick M1`; labels that would
+  overlap are skipped.

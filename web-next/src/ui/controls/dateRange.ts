@@ -1,6 +1,7 @@
 // Start/end date pair: two native date inputs bounded by min/max (e.g. a
 // station's period of record), an inline error, and `YYYY-MM-DD` output only
-// when the range is valid. Validation in dateModel.ts.
+// when the range is valid. Validation in dateModel.ts. Optional `onValidity(valid)`
+// reports draft validity; `showError: false` (or a getter) hides the inline message.
 //
 // Markup (register with Alpine.data('dateRange', dateRange)):
 //
@@ -41,6 +42,10 @@ export interface DateRangeOptions {
   max?: () => string | null
   /** Fieldset legend. */
   label: string
+  /** Called with the draft's validity on init and whenever it flips (e.g. to disable a submit button). */
+  onValidity?: (valid: boolean) => void
+  /** Show the inline error (default true). A getter lets the caller swap in its own message for some cases. */
+  showError?: boolean | (() => boolean)
 }
 
 /** Alpine.data factory for the date range; see the markup in the file header. */
@@ -58,11 +63,25 @@ export function dateRange(opts: DateRangeOptions) {
       return opts.value()
     },
 
+    /** Draft is emittable; watched by name so bounds changes (min/max) count too. */
+    get valid(): boolean {
+      return this.error() === null
+    },
+
     init(): void {
       this.$watch('external', (v) => {
         this.start = v.start
         this.end = v.end
       })
+      if (opts.onValidity) {
+        opts.onValidity(this.valid)
+        this.$watch('valid', (v: boolean) => opts.onValidity?.(v))
+      }
+    },
+    /** Whether the inline error is shown (`showError` option). */
+    errorShown(): boolean {
+      const s = opts.showError ?? true
+      return typeof s === 'function' ? s() : s
     },
     min(): string | null {
       return opts.min?.() ?? null
@@ -74,13 +93,13 @@ export function dateRange(opts: DateRangeOptions) {
       return validateRange({ start: this.start, end: this.end }, this.min() ?? undefined, this.max() ?? undefined)
     },
     errorText(): string {
-      return this.error()?.message ?? ''
+      return this.errorShown() ? (this.error()?.message ?? '') : ''
     },
     invalid(field: DateError['field']): 'true' | null {
       return this.error()?.field === field ? 'true' : null
     },
     describedBy(): string | null {
-      return this.error() ? this.ids.error : null
+      return this.error() && this.errorShown() ? this.ids.error : null
     },
 
     setStart(event: Event): void {

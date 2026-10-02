@@ -18,6 +18,7 @@ import { multiselect } from './ui/controls/multiselect'
 import { rangeSlider } from './ui/controls/rangeSlider'
 import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
+import { downloader } from './ui/downloader/downloader'
 import { downloaderMap, stationMap } from './ui/map/presets'
 import { bottomCard } from './ui/latest/cards/bottomCard'
 import { currentCard } from './ui/latest/cards/currentCard'
@@ -35,6 +36,8 @@ import './styles/app.css'
 import './ui/controls/controls.css'
 import './ui/map/map.css'
 import './ui/charts/chart.css'
+import './styles/downloader.css'
+
 // Latest Data (W2 layout/sidebar/timeseries).
 import { latestSidebar } from './ui/latest/sidebar'
 import { latestTimeseries } from './ui/latest/timeseries'
@@ -87,6 +90,10 @@ Alpine.data('downloaderMap', downloaderMap)
 // Charts (W1): the one ECharts host; ECharts itself loads lazily on the first
 // render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".
 Alpine.data('chart', chart)
+
+// Data Downloader (W2): the tab's one component (ui/downloader/downloader.ts);
+// x-data="downloader" in partials/downloader/index.html.
+Alpine.data('downloader', downloader)
 
 // Latest Data (W2 layout/sidebar/timeseries): partials/latest/index.html.
 Alpine.data('latestSidebar', latestSidebar)
