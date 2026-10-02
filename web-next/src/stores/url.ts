@@ -4,13 +4,15 @@
  * one `history.replaceState` per tick, keeping the hash.
  */
 import { DEFAULT_TAB, parseTabHash, type TabHash } from '../core/tabs'
-import { readUrlState, writeUrlSearch, type UrlState } from '../core/url-schema'
+import { readUrlState, viewHref, writeUrlSearch, type UrlState } from '../core/url-schema'
 
 export interface UrlStore {
   /** Every schema key, parsed (defaults filled in). Read-only: change it with `set`. */
   state: UrlState
   /** Active tab from the hash; unknown or hidden hashes read as Latest. */
   tab: TabHash
+  /** Absolute URL of the current view, including writes not yet flushed (Share copies it). */
+  readonly href: string
   /** Merge `patch` into `state`; the URL updates once at the end of this tick. */
   set(patch: Partial<UrlState>): void
   /** Switch tabs by setting the hash (adds a history entry, like the React app). */
@@ -34,6 +36,10 @@ export function createUrlStore(): UrlStore {
       sync()
       window.addEventListener('popstate', sync)
       window.addEventListener('hashchange', sync)
+    },
+
+    get href() {
+      return viewHref(location, this.state, touched)
     },
 
     set(patch) {

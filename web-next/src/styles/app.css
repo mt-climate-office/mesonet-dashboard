@@ -42,4 +42,50 @@ a.nav-btn { text-decoration: none; }
   color: var(--text-muted);
   text-align: center;
 }
-.app-footer a { color: var(--accent-line); }
+.app-footer p + p { margin-top: 0.2rem; }
+/* Underlined, not color-only (WCAG 1.4.1), as the kit does for .info-section links. */
+.app-footer a { color: var(--accent-line); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Notice banners (ui/shell/globalNotices.ts): the persistent, linkable twin
+   of a transient kit toast. Kit tokens; the icon + text carry the meaning. */
+.notice-stack {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left));
+}
+.notice-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  max-width: 60rem;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0.55rem 0.6rem 0.55rem 0.85rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-line);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.notice-banner > svg { flex-shrink: 0; margin-top: 0.2rem; stroke: var(--accent-line); }
+.notice-banner p { flex: 1; min-width: 0; }
+.notice-banner a { color: var(--accent-line); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Outage dialog (partials/outage.html): kit info modal + a tone line. */
+.outage-tone {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.outage-tone svg { stroke: var(--accent-line); flex-shrink: 0; }
+.outage-box { border-top: 3px solid var(--accent-line); } /* kit-override: marks the dialog as a notice, not help */
+.outage-message p + p { margin-top: 0.6rem; }
+.outage-actions { display: flex; justify-content: flex-end; margin-top: 1.25rem; }

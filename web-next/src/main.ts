@@ -18,7 +18,10 @@ import { rangeSlider } from './ui/controls/rangeSlider'
 import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
 import { downloaderMap, stationMap } from './ui/map/presets'
+import { globalNotices } from './ui/shell/globalNotices'
+import { helpDialog } from './ui/shell/helpDialog'
 import { navMeta } from './ui/shell/navMeta'
+import { outageNotice } from './ui/shell/outageNotice'
 import { tabBar } from './ui/shell/tabBar'
 import './styles/app.css'
 import './ui/controls/controls.css'
@@ -46,8 +49,12 @@ Alpine.store('station', createStationStore())
 
 /* 3. Components (one line each; x-data="<name>" in the partials). -------- */
 
+// Global UI (W1): navbar, notices, Help and outage dialogs (ui/shell/*).
 Alpine.data('tabBar', tabBar)
 Alpine.data('navMeta', navMeta)
+Alpine.data('helpDialog', helpDialog)
+Alpine.data('outageNotice', outageNotice)
+Alpine.data('globalNotices', globalNotices)
 
 // Form controls (ui/controls/README.md): x-data="combobox({ … })" etc.
 Alpine.data('combobox', combobox)
