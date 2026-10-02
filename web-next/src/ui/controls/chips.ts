@@ -12,8 +12,9 @@
 //     </template>
 //   </div>
 
-import { defineControl, uniqueId } from './define'
-import { toggleIn } from './selectionModel'
+import { component } from '../component'
+import { uniqueId } from './ids'
+import { toggleIn } from '../../core/controls/selectionModel'
 
 export interface ChipOption {
   value: string
@@ -32,7 +33,7 @@ export interface ChipsOptions {
 
 /** Alpine.data factory for the chip group; see the markup in the file header. */
 export function chips(opts: ChipsOptions) {
-  return defineControl({
+  return component({
     label: opts.label,
     ids: { label: `${uniqueId('chips')}-label` },
 

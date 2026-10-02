@@ -39,11 +39,12 @@
 //     </div>
 //   </div>
 
-import { defineControl, uniqueId } from './define'
-import { filterGroups, groupState, labelFor, optionValues, type GroupState, type MultiselectGroup } from './multiselectModel'
-import { inOrder, setIn, toggleIn } from './selectionModel'
+import { component } from '../component'
+import { uniqueId } from './ids'
+import { filterGroups, groupState, labelFor, optionValues, type GroupState, type MultiselectGroup } from '../../core/controls/multiselectModel'
+import { inOrder, setIn, toggleIn } from '../../core/controls/selectionModel'
 
-export type { MultiselectGroup, MultiselectOption } from './multiselectModel'
+export type { MultiselectGroup, MultiselectOption } from '../../core/controls/multiselectModel'
 
 export interface MultiselectOptions {
   groups: () => MultiselectGroup[]
@@ -58,7 +59,7 @@ export interface MultiselectOptions {
 /** Alpine.data factory for the multiselect; see the markup in the file header. */
 export function multiselect(opts: MultiselectOptions) {
   const base = uniqueId('multiselect')
-  return defineControl({
+  return component({
     label: opts.label,
     ids: { button: `${base}-button`, panel: `${base}-panel`, filter: `${base}-filter` },
     open: false,

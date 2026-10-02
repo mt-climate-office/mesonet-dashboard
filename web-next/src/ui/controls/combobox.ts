@@ -42,10 +42,11 @@
 //     <div role="status" class="sr-only" x-text="status()"></div>
 //   </div>
 
-import { DEFAULT_LIMIT, filterItems, resultSummary, stepIndex, type ComboboxItem } from './comboboxModel'
-import { defineControl, uniqueId } from './define'
+import { DEFAULT_LIMIT, filterItems, resultSummary, stepIndex, type ComboboxItem } from '../../core/controls/comboboxModel'
+import { component } from '../component'
+import { uniqueId } from './ids'
 
-export type { ComboboxItem } from './comboboxModel'
+export type { ComboboxItem } from '../../core/controls/comboboxModel'
 
 export interface ComboboxOptions {
   /** Every selectable item; read reactively, so it may fill in after load. */
@@ -64,7 +65,7 @@ export interface ComboboxOptions {
 /** Alpine.data factory for the combobox; see the markup in the file header. */
 export function combobox(opts: ComboboxOptions) {
   const base = uniqueId('combobox')
-  return defineControl({
+  return component({
     label: opts.label,
     placeholder: opts.placeholder ?? '',
     ids: { label: `${base}-label`, input: `${base}-input`, listbox: `${base}-listbox` },

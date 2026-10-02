@@ -163,3 +163,13 @@ describe('contrast against --bg-surface (kit 0.7.1 snapshot)', () => {
     })
   }
 })
+
+describe('heatmap midpoints', () => {
+  it('every diverging heatmap has a labelled midpoint', () => {
+    for (const key of ['soil_temp', 'swp'] as const) {
+      expect(HEATMAP[key].midpoint, key).toBeTypeOf('number')
+      expect(HEATMAP[key].midpointLabel, key).toBeTruthy()
+    }
+    expect(HEATMAP.swp.midpoint).toBe(15)
+  })
+})

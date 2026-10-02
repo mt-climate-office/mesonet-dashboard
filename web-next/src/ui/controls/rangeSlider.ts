@@ -24,7 +24,8 @@
 //     </div>
 //   </fieldset>
 
-import { defineControl, uniqueId } from './define'
+import { component } from '../component'
+import { uniqueId } from './ids'
 import {
   highSliderMax,
   highToSlider,
@@ -34,9 +35,9 @@ import {
   withLow,
   type RangeConfig,
   type RangeValue,
-} from './rangeModel'
+} from '../../core/controls/rangeModel'
 
-export type { RangeValue } from './rangeModel'
+export type { RangeValue } from '../../core/controls/rangeModel'
 
 export interface RangeSliderOptions extends RangeConfig {
   value: () => RangeValue
@@ -54,7 +55,7 @@ export interface RangeSliderOptions extends RangeConfig {
 export function rangeSlider(opts: RangeSliderOptions) {
   const base = uniqueId('range')
   const cfg: RangeConfig = { min: opts.min, max: opts.max, step: opts.step, allowNone: opts.allowNone }
-  return defineControl({
+  return component({
     label: opts.label,
     lowLabel: opts.lowLabel ?? 'Low threshold',
     highLabel: opts.highLabel ?? 'High threshold',
@@ -63,8 +64,13 @@ export function rangeSlider(opts: RangeSliderOptions) {
     /** Live value while dragging; emitted on change. */
     draft: normalizeRange(opts.value(), cfg),
 
+    /** The value owned by the caller; watched by name so Alpine tracks it. */
+    get external() {
+      return opts.value()
+    },
+
     init(): void {
-      this.$watch(opts.value, (v) => {
+      this.$watch('external', (v) => {
         this.draft = normalizeRange(v, cfg)
       })
     },

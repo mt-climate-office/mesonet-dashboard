@@ -256,14 +256,17 @@ export interface HeatmapScale {
   colors: readonly string[]
   /** Value the neutral stop marks; diverging ramps must label it. */
   midpoint?: number
+  /** Text for the midpoint on the color bar (HOUSE-STYLE §6). */
+  midpointLabel?: string
 }
 
 // Theme-independent: cells are opaque fills, so surface contrast does not apply.
 export const HEATMAP: Record<HeatmapVar, HeatmapScale> = {
-  soil_temp: { colors: reversed(RD_BU), midpoint: 32 }, // °F, freezing is the labelled midpoint
+  soil_temp: { colors: reversed(RD_BU), midpoint: 32, midpointLabel: 'Freezing (32 °F)' },
   soil_vwc: { colors: YL_GN_BU },
   soil_blk_ec: { colors: BATLOW }, // no house rule; the default sequential
-  swp: { colors: reversed(BR_BG) }, // bar magnitude up = drier → brown
+  // Bar magnitude, drier = higher = brown. Midpoint at the wilting point (user decision 2026-10-01).
+  swp: { colors: reversed(BR_BG), midpoint: 15, midpointLabel: 'Wilting point (15 bar)' },
   percent_saturation: { colors: BLUES },
 }
 

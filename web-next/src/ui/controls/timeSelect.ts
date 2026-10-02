@@ -15,7 +15,8 @@
 //     </select>
 //   </div>
 
-import { defineControl, uniqueId } from './define'
+import { component } from '../component'
+import { uniqueId } from './ids'
 
 export interface SelectOption {
   value: string
@@ -34,7 +35,7 @@ export interface TimeSelectOptions {
 
 /** Alpine.data factory for the select; see the markup in the file header. */
 export function timeSelect(opts: TimeSelectOptions) {
-  return defineControl({
+  return component({
     label: opts.label,
     emptyText: opts.emptyText ?? 'No times available',
     ids: { select: uniqueId('time-select') },

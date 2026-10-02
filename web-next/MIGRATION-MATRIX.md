@@ -76,3 +76,14 @@ Settled precedents (MIGRATING.md) and pure-WCAG fixes are applied without asking
    two-row wrap for the preview; W1 controls revisits a compact tab
    `<select>`/drawer if the wrap is judged too tall. **(1) adopt kit
    (static bar) · (2) app override as built · (3) back-port a sticky option?**
+
+## Decisions (batch 1, 2026-10-01)
+
+| # | Decision | Follow-up |
+|---|---|---|
+| 1 | Tab links with `aria-current="page"`: **app override** (tagged) | kit issue [mco-web-style#3](https://github.com/mt-climate-office/mco-web-style/issues/3) |
+| 2 | 3-state theme toggle: **app override** | kit issue [#3](https://github.com/mt-climate-office/mco-web-style/issues/3) (`cycle: true`) |
+| 3 | MapLibre: **keep kit pin 5.18.0**; popups via DOM/`setText`, never `setHTML` on API strings | kit issue [#1](https://github.com/mt-climate-office/mco-web-style/issues/1) (bump the pin) |
+| 4 | Sticky navbar, two-row wrap at 390 px: **app override as built** | kit issue [#4](https://github.com/mt-climate-office/mco-web-style/issues/4) |
+| — | Form errors: `--text-primary` + ⚠ + heavier edge until the kit has a token | kit issue [#2](https://github.com/mt-climate-office/mco-web-style/issues/2) |
+| — | SWP heatmap (BrBG): labelled midpoint at the **wilting point, 15 bar** | `core/palette/roles.ts` `HEATMAP.swp` |

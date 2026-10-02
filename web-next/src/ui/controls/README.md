@@ -10,7 +10,7 @@ How the controls work:
   through a callback (`onChange` / `onSelect`). The caller owns the state, usually a store, so the
   URL stays the source of truth.
 - **Registration.** Register the factories in `main.ts`, e.g. `Alpine.data('combobox', combobox)`.
-- **Logic.** Pure logic lives in `*Model.ts`, with unit tests beside it. The `.ts` factories only hold
+- **Logic.** Pure logic lives in `src/core/controls/*Model.ts` (with unit tests), per the layer rule. The `.ts` factories here only hold
   view state and ARIA wiring.
 - **Review.** To check by hand, open `demo.html` through the Vite dev server with
   `?theme=dark|light|high-contrast`.
@@ -96,14 +96,14 @@ dateRange({ value: () => {start, end}, onChange({start, end}), min?: () => strin
   out of bounds, or start > end.
 - It emits `YYYY-MM-DD` strings only, and only when the range is valid.
 - It never clamps while the user is typing. Callers that need to fit an existing range into a new
-  period (for example, after a station change) use `clampRange` from `dateModel.ts`.
+  period (for example, after a station change) use `clampRange` from `core/controls/dateModel.ts`.
 
 **dateInput** is the same for one date: `dateInput({ value, onChange, min?, max?, label })`.
 
 **timeSelect** is a native `<select>`: `timeSelect({ options: () => {value, label}[], value, onChange,
 label, emptyText? })`. It is disabled with a placeholder row while `options` is empty.
 
-All date parsing is by hand in `dateModel.ts`; the code never calls `new Date(string)`.
+All date parsing is by hand in `core/controls/dateModel.ts`; the code never calls `new Date(string)`.
 
 ```html
 <fieldset class="ctl-fieldset" x-data="dateRange({ value: () => …, onChange: (r) => …, min: () => …, max: () => …, label: 'Dates' })">

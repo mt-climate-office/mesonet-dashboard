@@ -9,9 +9,18 @@ import { createDataStore } from './stores/data'
 import { createStationStore } from './stores/station'
 import { createThemeStore } from './stores/theme'
 import { createUrlStore } from './stores/url'
+import { chips } from './ui/controls/chips'
+import { combobox } from './ui/controls/combobox'
+import { dateInput } from './ui/controls/dateInput'
+import { dateRange } from './ui/controls/dateRange'
+import { multiselect } from './ui/controls/multiselect'
+import { rangeSlider } from './ui/controls/rangeSlider'
+import { segmented } from './ui/controls/segmented'
+import { timeSelect } from './ui/controls/timeSelect'
 import { navMeta } from './ui/shell/navMeta'
 import { tabBar } from './ui/shell/tabBar'
 import './styles/app.css'
+import './ui/controls/controls.css'
 
 /* 1. URL fix-ups, before any store reads `location`. ---------------------- */
 
@@ -37,5 +46,15 @@ Alpine.store('station', createStationStore())
 
 Alpine.data('tabBar', tabBar)
 Alpine.data('navMeta', navMeta)
+
+// Form controls (ui/controls/README.md): x-data="combobox({ … })" etc.
+Alpine.data('combobox', combobox)
+Alpine.data('multiselect', multiselect)
+Alpine.data('dateRange', dateRange)
+Alpine.data('dateInput', dateInput)
+Alpine.data('timeSelect', timeSelect)
+Alpine.data('segmented', segmented)
+Alpine.data('chips', chips)
+Alpine.data('rangeSlider', rangeSlider)
 
 Alpine.start()

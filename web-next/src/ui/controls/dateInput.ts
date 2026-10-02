@@ -13,8 +13,9 @@
 //     <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
 //   </div>
 
-import { validateDate } from './dateModel'
-import { defineControl, uniqueId } from './define'
+import { validateDate } from '../../core/controls/dateModel'
+import { component } from '../component'
+import { uniqueId } from './ids'
 
 export interface DateInputOptions {
   /** Current date as `YYYY-MM-DD`. */
@@ -30,14 +31,19 @@ export interface DateInputOptions {
 /** Alpine.data factory for a single date input; see the markup in the file header. */
 export function dateInput(opts: DateInputOptions) {
   const base = uniqueId('date-input')
-  return defineControl({
+  return component({
     label: opts.label,
     ids: { input: `${base}-input`, error: `${base}-error` },
     /** What the input holds, which may be invalid and so not yet emitted. */
     draft: opts.value(),
 
+    /** The value owned by the caller; watched by name so Alpine tracks it. */
+    get external() {
+      return opts.value()
+    },
+
     init(): void {
-      this.$watch(opts.value, (v) => {
+      this.$watch('external', (v) => {
         this.draft = v
       })
     },

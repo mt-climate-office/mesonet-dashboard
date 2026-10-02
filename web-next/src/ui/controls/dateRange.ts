@@ -24,10 +24,11 @@
 //     <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
 //   </fieldset>
 
-import { validateRange, type DateError, type DateRange } from './dateModel'
-import { defineControl, uniqueId } from './define'
+import { validateRange, type DateError, type DateRange } from '../../core/controls/dateModel'
+import { component } from '../component'
+import { uniqueId } from './ids'
 
-export type { DateRange } from './dateModel'
+export type { DateRange } from '../../core/controls/dateModel'
 
 export interface DateRangeOptions {
   /** Current range as `YYYY-MM-DD` strings. */
@@ -45,15 +46,20 @@ export interface DateRangeOptions {
 /** Alpine.data factory for the date range; see the markup in the file header. */
 export function dateRange(opts: DateRangeOptions) {
   const base = uniqueId('date-range')
-  return defineControl({
+  return component({
     label: opts.label,
     ids: { start: `${base}-start`, end: `${base}-end`, error: `${base}-error` },
     /** Drafts: what the inputs hold, which may be invalid and so not yet emitted. */
     start: opts.value().start,
     end: opts.value().end,
 
+    /** The value owned by the caller; watched by name so Alpine tracks it. */
+    get external() {
+      return opts.value()
+    },
+
     init(): void {
-      this.$watch(opts.value, (v) => {
+      this.$watch('external', (v) => {
         this.start = v.start
         this.end = v.end
       })

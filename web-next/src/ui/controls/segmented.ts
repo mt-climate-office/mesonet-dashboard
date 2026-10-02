@@ -18,7 +18,8 @@
 //     </div>
 //   </fieldset>
 
-import { defineControl, uniqueId } from './define'
+import { component } from '../component'
+import { uniqueId } from './ids'
 
 export interface SegmentedOption {
   value: string
@@ -37,7 +38,7 @@ export interface SegmentedOptions {
 
 /** Alpine.data factory for the segmented control; see the markup in the file header. */
 export function segmented(opts: SegmentedOptions) {
-  return defineControl({
+  return component({
     label: opts.label,
     /** Radio group name, unique per instance. */
     name: uniqueId('segmented'),
