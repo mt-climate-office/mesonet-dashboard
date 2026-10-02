@@ -71,8 +71,43 @@ export function outageTone(color: string): OutageTone {
   return BOOTSTRAP_TONES[color.trim().toLowerCase()] ?? 'warning'
 }
 
-/** sessionStorage key: show each notice once per browser tab. */
-export const outageStorageKey = (id: string) => `outageModalShown:${id}`
+/**
+ * Words shown next to the tone icon, so the notice's severity never rests on
+ * color alone (WCAG 1.4.1).
+ */
+export const OUTAGE_TONE_LABELS: Readonly<Record<OutageTone, string>> = {
+  warning: 'Warning',
+  danger: 'Alert',
+  info: 'Information',
+  success: 'Resolved',
+  neutral: 'Notice',
+}
+
+/** sessionStorage key (app-prefixed, HOUSE-STYLE §4): show each notice once per browser tab. */
+export const outageStorageKey = (id: string) => `mco-dashboard-outage-${id}`
+
+/** The slice of `Storage` the gate needs (sessionStorage at runtime). */
+export interface FlagStorage {
+  getItem(key: string): string | null
+  setItem(key: string, value: string): void
+}
+
+/**
+ * Should `config` open now? True once per notice `id` per tab: an active
+ * notice not yet flagged in `storage`; the flag is written on the same call.
+ * Blocked or missing storage shows the notice (better twice than never).
+ */
+export function claimOutage(config: OutageConfig, storage: FlagStorage | null): boolean {
+  if (!config.active) return false
+  const key = outageStorageKey(config.id)
+  try {
+    if (storage?.getItem(key) != null) return false
+    storage?.setItem(key, '1')
+  } catch {
+    // Private mode / quota: fall through and show it.
+  }
+  return true
+}
 
 /** Fetch + coerce; any failure (network, timeout, bad JSON) → inactive. */
 export async function fetchOutageConfig(

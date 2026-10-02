@@ -5,6 +5,8 @@ import {
   fetchOutageConfig,
   outageTone,
   outageStorageKey,
+  OUTAGE_TONE_LABELS,
+  claimOutage,
 } from './outage'
 
 describe('coerceOutageConfig', () => {
@@ -48,10 +50,52 @@ describe('outageTone', () => {
 })
 
 describe('outageStorageKey', () => {
-  it('matches the legacy key', () => {
+  it('is app-prefixed per notice id', () => {
     expect(outageStorageKey('2026-08-13-partial-outage')).toBe(
-      'outageModalShown:2026-08-13-partial-outage',
+      'mco-dashboard-outage-2026-08-13-partial-outage',
     )
+  })
+})
+
+describe('OUTAGE_TONE_LABELS', () => {
+  it('names every tone in words', () => {
+    for (const t of ['warning', 'danger', 'info', 'success', 'neutral'] as const) {
+      expect(OUTAGE_TONE_LABELS[t]).toMatch(/^[A-Z][a-z]+$/)
+    }
+  })
+})
+
+describe('claimOutage', () => {
+  const memory = () => {
+    const m = new Map<string, string>()
+    return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), m }
+  }
+  const on = coerceOutageConfig({ active: true, id: 'a', message: 'Down' })
+
+  it('shows an active notice once per id', () => {
+    const s = memory()
+    expect(claimOutage(on, s)).toBe(true)
+    expect(s.m.get('mco-dashboard-outage-a')).toBe('1')
+    expect(claimOutage(on, s)).toBe(false)
+    expect(claimOutage({ ...on, id: 'b' }, s)).toBe(true)
+  })
+  it('never shows an inactive notice or writes a flag for it', () => {
+    const s = memory()
+    expect(claimOutage(DEFAULT_OUTAGE_CONFIG, s)).toBe(false)
+    expect(claimOutage({ ...on, active: false }, s)).toBe(false)
+    expect(s.m.size).toBe(0)
+  })
+  it('shows when storage is missing or throws', () => {
+    expect(claimOutage(on, null)).toBe(true)
+    const broken = {
+      getItem: () => {
+        throw new Error('SecurityError')
+      },
+      setItem: () => {
+        throw new Error('SecurityError')
+      },
+    }
+    expect(claimOutage(on, broken)).toBe(true)
   })
 })
 
