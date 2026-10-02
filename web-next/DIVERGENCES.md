@@ -871,3 +871,42 @@ Plotted values were checked against web/ point for point: acebozem hourly, mdama
 ### Announcements
 - **New:** when a new station, window or aggregation finishes loading, the live region says "Chart updated: {station}, {hourly|daily|raw} data, {start} to {end}, {n} variables." Plotly had no announcement.
 - **Why:** HOUSE-STYLE §5.1 (canvas changes are invisible to screen readers).
+
+## Latest cards
+
+Top card (Wind Rose / Weather Forecast / Latest Photo) and bottom card (Locator Map / Station Metadata / Current Conditions). Card defaults, the camera-schedule rule for Latest Photo, data2-only photos and the NWS forecast cards are carried over from web/ (LDT-002, LDT-003, LDT-009 to LDT-015, LDB-002, LDB-010 above); this section lists what changes versus web/.
+
+### Card switchers
+- **web/:** Mantine `SegmentedControl`s.
+- **New:** the kit segmented control (a radio fieldset in `.seg-btns`): arrow keys move between cards, a disabled Latest Photo is skipped, and each pick writes `?card=` / `?info=`. Labels and order are unchanged (LDT-001, LDB-001).
+- **Why:** kit first; native radio keyboard behaviour.
+
+### No Wind Rose flash before the photo
+- **web/:** with no `?card=`, the top card drew the Wind Rose (and requested its data) while the camera schedule loaded, then switched to Latest Photo for camera stations.
+- **New:** the auto choice shows "Loading…" until the schedule answers, then the Photo or the Wind Rose. An explicit `?card=` renders at once.
+- **Why:** one less request and no content swap for camera stations; the final card is the same (`core/cards/cardDefaults.ts`).
+
+### Wind rose
+- **web/:** Plotly barpolar, Plasma_r bins, title in Courier New over the polar plot, hover "{bin} mph / {dir}: {count}", legend names without units.
+- **New:** ECharts stacked polar bars with batlow bin colors (palette "wind-rose bins"); the title "Wind Data from {start} to {end}" is a heading above the chart (Space Mono); the legend names carry the unit ("4 – 6 mph") and wrap to two rows instead of paging; an `.sr-only` table twin lists the counts per direction and bin. Counts, bins, labels and the window/aggregation rule are unchanged (LDT-005 to LDT-007).
+- **Why:** house palette and fonts; all bins visible in a narrow card; HOUSE-STYLE §5.
+
+### Weather Forecast
+- **web/:** Mantine period cards with a hover tooltip for the detailed forecast and a drop icon for the precipitation chance; the raw request error as the failure text.
+- **New:** kit-token period cards in a keyboard-scrollable strip; the detailed forecast is the card's `title` and is in the accessible name; precipitation chance as "30%". On failure: "The NWS forecast is unavailable right now.", a Retry button and the NWS page link. Icons are shown only from `https://api.weather.gov/` (the page CSP's only image host for NWS).
+- **Why:** text-only rendering of API strings, a recoverable failure state.
+
+### Latest Photo
+- **web/:** Mantine chips, date picker popover, Select and Modal.
+- **New:** `aria-pressed` direction chips, a native date input bounded by the camera's first month and today, a native select of the frames that exist that day, and a kit `<dialog class="mco-modal">` (Esc and backdrop close, focus returns to the image button). "Download original" is in the dialog and saves the shown `webp_large` WebP under its archive basename, as web/ did. It is a link (`download` = basename); the WebP is prefetched as a blob when the dialog opens and saved without awaiting in the click, so the user gesture holds (Safari); if the blob is not ready the link opens the WebP in a new tab instead of web/'s late `window.open`. A past day whose derived WebPs cannot be confirmed shows the frames the manifest names and is retried later instead of being cached as final. The image is a `<button>`, so Enter/Space open the dialog.
+- **Why:** kit components; native controls are keyboard and screen-reader complete.
+
+### Current Conditions timestamp
+- **web/:** `dayjs(ts)` formatted the API stamp in the browser's time zone ("MMM D, YYYY h:mm A"), and Safari could not parse the space-separated stamp with an offset.
+- **New:** the stamp is read as Mountain wall clock by hand (`formatLatestStamp`), same format, so every viewer sees Mountain Time.
+- **Why:** ARCHITECTURE "Time" (all stamps MT, no `new Date(string)`).
+
+### Tables
+- **web/:** Mantine tables, odd rows `rgb(220,220,220)` (legacy TABLE_STYLING).
+- **New:** odd rows `--bg-raised`; row labels are `<th scope="row">`; values in Space Mono. Rows, order and values are unchanged (LDB-003 to LDB-009); the Precipitation Summary is still HydroMet only.
+- **Why:** house tokens in all three themes.

@@ -1,0 +1,39 @@
+<!-- Weather Forecast pane (x-data="forecastCard", ui/latest/cards/forecastCard.ts): NWS period
+     cards as text (title = the detailed forecast); degraded message + Retry + NWS link on failure. -->
+<div class="lc-pane" x-data="forecastCard" data-testid="forecast-card">
+  <template x-if="state === 'none'">
+    <p class="lc-message">Pick a station to load the forecast.</p>
+  </template>
+  <template x-if="state === 'loading'">
+    <p class="lc-message" role="status">Loading forecast…</p>
+  </template>
+  <template x-if="state === 'error'">
+    <div class="lc-message">
+      <p>The NWS forecast is unavailable right now.</p>
+      <p class="lc-actions">
+        <button type="button" class="nav-btn" @click="retry()">Retry</button>
+        <a class="lc-link" :href="detailUrl()" target="_blank" rel="noopener noreferrer">Open the NWS forecast page<span class="sr-only"> (opens in a new tab)</span></a>
+      </p>
+    </div>
+  </template>
+  <template x-if="state === 'ready'">
+    <div class="lc-forecast">
+      <div class="lc-forecast-head">
+        <h3 class="lc-title" x-text="heading()"></h3>
+        <a class="lc-link" :href="detailUrl()" target="_blank" rel="noopener noreferrer">Full forecast<span class="sr-only"> (opens in a new tab)</span></a>
+      </div>
+      <ul class="lc-periods" aria-label="Forecast periods" tabindex="0">
+        <template x-for="p in rows" :key="p.key">
+          <li class="lc-period" :class="p.isDaytime ? 'is-day' : 'is-night'" :title="p.detail">
+            <span class="lc-period-name" x-text="p.name"></span>
+            <template x-if="p.icon"><img :src="p.icon" :alt="p.alt" width="40" height="40" loading="lazy"></template>
+            <span class="lc-period-temp" x-text="p.temp"></span>
+            <span class="lc-period-short" x-text="p.short"></span>
+            <template x-if="p.precip"><span class="lc-period-pop"><span class="sr-only">Chance of precipitation </span><span x-text="p.precip"></span></span></template>
+            <span class="sr-only" x-text="p.detail"></span>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </template>
+</div>

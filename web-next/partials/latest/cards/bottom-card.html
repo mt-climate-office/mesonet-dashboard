@@ -1,2 +1,31 @@
-<!-- Placeholder slot (W2 Latest layout). The Latest cards agent replaces this file: Locator Map / Station Metadata / Current Conditions. -->
-<p class="latest-card-placeholder">Locator Map · Station Metadata · Current Conditions</p>
+<!-- Latest bottom card (x-data="bottomCard", ui/latest/cards/bottomCard.ts): switcher over ?info=,
+     then the Locator Map, Station Metadata or Current Conditions pane. Sits inside the Latest
+     tab's card <section> (partials/latest/index.html), which draws the border. -->
+<div class="lc lc-bottom" x-data="bottomCard" data-testid="bottom-card">
+  <fieldset class="ctl-seg lc-switch" data-testid="bottom-card-switch"
+            x-data="segmented({ options: () => options(), value: () => card, onChange: (v) => select(v), label: 'Bottom card' })">
+    <legend class="ctl-legend sr-only" x-text="label"></legend>
+    <div class="seg-btns">
+      <template x-for="opt in options()" :key="opt.value">
+        <label class="nav-btn seg-btn">
+          <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)"
+                 :disabled="opt.disabled ?? false" @change="select(opt.value)">
+          <span x-text="opt.label"></span>
+        </label>
+      </template>
+    </div>
+  </fieldset>
+  <div class="lc-body lc-body-bottom" :data-card="card">
+    <template x-if="card === 'map'">
+      <div class="lc-map" data-testid="locator-map"
+           x-data="stationMap({ stations: () => $store.station.list, selected: () => $store.station.id,
+                    onSelect: (id) => $store.station.select(id), visible: () => mapVisible(), label: 'Locator map of Montana Mesonet stations' })"></div>
+    </template>
+    <template x-if="card === 'metadata'">
+      <!-- @include partials/latest/cards/metadata.html -->
+    </template>
+    <template x-if="card === 'current'">
+      <!-- @include partials/latest/cards/current.html -->
+    </template>
+  </div>
+</div>
