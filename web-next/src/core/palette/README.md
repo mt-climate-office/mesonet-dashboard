@@ -8,7 +8,8 @@ The one place for data colors (HOUSE-STYLE §6). Pure TypeScript, no DOM.
 | `roles.ts` | Every chart/map color role → color per theme (`'dark' \| 'light' \| 'high-contrast'`), plus `resolve()` for kit tokens. |
 | `contrast.ts` | WCAG luminance and `contrastRatio()`. |
 | `tokens.snapshot.ts` | Kit 0.7.1 surface/text tokens the tests measure against. |
-| `DIVERGENCES-palette.md` | Legacy color → new role, for `web-next/DIVERGENCES.md`. |
+
+Which legacy color each role replaces: `web-next/DIVERGENCES.md` "House style › Data colors" (update it with any role change).
 
 ## Adding or changing a role
 

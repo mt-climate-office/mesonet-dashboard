@@ -12,9 +12,8 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 | `agAnnual.ts` | `annualChart`/`annualTable` (`AnnualModel`) |
 | `latestTimeseries.ts` | `latestTimeseriesChart`/`latestTimeseriesTable` (`LatestTimeseriesModel`: core/models/timeseries + view/extent), `latestTimeseriesHeight(n, compact)` |
 | `windRose.ts` | `windRoseChart`/`windRoseTable` (`WindRoseModel` from `core/models/windRose`), `windRoseTitle`, `binName` |
+| `downloaderPreview.ts` | `downloaderPreviewChart`/`downloaderPreviewTable` (`PreviewModel` from `core/models/downloaderPreview`), `previewHeight(m, compact)` |
 | `theme.ts` | `readChartTheme(name, getVar)` (kit tokens → `ChartTheme`), `echartsTheme(t)`, `paint(t, role)` (palette role → color) |
-
-W2 adds `timeseries.ts` and `downloaderPreview.ts` the same way.
 
 ## Shared helpers (internal to this folder)
 
@@ -22,7 +21,7 @@ W2 adds `timeseries.ts` and `downloaderPreview.ts` the same way.
 - `axes.ts`: `timeAxis` (wall-clock level ticks), `valueAxis(name)`, `logAxis(name, min, max, {inverse, prefix})`, `dualAxis(left, right)` (y2 aligned, from 0), `grid`, `timeZoom` (inside + slider; no drag-pan on compact), `niceCeil`, `logExtent`.
 - `series.ts`: `points(xs, ys, notes?)` (breaks lines at gaps > 1.5× cadence), `lineSeries` (LTTB over `LTTB_THRESHOLD`), `barSeries`, `markerSeries`; ids starting `AUX` (`aux:`) are drawing aids, skipped by tooltips and legends.
 - `tooltip.ts`: `tooltipBase` (kit `.mco-tooltip`), `axisTooltip(ctx, header, row)`, `tipText`, `legend(ctx, {data, title})` (bottom scroll legend; optional title text).
-- `overlays.ts`: `bandSeries` (stacked q25–q75 style band), `normalsSeries`, `hBandSeries` (horizontal bands + corner labels + dashed lines, e.g. SWP FC/WP), `sensorEventSeries` (hatched spans), `labelledLines` (markLines, e.g. GDD stages), `hatchDecal`.
+- `overlays.ts`: `bandSeries` (stacked q25–q75 style band), `normalsSeries`, `hBandSeries` (horizontal bands + boxed corner labels + dashed lines, e.g. SWP FC/WP), `sensorEventSeries` (hatched spans), `labelledLines` (markLines, e.g. GDD stages), `hatchDecal`.
 - `heatmap.ts`: `colorBar(ctx, scale, extent, {midpoint, ticks})` (hidden visualMap + bar drawn as graphics with min/max and the palette `midpointLabel`; vertical at the right, horizontal under the plot when `ctx.compact`), `frozenSeries` (hatched mask cells).
 - `zoom.ts` (used by the host): wall-clock ms ↔ category index (`categoryMs`, `toAxisRange`, `fromAxisRange`), `sameRange`, `carryState` (zoom + legend toggles across redraws).
 - `testing.ts`: `testCtx(theme)` for tests (kit 0.7.1 token values).

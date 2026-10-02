@@ -257,7 +257,8 @@ export async function open(env, query, { viewport = VIEWPORTS[0], reducedMotion 
         const out = []
         for (const el of document.querySelectorAll(sel)) {
           if (el.closest('.sr-only, [hidden], [inert]') || el.matches('.mco-skip-link')) continue
-          // Kit-owned map chrome: mco-web-style 0.7.1 leaves these < 40 px under (hover: none). Fix belongs in the kit.
+          // Kit-owned map chrome: mco-web-style 0.7.1 leaves these < 40 px under (hover: none). Kept as an
+          // exemption by user decision (no kit issue; MIGRATION-MATRIX "Decisions (W4)").
           if (el.matches('.maplibregl-ctrl-group button, .maplibregl-ctrl-attrib-button, .mco-panel-toggle')) continue
           const r = el.getBoundingClientRect()
           const cs = getComputedStyle(el)

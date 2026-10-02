@@ -13,6 +13,11 @@
 .latest-sidebar { grid-area: side; }
 .latest-plot { grid-area: plot; }
 .latest-cards { grid-area: cards; }
+/* The sidebar collapse toggle and its rail exist only at ≥ 1200 px (below); phones and tablets
+   always show the sidebar, whatever was saved. */
+.latest-sidebar-toggle { display: none; }
+.latest-rail { display: none; grid-area: rail; }
+.latest-sidebar-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 
 @media (min-width: 768px) {
   .latest-layout {
@@ -31,6 +36,16 @@
      the rest and a long Current Conditions table scrolls inside it. */
   .latest-cards { display: flex; flex-direction: column; align-items: stretch; height: calc(100dvh - 6.5rem); min-height: 40rem; }
   .latest-card-bottom { flex: 1; min-height: 20rem; height: auto; }
+
+  /* Collapsed sidebar (LDC-002, ui/latest/layout.ts): the plot takes its column (legacy 6 → 9 of 12)
+     and a rail keeps the expand button where the sidebar was. Wide screens only. */
+  .latest-layout.is-sidebar-collapsed {
+    grid-template-columns: auto minmax(0, 3fr) minmax(17rem, 1fr);
+    grid-template-areas: "rail plot cards";
+  }
+  .is-sidebar-collapsed .latest-sidebar { display: none; }
+  .is-sidebar-collapsed .latest-rail { display: flex; }
+  .latest-sidebar-toggle { display: inline-flex; }
 }
 
 /* Panels: the kit's surface tokens (.mco-panel is for floating over maps only). */

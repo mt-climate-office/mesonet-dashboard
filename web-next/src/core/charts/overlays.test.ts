@@ -26,6 +26,9 @@ describe('overlays', () => {
     const area = s.markArea!.data as unknown as [{ yAxis: number; name: string; label: { position: string } }, { yAxis: number }][]
     expect(area[0][0]).toMatchObject({ yAxis: 0.1, name: 'FC', label: { position: 'insideTopLeft' } })
     expect(s.markArea!.itemStyle!.color).toBe(paint(ctx.theme, SWP_BANDS.fill))
+    // Boxed labels (AG-SWP-003): text-colored 2 px border on the surface at 0.8.
+    expect(s.markArea!.label).toMatchObject({ borderWidth: 2, borderColor: ctx.theme.text, fontSize: 14 })
+    expect(String(s.markArea!.label!.backgroundColor)).toMatch(/^rgba\(.*,0\.8\)$/)
     expect(s.markLine!.lineStyle!.type).toBe('dashed')
   })
   it('sensor events: hatched custom series with hover text', () => {

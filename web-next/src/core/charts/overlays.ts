@@ -6,7 +6,7 @@
  */
 import type { CustomSeriesOption, LineSeriesOption, MarkLineComponentOption } from 'echarts'
 import type { Nullable } from '../ag/contract'
-import { NORMALS, SENSOR_EVENT, SWP_BANDS } from '../palette'
+import { NORMALS, SENSOR_EVENT, SWP_BANDS, withAlpha } from '../palette'
 import { AUX, lineSeries, points } from './series'
 import { paint } from './theme'
 import type { ChartContext } from './types'
@@ -105,7 +105,18 @@ export function hBandSeries(
     markArea: {
       silent: true,
       itemStyle: { color: fill },
-      label: { color: ctx.theme.text, fontFamily: ctx.theme.fontUi, fontSize: 13, fontWeight: 600 },
+      // Boxed corner labels, as legacy (AG-SWP-003: border 2, white at 0.8): kit text color
+      // border and the surface at 0.8, so the band text reads over the data in every theme.
+      label: {
+        color: ctx.theme.text,
+        fontFamily: ctx.theme.fontUi,
+        fontSize: 14,
+        fontWeight: 600,
+        backgroundColor: ctx.theme.surface.startsWith('#') ? withAlpha(ctx.theme.surface, 0.8) : ctx.theme.surface,
+        borderColor: ctx.theme.text,
+        borderWidth: 2,
+        padding: [3, 6],
+      },
       data: bands.map((b) => [
         { yAxis: b.from, name: b.label, label: { position: b.labelAt } },
         { yAxis: b.to },
