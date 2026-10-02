@@ -7,8 +7,8 @@
 import Alpine from 'alpinejs'
 import { getStationConfig, getStationRecord, type ObservationRow, type StationConfig } from '../../core/api'
 import { latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, type LatestTimeseriesModel } from '../../core/charts'
-import { TTL, axisExtent, configKey, datesPatch, installDate, normalsKey, recordRequest, todayIso, viewAnnouncement, windowRange, zoomDates } from '../../core/latest'
-import { NORMALS_VARS, availableVars, buildTimeseriesModel, chartWindow, emptyState, noData, type TimeseriesEmpty } from '../../core/models/timeseries'
+import { TTL, axisExtent, configKey, datesPatch, installDate, normalsKey, plotStatus, recordRequest, todayIso, viewAnnouncement, windowRange, zoomWindow, type PlotStatus } from '../../core/latest'
+import { NORMALS_VARS, availableVars, buildTimeseriesModel, chartWindow, emptyState, type TimeseriesEmpty } from '../../core/models/timeseries'
 import { fetchNormals, type StationNormals } from '../../core/normals'
 import { explodeInstruments, type ConfigRow, type RawInstrument } from '../../core/sensorEvents'
 import { latestVars } from '../../core/url-schema'
@@ -31,8 +31,15 @@ export function latestTimeseries() {
     compact: compactQuery.matches,
     latestTimeseriesChart,
     latestTimeseriesTable,
+    /** The user's last zoom (wall-clock ms) and the URL window it belongs to ("start|end"). */
+    userView: null as [number, number] | null,
+    userWindow: '',
 
     init() {
+      // A window set from outside (sidebar, back/forward) drops the user's view.
+      this.$watch('windowKey', (key: string) => {
+        if (key !== this.userWindow) this.userView = null
+      })
       compactQuery.addEventListener('change', (e) => (this.compact = e.matches))
       this.$watch('announceKey', (key: string) => {
         if (key) announce(key)
@@ -116,17 +123,14 @@ export function latestTimeseries() {
       return model
     },
 
-    /** What to show instead of (or over) the chart. */
-    status(): { kind: 'empty' | 'loading' | 'ready'; title?: string; hint?: string } {
-      const e = this.empty()
-      if (e) return { kind: 'empty', title: e.title, hint: 'hint' in e ? e.hint : undefined }
-      const res = this.record()
-      if (!res || res.status === 'loading') return this.model() ? { kind: 'ready' } : { kind: 'loading' }
-      if (res.status === 'error' || !this.model()) {
-        const n = noData()
-        return { kind: 'empty', title: n.title, hint: 'hint' in n ? n.hint : undefined }
-      }
-      return { kind: 'ready' }
+    /** What to show instead of (or over) the chart (core/latest `plotStatus`). */
+    status(): PlotStatus {
+      return plotStatus({
+        empty: this.empty(),
+        waiting: !stations().id || this.vars() === null,
+        record: this.record()?.status ?? null,
+        hasModel: !!this.model(),
+      })
     },
     loading(): boolean {
       return this.record()?.status === 'loading'
@@ -145,13 +149,26 @@ export function latestTimeseries() {
       return viewAnnouncement(name, m.period, w.start, w.end, m.ts.panels.length)
     },
 
+    /** "start|end" of the URL (fetch) window. */
+    get windowKey(): string {
+      const w = this.window()
+      return `${w.start}|${w.end}`
+    },
+    /**
+     * The x range for the chart: the user's own view while the URL window is the
+     * one that view produced, else the URL window (load, back/forward, sidebar).
+     */
     range(): [number, number] | null {
+      if (this.userView && this.windowKey === this.userWindow) return this.userView
       const w = this.window()
       return w.valid ? windowRange(w.start, w.end) : null
     },
+    /** A user zoom/pan: refetch (rewrite from/to) only once the view leaves the loaded days. */
     onZoom(fromMs: number, toMs: number): void {
-      const d = zoomDates(fromMs, toMs, todayIso(), installDate(stations().current))
-      url().set(datesPatch(d.start, d.end))
+      this.userView = [fromMs, toMs]
+      const next = zoomWindow([fromMs, toMs], this.window(), todayIso(), installDate(stations().current))
+      this.userWindow = next ? `${next.start}|${next.end}` : this.windowKey
+      if (next) url().set(datesPatch(next.start, next.end))
     },
   })
 }

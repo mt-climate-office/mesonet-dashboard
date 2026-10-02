@@ -52,6 +52,26 @@ export function zoomDates(fromMs: number, toMs: number, today: string, installed
   return { start, end }
 }
 
+/**
+ * After a user zoom or pan: the new URL (fetch) window, or null to keep the
+ * current one. Null while the view stays inside the loaded days (±1 min), so
+ * zooming in, even below a day on raw data, neither refetches nor snaps the
+ * view to whole days. Past the loaded days, the window becomes the days the
+ * view touches (clamped by `zoomDates`); null if that is the same window.
+ */
+export function zoomWindow(
+  view: [number, number],
+  loaded: { start: string; end: string },
+  today: string,
+  installed: string | null,
+): { start: string; end: string } | null {
+  const [lo, hi] = windowRange(loaded.start, loaded.end)
+  const tol = 60_000
+  if (view[0] >= lo - tol && view[1] <= hi + tol) return null
+  const next = zoomDates(view[0], view[1], today, installed)
+  return next.start === loaded.start && next.end === loaded.end ? null : next
+}
+
 const AGG_WORD: Record<LatestAgg, string> = { hourly: 'hourly', daily: 'daily', raw: 'raw' }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

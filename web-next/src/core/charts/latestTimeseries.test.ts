@@ -3,7 +3,7 @@ import type { ObservationRow } from '../api'
 import { buildTimeseriesModel } from '../models/timeseries'
 import type { StationNormals } from '../normals'
 import { ETR, NORMALS, PRECIP, THEMES, depthColor, variableStyle } from '../palette'
-import { latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, fmtValue, type LatestTimeseriesModel } from './latestTimeseries'
+import { TABLE_ROW_LIMIT, latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, fmtValue, type LatestTimeseriesModel } from './latestTimeseries'
 import { LTTB_THRESHOLD } from './series'
 import { testCtx } from './testing'
 import { paint } from './theme'
@@ -137,6 +137,17 @@ describe('latestTimeseriesTable', () => {
     expect(t.columns).toEqual(['Time (MT)', 'Precipitation [in]', 'Air Temperature @ 2 m [°F]'])
     expect(t.rows[0]).toEqual(['2026-07-01 00:00', '0', '60'])
     expect(t.rows).toHaveLength(3)
+  })
+  it(`caps the twin at ${TABLE_ROW_LIMIT} rows with a closing note`, () => {
+    const rows = Array.from({ length: 30 * 24 }, (_, i) => ({
+      station: 'x',
+      datetime: `2026-07-${String(1 + Math.floor(i / 24)).padStart(2, '0')} ${String(i % 24).padStart(2, '0')}:00:00-06:00`,
+      'Air Temperature @ 2 m [°F]': 60,
+    })) as ObservationRow[]
+    const t = latestTimeseriesTable(model(rows, ['Air Temperature']))
+    expect(t.rows).toHaveLength(TABLE_ROW_LIMIT + 1)
+    expect(t.rows.at(-1)).toEqual([`Showing first ${TABLE_ROW_LIMIT} of 720 rows; use the Data Downloader for the full record.`])
+    expect(latestTimeseriesTable(model(hourRows(3, met), ['Air Temperature'])).rows).toHaveLength(3)
   })
   it('formats small values with 3 decimals', () => {
     expect([fmtValue(0.012), fmtValue(12.345), fmtValue(0)]).toEqual(['0.012', '12.35', '0'])

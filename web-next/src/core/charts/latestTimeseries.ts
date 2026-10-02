@@ -286,15 +286,26 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
   } satisfies EChartsOption
 }
 
-/** The sr-only twin: one row per time step with any value, one column per plotted column. */
+/** Rows the sr-only twin keeps; a raw multi-week window would otherwise build a huge DOM. */
+export const TABLE_ROW_LIMIT = 500
+
+/**
+ * The sr-only twin: one row per time step with any value (the first
+ * TABLE_ROW_LIMIT, then a one-cell note row), one column per plotted column.
+ */
 export function latestTimeseriesTable(m: LatestTimeseriesModel): ChartTable {
   const period = m.period === 'daily' ? 'daily' : 'hourly'
   const cols = m.ts.panels.flatMap((p) => p.series)
   const rows: string[][] = []
+  let total = 0
   m.ts.x.forEach((x, j) => {
     if (!Number.isFinite(x) || cols.every((c) => c.values[j] == null)) return
+    if (++total > TABLE_ROW_LIMIT) return
     rows.push([isoWall(x, period), ...cols.map((c) => (c.values[j] == null ? MISSING : fmtValue(c.values[j]!)))])
   })
+  if (total > TABLE_ROW_LIMIT) {
+    rows.push([`Showing first ${TABLE_ROW_LIMIT} of ${total} rows; use the Data Downloader for the full record.`])
+  }
   return {
     caption: `Station observations (${m.period}): ${m.ts.panels.map((p) => p.variable).join(', ')}`,
     columns: [period === 'daily' ? 'Date' : 'Time (MT)', ...cols.map((c) => c.name)],

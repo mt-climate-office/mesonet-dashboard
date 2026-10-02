@@ -833,8 +833,8 @@ Plotted values were checked against web/ point for point: acebozem hourly, mdama
 - **web/:** Plotly subplots with `matches: 'x'`, x range forced to [first day − 1, last day + 1], and drag pan or zoom writing `from`/`to`. A double click reset the view to the defaults.
 - **New:**
   - One ECharts grid per variable, with every x axis on one shared dataZoom: shift+wheel, pinch, the slider on wide screens, and drag pan on desktop. The hover line is linked across all panels.
-  - The visible window is exactly the URL dates, from 00:00 on the start date to the end of the end date. The axis extends one window length on either side, capped at the install date and tomorrow. Zooming out (up to 3×) or panning therefore writes wider `from`/`to` and refetches.
-  - Zooms are day-granular and clamped to install date … today. Reloading restores the zoom.
+  - On load, back/forward or a sidebar change, the visible window is exactly the URL dates, from 00:00 on the start date to the end of the end date. The axis extends one window length on either side, capped at the install date and tomorrow.
+  - `from`/`to` are the day-granular *fetch* window. Zooming or panning inside the loaded days changes neither the URL nor the data, and the view is never snapped to whole days, so raw data zooms below a day. Once the view reaches past the loaded days, `from`/`to` become the days the view touches, clamped to install date … today, and the data refetches while the view stays where the user left it (`core/latest/view.ts#zoomWindow`). A reload shows the whole URL window.
   - The previous plot stays on screen, marked "Updating…", while a new window for the same station loads.
   - There is no double-click reset. The date inputs and "Display Latest 2 Weeks" do that job.
 - **Why:** with the ±1 day padding, every refetch would have widened the URL by two days.
@@ -867,6 +867,10 @@ Plotted values were checked against web/ point for point: acebozem hourly, mdama
   - A hatched full-height span in the palette `SENSOR_EVENT` role, with a "Sensor change" key at the top of the chart.
   - The legacy hover text (SC-009, verbatim) appears in the axis tooltip whenever the hovered time falls inside a span on that panel.
 - **Why:** the hatch keeps the overlay readable without color (HOUSE-STYLE §6). One axis tooltip replaces the polygon trick.
+
+### Accessible table twin
+- **New:** the plot's `.sr-only` table holds at most the first 500 time steps, then a row reading "Showing first 500 of N rows; use the Data Downloader for the full record."
+- **Why:** a raw window spanning weeks would otherwise build tens of thousands of cells.
 
 ### Announcements
 - **New:** when a new station, window or aggregation finishes loading, the live region says "Chart updated: {station}, {hourly|daily|raw} data, {start} to {end}, {n} variables." Plotly had no announcement.
