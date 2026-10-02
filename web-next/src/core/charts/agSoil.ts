@@ -7,7 +7,7 @@
 import type { EChartsOption, HeatmapSeriesOption, LineSeriesOption } from 'echarts'
 import type { LocalDate, LocalDateTime, Nullable, PercentSaturationSeries, SwpSeries } from '../ag/contract'
 import { kPaToBar } from '../ag/compute'
-import { PROFILE_META, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, type SoilProfileVar, depthLabel, xValues } from '../ag/view/labels'
+import { PROFILE_META, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, type SoilProfileVar, depthLabel } from '../ag/view/labels'
 import { HEATMAP, SWP_BANDS, depthColor } from '../palette'
 import { grid, logAxis, logExtent, timeAxis, timeZoom, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtNum, fmtWall, isoWall, wallMs, type Period } from './format'
@@ -45,10 +45,11 @@ function keptDepths(m: SoilProfileModel): number[] {
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-/** "2025-07-01" → "Jul 1"; "2025-07-01 14:00" → "Jul 1\n14:00". */
-const categoryLabel = (v: string) => {
-  const day = `${MONTHS[Number(v.slice(5, 7)) - 1]} ${Number(v.slice(8, 10))}`
-  return v.length > 10 ? `${day}\n${v.slice(11, 16)}` : day
+/** Category value (wall-clock ms) → "Jul 1", or "Jul 1\n14:00" for hourly cells. */
+const categoryLabel = (period: Period) => (v: string | number) => {
+  const d = new Date(Number(v))
+  const day = `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`
+  return period === 'hourly' ? `${day}\n${String(d.getUTCHours()).padStart(2, '0')}:00` : day
 }
 
 export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
@@ -57,7 +58,8 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
   const meta = PROFILE_META[m.variable]
   const scale = HEATMAP[m.variable]
   const isLog = m.variable === 'swp'
-  const x = xValues(m.time)
+  // Category data are wall-clock ms, so the host can report and apply zoom in ms (core/charts/zoom.ts).
+  const xMs = m.time.map(wallMs)
   const y = keep.map((d) => depthLabel(m.depthsCm[d]))
   const toZ = (v: number) => (isLog ? Math.log10(v) : v)
   const data: [number, number, number][] = []
@@ -77,27 +79,27 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
   if (isLog) [lo, hi] = [Math.max(lo, -2), Math.min(hi, 3)]
   const digits = m.variable === 'soil_blk_ec' || isLog ? 2 : 1
   const fmt = (z: number) => (isLog ? `-${Number((10 ** z).toPrecision(2))}` : z.toFixed(m.variable === 'soil_blk_ec' ? 2 : 0))
-  const xMs = m.time.map(wallMs)
+  const cells: [number, number][] = []
+  keep.forEach((d, yi) => m.frozen?.[d]?.forEach((f, xi) => f && cells.push([xi, yi])))
   const cb = colorBar(ctx, scale, [lo, hi], {
     title: meta.label,
     midpoint: scale.midpoint !== undefined ? toZ(scale.midpoint) : undefined,
     ticks: isLog ? [{ value: Math.log10(SWP_FIELD_CAPACITY), label: `FC (-${SWP_FIELD_CAPACITY})` }] : [],
     fmt,
     seriesIndex: 0,
+    bottom: cells.length ? 24 : 4, // compact: under the frozen-soil legend
   })
-  const cells: [number, number][] = []
-  keep.forEach((d, yi) => m.frozen?.[d]?.forEach((f, xi) => f && cells.push([xi, yi])))
   const heat: HeatmapSeriesOption = {
     type: 'heatmap',
     name: meta.label,
     data,
     emphasis: { itemStyle: { borderColor: ctx.theme.text, borderWidth: 1 } },
   }
-  const g = grid(ctx, { right: cb.gridRight, bottom: cells.length ? (ctx.compact ? 64 : 92) : ctx.compact ? 40 : 68 })
+  const g = grid(ctx, { right: cb.gridRight, bottom: ctx.compact ? cb.gridBottom : cells.length ? 92 : 68 })
   const lg = legend(ctx, { data: [FROZEN_NAME] })
   return {
     grid: g,
-    xAxis: { type: 'category', data: x, axisLabel: { formatter: categoryLabel, hideOverlap: true }, axisTick: { alignWithLabel: true } },
+    xAxis: { type: 'category', data: xMs, axisLabel: { formatter: categoryLabel(m.period), hideOverlap: true }, axisTick: { alignWithLabel: true } },
     yAxis: { type: 'category', data: y, inverse: true, name: 'Soil Depth', nameLocation: 'middle', nameGap: 44, nameRotate: 90 },
     visualMap: cb.visualMap,
     graphic: cb.graphic,

@@ -212,8 +212,15 @@ export const FEELS_LIKE: Record<Theme, Record<FeelsLikeRegime, MarkerStyle>> = {
 // light 0–0.55 (≥3.52), dark 0.45–1 (≥3.38), HC 0.35–1 (≥3.65).
 const BATLOW_SPAN: Record<Theme, [number, number]> = { light: [0, 0.55], dark: [0.45, 1], 'high-contrast': [0.35, 1] }
 
-// Mesonet soil sensor depths (in). Each gets an evenly spaced batlow position; others interpolate.
+// Mesonet soil sensor depths (in) and their positions within the theme's depth span. The five
+// depths most stations carry (2, 4, 8, 20, 40) are evenly spaced; 28 and 36 sit between 20 and 40.
+// (Even spacing over all seven left 2/4/8 in as near-identical olives in the dark theme.)
 const SOIL_DEPTHS_IN = [2, 4, 8, 20, 28, 36, 40]
+const DEPTH_POS = [0, 0.25, 0.5, 0.75, 5 / 6, 11 / 12, 1]
+
+// Depth lines use a wider dark span than bins/years: 0.42 is 3.13:1 on the dark surface.
+// light 0–0.55 (≥3.52), dark 0.42–1 (≥3.13), HC 0.35–1 (≥3.65).
+const DEPTH_SPAN: Record<Theme, [number, number]> = { light: [0, 0.55], dark: [0.42, 1], 'high-contrast': [0.35, 1] }
 
 /**
  * Line color for a soil depth in inches (cm callers divide by 2.54). Depends only on depth and theme,
@@ -221,14 +228,14 @@ const SOIL_DEPTHS_IN = [2, 4, 8, 20, 28, 36, 40]
  */
 export function depthColor(depthInches: number, theme: Theme): string {
   const d = SOIL_DEPTHS_IN
-  let rank = 0
-  if (depthInches >= d[d.length - 1]) rank = d.length - 1
+  let pos = 0
+  if (depthInches >= d[d.length - 1]) pos = 1
   else if (depthInches > d[0]) {
     const i = d.findIndex((x) => x >= depthInches)
-    rank = i - 1 + (depthInches - d[i - 1]) / (d[i] - d[i - 1])
+    pos = DEPTH_POS[i - 1] + ((DEPTH_POS[i] - DEPTH_POS[i - 1]) * (depthInches - d[i - 1])) / (d[i] - d[i - 1])
   }
-  const [from, to] = BATLOW_SPAN[theme]
-  return colorAt(BATLOW, from + ((to - from) * rank) / (d.length - 1))
+  const [from, to] = DEPTH_SPAN[theme]
+  return colorAt(BATLOW, from + (to - from) * pos)
 }
 
 function batlowSamples(n: number, theme: Theme): string[] {

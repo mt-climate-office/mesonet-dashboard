@@ -1,13 +1,14 @@
 /**
  * The one ECharts host. `ChartHost` owns everything stateful about a chart:
  * lazy ECharts load, init, kit theme (re-read on `mco-theme-change`), resize,
- * reduced motion, debounced zoom events, the `.sr-only` table twin, dispose.
- * Components use the `chart` Alpine wrapper (usage: core/charts/README.md).
+ * reduced motion, zoom in wall-clock ms both ways, the `.sr-only` table twin,
+ * dispose. Components use the `chart` Alpine wrapper (usage: core/charts/README.md).
  */
 import Alpine from 'alpinejs'
-import type { ECharts, EChartsOption } from 'echarts'
+import type { ECharts } from 'echarts'
 import { echartsTheme, readChartTheme } from '../../core/charts/theme'
 import type { ChartBuilder, ChartContext, ChartTable, ChartTheme } from '../../core/charts/types'
+import { type Range, type ViewState, carryState, categoryMs, fromAxisRange, sameRange, toAxisRange } from '../../core/charts/zoom'
 import { THEME_EVENT, isTheme } from '../../core/theme'
 import { component } from '../component'
 
@@ -25,8 +26,12 @@ export interface ChartOptions<M> {
 export interface ChartBindings<M> extends ChartOptions<M> {
   /** Model getter; null/undefined clears the chart. Read inside an Alpine effect, so it re-renders when its inputs change. */
   model: () => M | null | undefined
-  /** Optional x range (wall-clock ms) to apply after each render, e.g. from the URL. */
-  range?: () => [number, number] | null | undefined
+  /**
+   * Optional x range (wall-clock ms), e.g. from the URL. Applied in its own effect (never re-renders)
+   * and after each model render; a range equal to the current window is ignored, so echoing
+   * `onZoom` back through the URL does not loop.
+   */
+  range?: () => Range | null | undefined
 }
 
 const ZOOM_DEBOUNCE_MS = 250
@@ -54,6 +59,10 @@ export class ChartHost<M> {
   private zoomTimer = 0
   private disposed = false
   private silentZoom = false
+  /** Wall-clock ms per category when the x axis is categorical (heatmaps), else null. */
+  private cats: number[] | null = null
+  /** Last requested range (wall-clock ms), re-applied after model renders. */
+  private range: Range | null = null
   private ro: ResizeObserver
   private opts: ChartOptions<M>
 
@@ -76,23 +85,41 @@ export class ChartHost<M> {
     document.fonts?.ready.then(() => this.draw(true))
   }
 
-  /** Draw `model` (null clears). The first call loads ECharts. */
+  /** Draw `model` (null clears), then apply the requested range. The first call loads ECharts. */
   async render(model: M | null): Promise<void> {
     this.model = model
     if (!this.chart) {
       const { echarts } = await loadECharts()
-      if (this.disposed || this.chart) return this.draw(false)
-      this.chart = echarts.init(this.canvas, echartsTheme(this.theme))
-      this.chart.on('datazoom', this.onZoomEvent)
+      if (this.disposed) return
+      if (!this.chart) {
+        this.chart = echarts.init(this.canvas, echartsTheme(this.theme))
+        this.chart.on('datazoom', this.onZoomEvent)
+      }
     }
     this.draw(false)
+    if (this.range) this.zoomTo(this.range[0], this.range[1])
   }
 
-  /** Zoom the x axis to [fromMs, toMs] (wall-clock ms) without firing onZoom. */
+  /** Remember `r` and zoom to it now if the chart is drawn; null forgets it (the zoom stays). */
+  setRange(r: Range | null): void {
+    this.range = r
+    if (r && this.chart && this.model != null) this.zoomTo(r[0], r[1])
+  }
+
+  /** Zoom the x axis to [fromMs, toMs] (wall-clock ms) without firing onZoom; no-op if already there. */
   zoomTo(fromMs: number, toMs: number): void {
+    if (!this.chart || sameRange(this.visibleRange(), [fromMs, toMs])) return
+    const [startValue, endValue] = toAxisRange([fromMs, toMs], this.cats)
     this.silentZoom = true
-    this.chart?.dispatchAction({ type: 'dataZoom', dataZoomIndex: 0, startValue: fromMs, endValue: toMs })
+    this.chart.dispatchAction({ type: 'dataZoom', dataZoomIndex: 0, startValue, endValue })
     this.silentZoom = false
+  }
+
+  /** The visible x range in wall-clock ms, or null before the first draw. */
+  visibleRange(): Range | null {
+    const dz = (this.chart?.getOption()?.dataZoom as { startValue?: number; endValue?: number }[] | undefined)?.[0]
+    if (!dz || typeof dz.startValue !== 'number' || typeof dz.endValue !== 'number') return null
+    return fromAxisRange([dz.startValue, dz.endValue], this.cats)
   }
 
   dispose(): void {
@@ -113,25 +140,36 @@ export class ChartHost<M> {
     return { theme: this.theme, width: this.canvas.clientWidth || 800, compact: isCompact() }
   }
 
-  /** Rebuild the option from the model; `keepZoom` carries the current zoom window over. */
+  /** What a redraw keeps: legend toggles always, the zoom window only for same-data redraws. */
+  private viewState(keepZoom: boolean): ViewState {
+    const o = this.chart?.getOption() as { dataZoom?: { start?: number; end?: number }[]; legend?: { selected?: Record<string, boolean> }[] } | undefined
+    const dz = o?.dataZoom?.[0]
+    return {
+      zoom: keepZoom && dz ? { start: dz.start, end: dz.end } : undefined,
+      selected: o?.legend?.[0]?.selected,
+    }
+  }
+
+  /** Rebuild the option from the model; `keepZoom` = same data (theme, resize, fonts). */
   private draw(keepZoom: boolean): void {
     const chart = this.chart
     if (!chart || this.disposed) return
     if (this.model == null) {
       chart.clear()
+      this.cats = null
       this.renderTable(null)
       return
     }
-    const option = this.opts.builder(this.model, this.ctx())
+    const option = carryState(this.opts.builder(this.model, this.ctx()), this.viewState(keepZoom))
     const reduced = reducedMotion()
     // Animate the first draw only; theme/resize redraws should not replay the entrance.
     option.animation = !reduced && !keepZoom
     option.aria = { enabled: true, label: { description: `${this.opts.label}. The data is in the table that follows.` }, decal: { show: false } }
     if (reduced && option.tooltip && !Array.isArray(option.tooltip)) option.tooltip.transitionDuration = 0
-    if (keepZoom) carryZoom(chart, option)
+    this.cats = categoryMs(option)
     chart.setOption(option, { notMerge: true })
     this.width = this.canvas.clientWidth
-    this.renderTable(this.opts.table ? this.opts.table(this.model) : null)
+    if (!keepZoom) this.renderTable(this.opts.table ? this.opts.table(this.model) : null)
   }
 
   private renderTable(t: ChartTable | null): void {
@@ -176,44 +214,39 @@ export class ChartHost<M> {
     if (!this.opts.onZoom || this.silentZoom) return
     clearTimeout(this.zoomTimer)
     this.zoomTimer = window.setTimeout(() => {
-      const r = zoomRange(this.chart)
+      const r = this.visibleRange()
       if (r) this.opts.onZoom?.(r[0], r[1])
     }, ZOOM_DEBOUNCE_MS)
   }
 }
 
-/** The first dataZoom's visible [startValue, endValue], or null. */
-function zoomRange(chart: ECharts | null): [number, number] | null {
-  const dz = (chart?.getOption()?.dataZoom as { startValue?: number; endValue?: number }[] | undefined)?.[0]
-  return dz && typeof dz.startValue === 'number' && typeof dz.endValue === 'number' ? [dz.startValue, dz.endValue] : null
-}
-
-/** Copy the live zoom percentages onto the new option's dataZoom entries. */
-function carryZoom(chart: ECharts, option: EChartsOption): void {
-  const live = (chart.getOption()?.dataZoom as { start?: number; end?: number }[] | undefined)?.[0]
-  if (!live || !Array.isArray(option.dataZoom)) return
-  option.dataZoom = option.dataZoom.map((z) => ({ ...z, start: live.start, end: live.end }))
-}
-
 /**
- * `Alpine.data('chart', chart)`: `x-data="chart({ builder, table, label, model: () => …, onZoom })"`.
- * Re-renders whenever what `model()` (or `range()`) reads changes; disposes on destroy.
+ * `Alpine.data('chart', chart)`: `x-data="chart({ builder, table, label, model: () => …, onZoom, range })"`.
+ * Two effects: `model()` changes re-render; `range()` changes only zoom. Disposes on destroy.
  */
 export function chart<M>(bind: ChartBindings<M>) {
   let host: ChartHost<M> | null = null
-  let fx: ReturnType<typeof Alpine.effect> | null = null
+  const effects: ReturnType<typeof Alpine.effect>[] = []
   return component({
     init() {
       host = new ChartHost<M>(this.$el as HTMLElement, bind)
-      fx = Alpine.effect(() => {
-        const m = bind.model()
-        const r = bind.range?.()
-        const raw = m == null ? null : Alpine.raw(m)
-        void host?.render(raw).then(() => r && host?.zoomTo(r[0], r[1]))
-      })
+      effects.push(
+        Alpine.effect(() => {
+          const m = bind.model()
+          void host?.render(m == null ? null : Alpine.raw(m))
+        }),
+      )
+      if (bind.range) {
+        effects.push(
+          Alpine.effect(() => {
+            const r = bind.range?.()
+            host?.setRange(r ? [r[0], r[1]] : null)
+          }),
+        )
+      }
     },
     destroy() {
-      if (fx) Alpine.release(fx)
+      effects.forEach((fx) => Alpine.release(fx))
       host?.dispose()
       host = null
     },

@@ -75,9 +75,22 @@ describe('soilProfileChart', () => {
     expect(heat.type).toBe('heatmap')
     expect(heat.data).toEqual([[1, 0, 20], [0, 1, 30], [1, 1, 31]])
     expect(o.yAxis).toMatchObject({ type: 'category', data: ['2 in', '4 in'], inverse: true })
-    expect(o.xAxis).toMatchObject({ type: 'category', data: ['2026-01-01', '2026-01-02'] })
+    // Category data are wall-clock ms (local noon for daily rows) so the host zooms in ms.
+    const x = o.xAxis as { type: string; data: number[]; axisLabel: { formatter: (v: number) => string } }
+    expect(x).toMatchObject({ type: 'category', data: [Date.UTC(2026, 0, 1, 12), Date.UTC(2026, 0, 2, 12)] })
+    expect(x.axisLabel.formatter(x.data[0])).toBe('Jan 1')
     expect(frozen).toMatchObject({ type: 'custom', name: FROZEN_NAME, data: [[0, 0]], color: FROZEN.light.color })
     expect(o.visualMap).toMatchObject({ seriesIndex: 0, dimension: 2 })
+  })
+  it('compact: horizontal color bar under the plot, grid bottom clears it', () => {
+    const o = soilProfileChart({ ...base, variable: 'soil_temp', values: [[20, 50], [30, 31], [null, null]], frozen: undefined }, testCtx('dark', 390, true))
+    const group = (o.graphic as { type: string; bottom: number; children: { type: string; style?: { text?: string }; shape?: { width: number; height: number } }[] }[])[0]
+    expect(group.type).toBe('group')
+    const bar = group.children.find((c) => c.type === 'rect')!
+    expect(bar.shape!.width).toBeGreaterThan(bar.shape!.height)
+    expect(group.children.map((c) => c.style?.text)).toContain(HEATMAP.soil_temp.midpointLabel)
+    expect((o.grid as { bottom: number; right: number }).bottom).toBeGreaterThan(group.bottom + 40)
+    expect((o.grid as { right: number }).right).toBe(16)
   })
   it('soil temperature diverges around 32 °F with the labelled midpoint', () => {
     const o = soilProfileChart({ ...base, variable: 'soil_temp', values: [[20, 50], [30, 31], [null, null]], frozen: undefined }, testCtx())
