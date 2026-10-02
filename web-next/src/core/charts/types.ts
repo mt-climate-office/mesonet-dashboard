@@ -10,12 +10,22 @@ export interface ChartTheme {
   name: 'dark' | 'light' | 'high-contrast'
   /** Kit chrome tokens, resolved to concrete colors (`getComputedStyle`). */
   text: string
+  /** Axis labels and secondary text (`--text-secondary`, ≥ 4.5:1 on every surface). */
   textMuted: string
+  /** Axis lines and split lines (`--border`). */
   grid: string
   surface: string
+  /** Tooltip fill (`--glass`) and border (`--accent-line`), as the kit's `.mco-tooltip`. */
+  tooltipBg: string
+  tooltipBorder: string
   /** `--font-ui` / `--font-mono` stacks. */
   fontUi: string
   fontMono: string
+  /**
+   * Resolved values of the kit tokens that `core/palette` roles reference
+   * (`--text-dim`, `--text-primary`, …), for `paint()` in theme.ts.
+   */
+  vars: Readonly<Record<string, string>>
 }
 
 /** What a builder may know about where it renders. */
