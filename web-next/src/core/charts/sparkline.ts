@@ -68,8 +68,9 @@ export function sparkline(s: SparkSeries, opts: SparkOptions = {}): Sparkline | 
         const top = y(v)
         return { x: r2(Math.min(W - w, Math.max(0, x(t) - w / 2))), y: r2(top), w: r2(w), h: r2(H - top) }
       })
-    // The same bars as one filled path, so the SVG needs no per-bar elements (no x-for inside <svg>).
-    const d = bars.map((b) => `M${b.x} ${b.y}h${b.w}v${b.h}h${-b.w}Z`).join('')
+    // The same bars as one filled path, so the SVG needs no per-bar elements (no x-for inside <svg>),
+    // on a 1-unit baseline so a dry window still reads as "zero", not as a missing chart.
+    const d = `M0 ${H - 1}h${W}v1h${-W}Z` + bars.map((b) => `M${b.x} ${b.y}h${b.w}v${b.h}h${-b.w}Z`).join('')
     return { viewBox: `0 0 ${W} ${H}`, kind, d, bars, min, max, points: pts.length }
   }
 

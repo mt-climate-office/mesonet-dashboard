@@ -8,6 +8,64 @@ What web-next deliberately does differently, in three parts:
 
 Each entry gives the old behaviour, the new one, and why. Add an entry in the same PR as the change.
 
+## UX refactor (P0 prototype, 2026-10)
+
+The user-approved refactor (overview first, mobile first; DESIGN.md) changes the
+information architecture and layout on purpose. These entries supersede the
+layout parts of older entries below; data behaviour is unchanged.
+
+### One station view with five sections, instead of three tabs
+- **Legacy / web/:** top-level tabs Latest Data · Ag Tools · Data Downloader (`#latest` default).
+- **New:** a station view with sections **Now** (`#now`, default) · **Charts** · **Ag** · **Download** · **About**
+  (core/router.ts). Section changes are `pushState`, so Back returns to the previous section; in-section
+  state still uses the batched `replaceState`. On phones the sections are a bottom tab bar; on tablet and
+  desktop a segmented row under the station header.
+- **Old links keep working:** `#latest` → `#charts` + `cmp=1` (Compare, keeping `from/to/agg/vars/gridmet`);
+  a hash-less link with one of those keys does the same; `#downloader` → `#download` (keys renamed by
+  `migrateLegacySearch` first); `#ag` unchanged; `#satellite` → Now with the existing notice. `card`/`info`
+  are still read by Compare's cards and ignored elsewhere.
+- **P0 placeholders:** Charts shows the existing Latest view (as "Compare"); About shows the metadata,
+  current-readings table and locator map; Ag and Download are the existing views. P1 rebuilds them.
+- **Why:** users land on current conditions; history, tools and tables stay one tap away (plan Context).
+
+### A bare `?s=` opens Now; no `?s=` reopens the last station
+- **Legacy / web/:** `?s=` opened Latest Data; no `?s=` showed an empty Latest tab.
+- **New:** `?s=` opens Now. Without it the last confirmed station (`mco-dashboard-station`) opens; with none
+  the station picker opens (first visit). The five most recent stations are `mco-dashboard-recent`.
+- **Why:** user decision (2026-10-02): reopen the last station.
+
+### Station picker: drawer / bottom sheet with Near me
+- **web/:** a combobox and network chips in the Latest sidebar, plus the locator map card.
+- **New:** one picker (search, **Near me**, recents, network chips, map), a drawer on desktop (in-flow,
+  remembered in `mco-dashboard-drawer`), an overlay drawer on tablets and a bottom sheet on phones. Near me
+  asks for the location only when tapped. The Compare view keeps its own combobox until P1.
+- **Why:** station choice is the first decision on every visit and must work one-handed on a phone.
+
+### Navbar: one row; Feedback moved
+- **Before (MOB-003):** the bar wrapped to two rows at 390 px and carried the tab links and Feedback.
+- **New:** one row at every width: logo, brand (hidden ≤ 750 px by the kit), the station switcher
+  ("Bozeman ▾"), Share, theme, Help. Feedback is in Help and the footer.
+- **Why:** the old bar took 100 px of a phone screen and hid the app name.
+
+### Feels like uses the NWS method on Now
+- **Legacy / web/:** Current Conditions showed "Real Feel", the NWS wind-chill formula at every temperature
+  (a legacy bug kept for parity; LDB-007).
+- **New:** the Now hero shows **Feels like** from `core/ag/compute/feelsLike.ts`, the same NWS rules the Ag
+  tool uses: heat index at ≥ 80 °F, wind chill at ≤ 50 °F with wind > 3 mph, otherwise the air
+  temperature, labelled "Wind chill" / "Heat index" when it applies.
+- **Still legacy:** the About section's current-readings table (`core/cards/currentConditions.ts`) keeps
+  its Real Feel row until P1, so the fidelity rows stay comparable. Decision pending: drop or rename it.
+- **Why:** user decision (2026-10-02): the NWS method everywhere.
+
+### Now overview data
+- **New (no legacy equivalent):** today's high/low comes from today's hourly means plus the current
+  reading, against the gridMET 1991–2020 **median** `tmmx`/`tmmn` for the date; year-to-date
+  precipitation is compared with the sum of the daily **mean** `pr` normals from Jan 1 (a sum of medians
+  would not be a normal total). Stations without `/derived/ppt/` (AgriMet) show since-midnight and 24 h
+  from the hourly request. The sparkline request adds `bp` (pressure), and `snow_depth` / `vpd_atmo` when
+  the station reports them, to the plan's six elements so every tile has a sparkline. Data older than 2 h
+  shows a stale warning; the provisional badge follows `/latest`'s `provisional` flag.
+
 ## House style
 
 ### Data colors

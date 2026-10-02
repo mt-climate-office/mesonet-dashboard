@@ -23,7 +23,8 @@ describe('sparkline', () => {
   })
   it('bars from zero, only for positive values', () => {
     const s = sparkline({ t: [0, 1, 2, 3], v: [0, 0.1, 0, 0.2] }, { kind: 'bars' })!
-    expect(s.d.match(/Z/g)).toHaveLength(2)
+    expect(s.d.match(/Z/g)).toHaveLength(3) // baseline + two bars
+    expect(sparkline({ t: [0, 1], v: [0, 0] }, { kind: 'bars' })?.d).toBe('M0 27h100v1h-100Z')
     expect(s.bars).toHaveLength(2)
     expect(s.min).toBe(0)
     expect(s.bars[1].h).toBe(28)

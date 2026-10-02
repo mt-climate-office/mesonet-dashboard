@@ -21,7 +21,7 @@
          @focusout="onFocusOut($event)">
       <label class="ctl-label" :id="ids.label" :for="ids.input" x-text="label"></label>
       <div class="ctl-combobox-field">
-        <input x-ref="input" class="ctl-input" type="search" role="combobox" enterkeyhint="search"
+        <input x-ref="input" class="ctl-input" type="text" inputmode="search" role="combobox" enterkeyhint="search"
                autocomplete="off" spellcheck="false" aria-autocomplete="list" data-autofocus
                :id="ids.input" :placeholder="searchPlaceholder()" :aria-expanded="open"
                :aria-controls="ids.listbox" :aria-activedescendant="activeId()"
@@ -96,7 +96,7 @@
       </div>
       <template x-if="mapMounted">
         <div class="picker-map" data-testid="picker-map"
-             x-data="stationMap({ stations: () => $store.station.list, selected: () => $store.station.id,
+             x-data="pickerMap({ stations: () => $store.station.list, selected: () => $store.station.id,
                       onSelect: (id) => choose(id), visible: () => visible(), legendCollapsed: true, label: 'Map of Montana Mesonet stations: pick one' })"></div>
       </template>
     </section>

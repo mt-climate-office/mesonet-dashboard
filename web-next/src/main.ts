@@ -21,7 +21,7 @@ import { rangeSlider } from './ui/controls/rangeSlider'
 import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
 import { downloader } from './ui/downloader/downloader'
-import { downloaderMap, stationMap } from './ui/map/presets'
+import { downloaderMap, pickerMap, stationMap } from './ui/map/presets'
 import { bottomCard } from './ui/latest/cards/bottomCard'
 import { currentCard } from './ui/latest/cards/currentCard'
 import { forecastCard } from './ui/latest/cards/forecastCard'
@@ -129,6 +129,7 @@ Alpine.data('rangeSlider', rangeSlider)
 // Station maps (ui/map/presets.ts): x-data="stationMap({ stations, selected, onSelect })".
 Alpine.data('stationMap', stationMap)
 Alpine.data('downloaderMap', downloaderMap)
+Alpine.data('pickerMap', pickerMap)
 
 // Charts (W1): the one ECharts host; ECharts itself loads lazily on the first
 // render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".

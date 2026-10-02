@@ -36,6 +36,13 @@ const toggles = () => [...document.querySelectorAll<HTMLElement>('[data-picker-t
 export function stationPicker() {
   let ctl: Ctl | null = null
   const cleanups: (() => void)[] = []
+  // True while the picker opens by itself (first visit, bad station link): not a preference to save.
+  let auto = false
+  const autoOpen = () => {
+    auto = true
+    ctl?.open({ focus: false })
+    auto = false
+  }
   return component({
     open: false,
     mode: 'inline' as Mode,
@@ -54,10 +61,11 @@ export function stationPicker() {
       desktop.addEventListener('change', onViewport)
       cleanups.push(MCO.viewport.onChange(onViewport), () => desktop.removeEventListener('change', onViewport))
       // A link whose station turns out not to exist: open the picker once the catalog says so.
-      Alpine.effect(() => {
+      const fx = Alpine.effect(() => {
         const st = Alpine.store('station')
-        if (st.catalog?.status === 'success' && !st.id && !ctl?.isOpen) ctl?.open({ focus: false })
+        if (st.catalog?.status === 'success' && !st.id && !ctl?.isOpen) autoOpen()
       })
+      cleanups.push(() => Alpine.release(fx))
     },
 
     /** (Re)create the presentation for the current viewport and apply the start rule. */
@@ -70,7 +78,7 @@ export function stationPicker() {
       const onChange = (open: boolean) => {
         this.open = open
         if (open) this.mapMounted = true
-        if (this.mode === 'inline') saveDrawerOpen(browserStorage(), open)
+        if (this.mode === 'inline' && !auto) saveDrawerOpen(browserStorage(), open)
       }
       if (this.mode === 'sheet') {
         panel.hidden = true
@@ -86,7 +94,7 @@ export function stationPicker() {
       // On load nothing animates or steals focus; after a resize the panel may animate.
       if (start) {
         if (!viewportChange) panel.classList.add('no-anim')
-        ctl.open({ focus: false })
+        autoOpen()
         requestAnimationFrame(() => panel.classList.remove('no-anim'))
       }
       this.open = ctl.isOpen

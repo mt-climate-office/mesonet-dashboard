@@ -1,7 +1,8 @@
 /**
- * The two station maps (thin wrappers over ui/map/map.ts + stationLayer):
- *   stationMap    — Latest card: select a station, fly to it.
+ * The station maps (thin wrappers over ui/map/map.ts + stationLayer):
+ *   stationMap    — Latest card / About: select a station, fly to it.
  *   downloaderMap — Downloader: counties emphasised, click selects, no re-centre (legacy).
+ *   pickerMap     — station picker: the whole state stays in view, click selects.
  *
  * Markup: an empty element with a height; the component builds the map,
  * legend panel and sr-only table twin inside it.
@@ -117,3 +118,7 @@ export const stationMap = (opts: StationMapOptions) =>
 /** Downloader station map: county lines emphasised; selection does not move the map. */
 export const downloaderMap = (opts: StationMapOptions) =>
   mapView(opts, { label: 'Map of Montana Mesonet stations to download', emphasiseCounties: true, fly: false })
+
+/** Station-picker map: picking a station does not move the map (the whole network stays in view). */
+export const pickerMap = (opts: StationMapOptions) =>
+  mapView(opts, { label: 'Map of Montana Mesonet stations', emphasiseCounties: false, fly: false })
