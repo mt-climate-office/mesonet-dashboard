@@ -4,7 +4,7 @@
  * `history.replaceState` per tick (in-section state); `go` changes section
  * with `history.pushState` so Back returns (core/router.ts `historyMode`).
  */
-import { historyMode, parseSection, type Section } from '../core/router'
+import { historyMode, parseSection, sectionForHash, type Section } from '../core/router'
 import { readUrlState, viewHref, writeUrlSearch, type UrlState } from '../core/url-schema'
 
 export interface UrlStore {
@@ -25,6 +25,7 @@ export interface UrlStore {
 
 export function createUrlStore(): UrlStore {
   let pending = false
+  let booted = false
   // Keys ever passed to set()/go(); lets `alwaysWrite` keys stay at their default.
   const touched = new Set<string>()
   const path = () => location.pathname
@@ -35,7 +36,9 @@ export function createUrlStore(): UrlStore {
     init() {
       const sync = () => {
         this.state = readUrlState(location.search)
-        this.section = parseSection(location.hash)
+        // Boot reads the hash as is; later changes ignore in-page anchors such as the skip link's #main.
+        this.section = booted ? sectionForHash(location.hash, this.section) : parseSection(location.hash)
+        booted = true
       }
       sync()
       window.addEventListener('popstate', sync)

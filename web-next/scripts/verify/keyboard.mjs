@@ -1,5 +1,5 @@
 /**
- * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, navbar
+ * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, one-row navbar
  * tab order + focus ring, station combobox, Help dialog, theme toggle, Latest
  * sidebar collapse, tabs mounting only while open (no cross-tab requests), chart
  * table twins, map sr-table selection, reduced motion. Run via `npm run verify`.
@@ -31,8 +31,8 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await rendered({ charts: 1 })
 
   // Fresh load: walk the navbar from the top of the document.
-  const want = ['Skip to main content', 'Montana Climate Office', 'Latest Data', 'Ag Tools', 'Data Downloader',
-    'Send feedback (opens in a new tab)', 'Copy a link to this view']
+  // One-row navbar (DESIGN.md): logo, station switcher, Share, theme, Help; sections are below it.
+  const want = ['Skip to main content', 'Montana Climate Office', 'Station: Bozeman. Change station', 'Copy a link to this view']
   const got = []
   const rings = []
   for (let i = 0; i < want.length + 2; i++) {
@@ -42,7 +42,7 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   }
   const theme = got[want.length]
   const help = got[want.length + 1]
-  check('navbar Tab order: skip, logo, 3 tabs, feedback, share, theme, help',
+  check('navbar Tab order: skip, logo, station switcher, share, theme, help',
     want.every((w, i) => got[i] === w) && /theme/i.test(theme) && help === 'About this dashboard', got.join(' → '))
   check('every navbar stop shows the focus ring', rings.every(Boolean), got.filter((_, i) => !rings[i]).join(', '))
 

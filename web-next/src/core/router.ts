@@ -24,13 +24,23 @@ export const DEFAULT_SECTION: Section = 'now'
 const IDS: readonly string[] = SECTIONS.map((s) => s.id)
 
 /** Old tab hashes → the section that replaced them. */
-const LEGACY_HASH: Readonly<Record<string, Section>> = { latest: 'charts', downloader: 'download' }
+const LEGACY_HASH: Readonly<Record<string, Section>> = { latest: 'charts', downloader: 'download', satellite: 'now' }
 
 /** `#ag` / `ag` → 'ag'; legacy tab names map to their section; anything else → 'now'. */
 export function parseSection(hash: string): Section {
   const raw = hash.replace(/^#/, '').trim()
   if (IDS.includes(raw)) return raw as Section
   return LEGACY_HASH[raw] ?? DEFAULT_SECTION
+}
+
+/**
+ * The section after the hash changed to `hash`: like parseSection, except
+ * that an unrelated in-page anchor (the skip link's `#main`) keeps `current`
+ * instead of jumping to Now.
+ */
+export function sectionForHash(hash: string, current: Section): Section {
+  const raw = hash.replace(/^#/, '').trim()
+  return raw === '' || IDS.includes(raw) || raw in LEGACY_HASH ? parseSection(raw) : current
 }
 
 /** Section label ("Charts"), for announcements and titles. */

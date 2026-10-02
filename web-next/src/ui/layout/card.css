@@ -28,6 +28,8 @@ a.dash-card:hover { border-color: var(--accent-line); background: var(--accent-h
 
 /* Underlined, not color-only (WCAG 1.4.1). */
 .dash-link { color: var(--accent-line); font-size: var(--fs-sm); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+/* A standalone link (not inside prose) gets a 40 px touch target (HOUSE-STYLE §5.5). */
+@media (hover: none) { .dash-link { display: inline-flex; align-items: center; min-height: 40px; } }
 
 /* Status badge: text + border, never color alone. --warn adds an icon (markup) and a heavier border. */
 .dash-badge {

@@ -210,6 +210,41 @@
    "status": 200,
    "type": "application/geo+json",
    "file": "api-TFX_95_57-1c3e0214dd.json"
+  },
+  "https://api.weather.gov/gridpoints/TFX/95,57/forecast": {
+   "status": 200,
+   "type": "application/geo+json",
+   "file": "api-95_57_forecast-fd45520912.json"
+  },
+  "https://api.weather.gov/icons/land/day/few?size=medium": {
+   "status": 200,
+   "type": "image/png",
+   "file": "api-day_few-e415491edd.png"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,ppt,sol_rad,soil_vwc,bp,snow_depth&start_time=2026-09-29&level=2&rm_na=true&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-1300d6dc83.csv"
+  },
+  "https://api.weather.gov/icons/land/day/skc?size=medium": {
+   "status": 200,
+   "type": "image/png",
+   "file": "api-day_skc-d78ad3e786.png"
+  },
+  "https://api.weather.gov/icons/land/night/sct?size=medium": {
+   "status": 200,
+   "type": "image/png",
+   "file": "api-night_sct-790e5c379e.png"
+  },
+  "https://api.weather.gov/icons/land/day/sct?size=medium": {
+   "status": 200,
+   "type": "image/png",
+   "file": "api-day_sct-e6e6f30dc5.png"
+  },
+  "https://api.weather.gov/icons/land/night/few?size=medium": {
+   "status": 200,
+   "type": "image/png",
+   "file": "api-night_few-00bb73bdfb.png"
   }
  }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SECTION, SECTIONS, historyMode, legacyRedirect, parseSection, sectionLabel } from './router'
+import { DEFAULT_SECTION, SECTIONS, historyMode, legacyRedirect, parseSection, sectionForHash, sectionLabel } from './router'
 import { migrateLegacySearch } from './url-schema'
 
 describe('parseSection', () => {
@@ -23,6 +23,19 @@ describe('parseSection', () => {
   })
   it('labels', () => {
     expect(sectionLabel('download')).toBe('Download')
+  })
+})
+
+describe('sectionForHash', () => {
+  it('follows section and legacy hashes, and an empty hash means Now', () => {
+    expect(sectionForHash('#about', 'charts')).toBe('about')
+    expect(sectionForHash('#latest', 'now')).toBe('charts')
+    expect(sectionForHash('#satellite', 'charts')).toBe('now')
+    expect(sectionForHash('', 'charts')).toBe('now')
+  })
+  it('keeps the current section for in-page anchors (skip link #main)', () => {
+    expect(sectionForHash('#main', 'charts')).toBe('charts')
+    expect(sectionForHash('#whatever', 'ag')).toBe('ag')
   })
 })
 
