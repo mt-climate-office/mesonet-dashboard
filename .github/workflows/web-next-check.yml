@@ -1,0 +1,35 @@
+# PR gate for web-next/ (the Alpine + ECharts rebuild): typecheck, lint,
+# unit tests, production build and the bundle-size budget.
+name: Check web-next/
+
+on:
+  pull_request:
+    paths:
+      - 'web-next/**'
+      - '.github/workflows/web-next-check.yml'
+
+concurrency:
+  group: web-next-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-next
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web-next/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npm run size

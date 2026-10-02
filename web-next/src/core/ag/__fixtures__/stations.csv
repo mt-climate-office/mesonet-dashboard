@@ -1,0 +1,246 @@
+station,name,date_installed,sub_network,longitude,latitude,elevation,county,mesowest_id,gwic_id,nwsli_id,has_swp,funded
+aceabsar,Absarokee,2021-06-02,HydroMet,-109.61,45.56,1400.4,Stillwater,,,KEEM8,True,True
+acealbio,Albion SE,2026-09-12,HydroMet,-104.21,45.15,1076.0,Carter,,,,False,True
+aceashla,Ashland,2023-08-27,HydroMet,-106.14,45.57,971.0,Powder River,,,ASAM8,True,True
+aceaugus,Augusta N,2025-06-26,HydroMet,-112.36,47.59,1313.0,Teton,,,AGNM8,False,True
+acebaker,Baker S,2026-07-15,HydroMet,-104.29,46.25,1008.0,Fallon,,,,False,True
+acebarth,Barth Spring,2025-09-18,HydroMet,-107.24,47.82,887.0,Valley,,,ARTM8,False,True
+acebellt,Belltower,2026-07-19,HydroMet,-104.36,45.65,990.0,Carter,,,,False,True
+acebeltn,Belt NW,2025-06-25,HydroMet,-111.02,47.43,1149.0,Cascade,,,ELTM8,False,True
+acebento,Benton Lake W,2022-10-21,HydroMet,-111.47,47.69,1129.0,Cascade,,,BLWM8,True,True
+acebiddl,Biddle NW,2026-09-24,HydroMet,-105.57,45.21,1056.0,Powder River,,,,False,True
+acebigsa,Big Sandy NW,2024-07-17,HydroMet,-110.32,48.24,871.0,Chouteau,,,BSWM8,False,True
+acebigti,Big Timber SE,2022-08-23,HydroMet,-109.83,45.74,1347.0,Sweet Grass,,,BTSM8,False,True
+acebilli,Billings S,2024-07-11,HydroMet,-108.49,45.63,1231.0,Yellowstone,,,BNGM8,False,True
+acebirne,Birney,2025-08-01,HydroMet,-106.52,45.34,974.0,Rosebud,,,BYSM8,False,True
+acebootl,Bootlegger S CG SW,2025-07-12,HydroMet,-111.34,48.31,983.0,Toole,,,LEGM8,False,True
+acebowma,Bowmans Corner NW,2023-10-22,HydroMet,-112.17,47.31,1301.0,Lewis and Clark,,,BNWM8,False,True
+acebozem,Bozeman,2020-10-30,HydroMet,-111.07,45.66,1495.09,Gallatin,,,BZNM8,True,True
+acebrady,Brady NE,2023-06-27,HydroMet,-111.66,48.1,1029.0,Pondera,,,BRYM8,True,True
+acebrdus,Broadus SE,2026-09-15,HydroMet,-105.28,45.31,975.0,Powder River,,,,False,True
+acebrede,Bredette NE,2024-09-20,HydroMet,-105.26,48.55,787.0,Roosevelt,,,BDEM8,False,True
+acebroad,Broadview,2021-08-14,HydroMet,-108.76,46.13,1239.41,Yellowstone,,,BDVM8,True,True
+acebrock,Brockway,2025-10-02,HydroMet,-105.77,47.31,778.0,McCone,,,WAYM8,False,True
+acebruse,Brusett NW,2025-09-07,HydroMet,-107.52,47.52,1002.0,Garfield,,,USEM8,False,True
+acebsase,Big Sandy SE,2024-09-10,HydroMet,-110.04,48.03,945.0,Chouteau,,,BSEM8,False,True
+acebuffa,Buffalo Lake E,2024-10-16,HydroMet,-112.66,48.85,1256.0,Glacier,,,BUFM8,False,True
+acebusby,Busby S,2023-08-26,HydroMet,-106.93,45.52,1092.0,Big Horn,,,BUSM8,False,True
+acebynum,Bynum W,2023-06-21,HydroMet,-112.49,47.96,1353.0,Teton,,,BYUM8,True,True
+acecarly,Carlyle SW,2026-07-19,HydroMet,-104.2,46.62,972.0,Fallon,,,,False,True
+acecarte,Carter N,2024-07-15,HydroMet,-110.99,48.02,1064.0,Chouteau,,,CRNM8,False,True
+acecedar,Cedar Creek GA,2026-08-08,HydroMet,-104.63,46.92,780.0,Dawson,,,,False,True
+acechalk,Chalk Butte,2026-09-13,HydroMet,-104.78,45.66,1092.0,Carter,,,,False,True
+acechest,Chester SW,2023-06-28,HydroMet,-111.04,48.45,946.0,Liberty,,,CHSM8,True,True
+acechris,Christina W,2024-07-11,HydroMet,-109.52,47.42,1099.0,Fergus,,,CSTM8,False,True
+acecircl,Circle N,2025-10-02,HydroMet,-105.66,47.59,805.0,McCone,,,CRLM8,False,True
+acecleve,Cleveland N,2025-08-16,HydroMet,-109.14,48.39,933.0,Blaine,,,EVEM8,False,True
+acecoffe,Coffee Creek N,2022-09-19,HydroMet,-110.11,47.39,1136.0,Fergus,,,CFCM8,True,True
+acecohan,Cohagen N,2025-08-14,HydroMet,-106.64,47.12,889.0,Garfield,,,OHNM8,False,True
+acecohas,Cohagen S,2025-08-25,HydroMet,-106.68,46.91,909.0,Garfield,,,HAGM8,False,True
+aceconra,Conrad N,2024-08-07,HydroMet,-111.92,48.31,1132.03,Pondera,,,CNNM8,False,True
+aceconte,Content,2025-09-19,HydroMet,-107.58,48.02,705.0,Phillips,,,TNTM8,False,True
+acecoone,Cooney Reservoir NW,2022-08-20,HydroMet,-109.26,45.47,1439.0,Stillwater,,,COOM8,True,True
+acecotto,Cottonwood,2026-08-06,HydroMet,-104.23,47.21,761.0,Wibaux,,,,False,True
+acecrane,Crane W,2025-10-03,HydroMet,-104.32,47.57,645.0,Richland,,,CRBM8,False,True
+acecrowa,Crow Agency,2021-09-04,HydroMet,-107.44,45.59,939.58,Big Horn,,,CROM8,False,True
+acedillo,Dillon,2026-06-11,HydroMet,-112.51,45.27,1607.0,Beaverhead,,,,False,True
+acedoggu,Dog Gun Lake E,2024-10-15,HydroMet,-113.06,48.38,1474.0,Glacier,,,DOGM8,False,True
+acedryla,Dry Lake,2024-10-17,HydroMet,-108.64,48.04,1042.0,Blaine,,,DRYM8,False,True
+acedupuy,Dupuyer N,2023-06-22,HydroMet,-112.55,48.3,1186.0,Pondera,,,DYRM8,True,True
+aceeden,Eden NW,2025-06-27,HydroMet,-111.33,47.32,1241.0,Cascade,,,ENWM8,False,True
+aceedwar,Edwards E,2025-08-28,HydroMet,-107.18,47.18,876.0,Garfield,,,EDEM8,False,True
+aceekala,Ekalaka W,2026-07-20,HydroMet,-104.74,45.95,981.0,Carter,,,,False,True
+aceelmda,Elmdale S,2026-08-03,HydroMet,-104.74,47.86,754.0,Richland,,,,False,True
+aceethri,Ethridge N,2025-07-10,HydroMet,-112.15,48.61,1065.0,Toole,,,ETNM8,False,True
+acefairf,Fairfield,2025-06-25,HydroMet,-111.94,47.68,1189.0,Teton,,,FARM8,False,True
+acefallo,Fallon C-B Route,2026-08-08,HydroMet,-105.07,46.88,700.0,Prairie,,,,False,True
+acefigmt,Fig Mountain,2025-08-26,HydroMet,-107.01,47.01,998.0,Garfield,,,BLZM8,False,True
+acefores,Forestgrove N,2023-08-14,HydroMet,-109.09,47.11,1251.0,Fergus,,,FRGM8,False,True
+aceforsy,Forsyth S,2025-07-30,HydroMet,-106.71,46.18,907.0,Rosebud,,,FSSM8,False,True
+acefortk,Fort Kipp NW,2024-09-22,HydroMet,-104.77,48.22,643.0,Roosevelt,,,FTKM8,False,True
+acefoxcr,Fox Crossing SW,2024-08-03,HydroMet,-110.75,48.9,956.0,Hill,,,FOXM8,False,True
+acefrenc,Frenchman Ridge,2025-07-19,HydroMet,-110.55,47.75,1076.0,Chouteau,,,RIGM8,False,True
+aceglasg,Glasgow SW,2024-08-22,HydroMet,-106.75,48.12,692.0,Valley,,,GLOM8,False,True
+acehammo,Hammond NE,2026-09-22,HydroMet,-104.84,45.28,1113.0,Carter,,,,False,True
+aceharlo,Harlowton E,2023-07-13,HydroMet,-109.7,46.41,1245.0,Wheatland,,,HWTM8,True,True
+acehavre,Havre,2021-05-12,HydroMet,-109.8,48.49,830.99,Hill,,,HAEM8,True,True
+acehighw,Highwood Bench,2024-07-12,HydroMet,-110.9,47.68,1014.0,Chouteau,,,HIWM8,False,True
+acehogel,Hogeland SW,2024-08-19,HydroMet,-108.78,48.82,1016.0,Blaine,,,HOGM8,False,True
+acehuntl,Huntley E,2022-09-29,HydroMet,-108.23,45.93,928.0,Yellowstone,,,HNTM8,True,True
+aceingom,Ingomar,2021-08-12,HydroMet,-107.22,46.66,939.56,Rosebud,,,IGMM8,True,True
+aceinven,Inverness N,2024-08-06,HydroMet,-110.71,48.72,978.0,Hill,,,INNM8,False,True
+aceinves,Inverness S,2024-07-18,HydroMet,-110.71,48.38,934.0,Hill,,,ISSM8,False,True
+aceismay,Ismay NE,2026-07-16,HydroMet,-104.63,46.6,863.0,Fallon,,,,False,True
+acejudit,Judith Gap,2024-07-11,HydroMet,-109.77,46.72,1416.0,Judith Basin,,,JGPM8,False,True
+acekeste,Kester School S,2025-09-05,HydroMet,-106.66,47.56,795.0,Garfield,,,KSSM8,False,True
+acekreml,Kremlin NW,2025-07-12,HydroMet,-110.22,48.74,836.0,Hill,,,KLNM8,False,True
+acelaket,Lake Thibadeau W,2024-08-17,HydroMet,-109.64,48.75,801.0,Hill,,,LTBM8,False,True
+acelamed,Lame Deer E,2023-08-29,HydroMet,-106.49,45.66,1300.0,Rosebud,,,LMDM8,False,True
+acelarsl,Larslan SW,2024-09-26,HydroMet,-106.24,48.53,895.0,Valley,,,LLNM8,False,True
+acelauri,Laurin,2026-06-11,HydroMet,-112.13,45.36,1533.0,Madison,,,,False,True
+acelavin,Lavina N,2023-07-19,HydroMet,-108.95,46.4,1123.0,Golden Valley,,,LVAM8,True,True
+acelinds,Lindsay SW,2026-09-29,HydroMet,-105.25,47.19,925.0,Dawson,,,,False,True
+acelodge,Lodge Grass W,2023-08-25,HydroMet,-107.52,45.31,1166.0,Big Horn,,,LGGM8,False,True
+aceloman,Loma N,2024-07-12,HydroMet,-110.49,47.95,844.0,Valley,,,LOAM8,False,True
+acelorin,Loring SW,2023-09-07,HydroMet,-107.88,48.77,860.0,Phillips,,,LORM8,False,True
+aceltshp,Little Sheep Mtn,2026-09-17,HydroMet,-105.81,46.84,903.0,Prairie,,,,False,True
+acematad,Matador Ranch,2023-09-08,HydroMet,-108.34,47.93,923.0,Phillips,,,MTRM8,False,True
+acemedic,Medicine Lake W,2024-09-19,HydroMet,-104.73,48.52,754.0,Sheridan,,,MEDM8,False,True
+acemelvi,Melville,2021-09-12,HydroMet,-109.84,46.0,1430.15,Sweet Grass,,,MLVM8,True,True
+acemidwa,Midway Colony,2022-10-24,HydroMet,-112.01,48.06,1151.5,Pondera,,,RADM8,False,True
+acemildr,Mildred SW,2026-09-16,HydroMet,-105.14,46.55,886.0,Prairie,,,,False,True
+acemiles,Miles City,2021-08-25,HydroMet,-105.95,46.41,818.85,Custer,,,MCYM8,True,True
+acemilli,Mill Iron N,2026-07-20,HydroMet,-104.17,45.93,968.0,Carter,,,,False,True
+acemissi,Mission Lake S,2024-10-14,HydroMet,-112.63,48.53,1264.0,Glacier,,,MINM8,False,True
+acemizpa,Mizpah,2026-09-27,HydroMet,-105.21,46.22,779.0,Custer,,,,False,True
+acemocca,Moccasin,2021-05-13,HydroMet,-109.95,47.06,1294.77,Judith Basin,,,MCIM8,True,True
+acemolts,Molt S,2023-08-02,HydroMet,-108.96,45.84,1188.0,Stillwater,,,MOTM8,True,True
+acemosbs,Mosby S,2023-08-12,HydroMet,-107.92,46.78,855.0,Petroleum,,,MOYM8,False,True
+acemosnw,Jitney Road,2023-07-26,HydroMet,-108.1,47.06,911.0,Petroleum,,,MOBM8,True,True
+acemosse,Mosby SE,2024-09-08,HydroMet,-107.65,46.94,968.0,Garfield,,,MBYM8,False,True
+acemtleb,Mt Lebanon SE,2024-08-16,HydroMet,-111.04,48.85,1256.0,Liberty,,,MTLM8,False,True
+acemusse,Musselshell,2023-08-11,HydroMet,-108.02,46.54,955.0,Musselshell,,,MSSM8,True,True
+acenashu,Nashua NE,2024-09-24,HydroMet,-106.32,48.2,725.0,Valley,,,NUAM8,False,True
+aceoilmo,Oilmont,2022-09-16,HydroMet,-111.6,48.78,1090.0,Toole,,,OILM8,True,True
+aceolive,Olive N,2026-09-25,HydroMet,-105.54,45.62,1012.0,Powder River,,,,False,True
+aceophei,Opheim S,2024-08-21,HydroMet,-106.39,48.79,950.0,Valley,,,OHMM8,False,True
+aceotter,Otter E,2023-08-28,HydroMet,-105.98,45.25,1200.0,Powder River,,,OTRM8,False,True
+acepines,The Pines,2025-09-17,HydroMet,-106.67,47.85,735.0,Valley,,,PNEM8,False,True
+aceplevn,Plevna SW,2026-07-17,HydroMet,-104.65,46.32,881.0,Fallon,,,,False,True
+acepopla,Poplar N,2024-09-21,HydroMet,-105.22,48.18,651.0,Roosevelt,,,PARM8,False,True
+acepowde,Powderville S,2026-09-14,HydroMet,-105.06,45.56,949.0,Powder River,,,,False,True
+acepumpk,Pumpkin Creek N,2026-09-26,HydroMet,-105.69,46.25,793.0,Custer,,,,False,True
+acerapl2,Rapelje 2,2025-10-06,HydroMet,-109.45,45.86,1406.0,Stillwater,,,RJEM8,True,True
+aceriche,Richey SW,2026-08-04,HydroMet,-105.25,47.54,752.0,Dawson,,,,False,True
+acericse,Richey SE,2026-08-05,HydroMet,-104.76,47.54,869.0,Dawson,,,,False,True
+acerocks,Rock Springs N,2025-08-13,HydroMet,-106.21,46.89,844.0,Garfield,,,RSNM8,False,True
+acerothi,Rothiemay W,2023-07-18,HydroMet,-109.35,46.54,1330.0,Golden Valley,,,RMYM8,False,True
+aceround,Roundup,2021-06-09,HydroMet,-108.42,46.58,1047.34,Musselshell,,,ROUM8,True,True
+aceroyeg,Roy E,2023-08-03,HydroMet,-108.68,47.38,926.0,Fergus,,,RYOM8,True,True
+aceryega,Ryegate S,2023-07-19,HydroMet,-109.31,46.2,1302.0,Golden Valley,,,RGTM8,True,True
+acesacos,Saco S,2023-09-09,HydroMet,-107.39,48.29,835.0,Phillips,,,SASM8,False,True
+acesageh,Sage Hen Buttes,2025-09-06,HydroMet,-106.98,47.45,872.0,Garfield,,,SGHM8,False,True
+acesande,Sanders N,2025-08-02,HydroMet,-107.08,46.32,792.0,Treasure,,,SDRM8,False,True
+acesands,Sand Springs NW,2023-07-27,HydroMet,-107.64,47.17,917.0,Garfield,,,SDSM8,True,True
+acesarpy,Sarpy Creek,2025-08-03,HydroMet,-107.09,45.96,987.0,Treasure,,,SPYM8,False,True
+acesavoy,Savoy SW,2024-10-18,HydroMet,-108.59,48.42,750.0,Sweet Grass,,,SVYM8,False,True
+acescobe,Scobey NW,2023-09-10,HydroMet,-105.5,48.86,752.0,Daniels,,,SCYM8,False,True
+acescots,Scotsman Coulee,2025-07-18,HydroMet,-106.17,47.93,765.0,McCone,,,SCTM8,False,True
+aceshirl,Shirley NW,2026-09-28,HydroMet,-105.64,46.64,766.0,Custer,,,,False,True
+acesidne,Sidney,2021-09-12,HydroMet,-104.25,47.78,688.5,Richland,,,SIYM8,True,True
+acesimps,Simpson,2025-07-13,HydroMet,-110.19,48.93,845.0,Hill,,,SMPM8,False,True
+acesprin,Springdale,2024-05-18,HydroMet,-110.16,45.75,1309.0,Blaine,,,SDLM8,False,True
+acestipe,Stipek NW,2025-10-03,HydroMet,-104.73,47.26,704.0,Dawson,,,SPKM8,False,True
+acesunbu,Sunburst NW,2024-07-19,HydroMet,-112.02,48.92,1141.0,Toole,,,SBSM8,False,True
+acesunpr,Sun Prairie,2025-08-29,HydroMet,-107.68,47.77,824.0,Phillips,,,SNPM8,False,True
+acesunri,Sun River SE,2023-07-11,HydroMet,-111.72,47.41,1096.0,Cascade,,,SURM8,True,True
+acetampi,Tampico N,2024-08-23,HydroMet,-106.85,48.36,658.0,Valley,,,TAMM8,False,True
+acethurl,Thurlow,2025-07-31,HydroMet,-106.31,46.28,751.0,Rosebud,,,THLM8,False,True
+acetosto,Toston,2022-09-21,HydroMet,-111.54,46.14,1237.0,Broadwater,,,TTNM8,True,True
+aceturne,Turner N,2023-09-11,HydroMet,-108.39,48.87,937.0,Blaine,,,TRNM8,False,True
+acetwodo,Twodot E,2023-07-13,HydroMet,-110.21,46.45,1415.0,Wheatland,,,TWOM8,True,True
+acevalen,Dovetail,2023-08-04,HydroMet,-108.24,47.36,885.0,Petroleum,,,VLTM8,True,True
+acevanno,Van Norman S,2025-08-27,HydroMet,-106.23,47.21,770.0,Garfield,,,VNSM8,False,True
+acevidan,Vida NE,2025-07-16,HydroMet,-105.35,47.92,678.0,McCone,,,VDNM8,False,True
+acevidaw,Vida W,2025-10-01,HydroMet,-105.79,47.8,770.0,McCone,,,VDWM8,False,True
+acevolbo,Volborg NW,2026-09-25,HydroMet,-105.77,45.95,997.0,Custer,,,,False,True
+acevoltn,Volt N,2024-09-27,HydroMet,-105.66,48.54,729.0,Roosevelt,,338721,VOTM8,False,True
+acewagne,Wagner S,2025-09-20,HydroMet,-108.15,48.26,782.0,Phillips,,,WAGM8,False,True
+acewarho,War Horse NW,2023-08-13,HydroMet,-108.59,47.15,960.0,Petroleum,,,WRHM8,False,True
+acewarri,Warrick S,2025-08-17,HydroMet,-109.64,47.99,1072.0,Chouteau,,,RICM8,False,True
+aceweldo,Weldon SW,2025-09-04,HydroMet,-106.11,47.55,744.0,McCone,,,WLDM8,False,True
+acewetz,Wetzel NE,2024-10-13,HydroMet,-113.12,48.78,1359.0,Glacier,,,WETM8,False,True
+acewibau,Wibaux S,2026-08-07,HydroMet,-104.2,46.91,857.0,Wibaux,,,,False,True
+acewinif,Woodhawk,2024-10-19,HydroMet,-109.2,47.73,981.0,Fergus,,,WNFM8,False,True
+acewinne,Winnett SW,2023-07-25,HydroMet,-108.5,46.97,976.0,Petroleum,,,WIEM8,True,True
+acewolfp,Wolf Point NW,2024-09-25,HydroMet,-105.74,48.17,680.0,Roosevelt,,,WOFM8,False,True
+arskeogh,Fort Keogh N,2017-06-26,AgriMet,-105.95,46.41,818.85,Custer,MTM23,,,True,True
+arskeose,Fort Keogh SE,2018-06-19,AgriMet,-105.83,46.35,746.04,Custer,MTM25,,,True,True
+arskeosw,Fort Keogh SW,2018-06-26,AgriMet,-105.98,46.3,849.2,Custer,MTM26,,,True,True
+blm1arge,Argenta,2017-08-18,AgriMet,-112.88,45.25,1898.93,Beaverhead,MTM14,,,False,True
+blm2virg,Virginia City,2017-08-23,AgriMet,-111.88,45.27,2238.82,Madison,MTM17,,,False,True
+blm3mcca,McCartney Mtn,2017-08-20,AgriMet,-112.6,45.55,1850.71,Madison,MTM18,,,False,True
+blm5kidd,Kidd,2017-10-02,AgriMet,-112.72,44.81,1905.7,Beaverhead,MTM16,,,False,True
+blmangel,Angela,2021-10-13,AgriMet,-106.59,46.7,954.06,Rosebud,MTM89,,,True,True
+blmbattl,Battle Creek,2018-08-21,AgriMet,-103.78,45.07,988.09,Silver Bow,MTM30,,,True,True
+blmbelfr,Belfry,2018-09-28,AgriMet,-108.9,45.18,1194.85,Carbon,MTM31,,,True,True
+blmbroad,Broadus,2018-08-11,AgriMet,-105.36,45.44,961.55,Powder River,MTM32,,,True,True
+blmcapit,Capitol,2018-08-13,AgriMet,-104.14,45.32,1003.48,Carter,MTM33,,,True,True
+blmcuste,Custer NW,2023-10-15,AgriMet,-107.59,46.15,897.0,Yellowstone,MTM96,,,False,True
+blmfortp,Fort Peck,2021-10-13,AgriMet,-106.15,47.74,797.19,McCone,MTM87,,,False,True
+blmglend,Glendive,2018-06-25,AgriMet,-104.75,46.92,707.35,Dawson,MTM28,,,True,True
+blmglnor,Vandalia N,2018-10-10,AgriMet,-106.91,48.51,790.51,Valley,MTM34,,,True,True
+blmglsou,Triple Crossing,2018-10-11,AgriMet,-107.11,47.99,732.0,Valley,,,,False,True
+blmhardi,Harding Cutoff,2018-08-21,AgriMet,-103.73,45.17,982.06,Silver Bow,MTM36,,,True,True
+blmhavre,Cherry Ridge,2018-10-07,AgriMet,-109.05,48.87,921.77,Blaine,MTM37,,,True,True
+blmjorda,Jordan,2021-10-13,AgriMet,-106.49,47.35,761.35,Garfield,MTM88,,,True,True
+blmmatad,Zortman E,2018-10-13,AgriMet,-108.32,47.89,943.82,Phillips,MTM38,,,True,True
+blmplevn,Plevna,2018-08-20,AgriMet,-104.43,46.44,922.31,Fallon,MTM39,,,True,True
+blmpumpk,Pumpkin Creek,2018-08-09,AgriMet,-105.7,46.2,830.59,Custer,MTM40,,,True,True
+blmround,Roundup NW,2018-09-25,AgriMet,-108.74,46.58,1106.22,Musselshell,MTM41,,,True,True
+blmroyno,Roy,2019-08-07,AgriMet,-108.95,47.49,936.41,Fergus,MTM42,,,True,True
+blmrubyc,Ruby Creek,2024-04-28,AgriMet,-109.15,45.07,1437.0,Carbon,MTM98,,,False,True
+blmstmbt,Steamboat,2024-04-28,AgriMet,-108.14,46.24,1081.0,Yellowstone,MTM99,,,False,True
+blmterry,Terry,2018-06-26,AgriMet,-105.26,46.84,707.38,Prairie,MTM29,,,True,True
+blmwarre,Warren E,2018-09-27,AgriMet,-108.44,45.04,1594.16,Carbon,MTM43,,,True,True
+bozmtest,Bozeman Test,2021-10-01,AgriMet,-111.07,45.66,1494.9,Gallatin,,,,False,True
+corvalli,Corvallis,2016-09-30,AgriMet,-114.09,46.33,1093.71,Ravalli,MTM04,,,False,True
+crowagen,Crow Agency E,2017-04-19,AgriMet,-107.44,45.59,939.56,Big Horn,MTM13,,,False,True
+csktbira,CSKT Bison Range,2023-05-04,HydroMet,-114.26,47.37,813.0,Lake,MTM94,,,True,True
+ebarllob,Clearwater SW,2016-11-21,AgriMet,-113.37,46.96,1181.0,Missoula,MTM08,,,False,True
+ekalakas,Ekalaka SE,2020-10-14,AgriMet,-104.34,45.71,972.42,Carter,MTM93,,,False,True
+ftbentcb,Fort Benton E,2017-09-13,AgriMet,-110.48,47.79,988.71,Chouteau,MTM02,,,True,True
+havrenmt,Havre,2016-10-21,AgriMet,-109.8,48.49,827.06,Hill,MTM06,,,False,True
+kalispel,Kalispell E,2016-09-29,AgriMet,-114.14,48.19,900.52,Flathead,MTM03,,,False,True
+lololowr,Lolo Lower,2016-09-22,AgriMet,-114.13,46.75,998.0,Missoula,MTM01,,,False,True
+lomawood,Loma S,2018-07-26,AgriMet,-110.53,47.89,851.66,Chouteau,MTM45,,,True,True
+lubrecht,Lubrecht Forest,2017-06-16,AgriMet,-113.44,46.89,1241.85,Missoula,MTM12,,,False,True
+mbmgtech,MT Tech,2018-09-15,AgriMet,-112.56,46.01,1774.35,Silver Bow,MTM46,,,False,True
+mcolubre,Lubrecht HQ,2023-11-15,HydroMet,-113.45,46.89,1252.0,Missoula,,,,False,True
+mdabench,Benchland NE,2019-04-29,AgriMet,-109.97,47.09,1293.54,Judith Basin,MTM47,133047,,True,True
+mdabigsa,Big Sandy SW,2021-10-15,AgriMet,-110.33,48.1,888.29,Chouteau,MTM90,316561,,True,True
+mdabilli,Billings W,2023-04-25,AgriMet,-108.7,45.74,1008.0,Yellowstone,,,,False,True
+mdacasca,Cascade E,2019-10-22,AgriMet,-111.62,47.28,1034.38,Cascade,MTM76,286443,,True,True
+mdacharl,Charlo Heights,2019-10-25,AgriMet,-114.17,46.16,1122.91,Ravalli,MTM77,286442,,True,True
+mdachine,Chinook E,2018-10-06,AgriMet,-109.16,48.58,729.61,Blaine,MTM48,286445,,True,True
+mdachote,Choteau NE,2019-04-29,AgriMet,-112.09,47.89,1152.33,Teton,MTM49,213965,,True,True
+mdadagma,Dagmar NW,2019-10-02,AgriMet,-104.25,48.66,646.25,Sheridan,MTM82,235955,,False,True
+mdadillo,Dillon NE,2019-09-25,AgriMet,-112.59,45.25,1534.87,Beaverhead,MTM70,213964,,True,True
+mdaedgar,Edgar E,2019-05-29,AgriMet,-108.86,45.46,1058.97,Carbon,MTM50,122340,,True,True
+mdafroid,Froid NE,2019-10-03,AgriMet,-104.48,48.35,627.6,Roosevelt,MTM81,235081,,True,True
+mdagildf,Gildford N,2019-07-03,AgriMet,-110.28,48.7,854.22,Hill,MTM51,213968,,True,True
+mdaglasw,Glasgow W,2019-10-02,AgriMet,-106.72,48.23,638.99,Valley,MTM72,213969,,False,True
+mdagldcr,Gold Creek,2025-05-16,AgriMet,-112.92,46.58,1305.0,Powell,MTC02,,,False,True
+mdahardi,Hardin N,2019-10-17,AgriMet,-107.6,45.87,863.58,Big Horn,MTM75,236086,,True,True
+mdahogel,Hogeland SE,2018-10-09,AgriMet,-108.56,48.77,950.5,Blaine,MTM52,121258,,True,True
+mdaledge,Ledger N,2019-10-10,AgriMet,-111.82,48.34,1047.42,Pondera,MTM73,121215,,True,True
+mdamalta,Malta W,2018-09-20,AgriMet,-108.0,48.35,688.8,Phillips,MTM69,235919,,True,True
+mdamanha,Manhattan S,2019-09-26,AgriMet,-111.32,45.79,1329.22,Gallatin,MTM71,286439,,True,True
+mdamiles,Miles City S,2019-10-16,AgriMet,-105.76,46.22,749.28,Custer,MTM74,236367,,True,True
+mdamoies,Moiese N,2020-06-16,AgriMet,-114.26,47.42,867.14,Lake,MTM79,216984,,False,True
+mdaoilmo,Oilmont E,2019-06-24,AgriMet,-111.6,48.78,1087.91,Toole,MTM53,286440,,True,True
+mdapower,Power S,2019-04-29,AgriMet,-111.71,47.66,1132.73,Teton,MTM54,122338,,True,True
+mdaronan,Ronan,2023-05-26,AgriMet,-114.1,47.54,942.0,Lake,MTM97,,,False,True
+mdascoby,Scobey N,2019-10-02,AgriMet,-105.44,48.88,730.33,Daniels,MTM78,214376,,True,True
+mdatost2,Toston SW2,2021-04-21,AgriMet,-111.54,46.11,1233.38,Broadwater,MTM83,314258,,True,True
+mdatwinb,Twin Bridges S,2019-05-22,AgriMet,-112.36,45.47,1448.64,Madison,MTM56,262226,,True,True
+moccasin,Moccasin,2016-12-19,AgriMet,-109.95,47.06,1294.77,Judith Basin,MTM09,,,False,True
+moltwest,Molt W,2017-10-19,AgriMet,-109.09,45.82,1270.41,Stillwater,MTM20,,,True,True
+namlower,Hot Springs NE Lower,2018-07-30,AgriMet,-114.51,47.7,1039.82,Lake,MTM57,,,False,True
+namupper,Hot Springs NE Upper,2018-07-31,AgriMet,-114.54,47.72,1524.73,Lake,MTM58,,,True,True
+nctbirne,Birney N,2021-06-19,AgriMet,-106.58,45.45,1281.88,Rosebud,MTM92,,,True,True
+nctbusby,Busby N,2021-06-18,AgriMet,-106.95,45.64,1220.14,Big Horn,MTM91,,,True,True
+pvbrisbi,Brisbin,2021-09-21,AgriMet,-110.61,45.53,1431.07,Park,MTM84,,,True,True
+pvcarbel,Carbella N,2021-09-24,AgriMet,-110.88,45.28,1772.31,Park,MTM85,,,True,True
+pvemigra,Emigrant E,2021-09-24,AgriMet,-110.68,45.35,1625.21,Park,MTM86,,,True,True
+raplejen,Rapleje N,2017-06-20,AgriMet,-109.24,46.04,1269.39,Stillwater,MTM19,,,True,True
+reedpoin,Reed Point NE,2017-10-20,AgriMet,-109.43,45.8,1295.79,Stillwater,MTM22,,,True,True
+turekran,Coffee Creek N,2016-11-08,AgriMet,-110.13,47.39,1132.15,Fergus,MTM15,,,True,True
+unmpryor,Pryor,2024-06-25,AgriMet,-108.56,45.41,1265.0,Big Horn,MTC01,,,False,True
+unmwyola,Wyola,2023-09-21,AgriMet,-107.39,45.14,1136.0,Big Horn,MTM95,,,False,True
+whitshaw,Whitefish N,2018-07-23,AgriMet,-114.44,48.48,918.38,Flathead,MTM60,,,False,True
+wsrabsaw,Absarokee,2018-09-19,AgriMet,-109.61,45.56,1400.4,Stillwater,MTM62,,,True,True
+wsrbigtm,Big Timber SE,2019-07-02,AgriMet,-109.83,45.74,1335.29,Sweet Grass,MTM63,,,False,True
+wsrboydw,Cooney Reservoir W,2018-09-21,AgriMet,-109.26,45.47,1429.65,Stillwater,MTM64,,,True,True
+wsrmelvi,Melville SE,2019-07-03,AgriMet,-109.84,46.0,1430.15,Sweet Grass,MTM66,,,True,True
+wsrreeds,Reed Point S,2018-09-18,AgriMet,-109.56,45.61,1429.43,Stillwater,MTM67,,,False,True

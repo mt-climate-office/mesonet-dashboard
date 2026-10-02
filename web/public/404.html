@@ -12,6 +12,19 @@
       (function () {
         var base = '__BASE__'
         var path = window.location.pathname
+        // web-next preview (`<base>/next/`, its own build in the same Pages
+        // artifact): `<base>/next/<id>` → `<base>/next/?s=<id>`; any other
+        // missing path under it goes to its index.
+        var next = base + '/next'
+        if (path === next || path.indexOf(next + '/') === 0) {
+          var nsub = path.slice(next.length + 1).replace(/\/+$/, '')
+          var nsearch = window.location.search
+          if (nsub && nsub.indexOf('/') === -1 && /^[a-z0-9_-]+$/i.test(nsub) && !/(^\?|&)s=/.test(nsearch)) {
+            nsearch = nsearch ? nsearch + '&s=' + nsub : '?s=' + nsub
+          }
+          window.location.replace(next + '/' + nsearch + window.location.hash)
+          return
+        }
         if (path.indexOf(base + '/') !== 0) {
           window.location.replace(base + '/' + window.location.search + window.location.hash)
           return

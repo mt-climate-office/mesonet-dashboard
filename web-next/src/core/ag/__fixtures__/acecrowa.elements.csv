@@ -1,0 +1,41 @@
+element,description,description_short,base_units,us_units,sort_order
+soil_temp_0010,Soil temperature at 10 cm below surface,Soil Temperature @ -10 cm,degC,degF,8.0
+soil_temp_0010,Soil temperature at 10 cm below surface,Soil Temperature @ -10 cm,degC,degF,8.0
+air_temp_0200,Air Temperature at 2 m,Air Temperature @ 2 m,degC,degF,1.0
+ppt_max_rate,Maximum precipiation rate,Max Precip Rate,mm hr^-1,in hr^-1,4.0
+soil_vwc_0050,Soil volumetric water content at 50 cm below surface,Soil VWC @ -50 cm,percent,percent,16.0
+soil_vwc_0050,Soil volumetric water content at 50 cm below surface,Soil VWC @ -50 cm,percent,percent,16.0
+wind_spd_1000,Wind speed at 10 m,Wind Speed @ 10 m,m s^-1,mi hr^-1,29.0
+soil_vwc_0010,Soil volumetric water content at 10 cm below surface,Soil VWC @ -10 cm,percent,percent,14.0
+soil_vwc_0010,Soil volumetric water content at 10 cm below surface,Soil VWC @ -10 cm,percent,percent,14.0
+soil_temp_0005,Soil temperature at 5 cm below surface,Soil Temperature @ -5 cm,degC,degF,7.0
+soil_temp_0005,Soil temperature at 5 cm below surface,Soil Temperature @ -5 cm,degC,degF,7.0
+soil_temp_0050,Soil temperature at 50 cm below surface,Soil Temperature @ -50 cm,degC,degF,10.0
+soil_temp_0050,Soil temperature at 50 cm below surface,Soil Temperature @ -50 cm,degC,degF,10.0
+wind_dir_1000,Wind direction at 10 m,Wind Direction @ 10 m,arcdeg,arcdeg,27.0
+soil_ec_blk_0020,Bulk soil electrical conductivity at 20 cm below surface,Bulk EC @ -20 cm,mS cm^-1,mS cm^-1,21.0
+soil_ec_blk_0020,Bulk soil electrical conductivity at 20 cm below surface,Bulk EC @ -20 cm,mS cm^-1,mS cm^-1,21.0
+sol_rad,Solar radiation,Solar Radiation,W m^-2,W m^-2,25.0
+bp,Atmospheric Pressure,Atmospheric Pressure,kPa,millibar,5.0
+soil_ec_blk_0005,Bulk soil electrical conductivity at 5 cm below surface,Bulk EC @ -5 cm,mS cm^-1,mS cm^-1,19.0
+soil_ec_blk_0005,Bulk soil electrical conductivity at 5 cm below surface,Bulk EC @ -5 cm,mS cm^-1,mS cm^-1,19.0
+soil_vwc_0020,Soil volumetric water content at 20 cm below surface,Soil VWC @ -20 cm,percent,percent,15.0
+soil_vwc_0020,Soil volumetric water content at 20 cm below surface,Soil VWC @ -20 cm,percent,percent,15.0
+rh,Relative humidity,Relative Humidity,percent,percent,6.0
+ppt,Net precipitation since previous report,Precipitation,mm,in,3.0
+soil_temp_0020,Soil temperature at 20 cm below surface,Soil Temperature @ -20 cm,degC,degF,9.0
+soil_temp_0020,Soil temperature at 20 cm below surface,Soil Temperature @ -20 cm,degC,degF,9.0
+soil_vwc_0100,Soil volumetric water content at 100 cm below surface,Soil VWC @ -100 cm,percent,percent,18.0
+soil_vwc_0100,Soil volumetric water content at 100 cm below surface,Soil VWC @ -100 cm,percent,percent,18.0
+soil_ec_blk_0100,Bulk soil electrical conductivity at 100 cm below surface,Bulk EC @ -100 cm,mS cm^-1,mS cm^-1,24.0
+soil_ec_blk_0100,Bulk soil electrical conductivity at 100 cm below surface,Bulk EC @ -100 cm,mS cm^-1,mS cm^-1,24.0
+soil_ec_blk_0010,Bulk soil electrical conductivity at 10 cm below surface,Bulk EC @ -10 cm,mS cm^-1,mS cm^-1,20.0
+soil_ec_blk_0010,Bulk soil electrical conductivity at 10 cm below surface,Bulk EC @ -10 cm,mS cm^-1,mS cm^-1,20.0
+soil_ec_blk_0050,Bulk soil electrical conductivity at 50 cm below surface,Bulk EC @ -50 cm,mS cm^-1,mS cm^-1,22.0
+soil_ec_blk_0050,Bulk soil electrical conductivity at 50 cm below surface,Bulk EC @ -50 cm,mS cm^-1,mS cm^-1,22.0
+snow_depth,Snow depth,Snow Depth,cm,in,36.0
+soil_vwc_0005,Soil volumetric water content at 5 cm below surface,Soil VWC @ -5 cm,percent,percent,13.0
+soil_vwc_0005,Soil volumetric water content at 5 cm below surface,Soil VWC @ -5 cm,percent,percent,13.0
+soil_temp_0100,Soil temperature at 100 cm below surface,Soil Temperature @ -100 cm,degC,degF,12.0
+soil_temp_0100,Soil temperature at 100 cm below surface,Soil Temperature @ -100 cm,degC,degF,12.0
+windgust_1000,Maximum wind gust speed since previous report at 10 m,Gust Speed @ 10 m,m s^-1,mi hr^-1,31.0
