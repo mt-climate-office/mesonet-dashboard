@@ -18,6 +18,7 @@ import { multiselect } from './ui/controls/multiselect'
 import { rangeSlider } from './ui/controls/rangeSlider'
 import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
+import { downloader } from './ui/downloader/downloader'
 import { downloaderMap, stationMap } from './ui/map/presets'
 import { globalNotices } from './ui/shell/globalNotices'
 import { helpDialog } from './ui/shell/helpDialog'
@@ -28,6 +29,7 @@ import './styles/app.css'
 import './ui/controls/controls.css'
 import './ui/map/map.css'
 import './ui/charts/chart.css'
+import './styles/downloader.css'
 
 /* 1. URL fix-ups, before any store reads `location`. ---------------------- */
 
@@ -75,5 +77,9 @@ Alpine.data('downloaderMap', downloaderMap)
 // Charts (W1): the one ECharts host; ECharts itself loads lazily on the first
 // render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".
 Alpine.data('chart', chart)
+
+// Data Downloader (W2): the tab's one component (ui/downloader/downloader.ts);
+// x-data="downloader" in partials/downloader/index.html.
+Alpine.data('downloader', downloader)
 
 Alpine.start()

@@ -1,22 +1,11 @@
 /**
- * Station grouping and marker colours for the Downloader map, ported from
- * legacy `plotting.plot_station` (stations grouped by identical lat/lon):
- *   - AgriMet → #00cc96, everything else (HydroMet) → #7A7AFB,
- *   - co-located (more than one station at a point) → #FB7A7A,
- *   - the group containing the selected station → #FFD700.
- * Hover text lists the long names ("{name} ({sub_network})"); a click picks
- * the first station code of the group (legacy sorted the codes with
- * np.unique, i.e. alphabetically).
+ * Station grouping for the station maps (core/map/markers.ts), ported from
+ * legacy `plotting.plot_station`: stations at an identical lat/lon form one
+ * marker. Marker colours come from core/palette network roles, not here.
+ * A click picks the first station code of the group (legacy sorted the codes
+ * with np.unique, i.e. alphabetically).
  */
 import type { Station } from '../api'
-
-/** LEGACY marker colors; W1 replaces them with core/palette network roles. */
-export const DL_MARKER_COLORS = {
-  AgriMet: '#00cc96',
-  HydroMet: '#7A7AFB',
-  coLocated: '#FB7A7A',
-  selected: '#FFD700',
-} as const
 
 export interface StationGroup {
   longitude: number
@@ -25,10 +14,10 @@ export interface StationGroup {
   codes: string[]
   /** "{name} ({sub_network})" per station, in input order. */
   longNames: string[]
-  color: string
   selected: boolean
 }
 
+/** One group per distinct lat/lon (rows without coordinates skipped); `selected` marks the group holding that code. */
 export function groupStations(
   stations: ReadonlyArray<Station>,
   selected: string | null,
@@ -46,19 +35,11 @@ export function groupStations(
     const longNames = list.map((s) => `${s.name} (${s.sub_network})`)
     const codes = [...new Set(list.map((s) => s.station))].sort()
     const isSelected = selected != null && codes.includes(selected)
-    let color: string =
-      list.length > 1
-        ? DL_MARKER_COLORS.coLocated
-        : longNames[0].includes('AgriMet')
-          ? DL_MARKER_COLORS.AgriMet
-          : DL_MARKER_COLORS.HydroMet
-    if (isSelected) color = DL_MARKER_COLORS.selected
     out.push({
       longitude: list[0].longitude,
       latitude: list[0].latitude,
       codes,
       longNames,
-      color,
       selected: isSelected,
     })
   }
