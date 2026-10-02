@@ -6,17 +6,19 @@
 import type { Station } from '../api'
 import { asNetwork } from './markers'
 
-/** Elevation in metres → "1,400 m"; null for a missing/non-finite value. */
+const FT_PER_M = 3.28084
+
+/** Elevation in metres → "1,400 m (4,593 ft)", each rounded from the raw value; null for a missing/non-finite value. */
 export function formatElevation(metres: number | null | undefined): string | null {
-  return typeof metres === 'number' && Number.isFinite(metres)
-    ? `${Math.round(metres).toLocaleString('en-US')} m`
-    : null
+  if (typeof metres !== 'number' || !Number.isFinite(metres)) return null
+  const fmt = (n: number) => Math.round(n).toLocaleString('en-US')
+  return `${fmt(metres)} m (${fmt(metres * FT_PER_M)} ft)`
 }
 
 export interface PopupLine {
   /** Station name (falls back to the id). */
   name: string
-  /** "HydroMet · 1,400 m" (elevation omitted when unknown). */
+  /** "HydroMet · 1,400 m (4,593 ft)" (elevation omitted when unknown). */
   detail: string
 }
 

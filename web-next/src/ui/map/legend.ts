@@ -63,7 +63,7 @@ export function createLegend(title = 'Stations'): Legend {
           if (r.count !== null) {
             const n = document.createElement('span')
             n.className = 'map-legend-count'
-            n.textContent = `${r.count} sites`
+            n.textContent = `${r.count} ${r.count === 1 ? 'site' : 'sites'}`
             li.append(n)
           }
           return li

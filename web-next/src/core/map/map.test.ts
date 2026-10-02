@@ -119,16 +119,18 @@ describe('clickTarget / markerKeyOf', () => {
 describe('text models', () => {
   const byId = new Map(CATALOG.map((s) => [s.station, s]))
 
-  it('formats elevation in whole metres', () => {
-    expect(formatElevation(1400.4)).toBe('1,400 m')
+  it('formats elevation in whole metres and feet', () => {
+    expect(formatElevation(1400)).toBe('1,400 m (4,593 ft)')
+    expect(formatElevation(1400.4)).toBe('1,400 m (4,594 ft)')
+    expect(formatElevation(0)).toBe('0 m (0 ft)')
     expect(formatElevation(Number.NaN)).toBeNull()
     expect(formatElevation(null)).toBeNull()
   })
 
   it('builds popup lines per member, skipping unknown ids', () => {
     expect(popupLines(['acebozem', 'bozmtest', 'ghost'], byId)).toEqual([
-      { name: 'Bozeman', detail: 'HydroMet · 1,400 m' },
-      { name: 'Bozeman AgriMet', detail: 'AgriMet · 1,400 m' },
+      { name: 'Bozeman', detail: 'HydroMet · 1,400 m (4,594 ft)' },
+      { name: 'Bozeman AgriMet', detail: 'AgriMet · 1,400 m (4,594 ft)' },
     ])
   })
 

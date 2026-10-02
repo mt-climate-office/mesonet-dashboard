@@ -140,6 +140,8 @@ export function createStationLayer(map: MapLibre.Map, onSelect: (id: string) => 
       })
       m.addLayer({
         id: HIT, type: 'circle', source: SRC,
+        // Same order as the drawn dots, so the marker on top is the one hit.
+        layout: { 'circle-sort-key': ['get', 'sort'] },
         paint: { 'circle-radius': radius(7), 'circle-color': 'rgba(0,0,0,0)' },
       })
       rebuild(theme)

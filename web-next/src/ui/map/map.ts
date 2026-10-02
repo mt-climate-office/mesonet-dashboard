@@ -56,15 +56,35 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   const floor = MCO.map.installZoomFloor(map)
   map.once('load', () => floor.refresh())
 
+  // One automatic basemap retry per failure (see the 'error' handler below).
+  let retried = false
+  let retryTimer: ReturnType<typeof setTimeout> | undefined
+
   // Every style load (first, then each setStyle) starts from a bare basemap.
   map.on('style.load', () => {
+    retried = false
     addBoundaries(map, opts.emphasiseCounties === true)
     opts.layers(map, MCO.getTheme())
   })
 
   // diff: false forces a full reload, so style.load fires and the layers come back.
-  const onTheme = () => map.setStyle(MCO.map.cartoStyleUrl(), { diff: false })
+  const loadStyle = () => map.setStyle(MCO.map.cartoStyleUrl(), { diff: false })
+  const onTheme = () => {
+    clearTimeout(retryTimer)
+    loadStyle()
+  }
   window.addEventListener(THEME_EVENT, onTheme)
+
+  // Basemap style fetch failed: tell the user, retry once after 5 s (no loop;
+  // a successful style.load re-arms the retry for the next failure).
+  map.on('error', (e) => {
+    const url = (e.error as { url?: string } | undefined)?.url
+    if (!url || !url.endsWith('/style.json')) return
+    MCO.showToast('Map basemap failed to load')
+    if (retried) return
+    retried = true
+    retryTimer = setTimeout(loadStyle, 5000)
+  })
 
   // The map sits in cards whose size changes without a window resize.
   const resize = new ResizeObserver(() => map.resize())
@@ -76,6 +96,7 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
       map.flyTo({ center: lngLat, zoom: Math.max(map.getZoom(), minZoom), animate: animate && !MCO.reducedMotion() })
     },
     dispose() {
+      clearTimeout(retryTimer)
       window.removeEventListener(THEME_EVENT, onTheme)
       resize.disconnect()
       floor.dispose()

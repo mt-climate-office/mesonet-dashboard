@@ -103,7 +103,12 @@ export function createSrTable(opts: SrTableOptions): SrTable {
             return tr
           }),
         )
-        if (focused) buttons().find((b) => b.dataset.id === focused)?.focus()
+        if (focused) {
+          const again = buttons().find((b) => b.dataset.id === focused)
+          // Removing the focused button fires no focusout in Chrome; clear the popup ourselves.
+          if (again) again.focus()
+          else opts.onFocus(null)
+        }
       }
       setRoving(selected)
     },
