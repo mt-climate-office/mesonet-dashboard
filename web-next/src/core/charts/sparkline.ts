@@ -26,7 +26,7 @@ export interface SparkOptions {
 export interface Sparkline {
   viewBox: string
   kind: 'line' | 'bars'
-  /** Line path (`M…L…`), one `M` per unbroken run; '' for bars or no data. */
+  /** Line: stroke path (`M…L…`), one `M` per unbroken run. Bars: one fill path of rectangles. */
   d: string
   /** Bars as `{x, y, w, h}` in viewBox units; [] for lines. */
   bars: { x: number; y: number; w: number; h: number }[]
@@ -68,7 +68,9 @@ export function sparkline(s: SparkSeries, opts: SparkOptions = {}): Sparkline | 
         const top = y(v)
         return { x: r2(Math.min(W - w, Math.max(0, x(t) - w / 2))), y: r2(top), w: r2(w), h: r2(H - top) }
       })
-    return { viewBox: `0 0 ${W} ${H}`, kind, d: '', bars, min, max, points: pts.length }
+    // The same bars as one filled path, so the SVG needs no per-bar elements (no x-for inside <svg>).
+    const d = bars.map((b) => `M${b.x} ${b.y}h${b.w}v${b.h}h${-b.w}Z`).join('')
+    return { viewBox: `0 0 ${W} ${H}`, kind, d, bars, min, max, points: pts.length }
   }
 
   let d = ''
