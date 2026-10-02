@@ -1,9 +1,10 @@
 /**
- * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, navbar
- * tab order + focus ring, station combobox, Help dialog, theme toggle, chart
+ * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, one-row navbar
+ * tab order + focus ring, station combobox, Help dialog, theme toggle, Latest
+ * sidebar collapse, tabs mounting only while open (no cross-tab requests), chart
  * table twins, map sr-table selection, reduced motion. Run via `npm run verify`.
  */
-import { DL_QUERY, check, finish, open, runDownload, start } from './lib.mjs'
+import { DL_QUERY, VIEWPORTS, check, finish, open, runDownload, start } from './lib.mjs'
 
 const env = await start()
 
@@ -30,8 +31,8 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await rendered({ charts: 1 })
 
   // Fresh load: walk the navbar from the top of the document.
-  const want = ['Skip to main content', 'Montana Climate Office', 'Latest Data', 'Ag Tools', 'Data Downloader',
-    'Send feedback (opens in a new tab)', 'Copy a link to this view']
+  // One-row navbar (DESIGN.md): logo, station switcher, Share, theme, Help; sections are below it.
+  const want = ['Skip to main content', 'Montana Climate Office', 'Station: Bozeman. Change station', 'Copy a link to this view']
   const got = []
   const rings = []
   for (let i = 0; i < want.length + 2; i++) {
@@ -41,7 +42,7 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   }
   const theme = got[want.length]
   const help = got[want.length + 1]
-  check('navbar Tab order: skip, logo, 3 tabs, feedback, share, theme, help',
+  check('navbar Tab order: skip, logo, station switcher, share, theme, help',
     want.every((w, i) => got[i] === w) && /theme/i.test(theme) && help === 'About this dashboard', got.join(' → '))
   check('every navbar stop shows the focus ring', rings.every(Boolean), got.filter((_, i) => !rings[i]).join(', '))
 
@@ -111,6 +112,66 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await page.keyboard.press('Escape')
   const p = await problems()
   check('combobox: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Latest sidebar collapse (LDC-002): keyboard, focus, persistence ────── */
+{
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=light#latest')
+  await rendered({ charts: 1 })
+  const state = () => page.evaluate(() => ({
+    sidebar: document.querySelector('[data-testid="latest-sidebar"]')?.offsetParent !== null,
+    focus: document.activeElement?.id ?? '',
+    saved: localStorage.getItem('mco-dashboard-sidebar'),
+    expanded: document.getElementById('latest-sidebar-collapse')?.getAttribute('aria-expanded'),
+    controls: document.getElementById('latest-sidebar-expand')?.getAttribute('aria-controls'),
+  }))
+  const s0 = await state()
+  check('sidebar: open by default, toggle has aria-expanded + aria-controls', s0.sidebar && s0.expanded === 'true' && s0.controls === 'latest-sidebar', JSON.stringify(s0))
+  // Reached by Tab from the skip-link target (<main>): the first stop inside the sidebar.
+  await page.locator('#main').focus()
+  for (let i = 0; i < 6 && (await focused(page)) !== 'Hide controls'; i++) await page.keyboard.press('Tab')
+  check('sidebar: "Hide controls" is reachable by Tab with a focus ring', (await focused(page)) === 'Hide controls' && (await ringVisible(page)))
+  await page.keyboard.press('Enter')
+  // Focus moves on Alpine's next tick, after the layout class applies.
+  await page.waitForFunction(() => document.activeElement?.id === 'latest-sidebar-expand', null, { timeout: 5000 }).catch(() => {})
+  const s1 = await state()
+  check('sidebar: Enter collapses it, focus moves to "Show controls", saved', !s1.sidebar && s1.focus === 'latest-sidebar-expand' && s1.saved === 'collapsed', JSON.stringify(s1))
+  await page.reload({ waitUntil: 'load' })
+  await page.waitForSelector('#latest-sidebar-expand', { state: 'visible', timeout: 10000 }).catch(() => {})
+  const s2 = await state()
+  check('sidebar: stays collapsed after a reload (localStorage, not the URL)', !s2.sidebar && !(await page.evaluate(() => location.search.includes('sidebar'))), JSON.stringify(s2))
+  await page.locator('#latest-sidebar-expand').focus()
+  await page.keyboard.press('Space')
+  await page.waitForFunction(() => document.activeElement?.id === 'latest-sidebar-collapse', null, { timeout: 5000 }).catch(() => {})
+  const s3 = await state()
+  check('sidebar: Space expands it, focus returns to "Hide controls", saved open', s3.sidebar && s3.focus === 'latest-sidebar-collapse' && s3.saved === 'open', JSON.stringify(s3))
+  const p = await problems()
+  check('sidebar: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+{
+  // Phones: a saved collapse is ignored and neither toggle shows.
+  const { page, close } = await open(env, '?s=acebozem&theme=dark#latest', { viewport: VIEWPORTS[1] })
+  await page.evaluate(() => localStorage.setItem('mco-dashboard-sidebar', 'collapsed'))
+  await page.reload({ waitUntil: 'load' })
+  await page.waitForSelector('[data-testid="latest-sidebar"]', { timeout: 10000 })
+  const phone = await page.evaluate(() => ({
+    sidebar: document.querySelector('[data-testid="latest-sidebar"]')?.offsetParent !== null,
+    toggles: ['latest-sidebar-collapse', 'latest-sidebar-expand'].filter((id) => document.getElementById(id)?.offsetParent !== null),
+  }))
+  check('sidebar: 390 px ignores a saved collapse and shows no toggle', phone.sidebar && phone.toggles.length === 0, JSON.stringify(phone))
+  await close()
+}
+
+/* ── Tabs mount only while open: no Latest requests from #ag / #downloader ─ */
+for (const [name, query, charts] of [['ag', '?s=acebozem&var=gdd#ag', 1], ['downloader', '?s=acebozem#downloader', 0]]) {
+  const { page, close, rendered } = await open(env, query)
+  await rendered({ charts })
+  const latest = await page.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name)
+    // Latest-only endpoints (hourly record + derived ETr, latest obs, ppt summary, sensor config, camera schedule).
+    .filter((u) => /observations\/(hourly|raw)|derived\/hourly|\/latest\b|derived\/ppt|\/config\/|photos\/schedule/.test(u)))
+  check(`[${name}] first load makes no Latest-tab requests`, latest.length === 0, latest.slice(0, 4).join(' | '))
   await close()
 }
 

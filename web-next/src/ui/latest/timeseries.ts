@@ -26,6 +26,8 @@ const compactQuery = matchMedia('(max-width: 640px)')
 export function latestTimeseries() {
   // Memo of the last built model, keyed by its inputs' identities (records are large).
   let memo: { inputs: unknown[]; model: LatestTimeseriesModel | null; scope: string } | null = null
+  // The tab mounts this component on each visit, so the media listener is removed on destroy.
+  let onCompact: ((e: MediaQueryListEvent) => void) | null = null
 
   return component({
     compact: compactQuery.matches,
@@ -36,11 +38,12 @@ export function latestTimeseries() {
     userWindow: '',
 
     init() {
+      onCompact = (e: MediaQueryListEvent) => (this.compact = e.matches)
       // A window set from outside (sidebar, back/forward) drops the user's view.
       this.$watch('windowKey', (key: string) => {
         if (key !== this.userWindow) this.userView = null
       })
-      compactQuery.addEventListener('change', (e) => (this.compact = e.matches))
+      compactQuery.addEventListener('change', onCompact)
       this.$watch('announceKey', (key: string) => {
         if (key) announce(key)
       })
@@ -48,6 +51,10 @@ export function latestTimeseries() {
       this.$watch('recordError', (err: unknown) => {
         if (err) console.error('Latest Data request failed:', err)
       })
+    },
+
+    destroy() {
+      if (onCompact) compactQuery.removeEventListener('change', onCompact)
     },
 
     get recordError(): unknown {

@@ -15,6 +15,9 @@ const openHelp = async (page) => {
 
 // `before` runs once the page loads, `after` once the evidence is in.
 const SCENARIOS = [
+  // The Now overview (default section) and a first visit (no station: the picker is open).
+  { name: 'now', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]', '[data-testid="now-hero"] .dash-spark svg'] } },
+  { name: 'picker', query: '', evidence: { filled: ['[data-testid="picker-map"] tbody'] } },
   // Default cards (current conditions + the auto top card), then the map + wind rose pair.
   { name: 'latest', query: '?s=acebozem#latest', evidence: { charts: 1, filled: ['[data-testid="current-table"] tbody'] } },
   { name: 'latest-map', query: '?s=acebozem&info=map&card=wind#latest', evidence: { charts: 2, filled: ['[data-testid="locator-map"] tbody'] } },

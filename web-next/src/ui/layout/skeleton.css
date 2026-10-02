@@ -1,0 +1,34 @@
+/* Skeletons (kit candidate .mco-skel, KIT-NOTES.md): shaped placeholders that
+   hold a slot's final size while data loads, so content swaps in without a
+   layout shift. A token shimmer sweeps across; under reduced motion they are
+   static. Always aria-hidden; the slot's own role="status" text says "Loading". */
+
+.dash-skel {
+  position: relative; overflow: hidden;
+  display: block;
+  background: var(--bg-raised);
+  border-radius: var(--radius-sm);
+}
+.dash-skel::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, var(--border-glass), transparent);
+  transform: translateX(-100%);
+  animation: dash-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes dash-shimmer { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .dash-skel::after { animation: none; display: none; }
+}
+
+/* Shapes. */
+.dash-skel--line { height: 0.875rem; margin: 0.3rem 0; }
+.dash-skel--value { height: 2.1rem; width: 45%; margin: 0.35rem 0; }
+.dash-skel--spark { height: 28px; width: 100%; }
+.dash-skel--media { width: 100%; height: 100%; min-height: 12rem; }
+.dash-skel--period { flex: 0 0 6.5rem; height: 9rem; border-radius: var(--radius-md); }
+.dash-skel--chart { width: 100%; height: var(--chart-height, 320px); border-radius: var(--radius-md); }
+/* Table: striped rows drawn by the background, one element for any row count. */
+.dash-skel--table {
+  width: 100%; height: calc(var(--rows, 6) * 1.9rem);
+  background: repeating-linear-gradient(var(--bg-raised) 0 1.4rem, transparent 1.4rem 1.9rem);
+}

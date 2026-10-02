@@ -1,0 +1,56 @@
+/* Section navigation (ui/layout/sectionNav.ts). Same five links twice:
+     .dash-sections  tablet/desktop segmented row under the station header
+     .dash-tabbar    compact bottom tab bar: icon + label, ≥ 56 px, fixed,
+                     safe-area padding; its height is --tabbar-h on <html>
+   Kit candidates .mco-section-nav / .mco-tabbar (KIT-NOTES.md). The current
+   link is aria-current="page": a filled pill in the row; in the bar an
+   indicator line + bolder label + accent icon (not color alone). */
+
+.dash-sections {
+  display: flex; gap: 0.35rem;
+  padding: 0.75rem max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left));
+  overflow-x: auto; scrollbar-width: none;
+}
+.dash-section-link {
+  display: inline-flex; align-items: center;
+  min-height: 36px; padding: 0.35rem 0.95rem;
+  border: 1px solid var(--ctrl-border); border-radius: 999px;
+  color: var(--text-secondary); text-decoration: none;
+  font-size: var(--fs-sm); font-weight: 600; white-space: nowrap;
+  transition: var(--transition);
+}
+.dash-section-link:hover { background: var(--accent-hover); border-color: var(--accent-line); color: var(--text-primary); }
+.dash-section-link[aria-current="page"] { background: var(--accent); border-color: var(--accent-line); color: var(--text-on-accent); }
+@media (hover: none) { .dash-section-link { min-height: 40px; } }
+
+.dash-tabbar { display: none; }
+
+@media (max-width: 640px), (max-height: 560px) {
+  .dash-sections { display: none; }
+  .dash-tabbar {
+    display: flex;
+    position: fixed; left: 0; right: 0; bottom: 0;
+    z-index: var(--z-chrome);
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: var(--glass);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+  }
+  .dash-tab {
+    position: relative;
+    flex: 1 1 0; min-width: 0; min-height: 56px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    color: var(--text-secondary); text-decoration: none;
+    font-size: var(--fs-xs); font-weight: 500;
+  }
+  .dash-tab svg { stroke: currentColor; }
+  .dash-tab[aria-current="page"] { color: var(--text-primary); font-weight: 700; }
+  .dash-tab[aria-current="page"] svg { stroke: var(--accent-line); }
+  .dash-tab[aria-current="page"]::before {
+    content: ""; position: absolute; top: 0; left: 25%; right: 25%;
+    height: 3px; border-radius: 0 0 3px 3px; background: var(--accent-line);
+  }
+  /* Content and the toast clear the bar. */
+  body { padding-bottom: var(--tabbar-h, 56px); }
+  .mco-toast { bottom: calc(var(--tabbar-h, 56px) + var(--sheet-h, 0px) + 1rem); } /* kit-override: lift above the tab bar and an open sheet */
+}

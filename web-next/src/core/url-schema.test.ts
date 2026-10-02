@@ -164,3 +164,14 @@ describe('viewHref', () => {
     expect(viewHref(loc('', '#ag'), d, new Set(['var']))).toBe(`${BASE}?var=${d.var}#ag`)
   })
 })
+
+describe('cmp (Charts → Compare)', () => {
+  it('reads 1 or true, writes 1, omits the default', () => {
+    expect(readUrlState('').cmp).toBe(false)
+    expect(readUrlState('?cmp=1').cmp).toBe(true)
+    expect(readUrlState('?cmp=TRUE').cmp).toBe(true)
+    expect(readUrlState('?cmp=0').cmp).toBe(false)
+    expect(writeUrlSearch({ ...readUrlState('?s=a'), cmp: false })).toBe('?s=a')
+    expect(writeUrlSearch({ ...readUrlState('?s=a'), cmp: true })).toBe('?s=a&cmp=1')
+  })
+})

@@ -1,0 +1,11 @@
+/* Type scale (DESIGN.md "Type"): six steps, used by every new rule instead of
+   one-off sizes. Not theme-dependent, so one :root block. Kit candidate
+   (--fs-* tokens, KIT-NOTES.md). Values and numerals use --font-mono. */
+:root {
+  --fs-xs: 0.75rem;   /* labels, captions, badges, tab-bar labels */
+  --fs-sm: 0.875rem;  /* body in cards, secondary lines, section links */
+  --fs-md: 1rem;      /* body, inputs on touch (≥ 16 px stops iOS zoom) */
+  --fs-lg: 1.25rem;   /* card values, station name on phones */
+  --fs-xl: 1.75rem;   /* tile values, station name */
+  --fs-2xl: 2.5rem;   /* the hero value */
+}

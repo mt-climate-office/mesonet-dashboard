@@ -8,9 +8,94 @@ What web-next deliberately does differently, in three parts:
 
 Each entry gives the old behaviour, the new one, and why. Add an entry in the same PR as the change.
 
+## UX refactor (P0 prototype, 2026-10)
+
+The user-approved refactor (overview first, mobile first; DESIGN.md) changes the
+information architecture and layout on purpose. These entries supersede the
+layout parts of older entries below; data behaviour is unchanged.
+
+### One station view with five sections, instead of three tabs
+- **Legacy / web/:** top-level tabs Latest Data · Ag Tools · Data Downloader (`#latest` default).
+- **New:** a station view with sections **Now** (`#now`, default) · **Charts** · **Ag** · **Download** · **About**
+  (core/router.ts). Section changes are `pushState`, so Back returns to the previous section; in-section
+  state still uses the batched `replaceState`. On phones the sections are a bottom tab bar; on tablet and
+  desktop a segmented row under the station header.
+- **Old links keep working:** `#latest` → `#charts` + `cmp=1` (Compare, keeping `from/to/agg/vars/gridmet`);
+  a hash-less link with one of those keys does the same; `#downloader` → `#download` (keys renamed by
+  `migrateLegacySearch` first); `#ag` unchanged; `#satellite` → Now with the existing notice. `card`/`info`
+  are still read by Compare's cards and ignored elsewhere.
+- **P0 placeholders:** Charts shows the existing Latest view (as "Compare"); About shows the metadata,
+  current-readings table and locator map; Ag and Download are the existing views. P1 rebuilds them.
+- **Why:** users land on current conditions; history, tools and tables stay one tap away (plan Context).
+
+### A bare `?s=` opens Now; no `?s=` reopens the last station
+- **Legacy / web/:** `?s=` opened Latest Data; no `?s=` showed an empty Latest tab.
+- **New:** `?s=` opens Now. Without it the last confirmed station (`mco-dashboard-station`) opens; with none
+  the station picker opens (first visit). The five most recent stations are `mco-dashboard-recent`.
+- **Why:** user decision (2026-10-02): reopen the last station.
+
+### Station picker: drawer / bottom sheet with Near me
+- **web/:** a combobox and network chips in the Latest sidebar, plus the locator map card.
+- **New:** one picker (search, **Near me**, recents, network chips, map), a drawer on desktop (in-flow,
+  remembered in `mco-dashboard-drawer`), an overlay drawer on tablets and a bottom sheet on phones. Near me
+  asks for the location only when tapped. The Compare view keeps its own combobox until P1.
+- **Why:** station choice is the first decision on every visit and must work one-handed on a phone.
+
+### Navbar: one row; Feedback moved
+- **Before (MOB-003):** the bar wrapped to two rows at 390 px and carried the tab links and Feedback.
+- **New:** one row at every width: logo, brand (hidden ≤ 750 px by the kit), the station switcher
+  ("Bozeman ▾"), Share, theme, Help. Feedback is in Help and the footer.
+- **Why:** the old bar took 100 px of a phone screen and hid the app name.
+
+### Feels like uses the NWS method on Now
+- **Legacy / web/:** Current Conditions showed "Real Feel", the NWS wind-chill formula at every temperature
+  (a legacy bug kept for parity; LDB-007).
+- **New:** the Now hero shows **Feels like** from `core/ag/compute/feelsLike.ts`, the same NWS rules the Ag
+  tool uses: heat index at ≥ 80 °F, wind chill at ≤ 50 °F with wind > 3 mph, otherwise the air
+  temperature, labelled "Wind chill" / "Heat index" when it applies.
+- **Still legacy:** the About section's current-readings table (`core/cards/currentConditions.ts`) keeps
+  its Real Feel row until P1, so the fidelity rows stay comparable. Decision pending: drop or rename it.
+- **Why:** user decision (2026-10-02): the NWS method everywhere.
+
+### Now overview data
+- **New (no legacy equivalent):** today's high/low comes from today's hourly means plus the current
+  reading, against the gridMET 1991–2020 **median** `tmmx`/`tmmn` for the date; year-to-date
+  precipitation is compared with the sum of the daily **mean** `pr` normals from Jan 1 (a sum of medians
+  would not be a normal total). Stations without `/derived/ppt/` (AgriMet) show since-midnight and 24 h
+  from the hourly request. The sparkline request adds `bp` (pressure), and `snow_depth` / `vpd_atmo` when
+  the station reports them, to the plan's six elements so every tile has a sparkline. Data older than 2 h
+  shows a stale warning; the provisional badge follows `/latest`'s `provisional` flag.
+
 ## House style
 
-> Placeholder. W1 (palette) fills this in: one entry per changed color role from the plan's palette table (networks, per-variable lines, precipitation/ETr, soil depths, wind-rose bins, annual years, GDD, CCI, feels-like, heatmaps, normals/sensor events/FC–WP), each naming the legacy color it replaces (about 18 CHECKLIST color matches).
+### Data colors
+Every legacy data color is replaced by a role in `core/palette/roles.ts` (house palette, HOUSE-STYLE §6). "web/" is the React port; "legacy" is the Dash app. Every role is per theme; the light-theme value is listed unless noted. Every line, marker and bar clears 3:1 on `--bg-surface`. This table supersedes the older color notes further down (Viridis soil depths, sand/indigo GDD, Viridis heatmaps and annual years); CHECKLIST statuses that say "palette <ID>" cite its rows.
+
+| ID | Legacy (and web/) | New role → color |
+|---|---|---|
+| LDP-007 | `COLOR_MAPPER`: Air Temp / Well Temp `#c42217`, Solar `#c15366`, RH `#a16a5c`, Snow Depth / Pressure `#A020F0`, Wind Speed `#ec6607`, Gust `#FEC20C`, Well Level `#0000FF`, Well EC `#AEF359`, Max Precip Rate `#000080`, VPD `#32612D`, Wind Dir `#607D3B` | `variableStyle()` by family. Temperature `#CC6677`; moisture (RH, VPD, well level, well EC) `#3388BB`; radiation `#998833`; wind (speed, gust, direction) `#117733`, gust dashed; pressure/snow `#AA4499`; precip rate `#332288`. Light = Tol muted, dark = Tol bright, HC = Tol high-contrast, darkened or lightened where needed for 3:1 |
+| LDP-009 | Precip bars Plotly default `#636efa` | `PRECIP`: Blues bars `#2171b5` + cumulative `#08306b` |
+| LDP-010 | ETr bars `#FF0000` | `ETR`: YlOrRd bars `#e31a1c` + cumulative `#800026` |
+| LDP-011 | Depth colors: Plotly qualitative (legacy); Viridis sample (web/) | `depthColor(in, theme)`: batlow at fixed depth positions (2, 4, 8, 20, 40 in evenly spaced; 28 and 36 between 20 and 40). Light uses 0–0.55, dark 0.42–1, HC 0.35–1 |
+| LDP-013 | Depth legend chips filled with the depth color, white text | A key row above the panel: a `depthColor()` line swatch plus "2 in" in kit text (white on the light depth colors failed 4.5:1) |
+| LDP-018 | Normals band `rgba(107,107,107,0.4)` between dashed black q25/q75 lines | `NORMALS`: band `--text-dim` at 18% + dashed `--text-dim` median line |
+| LDP-019 | Precip/ETr normals markers black | `NORMALS.line` (`--text-dim`); marker shapes unchanged |
+| SC-008 | Sensor-event rect `rgba(200,200,200,1)` at 0.75 opacity | `SENSOR_EVENT`: `--text-dim` at 25% + hatch + label "Sensor change" |
+| LDT-005 | Wind rose `Plasma_r` | `binColors(n, theme)`: batlow, slow → fast |
+| LDT-006 | Wind rose title black | Kit `--text-primary` (chrome, not a palette role) |
+| LDB-005 | Table odd rows `rgb(220,220,220)`, black on white | Kit table tokens (chrome, not a palette role) |
+| AG-FL-001 | Feels-like markers blue / red / green over a black line | `FEELS_LIKE`: wind chill `#2166ac` diamond, heat index `#b2182b` triangle, average temp grey `#767676` circle; line `INDEX_LINE` (`--text-dim`). Dark/HC step along RdBu toward the light end |
+| AG-CCI-003 | Extreme Danger `#843094`, Extreme `#CC0606`, Severe `#FF4400`, Moderate `#FFAD00`, Mild `#FFFF00`, No Stress `#A5A5A5`; black line (legacy). YlOrRd + `#BBBBBB` (web/) | `cciColor()`: No Stress grey + 5 YlOrRd samples, using the part of the ramp that clears 3:1 on each surface (light 0.6–1); line `INDEX_LINE` |
+| AG-GDD-005 | Orange bars + orange line, markers in a 24-color stage palette (legacy); Tol sand/indigo + Tol stage colors (web/) | `GDD`: YlOrRd bars `#fc4e2a` + cumulative `#bd0026`; projection band = cumulative at 15%; stages are labelled markLines in `--text-dim` (`GDD_STAGE_LINE`), not marker colors |
+| AG-SOIL-004 | soil_temp `RdBu_r` mid 32; swp `BrBG_r`; others `BrBG` (legacy). Viridis / custom diverging (web/) | `HEATMAP`: soil_temp RdBu reversed, midpoint 32 °F; VWC YlGnBu; EC batlow; SWP BrBG reversed (wet teal → dry brown); percent saturation Blues. Frozen cells `FROZEN` grey (`#d9d9d9` light) + hatch |
+| AG-SWP-001 | Depth colors as LDP-011 | `depthColor()` (cm ÷ 2.54) |
+| AG-SWP-002 | FC/WP bands `rgba(128,128,128,0.2)` (legacy), `rgba(150,150,150,0.18)` + `#444` dashed lines (web/) | `SWP_BANDS`: `--text-dim` at 12% + dashed `--text-dim` lines, labelled "Field Capacity" / "Wilting Point" |
+| AG-SWP-003 | Annotation boxes: black border 2, white 0.8 background | Boxed labels from kit tokens: `--text-primary` 2 px border and text, `--bg-surface` at 0.8 fill, 14 px (`core/charts/overlays.ts#hBandSeries`); not a palette role |
+| AG-PS-001 | Depth colors as LDP-011 | `depthColor()` |
+| AG-ANN-003 | Past years YlGnBu 0.15–0.75 (legacy), Viridis (web/); current year black, width 3 | `yearColors(n, theme)`: batlow old → new; current year `ANNUAL_CURRENT` = `--text-primary`, width 3 |
+| DL-017 | Preview lines black | `previewColor(i, theme)`: Tol bright cycle (light keeps blue, green, red, purple) |
+| DL-018 | AgriMet `#00cc96`, HydroMet `#7A7AFB`, co-located `#FB7A7A`, selected `#FFD700` | `NETWORK_COLOR`: HydroMet `#4477AA` circle, AgriMet `#CC6622` (light; `#EE7733` dark/HC) hollow circle, Cooperator `#009988` ring; selected `SELECTION_RING` = `--selection-ring`. A co-located site is one marker, inner dot the first network and outer ring the second ("Maps") |
+| (Latest map, `web/src/lib/networks.ts`) | HydroMet `#7A7AFB`, AgriMet `#00cc96`, Cooperator `#FB7A7A`, selected `#FFD700` | Same as DL-018 |
 
 ### Fonts, chrome and themes
 - **web/:** system font stack, stock Mantine blue, light theme only.
@@ -20,7 +105,18 @@ Each entry gives the old behaviour, the new one, and why. Add an entry in the sa
 ### Page title
 - **web/:** "Montana Mesonet Dashboard".
 - **New:** `Dashboard · MT Mesonet` in the tab and `Dashboard · Montana Mesonet` on link cards; the navbar reads "Mesonet Dashboard / A service of the Montana Climate Office."
-- **Why:** HOUSE-STYLE §1 Naming.
+- **Station in the tab title (GS-007).** Legacy's banner read "The Montana Mesonet Dashboard: {station name}" on Latest Data. web-next puts the station first in the document title instead ("Bozeman · Dashboard · MT Mesonet", `core/pageTitle.ts`) on every tab, since `?s=` is shared by all tabs. The navbar brand stays the app name (kit navbar), and the Ag card heading already names the station. Link-card titles stay static.
+- **Why:** HOUSE-STYLE §1 Naming. The distinctive part comes first so it survives tab-bar truncation; the station is a prefix on the §1 title, which itself is unchanged.
+
+### Viewport zoom (GS-002)
+- **Legacy:** `maximum-scale=1.2, minimum-scale=0.5`.
+- **New:** `width=device-width, initial-scale=1.0, viewport-fit=cover` with no scale limits.
+- **Why:** WCAG 1.4.4: pinch zoom must not be capped. `viewport-fit=cover` is the kit's safe-area requirement.
+
+### Navbar on narrow screens (MOB-003)
+- **Legacy:** at ≤ 600 px the header's toggle and download buttons were hidden.
+- **New:** the kit's ≤ 750 px rule visually hides the brand text (screen readers still read it) and drops the divider. Every tab link and button stays, and the buttons shrink to icons with permanent `aria-label`s. The bar wraps to two rows at 390 px (MIGRATION-MATRIX decision 4).
+- **Why:** kit default; no feature is lost on phones.
 
 ## vs web/
 
@@ -53,7 +149,7 @@ Each entry gives the old behaviour, the new one, and why. Add an entry in the sa
 - **Why:** HOUSE-STYLE settled precedent (Mountain Time stamps), no time-zone library.
 
 ### Help dialog
-- **New:** placeholder content until the global UI wave ports the full text (HELP-001 to HELP-006 below still describe the target).
+- See "Global UI › Help dialog content".
 ## Carried over from web/: shell, Latest Data and shared data
 
 > From `web/DIVERGENCES.md`. These describe behaviour versus the legacy Dash app and still apply. Renderer details written for Plotly (`connectgaps`, `matches: 'x'`, x-unified hover, `hoveron`) state the behaviour to keep; W2 re-verifies each against ECharts.
@@ -109,7 +205,7 @@ Each entry gives the old behaviour, the new one, and why. Add an entry in the sa
 - **New:** "Latest Photo" is enabled when the data2 camera schedule lists the station with a current period. It is the default top card for those stations, as legacy made it the default for camera stations. Every scheduled camera is at a HydroMet station today. While the schedule loads, the auto default is Wind Rose. An explicit `card=photo` waits for the schedule.
 
 #### Photo modal (LDT-015)
-- **Same as legacy:** clicking the photo opens a centered 92vw modal.
+- **Same as legacy:** clicking the photo opens a centered 92vw modal (kit dialog, at most 1600 px wide) with the image up to 86vh tall.
 - **New:** the modal has a "Download original" button. It downloads the same large WebP the card shows (`photos/webp/large/…_{slot_utc}.webp`) and saves it under that file's own name, for example `acebozem_N_20261001T150000Z.webp`. If the fetch fails, the image opens in a new tab.
 
 #### Card defaults are "auto" (LDT-003, LDB-001, LDB-002)
@@ -128,7 +224,8 @@ Each entry gives the old behaviour, the new one, and why. Add an entry in the sa
 - **New:**
   - Snow Depth is shown. Legacy listed it as `Snow Depth [in.]` while the API sends `[in]`, so legacy silently dropped it (legacy bug not ported).
   - The timestamp is formatted ("Oct 1, 2026 2:30 PM").
-  - Precipitation Summary values carry an " in" suffix.
+  - Precipitation Summary values are rounded to 2 decimals and carry an " in" suffix ("0.10 in"; LDB-009).
+  - Real Feel is left out when the wind speed is 0 (or missing). Legacy still printed `35.74 + 0.6215·T` at calm wind, which is not a wind chill (LDB-007). Kept as web/ does, so the card matches web/ row for row.
 
 #### Wind rose (LDT-005, LDT-006, LDT-007)
 - **Same as legacy:** the rose follows the plotted date range and aggregation, and is titled "Wind Data from {start} to {end}" (Courier New).
@@ -139,24 +236,23 @@ Each entry gives the old behaviour, the new one, and why. Add an entry in the sa
 
 #### Plot layout (LDP-001, LDP-002, LDP-021, MOB-002)
 - **Legacy:** fixed 500 px (one panel) or 250 px per panel, in an 88vh scroll column. The x axes were independent but forced to the same range.
-- **New:**
-  - The plot fills its column, with a 200 px minimum per panel. Long selections scroll instead of squashing.
-  - The x axes are linked (`matches: 'x'`), so pan and zoom move every panel together. Panning writes `from`/`to` to the URL and refetches.
-  - On wide screens the card column is viewport-tall and scrolls internally.
+- **New:** see "Latest Data › Layout" (panel heights, no inner scroll box, sidebar collapse) and "Latest Data › One time axis, zoom and the URL" (one shared zoom, URL window). Those sections replace web/'s Plotly notes (200 px panels, `matches: 'x'`).
 
 #### Soil depth colours (LDP-011)
 - **Legacy:** the Plotly default colours per depth (2 in `#636efa`, 4 in `#EF553B`, …).
-- **New:** a Viridis sample, a CVD-safe palette (`core/params/palettes.ts` (legacy; replaced by `core/palette`)). The x-unified hover is applied to every panel, not just soil.
+- **New:** batlow depth colours (`core/palette` `depthColor`, "House style › Data colors"; web/ used Viridis). The hover covers every panel, not just soil ("Latest Data › Hover").
 
 #### "Not available" panels (LDP-014, LDP-015)
 - **Same as legacy:** a selected variable with no data in the window keeps an empty panel with "**{Variable} data are not available for this time period.**" (`add_nodata_lab`).
 - **New:**
-  - The text is 14 px, not 18 px, so it fits a narrow panel.
+  - The text is 13 px (12 px on phones), not 18 px, so it fits a narrow panel.
   - Legacy's early return (no notes or soil legends at all once any soil panel was empty, LDP-015) is not ported.
 
 #### Empty and error states (ES-001 to ES-005)
-- **Same as legacy:** the texts ("Select Station", "No variables selected", "No data available for selected station and dates / Either change the date range or select a new station.").
+- **Same as legacy:** the titles ("Select Station", "No variables selected", "No data available for selected station and dates / Either change the date range or select a new station.").
 - **New:**
+  - The no-station hint reads "To get started, select a station from the dropdown or the map." Legacy said "the dropdown above or the map to the right", but here the picker is in the sidebar and the map moves under the plot on narrow screens (ES-001).
+  - An unknown `?s=` or `/<station>` path shows "Station not found." once the catalog has loaded, instead of silently showing no station (URL-003), so a mistyped link explains itself.
   - They render as centred text, not as a 500 px blank Plotly figure (ES-004).
   - Raw HTTP errors are logged to the console, never shown.
   - Malformed `?from`/`?to` show the no-data message without sending a request.
@@ -175,13 +271,13 @@ Each entry gives the old behaviour, the new one, and why. Add an entry in the sa
   - The config comes from `/config/{station}/`, which has no `public` parameter in v2.
   - The element→column map adds the 28 in (−70 cm) soil depth, which legacy lacked.
   - Times are computed as America/Denver wall-clock milliseconds, with no timezone library.
-  - The hover polygon uses `hoveron: 'points'`, so it still fires under x-unified hover.
+  - Drawing and hover are under "Latest Data › Sensor-change overlays (SC-008)": a hatched span, with the hover text in the axis tooltip (no hover polygon).
 
 ### Shell, routing and links
 
 #### Base path (GS-003)
 - **Legacy:** served at `/dash/` when `ON_SERVER` was set.
-- **New:** the base comes from `VITE_BASE` (default `/mesonet-dashboard/`, for GitHub Pages behind mesonet2). `/dash` is pointed at it at cutover. `vite.config.ts` has the details.
+- **New:** the base comes from `VITE_BASE` (default `/mesonet-dashboard/next/`, the GitHub Pages preview; it becomes `/mesonet-dashboard/` when web-next replaces web/). `/dash` is pointed at it at cutover. `vite.config.ts` has the details.
 
 #### NWSLI and station ids are case-insensitive (URL-002)
 - **Legacy:** matched `/dash/<segment>` exactly against station id, then NWSLI id.
@@ -207,7 +303,8 @@ Each entry gives the old behaviour, the new one, and why. Add an entry in the sa
 
 #### Tabs keep their state (GS-009)
 - **Legacy:** rebuilt each tab from scratch.
-- **New:** tab panels still unmount, but each tab's controls live in its own URL keys (`core/url-schema.ts`), so switching tabs and coming back restores them.
+- **Same as legacy:** each tab's content is mounted only while that tab is open (`<template x-if>` in `partials/<tab>/index.html`), so a tab makes no requests until it is opened and its components start fresh on each visit.
+- **New:** each tab's controls live in its own URL keys (`core/url-schema.ts`), so switching tabs and coming back restores them, and fetched data stays in `$store.data`, so a revisit draws from the cache. Two things reset on leaving a tab: a chart zoom inside the loaded window, and a Downloader result (Run again; the request is still in the URL). The Latest sidebar's collapsed state is kept in localStorage.
 
 ## Carried over from web/: Ag Tools
 
@@ -482,13 +579,14 @@ Ag Tools is now computed in the browser from raw `/observations` (QC level
   `app.py` ~567-599. Explicit URL params in a deep link are kept on the
   initial load; only a user's change of variable resets them.
 - **SWP annotations** match legacy: boxed "Field Capacity" (top-left) and
-  "Wilting Point" (bottom-left) labels. The grey bands also have dashed
+  "Wilting Point" (bottom-left) labels (2 px text-colour border on the
+  surface at 0.8, 14 px). The grey bands also have dashed
   0.33 / 15 bar reference lines, which legacy did not draw.
 - **Plot size and x range.** The chart fills its card (at least 540 px) and
   the x axis fits the data (Plotly autorange), instead of legacy's fixed
   500 px height and [first − 1 day, last + 1 day] range. A fixed pad would
   fight the GDD projection, which extends the axis past the last observation.
-  Derived data are cached in memory (TanStack Query), not in session storage.
+  Derived data are cached in memory (`$store.data`), not in session storage.
 - **No-station state** uses the legacy text: "Select Station" / "To get
   started, select a station from the dropdown."
 - **Static data sources.** `data/staticSource.ts` `DATA2_STATIC_ENABLED =
@@ -530,17 +628,34 @@ Ag Tools is now computed in the browser from raw `/observations` (QC level
   like legacy `dist_swap` ("Soil VWC @ 4 in", "Air Temperature @ 6.6 ft"),
   and are naturally sorted. One `/observations/daily` request per year (level 2,
   daily mean; daily total for precipitation), drawn as each year arrives
-  (legacy: one full-record request). The current year is black, width 3; prior
-  years are Viridis samples (the pre-Wave-3 palette; legacy used YlGnBu).
-  Precipitation is cumulative and stops at the last observed day rather than
-  running flat to Dec 31. The y label keeps the sensor height
-  ("Air Temperature @ 2 m [°F]").
+  (legacy: one full-record request). The current year is `--text-primary`,
+  width 3; prior years are batlow samples ("House style › Data colors";
+  legacy used YlGnBu). Precipitation is cumulative and stops at the last
+  observed day rather than running flat to Dec 31. The y label keeps the
+  sensor height ("Air Temperature @ 2 m [°F]"). The x axis has month ticks and
+  no "Day of Year" title (the tooltip header gives the day), and the legend sits
+  under the plot as on every other chart, not at the right (AG-ANN-003; the
+  right-hand legend would take a quarter of a phone-width chart). A year before
+  the station's level-2 data begins answers 404 "No data"; it is drawn as an
+  empty year, and the browser still logs the 404 (as web/).
+- **Empty Annual** reads "Select a comparison variable to continue." (web/
+  wording; legacy "Select a variable for comparison...", AG-ANN-005).
 - **Learn More.** Same slugs as legacy (gdd → `gdds/#<crop>-growing-degree-days`,
   soil profile → `soil_profile/`, cci → `risk/`, others pass through), except
   Annual, which links the base Ag Tools page instead of legacy's `ag_tools//`.
 - **Date picker** ends at today (legacy allowed tomorrow).
-- **Colors** (CCI YlOrRd ramp, GDD sand/indigo, Viridis heatmaps) are the
-  pre-Wave-3 dashboard's CVD-safe palettes, unchanged in Wave 3.
+- **Colors** are the house palette ("House style › Data colors"): CCI YlOrRd,
+  GDD YlOrRd bars and line, per-variable heatmap scales. This replaces web/'s
+  sand/indigo GDD and Viridis heatmaps.
+- **Unit text.** Axis, legend and colour-bar labels use the API's unit
+  symbols ("[°F]", "[bar]") instead of legacy's "[degF]", "[negative bar]" and
+  "[Bar]" (AG-SOIL-003, AG-CCI-003; same as web/). SWP is negative by
+  definition, and the axis ticks carry the "-".
+- **GDD bar name** includes the cutoffs in use: "Daily GDDs (32–70 °F)"
+  (legacy "Daily GDDs"; AG-GDD-005), so custom cutoffs are visible in the
+  legend and the table.
+- **Percent saturation axis** is fixed at 0–100 % (legacy autorange,
+  AG-PS-001), so saturation reads against the same scale at every station.
 - **Satellite tab** is hidden; `#satellite` links open Latest with a notice
   linking the legacy satellite view.
 
@@ -664,15 +779,19 @@ and the preview on small screens. It wraps to two lines at 375px.
   written as `true`/`false`. Legacy wrote Python's `True`/`False`. Either form
   parses in R, pandas and spreadsheets.
 - **Extra columns (DLF-003).** `provisional` (QC state per row) is always
-  included. Monthly CSVs also have `Days With Data`. "Contains Missing Data"
-  keeps its legacy name (DL-013).
+  included. Daily and hourly CSVs also carry the API's `obs_count`
+  (observations behind each row); monthly CSVs drop it and add
+  `Days With Data`. "Contains Missing Data" keeps its legacy name (DL-013).
+- **Datetimes (DLF-003)** are the API's local stamps with their offset
+  (`2026-09-01 00:00:00-06:00`), as received, not legacy's JSON round-trip.
+  The offset makes each row unambiguous across DST changes.
 - The filename is unchanged: `{station}_{period}_{YYYYMMDD}_to_{YYYYMMDD}.csv`
   (DLF-001). When the start date was clamped, the filename uses the clamped
   start.
 
 ## Global UI
 
-> W1 global UI (outage notice, notices, Help, Share, theme toggle, footer). Compared with web/ unless noted. This replaces the "Help dialog" placeholder under "vs web/".
+> W1 global UI (outage notice, notices, Help, Share, theme toggle, footer). Compared with web/ unless noted.
 
 ### Outage notice
 - **Same as web/:** `outage.json` from the repo's main branch, shown once per browser tab per notice `id`; any failure means inactive.
@@ -795,8 +914,10 @@ Plotted values were checked against web/ point for point: acebozem hourly, mdama
 - **New:**
   - 768–1199 px: the sidebar and plot sit side by side, with the two cards in a row under them. Below 768 px everything stacks.
   - The plot is as tall as its panels need (190 px per panel, 340 px for a single panel, 160 px on phones), and the page scrolls. The plot has no inner scroll box.
-  - The sidebar has a "Controls" heading (LDC-001), but it still cannot collapse (LDC-002 stays a gap).
-- **Why:** one scroll container is easier to use on touch screens. Collapsing matters less now that the card column wraps below 1200 px.
+  - The sidebar has a "Controls" heading (LDC-001).
+  - **Collapse (LDC-002).** At 1200 px and wider, an icon button beside "Controls" ("Hide controls", `aria-expanded`) hides the sidebar, and the plot widens into its column (legacy: 6 → 9 of 12). A menu button ("Show controls") at the top of a slim rail where the sidebar was brings it back. This replaces legacy's floating blue button. Focus moves to the other button. The choice is saved per browser in localStorage `mco-dashboard-sidebar`, not in the URL, so a shared link always shows the controls. Below 1200 px both buttons are hidden and the sidebar always shows, whatever was saved (`ui/latest/layout.ts`, `core/latest/layout.ts`).
+  - Loading is text, not legacy's Bars spinner: "Loading station data…" over an empty plot, and a small "Updating…" in the corner while a new window for the same station loads over the old plot (LDP-021).
+- **Why:** one scroll container is easier to use on touch screens. Text says what is loading and needs no motion (reduced-motion safe).
 
 ### Station picker (ST-001)
 - **web/:** a searchable Select whose labels read "{name} ({sub_network})".
@@ -912,8 +1033,14 @@ Top card (Wind Rose / Weather Forecast / Latest Photo) and bottom card (Locator 
 
 ### Tables
 - **web/:** Mantine tables, odd rows `rgb(220,220,220)` (legacy TABLE_STYLING).
-- **New:** odd rows `--bg-raised`; row labels are `<th scope="row">`; values in Space Mono. Rows, order and values are unchanged (LDB-003 to LDB-009); the Precipitation Summary is still HydroMet only.
-- **Why:** house tokens in all three themes.
+- **New:** odd rows `--bg-raised`; row labels are `<th scope="row">`; values in Space Mono. Rows, order and values are unchanged from web/ (LDB-003 to LDB-009); the Precipitation Summary is still HydroMet only.
+- **Station Metadata vs legacy (LDB-003):** the legacy rows in legacy order, then two web/ extras, County and NWSLI ID (`core/cards/metadata.ts`). A blank catalog value shows "—" instead of an empty cell.
+- **Why:** house tokens in all three themes; the extra rows are the ids people search by.
+
+### Station one-pager link (OP-001)
+- **Legacy:** fetched `one-pagers.json` from the repo's main branch on every Metadata render.
+- **New:** the same file, fetched once through `$store.data` and kept for 30 minutes (`ONE_PAGERS_STALE_MS`). Only well-formed `{station, url}` entries with http(s) URLs are used (`core/cards/onePagers.ts`).
+- **Why:** the file changes a few times a day at most; one fetch per visit is enough, and the URL filter keeps a bad entry from becoming a link.
 
 ## Downloader (web-next)
 
@@ -938,6 +1065,14 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
   station…" for a station that is set.
 - **Messages** are kit-styled inline notes (⚠ + text, accent edge), not
   coloured Mantine alerts; Run/Download hints keep their web/ wording.
+- **Download is disabled until a run returns rows (DL-016),** as in web/,
+  instead of legacy's enabled button that answered "Please 'Run Request'
+  before attempting to download." The state is visible on the button, so
+  the message is never needed.
+- **Station label (DL-001)** is "Station" with the placeholder "Pick a
+  station" (legacy "Select Station" / "Select a Mesonet Station from the Map
+  or Dropdown..."), the same wording as Ag Tools. The map below is the
+  pointer alternative.
 - **Preview chart (DL-017).** ECharts small multiples, one grid per column,
   linked x zoom and axis pointer, the column name as each panel's title above
   the plot (not a rotated y title). Lines use the palette's preview cycle
@@ -971,7 +1106,8 @@ The Ag tab UI (`partials/ag/*`, `ui/ag/*`, logic in `core/ag/view/tab.ts`, `resu
 ### Controls
 - **web/:** Mantine selects, a range date picker, chips for crop / soil variable / livestock, one dual-thumb slider with marks.
 - **New:** the shared controls (`ui/controls`): station combobox (NWSLI searchable), native selects for variable / projection / comparison variable, two native date inputs (max today), segmented radios for time aggregation and livestock, `aria-pressed` chips (single choice) for crop and soil variable, and two native range inputs ("Base", "Upper cutoff", with the extra "No upper limit" stop) instead of one dual-thumb slider. The cutoff text and "Reset to <crop> cutoffs" are as before.
-- **Why:** kit-first controls with a keyboard and screen-reader twin for every gesture.
+- **Labels vs legacy (AG-001, AG-002, AG-GDD-001, AG-ANN-001):** short labels shared by all tabs: "Station" with the placeholder "Pick a station" (legacy "Select Station" / "Select a Mesonet Station Dropdown..."), "Variable", "GDD crop" (legacy "GDD Generic Crop Type"), "Comparison variable". The station picker is clearable, which returns the card to "Select Station" (legacy was not clearable).
+- **Why:** kit-first controls with a keyboard and screen-reader twin for every gesture; one label vocabulary across the three tabs.
 
 ### Chart card
 - **New:** the card heading names the variable and the station ("Growing Degree Days: Bozeman"). Notes are a list above the chart; the chart host is mounted only once a view is ready, so loading shows a spinner, and empty / error states show their text in place of the chart (same texts as web/). Each settled view is announced in the page's polite live region ("Growing Degree Days chart updated for Bozeman.", or the empty / error text).

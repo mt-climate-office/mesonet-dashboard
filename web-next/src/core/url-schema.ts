@@ -10,6 +10,9 @@
  *              theme      dark | light | high-contrast (read first by the
  *                         inline anti-flash script; absent = saved/OS choice)
  *
+ *   Charts     cmp        1 = the Compare (stacked) chart; `#latest` links map
+ *                         here (core/router.ts). It reads the Latest keys.
+ *
  *   Latest     from, to   chart window (YYYY-MM-DD; pan/zoom writes these)
  *              agg        hourly | daily | raw
  *              vars       display-variable names, comma-separated (absent =
@@ -127,6 +130,13 @@ const bool = (d: boolean): KeySpec<boolean> => ({
   format: (v) => String(v),
 })
 
+/** A new-style on/off key: `1` (or `true`) is on, written as `1`; absent = off. */
+const flag = (): KeySpec<boolean> => ({
+  default: false,
+  parse: (raw) => raw === '1' || raw?.toLowerCase() === 'true',
+  format: () => '1',
+})
+
 /** Comma-separated list. Absent → default; `key=` → []. */
 function list<D extends readonly string[] | null>(d: D): KeySpec<string[] | D> {
   return {
@@ -153,7 +163,9 @@ export const URL_SCHEMA = {
   // Shared
   s: str(),
   theme: oneOf(THEMES, null),
-  // Latest
+  // Charts
+  cmp: flag(),
+  // Latest (Compare)
   from: str(),
   to: str(),
   agg: oneOf(LATEST_AGG_OPTIONS, 'hourly'),

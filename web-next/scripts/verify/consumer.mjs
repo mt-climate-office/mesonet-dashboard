@@ -68,9 +68,10 @@ const env = await start()
   const { page, close, rendered, problems } = await open(env, '?s=acebozem&theme=light#latest')
   await rendered({ charts: 1 })
   check('?theme=light boots data-theme=light before app code', (await page.evaluate(() => document.documentElement.dataset.theme)) === 'light')
-  // Exercise what persists: the theme toggle and a tab switch.
+  // Exercise what persists: the theme toggle, a section switch and the station picker (drawer + station memory).
   await page.locator('#btn-theme').click()
-  await page.getByTestId('tab-ag').click()
+  await page.locator('[data-testid="section-row"] a[data-section="ag"]').click()
+  await page.getByTestId('station-switcher').click()
   await page.waitForTimeout(500)
   const keys = await page.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)])
   const bad = keys.filter((k) => !k.startsWith('mco-'))

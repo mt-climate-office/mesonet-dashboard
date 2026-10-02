@@ -38,7 +38,7 @@ export function legacyStateNotice(hash: string): Notice {
 export function satelliteNotice(): Notice {
   return {
     id: 'satellite',
-    text: 'Satellite indicators aren’t in this dashboard yet, so you’re on Latest Data.',
+    text: 'Satellite indicators aren’t in this dashboard yet, so you’re on the station overview.',
     linkText: 'Open satellite indicators in the previous dashboard',
     href: LEGACY_SATELLITE_URL,
     toast: 'Satellite indicators are on the previous dashboard. See the notice at the top of the page.',

@@ -37,10 +37,12 @@ describe('index.html', () => {
   it('expands every @include', () => {
     const out = expandIncludes(html, root)
     expect(out).not.toMatch(/@include/)
-    expect(out).toContain('id="tab-latest"')
-    // Each tab's partial (and its nested includes) made it into the page.
+    for (const s of ['now', 'charts', 'ag', 'download', 'about']) expect(out).toContain(`id="section-${s}"`)
+    // Each section's partial (and its nested includes) made it into the page.
+    expect(out).toContain('x-data="nowView')
     expect(out).toContain('x-data="latestSidebar')
     expect(out).toContain('x-data="agTab')
     expect(out).toContain('x-data="downloader')
+    expect(out).toContain('x-data="stationPicker')
   })
 })

@@ -1,0 +1,28 @@
+/* Station picker content (partials/picker.html); the drawer / sheet frame is
+   ui/layout/{drawer,sheet}.css. Kit tokens only. */
+
+.picker-search .ctl-input { font-size: var(--fs-md); min-height: 44px; }
+.picker-group { display: flex; flex-direction: column; gap: 0.5rem; }
+.picker-group-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.picker-group-title { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.picker-note { font-size: var(--fs-sm); color: var(--text-muted); }
+
+.picker-list { list-style: none; display: flex; flex-direction: column; }
+.picker-row {
+  width: 100%; min-height: 44px;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  background: none; border: 0; border-radius: var(--radius-md);
+  color: var(--text-primary); font: inherit; font-size: var(--fs-sm); text-align: left;
+  cursor: pointer;
+}
+.picker-row:hover { background: var(--accent-hover); }
+.picker-row[aria-current="true"] { box-shadow: inset 3px 0 0 var(--accent-line); font-weight: 600; }
+.picker-row-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-row-meta { flex-shrink: 0; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
+
+.picker-map { height: 18rem; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
+/* In the drawer the map takes whatever height is left (at least 18rem; the body scrolls past that). */
+.dash-drawer .picker-group:last-child { flex: 1 0 auto; }
+.dash-drawer .picker-map { flex: 1 0 18rem; height: auto; }
+.dash-sheet .picker-map { height: min(46dvh, 22rem); }

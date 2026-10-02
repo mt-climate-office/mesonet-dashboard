@@ -1,7 +1,8 @@
 /**
- * The two station maps (thin wrappers over ui/map/map.ts + stationLayer):
- *   stationMap    — Latest card: select a station, fly to it.
+ * The station maps (thin wrappers over ui/map/map.ts + stationLayer):
+ *   stationMap    — Latest card / About: select a station, fly to it.
  *   downloaderMap — Downloader: counties emphasised, click selects, no re-centre (legacy).
+ *   pickerMap     — station picker: the whole state stays in view, click selects.
  *
  * Markup: an empty element with a height; the component builds the map,
  * legend panel and sr-only table twin inside it.
@@ -28,6 +29,8 @@ export interface StationMapOptions {
   onSelect: (id: string) => void
   /** Station ids to show (network filter); null/undefined shows all. */
   visible?: () => ReadonlySet<string> | readonly string[] | null | undefined
+  /** Start the legend collapsed at every width (narrow drawers). */
+  legendCollapsed?: boolean
   /** Accessible name for the map. */
   label?: string
 }
@@ -55,7 +58,7 @@ function mapView(opts: StationMapOptions, preset: Preset) {
       root.classList.add('map-frame')
       const canvas = document.createElement('div')
       canvas.className = 'map-canvas'
-      const legend = createLegend()
+      const legend = createLegend('Stations', { collapsed: opts.legendCollapsed })
       const table = createSrTable({
         caption: 'Stations shown on the map',
         onSelect: (id) => opts.onSelect(id),
@@ -115,3 +118,7 @@ export const stationMap = (opts: StationMapOptions) =>
 /** Downloader station map: county lines emphasised; selection does not move the map. */
 export const downloaderMap = (opts: StationMapOptions) =>
   mapView(opts, { label: 'Map of Montana Mesonet stations to download', emphasiseCounties: true, fly: false })
+
+/** Station-picker map: picking a station does not move the map (the whole network stays in view). */
+export const pickerMap = (opts: StationMapOptions) =>
+  mapView(opts, { label: 'Map of Montana Mesonet stations', emphasiseCounties: false, fly: false })

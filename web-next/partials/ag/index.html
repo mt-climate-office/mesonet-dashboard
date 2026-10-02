@@ -1,6 +1,6 @@
 <!-- Ag Tools tab: controls card + one chart card. Mounted only while the tab
      is open, so nothing fetches from another tab (the cache keeps the data). -->
-<template x-if="$store.url.tab === 'ag'">
+<template x-if="$store.url.section === 'ag'">
   <div class="ag" x-data="agTab">
     <!-- @include partials/ag/controls.html -->
     <section class="ag-card ag-chart-card" aria-labelledby="ag-chart-title">

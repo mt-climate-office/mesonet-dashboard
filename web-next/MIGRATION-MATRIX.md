@@ -13,7 +13,7 @@ Settled precedents (MIGRATING.md) and pure-WCAG fixes are applied without asking
 | Head | `viewport-fit=cover` | absent | required | KIT-NEW | adopted (WCAG/settled) |
 | Head | Meta CSP | none | meta CSP pattern | KIT-NEW | adopted; adds `'unsafe-eval'` for Alpine (documented) |
 | Head | Favicons / OG card | app `favicon.svg`, no OG | kit-hosted favicon set + og-card | KIT-NEW | adopted kit assets |
-| Head | Page title | "Montana Mesonet Dashboard" | `<Short> · <Family>` | DRIFT | `Dashboard · MT Mesonet` (§1 rule, plan) |
+| Head | Page title | "Montana Mesonet Dashboard" | `<Short> · <Family>` | DRIFT | `Dashboard · MT Mesonet` (§1 rule, plan); `<Station> · Dashboard · MT Mesonet` once a station is selected (DIVERGENCES "Page title") |
 | Tokens | Colors | Mantine blue + 144 hard-coded hexes | tokens, 3 themes | DRIFT | tokens only; data colors → `core/palette` (W1) |
 | Tokens | Themes | light only | dark / light / high-contrast | KIT-NEW | all three (user decision) |
 | Tokens | `--text-dim`, `--accent-line` semantics | n/a | kit values | IDENTICAL | adopted (settled) |
@@ -87,3 +87,10 @@ Settled precedents (MIGRATING.md) and pure-WCAG fixes are applied without asking
 | 4 | Sticky navbar, two-row wrap at 390 px: **app override as built** | kit issue [#4](https://github.com/mt-climate-office/mco-web-style/issues/4) |
 | — | Form errors: `--text-primary` + ⚠ + heavier edge until the kit has a token | kit issue [#2](https://github.com/mt-climate-office/mco-web-style/issues/2) |
 | — | SWP heatmap (BrBG): labelled midpoint at the **wilting point, 15 bar** | `core/palette/roles.ts` `HEATMAP.swp` |
+
+## Decisions (W4, 2026-10-02)
+
+| # | Decision | Follow-up |
+|---|---|---|
+| — | **Kit touch targets: exemption, no kit issue.** Under `(hover: none)` the kit's MapLibre controls (29 px), the attribution button (24 px) and `.mco-panel-toggle` (36 px) are below HOUSE-STYLE §5.5's 40 px. The user declined a kit issue. The verify touch-target check exempts exactly these three selectors (`scripts/verify/lib.mjs#smallTargets`, run by `axe.mjs`). Reason: this is kit-owned chrome that the app must not patch locally (CLAUDE.md: change the kit, never a local copy), and every map control has a keyboard or sr-table twin. | Revisit if the kit changes its map chrome |
+| — | Latest sidebar collapse (LDC-002): **added**, wide screens only, persisted in localStorage `mco-dashboard-sidebar` (not the URL) | DIVERGENCES "Latest Data › Layout" |

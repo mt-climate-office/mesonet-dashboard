@@ -1,0 +1,21 @@
+<!-- About (P0): the station's metadata, every current reading (the former Current Conditions
+     table with the HydroMet precipitation summary) and the locator map, reusing the Latest card
+     panes (ui/latest/cards/*). P1 adds the one-pager, sensor-change history and data notes. -->
+<template x-if="$store.url.section === 'about'">
+<div class="about-grid" data-testid="about">
+  <section class="dash-card about-card" aria-labelledby="about-meta-title">
+    <h3 class="dash-card-title" id="about-meta-title">Station details</h3>
+    <!-- @include partials/latest/cards/metadata.html -->
+  </section>
+  <section class="dash-card about-card" aria-labelledby="about-current-title">
+    <h3 class="dash-card-title" id="about-current-title">All current readings</h3>
+    <!-- @include partials/latest/cards/current.html -->
+  </section>
+  <section class="dash-card about-card about-map" aria-labelledby="about-map-title">
+    <h3 class="dash-card-title" id="about-map-title">Location</h3>
+    <div class="about-map-frame" data-testid="about-map"
+         x-data="stationMap({ stations: () => $store.station.list, selected: () => $store.station.id,
+                  onSelect: (id) => $store.station.select(id), label: 'Locator map of Montana Mesonet stations' })"></div>
+  </section>
+</div>
+</template>
