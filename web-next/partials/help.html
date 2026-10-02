@@ -1,0 +1,81 @@
+<!-- Help dialog ("?" in the navbar; x-data="helpDialog", ui/shell/helpDialog.ts).
+     Static hrefs are the no-JS fallback; :href binds the core/config.ts values. Content ported from web/src/components/HelpModal.tsx
+     (legacy layout.generate_modal), in kit .info-section blocks. -->
+<dialog class="mco-modal" id="help-modal" aria-labelledby="help-modal-title" data-testid="help-modal" x-data="helpDialog">
+  <div class="info-modal-box">
+    <div class="info-modal-header">
+      <div>
+        <h2 class="info-modal-title" id="help-modal-title">The Montana Mesonet Dashboard</h2>
+        <p class="info-modal-subtitle">A service of the Montana Climate Office.</p>
+      </div>
+      <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+    </div>
+
+    <div class="info-section">
+      <h3>Welcome</h3>
+      <p>This dashboard shows historical data from every station in the Montana
+         Mesonet. To see a station, pick it from the station menu, click it on
+         the locator map, or add its name to the address (for example
+         <a href="https://mesonet.climate.umt.edu/dash/crowagen" target="_blank" rel="noopener noreferrer">https://mesonet.climate.umt.edu/dash/crowagen</a>).</p>
+    </div>
+
+    <div class="info-section">
+      <h3>Using the tabs</h3>
+      <ul>
+        <li><strong>Latest Data</strong> plots a station's recent observations,
+            with current conditions, the forecast, a wind rose and station photos.</li>
+        <li><strong>Ag Tools</strong> computes agricultural indicators: reference ET,
+            growing degree days, soil profiles, livestock risk and more.</li>
+        <li><strong>Data Downloader</strong> exports station observations as CSV.</li>
+        <li>The address keeps the dashboard's state, so copying it (or using
+            <strong>Share</strong>) shares the current view.</li>
+        <li>Satellite indicators are on the
+            <a href="https://mesonet.climate.umt.edu/dash#satellite" :href="satelliteUrl" target="_blank" rel="noopener noreferrer">previous dashboard</a>.</li>
+      </ul>
+    </div>
+
+    <div class="info-section">
+      <h3>Data source</h3>
+      <p>Station data are aggregated on demand from the
+         <a href="https://mesonet2.climate.umt.edu/api/v2/docs" :href="apiDocsUrl" target="_blank" rel="noopener noreferrer">Montana Mesonet API</a>.
+         Times are Mountain Time.</p>
+    </div>
+
+    <div class="info-section">
+      <h3>Contact</h3>
+      <p>To report a bug, request a feature or ask about the dashboard:</p>
+      <ul>
+        <li>email <a href="mailto:james.seielstad@mso.umt.edu">james.seielstad@mso.umt.edu</a>,</li>
+        <li>fill out our <a href="https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN" :href="feedbackUrl" target="_blank" rel="noopener noreferrer">feedback form</a>,</li>
+        <li>or open an issue on <a href="https://github.com/mt-climate-office/mesonet-dashboard/issues" target="_blank" rel="noopener noreferrer">our GitHub</a>.</li>
+      </ul>
+      <p>For questions about current Mesonet stations, contact our Mesonet
+         Manager (Kevin Hyde) at <a href="mailto:kevin.hyde@umontana.edu">kevin.hyde@umontana.edu</a>.
+         For general questions about the Mesonet and its development, contact
+         the state climatologist (Kelsey Jencso) at
+         <a href="mailto:kelsey.jencso@umontana.edu">kelsey.jencso@umontana.edu</a>.</p>
+    </div>
+
+    <div class="info-section">
+      <h3>Montana Mesonet background</h3>
+      <p>The Montana Climate Office (MCO) installed 6 weather and soil moisture
+         monitoring stations in 2016 as part of the Montana Research and
+         Economic Development Initiative (MREDI). The Mesonet was designed to
+         support decision-making for statewide drought assessments, precision
+         agriculture and rangeland and forested watershed management. Since
+         2016 the network has grown to 94 stations through support from private
+         landowners, watershed groups, tribes, state agencies and grants from
+         federal entities. In 2020 the MCO was awarded a contract from the U.S.
+         Army Corps to add 205 additional stations. The new stations will be
+         installed every 500 square miles in central and eastern Montana to
+         improve drought assessments and flood forecasting, in the protection
+         of lives and property.</p>
+    </div>
+
+    <div class="info-section">
+      <h3>Source code</h3>
+      <p>See how we built this application at our
+         <a href="https://github.com/mt-climate-office/mesonet-dashboard/tree/main" target="_blank" rel="noopener noreferrer">GitHub repository</a>.</p>
+    </div>
+  </div>
+</dialog>

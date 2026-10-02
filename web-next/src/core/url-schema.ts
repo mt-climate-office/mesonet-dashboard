@@ -247,6 +247,19 @@ export function writeUrlSearch(
   return `?${pairs.map(([k, v]) => `${enc(k)}=${enc(v)}`).join('&')}`
 }
 
+/**
+ * Absolute URL of the view in `state`: `loc`'s origin, path and hash with
+ * the query re-serialized by `writeUrlSearch` against `loc.search`, i.e.
+ * what the URL store writes on its next flush (Share copies this).
+ */
+export function viewHref(
+  loc: Pick<Location, 'origin' | 'pathname' | 'search' | 'hash'>,
+  state: UrlState,
+  touched: ReadonlySet<string> = new Set(),
+): string {
+  return `${loc.origin}${loc.pathname}${writeUrlSearch(state, loc.search, touched)}${loc.hash}`
+}
+
 /** The Latest selection with "absent = defaults" resolved. */
 export function latestVars(state: Pick<UrlState, 'vars'>): string[] {
   return state.vars ?? [...SELECTED_VARS]

@@ -5,6 +5,7 @@ import {
   readUrlState,
   selectStationPatch,
   stationPathRedirect,
+  viewHref,
   writeUrlSearch,
 } from './url-schema'
 
@@ -136,5 +137,30 @@ describe('migrateLegacySearch', () => {
 
   it('returns an empty string when only legacy keys were present and moved', () => {
     expect(migrateLegacySearch('?time=hourly', '#ag')).toBe('?ag_time=hourly')
+  })
+})
+
+describe('viewHref', () => {
+  const loc = (search: string, hash = '#latest') => ({
+    origin: 'https://mt-climate-office.github.io',
+    pathname: '/mesonet-dashboard/next/',
+    search,
+    hash,
+  })
+  const BASE = 'https://mt-climate-office.github.io/mesonet-dashboard/next/'
+  it('serializes the store state, keeping path, hash and unknown keys', () => {
+    const state = { ...readUrlState('?s=acebozem'), s: 'aceabsar' }
+    expect(viewHref(loc('?s=acebozem&kbd=off', '#ag'), state)).toBe(`${BASE}?kbd=off&s=aceabsar#ag`)
+  })
+  it('gives a clean URL for an all-defaults view', () => {
+    expect(viewHref(loc(''), readUrlState(''))).toBe(`${BASE}#latest`)
+  })
+  it('reflects a write the store has not flushed yet', () => {
+    expect(viewHref(loc(''), { ...readUrlState(''), s: 'acebozem' })).toBe(`${BASE}?s=acebozem#latest`)
+  })
+  it('passes touched keys through (Ag var pinned at its default)', () => {
+    const d = readUrlState('')
+    expect(viewHref(loc('', '#ag'), d)).toBe(`${BASE}#ag`)
+    expect(viewHref(loc('', '#ag'), d, new Set(['var']))).toBe(`${BASE}?var=${d.var}#ag`)
   })
 })

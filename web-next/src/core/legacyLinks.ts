@@ -17,3 +17,23 @@ export function legacyStateHash(search: string): string | null {
 export function legacyStateUrl(base: string, hash: string): string {
   return `${base.replace(/\/+$/, '')}/?${LEGACY_STATE_PARAM}=${encodeURIComponent(hash)}`
 }
+
+/**
+ * `search` without the `state` param, other params byte-for-byte as they
+ * were (so literal commas and `+` survive). Returns `?…` or ''.
+ */
+export function withoutLegacyState(search: string): string {
+  const kept = search
+    .replace(/^\?/, '')
+    .split('&')
+    .filter((pair) => {
+      if (!pair) return false
+      const key = pair.split('=')[0].replace(/\+/g, ' ')
+      try {
+        return decodeURIComponent(key) !== LEGACY_STATE_PARAM
+      } catch {
+        return true
+      }
+    })
+  return kept.length ? `?${kept.join('&')}` : ''
+}

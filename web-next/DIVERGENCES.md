@@ -670,6 +670,37 @@ and the preview on small screens. It wraps to two lines at 375px.
   (DLF-001). When the start date was clamped, the filename uses the clamped
   start.
 
+## Global UI
+
+> W1 global UI (outage notice, notices, Help, Share, theme toggle, footer). Compared with web/ unless noted. This replaces the "Help dialog" placeholder under "vs web/".
+
+### Outage notice
+- **Same as web/:** `outage.json` from the repo's main branch, shown once per browser tab per notice `id`; any failure means inactive.
+- **New:** a kit `<dialog class="mco-modal">` fed by `$store.data.cached('outage', …)` (60 s TTL, no retry), rechecked every 60 s while the tab is visible, so a notice posted while the page is open still appears. The sessionStorage key is `mco-dashboard-outage-<id>` (was `outageModalShown:<id>`). sessionStorage is per tab, so the rename makes no one see a notice twice. The tone (`color`) shows as an icon plus a word (Warning, Alert, Information, Resolved, Notice), never as color alone. The MCO logo header is gone; the notice title is the dialog heading.
+- **Markdown:** a small built-in subset (`core/markdown.ts`): paragraphs, bold, italic, `[links](…)` and `<https://…>` autolinks. Raw HTML in the message shows as text. Only `http(s):` and `mailto:` targets become links (new tab, `rel="noopener noreferrer"`). react-markdown also rendered lists, headings and code, but outage messages have never used them.
+- **Why:** no Mantine or react-markdown. The message is remote content rendered with `x-html`, so it has to be escaped.
+
+### Legacy `?state=` links and `#satellite`
+- **web/:** a Mantine notification, open until closed, with a link to the previous dashboard.
+- **New:** a dismissible banner at the top of `<main>` carries the sentence and the link, and a plain-text kit toast (2800 ms) points to it. `state` is removed and the other params stay byte-for-byte (`core/legacyLinks.ts#withoutLegacyState`). `#satellite` becomes `#latest`, both on load and on later hash changes.
+- **Why:** the kit toast is text-only with `pointer-events: none`, so it can't hold a link. The banner keeps the link reachable by keyboard and screen reader.
+
+### Station id resolution announced
+- **New:** when an NWSLI or mis-cased `?s=` is rewritten to the catalog id, the live region says so ("Station ACEBOZEM opened as Bozeman (acebozem).").
+- **Why:** HOUSE-STYLE §5.1. Otherwise the URL change is silent.
+
+### Help dialog content
+- **Same as web/:** the content (welcome with the crowagen example, the tabs, API docs on mesonet2, contacts, Background, Source Code, satellite on the previous dashboard). It opens only from the "?" button.
+- **New:** kit `.info-section` blocks with headings (Welcome, Using the tabs, Data source, Contact, Montana Mesonet background, Source code). Data source adds "Times are Mountain Time." There is no first-visit auto-open: HOUSE-STYLE §4 suggests one, gated by `mco-dashboard-help-seen`, but neither web/ nor the legacy app opened Help on load.
+
+### Share
+- **New:** copies `$store.url.href`, the view's URL built from the store state (`core/url-schema.ts#viewHref`), so the link matches the view even before the store's batched write reaches the address bar. The result appears as a toast and is also sent to the page live region.
+
+### Theme toggle
+- **New:** one button cycles dark → light → high contrast. Its icon and `aria-label` ("Switch to light theme") name the theme a click switches to, a matching tooltip shows on hover, and the new theme is announced in the live region. `MCO.setTheme` saves the choice in the shared `mco-theme` key.
+
+### Footer
+- **New:** every tab ends with "Data from the Montana Mesonet, quality-controlled and served by the Mesonet API." and "Montana Climate Office · climate.umt.edu" (HOUSE-STYLE §1 voice), with underlined links. The Downloader's BLM funding footer stays on that tab only.
 ## Charts
 
 ECharts host (`ui/charts/chart.ts`) and the Ag builders (`core/charts/ag*.ts`) vs the Plotly figures in `web/src/features/ag/figures`. Color changes are under House style.
