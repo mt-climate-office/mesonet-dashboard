@@ -1,0 +1,91 @@
+# Fidelity harness (web-next)
+
+Compares web-next with the current React app (`web/`) on the same API and QC level (2), and
+web-next's Ag numbers with the API's `/derived`. It is the W4 cutover evidence together with
+`CHECKLIST.md`. It is a port of `web/scripts/fidelity/` (which compared legacy Dash with `web/`);
+`web/` is frozen, so that copy stays as it was.
+
+## Run
+
+```sh
+cd web-next
+node scripts/fidelity/run.mjs            # everything, full station matrix (~2–3 h)
+```
+
+That one command starts both Vite dev servers if they are not already answering
+(`web/` on :5188, web-next on :5189; override with `WEB_URL` / `NEXT_URL`) and stops the ones it
+started. Options:
+
+```sh
+node scripts/fidelity/run.mjs --compare latest,ag,downloader,ag-api \
+  --stations acebozem,lololowr --scenarios default,daily --out DIR --headed
+node scripts/fidelity/run.mjs --recompare      # re-diff saved captures, no browser
+node scripts/fidelity/run.mjs --report-only    # rebuild DIR/report.html and DIR/results.json
+FIDELITY_DEBUG=1 node scripts/fidelity/run.mjs …   # print each wait step
+```
+
+- **Needs** `npm ci` in `web-next/` and `npm ci --ignore-scripts` in `web/` (Playwright comes from
+  `../web/node_modules` via `createRequire`; web-next adds no dependency) and an installed Chrome
+  (`channel: 'chrome'`; `FIDELITY_CHROMIUM=/path` overrides).
+- **Output** (default: the session scratchpad `…/fidelity-next`, env `FIDELITY_OUT`):
+  `DIR/<compare>/results.json`, `captures/*.json` (every extracted figure, card and log),
+  `shots/*.png`, `files/*.csv`; `DIR/results.json` (summary) and `DIR/report.html`
+  (scenario × station matrix with details).
+- **Exit code** 1 if any item is FAIL or ERROR.
+- **Every page** is 1440 × 1000, light color scheme, `America/Denver`; web-next also gets
+  `?theme=light`. Theme independence is the axe job's concern, not this one.
+- **Gentle with the API:** items run one after another, web/ then web-next, with a pause between
+  items. Waits are for render evidence (a drawn chart, an empty-state text, no "Loading…"), then a
+  2 s quiet period with no xhr/fetch, never `networkidle`; timeouts are generous (`config.mjs`).
+
+## Comparisons
+
+| `--compare` | A | B | What it checks |
+|---|---|---|---|
+| `latest` | web/ Latest Data | web-next | Every station × the old scenario set (hourly default, daily, daily + gridMET, raw, the sensor-change window for `sensor-change` stations, and each top/bottom card). Timeseries and wind-rose traces (values by timestamp, panel titles), sensor-change spans, "not available" notes; card tables (Current Conditions, Metadata, Precipitation Summary) as label/value rows, card text, image sources, select options; the locator map's station list vs `/stations`; web-next palette roles; non-2xx requests and console errors |
+| `ag` | web/ Ag Tools | web-next | Every station × every variable: ETr daily/hourly, GDD wheat/corn and the default window with the projection, feels-like, CCI adult/newborn, SWP and percent saturation (has_swp stations), soil profile VWC/temperature/EC, annual (first element and precipitation). Traces, panels, SWP reference lines, notes/messages, palette |
+| `downloader` | web/ Downloader | web-next | daily / hourly / monthly / derived-only requests: the downloaded CSV (byte-identical, else filename, columns, row count, values by datetime), the preview chart traces, the map's station list, palette |
+| `ag-api` | mesonet2 `/derived` (no `premade`, `keep=true`, `alpha=0.23`, level 2) | web-next Ag | ETr, GDD wheat/corn, feels-like, CCI, SWP, percent saturation: each derived output column is matched to the closest trace (raw or cumulative, depth-aware cm → in) |
+
+Statuses: **PASS** equal within tolerance (`abs 0.0011`, `rel 2e-4`; `FIDELITY_ABS_TOL`,
+`FIDELITY_REL_TOL`). **WARN** label wording, points that differ only at the trailing edge (the two
+captures are seconds apart), advisory card text, off-palette colors, web-next console errors.
+**FAIL** a trace, figure or card missing/extra/empty, interior value or null differences, sensor
+spans, CSV columns/rows/values. **ERROR** a side failed to load.
+
+## How the extraction works
+
+- **web/ (Plotly):** `gd.data` / `gd._fullLayout` of every `.js-plotly-plot`.
+- **web-next (ECharts):** for every chart host (`.chart`, `ui/charts/chart.ts`) the harness imports
+  the ECharts module the host lazy-loaded (the same Vite dev URL, so the same instance registry)
+  and reads `echarts.getInstanceByDom(canvas).getOption()`. Nothing is exposed globally. Without
+  an instance (a production build) it falls back to the host's `.sr-only` table twin (and
+  `data-zoom` carries the visible window).
+- Both are normalised to `{ panel, name, x[], y[] }` traces: panel = the y-axis title (`polar` for
+  the wind rose), x = wall-clock `YYYY-MM-DDTHH:MM` (midnight = the date; web-next's daily points
+  at local noon are moved back to the date), numbers for day-of-year. Stacked ECharts series are
+  reported at their drawn (absolute) values; heatmaps become one trace per depth row; frozen-soil
+  cells become `frozen|<depth>` traces; sensor spans and markLine/markArea values are compared
+  separately. Known renames are mapped (`Average Max./Min.` ↔ the normals edges, `Feels Like` /
+  `Risk` ↔ the index line, wind-rose bins with/without "mph"); otherwise traces pair by panel +
+  name, then by name, then by content within the panel (a WARN for the label change).
+- **Cards:** visible text (sr-only twins and hidden panes skipped), tables as cell rows, images
+  (and whether they loaded), select options. web/'s cards are found by their Mantine switcher
+  label; web-next's by `data-testid` (`top-card`, `bottom-card`).
+- **Maps:** web-next's map hosts (`locator-map`, `dl-map`) via their sr-only station table.
+- **Colors** are not compared between the apps (the house palette is intentional,
+  `DIVERGENCES.md` "House style"). Instead every web-next data series color must be one of the
+  colors `core/palette` produces for the light theme (imported from the dev server, sampled
+  ramps included); anything else WARNs as "off palette".
+
+## Files
+
+- `config.mjs`: targets, URL builder (both apps share the URL keys), scenarios, tolerances, timeouts.
+- `stations.json`: the station matrix (copied from `web/scripts/fidelity/`, made by its `select-stations.mjs`).
+- `lib/browser.mjs`: Playwright launch, instrumented page, settle, screenshots.
+- `lib/extract.mjs`: in-page extractors (Plotly, ECharts, cards, map) and the palette color set.
+- `lib/drivers.mjs`: per-tab drivers for both apps (deep link → wait → extract; Downloader clicks Run and Download).
+- `lib/compare.mjs`: normalisation, trace matching and numeric diff, cards, CSV, palette check.
+- `lib/derived.mjs`: `/derived` fetch and the ag-api comparison.
+- `lib/report.mjs`: `report.html`. `lib/servers.mjs`: dev-server start/stop. `lib/util.mjs`: CSV, dates (Mountain Time), status ranking.
+- `CHECKLIST.md`: the 212-item legacy inventory with a web-next status column.
