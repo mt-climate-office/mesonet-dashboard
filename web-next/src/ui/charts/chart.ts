@@ -64,6 +64,8 @@ export class ChartHost<M> {
   /** Last requested range (wall-clock ms), re-applied after model renders. */
   private range: Range | null = null
   private ro: ResizeObserver
+  /** A render arrived while the canvas had no size; onResize draws it. */
+  private pending = false
   private opts: ChartOptions<M>
   private el: HTMLElement
 
@@ -87,9 +89,18 @@ export class ChartHost<M> {
     document.fonts?.ready.then(() => this.draw(true))
   }
 
-  /** Draw `model` (null clears), then apply the requested range. The first call loads ECharts. */
+  /**
+   * Draw `model` (null clears), then apply the requested range. The first call loads ECharts.
+   * While the canvas has no size (e.g. inside a hidden tab panel) the model is kept and drawn
+   * by onResize once the element appears; initialising at 0×0 makes ECharts warn and mis-size.
+   */
   async render(model: M | null): Promise<void> {
     this.model = model
+    if (!this.hasSize()) {
+      this.pending = true
+      return
+    }
+    this.pending = false
     if (!this.chart) {
       await loadECharts()
       if (this.disposed) return
@@ -226,7 +237,15 @@ export class ChartHost<M> {
     void this.init().then(() => this.draw(true, state))
   }
 
+  private hasSize(): boolean {
+    return this.canvas.clientWidth > 0 && this.canvas.clientHeight > 0
+  }
+
   private onResize(): void {
+    if (this.pending && this.hasSize()) {
+      void this.render(this.model)
+      return
+    }
     if (!this.chart) return
     this.chart.resize()
     // Builders lay out some pieces in px (color bars, legend titles): rebuild when the width moves.
