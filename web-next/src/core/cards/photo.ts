@@ -53,6 +53,15 @@ export function derivedKey(frames: readonly PhotoFrame[]): string {
     .join(',')
 }
 
+/** Label of a direction: the schedule's (legacy) label, else the legacy word, else the token. */
+export const photoLabel = (cam: StationCamera, token: string): string => cam.allLabels[token] ?? directionLabel(token)
+
+/**
+ * What a past day shows while its derived WebPs are unconfirmed, or when the
+ * confirmation failed: the manifest frames that name their WebP.
+ */
+export const knownFrames = (frames: readonly PhotoFrame[]): PhotoFrame[] => frames.filter((f) => !f.derived)
+
 export interface PhotoPick {
   /** Direction chips (tokens), canonical order. */
   tokens: string[]
@@ -60,6 +69,8 @@ export interface PhotoPick {
   labels: Record<string, string>
   /** The chosen direction: the pick if offered, else N, else the first. */
   direction: string
+  /** Its label (defined even when no chip is offered, e.g. a day before the camera). */
+  label: string
   /** That direction's frames on the day, newest first (the time options). */
   frames: PhotoFrame[]
   /** The chosen frame: the picked slot if present, else the newest; undefined = none that day. */
@@ -92,14 +103,14 @@ export function photoPick(i: PhotoPickInput): PhotoPick {
         ? i.cam.currentViews
         : viewsBetween(i.cam, localToUtcMs(i.day), localToUtcMs(addDays(i.day, 1)))
       ).map((v) => v.token)
-  const labels = Object.fromEntries(tokens.map((t) => [t, i.cam.allLabels[t] ?? directionLabel(t)]))
+  const labels = Object.fromEntries(tokens.map((t) => [t, photoLabel(i.cam, t)]))
   const direction =
     i.direction && tokens.includes(i.direction) ? i.direction : tokens.includes('N') ? 'N' : (tokens[0] ?? 'N')
   const frames = dayFrames.filter((f) => f.token === direction)
   const active = frames.find((f) => f.slotUtcMs === i.slotUtcMs) ?? frames[0]
   const stamp = active ? formatLocal(active.slotUtcMs) : ''
-  const label = labels[direction] ?? directionLabel(direction)
-  return { tokens, labels, direction, frames, active, stamp, alt: `${i.station} ${label} camera ${stamp}`.trim() }
+  const label = photoLabel(i.cam, direction)
+  return { tokens, labels, direction, label, frames, active, stamp, alt: `${i.station} ${label} camera ${stamp}`.trim() }
 }
 
 /** Time-select options for a direction's frames: value = slot ms, label = local time. */

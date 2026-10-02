@@ -3,6 +3,7 @@
 <div class="lc-pane lc-scroll" x-data="metadataCard" data-testid="metadata-card">
   <template x-if="state === 'none'"><p class="lc-message">Pick a station for its metadata.</p></template>
   <template x-if="state === 'loading'"><p class="lc-message" role="status">Loading…</p></template>
+  <template x-if="state === 'failed'"><p class="lc-message">Station list could not be loaded.</p></template>
   <template x-if="state === 'missing'"><p class="lc-message">Station not found.</p></template>
   <template x-if="state === 'ready'">
     <table class="lc-table">

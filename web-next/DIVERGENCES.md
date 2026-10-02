@@ -810,7 +810,7 @@ Top card (Wind Rose / Weather Forecast / Latest Photo) and bottom card (Locator 
 
 ### Latest Photo
 - **web/:** Mantine chips, date picker popover, Select and Modal.
-- **New:** `aria-pressed` direction chips, a native date input bounded by the camera's first month and today, a native select of the frames that exist that day, and a kit `<dialog class="mco-modal">` (Esc and backdrop close, focus returns to the image button). "Download original" is in the dialog and saves the shown `webp_large` WebP under its archive basename, as web/ did. The image is a `<button>`, so Enter/Space open the dialog.
+- **New:** `aria-pressed` direction chips, a native date input bounded by the camera's first month and today, a native select of the frames that exist that day, and a kit `<dialog class="mco-modal">` (Esc and backdrop close, focus returns to the image button). "Download original" is in the dialog and saves the shown `webp_large` WebP under its archive basename, as web/ did. It is a link (`download` = basename); the WebP is prefetched as a blob when the dialog opens and saved without awaiting in the click, so the user gesture holds (Safari); if the blob is not ready the link opens the WebP in a new tab instead of web/'s late `window.open`. A past day whose derived WebPs cannot be confirmed shows the frames the manifest names and is retried later instead of being cached as final. The image is a `<button>`, so Enter/Space open the dialog.
 - **Why:** kit components; native controls are keyboard and screen-reader complete.
 
 ### Current Conditions timestamp

@@ -9,10 +9,11 @@ import { onePagers } from './resources'
 
 export function metadataCard() {
   return component({
-    get state(): 'none' | 'loading' | 'missing' | 'ready' {
+    get state(): 'none' | 'loading' | 'failed' | 'missing' | 'ready' {
       const st = Alpine.store('station')
       if (!Alpine.store('url').state.s) return 'none'
       if (st.catalog?.status === 'loading') return 'loading'
+      if (st.catalog?.status === 'error' && !st.catalog.data) return 'failed'
       return st.current ? 'ready' : 'missing'
     },
 

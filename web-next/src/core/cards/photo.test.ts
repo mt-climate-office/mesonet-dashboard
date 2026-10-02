@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { framesFromListing, parseSchedule, type PhotoFrame, type RawSchedule } from '../photos'
-import { derivedKey, isRecentDay, noCameraImages, photoDay, photoMinDay, photoPick, photoTimeOptions } from './photo'
+import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoLabel, photoMinDay, photoPick, photoTimeOptions } from './photo'
 
 const B = 'https://data2.climate.umt.edu/mesonet/'
 const RAW: RawSchedule = {
@@ -80,6 +80,28 @@ describe('photoPick', () => {
       { value: String(Date.UTC(2026, 9, 1, 21)), label: 'Oct 1, 2026 3:00 PM' },
       { value: String(Date.UTC(2026, 9, 1, 15)), label: 'Oct 1, 2026 9:00 AM' },
     ])
+  })
+})
+
+describe('labels', () => {
+  it('a day with no views still has a direction label (pre-install / gap days)', () => {
+    const p = photoPick({ station: 'acebozem', cam, day: '1999-01-01', recent: false, frames: [], direction: null, slotUtcMs: null })
+    expect(p.tokens).toEqual([])
+    expect(p.direction).toBe('N')
+    expect(p.label).toBe('North')
+    expect(p.labels.N).toBeUndefined()
+    expect(p.alt).toBe('acebozem North camera')
+  })
+  it('photoLabel falls back to legacy words, then the token', () => {
+    expect(photoLabel(cam, 'NS')).toBe('North Sky')
+    expect(photoLabel(cam, 'SS')).toBe('South Sky')
+    expect(photoLabel(cam, 'XYZ')).toBe('XYZ')
+  })
+})
+
+describe('knownFrames', () => {
+  it('drops derived frames', () => {
+    expect(knownFrames([{ ...frames[0], derived: true }, frames[1]])).toEqual([frames[1]])
   })
 })
 

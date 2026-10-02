@@ -5,7 +5,7 @@
  * with "Download original" (the same WebP, saved under its basename).
  */
 import Alpine from 'alpinejs'
-import { derivedKey, isRecentDay, noCameraImages, photoDay, photoMinDay, photoPick, photoTimeOptions, type PhotoPick } from '../../../core/cards'
+import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoMinDay, photoPick, photoTimeOptions, type PhotoPick } from '../../../core/cards'
 import { basename, framesFor, localToday, type PhotoFrame, type StationCamera } from '../../../core/photos'
 import type { SelectOption } from '../../controls/timeSelect'
 import { component } from '../../component'
@@ -15,6 +15,8 @@ type Source = { status: 'loading' | 'success' | 'error'; data: PhotoFrame[] | un
 
 export function photoCard() {
   let modal: { open(): void } | null = null
+  // The shown WebP, fetched as a blob when the dialog opens (see download()).
+  let blob: { url: string; data: Blob | null } | null = null
   return component({
     picked: null as string | null,
     direction: null as string | null,
@@ -56,7 +58,10 @@ export function photoCard() {
       if (!month.data) return { status: month.status, data: undefined }
       const frames = framesFor(month.data, this.day)
       const key = derivedKey(frames)
-      return key ? confirmedDay(s, cam, this.day, key, frames) : { status: 'success', data: frames }
+      if (!key) return { status: 'success', data: frames }
+      // Until (or unless) the derived WebPs are confirmed, show the frames whose WebP the manifest names.
+      const conf = confirmedDay(s, cam, this.day, key, frames)
+      return conf.data ? conf : { status: conf.status === 'loading' ? 'success' : 'error', data: knownFrames(frames) }
     },
 
     get pick(): PhotoPick | null {
@@ -81,7 +86,7 @@ export function photoCard() {
       if (noCameraImages(this.cam)) return 'No camera images are available for this station.'
       if (this.source?.status === 'error') return 'Camera images could not be loaded.'
       const p = this.pick
-      return `No camera images are available for ${p ? p.labels[p.direction] : 'this view'} on this date.`
+      return `No camera images are available for ${p ? p.label : 'this view'} on this date.`
     },
     /** Pickers show once the camera is known (even on an empty day). */
     get hasControls(): boolean {
@@ -99,7 +104,7 @@ export function photoCard() {
     },
     title(): string {
       const p = this.pick
-      return p ? `${this.station} · ${p.labels[p.direction]}${p.stamp ? ` · ${p.stamp}` : ''}` : ''
+      return p ? `${this.station} · ${p.label}${p.stamp ? ` · ${p.stamp}` : ''}` : ''
     },
 
     selectDay(d: string): void {
@@ -116,24 +121,37 @@ export function photoCard() {
       // Wired on first use: x-ref children are not registered yet during init().
       modal ??= MCO.initInfoModal({ dialog: this.$refs.dialog as HTMLDialogElement })
       modal.open()
+      const url = this.pick?.active?.webpUrl
+      if (!url || blob?.url === url) return
+      const mine: { url: string; data: Blob | null } = { url, data: null }
+      blob = mine
+      fetch(url)
+        .then((r) => (r.ok ? r.blob() : null))
+        .then((b) => void (mine.data = b))
+        .catch(() => undefined)
     },
 
-    /** Save the shown WebP under its archive basename; open it in a tab if the fetch fails. */
-    async download(): Promise<void> {
+    /** Archive basename of the shown WebP (the download file name). */
+    fileName(): string {
+      return this.pick?.active ? basename(this.pick.active.webpUrl) : ''
+    },
+
+    /**
+     * "Download original" is `<a href=webp download=basename target=_blank>`. Browsers ignore
+     * `download` cross-origin, so once the blob prefetched by enlarge() is ready it is saved from an
+     * object URL, synchronously (no await, so the click's user gesture holds, e.g. in Safari).
+     * Otherwise the link's default runs and opens the WebP in a new tab.
+     */
+    download(e: Event): void {
       const url = this.pick?.active?.webpUrl
-      if (!url) return
-      try {
-        const r = await fetch(url)
-        if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        const href = URL.createObjectURL(await r.blob())
-        const a = Object.assign(document.createElement('a'), { href, download: basename(url) })
-        document.body.append(a)
-        a.click()
-        a.remove()
-        setTimeout(() => URL.revokeObjectURL(href), 5_000)
-      } catch {
-        window.open(url, '_blank', 'noopener')
-      }
+      if (!url || blob?.url !== url || !blob.data) return
+      e.preventDefault()
+      const href = URL.createObjectURL(blob.data)
+      const a = Object.assign(document.createElement('a'), { href, download: basename(url) })
+      document.body.append(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(href), 5_000)
     },
   })
 }

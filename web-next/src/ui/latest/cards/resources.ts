@@ -33,9 +33,13 @@ export const latestFrames = (s: PhotoSchedule, cam: StationCamera) =>
 export const monthFrames = (s: PhotoSchedule, cam: StationCamera, ym: string) =>
   cached(`photo:month:${cam.station}:${ym}`, () => fetchMonthFrames(s, cam, ym), ym === localToday().slice(0, 7) ? 5 * MIN : Infinity)
 
-/** A past day's frames with derived WebPs confirmed; `derived` is core/cards/photo `derivedKey(frames)`. */
+/**
+ * A past day's frames with derived WebPs confirmed; `derived` is core/cards/photo `derivedKey(frames)`.
+ * Strict: a failed listing errors (retried, then kept until refresh) instead of caching a partial day
+ * forever; only a fully confirmed day is cached with no expiry.
+ */
 export const confirmedDay = (s: PhotoSchedule, cam: StationCamera, day: string, derived: string, frames: PhotoFrame[]) =>
-  cached(`photo:confirm:${cam.station}:${day}:${derived}`, () => confirmDerived(s, cam, frames), Infinity)
+  cached(`photo:confirm:${cam.station}:${day}:${derived}`, () => confirmDerived(s, cam, frames, { strict: true }), Infinity)
 
 /** Newest observation row(s) for Current Conditions. */
 export const latestObs = (station: string) => cached(`latest:${station}`, () => getStationLatest(station), 5 * MIN)

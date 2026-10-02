@@ -41,7 +41,7 @@
   </template>
   <template x-if="state === 'ready'">
     <button type="button" class="lc-photo-frame" @click="enlarge()" title="Click to enlarge"
-            :aria-label="'Enlarge ' + pick.labels[pick.direction] + ' photo for ' + station" aria-haspopup="dialog">
+            :aria-label="'Enlarge ' + pick.label + ' photo for ' + station" aria-haspopup="dialog">
       <img :src="pick.active.webpUrl" :alt="pick.alt" data-testid="photo-image">
     </button>
   </template>
@@ -54,10 +54,11 @@
       <template x-if="pick && pick.active">
         <div class="lc-photo-modal-body">
           <img :src="pick.active.webpUrl" :alt="pick.alt">
-          <button type="button" class="nav-btn" @click="download()" data-testid="photo-download">
+          <a class="nav-btn lc-download" :href="pick.active.webpUrl" :download="fileName()" target="_blank" rel="noopener noreferrer"
+             @click="download($event)" data-testid="photo-download">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
             <span>Download original</span>
-          </button>
+          </a>
         </div>
       </template>
     </div>
