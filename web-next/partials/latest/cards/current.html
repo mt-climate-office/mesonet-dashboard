@@ -1,0 +1,31 @@
+<!-- Current Conditions pane (x-data="currentCard", ui/latest/cards/currentCard.ts): "Latest Data
+     Summary" rows, then the HydroMet-only "Precipitation Summary". -->
+<!-- Scrollable, so focusable (tabindex) and named for keyboard scrolling (WCAG 2.1.1). -->
+<div class="lc-pane lc-scroll" x-data="currentCard" data-testid="current-card" tabindex="0" role="region" aria-label="Current conditions">
+  <template x-if="state === 'none'"><p class="lc-message">Pick a station to see current conditions.</p></template>
+  <template x-if="state === 'loading'"><p class="lc-message" role="status">Loading…</p></template>
+  <template x-if="state === 'error'"><p class="lc-message lc-strong">No data available for selected dates.</p></template>
+  <template x-if="state === 'empty'"><p class="lc-message">No recent observations.</p></template>
+  <template x-if="state === 'ready'">
+    <div>
+      <table class="lc-table" data-testid="current-table">
+        <caption class="lc-caption">Latest Data Summary</caption>
+        <tbody>
+          <template x-for="r in rows" :key="r[0]">
+            <tr><th scope="row" x-text="r[0]"></th><td x-text="r[1]"></td></tr>
+          </template>
+        </tbody>
+      </table>
+      <template x-if="pptRows.length">
+        <table class="lc-table" data-testid="ppt-table">
+          <caption class="lc-caption">Precipitation Summary</caption>
+          <tbody>
+            <template x-for="r in pptRows" :key="r[0]">
+              <tr><th scope="row" x-text="r[0]"></th><td x-text="r[1]"></td></tr>
+            </template>
+          </tbody>
+        </table>
+      </template>
+    </div>
+  </template>
+</div>

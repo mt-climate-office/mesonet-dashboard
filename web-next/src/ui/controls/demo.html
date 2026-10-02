@@ -1,0 +1,326 @@
+<!doctype html>
+<!-- Manual-review page for ui/controls: every control, with its emitted value,
+     in the theme named by ?theme=dark|light|high-contrast. Not part of the app
+     build; serve it with Vite (e.g. /src/ui/controls/demo.html). -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script>
+    // Anti-flash: apply ?theme= before first paint.
+    (function () {
+      var t = new URLSearchParams(location.search).get('theme');
+      if (t === 'light' || t === 'high-contrast' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <title>Controls · MT Mesonet</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.7.1/theme/mco-theme.css"
+        integrity="sha384-dktZyfU+lLz1JEFe+npkBVrH8FsSdtYYOPC7bJQtZwEJnvD3IiENV+UUgyXeFpnl"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="./controls.css">
+  <style>
+    /* Demo-page layout only. */
+    main { max-width: 56rem; margin: 0 auto; padding: 1.5rem max(1rem, env(safe-area-inset-left)) 4rem; }
+    h1 { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.25rem; }
+    h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.6rem; }
+    main > p { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.25rem; }
+    section { padding: 1rem; margin-bottom: 1rem; background: var(--bg-surface);
+              border: 1px solid var(--border); border-radius: var(--radius-lg); }
+    .readout { margin-top: 0.6rem; font-size: 0.75rem; color: var(--text-secondary); }
+    .readout code { font-family: var(--font-mono); color: var(--text-primary); word-break: break-all; }
+    .demo-combobox { max-width: 22rem; }
+  </style>
+</head>
+<body>
+<main id="main" tabindex="-1">
+  <h1>Dashboard controls</h1>
+  <p>Each control writes to a demo store; the line under it shows what it emitted.</p>
+
+  <section aria-labelledby="h-theme">
+    <h2 id="h-theme">Theme (segmented)</h2>
+    <fieldset class="ctl-seg" x-data="segmented({ options: () => $store.demo.themes, value: () => $store.demo.theme,
+              onChange: (v) => $store.demo.setTheme(v), label: 'Theme' })">
+      <legend class="ctl-legend" x-text="label"></legend>
+      <div class="seg-btns">
+        <template x-for="opt in options()" :key="opt.value">
+          <label class="nav-btn seg-btn">
+            <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)"
+                   :disabled="opt.disabled ?? false" @change="select(opt.value)">
+            <span x-text="opt.label"></span>
+          </label>
+        </template>
+      </div>
+    </fieldset>
+    <fieldset class="ctl-seg" style="margin-top: 0.75rem" x-data="segmented({ options: () => $store.demo.periods,
+              value: () => $store.demo.period, onChange: (v) => $store.demo.period = v, label: 'Period' })">
+      <legend class="ctl-legend" x-text="label"></legend>
+      <div class="seg-btns">
+        <template x-for="opt in options()" :key="opt.value">
+          <label class="nav-btn seg-btn">
+            <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)"
+                   :disabled="opt.disabled ?? false" @change="select(opt.value)">
+            <span x-text="opt.label"></span>
+          </label>
+        </template>
+      </div>
+    </fieldset>
+    <p class="readout">period: <code x-data x-text="$store.demo.period"></code></p>
+  </section>
+
+  <section aria-labelledby="h-station">
+    <h2 id="h-station">Station (combobox)</h2>
+    <div class="ctl-combobox demo-combobox" x-data="combobox({ items: () => $store.demo.stations,
+         value: () => $store.demo.station, onSelect: (id) => $store.demo.station = id,
+         label: 'Station', placeholder: 'Search by name or id' })"
+         @focusout="onFocusOut($event)">
+      <label class="ctl-label" :id="ids.label" :for="ids.input" x-text="label"></label>
+      <div class="ctl-combobox-field">
+        <input x-ref="input" class="ctl-input" type="text" role="combobox"
+               autocomplete="off" spellcheck="false" aria-autocomplete="list"
+               :id="ids.input" :placeholder="placeholder" :aria-expanded="open"
+               :aria-controls="ids.listbox" :aria-activedescendant="activeId()"
+               :value="inputText()" @input="onInput($event)"
+               @keydown="onKeydown($event)" @click="toggle()">
+        <button type="button" class="ctl-clear" x-show="hasValue()"
+                :aria-label="'Clear ' + label" @click="clear()">&times;</button>
+      </div>
+      <div class="ctl-combobox-popup" x-show="open">
+        <div role="listbox" class="ctl-combobox-list" :id="ids.listbox"
+             :aria-labelledby="ids.label" x-show="result.total > 0">
+          <template x-for="group in result.groups" :key="group.name ?? ''">
+            <ul :role="group.name ? 'group' : 'presentation'"
+                :aria-labelledby="group.name ? groupId(group.name) : null">
+              <li role="presentation" class="ctl-combobox-group" x-show="group.name"
+                  :id="group.name ? groupId(group.name) : null" x-text="group.name"></li>
+              <template x-for="item in group.items" :key="item.id">
+                <li role="option" class="ctl-option" :id="optionId(item.id)"
+                    :aria-selected="isActive(item.id)" :class="{ 'is-current': isCurrent(item.id) }"
+                    @mousedown.prevent @click="select(item.id)">
+                  <span x-text="item.label"></span>
+                  <span class="ctl-option-meta" x-text="item.id"></span>
+                </li>
+              </template>
+            </ul>
+          </template>
+        </div>
+        <p class="ctl-combobox-note" x-show="note()" x-text="note()"></p>
+      </div>
+      <div role="status" class="sr-only" x-text="status()"></div>
+    </div>
+    <p class="readout">station: <code x-data x-text="JSON.stringify($store.demo.station)"></code>
+      (try "bozeman", "BOZM8", or Down to browse; 260 items, capped at 200)</p>
+  </section>
+
+  <section aria-labelledby="h-elements">
+    <h2 id="h-elements">Elements (multiselect)</h2>
+    <div class="ctl-multiselect" x-data="multiselect({ groups: () => $store.demo.elementGroups,
+         value: () => $store.demo.elements, onChange: (v) => $store.demo.elements = v, label: 'Elements' })">
+      <button type="button" class="nav-btn ctl-disclosure" :id="ids.button"
+              :aria-expanded="open" :aria-controls="ids.panel" @click="toggle()">
+        <span x-text="label"></span><span class="ctl-count" x-text="countText()"></span>
+      </button>
+      <ul x-ref="chips" class="ctl-chip-list" :aria-label="'Selected ' + label" x-show="selected().length > 0">
+        <template x-for="v in selected()" :key="v">
+          <li><button type="button" class="nav-btn ctl-chip" :aria-label="'Remove ' + labelOf(v)"
+                      @click="remove(v, $event)"><span x-text="labelOf(v)"></span>
+              <span aria-hidden="true">&times;</span></button></li>
+        </template>
+      </ul>
+      <div class="ctl-multiselect-panel" role="group" :id="ids.panel"
+           :aria-labelledby="ids.button" x-show="open" @keydown.escape="close()">
+        <label class="ctl-label" :for="ids.filter">Filter</label>
+        <input type="search" class="ctl-input" :id="ids.filter" x-model="query" autocomplete="off">
+        <template x-for="group in visibleGroups" :key="group.id">
+          <fieldset class="ctl-fieldset">
+            <legend class="ctl-legend" x-text="group.label"></legend>
+            <label class="ctl-check ctl-check-all">
+              <input type="checkbox" :checked="stateOf(group) === 'all'"
+                     x-effect="markMixed($el, group)" @change="setGroup(group, $event)">
+              <span>Select all</span></label>
+            <template x-for="opt in group.options" :key="opt.value">
+              <label class="ctl-check">
+                <input type="checkbox" :checked="isSelected(opt.value)" @change="toggleValue(opt.value)">
+                <span x-text="opt.label"></span></label>
+            </template>
+          </fieldset>
+        </template>
+        <p class="ctl-note" x-show="visibleGroups.length === 0">No matches</p>
+      </div>
+    </div>
+    <p class="readout">elements: <code x-data x-text="JSON.stringify($store.demo.elements)"></code></p>
+  </section>
+
+  <section aria-labelledby="h-dates">
+    <h2 id="h-dates">Dates (date range, date input, time select)</h2>
+    <fieldset class="ctl-fieldset" x-data="dateRange({ value: () => $store.demo.range,
+              onChange: (r) => $store.demo.range = r, min: () => '2016-05-01', max: () => '2026-10-01',
+              label: 'Download period' })">
+      <legend class="ctl-legend" x-text="label"></legend>
+      <div class="ctl-row">
+        <div class="ctl-field">
+          <label class="ctl-label" :for="ids.start">Start</label>
+          <input type="date" class="ctl-input" :id="ids.start" :min="min()" :max="max()"
+                 :value="start" :aria-invalid="invalid('start')"
+                 :aria-describedby="describedBy()" @change="setStart($event)">
+        </div>
+        <div class="ctl-field">
+          <label class="ctl-label" :for="ids.end">End</label>
+          <input type="date" class="ctl-input" :id="ids.end" :min="min()" :max="max()"
+                 :value="end" :aria-invalid="invalid('end')"
+                 :aria-describedby="describedBy()" @change="setEnd($event)">
+        </div>
+      </div>
+      <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
+    </fieldset>
+    <p class="readout">range: <code x-data x-text="JSON.stringify($store.demo.range)"></code> (period of record 2016-05-01 → 2026-10-01)</p>
+
+    <div class="ctl-row" style="margin-top: 1rem">
+      <div class="ctl-field" x-data="dateInput({ value: () => $store.demo.day, onChange: (d) => $store.demo.day = d,
+           min: () => '2020-01-01', max: () => '2026-10-01', label: 'Photo date' })">
+        <label class="ctl-label" :for="ids.input" x-text="label"></label>
+        <input type="date" class="ctl-input" :id="ids.input" :min="min()" :max="max()"
+               :value="draft" :aria-invalid="invalid()" :aria-describedby="describedBy()"
+               @change="set($event)">
+        <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
+      </div>
+      <div class="ctl-field" x-data="timeSelect({ options: () => $store.demo.times, value: () => $store.demo.time,
+           onChange: (v) => $store.demo.time = v, label: 'Photo time' })">
+        <label class="ctl-label" :for="ids.select" x-text="label"></label>
+        <select class="ctl-input ctl-select" :id="ids.select" :disabled="isEmpty()" @change="set($event)">
+          <template x-if="isEmpty()"><option value="" x-text="emptyText"></option></template>
+          <template x-for="opt in options()" :key="opt.value">
+            <option :value="opt.value" :selected="isSelected(opt.value)" x-text="opt.label"></option>
+          </template>
+        </select>
+      </div>
+      <div class="ctl-field" x-data="timeSelect({ options: () => [], value: () => '', onChange: () => {}, label: 'Empty select' })">
+        <label class="ctl-label" :for="ids.select" x-text="label"></label>
+        <select class="ctl-input ctl-select" :id="ids.select" :disabled="isEmpty()" @change="set($event)">
+          <template x-if="isEmpty()"><option value="" x-text="emptyText"></option></template>
+          <template x-for="opt in options()" :key="opt.value">
+            <option :value="opt.value" :selected="isSelected(opt.value)" x-text="opt.label"></option>
+          </template>
+        </select>
+      </div>
+    </div>
+    <p class="readout">day: <code x-data x-text="JSON.stringify($store.demo.day)"></code>,
+      time: <code x-data x-text="JSON.stringify($store.demo.time)"></code></p>
+  </section>
+
+  <section aria-labelledby="h-chips">
+    <h2 id="h-chips">Networks (chips)</h2>
+    <div class="ctl-chips" role="group" :aria-labelledby="ids.label"
+         x-data="chips({ options: () => $store.demo.networks, value: () => $store.demo.networksOn,
+         onChange: (vs) => $store.demo.networksOn = vs, label: 'Networks' })">
+      <span class="ctl-legend" :id="ids.label" x-text="label"></span>
+      <template x-for="opt in options()" :key="opt.value">
+        <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)"
+                @click="toggle(opt.value)" x-text="opt.label"></button>
+      </template>
+    </div>
+    <p class="readout">networks: <code x-data x-text="JSON.stringify($store.demo.networksOn)"></code></p>
+  </section>
+
+  <section aria-labelledby="h-gdd">
+    <h2 id="h-gdd">GDD thresholds (range sliders)</h2>
+    <fieldset class="ctl-fieldset ctl-range" x-data="rangeSlider({ min: 32, max: 100, step: 1, allowNone: true,
+              unit: '°F', value: () => $store.demo.gdd, onChange: (v) => $store.demo.gdd = v,
+              label: 'GDD thresholds' })">
+      <legend class="ctl-legend" x-text="label"></legend>
+      <div class="ctl-range-row">
+        <label class="ctl-label" :for="ids.low" x-text="lowLabel"></label>
+        <span class="ctl-range-value" aria-hidden="true" x-text="lowText()"></span>
+        <input type="range" :id="ids.low" :min="cfg.min" :max="cfg.max" :step="cfg.step"
+               :value="draft.low" :aria-valuetext="lowText()"
+               @input="onLow($event)" @change="commit()">
+      </div>
+      <div class="ctl-range-row">
+        <label class="ctl-label" :for="ids.high" x-text="highLabel"></label>
+        <span class="ctl-range-value" aria-hidden="true" x-text="highText()"></span>
+        <input type="range" :id="ids.high" :min="cfg.min" :max="highMax()" :step="cfg.step"
+               :value="highPosition()" :aria-valuetext="highText()"
+               @input="onHigh($event)" @change="commit()">
+      </div>
+    </fieldset>
+    <p class="readout">gdd: <code x-data x-text="JSON.stringify($store.demo.gdd)"></code></p>
+  </section>
+</main>
+
+<script type="module">
+  import Alpine from 'alpinejs'
+  import { chips } from './chips'
+  import { combobox } from './combobox'
+  import { dateInput } from './dateInput'
+  import { dateRange } from './dateRange'
+  import { multiselect } from './multiselect'
+  import { rangeSlider } from './rangeSlider'
+  import { segmented } from './segmented'
+  import { timeSelect } from './timeSelect'
+
+  const real = [
+    ['aceabsar', 'Absarokee', 'HydroMet', 'ABSM8'], ['acebozem', 'Bozeman Airport', 'HydroMet', 'BZNM8'],
+    ['acecrow', 'Crow Agency', 'HydroMet', 'CRWM8'], ['acemissou', 'Missoula South', 'HydroMet', 'MSSM8'],
+    ['aceglacie', 'West Glacier', 'HydroMet', 'WGLM8'], ['agrbozem', 'Bozeman', 'AgriMet', 'BOZM8'],
+    ['agrcorva', 'Corvallis', 'AgriMet', 'CRVM8'], ['agrmoccas', 'Moccasin', 'AgriMet', 'MOCM8'],
+    ['coopmoz', 'Mozart Ranch', 'Cooperator'], ['coopflat', 'Flathead Lake', 'Cooperator'],
+  ]
+  const stations = real.map(([id, label, group, nwsli]) => ({ id, label, group, keywords: nwsli ? [nwsli] : [] }))
+  for (let i = 1; i <= 250; i++) {
+    stations.push({ id: `synth${String(i).padStart(3, '0')}`, label: `Synthetic station ${i}`, group: 'Synthetic' })
+  }
+
+  const themes = [
+    { value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }, { value: 'high-contrast', label: 'High contrast' },
+  ]
+
+  Alpine.store('demo', {
+    themes,
+    theme: document.documentElement.getAttribute('data-theme') || 'dark',
+    setTheme(t) {
+      this.theme = t
+      document.documentElement.setAttribute('data-theme', t)
+      const url = new URL(location.href)
+      url.searchParams.set('theme', t)
+      history.replaceState(null, '', url)
+    },
+    periods: [
+      { value: 'day', label: 'Day' }, { value: 'week', label: 'Week' },
+      { value: 'month', label: 'Month' }, { value: 'year', label: 'Year', disabled: true },
+    ],
+    period: 'week',
+    stations,
+    station: 'acebozem',
+    elementGroups: [
+      { id: 'standard', label: 'Standard elements', options: [
+        { value: 'air_temp', label: 'Air Temperature' }, { value: 'rh', label: 'Relative Humidity' },
+        { value: 'ppt', label: 'Precipitation' }, { value: 'wind_spd', label: 'Wind Speed' },
+        { value: 'sol_rad', label: 'Solar Radiation' }, { value: 'soil_vwc', label: 'Soil VWC' },
+      ] },
+      { id: 'derived', label: 'Derived variables', options: [
+        { value: 'etr', label: 'Reference ET' }, { value: 'feels_like', label: 'Feels-like Temperature' },
+        { value: 'gdd', label: 'Growing Degree Days' }, { value: 'swp', label: 'Soil Water Potential' },
+      ] },
+    ],
+    elements: ['air_temp', 'ppt'],
+    range: { start: '2026-09-01', end: '2026-09-30' },
+    day: '2026-09-30',
+    times: ['06:00', '09:00', '12:00', '15:00', '18:00'].map((t) => ({ value: t, label: `${t} MT` })),
+    time: '12:00',
+    networks: [{ value: 'HydroMet', label: 'HydroMet' }, { value: 'AgriMet', label: 'AgriMet' }, { value: 'Cooperator', label: 'Cooperator' }],
+    networksOn: ['HydroMet', 'AgriMet'],
+    gdd: { low: 50, high: 86 },
+  })
+
+  Alpine.data('chips', chips)
+  Alpine.data('combobox', combobox)
+  Alpine.data('dateInput', dateInput)
+  Alpine.data('dateRange', dateRange)
+  Alpine.data('multiselect', multiselect)
+  Alpine.data('rangeSlider', rangeSlider)
+  Alpine.data('segmented', segmented)
+  Alpine.data('timeSelect', timeSelect)
+  window.Alpine = Alpine
+  Alpine.start()
+</script>
+</body>
+</html>

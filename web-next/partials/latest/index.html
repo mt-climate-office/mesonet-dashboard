@@ -1,0 +1,146 @@
+<!-- Latest Data tab: sidebar controls | station timeseries | card column.
+     Sidebar and timeseries: ui/latest/{sidebar,timeseries}.ts. The two cards
+     are partials/latest/cards/{top,bottom}-card.html (Latest cards owner). -->
+<div class="latest-layout">
+  <aside class="latest-sidebar" aria-labelledby="latest-controls-title" x-data="latestSidebar" data-testid="latest-sidebar">
+    <h2 class="latest-section-title" id="latest-controls-title">Controls</h2>
+
+    <div class="ctl-combobox" data-testid="station-select"
+         x-data="combobox({ items: () => stationItems(), value: () => stationValue(), onSelect: (id) => selectStation(id), label: 'Station' })"
+         @focusout="onFocusOut($event)">
+      <label class="ctl-label" :id="ids.label" :for="ids.input" x-text="label"></label>
+      <div class="ctl-combobox-field">
+        <input x-ref="input" class="ctl-input" type="text" role="combobox"
+               autocomplete="off" spellcheck="false" aria-autocomplete="list"
+               :id="ids.input" :placeholder="stationPlaceholder()" :aria-expanded="open"
+               :aria-controls="ids.listbox" :aria-activedescendant="activeId()"
+               :value="inputText()" @input="onInput($event)"
+               @keydown="onKeydown($event)" @click="toggle()">
+        <button type="button" class="ctl-clear" x-show="hasValue()"
+                :aria-label="'Clear ' + label" @click="clear()">&times;</button>
+      </div>
+      <div class="ctl-combobox-popup" x-show="open">
+        <div role="listbox" class="ctl-combobox-list" :id="ids.listbox"
+             :aria-labelledby="ids.label" x-show="result.total > 0">
+          <template x-for="group in result.groups" :key="group.name ?? ''">
+            <ul :role="group.name ? 'group' : 'presentation'"
+                :aria-labelledby="group.name ? groupId(group.name) : null">
+              <li role="presentation" class="ctl-combobox-group" x-show="group.name"
+                  :id="group.name ? groupId(group.name) : null" x-text="group.name"></li>
+              <template x-for="item in group.items" :key="item.id">
+                <li role="option" class="ctl-option" :id="optionId(item.id)"
+                    :aria-selected="isActive(item.id)" :class="{ 'is-current': isCurrent(item.id) }"
+                    @mousedown.prevent @click="select(item.id)">
+                  <span x-text="item.label"></span>
+                  <span class="ctl-option-meta" x-text="item.id"></span>
+                </li>
+              </template>
+            </ul>
+          </template>
+        </div>
+        <p class="ctl-combobox-note" x-show="note()" x-text="note()"></p>
+      </div>
+      <div role="status" class="sr-only" x-text="status()"></div>
+    </div>
+
+    <div class="latest-group">
+      <div class="ctl-chips" role="group" :aria-labelledby="ids.label" data-testid="network-chips"
+           x-data="chips({ options: () => networkOptions(), value: () => nets(), onChange: (v) => setNets(v), label: 'Networks' })">
+        <span class="ctl-legend" :id="ids.label" x-text="label"></span>
+        <template x-for="opt in options()" :key="opt.value">
+          <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)"
+                  @click="toggle(opt.value)" x-text="opt.label"></button>
+        </template>
+      </div>
+      <p class="ctl-note">Filter stations by network type. Leave both checked to show all stations.</p>
+    </div>
+
+    <div class="latest-group">
+      <fieldset class="ctl-fieldset" data-testid="date-range"
+                x-data="dateRange({ value: () => dates(), onChange: (r) => setDates(r), min: () => dateMin(), max: () => dateMax(), label: 'Date range' })">
+        <legend class="ctl-legend" x-text="label"></legend>
+        <div class="ctl-row">
+          <div class="ctl-field">
+            <label class="ctl-label" :for="ids.start">Start</label>
+            <input type="date" class="ctl-input" :id="ids.start" :min="min()" :max="max()"
+                   :value="start" :aria-invalid="invalid('start')"
+                   :aria-describedby="describedBy()" @change="setStart($event)">
+          </div>
+          <div class="ctl-field">
+            <label class="ctl-label" :for="ids.end">End</label>
+            <input type="date" class="ctl-input" :id="ids.end" :min="min()" :max="max()"
+                   :value="end" :aria-invalid="invalid('end')"
+                   :aria-describedby="describedBy()" @change="setEnd($event)">
+          </div>
+        </div>
+        <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
+      </fieldset>
+      <button type="button" class="nav-btn latest-por" data-testid="por-button"
+              :disabled="porDisabled()" @click="togglePor()" x-text="porLabel()"></button>
+    </div>
+
+    <div class="latest-group">
+      <fieldset class="ctl-seg" data-testid="agg-select"
+                x-data="segmented({ options: () => aggOptions, value: () => agg(), onChange: (v) => setAgg(v), label: 'Time aggregation' })">
+        <legend class="ctl-legend" x-text="label"></legend>
+        <div class="seg-btns">
+          <template x-for="opt in options()" :key="opt.value">
+            <label class="nav-btn seg-btn">
+              <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)"
+                     :disabled="opt.disabled ?? false" @change="select(opt.value)">
+              <span x-text="opt.label"></span>
+            </label>
+          </template>
+        </div>
+      </fieldset>
+      <p class="ctl-note">Hourly and daily averages are pre-computed and will load faster. Avoid selecting periods longer than 1 year for daily, 3 months for hourly, or 2 weeks for raw data.</p>
+      <label class="ctl-check latest-switch" data-testid="gridmet-switch">
+        <input type="checkbox" role="switch" aria-describedby="latest-gridmet-help"
+               :checked="gridmet()" :disabled="gridmetDisabled()" @change="setGridmet($event)">
+        <span>Show gridMET Normals</span>
+      </label>
+      <p class="ctl-note" id="latest-gridmet-help">Shows 1991-2020 gridMET climate normals. Only available on daily data.</p>
+    </div>
+
+    <div class="latest-group">
+      <div class="ctl-chips latest-vars" role="group" :aria-labelledby="ids.label" data-testid="variable-chips"
+           x-data="chips({ options: () => varOptions(), value: () => varValue(), onChange: (v) => setVars(v), label: 'Variables' })">
+        <span class="ctl-legend" :id="ids.label" x-text="label"></span>
+        <template x-for="opt in options()" :key="opt.value">
+          <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)"
+                  @click="toggle(opt.value)" x-text="opt.label"></button>
+        </template>
+      </div>
+      <a class="latest-link" href="https://climate.umt.edu/mesonet/variables/" target="_blank" rel="noopener noreferrer">About These Variables<span class="sr-only"> (opens in a new tab)</span></a>
+    </div>
+
+    <p class="ctl-note">Data is served on demand from the
+      <a class="latest-link" href="https://mesonet2.climate.umt.edu/api/v2/docs" target="_blank" rel="noopener noreferrer">Montana Mesonet API<span class="sr-only"> (opens in a new tab)</span></a>.</p>
+  </aside>
+
+  <section class="latest-plot" aria-label="Station timeseries" x-data="latestTimeseries" data-testid="latest-timeseries">
+    <div class="latest-status" x-show="status().kind !== 'ready'" data-testid="timeseries-status">
+      <template x-if="status().kind === 'loading'">
+        <p class="latest-loading" role="status">Loading station data…</p>
+      </template>
+      <template x-if="status().kind === 'empty'">
+        <div>
+          <p class="latest-status-title" x-text="status().title"></p>
+          <p class="latest-status-hint" x-show="status().hint" x-text="status().hint"></p>
+        </div>
+      </template>
+    </div>
+    <p class="latest-refreshing" x-show="status().kind === 'ready' && loading()" aria-hidden="true">Updating…</p>
+    <div class="chart latest-chart" :aria-hidden="status().kind !== 'ready'" :style="heightStyle()"
+         x-data="chart({ builder: latestTimeseriesChart, table: latestTimeseriesTable, label: 'Station timeseries', model: () => model(), onZoom: (a, b) => onZoom(a, b), range: () => range() })"></div>
+  </section>
+
+  <div class="latest-cards">
+    <section class="latest-card latest-card-top" aria-label="Station views" data-testid="latest-top-card">
+      <!-- @include partials/latest/cards/top-card.html -->
+    </section>
+    <section class="latest-card latest-card-bottom" aria-label="Station details" data-testid="latest-bottom-card">
+      <!-- @include partials/latest/cards/bottom-card.html -->
+    </section>
+  </div>
+</div>

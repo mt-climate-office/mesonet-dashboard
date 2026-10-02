@@ -1,0 +1,8 @@
+{
+  "active": false,
+  "id": "2026-08-13-partial-outage",
+  "title": "Partial Mesonet Outage",
+  "color": "warning",
+  "button_text": "Got it",
+  "message": "We're currently experiencing a partial outage affecting data from some Montana Mesonet stations. Our team is actively working to restore service, and we expect affected stations to be back online by this evening (August 13).\n\nWe apologize for any inconvenience and appreciate your patience."
+}

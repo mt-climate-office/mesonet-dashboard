@@ -1,0 +1,35 @@
+{
+  "name": "mesonet-dashboard-web-next",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "size": "node scripts/check-size.mjs",
+    "verify": "vite build && node scripts/verify/consumer.mjs && node scripts/verify/axe.mjs && node scripts/verify/keyboard.mjs"
+  },
+  "dependencies": {
+    "alpinejs": "^3.17.4",
+    "dayjs": "^1.11.23",
+    "echarts": "^6.1.0",
+    "papaparse": "^5.7.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@types/alpinejs": "^3.17.0",
+    "@types/node": "^24.19.1",
+    "@types/papaparse": "^5.5.2",
+    "eslint": "^10.11.0",
+    "maplibre-gl": "5.18.0",
+    "playwright": "^1.63.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}

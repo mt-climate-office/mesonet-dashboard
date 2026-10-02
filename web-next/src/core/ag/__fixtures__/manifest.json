@@ -1,0 +1,585 @@
+{
+  "captured_at": "2026-10-01T17:47:54.012Z",
+  "api": "https://mesonet2.climate.umt.edu/api/v2/",
+  "level": 2,
+  "units": "us (API default)",
+  "stations": [
+    {
+      "id": "acebozem",
+      "why": "HydroMet, has_swp, 10 m wind, 5 soil depths"
+    },
+    {
+      "id": "arskeogh",
+      "why": "AgriMet, has_swp, 2.44 m (8 ft) wind"
+    },
+    {
+      "id": "acecrowa",
+      "why": "HydroMet without soil water parameters"
+    },
+    {
+      "id": "mdamalta",
+      "why": "has_swp; API DB porosity differs from mesonet-soils and the API has none at 91 cm (AG-PS-001)",
+      "psOnly": true
+    }
+  ],
+  "windows": {
+    "daily": [
+      {
+        "name": "season2025",
+        "start": "2025-04-01",
+        "end": "2025-10-01"
+      },
+      {
+        "name": "winter2526",
+        "start": "2025-12-01",
+        "end": "2026-03-01"
+      }
+    ],
+    "hourly": [
+      {
+        "name": "jul2025",
+        "start": "2025-07-01",
+        "end": "2025-08-01"
+      },
+      {
+        "name": "jan2026",
+        "start": "2026-01-01",
+        "end": "2026-02-01"
+      }
+    ]
+  },
+  "files": {
+    "acebozem.daily.season2025.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd&agg_func=min,max,avg,min,max,avg,avg,avg&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=etr&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=cci&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-gdd.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-gdd-wheat.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=wheat&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-gdd-barley.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=barley&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-gdd-canola.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=canola&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-gdd-corn.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=corn&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-gdd-sugarbeet.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=sugarbeet&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-gdd-sunflower.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=sunflower&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-gdd-hemp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=hemp&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-swp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=swp&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.season2025.derived-percent_saturation.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=percent_saturation&keep=true&type=csv",
+      "rows": 181
+    },
+    "acebozem.daily.winter2526.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd&agg_func=min,max,avg,min,max,avg,avg,avg&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=etr&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=cci&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-gdd.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-gdd-wheat.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=wheat&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-gdd-barley.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=barley&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-gdd-canola.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=canola&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-gdd-corn.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=corn&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-gdd-sugarbeet.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=sugarbeet&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-gdd-sunflower.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=sunflower&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-gdd-hemp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=hemp&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-swp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=swp&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.daily.winter2526.derived-percent_saturation.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acebozem&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=percent_saturation&keep=true&type=csv",
+      "rows": 90
+    },
+    "acebozem.hourly.jul2025.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=acebozem&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=air_temp,rh,sol_rad,wind_spd&agg_func=avg&type=csv",
+      "rows": 673
+    },
+    "acebozem.hourly.jul2025.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=acebozem&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 673
+    },
+    "acebozem.hourly.jul2025.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=etr&keep=true&type=csv",
+      "rows": 673
+    },
+    "acebozem.hourly.jul2025.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 673
+    },
+    "acebozem.hourly.jul2025.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=cci&keep=true&type=csv",
+      "rows": 673
+    },
+    "acebozem.hourly.jul2025.derived-swp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=swp&keep=true&type=csv",
+      "rows": 673
+    },
+    "acebozem.hourly.jul2025.derived-percent_saturation.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=percent_saturation&keep=true&type=csv",
+      "rows": 673
+    },
+    "acebozem.hourly.jan2026.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=acebozem&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=air_temp,rh,sol_rad,wind_spd&agg_func=avg&type=csv",
+      "rows": 744
+    },
+    "acebozem.hourly.jan2026.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=acebozem&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 744
+    },
+    "acebozem.hourly.jan2026.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=etr&keep=true&type=csv",
+      "rows": 744
+    },
+    "acebozem.hourly.jan2026.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 744
+    },
+    "acebozem.hourly.jan2026.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=cci&keep=true&type=csv",
+      "rows": 744
+    },
+    "acebozem.hourly.jan2026.derived-swp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=swp&keep=true&type=csv",
+      "rows": 744
+    },
+    "acebozem.hourly.jan2026.derived-percent_saturation.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=percent_saturation&keep=true&type=csv",
+      "rows": 744
+    },
+    "acebozem.soil-raw.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/swp?stations=acebozem&type=csv",
+      "rows": 533
+    },
+    "acebozem.elements.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/elements/acebozem/?type=csv",
+      "rows": 40
+    },
+    "arskeogh.daily.season2025.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd&agg_func=min,max,avg,min,max,avg,avg,avg&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=etr&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=cci&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-gdd.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-gdd-wheat.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=wheat&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-gdd-barley.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=barley&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-gdd-canola.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=canola&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-gdd-corn.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=corn&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-gdd-sugarbeet.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=sugarbeet&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-gdd-sunflower.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=sunflower&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-gdd-hemp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=hemp&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-swp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=swp&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.season2025.derived-percent_saturation.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=percent_saturation&keep=true&type=csv",
+      "rows": 183
+    },
+    "arskeogh.daily.winter2526.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd&agg_func=min,max,avg,min,max,avg,avg,avg&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=etr&keep=true&type=csv",
+      "error": "HTTP 404 https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=etr&keep=true&type=csv: {\"detail\":\"Element 'sol_rad' not found in the data for the requested stations and time period.\"}"
+    },
+    "arskeogh.daily.winter2526.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=cci&keep=true&type=csv",
+      "error": "HTTP 404 https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=cci&keep=true&type=csv: {\"detail\":\"Element 'sol_rad' not found in the data for the requested stations and time period.\"}"
+    },
+    "arskeogh.daily.winter2526.derived-gdd.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&keep=true&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.derived-gdd-wheat.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=wheat&keep=true&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.derived-gdd-barley.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=barley&keep=true&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.derived-gdd-canola.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=canola&keep=true&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.derived-gdd-corn.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=corn&keep=true&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.derived-gdd-sugarbeet.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=sugarbeet&keep=true&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.derived-gdd-sunflower.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=sunflower&keep=true&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.derived-gdd-hemp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=hemp&keep=true&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.derived-swp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=swp&keep=true&type=csv",
+      "rows": 90
+    },
+    "arskeogh.daily.winter2526.derived-percent_saturation.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=arskeogh&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=percent_saturation&keep=true&type=csv",
+      "rows": 90
+    },
+    "arskeogh.hourly.jul2025.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=arskeogh&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=air_temp,rh,sol_rad,wind_spd&agg_func=avg&type=csv",
+      "rows": 744
+    },
+    "arskeogh.hourly.jul2025.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=arskeogh&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 744
+    },
+    "arskeogh.hourly.jul2025.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=etr&keep=true&type=csv",
+      "rows": 744
+    },
+    "arskeogh.hourly.jul2025.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 744
+    },
+    "arskeogh.hourly.jul2025.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=cci&keep=true&type=csv",
+      "rows": 744
+    },
+    "arskeogh.hourly.jul2025.derived-swp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=swp&keep=true&type=csv",
+      "rows": 744
+    },
+    "arskeogh.hourly.jul2025.derived-percent_saturation.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=percent_saturation&keep=true&type=csv",
+      "rows": 744
+    },
+    "arskeogh.hourly.jan2026.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=arskeogh&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=air_temp,rh,sol_rad,wind_spd&agg_func=avg&type=csv",
+      "rows": 744
+    },
+    "arskeogh.hourly.jan2026.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=arskeogh&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 744
+    },
+    "arskeogh.hourly.jan2026.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=etr&keep=true&type=csv",
+      "error": "HTTP 404 https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=etr&keep=true&type=csv: {\"detail\":\"Element 'sol_rad' not found in the data for the requested stations and time period.\"}"
+    },
+    "arskeogh.hourly.jan2026.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 744
+    },
+    "arskeogh.hourly.jan2026.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=cci&keep=true&type=csv",
+      "error": "HTTP 404 https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=cci&keep=true&type=csv: {\"detail\":\"Element 'sol_rad' not found in the data for the requested stations and time period.\"}"
+    },
+    "arskeogh.hourly.jan2026.derived-swp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=swp&keep=true&type=csv",
+      "rows": 744
+    },
+    "arskeogh.hourly.jan2026.derived-percent_saturation.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=arskeogh&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=percent_saturation&keep=true&type=csv",
+      "rows": 744
+    },
+    "arskeogh.soil-raw.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/swp?stations=arskeogh&type=csv",
+      "rows": 266
+    },
+    "arskeogh.elements.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/elements/arskeogh/?type=csv",
+      "rows": 32
+    },
+    "acecrowa.daily.season2025.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd&agg_func=min,max,avg,min,max,avg,avg,avg&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=etr&keep=true&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=cci&keep=true&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.derived-gdd.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&keep=true&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.derived-gdd-wheat.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=wheat&keep=true&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.derived-gdd-barley.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=barley&keep=true&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.derived-gdd-canola.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=canola&keep=true&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.derived-gdd-corn.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=corn&keep=true&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.derived-gdd-sugarbeet.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=sugarbeet&keep=true&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.derived-gdd-sunflower.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=sunflower&keep=true&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.season2025.derived-gdd-hemp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=gdd&crop=hemp&keep=true&type=csv",
+      "rows": 183
+    },
+    "acecrowa.daily.winter2526.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd&agg_func=min,max,avg,min,max,avg,avg,avg&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=etr&keep=true&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=cci&keep=true&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.derived-gdd.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&keep=true&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.derived-gdd-wheat.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=wheat&keep=true&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.derived-gdd-barley.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=barley&keep=true&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.derived-gdd-canola.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=canola&keep=true&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.derived-gdd-corn.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=corn&keep=true&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.derived-gdd-sugarbeet.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=sugarbeet&keep=true&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.derived-gdd-sunflower.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=sunflower&keep=true&type=csv",
+      "rows": 90
+    },
+    "acecrowa.daily.winter2526.derived-gdd-hemp.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=acecrowa&start_time=2025-12-01&end_time=2026-03-01&level=2&elements=gdd&crop=hemp&keep=true&type=csv",
+      "rows": 90
+    },
+    "acecrowa.hourly.jul2025.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=acecrowa&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=air_temp,rh,sol_rad,wind_spd&agg_func=avg&type=csv",
+      "rows": 744
+    },
+    "acecrowa.hourly.jul2025.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=acecrowa&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 744
+    },
+    "acecrowa.hourly.jul2025.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acecrowa&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=etr&keep=true&type=csv",
+      "rows": 744
+    },
+    "acecrowa.hourly.jul2025.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acecrowa&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 744
+    },
+    "acecrowa.hourly.jul2025.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acecrowa&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=cci&keep=true&type=csv",
+      "rows": 744
+    },
+    "acecrowa.hourly.jan2026.obs-met.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=acecrowa&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=air_temp,rh,sol_rad,wind_spd&agg_func=avg&type=csv",
+      "rows": 744
+    },
+    "acecrowa.hourly.jan2026.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=acecrowa&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 744
+    },
+    "acecrowa.hourly.jan2026.derived-etr.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acecrowa&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=etr&keep=true&type=csv",
+      "rows": 744
+    },
+    "acecrowa.hourly.jan2026.derived-feels_like.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acecrowa&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=feels_like&keep=true&type=csv",
+      "rows": 744
+    },
+    "acecrowa.hourly.jan2026.derived-cci.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acecrowa&start_time=2026-01-01&end_time=2026-02-01&level=2&elements=cci&keep=true&type=csv",
+      "rows": 744
+    },
+    "acecrowa.elements.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/elements/acecrowa/?type=csv",
+      "rows": 40
+    },
+    "mdamalta.daily.season2025.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=mdamalta&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 183
+    },
+    "mdamalta.daily.season2025.derived-percent_saturation.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=mdamalta&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=percent_saturation&keep=true&type=csv",
+      "rows": 183
+    },
+    "mdamalta.hourly.jul2025.obs-soil.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=mdamalta&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
+      "rows": 744
+    },
+    "mdamalta.hourly.jul2025.derived-percent_saturation.csv": {
+      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=mdamalta&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=percent_saturation&keep=true&type=csv",
+      "rows": 744
+    }
+  }
+}

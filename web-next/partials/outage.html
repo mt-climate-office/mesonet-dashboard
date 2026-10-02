@@ -1,0 +1,26 @@
+<!-- Site-wide outage notice (x-data="outageNotice", ui/shell/outageNotice.ts).
+     Opens itself once per tab per notice id when outage.json is active. The
+     tone is shown as an icon AND a word, never color alone. -->
+<dialog class="mco-modal" id="outage-modal" aria-labelledby="outage-modal-title" aria-describedby="outage-modal-message"
+        data-testid="outage-modal" x-data="outageNotice">
+  <div class="info-modal-box outage-box" :data-tone="tone">
+    <div class="info-modal-header">
+      <div>
+        <p class="outage-tone">
+          <svg x-show="tone === 'warning'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></svg>
+          <svg x-show="tone === 'danger'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M7.9 2h8.2L22 7.9v8.2L16.1 22H7.9L2 16.1V7.9zM12 8v4M12 16h.01"/></svg>
+          <svg x-show="tone === 'info' || tone === 'neutral'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <svg x-show="tone === 'success'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
+          <span x-text="toneLabel"></span>
+        </p>
+        <h2 class="info-modal-title" id="outage-modal-title" x-text="config.title"></h2>
+      </div>
+      <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
+    </div>
+    <!-- messageHtml is core/markdown.ts output: input HTML escaped, links scheme-allowlisted. -->
+    <div class="info-section outage-message" id="outage-modal-message" x-html="messageHtml"></div>
+    <div class="outage-actions">
+      <button type="button" class="nav-btn" data-close-modal x-text="config.button_text"></button>
+    </div>
+  </div>
+</dialog>

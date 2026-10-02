@@ -1,0 +1,197 @@
+<!-- Data Downloader tab (ui/downloader/downloader.ts): request controls and
+     station map on the left, the preview chart on the right, BLM funding
+     footer at the bottom. Controls follow ui/controls/README.md. -->
+<div class="dl-tab" x-data="downloader" data-testid="downloader">
+  <div class="dl-layout">
+    <div class="dl-side">
+      <form class="dl-card dl-controls" aria-label="Download request" novalidate @submit.prevent="runRequest()">
+        <!-- Station: combobox; the map below is the pointer twin. -->
+        <div class="ctl-combobox" x-data="combobox({ items: () => stationItems, value: () => url.s,
+             onSelect: (id) => pickStation(id), label: 'Station', placeholder: 'Pick a station' })"
+             @focusout="onFocusOut($event)" data-testid="dl-station">
+          <label class="ctl-label" :id="ids.label" :for="ids.input" x-text="label"></label>
+          <div class="ctl-combobox-field">
+            <input x-ref="input" class="ctl-input" type="text" role="combobox"
+                   autocomplete="off" spellcheck="false" aria-autocomplete="list"
+                   :id="ids.input" :placeholder="placeholder" :aria-expanded="open"
+                   :aria-controls="ids.listbox" :aria-activedescendant="activeId()"
+                   :value="inputText()" @input="onInput($event)"
+                   @keydown="onKeydown($event)" @click="toggle()">
+            <button type="button" class="ctl-clear" x-show="hasValue()"
+                    :aria-label="'Clear ' + label" @click="clear()">&times;</button>
+          </div>
+          <div class="ctl-combobox-popup" x-show="open">
+            <div role="listbox" class="ctl-combobox-list" :id="ids.listbox"
+                 :aria-labelledby="ids.label" x-show="result.total > 0">
+              <template x-for="group in result.groups" :key="group.name ?? ''">
+                <ul :role="group.name ? 'group' : 'presentation'"
+                    :aria-labelledby="group.name ? groupId(group.name) : null">
+                  <li role="presentation" class="ctl-combobox-group" x-show="group.name"
+                      :id="group.name ? groupId(group.name) : null" x-text="group.name"></li>
+                  <template x-for="item in group.items" :key="item.id">
+                    <li role="option" class="ctl-option" :id="optionId(item.id)"
+                        :aria-selected="isActive(item.id)" :class="{ 'is-current': isCurrent(item.id) }"
+                        @mousedown.prevent @click="select(item.id)">
+                      <span x-text="item.label"></span>
+                      <span class="ctl-option-meta" x-text="item.id"></span>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+            </div>
+            <p class="ctl-combobox-note" x-show="note()" x-text="note()"></p>
+          </div>
+          <div role="status" class="sr-only" x-text="status()"></div>
+        </div>
+
+        <!-- Variables: grouped Standard / Derived checkboxes with a filter. -->
+        <div class="dl-field">
+          <div class="ctl-multiselect" x-show="stationId" x-data="multiselect({ groups: () => groups,
+               value: () => pruned.selected, onChange: (v) => setElements(v), label: 'Variables' })"
+               data-testid="dl-elements">
+            <button type="button" class="nav-btn ctl-disclosure" :id="ids.button"
+                    :aria-expanded="open" :aria-controls="ids.panel" @click="toggle()">
+              <span x-text="label"></span><span class="ctl-count" x-text="countText()"></span>
+            </button>
+            <ul x-ref="chips" class="ctl-chip-list" :aria-label="'Selected ' + label" x-show="selected().length > 0">
+              <template x-for="v in selected()" :key="v">
+                <li><button type="button" class="nav-btn ctl-chip" :aria-label="'Remove ' + labelOf(v)"
+                            @click="remove(v, $event)"><span x-text="labelOf(v)"></span>
+                    <span aria-hidden="true">&times;</span></button></li>
+              </template>
+            </ul>
+            <div class="ctl-multiselect-panel" role="group" :id="ids.panel"
+                 :aria-labelledby="ids.button" x-show="open" @keydown.escape="close()">
+              <label class="ctl-label" :for="ids.filter">Filter</label>
+              <input type="search" class="ctl-input" :id="ids.filter" x-model="query" autocomplete="off">
+              <p class="ctl-note" x-show="elements?.status === 'loading'">Loading variables…</p>
+              <template x-for="group in visibleGroups" :key="group.id">
+                <fieldset class="ctl-fieldset">
+                  <legend class="ctl-legend" x-text="group.label"></legend>
+                  <label class="ctl-check ctl-check-all">
+                    <input type="checkbox" :checked="stateOf(group) === 'all'"
+                           x-effect="markMixed($el, group)" @change="setGroup(group, $event)">
+                    <span>Select all</span></label>
+                  <template x-for="opt in group.options" :key="opt.value">
+                    <label class="ctl-check">
+                      <input type="checkbox" :checked="isSelected(opt.value)" @change="toggleValue(opt.value)">
+                      <span x-text="opt.label"></span></label>
+                  </template>
+                </fieldset>
+              </template>
+              <p class="ctl-note" x-show="visibleGroups.length === 0">No matches</p>
+            </div>
+          </div>
+          <p class="ctl-note" x-show="!stationId">Variables: pick a station first.</p>
+          <p class="dl-msg dl-msg-action" role="alert" x-show="elements?.status === 'error'" data-testid="dl-elements-error">
+            <span>Variables could not be loaded.</span>
+            <button type="button" class="nav-btn" @click="elements?.refresh()">Retry</button>
+          </p>
+          <label class="ctl-check dl-switch">
+            <input type="checkbox" role="switch" :checked="url.pub" @change="toggleUncommon($event)" data-testid="dl-uncommon">
+            <span>Show uncommon variables</span>
+          </label>
+        </div>
+
+        <!-- QC level. -->
+        <div class="dl-field">
+          <fieldset class="ctl-seg" x-data="segmented({ options: () => qcOptions, value: () => String(qc),
+                    onChange: (v) => setQc(v), label: 'Quality control' })" data-testid="dl-qc">
+            <legend class="ctl-legend" x-text="label"></legend>
+            <div class="seg-btns">
+              <template x-for="opt in options()" :key="opt.value">
+                <label class="nav-btn seg-btn">
+                  <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)"
+                         :disabled="opt.disabled ?? false" @change="select(opt.value)">
+                  <span x-text="opt.label"></span>
+                </label>
+              </template>
+            </div>
+          </fieldset>
+          <p class="ctl-note" x-text="qcDescription"></p>
+        </div>
+
+        <!-- Time aggregation. -->
+        <div class="dl-field">
+          <fieldset class="ctl-seg" x-data="segmented({ options: () => periodOptions, value: () => url.period,
+                    onChange: (v) => setPeriod(v), label: 'Time aggregation' })" data-testid="dl-period">
+            <legend class="ctl-legend" x-text="label"></legend>
+            <div class="seg-btns">
+              <template x-for="opt in options()" :key="opt.value">
+                <label class="nav-btn seg-btn">
+                  <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)"
+                         :disabled="opt.disabled ?? false" @change="select(opt.value)">
+                  <span x-text="opt.label"></span>
+                </label>
+              </template>
+            </div>
+          </fieldset>
+          <p class="ctl-note" x-show="url.period === 'monthly'" x-text="monthlyNote"></p>
+        </div>
+
+        <!-- Dates: bounded by the install date and today. -->
+        <fieldset class="ctl-fieldset" x-data="dateRange({ value: () => ({ start: dates.start, end: dates.end }),
+                  onChange: (r) => setDates(r), min: () => installDate, max: () => today, label: 'Dates',
+                  onValidity: (v) => setRangeValid(v), showError: () => showRangeError() })"
+                  data-testid="dl-dates">
+          <legend class="ctl-legend" x-text="label"></legend>
+          <div class="ctl-row">
+            <div class="ctl-field">
+              <label class="ctl-label" :for="ids.start">Start</label>
+              <input type="date" class="ctl-input" :id="ids.start" :min="min()" :max="max()"
+                     :value="start" :aria-invalid="invalid('start')"
+                     :aria-describedby="describedBy()" @change="setStart($event)">
+            </div>
+            <div class="ctl-field">
+              <label class="ctl-label" :for="ids.end">End</label>
+              <input type="date" class="ctl-input" :id="ids.end" :min="min()" :max="max()"
+                     :value="end" :aria-invalid="invalid('end')"
+                     :aria-describedby="describedBy()" @change="setEnd($event)">
+            </div>
+          </div>
+          <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
+        </fieldset>
+
+        <!-- Inline messages (⚠ + text, kit tokens). -->
+        <p class="dl-msg" role="alert" x-show="dates.clamped && dates.error" x-text="dates.error" data-testid="dl-install-error"></p>
+        <p class="ctl-note" x-show="dates.clamped && !dates.error" data-testid="dl-start-clamped">
+          Start date moved to <span x-text="installDate"></span>, when this station was installed.
+        </p>
+        <p class="dl-msg" x-show="dates.largeHourly" x-text="largeHourlyText()" data-testid="dl-large-hourly"></p>
+        <p class="dl-msg" x-show="droppedNotice" x-text="droppedNotice" data-testid="dl-dropped-swp"></p>
+
+        <div class="dl-actions">
+          <button type="submit" class="nav-btn dl-btn-primary" :aria-busy="loading" :disabled="loading || resolving || !rangeValid" data-testid="dl-run">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
+            <span x-text="loading ? 'Running…' : runLabel"></span>
+          </button>
+          <button type="button" class="nav-btn" :disabled="!hasRows" @click="download()" data-testid="dl-download">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+            <span>Download CSV</span>
+          </button>
+        </div>
+        <p class="dl-msg" role="alert" x-show="hint && !(dates.clamped && hint === dates.error)" x-text="hint" data-testid="dl-hint"></p>
+        <template x-for="w in result?.warnings ?? []" :key="w">
+          <p class="dl-msg" x-text="w"></p>
+        </template>
+      </form>
+
+      <div class="dl-map" x-data="downloaderMap({ stations: () => $store.station.list,
+           selected: () => stationId, onSelect: (id) => pickStation(id) })" data-testid="dl-map"></div>
+    </div>
+
+    <section class="dl-card dl-preview" aria-label="Preview of the requested data" data-testid="dl-preview">
+      <p class="dl-preview-status" x-show="previewStatus()" x-text="previewStatus()"
+         :class="{ 'is-error': run?.status === 'error' }"></p>
+      <!-- x-if: the host is created only once there is a model, so ECharts never inits in a hidden box. -->
+      <template x-if="preview()">
+        <div class="chart" :style="previewStyle()"
+             x-data="chart({ builder: previewBuilder, table: previewTable, label: 'Preview of the requested data', model: () => preview() })"></div>
+      </template>
+    </section>
+  </div>
+
+  <footer class="dl-funding" data-testid="dl-funding-footer">
+    <p>Supported by Bureau of Land Management (RM-CESU Award L16AC00359)</p>
+  </footer>
+</div>

@@ -1,0 +1,68 @@
+/* Data Downloader tab (partials/downloader/index.html): two-column layout
+   (controls + map | preview), inline messages, primary Run button, BLM
+   funding footer. Kit tokens only. */
+
+.dl-tab { display: flex; flex-direction: column; gap: 0.75rem; max-width: 120rem; margin: 0 auto; }
+.dl-layout { display: grid; grid-template-columns: minmax(20rem, 24rem) minmax(0, 1fr); gap: 0.75rem; align-items: start; }
+@media (max-width: 900px) { .dl-layout { grid-template-columns: minmax(0, 1fr); } }
+
+.dl-side { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+.dl-card {
+  min-width: 0;
+  padding: 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.dl-controls { display: flex; flex-direction: column; gap: 1rem; }
+.dl-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.dl-field > .ctl-note { margin-top: -0.1rem; }
+.dl-controls .seg-btns { width: 100%; }
+.dl-controls .seg-btn { flex: 1; justify-content: center; }
+.dl-switch { align-self: flex-start; }
+
+/* Notices and errors: ⚠ + text, so the meaning never rests on color. */
+.dl-msg {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.78rem; line-height: 1.45;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-line);
+  border-radius: var(--radius-md);
+}
+.dl-msg::before { content: "\26A0\FE0E  " / ""; }
+.dl-msg-action { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.dl-msg-action > span { flex: 1; }
+
+.dl-actions { display: flex; gap: 0.5rem; }
+.dl-actions .nav-btn { flex: 1; justify-content: center; }
+/* kit-override: the kit has no primary button; Run uses the pressed segment's
+   fill (--accent with --text-on-accent, border --accent-line for 3:1). */
+.nav-btn.dl-btn-primary { background: var(--accent); border-color: var(--accent-line); color: var(--text-on-accent); }
+.nav-btn.dl-btn-primary:hover { background: var(--accent); color: var(--text-on-accent); filter: brightness(1.1); }
+.nav-btn.dl-btn-primary[disabled]:hover { filter: none; }
+
+.dl-map { height: 380px; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+
+.dl-preview { min-height: 30rem; padding: 0.5rem; }
+.dl-preview-status {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 28rem; padding: 1rem;
+  text-align: center; font-size: 0.85rem; color: var(--text-secondary);
+}
+.dl-preview-status.is-error { color: var(--text-primary); }
+.dl-preview-status.is-error::before { content: "\26A0\FE0E  " / ""; white-space: pre; }
+
+/* Funder attribution (legacy fixed footer); in page flow so it never covers
+   the controls. Brand fill, as legacy's blue bar. */
+.dl-funding {
+  display: flex; align-items: center;
+  min-height: 40px; padding: 0.4rem 0.75rem;
+  background: var(--accent); color: var(--text-on-accent);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem; font-weight: 800;
+}
+
+/* kit-override: the element list runs to ~40 rows; scroll it inside the panel so Run stays near. */
+.dl-controls .ctl-multiselect-panel { max-height: 28rem; overflow-y: auto; }

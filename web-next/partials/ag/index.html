@@ -1,0 +1,31 @@
+<!-- Ag Tools tab: controls card + one chart card. Mounted only while the tab
+     is open, so nothing fetches from another tab (the cache keeps the data). -->
+<template x-if="$store.url.tab === 'ag'">
+  <div class="ag" x-data="agTab">
+    <!-- @include partials/ag/controls.html -->
+    <section class="ag-card ag-chart-card" aria-labelledby="ag-chart-title">
+      <h2 class="ag-card-title" id="ag-chart-title" x-text="title()"></h2>
+      <template x-if="state() === 'loading-stations'">
+        <p class="ag-state">Loading stations…</p>
+      </template>
+      <template x-if="state() === 'no-station'">
+        <div class="ag-state ag-no-station" data-testid="ag-no-station">
+          <p class="ag-no-station-title">Select Station</p>
+          <p>To get started, select a station from the dropdown.</p>
+        </div>
+      </template>
+      <template x-if="show('met')">
+        <!-- @include partials/ag/met.html -->
+      </template>
+      <template x-if="show('gdd')">
+        <!-- @include partials/ag/gdd.html -->
+      </template>
+      <template x-if="show('soil')">
+        <!-- @include partials/ag/soil.html -->
+      </template>
+      <template x-if="show('annual')">
+        <!-- @include partials/ag/annual.html -->
+      </template>
+    </section>
+  </div>
+</template>
