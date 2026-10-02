@@ -1,0 +1,156 @@
+/* Styles for the shared form controls in ui/controls/ (combobox, multiselect,
+   date inputs, select, segmented, chips, range sliders). Kit tokens only; the
+   kit supplies the focus ring and the reduced-motion clamp. */
+
+/* ── Shared field parts ─────────────────────────────────────────────────── */
+.ctl-fieldset,
+.ctl-seg { border: 0; min-width: 0; }
+.ctl-legend,
+.ctl-label {
+  display: block;
+  font-size: 0.72rem; font-weight: 600;
+  color: var(--text-secondary);
+}
+.ctl-legend { margin-bottom: 0.35rem; }
+.ctl-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.ctl-row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+.ctl-input {
+  font: inherit; font-size: 0.82rem;
+  min-height: 34px; padding: 5px 9px;
+  color: var(--text-primary); background: var(--input-bg);
+  border: 1px solid var(--ctrl-border); border-radius: var(--radius-md);
+  /* Native date pickers and select popups follow the theme, not the OS. */
+  color-scheme: dark;
+}
+[data-theme="light"] .ctl-input { color-scheme: light; }
+.ctl-input::placeholder { color: var(--text-muted); opacity: 1; }
+.ctl-input:hover { border-color: var(--accent-line); }
+.ctl-input:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Invalid gets a heavier bottom edge as a non-color cue; the message says why. */
+.ctl-input[aria-invalid="true"] { border-color: var(--text-primary); box-shadow: inset 0 -2px 0 var(--text-primary); }
+.ctl-select { cursor: pointer; }
+
+.ctl-error { font-size: 0.75rem; color: var(--text-primary); }
+.ctl-error:not(:empty) { margin-top: 0.35rem; }
+.ctl-error:not(:empty)::before { content: "\26A0\FE0E  " / ""; }
+.ctl-note { font-size: 0.75rem; color: var(--text-muted); }
+
+/* ── Combobox ───────────────────────────────────────────────────────────── */
+.ctl-combobox { position: relative; display: flex; flex-direction: column; gap: 0.25rem; }
+.ctl-combobox-field { position: relative; display: flex; }
+.ctl-combobox-field .ctl-input { width: 100%; padding-right: 2.2rem; }
+.ctl-clear {
+  position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
+  width: 30px; height: 30px;
+  border: 0; border-radius: var(--radius-sm); background: none;
+  color: var(--text-secondary); font: inherit; font-size: 1.1rem; line-height: 1;
+  cursor: pointer;
+}
+.ctl-clear:hover { background: var(--accent-hover); color: var(--text-primary); }
+.ctl-combobox-popup {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+  z-index: var(--z-flyout);
+  max-height: min(20rem, 60vh); overflow-y: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+}
+.ctl-combobox-list ul { list-style: none; }
+.ctl-combobox-group {
+  position: sticky; top: 0;
+  padding: 6px 10px 3px;
+  background: var(--bg-surface); color: var(--text-muted);
+  font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.ctl-option {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  min-height: 30px; padding: 4px 10px;
+  color: var(--text-primary); font-size: 0.82rem;
+  cursor: pointer;
+}
+.ctl-option:hover { background: var(--accent-hover); }
+/* aria-selected marks the keyboard-active option (aria-activedescendant). */
+.ctl-option[aria-selected="true"] { background: var(--accent-hover); box-shadow: inset 3px 0 0 var(--accent-line); }
+.ctl-option.is-current { font-weight: 600; }
+.ctl-option.is-current > :first-child::before { content: "\2713  " / ""; }
+.ctl-option-meta { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); }
+.ctl-combobox-note { padding: 6px 10px; font-size: 0.75rem; color: var(--text-muted); }
+
+/* ── Chips (multi-toggle and removable) ─────────────────────────────────── */
+.ctl-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.ctl-chips > .ctl-legend { width: 100%; margin-bottom: 0; }
+/* kit-override: compact .nav-btn for dense chip rows (34px → 28px; touch is restored below). */
+.ctl-chip { min-height: 28px; padding: 3px 10px; border-radius: 999px; font-size: 0.74rem; }
+/* A check on pressed chips: state is not carried by color alone. */
+.ctl-chip[aria-pressed="true"]::before { content: "\2713" / ""; }
+.ctl-chip-list { display: flex; flex-wrap: wrap; gap: 0.35rem; list-style: none; }
+
+/* ── Multiselect ────────────────────────────────────────────────────────── */
+.ctl-multiselect { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+.ctl-disclosure::after {
+  content: ""; width: 0.4rem; height: 0.4rem; margin-left: 0.2rem;
+  border: solid currentColor; border-width: 0 2px 2px 0;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--transition);
+}
+.ctl-disclosure[aria-expanded="true"]::after { transform: translateY(1px) rotate(225deg); }
+.ctl-count { font-weight: 400; }
+.ctl-multiselect-panel {
+  display: flex; flex-direction: column; gap: 0.75rem;
+  width: 100%; padding: 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+}
+.ctl-multiselect-panel > .ctl-input { max-width: 20rem; margin-top: -0.5rem; }
+.ctl-multiselect .ctl-fieldset {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); column-gap: 0.75rem;
+}
+.ctl-check {
+  display: flex; align-items: center; gap: 0.45rem;
+  min-height: 28px;
+  color: var(--text-primary); font-size: 0.82rem;
+  cursor: pointer;
+}
+.ctl-check input { width: 16px; height: 16px; accent-color: var(--accent-line); cursor: pointer; }
+.ctl-check-all { grid-column: 1 / -1; font-weight: 600; }
+
+/* ── Segmented (radio fieldset in kit .seg-btns) ─────────────────────────── */
+/* The radio covers its label, invisibly, so the kit's universal :focus-visible
+   ring lands on the whole segment and clicks anywhere hit the input. */
+.ctl-seg .seg-btn { position: relative; }
+.ctl-seg .seg-btn > input {
+  position: absolute; inset: 0; margin: 0;
+  appearance: none; background: none; border: 0; border-radius: inherit;
+  cursor: pointer;
+}
+/* kit-override: the kit keys pressed off aria-pressed; a radio's state is :checked. */
+.ctl-seg .seg-btn:has(> input:checked) {
+  background: var(--accent); border-color: var(--accent-line); color: var(--text-on-accent);
+}
+.ctl-seg .seg-btn:has(> input:disabled) { opacity: 0.4; }
+.ctl-seg .seg-btn > input:disabled { cursor: not-allowed; }
+/* kit-override: Alpine's x-for leaves its <template> as first child, so the
+   kit's :first-child corner rounding never matches the first segment. */
+.ctl-seg .seg-btn:first-of-type { border-top-left-radius: var(--radius-md); border-bottom-left-radius: var(--radius-md); }
+
+/* ── Range sliders ──────────────────────────────────────────────────────── */
+.ctl-range { display: flex; flex-direction: column; gap: 0.5rem; }
+.ctl-range-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  column-gap: 0.75rem; row-gap: 0.15rem;
+}
+.ctl-range-row > input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%; min-height: 24px; margin: 0;
+  accent-color: var(--accent-line); cursor: pointer;
+}
+.ctl-range-value { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary); }
+
+/* ── Touch: ≥40px targets (WCAG 2.5.5, HOUSE-STYLE §5.5) ───────────────── */
+@media (hover: none) {
+  .ctl-input, .ctl-chip, .ctl-option, .ctl-check { min-height: 40px; }
+  .ctl-clear { width: 40px; height: 40px; }
+  .ctl-check input { width: 20px; height: 20px; }
+  .ctl-range-row > input[type="range"] { min-height: 40px; }
+}
