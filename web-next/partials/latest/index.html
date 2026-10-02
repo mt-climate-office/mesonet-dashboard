@@ -1,9 +1,19 @@
 <!-- Latest Data tab: sidebar controls | station timeseries | card column.
-     Sidebar and timeseries: ui/latest/{sidebar,timeseries}.ts. The two cards
-     are partials/latest/cards/{top,bottom}-card.html (Latest cards owner). -->
-<div class="latest-layout">
-  <aside class="latest-sidebar" aria-labelledby="latest-controls-title" x-data="latestSidebar" data-testid="latest-sidebar">
-    <h2 class="latest-section-title" id="latest-controls-title">Controls</h2>
+     Layout (sidebar collapse), sidebar and timeseries: ui/latest/{layout,sidebar,timeseries}.ts.
+     The two cards are partials/latest/cards/{top,bottom}-card.html. Mounted only
+     while the tab is open, so nothing fetches from another tab (the cache keeps the data). -->
+<template x-if="$store.url.tab === 'latest'">
+<div class="latest-layout" x-data="latestLayout" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
+  <aside class="latest-sidebar" id="latest-sidebar" aria-labelledby="latest-controls-title" x-data="latestSidebar" data-testid="latest-sidebar">
+    <div class="latest-sidebar-head">
+      <h2 class="latest-section-title" id="latest-controls-title">Controls</h2>
+      <!-- Wide screens only (latest.css); the rail button below brings the sidebar back. -->
+      <button type="button" class="nav-btn icon-only latest-sidebar-toggle" id="latest-sidebar-collapse"
+              aria-label="Hide controls" title="Hide controls" aria-controls="latest-sidebar" aria-expanded="true"
+              @click="toggleSidebar()" data-testid="sidebar-collapse">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+    </div>
 
     <div class="ctl-combobox" data-testid="station-select"
          x-data="combobox({ items: () => stationItems(), value: () => stationValue(), onSelect: (id) => selectStation(id), label: 'Station' })"
@@ -117,6 +127,13 @@
     <p class="ctl-note">Data is served on demand from the
       <a class="latest-link" href="https://mesonet2.climate.umt.edu/api/v2/docs" target="_blank" rel="noopener noreferrer">Montana Mesonet API<span class="sr-only"> (opens in a new tab)</span></a>.</p>
   </aside>
+  <div class="latest-rail">
+    <button type="button" class="nav-btn icon-only latest-sidebar-toggle" id="latest-sidebar-expand"
+            aria-label="Show controls" title="Show controls" aria-controls="latest-sidebar" aria-expanded="false"
+            @click="toggleSidebar()" data-testid="sidebar-expand">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </div>
 
   <section class="latest-plot" aria-label="Station timeseries" x-data="latestTimeseries" data-testid="latest-timeseries">
     <div class="latest-status" x-show="status().kind !== 'ready'" data-testid="timeseries-status">
@@ -144,3 +161,4 @@
     </section>
   </div>
 </div>
+</template>

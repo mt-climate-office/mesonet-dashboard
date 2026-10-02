@@ -39,6 +39,7 @@ import './ui/charts/chart.css'
 import './styles/downloader.css'
 
 // Latest Data (W2 layout/sidebar/timeseries).
+import { latestLayout } from './ui/latest/layout'
 import { latestSidebar } from './ui/latest/sidebar'
 import { latestTimeseries } from './ui/latest/timeseries'
 import './styles/latest.css'
@@ -104,6 +105,7 @@ Alpine.data('chart', chart)
 Alpine.data('downloader', downloader)
 
 // Latest Data (W2 layout/sidebar/timeseries): partials/latest/index.html.
+Alpine.data('latestLayout', latestLayout)
 Alpine.data('latestSidebar', latestSidebar)
 Alpine.data('latestTimeseries', latestTimeseries)
 // Latest cards (W2; partials/latest/cards/*): top and bottom card switchers
