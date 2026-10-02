@@ -1,0 +1,56 @@
+<!doctype html>
+<!-- Manual-review page for the chart host and every Ag builder, with the
+     golden fixtures, in the theme named by ?theme=dark|light|high-contrast.
+     Not part of the app build; serve with Vite at /src/ui/charts/demo.html. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script>
+    // Anti-flash: apply ?theme= before first paint.
+    (function () {
+      var t = new URLSearchParams(location.search).get('theme');
+      if (t === 'light' || t === 'high-contrast' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <title>Charts · MT Mesonet</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.7.1/theme/mco-theme.css"
+        integrity="sha384-dktZyfU+lLz1JEFe+npkBVrH8FsSdtYYOPC7bJQtZwEJnvD3IiENV+UUgyXeFpnl"
+        crossorigin="anonymous">
+  <style>
+    /* Demo-page layout only. */
+    main { max-width: 72rem; margin: 0 auto; padding: 1.5rem max(1rem, env(safe-area-inset-left)) 4rem; }
+    h1 { font-size: 1.3rem; font-weight: 600; margin-bottom: 0.25rem; }
+    h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.6rem; }
+    main > p { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem; }
+    .themes { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    section { padding: 1rem; margin-bottom: 1rem; background: var(--bg-surface);
+              border: 1px solid var(--border); border-radius: var(--radius-lg); }
+    .readout { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 1rem; }
+    .readout code { font-family: var(--font-mono); color: var(--text-primary); }
+  </style>
+</head>
+<body>
+<main id="main" tabindex="-1" x-data="demoPage">
+  <h1>Ag charts</h1>
+  <p>Every core/charts Ag builder through ui/charts/chart.ts, station acebozem fixtures. Switching theme re-themes in place.</p>
+  <div class="themes" role="group" aria-label="Theme">
+    <button type="button" class="nav-btn" @click="setTheme('dark')">Dark</button>
+    <button type="button" class="nav-btn" @click="setTheme('light')">Light</button>
+    <button type="button" class="nav-btn" @click="setTheme('high-contrast')">High contrast</button>
+  </div>
+  <p class="readout">Last onZoom (ETr chart): <code id="zoom-readout">none yet</code></p>
+  <template x-for="c in list()" :key="c.id">
+    <section :data-chart="c.id">
+      <h2 x-text="c.title"></h2>
+      <div class="chart" x-data="chart(c.bind)"></div>
+    </section>
+  </template>
+</main>
+<script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.7.1/core/mco-core.js"
+        integrity="sha384-ZOGCREEJsO8sY1wJ7eS/Q7K7NdZAHF+LxSMoO3ZGqBtEVISX3616cGomCW418hXH"
+        crossorigin="anonymous"></script>
+<script type="module" src="./demo.ts"></script>
+</body>
+</html>

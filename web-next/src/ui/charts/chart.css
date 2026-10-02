@@ -1,0 +1,7 @@
+/* Chart host sizing (ui/charts/chart.ts). ECharts needs a sized box; set
+   --chart-height on the .chart element to change it per card. */
+.chart { position: relative; min-width: 0; }
+.chart-canvas { width: 100%; height: var(--chart-height, 380px); }
+@media (max-width: 640px) {
+  .chart-canvas { height: var(--chart-height-compact, 320px); }
+}
