@@ -28,6 +28,14 @@ import './styles/app.css'
 import './ui/controls/controls.css'
 import './ui/map/map.css'
 import './ui/charts/chart.css'
+// Ag Tools (W2)
+import { agAnnualView } from './ui/ag/agAnnualView'
+import { agControls } from './ui/ag/agControls'
+import { agGddView } from './ui/ag/agGddView'
+import { agMetView } from './ui/ag/agMetView'
+import { agSoilView } from './ui/ag/agSoilView'
+import { agTab } from './ui/ag/agTab'
+import './styles/ag.css'
 
 /* 1. URL fix-ups, before any store reads `location`. ---------------------- */
 
@@ -75,5 +83,13 @@ Alpine.data('downloaderMap', downloaderMap)
 // Charts (W1): the one ECharts host; ECharts itself loads lazily on the first
 // render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".
 Alpine.data('chart', chart)
+
+// Ag Tools (W2, ui/ag/*): tab wrapper, controls card, one view per variable group.
+Alpine.data('agTab', agTab)
+Alpine.data('agControls', agControls)
+Alpine.data('agMetView', agMetView)
+Alpine.data('agGddView', agGddView)
+Alpine.data('agSoilView', agSoilView)
+Alpine.data('agAnnualView', agAnnualView)
 
 Alpine.start()

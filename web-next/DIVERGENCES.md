@@ -783,3 +783,19 @@ ECharts host (`ui/charts/chart.ts`) and the Ag builders (`core/charts/ag*.ts`) v
 ### Accessible twin
 - **New:** each chart has an `.sr-only` table twin (date/time column plus the plotted values, "—" for missing, "frozen" for masked soil cells) and an `aria-label` on the canvas. Animations run only on first draw, and not at all under reduced motion.
 - **Why:** HOUSE-STYLE §5.
+
+## Ag Tools (web-next)
+
+The Ag tab UI (`partials/ag/*`, `ui/ag/*`, logic in `core/ag/view/tab.ts`, `results.ts`, `keys.ts`) vs `web/src/tabs/AgToolsTab.tsx` + `features/ag/ui/AgVariableView.tsx`. Data, compute, texts and URL behaviour are unchanged (computed client-side from level-2 observations; only `/derived` requests are `elements=swp` and the `percent_saturation&keep=true` porosity rows).
+
+### Controls
+- **web/:** Mantine selects, a range date picker, chips for crop / soil variable / livestock, one dual-thumb slider with marks.
+- **New:** the shared controls (`ui/controls`): station combobox (NWSLI searchable), native selects for variable / projection / comparison variable, two native date inputs (max today), segmented radios for time aggregation and livestock, `aria-pressed` chips (single choice) for crop and soil variable, and two native range inputs ("Base", "Upper cutoff", with the extra "No upper limit" stop) instead of one dual-thumb slider. The cutoff text and "Reset to <crop> cutoffs" are as before.
+- **Why:** kit-first controls with a keyboard and screen-reader twin for every gesture.
+
+### Chart card
+- **New:** the card heading names the variable and the station ("Growing Degree Days: Bozeman"). Notes are a list above the chart; the chart host is mounted only once a view is ready, so loading shows a spinner, and empty / error states show their text in place of the chart (same texts as web/). Each settled view is announced in the page's polite live region ("Growing Degree Days chart updated for Bozeman.", or the empty / error text).
+- **Why:** HOUSE-STYLE §5 (canvas changes need a live region).
+
+### Fetching
+- **New:** the tab's components mount only while `#ag` is open, so nothing fetches from another tab (the cache keeps the data for the next visit). Cache keys encode station, window, period and QC level (`core/ag/view/keys.ts`). A degraded NWS forecast is retried on the next read after 5 minutes (web/: a 5-minute `staleTime`).

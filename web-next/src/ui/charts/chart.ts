@@ -103,6 +103,8 @@ export class ChartHost<M> {
   /** (Re)create the ECharts instance with the current theme. */
   private async init(): Promise<void> {
     const { echarts } = await loadECharts()
+    // Two renders racing the first lazy load both get here; only the first creates the instance.
+    if (this.chart || this.disposed) return
     this.chart = echarts.init(this.canvas, echartsTheme(this.theme))
     this.chart.on('datazoom', this.onZoomEvent)
   }
