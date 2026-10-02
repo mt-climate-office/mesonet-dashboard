@@ -24,7 +24,8 @@ const SHORT_NAME_MAPPER: Record<string, string[]> = {
   'Reference ET': ['pet'],
 }
 
-interface NormalRow extends Record<string, unknown> {
+/** One daily row of a normals CSV (units of the gridMET variable: °F, in, %). */
+export interface NormalRow extends Record<string, unknown> {
   type: string
   variable: string
   month: number
@@ -32,6 +33,7 @@ interface NormalRow extends Record<string, unknown> {
   q25: number | null
   q75: number | null
   median: number | null
+  mean?: number | null
 }
 
 export interface MergedNormal {
@@ -58,6 +60,12 @@ async function loadCsv(station: string, varCode: string): Promise<NormalRow[]> {
   cache.set(key, daily)
   return daily
 }
+
+/**
+ * The daily rows of one station × gridMET variable CSV (`tmmx`, `tmmn`, `pr`, …);
+ * [] when the file is missing. Used by the Now overview (core/overview/normals.ts).
+ */
+export const fetchDailyNormals = (station: string, varCode: string): Promise<NormalRow[]> => loadCsv(station, varCode)
 
 export interface StationNormals {
   /** Map of "MM-DD" → {mn,mx,avg} */
