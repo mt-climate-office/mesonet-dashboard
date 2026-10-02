@@ -65,8 +65,10 @@ export class ChartHost<M> {
   private range: Range | null = null
   private ro: ResizeObserver
   private opts: ChartOptions<M>
+  private el: HTMLElement
 
   constructor(el: HTMLElement, opts: ChartOptions<M>) {
+    this.el = el
     this.opts = opts
     this.theme = this.readTheme(currentTheme())
     this.canvas = document.createElement('div')
@@ -89,15 +91,20 @@ export class ChartHost<M> {
   async render(model: M | null): Promise<void> {
     this.model = model
     if (!this.chart) {
-      const { echarts } = await loadECharts()
+      await loadECharts()
       if (this.disposed) return
-      if (!this.chart) {
-        this.chart = echarts.init(this.canvas, echartsTheme(this.theme))
-        this.chart.on('datazoom', this.onZoomEvent)
-      }
+      if (!this.chart) await this.init()
     }
     this.draw(false)
     if (this.range) this.zoomTo(this.range[0], this.range[1])
+    this.markZoom()
+  }
+
+  /** (Re)create the ECharts instance with the current theme. */
+  private async init(): Promise<void> {
+    const { echarts } = await loadECharts()
+    this.chart = echarts.init(this.canvas, echartsTheme(this.theme))
+    this.chart.on('datazoom', this.onZoomEvent)
   }
 
   /** Remember `r` and zoom to it now if the chart is drawn; null forgets it (the zoom stays). */
@@ -113,6 +120,13 @@ export class ChartHost<M> {
     this.silentZoom = true
     this.chart.dispatchAction({ type: 'dataZoom', dataZoomIndex: 0, startValue, endValue })
     this.silentZoom = false
+    this.markZoom()
+  }
+
+  /** `data-zoom="fromMs,toMs"` on the host element: the visible window, for tests and the fidelity harness. */
+  private markZoom(): void {
+    const r = this.visibleRange()
+    if (r) this.el.dataset.zoom = r.join(',')
   }
 
   /** The visible x range in wall-clock ms, or null before the first draw. */
@@ -150,8 +164,11 @@ export class ChartHost<M> {
     }
   }
 
-  /** Rebuild the option from the model; `keepZoom` = same data (theme, resize, fonts). */
-  private draw(keepZoom: boolean): void {
+  /**
+   * Rebuild the option from the model; `keepZoom` = same data (theme, resize, fonts). `state` is
+   * the view to keep, read before the instance is replaced (theme change).
+   */
+  private draw(keepZoom: boolean, state: ViewState = this.viewState(keepZoom)): void {
     const chart = this.chart
     if (!chart || this.disposed) return
     if (this.model == null) {
@@ -160,7 +177,7 @@ export class ChartHost<M> {
       this.renderTable(null)
       return
     }
-    const option = carryState(this.opts.builder(this.model, this.ctx()), this.viewState(keepZoom))
+    const option = carryState(this.opts.builder(this.model, this.ctx()), state)
     const reduced = reducedMotion()
     // Animate the first draw only; theme/resize redraws should not replay the entrance.
     option.animation = !reduced && !keepZoom
@@ -169,6 +186,7 @@ export class ChartHost<M> {
     this.cats = categoryMs(option)
     chart.setOption(option, { notMerge: true })
     this.width = this.canvas.clientWidth
+    this.markZoom()
     if (!keepZoom) this.renderTable(this.opts.table ? this.opts.table(this.model) : null)
   }
 
@@ -199,8 +217,13 @@ export class ChartHost<M> {
   private onTheme = (e: Event): void => {
     const name = (e as CustomEvent<{ theme?: string }>).detail?.theme
     this.theme = this.readTheme(isTheme(name) ? name : currentTheme())
-    this.chart?.setTheme(echartsTheme(this.theme) as never)
-    this.draw(true)
+    if (!this.chart) return
+    // A fresh instance per theme: chart.setTheme() re-applies the raw option, losing zoom and
+    // legend toggles, and mis-drew a series on a dual-axis chart with one axis emptied.
+    const state = this.viewState(true)
+    this.chart.dispose()
+    this.chart = null
+    void this.init().then(() => this.draw(true, state))
   }
 
   private onResize(): void {
@@ -211,9 +234,10 @@ export class ChartHost<M> {
   }
 
   private onZoomEvent = (): void => {
-    if (!this.opts.onZoom || this.silentZoom) return
+    if (this.silentZoom) return
     clearTimeout(this.zoomTimer)
     this.zoomTimer = window.setTimeout(() => {
+      this.markZoom()
       const r = this.visibleRange()
       if (r) this.opts.onZoom?.(r[0], r[1])
     }, ZOOM_DEBOUNCE_MS)

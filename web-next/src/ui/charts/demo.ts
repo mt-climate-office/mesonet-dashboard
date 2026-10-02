@@ -82,17 +82,29 @@ interface DemoChart {
   bind: ChartBindings<never>
 }
 
-let zoomText = 'none yet'
+/*
+ * URL round trip, as the Latest tab will do it: ?z=fromMs,toMs drives `range` for the ETr chart and
+ * the season SWP heatmap (a category axis), and either chart's onZoom writes it back.
+ */
+const zParam = new URLSearchParams(location.search).get('z')?.split(',').map(Number)
+const sync = Alpine.reactive({ range: zParam?.length === 2 && zParam.every(Number.isFinite) ? (zParam as [number, number]) : null, calls: 0 })
+const syncBindings = {
+  range: () => sync.range,
+  onZoom: (a: number, b: number) => {
+    sync.calls++
+    sync.range = [a, b]
+    const u = new URL(location.href)
+    u.searchParams.set('z', `${a},${b}`)
+    history.replaceState(null, '', u)
+    document.getElementById('zoom-readout')!.textContent = `${new Date(a).toISOString().slice(0, 16)} → ${new Date(b).toISOString().slice(0, 16)} (onZoom calls: ${sync.calls})`
+  },
+}
+
 const bind = <M>(builder: C.ChartBuilder<M>, table: (m: M) => C.ChartTable, label: string, model: M, extra: Partial<ChartBindings<M>> = {}) =>
   ({ builder, table, label, model: () => model, ...extra }) as unknown as ChartBindings<never>
 
 const CHARTS: DemoChart[] = [
-  { id: 'etr', title: 'Reference ET — daily, season 2025 (onZoom wired)', bind: bind(C.etrChart, C.etrTable, 'Reference ET', { series: etoDaily(season, meta), period: 'daily' }, {
-    onZoom: (a, b) => {
-      zoomText = `${new Date(a).toISOString().slice(0, 16)} → ${new Date(b).toISOString().slice(0, 16)}`
-      document.getElementById('zoom-readout')!.textContent = zoomText
-    },
-  }) },
+  { id: 'etr', title: 'Reference ET — daily, season 2025 (zoom synced with the SWP heatmap via ?z=)', bind: bind(C.etrChart, C.etrTable, 'Reference ET', { series: etoDaily(season, meta), period: 'daily' }, syncBindings) },
   { id: 'etr-h', title: 'Reference ET — hourly, Jul 2025', bind: bind(C.etrChart, C.etrTable, 'Hourly reference ET', { series: etoHourly(hourlyMet(ST, 'jul2025'), meta), period: 'hourly' }) },
   { id: 'fl', title: 'Feels like — daily, winter 2025–26', bind: bind(C.feelsLikeChart, C.feelsLikeTable, 'Feels-like temperature', { series: feelsLikeDaily(winter), period: 'daily' }) },
   { id: 'fl-h', title: 'Feels like — hourly, Jul 2025', bind: bind(C.feelsLikeChart, C.feelsLikeTable, 'Hourly feels-like temperature', { series: feelsLikeHourly(hourlyMet(ST, 'jul2025')), period: 'hourly' }) },
@@ -103,7 +115,7 @@ const CHARTS: DemoChart[] = [
   { id: 'sp-t', title: 'Soil profile — temperature, winter', bind: bind(C.soilProfileChart, C.soilProfileTable, 'Soil temperature profile', profile('soil_temp')) },
   { id: 'sp-v', title: 'Soil profile — VWC, winter (frozen mask)', bind: bind(C.soilProfileChart, C.soilProfileTable, 'Soil VWC profile', profile('soil_vwc')) },
   { id: 'sp-s', title: 'Soil profile — SWP, winter (frozen mask)', bind: bind(C.soilProfileChart, C.soilProfileTable, 'Soil water potential profile', profile('swp')) },
-  { id: 'sp-ss', title: 'Soil profile — SWP, season 2025', bind: bind(C.soilProfileChart, C.soilProfileTable, 'Soil water potential profile, season', profile('swp', soilSeason)) },
+  { id: 'sp-ss', title: 'Soil profile — SWP, season 2025 (zoom synced with ETr)', bind: bind(C.soilProfileChart, C.soilProfileTable, 'Soil water potential profile, season', profile('swp', soilSeason), syncBindings) },
   { id: 'sp-p', title: 'Soil profile — percent saturation, hourly Jul 2025', bind: bind(C.soilProfileChart, C.soilProfileTable, 'Percent saturation profile', profile('percent_saturation', soilJul)) },
   { id: 'swp', title: 'Soil water potential — daily, season 2025', bind: bind(C.swpChart, C.swpTable, 'Soil water potential by depth', { series: swp(soilSeason, params), period: 'daily' }) },
   { id: 'swp-h', title: 'Soil water potential — hourly, Jul 2025', bind: bind(C.swpChart, C.swpTable, 'Hourly soil water potential', { series: swp(soilJul, params), period: 'hourly' }) },

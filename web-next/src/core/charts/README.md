@@ -21,7 +21,8 @@ W2 adds `timeseries.ts`, `windRose.ts`, `downloaderPreview.ts` the same way.
 - `series.ts`: `points(xs, ys, notes?)` (breaks lines at gaps > 1.5× cadence), `lineSeries` (LTTB over `LTTB_THRESHOLD`), `barSeries`, `markerSeries`; ids starting `AUX` (`aux:`) are drawing aids, skipped by tooltips and legends.
 - `tooltip.ts`: `tooltipBase` (kit `.mco-tooltip`), `axisTooltip(ctx, header, row)`, `tipText`, `legend(ctx, {data, title})` (bottom scroll legend; optional title text).
 - `overlays.ts`: `bandSeries` (stacked q25–q75 style band), `normalsSeries`, `hBandSeries` (horizontal bands + corner labels + dashed lines, e.g. SWP FC/WP), `sensorEventSeries` (hatched spans), `labelledLines` (markLines, e.g. GDD stages), `hatchDecal`.
-- `heatmap.ts`: `colorBar(ctx, scale, extent, {midpoint, ticks})` (visualMap + bar drawn as graphics with min/max and the palette `midpointLabel`), `frozenSeries` (hatched mask cells).
+- `heatmap.ts`: `colorBar(ctx, scale, extent, {midpoint, ticks})` (hidden visualMap + bar drawn as graphics with min/max and the palette `midpointLabel`; vertical at the right, horizontal under the plot when `ctx.compact`), `frozenSeries` (hatched mask cells).
+- `zoom.ts` (used by the host): wall-clock ms ↔ category index (`categoryMs`, `toAxisRange`, `fromAxisRange`), `sameRange`, `carryState` (zoom + legend toggles across redraws).
 - `testing.ts`: `testCtx(theme)` for tests (kit 0.7.1 token values).
 
 ## Contract
@@ -29,7 +30,7 @@ W2 adds `timeseries.ts`, `windRose.ts`, `downloaderPreview.ts` the same way.
 - `(model, ctx) => EChartsOption`. Pure: no DOM, no Alpine, no fetch, no `new Date(string)`.
 - Input is a model from `core/models/` or an Ag contract series (SI). **Units convert at the edge**, inside the builder.
 - Colors come only from `core/palette` roles (`paint()` for TokenRefs) and `ctx.theme`. No hex literals in builders. Chrome (text, axes, fonts) comes from the ECharts theme, so builders rarely touch it.
-- Time axes: x is Denver wall-clock ms; set `useUTC: true`.
+- Time axes: x is Denver wall-clock ms; set `useUTC: true`. A category x axis (heatmaps) puts each category's wall-clock ms in `xAxis.data` (format labels in `axisLabel.formatter`), so the host's zoom API stays in ms.
 - Don't set `animation`; the host turns it on for first draws unless the user prefers reduced motion.
 - Every builder that draws data exports a `…Table(model): ChartTable` twin.
 - Register any new ECharts part in `ui/charts/echarts.ts`; builders import types only from `echarts`.
@@ -42,7 +43,7 @@ W2 adds `timeseries.ts`, `windRose.ts`, `downloaderPreview.ts` the same way.
 4. Re-export it from `index.ts`; if it needs a new ECharts part, add it to `ui/charts/echarts.ts`.
 5. In the card's component, expose the bindings and render with the host:
    `<div class="chart" x-data="chart({ builder: xChart, table: xTable, label: 'X', model: () => xModel() })"></div>`.
-   Optional: `onZoom(fromMs, toMs)` (debounced 250 ms, user zooms only) and `range: () => [fromMs, toMs]` to apply a zoom (e.g. from the URL).
+   Optional: `onZoom(fromMs, toMs)` (debounced 250 ms, user zooms only) and `range: () => [fromMs, toMs]` to apply a zoom (e.g. from the URL). `range` runs in its own effect (it never re-renders) and is re-applied after model renders; a range equal to the visible window (±1 min) is ignored, so writing `onZoom` into the URL and reading it back as `range` does not loop. The host element carries `data-zoom="fromMs,toMs"` for tests.
 6. Check it in `ui/charts/demo.html` (`npm run dev`, then `/mesonet-dashboard/next/src/ui/charts/demo.html?theme=light`).
 
 ## Behaviour kept from the Plotly builders (web/src/features/ag/figures)

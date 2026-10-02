@@ -40,7 +40,7 @@
     <button type="button" class="nav-btn" @click="setTheme('light')">Light</button>
     <button type="button" class="nav-btn" @click="setTheme('high-contrast')">High contrast</button>
   </div>
-  <p class="readout">Last onZoom (ETr chart): <code id="zoom-readout">none yet</code></p>
+  <p class="readout">Last onZoom (ETr / season SWP heatmap, synced through ?z=): <code id="zoom-readout">none yet</code></p>
   <template x-for="c in list()" :key="c.id">
     <section :data-chart="c.id">
       <h2 x-text="c.title"></h2>
