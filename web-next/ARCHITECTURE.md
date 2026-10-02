@@ -6,7 +6,8 @@ with Alpine.js, Apache ECharts and TypeScript. Preview at
 `/mesonet-dashboard/next/`; it replaces `web/` at cutover.
 
 Read this file first. It is short on purpose: if something here is unclear,
-fix this file in the same PR.
+fix this file in the same PR. Layout, components, motion and type are in
+DESIGN.md; what the kit lacks (and the proposals) is in KIT-NOTES.md.
 
 ## Commands
 
@@ -32,10 +33,12 @@ src/
   core/     pure TypeScript: API clients, parsing, Ag compute, chart models,
             chart builders, palette, URL schema. No DOM, no Alpine.
   stores/   the four shared pieces of app state (Alpine.store)
-  ui/       thin Alpine components (Alpine.data) + their CSS
+  ui/       thin Alpine components (Alpine.data) + their CSS;
+            ui/layout/ holds the framework-free primitives (drawer, sheet,
+            section nav, transitions, card, skeleton, type scale)
   types/    globals from the CDN (window.MCO, maplibregl) and $store typing
   main.ts   URL fix-ups → register stores → register components → Alpine.start()
-partials/   HTML, one file per tab/card, inlined into index.html at build
+partials/   HTML, one file per section/card, inlined into index.html at build
 index.html  <head> (kit CSS/JS + SRI, CSP, anti-flash, fonts) + @include shell
 vite/       the @include plugin and index.html guard tests
 ```
@@ -82,9 +85,13 @@ URL ──► $store.url.state ──► component getters ──► core fetche
 - **`$store.url`** (`stores/url.ts`): `state` holds every key in
   `core/url-schema.ts`, parsed, defaults filled in. Change it only with
   `set(patch)`; writes batch into one `replaceState` per tick, keep the hash,
-  omit defaults (Ag `var` stays once set) and keep unknown keys. `tab` comes
-  from the hash; `setTab(t)` or a plain `<a href="#ag">` switches tabs.
-  Back/forward re-read both.
+  omit defaults (Ag `var` stays once set) and keep unknown keys. `section`
+  comes from the hash (core/router.ts: now · charts · ag · download · about;
+  legacy `#latest`/`#downloader` map). `go(section, patch?)` changes section
+  with `pushState` (Back works); `hrefFor(section, patch?)` gives the real
+  href for a link. In-page anchors (the skip link's `#main`) keep the section.
+  Back/forward re-read both. Navigate from UI through `ui/shell/navigate.ts`
+  (view transition + scroll + announcement).
 - **`$store.data`** (`stores/data.ts` → `core/cache.ts`):
   `cached(key, fetcher, {ttl, retry})` returns one reactive
   `{status: 'loading'|'success'|'error', data, error, refresh()}` per key.
@@ -98,7 +105,10 @@ URL ──► $store.url.state ──► component getters ──► core fetche
 - **`$store.station`** (`stores/station.ts`): `catalog` (a Resource), `list`,
   `id` (the `?s=` value once confirmed against the catalog; null while
   loading), `current` (its row), `byId(id)`, `select(id)` (sets `s` and resets
-  the Latest cards). It rewrites NWSLI / mis-cased `?s=` to the catalog id.
+  the Latest cards), `recent` (last 5). It rewrites NWSLI / mis-cased `?s=` to
+  the catalog id and remembers every confirmed station (core/stations/recent.ts).
+  With no `?s=`, main.ts puts the remembered station in the URL before the
+  stores start; with none, the station picker opens.
 
 Former TanStack hooks map to `cached()` keys with these TTLs (keep them):
 stations / elements 1 h; station config, ppt summary, NWS forecast 30 min;
@@ -137,19 +147,38 @@ cannot read them, so:
 test (see `core/charts/README.md`). (3) In the component, pass the model and
 builder to the chart host. No colors outside `core/palette`.
 
-**Add a card.** Markup in `partials/<tab>/<card>.html`, included from the
-tab's `index.html` with `<!-- @include partials/<tab>/<card>.html -->`.
-Component `ui/<tab>/<card>.ts` exporting a factory that returns
+**Add a card.** Markup in `partials/<section>/<card>.html` inside a
+`.dash-card`, included from the section's `index.html` with
+`<!-- @include partials/<section>/<card>.html -->`.
+Component `ui/<section>/<card>.ts` exporting a factory that returns
 `component({...})` (`ui/component.ts` types `this`). Register it in
 `main.ts` with one `Alpine.data('<name>', factory)` line. Fetch through
 `$store.data.cached`; put any logic in `core/`.
 
-**Add a tab.** Add it to `core/tabs.ts`, a link in `partials/shell.html`
-(`.controls`), a `<section class="tab-panel">` in `<main>` that includes
-`partials/<tab>/index.html`, and its URL keys (prefixed `<tab>_`) to the schema.
-Wrap the tab's root in `<template x-if="$store.url.tab === '<tab>'">` (as every
-tab does), so it mounts, and fetches, only while open; components must undo
-in `destroy()` whatever they add outside themselves (listeners, maps, charts).
+**Add a section.** (1) An entry in `SECTIONS` (`core/router.ts`) + its
+router test. (2) A link in both navs in `partials/shell.html` (the
+`.dash-sections` row and the `.dash-tabbar` with an icon; same
+`data-section`). (3) A `<section id="section-<id>" class="tab-panel">` in
+`.dash-section-host` that includes `partials/<id>/index.html`. (4) Wrap that
+partial's root in `<template x-if="$store.url.section === '<id>'">` so it
+mounts, and fetches, only while open; components undo in `destroy()` whatever
+they add outside themselves (listeners, maps, charts). Its URL keys are
+prefixed `<id>_` in the schema.
+
+**Add a Now tile.** (1) In `core/overview/tiles.ts`, push a `Tile` in
+`tiles()` when the station reports the value (read it in
+`core/overview/conditions.ts` if it is a new `/latest` column), with its
+`vars` (the Compare display variables it links to) and a `SeriesKey` for the
+sparkline; add the element code to `SPARK_ELEMENTS` (or
+`OPTIONAL_SPARK_ELEMENTS`) and its column to `keyFor` in `series.ts`. (2) A
+test in `core/overview/overview.test.ts`. The partial renders every tile
+from the model, so no markup is needed unless the tile has a custom block
+(like `windDeg` or `soil`); styling hooks are `.now-tile--<id>`.
+
+**Add a layout primitive.** Framework-free first: CSS on kit tokens in
+`ui/layout/<name>.css` and, if it has behaviour, a vanilla
+`init<Name>({…})` in `ui/layout/<name>.ts` (no Alpine, no stores); then a
+thin Alpine wrapper elsewhere. Log what the kit lacks in KIT-NOTES.md.
 
 **Add a URL key.** One entry in `URL_SCHEMA` (`core/url-schema.ts`) with its
 parser and default, a line in that file's key map, and a test. Read it as
@@ -174,14 +203,18 @@ version, CSP hash matches the inline anti-flash script byte for byte).
 Expressions in HTML stay limited to property/method calls on typed components.
 
 Use: `.mco-navbar` family, `.nav-btn` (`[aria-pressed]` for toggles,
-`[aria-current]` for tab links — app CSS), `.seg-btns`, `.mco-btn-info`,
+`[aria-current]` for section links — app CSS), `.seg-btns`, `.mco-btn-info`,
 `<dialog class="mco-modal">` + `MCO.initInfoModal`, `MCO.showToast`,
 `.mco-panel` (floating over maps only; it is absolutely positioned),
 `MCO.createLiveRegion` (via `ui/shell/live.ts#announce`), `MCO.viewport`,
-`MCO.reducedMotion()`, `MCO.map.*`. localStorage keys other than
-`mco-theme` are `mco-dashboard-*` and re-validated on read (today only
-`mco-dashboard-sidebar`, the Latest sidebar collapse, `core/latest/layout.ts`);
-sessionStorage holds `mco-dashboard-outage-<id>`.
+`MCO.reducedMotion()`, `MCO.map.*`, `.mco-scrim`. localStorage keys other
+than `mco-theme` are `mco-dashboard-*` and re-validated on read:
+`mco-dashboard-sidebar` (Compare sidebar collapse, `core/latest/layout.ts`),
+`mco-dashboard-station`, `mco-dashboard-recent`, `mco-dashboard-drawer`
+(station picker, `core/stations/recent.ts`); sessionStorage holds
+`mco-dashboard-outage-<id>`. Where the kit has no piece (drawer, sheet, tab
+bar, card, skeleton, type scale, transitions) the app's version lives in
+`ui/layout/` under a `dash-` name with a proposed `mco-` name in KIT-NOTES.md.
 
 ## Accessibility (HOUSE-STYLE §5, all mandatory)
 
@@ -190,8 +223,10 @@ an `.sr-only` table twin per chart (rendered by the chart host); kit focus
 ring only (no per-selector focus rules); ≥ 40 px touch targets under
 `(hover: none)`; `aria-pressed` drives toggle styling; keyboard twin for every
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
-focus returns. `npm run verify` runs axe on 8 scenarios across the 3 tabs ×
-1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
+focus returns; drawers and sheets move focus in, make the background `inert`
+while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
+`npm run verify` runs axe on 10 scenarios (Now, the picker, Compare, Ag,
+Download, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
 
 ## Testing
 
@@ -210,7 +245,8 @@ focus returns. `npm run verify` runs axe on 8 scenarios across the 3 tabs ×
 `scripts/check-size.mjs`: the entry chunk ≤ 200 KB gzip and all JS ≤ 450 KB
 gzip. Measured at W1: entry (Alpine + core + shell, controls, map and chart hosts) 43 KB; tree-shaken
 ECharts, a lazy chunk loaded on the first chart render (`ui/charts/echarts.ts`), 233 KB; 268 KB in all,
-leaving ~180 KB for the tabs. The Plotly build this replaces shipped
+leaving ~180 KB for the sections; at the UX P0 prototype the entry is 107 KB and all JS 328 KB
+(the Now page does not need the ECharts chunk unless it shows the wind rose). The Plotly build this replaces shipped
 ~4.6 MB. Raising a budget needs a reason in the PR.
 
 ## Rules carried from web/

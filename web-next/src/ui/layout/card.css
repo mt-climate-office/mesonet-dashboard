@@ -1,0 +1,47 @@
+/* .dash-card: the one in-flow panel primitive (kit candidate .mco-card,
+   KIT-NOTES.md). Kit .mco-panel is for glass floating over maps; this is the
+   flat surface for page content. One padding scale (--card-pad), one title
+   style. A card may be an <a> (tiles): it then shows the hover border and
+   keeps the kit focus ring. Badges (.dash-badge) live here too. */
+
+.dash-card {
+  --card-pad: 1rem;
+  position: relative; /* anchors .sr-only descendants, which would otherwise widen the page */
+  min-width: 0;
+  padding: var(--card-pad);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+}
+a.dash-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--transition), background var(--transition);
+}
+a.dash-card:hover { border-color: var(--accent-line); background: var(--accent-hover); }
+
+.dash-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; }
+.dash-card-title { margin: 0 0 0.6rem; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
+.dash-card-head .dash-card-title { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Underlined, not color-only (WCAG 1.4.1). */
+.dash-link { color: var(--accent-line); font-size: var(--fs-sm); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+/* A standalone link (not inside prose) gets a 40 px touch target (HOUSE-STYLE §5.5). */
+@media (hover: none) { .dash-link { display: inline-flex; align-items: center; min-height: 40px; } }
+
+/* Status badge: text + border, never color alone. --warn adds an icon (markup) and a heavier border. */
+.dash-badge {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid var(--ctrl-border); border-radius: 999px;
+  font-size: var(--fs-xs); font-weight: 600; color: var(--text-secondary);
+  white-space: nowrap;
+}
+.dash-badge--warn { border: 2px solid var(--text-primary); color: var(--text-primary); }
+.dash-badge svg { stroke: currentColor; }
+
+@media (max-width: 640px), (max-height: 560px) {
+  .dash-card { --card-pad: 0.875rem; }
+}
