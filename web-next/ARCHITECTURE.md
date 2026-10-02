@@ -16,6 +16,9 @@ npm run dev        # http://localhost:5174/mesonet-dashboard/next/ (API proxied 
 npm test           # vitest, Node only
 npm run typecheck && npm run lint
 npm run build && npm run size   # size = bundle budget gate
+npm run verify     # build + Playwright: kit-consumer checks, axe matrix, keyboard walks
+                   # (scripts/verify/, API data from its fixtures/; to re-record:
+                   #  rm -r scripts/verify/fixtures && VERIFY_RECORD=1 npm run verify)
 ```
 
 CI (`.github/workflows/web-next-check.yml`) runs all of these on every PR

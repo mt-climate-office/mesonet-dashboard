@@ -1,0 +1,419 @@
+{
+    "station": "acebozem", 
+    "name": "Bozeman", 
+    "date_installed": "2020-10-30", 
+    "latitude": 45.66, 
+    "longitude": -111.07, 
+    "gwic_id": null, 
+    "mesowest_id": null, 
+    "elevation": 1495.09, 
+    "sub_network": "HydroMet", 
+    "status": "active", 
+    "nwsli_id": "BZNM8", 
+    "report_mesowest": null, 
+    "ace_grid": "D-11", 
+    "budget_om": "M61914", 
+    "budget_siting": "M61914", 
+    "budget_install": "M61914", 
+    "report_mco": true, 
+    "funded": true, 
+    "county": "Gallatin", 
+    "instruments": [
+        {
+            "serial_number": "0001", 
+            "date_start": "2023-05-16", 
+            "date_end": "None", 
+            "elements": "door", 
+            "type": "Door Switch", 
+            "manufacturer": "SparkFun", 
+            "model": "Magnetic Door Switch", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "10059", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "snow_depth", 
+                "snow_depth_q"
+            ], 
+            "type": "Snow", 
+            "manufacturer": "CSI", 
+            "model": "SnowVUE 10", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "12204391", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": "bp", 
+            "type": "Barometer", 
+            "manufacturer": "Setra", 
+            "model": "278 CS100", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "12485", 
+            "date_start": "2020-10-30", 
+            "date_end": "2024-08-02", 
+            "elements": [
+                "snow_depth", 
+                "snow_depth_q"
+            ], 
+            "type": "Snow", 
+            "manufacturer": "CSI", 
+            "model": "SR50A-L", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "16384", 
+            "date_start": "2020-10-30", 
+            "date_end": "2025-08-22", 
+            "elements": "batt_vol", 
+            "type": "Logger", 
+            "manufacturer": "CSI", 
+            "model": "CR1000X", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "17009216", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0100", 
+                "soil_ec_perm_0100", 
+                "soil_ec_por_0100", 
+                "soil_temp_0100", 
+                "soil_vwc_0100"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Acclima", 
+            "model": "TDR-310N", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "17009217", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0050", 
+                "soil_ec_perm_0050", 
+                "soil_ec_por_0050", 
+                "soil_temp_0050", 
+                "soil_vwc_0050"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Acclima", 
+            "model": "TDR-310N", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "17009218", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0005", 
+                "soil_ec_perm_0005", 
+                "soil_ec_por_0005", 
+                "soil_temp_0005", 
+                "soil_vwc_0005"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Acclima", 
+            "model": "TDR-310N", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "17010583", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0010", 
+                "soil_ec_perm_0010", 
+                "soil_ec_por_0010", 
+                "soil_temp_0010", 
+                "soil_vwc_0010"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Acclima", 
+            "model": "TDR-310N", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "17010584", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0020", 
+                "soil_ec_perm_0020", 
+                "soil_ec_por_0020", 
+                "soil_temp_0020", 
+                "soil_vwc_0020"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Acclima", 
+            "model": "TDR-310N", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "17010585", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0050", 
+                "soil_ec_perm_0050", 
+                "soil_ec_por_0050", 
+                "soil_temp_0050", 
+                "soil_vwc_0050"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Acclima", 
+            "model": "TDR-310N", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "17010593", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0100", 
+                "soil_ec_perm_0100", 
+                "soil_ec_por_0100", 
+                "soil_temp_0100", 
+                "soil_vwc_0100"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Acclima", 
+            "model": "TDR-310N", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "17010917", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0020", 
+                "soil_ec_perm_0020", 
+                "soil_ec_por_0020", 
+                "soil_temp_0020", 
+                "soil_vwc_0020"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Acclima", 
+            "model": "TDR-310N", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "17010946", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0010", 
+                "soil_ec_perm_0010", 
+                "soil_ec_por_0010", 
+                "soil_temp_0010", 
+                "soil_vwc_0010"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Acclima", 
+            "model": "TDR-310N", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "17010947", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0005", 
+                "soil_ec_perm_0005", 
+                "soil_ec_por_0005", 
+                "soil_temp_0005", 
+                "soil_vwc_0005"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Acclima", 
+            "model": "TDR-310N", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "176518", 
+            "date_start": "2020-10-30", 
+            "date_end": "None", 
+            "elements": [
+                "wind_dir_1000", 
+                "wind_dir_sd_1000", 
+                "windgust_1000", 
+                "wind_spd_1000"
+            ], 
+            "type": "Wind", 
+            "manufacturer": "RM Young", 
+            "model": "09101", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "23270539", 
+            "date_start": "2025-08-22", 
+            "date_end": "None", 
+            "elements": "batt_vol", 
+            "type": "Ethernet Meterbus Converter", 
+            "manufacturer": "Morning Star", 
+            "model": "EMC-1", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "2385", 
+            "date_start": "2022-04-01", 
+            "date_end": "None", 
+            "elements": "sol_rad", 
+            "type": "Pyranometer", 
+            "manufacturer": "Apogee", 
+            "model": "SP-510-SS", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "2640", 
+            "date_start": "2020-10-30", 
+            "date_end": "2022-03-31", 
+            "elements": "sol_rad", 
+            "type": "Pyranometer", 
+            "manufacturer": "Apogee", 
+            "model": "CS320-10-P", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "265913", 
+            "date_start": "2020-10-30", 
+            "date_end": "2024-08-02", 
+            "elements": [
+                "soil_ec_blk_0005", 
+                "soil_ec_perm_0005", 
+                "soil_temp_0005", 
+                "soil_vwc_0005"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Stevens", 
+            "model": "HydraProbe", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "266011", 
+            "date_start": "2020-10-30", 
+            "date_end": "2024-08-02", 
+            "elements": [
+                "soil_ec_blk_0010", 
+                "soil_ec_perm_0010", 
+                "soil_temp_0010", 
+                "soil_vwc_0010"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Stevens", 
+            "model": "HydraProbe", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "266030", 
+            "date_start": "2020-10-30", 
+            "date_end": "2024-08-02", 
+            "elements": [
+                "soil_ec_blk_0020", 
+                "soil_ec_perm_0020", 
+                "soil_temp_0020", 
+                "soil_vwc_0020"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Stevens", 
+            "model": "HydraProbe", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "266034", 
+            "date_start": "2020-10-30", 
+            "date_end": "2024-08-02", 
+            "elements": [
+                "soil_ec_blk_0050", 
+                "soil_ec_perm_0050", 
+                "soil_temp_0050", 
+                "soil_vwc_0050"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Stevens", 
+            "model": "HydraProbe", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "266044", 
+            "date_start": "2020-10-30", 
+            "date_end": "2024-08-02", 
+            "elements": [
+                "soil_ec_blk_0100", 
+                "soil_ec_perm_0100", 
+                "soil_temp_0100", 
+                "soil_vwc_0100"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "Stevens", 
+            "model": "HydraProbe", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "3374", 
+            "date_start": "2020-10-30", 
+            "date_end": "2023-01-01", 
+            "elements": "air_temp_1000", 
+            "type": "Temperature", 
+            "manufacturer": "Apogee", 
+            "model": "ST-110-SS", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "7555424", 
+            "date_start": "2020-10-30", 
+            "date_end": "2024-08-02", 
+            "elements": "bp", 
+            "type": "Barometer", 
+            "manufacturer": "Setra", 
+            "model": "278 CS100", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "PL2L-451941", 
+            "date_start": "2020-10-30", 
+            "date_end": "None", 
+            "elements": [
+                "pluv_fill", 
+                "ppt", 
+                "ppt_max_rate"
+            ], 
+            "type": "Precipitation", 
+            "manufacturer": "Ott Hydromet", 
+            "model": "Pluvio2 L 400", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "S2121091", 
+            "date_start": "2020-10-30", 
+            "date_end": "2024-08-02", 
+            "elements": [
+                "air_temp_0200", 
+                "rh"
+            ], 
+            "type": "RH/T", 
+            "manufacturer": "Vaisala", 
+            "model": "HMP155A", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "V5240170", 
+            "date_start": "2024-08-02", 
+            "date_end": "None", 
+            "elements": [
+                "air_temp_0200", 
+                "rh"
+            ], 
+            "type": "RH/T", 
+            "manufacturer": "Vaisala", 
+            "model": "HMP155E", 
+            "outage_ranges": null
+        }
+    ]
+}
