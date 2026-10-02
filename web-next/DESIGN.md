@@ -56,7 +56,7 @@ theme · Help. One row at every width. Feedback lives in Help and the footer.
 |---|---|---|
 | Freshness | "Updated 7 min ago", **Provisional** badge, **No report for over 2 hours** warning | `/latest` (1) |
 | Hero | Air temperature; NWS feels-like with "Wind chill"/"Heat index"; today's high/low; gridMET normal high/low; 48 h sparkline | `/latest` (1); hourly + `tmmx`/`tmmn` (2) |
-| Tiles | Wind (speed, gust, compass glyph pointing where it blows), Precipitation (today, 24 h, 7 d, YTD vs normal), Humidity, Solar, Pressure, Soil (depth profile: temp + VWC bar), Snow depth (if reported), VPD (AgriMet); each a link to its variable, with a 48 h sparkline | `/latest`, `/derived/ppt/` (1); hourly + `pr` (2) |
+| Tiles | Wind (speed, gust, compass glyph pointing where it blows), Precipitation (today, 24 h, 7 d, YTD vs normal), Humidity, Solar, Pressure, Soil (depth profile: temp + VWC bar), Snow depth (only with snow: ≥ 0.5 in now or in any hour of the last 72 h), VPD (AgriMet); each a link to its variable, with a 48 h sparkline | `/latest`, `/derived/ppt/` (1); hourly + `pr` (2) |
 | Media | Latest camera frame (opens the photo dialog), or the wind rose without a camera | photo schedule (1) |
 | Forecast | NWS periods in a horizontal strip with scroll snap | NWS (1) |
 | All readings | link to About | — |
