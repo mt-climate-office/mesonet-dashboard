@@ -10,7 +10,6 @@ import {
   PICK_FIRST_HINT,
   pruneSelection,
   qcLevelOf,
-  requestKey,
   resultAnnouncement,
   runBlocker,
   shiftDate,
@@ -166,11 +165,6 @@ describe('guards and text', () => {
     expect(runBlocker('s', [], null)).toBe(PICK_FIRST_HINT)
     expect(runBlocker('s', ['x'], 'bad')).toBe('bad')
     expect(runBlocker('s', ['x'], null)).toBeNull()
-  })
-  it('requestKey encodes every input', () => {
-    expect(requestKey({ station: 's', period: 'daily', start: 'a', end: 'b', level: 1, elements: ['x', 'etr'] })).toBe(
-      'dl:s:daily:a:b:qc1:x,etr',
-    )
   })
   it('resultAnnouncement', () => {
     expect(resultAnnouncement(0, 3)).toBe('Request finished: no data for this selection.')

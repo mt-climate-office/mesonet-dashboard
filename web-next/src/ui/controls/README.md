@@ -88,13 +88,17 @@ Group = { id, label, options: { value, label }[] }
 **dateRange** is a start and end pair for a bounded period, such as a station's period of record.
 
 ```ts
-dateRange({ value: () => {start, end}, onChange({start, end}), min?: () => string | null, max?: () => string | null, label })
+dateRange({ value: () => {start, end}, onChange({start, end}), min?: () => string | null, max?: () => string | null, label,
+           onValidity?(valid), showError?: boolean | (() => boolean) })
 ```
 
 - It uses two native `<input type="date">`.
 - It shows one inline error, with `aria-invalid` and `aria-describedby`, when a date is empty,
   out of bounds, or start > end.
-- It emits `YYYY-MM-DD` strings only, and only when the range is valid.
+- It emits `YYYY-MM-DD` strings only, and only when the range is valid. `onValidity(valid)` fires on init
+  and whenever the draft's validity flips (e.g. to disable a submit button).
+- `showError` (default true) hides the inline message when false (or a getter returning false), so a
+  caller can show its own text instead; `aria-invalid` stays.
 - It never clamps while the user is typing. Callers that need to fit an existing range into a new
   period (for example, after a station change) use `clampRange` from `core/controls/dateModel.ts`.
 

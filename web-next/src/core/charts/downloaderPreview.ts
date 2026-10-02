@@ -17,6 +17,7 @@ import type { ChartBuilder, ChartTable } from './types'
 const TOP_PAD = 8
 const TITLE_PX = 26
 const XLABEL_PX = 24
+const DAY_MS = 86_400_000
 /** Room under the last panel: the zoom slider on wide screens. */
 const bottomPad = (compact: boolean) => (compact ? 8 : 44)
 
@@ -53,8 +54,10 @@ export const downloaderPreviewChart: ChartBuilder<PreviewModel> = (m, ctx) => {
   }))
   const xAxes: XAXisComponentOption[] = m.panels.map((_, i) => {
     const base = timeAxis()
-    const labels = m.monthlyTicks ? { ...base.axisLabel, formatter: { year: '{yyyy}', month: '{MMM} {yyyy}', day: '{MMM} {d}' } } : base.axisLabel
-    return { ...base, gridIndex: i, axisLabel: labels } as XAXisComponentOption
+    const labels = m.monthlyTicks ? { ...base.axisLabel, formatter: { year: '{MMM} {yyyy}', month: '{MMM} {yyyy}', day: '{MMM} {d}' } } : base.axisLabel
+    // ≤ 36 months: one tick per month (legacy dtick M1); a 28–31 day interval pins ECharts to month steps.
+    const ticks = m.monthlyTicks ? { minInterval: 28 * DAY_MS, maxInterval: 31 * DAY_MS } : {}
+    return { ...base, ...ticks, gridIndex: i, axisLabel: labels } as XAXisComponentOption
   })
   const yAxes: YAXisComponentOption[] = m.panels.map((p, i) => ({
     type: 'value',

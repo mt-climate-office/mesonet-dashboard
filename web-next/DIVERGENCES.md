@@ -819,5 +819,16 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
 - **Funding footer (DL-020)** keeps its text, bold weight, 40 px height and
   in-flow placement, but is filled with the kit `--accent` / `--text-on-accent`
   tokens instead of `#129dff` on black (tokens only; legible in all themes).
-- **Requests go through `$store.data.cached`** (key = every query input, 5 min
-  TTL): re-running an identical request within 5 minutes reuses the result.
+- **Run always refetches.** Download requests bypass `$store.data` (the one
+  exception to the shared cache): the component keeps only the latest result,
+  drops it when the station changes, and ignores a response from an older Run.
+- **Run is disabled while the date inputs hold an invalid draft**, and the
+  message under Run (no station/variable, bad dates, "Run Request" first)
+  clears as soon as the inputs fix it, not only on the next click. When the
+  clamped-start install message applies, the date control's own error is
+  hidden (`dateRange` `showError`) so only that message shows.
+- **Variables that fail to load** show "Variables could not be loaded." with a
+  Retry button (web/ showed an empty list).
+- **Monthly preview** ticks once per month ("Jan 2025", "Feb 2025", …) when
+  the range is 36 months or less, as legacy's `dtick M1`; labels that would
+  overlap are skipped.

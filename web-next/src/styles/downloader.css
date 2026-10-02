@@ -32,6 +32,8 @@
   border-radius: var(--radius-md);
 }
 .dl-msg::before { content: "\26A0\FE0E  " / ""; }
+.dl-msg-action { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.dl-msg-action > span { flex: 1; }
 
 .dl-actions { display: flex; gap: 0.5rem; }
 .dl-actions .nav-btn { flex: 1; justify-content: center; }

@@ -18,7 +18,6 @@ import {
   derivedOptionsFor,
   HOURLY_CONFIRM_DAYS,
   HOURLY_DEFAULT_DAYS,
-  type DownloadQuery,
   type QcLevel,
   SWP_CODES,
 } from './request'
@@ -165,11 +164,6 @@ export function largeHourlyText(span: number, needsConfirm: boolean): string {
 export function runBlocker(station: string | null, elements: readonly string[], dateError: string | null): string | null {
   if (!station || elements.length === 0) return PICK_FIRST_HINT
   return dateError
-}
-
-/** `$store.data` key for a request; encodes every input of fetchDownload. */
-export function requestKey(q: DownloadQuery): string {
-  return `dl:${q.station}:${q.period}:${q.start}:${q.end}:qc${q.level}:${q.elements.join(',')}`
 }
 
 /** Same station/window/period → a confirmed large hourly request stays confirmed. */

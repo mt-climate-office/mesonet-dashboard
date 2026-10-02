@@ -83,6 +83,10 @@
             </div>
           </div>
           <p class="ctl-note" x-show="!stationId">Variables: pick a station first.</p>
+          <p class="dl-msg dl-msg-action" role="alert" x-show="elements?.status === 'error'" data-testid="dl-elements-error">
+            <span>Variables could not be loaded.</span>
+            <button type="button" class="nav-btn" @click="elements?.refresh()">Retry</button>
+          </p>
           <label class="ctl-check dl-switch">
             <input type="checkbox" role="switch" :checked="url.pub" @change="toggleUncommon($event)" data-testid="dl-uncommon">
             <span>Show uncommon variables</span>
@@ -127,7 +131,8 @@
 
         <!-- Dates: bounded by the install date and today. -->
         <fieldset class="ctl-fieldset" x-data="dateRange({ value: () => ({ start: dates.start, end: dates.end }),
-                  onChange: (r) => setDates(r), min: () => installDate, max: () => today, label: 'Dates' })"
+                  onChange: (r) => setDates(r), min: () => installDate, max: () => today, label: 'Dates',
+                  onValidity: (v) => setRangeValid(v), showError: () => showRangeError() })"
                   data-testid="dl-dates">
           <legend class="ctl-legend" x-text="label"></legend>
           <div class="ctl-row">
@@ -156,7 +161,7 @@
         <p class="dl-msg" x-show="droppedNotice" x-text="droppedNotice" data-testid="dl-dropped-swp"></p>
 
         <div class="dl-actions">
-          <button type="submit" class="nav-btn dl-btn-primary" :aria-busy="loading" :disabled="loading || resolving" data-testid="dl-run">
+          <button type="submit" class="nav-btn dl-btn-primary" :aria-busy="loading" :disabled="loading || resolving || !rangeValid" data-testid="dl-run">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>
             <span x-text="loading ? 'Running…' : runLabel"></span>
           </button>
@@ -177,7 +182,7 @@
 
     <section class="dl-card dl-preview" aria-label="Preview of the requested data" data-testid="dl-preview">
       <p class="dl-preview-status" x-show="previewStatus()" x-text="previewStatus()"
-         :class="{ 'is-error': run?.res.status === 'error' }"></p>
+         :class="{ 'is-error': run?.status === 'error' }"></p>
       <!-- x-if: the host is created only once there is a model, so ECharts never inits in a hidden box. -->
       <template x-if="preview()">
         <div class="chart" :style="previewStyle()"

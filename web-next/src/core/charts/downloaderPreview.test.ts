@@ -55,6 +55,9 @@ describe('downloaderPreviewChart', () => {
     )!
     const o = downloaderPreviewChart(m, testCtx('light', 390, true))
     expect((o.series as S[])[0].showSymbol).toBe(true)
+    const x = (o.xAxis as { minInterval?: number; maxInterval?: number }[])[0]
+    expect([x.minInterval, x.maxInterval]).toEqual([28 * 86_400_000, 31 * 86_400_000])
+    expect((downloaderPreviewChart(hourly, testCtx()).xAxis as { minInterval?: number }[])[0].minInterval).toBeUndefined()
     expect((o.dataZoom as { type: string }[]).map((z) => z.type)).toEqual(['inside'])
   })
 
