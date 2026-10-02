@@ -1,11 +1,13 @@
 /**
  * `x-data="navMeta"` on the navbar's right-hand group: Share (copy link →
  * toast + live region) and the 3-state theme toggle (`$store.theme`). Also
- * keeps `document.title` naming the selected station (core/pageTitle.ts). The
+ * keeps `document.title` naming the selected station (core/pageTitle.ts) and
+ * publishes the navbar height as `--chrome-h`. The
  * Help button is wired by its dialog (ui/shell/helpDialog.ts).
  */
 import Alpine from 'alpinejs'
 import { pageTitle } from '../../core/pageTitle'
+import { publishHeight } from '../layout/sectionNav'
 import { component } from '../component'
 import { announce } from './live'
 
@@ -18,6 +20,9 @@ export function navMeta() {
       Alpine.effect(() => {
         document.title = pageTitle(Alpine.store('station').current?.name)
       })
+      // --chrome-h: the sticky navbar's height, for the drawer and sheet offsets.
+      const bar = (this.$el as HTMLElement).closest<HTMLElement>('.mco-navbar')
+      if (bar) publishHeight(bar, '--chrome-h')
     },
 
     /**

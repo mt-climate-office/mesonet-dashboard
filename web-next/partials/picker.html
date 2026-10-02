@@ -1,0 +1,104 @@
+<!-- Station picker (x-data="stationPicker", ui/picker/stationPicker.ts): search, Near me, recents,
+     network chips and the station map. A drawer (.dash-drawer, inline ≥ 1060 px / overlay) or, on
+     compact viewports, a bottom sheet (.dash-sheet); the class follows the viewport. The head's
+     handle button is the sheet's drag/toggle target and is hidden in drawer mode. -->
+<aside id="station-picker" class="dash-picker" x-data="stationPicker"
+       :class="mode === 'sheet' ? 'dash-sheet' : 'dash-drawer'"
+       :role="modal ? 'dialog' : null" :aria-modal="modal ? 'true' : null"
+       aria-labelledby="picker-title" data-testid="station-picker">
+  <div class="dash-panel-head">
+    <button type="button" class="dash-sheet-handle" aria-controls="station-picker"
+            aria-label="Show more of the station picker" data-testid="sheet-handle">
+      <span class="dash-sheet-grab" aria-hidden="true"></span>
+    </button>
+    <h2 class="dash-panel-title" id="picker-title">Choose a station</h2>
+    <button type="button" class="modal-close" aria-label="Close station picker" @click="close()" data-testid="picker-close">×</button>
+  </div>
+
+  <div class="dash-panel-body">
+    <div class="ctl-combobox picker-search" data-testid="picker-search"
+         x-data="combobox({ items: () => items(), value: () => $store.station.id, onSelect: (id) => choose(id), label: 'Search stations' })"
+         @focusout="onFocusOut($event)">
+      <label class="ctl-label" :id="ids.label" :for="ids.input" x-text="label"></label>
+      <div class="ctl-combobox-field">
+        <input x-ref="input" class="ctl-input" type="search" role="combobox" enterkeyhint="search"
+               autocomplete="off" spellcheck="false" aria-autocomplete="list" data-autofocus
+               :id="ids.input" :placeholder="searchPlaceholder()" :aria-expanded="open"
+               :aria-controls="ids.listbox" :aria-activedescendant="activeId()"
+               :value="inputText()" @input="onInput($event)"
+               @keydown="onKeydown($event)" @click="toggle()">
+        <button type="button" class="ctl-clear" x-show="hasValue()"
+                :aria-label="'Clear ' + label" @click="clear()">&times;</button>
+      </div>
+      <div class="ctl-combobox-popup" x-show="open">
+        <div role="listbox" class="ctl-combobox-list" :id="ids.listbox"
+             :aria-labelledby="ids.label" x-show="result.total > 0">
+          <template x-for="group in result.groups" :key="group.name ?? ''">
+            <ul :role="group.name ? 'group' : 'presentation'"
+                :aria-labelledby="group.name ? groupId(group.name) : null">
+              <li role="presentation" class="ctl-combobox-group" x-show="group.name"
+                  :id="group.name ? groupId(group.name) : null" x-text="group.name"></li>
+              <template x-for="item in group.items" :key="item.id">
+                <li role="option" class="ctl-option" :id="optionId(item.id)"
+                    :aria-selected="isActive(item.id)" :class="{ 'is-current': isCurrent(item.id) }"
+                    @mousedown.prevent @click="select(item.id)">
+                  <span x-text="item.label"></span>
+                  <span class="ctl-option-meta" x-text="item.id"></span>
+                </li>
+              </template>
+            </ul>
+          </template>
+        </div>
+        <p class="ctl-combobox-note" x-show="note()" x-text="note()"></p>
+      </div>
+      <div role="status" class="sr-only" x-text="status()"></div>
+    </div>
+
+    <section class="picker-group" aria-labelledby="picker-near-title" x-show="geoSupported">
+      <div class="picker-group-head">
+        <h3 class="picker-group-title" id="picker-near-title">Near me</h3>
+        <button type="button" class="nav-btn" @click="locate()" :disabled="near.status === 'locating'" data-testid="near-me">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          <span x-text="near.status === 'locating' ? 'Locating…' : near.status === 'ready' ? 'Update' : 'Use my location'"></span>
+        </button>
+      </div>
+      <p class="picker-note" x-show="near.status === 'idle'">Your location is used once, in this browser, to list the closest stations.</p>
+      <p class="picker-note" role="status" x-show="near.status === 'denied'" data-testid="near-denied">Location access is off for this site. Search by name or pick a station on the map.</p>
+      <p class="picker-note" role="status" x-show="near.status === 'error'">Your location could not be found. Search by name or pick a station on the map.</p>
+      <ul class="picker-list" x-show="near.status === 'ready'" data-testid="near-list">
+        <template x-for="r in near.rows" :key="r.station">
+          <li><button type="button" class="picker-row" @click="choose(r.station)" :aria-current="r.station === $store.station.id ? 'true' : null">
+            <span class="picker-row-name" x-text="r.name"></span><span class="picker-row-meta" x-text="r.dist"></span>
+          </button></li>
+        </template>
+      </ul>
+    </section>
+
+    <section class="picker-group" aria-labelledby="picker-recent-title" x-show="recent().length" data-testid="recent-list">
+      <h3 class="picker-group-title" id="picker-recent-title">Recent</h3>
+      <ul class="picker-list">
+        <template x-for="r in recent()" :key="r.station">
+          <li><button type="button" class="picker-row" @click="choose(r.station)" :aria-current="r.current ? 'true' : null">
+            <span class="picker-row-name" x-text="r.name"></span><span class="picker-row-meta" x-text="r.station"></span>
+          </button></li>
+        </template>
+      </ul>
+    </section>
+
+    <section class="picker-group" aria-labelledby="picker-map-title">
+      <h3 class="picker-group-title" id="picker-map-title">Map</h3>
+      <div class="ctl-chips" role="group" aria-label="Networks" data-testid="picker-networks"
+           x-data="chips({ options: () => networkOptions(), value: () => nets(), onChange: (v) => setNets(v), label: 'Networks' })">
+        <template x-for="opt in options()" :key="opt.value">
+          <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)"
+                  @click="toggle(opt.value)" x-text="opt.label"></button>
+        </template>
+      </div>
+      <template x-if="mapMounted">
+        <div class="picker-map" data-testid="picker-map"
+             x-data="stationMap({ stations: () => $store.station.list, selected: () => $store.station.id,
+                      onSelect: (id) => choose(id), visible: () => visible(), legendCollapsed: true, label: 'Map of Montana Mesonet stations: pick one' })"></div>
+      </template>
+    </section>
+  </div>
+</aside>

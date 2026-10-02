@@ -14,8 +14,8 @@ export interface Legend {
   render(rows: readonly LegendRow[]): void
 }
 
-/** Build the legend panel; place `element` inside the map frame. */
-export function createLegend(title = 'Stations'): Legend {
+/** Build the legend panel; place `element` inside the map frame. `collapsed` starts it closed at any width. */
+export function createLegend(title = 'Stations', opts: { collapsed?: boolean } = {}): Legend {
   const ids = { title: uniqueId('map-legend-title'), body: uniqueId('map-legend-body') }
   const panel = document.createElement('div')
   panel.className = 'mco-panel map-legend'
@@ -42,7 +42,7 @@ export function createLegend(title = 'Stations'): Legend {
   list.setAttribute('aria-labelledby', ids.title)
   body.append(list)
   panel.append(head, body)
-  MCO.initCollapsible({ toggle, body, autoCollapseOnCompact: true })
+  MCO.initCollapsible({ toggle, body, autoCollapseOnCompact: true, startCollapsed: opts.collapsed })
 
   return {
     element: panel,

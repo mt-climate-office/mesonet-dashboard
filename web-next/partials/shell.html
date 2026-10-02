@@ -1,6 +1,7 @@
-<!-- Page shell: skip link, kit navbar, notice banners, the three tab panels,
-     footer, and the Help and outage dialogs. Tab content comes from
-     partials/<tab>/index.html. -->
+<!-- Page shell (DESIGN.md "Layout"): skip link, one-row kit navbar with the station switcher,
+     then the station picker (drawer / sheet) beside the content column: notices, station header,
+     the desktop section row, the five sections, footer. The phone tab bar is fixed at the bottom.
+     Section content comes from partials/<section>/index.html; each mounts only while open. -->
 <a class="mco-skip-link" href="#main">Skip to main content</a>
 
 <header class="mco-navbar" id="navbar">
@@ -14,19 +15,18 @@
     <span class="brand-subtitle">A service of the Montana Climate Office.</span>
   </div>
 
-  <!-- Tabs are links: #hash routing works without JS; tabBar sets aria-current. -->
-  <nav class="controls" aria-label="Dashboard sections" x-data="tabBar">
-    <a class="nav-btn" href="#latest" :aria-current="current('latest')" data-testid="tab-latest">Latest Data</a>
-    <a class="nav-btn" href="#ag" :aria-current="current('ag')" data-testid="tab-ag">Ag Tools</a>
-    <a class="nav-btn" href="#downloader" :aria-current="current('downloader')" data-testid="tab-downloader">Data Downloader</a>
-  </nav>
+  <div class="controls">
+    <!-- Opens the station picker; the name never sheds (no .btn-label), it truncates instead. -->
+    <button type="button" class="nav-btn dash-switcher" x-data="stationHeader" data-picker-toggle
+            aria-controls="station-picker" aria-expanded="false" aria-haspopup="true"
+            :aria-label="'Station: ' + name + '. Change station'" @click="pick($event)" data-testid="station-switcher">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      <span class="dash-switcher-name" x-text="name">Choose a station</span>
+      <svg class="dash-switcher-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+  </div>
 
   <div class="nav-meta" x-data="navMeta">
-    <a class="nav-btn" href="https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN"
-       target="_blank" rel="noopener noreferrer" aria-label="Send feedback (opens in a new tab)">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      <span class="btn-label">Feedback</span>
-    </a>
     <button type="button" class="nav-btn" id="btn-share" aria-label="Copy a link to this view" @click="share()" data-testid="btn-share">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
       <span class="btn-label">Share</span>
@@ -40,33 +40,90 @@
   </div>
 </header>
 
-<main id="main" tabindex="-1">
-  <!-- Dismissible notices (legacy ?state= links, #satellite): ui/shell/globalNotices.ts. -->
-  <section class="notice-stack" aria-label="Notices" x-data="globalNotices" x-show="notices.length" x-cloak data-testid="notices">
-    <template x-for="n in notices" :key="n.id">
-      <div class="notice-banner" :data-testid="'notice-' + n.id">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-        <p><span x-text="n.text"></span> <a :href="n.href" target="_blank" rel="noopener noreferrer"><span x-text="n.linkText"></span><span class="sr-only"> (opens in a new tab)</span></a></p>
-        <button type="button" class="modal-close" aria-label="Dismiss notice" @click="dismiss(n.id)">×</button>
-      </div>
-    </template>
-  </section>
-  <section id="tab-latest" class="tab-panel" aria-label="Latest Data" x-data x-show="$store.url.tab === 'latest'" x-cloak>
-    <!-- @include partials/latest/index.html -->
-  </section>
-  <section id="tab-ag" class="tab-panel" aria-label="Ag Tools" x-data x-show="$store.url.tab === 'ag'" x-cloak>
-    <!-- @include partials/ag/index.html -->
-  </section>
-  <section id="tab-downloader" class="tab-panel" aria-label="Data Downloader" x-data x-show="$store.url.tab === 'downloader'" x-cloak>
-    <!-- @include partials/downloader/index.html -->
-  </section>
-</main>
+<div class="dash-shell">
+  <!-- @include partials/picker.html -->
 
-<footer class="app-footer">
-  <p>Data from the <a href="https://climate.umt.edu/mesonet/" target="_blank" rel="noopener noreferrer">Montana Mesonet</a>,
-     quality-controlled and served by the <a href="https://mesonet2.climate.umt.edu/api/v2/docs" target="_blank" rel="noopener noreferrer">Mesonet API</a>.</p>
-  <p>Montana Climate Office · <a href="https://climate.umt.edu" target="_blank" rel="noopener noreferrer">climate.umt.edu</a></p>
-</footer>
+  <div class="dash-content">
+    <main id="main" tabindex="-1">
+      <!-- Dismissible notices (legacy ?state= links, #satellite): ui/shell/globalNotices.ts. -->
+      <section class="notice-stack" aria-label="Notices" x-data="globalNotices" x-show="notices.length" x-cloak data-testid="notices">
+        <template x-for="n in notices" :key="n.id">
+          <div class="notice-banner" :data-testid="'notice-' + n.id">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <p><span x-text="n.text"></span> <a :href="n.href" target="_blank" rel="noopener noreferrer"><span x-text="n.linkText"></span><span class="sr-only"> (opens in a new tab)</span></a></p>
+            <button type="button" class="modal-close" aria-label="Dismiss notice" @click="dismiss(n.id)">×</button>
+          </div>
+        </template>
+      </section>
+
+      <header class="dash-station" x-data="stationHeader" data-testid="station-header">
+        <h2 class="dash-station-name" x-text="name">Choose a station</h2>
+        <p class="dash-station-meta" x-show="hasStation" x-text="meta"></p>
+      </header>
+
+      <!-- Tablet / desktop section row (hidden on compact, where the tab bar below takes over). -->
+      <nav class="dash-sections" aria-label="Station sections" x-data="sections" data-testid="section-row">
+        <a class="dash-section-link" data-section="now" href="#now" :href="href('now')">Now</a>
+        <a class="dash-section-link" data-section="charts" href="#charts" :href="href('charts')">Charts</a>
+        <a class="dash-section-link" data-section="ag" href="#ag" :href="href('ag')">Ag</a>
+        <a class="dash-section-link" data-section="download" href="#download" :href="href('download')">Download</a>
+        <a class="dash-section-link" data-section="about" href="#about" :href="href('about')">About</a>
+      </nav>
+
+      <div class="dash-section-host">
+        <section id="section-now" class="tab-panel" aria-label="Now" x-data x-show="$store.url.section === 'now'" x-cloak>
+          <!-- @include partials/now/index.html -->
+        </section>
+        <section id="section-charts" class="tab-panel" aria-label="Charts" x-data x-show="$store.url.section === 'charts'" x-cloak>
+          <!-- @include partials/charts/index.html -->
+        </section>
+        <section id="section-ag" class="tab-panel" aria-label="Ag Tools" x-data x-show="$store.url.section === 'ag'" x-cloak>
+          <!-- @include partials/ag/index.html -->
+        </section>
+        <section id="section-download" class="tab-panel" aria-label="Download" x-data x-show="$store.url.section === 'download'" x-cloak>
+          <!-- @include partials/downloader/index.html -->
+        </section>
+        <section id="section-about" class="tab-panel" aria-label="About this station" x-data x-show="$store.url.section === 'about'" x-cloak>
+          <!-- @include partials/about/index.html -->
+        </section>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <p>Data from the <a href="https://climate.umt.edu/mesonet/" target="_blank" rel="noopener noreferrer">Montana Mesonet</a>,
+         quality-controlled and served by the <a href="https://mesonet2.climate.umt.edu/api/v2/docs" target="_blank" rel="noopener noreferrer">Mesonet API</a>.</p>
+      <p>Montana Climate Office · <a href="https://climate.umt.edu" target="_blank" rel="noopener noreferrer">climate.umt.edu</a>
+         · <a href="https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN" target="_blank" rel="noopener noreferrer">Send feedback<span class="sr-only"> (opens in a new tab)</span></a></p>
+    </footer>
+  </div>
+</div>
+
+<!-- Phone section bar (compact only): icon + label, ≥ 56 px, safe-area padding; publishes --tabbar-h. -->
+<nav class="dash-tabbar" aria-label="Station sections" x-data="sections" data-publish="--tabbar-h" data-testid="tabbar">
+  <a class="dash-tab" data-section="now" href="#now" :href="href('now')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+    <span>Now</span>
+  </a>
+  <a class="dash-tab" data-section="charts" href="#charts" :href="href('charts')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-5 4 3 5-7"/></svg>
+    <span>Charts</span>
+  </a>
+  <a class="dash-tab" data-section="ag" href="#ag" :href="href('ag')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M12 21V11"/><path d="M12 11C12 7 9 4 4 4c0 4 3 7 8 7z"/><path d="M12 13c0-4 3-7 8-7 0 4-3 7-8 7z"/></svg>
+    <span>Ag</span>
+  </a>
+  <a class="dash-tab" data-section="download" href="#download" :href="href('download')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+    <span>Download</span>
+  </a>
+  <a class="dash-tab" data-section="about" href="#about" :href="href('about')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg>
+    <span>About</span>
+  </a>
+</nav>
+
+<!-- Scrim behind the overlay drawer / sheet (kit .mco-scrim, toggled by ui/layout/{drawer,sheet}.ts). -->
+<div class="mco-scrim dash-scrim" id="picker-scrim" hidden></div>
 
 <!-- @include partials/help.html -->
 <!-- @include partials/outage.html -->

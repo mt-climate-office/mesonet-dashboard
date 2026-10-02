@@ -23,10 +23,10 @@ export function globalNotices() {
       }
       if (legacy) this.show(legacyStateNotice(legacy))
 
-      // $store.url already routes #satellite to Latest; make the address bar match.
+      // $store.url already routes #satellite to Now; make the address bar match.
       const checkSatellite = () => {
         if (location.hash !== SATELLITE_HASH) return
-        history.replaceState(history.state, '', `${location.pathname}${location.search}#latest`)
+        history.replaceState(history.state, '', `${location.pathname}${location.search}#now`)
         this.show(satelliteNotice())
       }
       checkSatellite()

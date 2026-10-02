@@ -2,7 +2,7 @@
      station map on the left, the preview chart on the right, BLM funding
      footer at the bottom. Controls follow ui/controls/README.md. Mounted only
      while the tab is open, so the map and element list load on the first visit. -->
-<template x-if="$store.url.tab === 'downloader'">
+<template x-if="$store.url.section === 'download'">
 <div class="dl-tab" x-data="downloader" data-testid="downloader">
   <div class="dl-layout">
     <div class="dl-side">

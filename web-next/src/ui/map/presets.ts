@@ -28,6 +28,8 @@ export interface StationMapOptions {
   onSelect: (id: string) => void
   /** Station ids to show (network filter); null/undefined shows all. */
   visible?: () => ReadonlySet<string> | readonly string[] | null | undefined
+  /** Start the legend collapsed at every width (narrow drawers). */
+  legendCollapsed?: boolean
   /** Accessible name for the map. */
   label?: string
 }
@@ -55,7 +57,7 @@ function mapView(opts: StationMapOptions, preset: Preset) {
       root.classList.add('map-frame')
       const canvas = document.createElement('div')
       canvas.className = 'map-canvas'
-      const legend = createLegend()
+      const legend = createLegend('Stations', { collapsed: opts.legendCollapsed })
       const table = createSrTable({
         caption: 'Stations shown on the map',
         onSelect: (id) => opts.onSelect(id),

@@ -2,7 +2,7 @@
      Layout (sidebar collapse), sidebar and timeseries: ui/latest/{layout,sidebar,timeseries}.ts.
      The two cards are partials/latest/cards/{top,bottom}-card.html. Mounted only
      while the tab is open, so nothing fetches from another tab (the cache keeps the data). -->
-<template x-if="$store.url.tab === 'latest'">
+<template x-if="$store.url.section === 'charts'">
 <div class="latest-layout" x-data="latestLayout" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
   <aside class="latest-sidebar" id="latest-sidebar" aria-labelledby="latest-controls-title" x-data="latestSidebar" data-testid="latest-sidebar">
     <div class="latest-sidebar-head">
