@@ -43,6 +43,14 @@ import { latestSidebar } from './ui/latest/sidebar'
 import { latestTimeseries } from './ui/latest/timeseries'
 import './styles/latest.css'
 import './styles/cards.css'
+// Ag Tools (W2)
+import { agAnnualView } from './ui/ag/agAnnualView'
+import { agControls } from './ui/ag/agControls'
+import { agGddView } from './ui/ag/agGddView'
+import { agMetView } from './ui/ag/agMetView'
+import { agSoilView } from './ui/ag/agSoilView'
+import { agTab } from './ui/ag/agTab'
+import './styles/ag.css'
 
 /* 1. URL fix-ups, before any store reads `location`. ---------------------- */
 
@@ -107,5 +115,12 @@ Alpine.data('photoCard', photoCard)
 Alpine.data('bottomCard', bottomCard)
 Alpine.data('metadataCard', metadataCard)
 Alpine.data('currentCard', currentCard)
+// Ag Tools (W2, ui/ag/*): tab wrapper, controls card, one view per variable group.
+Alpine.data('agTab', agTab)
+Alpine.data('agControls', agControls)
+Alpine.data('agMetView', agMetView)
+Alpine.data('agGddView', agGddView)
+Alpine.data('agSoilView', agSoilView)
+Alpine.data('agAnnualView', agAnnualView)
 
 Alpine.start()

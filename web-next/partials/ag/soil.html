@@ -1,0 +1,16 @@
+<!-- Soil profile / soil water potential / percent saturation card body (ui/ag/agSoilView.ts). -->
+<div class="ag-view" x-data="agSoilView" data-testid="ag-chart">
+  <!-- @include partials/ag/status.html -->
+  <template x-if="view.status === 'ready' && kind() === 'profile'">
+    <div class="chart ag-chart" data-testid="ag-chart-profile"
+         x-data="chart({ ...charts.profile, model: () => modelOf('profile') })"></div>
+  </template>
+  <template x-if="view.status === 'ready' && kind() === 'swp'">
+    <div class="chart ag-chart" data-testid="ag-chart-swp"
+         x-data="chart({ ...charts.swp, model: () => modelOf('swp') })"></div>
+  </template>
+  <template x-if="view.status === 'ready' && kind() === 'percent_saturation'">
+    <div class="chart ag-chart" data-testid="ag-chart-percent_saturation"
+         x-data="chart({ ...charts.percent_saturation, model: () => modelOf('percent_saturation') })"></div>
+  </template>
+</div>

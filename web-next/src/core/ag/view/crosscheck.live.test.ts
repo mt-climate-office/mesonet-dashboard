@@ -5,11 +5,13 @@
  *   AG_LIVE=1 VITE_API_URL=https://mesonet2.climate.umt.edu/api/v2/ \
  *     npx vitest run src/core/ag/view/crosscheck.live.test.ts --silent=false
  */
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { fetchText } from '../../api/http'
 import { exclusiveEnd } from '../../api/record'
 import { cciDaily, cToF, etoDaily, feelsLikeDaily, gdd, mmToIn } from '../compute'
-import { fetchDailyMet, fetchStationMeta } from '../data'
+import { fetchDailyMet, fetchSoilSeries, fetchStationMeta, parseGddStagesJson } from '../data'
+import { fetchPorosityRows, percentSaturationFromApiPorosity } from './porositySource'
 import { addDays, denverLocal, denverToday, parseApiDatetime, parseCsvRaw, toNum } from '../data/parse'
 import type { Nullable } from '../contract'
 
@@ -86,5 +88,41 @@ describe.skipIf(!live)(`live cross-check vs /derived/daily (${STATION}, last 30 
     expect(rows['GDD corn daily [°F·day]'].max).toBeLessThanOrEqual(0.0005)
     expect(rows['Feels-like [°F]'].max).toBeLessThanOrEqual(0.1)
     expect(rows['CCI [°F]'].max).toBeLessThanOrEqual(0.1)
+  }, 120_000)
+
+  // What the Ag tab draws: GDD wheat with the vendored stage table (NDAWN switch)
+  // and percent saturation from level-2 VWC + the API porosity (ui/ag/agSoilView).
+  it('GDD wheat (vendored stages) / percent saturation (API porosity)', async () => {
+    const end = denverToday()
+    const start = addDays(end, -29)
+    const stages = parseGddStagesJson(JSON.parse(readFileSync('public/data/gdd_stages.json', 'utf8')), 'vendored')
+    const q = { station: STATION, start, end }
+    const [met, soil, porosity, gddApi, psText] = await Promise.all([
+      fetchDailyMet(q),
+      fetchSoilSeries({ ...q, period: 'daily' }),
+      fetchPorosityRows({ ...q, period: 'daily' }),
+      derived('gdd', start, end, { crop: 'wheat' }),
+      fetchText('derived/daily/', { stations: STATION, elements: 'percent_saturation', start_time: start, end_time: exclusiveEnd(end), level: 2, type: 'csv' }),
+    ])
+    const g = gdd(met, { crop: 'wheat', stages: stages.tables.wheat })
+    const ps = percentSaturationFromApiPorosity(porosity, soil, 'daily')
+    const psRows = parseCsvRaw(psText)
+    const rows: Record<string, ReturnType<typeof diff>> = {
+      'GDD wheat daily [°F·day]': diff(g.date, g.daily, gddApi(/^GDDs/)),
+      'GDD wheat cumulative [°F·day]': diff(g.date, g.cumulative, gddApi(/^Cumulative GDDs/)),
+    }
+    ps.depthsCm.forEach((cm, d) => {
+      const h = Object.keys(psRows[0] ?? {}).find((k) => k === `Percent Saturation @ -${cm} cm [%]`)
+      if (!h) return
+      const api = new Map<string, Nullable>(psRows.map((r) => [denverLocal(parseApiDatetime(r.datetime)).date, toNum(r[h])]))
+      rows[`Percent saturation @ ${cm} cm [%]`] = diff(ps.time.map((t) => t.slice(0, 10)), ps.pct[d], api)
+    })
+    console.log(`${STATION} ${start}..${end}`)
+    console.table(rows)
+    // The API rounds to 3 decimals, so "exact" is |Δ| ≤ 0.0005 (plus float noise).
+    const EXACT = 0.0005 + 1e-9
+    expect(rows['GDD wheat daily [°F·day]'].max).toBeLessThanOrEqual(EXACT)
+    expect(rows['GDD wheat cumulative [°F·day]'].max).toBeLessThanOrEqual(EXACT)
+    for (const [k, r] of Object.entries(rows)) if (k.startsWith('Percent')) expect(r.max).toBeLessThanOrEqual(EXACT)
   }, 120_000)
 })

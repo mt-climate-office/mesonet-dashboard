@@ -38,6 +38,9 @@ describe('index.html', () => {
     const out = expandIncludes(html, root)
     expect(out).not.toMatch(/@include/)
     expect(out).toContain('id="tab-latest"')
-    expect(out).toContain('Coming in W2')
+    // Each tab's partial (and its nested includes) made it into the page.
+    expect(out).toContain('x-data="latestSidebar')
+    expect(out).toContain('x-data="agTab')
+    expect(out).toContain('x-data="downloader')
   })
 })

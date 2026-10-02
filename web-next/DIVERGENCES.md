@@ -963,3 +963,23 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
 - **Monthly preview** ticks once per month ("Jan 2025", "Feb 2025", …) when
   the range is 36 months or less, as legacy's `dtick M1`; labels that would
   overlap are skipped.
+
+## Ag Tools (web-next)
+
+The Ag tab UI (`partials/ag/*`, `ui/ag/*`, logic in `core/ag/view/tab.ts`, `results.ts`, `keys.ts`) vs `web/src/tabs/AgToolsTab.tsx` + `features/ag/ui/AgVariableView.tsx`. Data, compute, texts and URL behaviour are unchanged (computed client-side from level-2 observations; only `/derived` requests are `elements=swp` and the `percent_saturation&keep=true` porosity rows).
+
+### Controls
+- **web/:** Mantine selects, a range date picker, chips for crop / soil variable / livestock, one dual-thumb slider with marks.
+- **New:** the shared controls (`ui/controls`): station combobox (NWSLI searchable), native selects for variable / projection / comparison variable, two native date inputs (max today), segmented radios for time aggregation and livestock, `aria-pressed` chips (single choice) for crop and soil variable, and two native range inputs ("Base", "Upper cutoff", with the extra "No upper limit" stop) instead of one dual-thumb slider. The cutoff text and "Reset to <crop> cutoffs" are as before.
+- **Why:** kit-first controls with a keyboard and screen-reader twin for every gesture.
+
+### Chart card
+- **New:** the card heading names the variable and the station ("Growing Degree Days: Bozeman"). Notes are a list above the chart; the chart host is mounted only once a view is ready, so loading shows a spinner, and empty / error states show their text in place of the chart (same texts as web/). Each settled view is announced in the page's polite live region ("Growing Degree Days chart updated for Bozeman.", or the empty / error text).
+- **Why:** HOUSE-STYLE §5 (canvas changes need a live region).
+
+### Fetching
+- **New:** the tab's components mount only while `#ag` is open, so nothing fetches from another tab (the cache keeps the data for the next visit). Cache keys encode station, window, period and QC level (`core/ag/view/keys.ts`). A degraded NWS forecast is retried on the next read after 5 minutes (web/: a 5-minute `staleTime`).
+
+### Annual comparison controls
+- **web/:** the date range stays visible (and is ignored); a failed element list shows an empty select.
+- **New:** the date range is hidden for Annual. A failed element list says "Variables could not be loaded." in the control and the card, each with Retry. The card waits for the station's element list and never fetches years for a comparison variable the station does not offer (a stale `annv` after a station change); it draws the first option meanwhile, which is what the URL is corrected to.

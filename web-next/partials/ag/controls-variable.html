@@ -1,0 +1,77 @@
+<!-- Variable-specific controls (inside agControls): GDD crop + cutoffs +
+     projection, soil profile sub-variable, annual comparison element. -->
+<template x-if="tab.variable === 'gdd'">
+  <div class="ag-stack">
+    <div class="ctl-chips" role="group" :aria-labelledby="ids.label" data-testid="ag-crop"
+         x-data="chips({ options: () => crops, value: () => [tab.crop], onChange: (v) => setCrop(v), label: 'GDD crop' })">
+      <span class="ctl-legend" :id="ids.label" x-text="label"></span>
+      <template x-for="opt in options()" :key="opt.value">
+        <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)"
+                @click="toggle(opt.value)" x-text="opt.label"></button>
+      </template>
+    </div>
+
+    <fieldset class="ctl-fieldset ctl-range" data-testid="ag-cutoffs"
+              x-data="rangeSlider({ ...slider, value: () => sliderValue(), onChange: (v) => setSlider(v),
+                      label: 'Temperature cutoffs', lowLabel: 'Base', highLabel: 'Upper cutoff' })">
+      <legend class="ctl-legend" x-text="label"></legend>
+      <div class="ctl-range-row">
+        <label class="ctl-label" :for="ids.low" x-text="lowLabel"></label>
+        <span class="ctl-range-value" aria-hidden="true" x-text="lowText()"></span>
+        <input type="range" :id="ids.low" :min="cfg.min" :max="cfg.max" :step="cfg.step"
+               :value="draft.low" :aria-valuetext="lowText()"
+               @input="onLow($event)" @change="commit()">
+      </div>
+      <div class="ctl-range-row">
+        <label class="ctl-label" :for="ids.high" x-text="highLabel"></label>
+        <span class="ctl-range-value" aria-hidden="true" x-text="highText()"></span>
+        <input type="range" :id="ids.high" :min="cfg.min" :max="highMax()" :step="cfg.step"
+               :value="highPosition()" :aria-valuetext="highText()"
+               @input="onHigh($event)" @change="commit()">
+      </div>
+    </fieldset>
+    <p class="ctl-note" data-testid="gdd-cutoff-mode" x-text="cutoffText()"></p>
+    <button type="button" class="nav-btn ag-reset" x-show="tab.cut.custom" @click="resetCutoffs()"
+            x-text="'Reset to ' + tab.cropLabel.toLowerCase() + ' cutoffs'"></button>
+
+    <div class="ctl-field" data-testid="ag-projection"
+         x-data="timeSelect({ options: () => projections, value: () => tab.gddProj,
+                 onChange: (v) => setProjection(v), label: 'Projection' })">
+      <label class="ctl-label" :for="ids.select" x-text="label"></label>
+      <select class="ctl-input ctl-select" :id="ids.select" @change="set($event)">
+        <template x-for="opt in options()" :key="opt.value">
+          <option :value="opt.value" :selected="isSelected(opt.value)" x-text="opt.label"></option>
+        </template>
+      </select>
+    </div>
+  </div>
+</template>
+
+<template x-if="tab.variable === 'soil_temp,soil_ec_blk'">
+  <div class="ctl-chips" role="group" :aria-labelledby="ids.label" data-testid="ag-soil-var"
+       x-data="chips({ options: () => tab.soilOptions, value: () => [tab.soilVar], onChange: (v) => setSoil(v), label: 'Soil variable' })">
+    <span class="ctl-legend" :id="ids.label" x-text="label"></span>
+    <template x-for="opt in options()" :key="opt.value">
+      <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)"
+              @click="toggle(opt.value)" x-text="opt.label"></button>
+    </template>
+  </div>
+</template>
+
+<template x-if="tab.variable === 'annual'">
+  <div class="ag-stack">
+  <div class="ctl-field" data-testid="ag-annual-var"
+       x-data="timeSelect({ options: () => annualOptions(), value: () => tab.annualVar,
+               onChange: (v) => setAnnual(v), label: 'Comparison variable', emptyText: annualEmptyText() })">
+    <label class="ctl-label" :for="ids.select" x-text="label"></label>
+    <select class="ctl-input ctl-select" :id="ids.select" :disabled="isEmpty()" @change="set($event)">
+      <template x-if="isEmpty()"><option value="" x-text="annualEmptyText()"></option></template>
+      <template x-for="opt in options()" :key="opt.value">
+        <option :value="opt.value" :selected="isSelected(opt.value)" x-text="opt.label"></option>
+      </template>
+    </select>
+  </div>
+  <p class="ctl-error" x-show="elementsFailed()" data-testid="ag-annual-error">Variables could not be loaded.
+    <button type="button" class="nav-btn ag-retry" @click="retryElements()">Retry</button></p>
+  </div>
+</template>

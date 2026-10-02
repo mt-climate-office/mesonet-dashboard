@@ -1,0 +1,16 @@
+<!-- Reference ET / feels-like / livestock risk card body (ui/ag/agMetView.ts). -->
+<div class="ag-view" x-data="agMetView" data-testid="ag-chart">
+  <!-- @include partials/ag/status.html -->
+  <template x-if="view.status === 'ready' && kind() === 'etr'">
+    <div class="chart ag-chart" data-testid="ag-chart-etr"
+         x-data="chart({ ...charts.etr, model: () => modelOf('etr') })"></div>
+  </template>
+  <template x-if="view.status === 'ready' && kind() === 'feels_like'">
+    <div class="chart ag-chart" data-testid="ag-chart-feels_like"
+         x-data="chart({ ...charts.feels_like, model: () => modelOf('feels_like') })"></div>
+  </template>
+  <template x-if="view.status === 'ready' && kind() === 'cci'">
+    <div class="chart ag-chart" data-testid="ag-chart-cci"
+         x-data="chart({ ...charts.cci, model: () => modelOf('cci') })"></div>
+  </template>
+</div>
