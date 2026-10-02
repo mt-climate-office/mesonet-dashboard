@@ -1,0 +1,112 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "s": "https://schema.org/",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "unit": "http://codes.wmo.int/common/unit/",
+            "@vocab": "https://api.weather.gov/ontology#",
+            "geometry": {
+                "@id": "s:GeoCoordinates",
+                "@type": "geo:wktLiteral"
+            },
+            "city": "s:addressLocality",
+            "state": "s:addressRegion",
+            "distance": {
+                "@id": "s:Distance",
+                "@type": "s:QuantitativeValue"
+            },
+            "bearing": {
+                "@type": "s:QuantitativeValue"
+            },
+            "value": {
+                "@id": "s:value"
+            },
+            "unitCode": {
+                "@id": "s:unitCode",
+                "@type": "@id"
+            },
+            "forecastOffice": {
+                "@type": "@id"
+            },
+            "forecastGridData": {
+                "@type": "@id"
+            },
+            "publicZone": {
+                "@type": "@id"
+            },
+            "county": {
+                "@type": "@id"
+            }
+        }
+    ],
+    "id": "https://api.weather.gov/points/45.66,-111.07",
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -111.07,
+            45.66
+        ]
+    },
+    "properties": {
+        "@id": "https://api.weather.gov/points/45.66,-111.07",
+        "@type": "wx:Point",
+        "cwa": "TFX",
+        "type": "land",
+        "forecastOffice": "https://api.weather.gov/offices/TFX",
+        "gridId": "TFX",
+        "gridX": 95,
+        "gridY": 57,
+        "forecast": "https://api.weather.gov/gridpoints/TFX/95,57/forecast",
+        "forecastHourly": "https://api.weather.gov/gridpoints/TFX/95,57/forecast/hourly",
+        "forecastGridData": "https://api.weather.gov/gridpoints/TFX/95,57",
+        "observationStations": "https://api.weather.gov/gridpoints/TFX/95,57/stations",
+        "relativeLocation": {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -111.0537825,
+                    45.6831545
+                ]
+            },
+            "properties": {
+                "city": "Bozeman",
+                "state": "MT",
+                "distance": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 0
+                },
+                "bearing": {
+                    "unitCode": "wmoUnit:degree_(angle)",
+                    "value": 0
+                }
+            }
+        },
+        "forecastZone": "https://api.weather.gov/zones/forecast/MTZ326",
+        "county": "https://api.weather.gov/zones/county/MTC031",
+        "fireWeatherZone": "https://api.weather.gov/zones/fire/MTZ118",
+        "timeZone": "America/Denver",
+        "radarStation": "KBLX",
+        "astronomicalData": {
+            "sunrise": "2026-10-02T07:24:15-06:00",
+            "sunset": "2026-10-02T19:02:45-06:00",
+            "transit": "2026-10-02T13:13:30-06:00",
+            "civilTwilightBegin": "2026-10-02T06:54:45-06:00",
+            "civilTwilightEnd": "2026-10-02T19:32:15-06:00",
+            "nauticalTwilightBegin": "2026-10-02T06:20:19-06:00",
+            "nauticalTwilightEnd": "2026-10-02T20:06:41-06:00",
+            "astronomicalTwilightBegin": "2026-10-02T05:45:25-06:00",
+            "astronomicalTwilightEnd": "2026-10-02T20:41:36-06:00"
+        },
+        "nwr": {
+            "transmitter": "KGG97",
+            "sameCode": "030031",
+            "areaBroadcast": "https://api.weather.gov/radio/KGG97/broadcast",
+            "pointBroadcast": "https://api.weather.gov/points/45.66,-111.07/radio"
+        }
+    }
+}

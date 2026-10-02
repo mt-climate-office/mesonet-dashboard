@@ -23,6 +23,8 @@
 .ag-retry { min-height: 28px; font-size: 0.74rem; margin-left: 0.4rem; }
 .ag-retry-row { display: flex; justify-content: center; margin-top: -0.5rem; }
 .ag-reset { align-self: flex-start; font-size: 0.74rem; }
+/* Touch: the compact heights above must not undercut the kit's 40 px .nav-btn target (HOUSE-STYLE §5.5). */
+@media (hover: none) { .ag-learn, .ag-retry { min-height: 40px; } }
 
 /* Chart card. */
 .ag-chart { --chart-height: 540px; --chart-height-compact: 420px; }

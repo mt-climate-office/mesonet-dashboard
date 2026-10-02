@@ -1,6 +1,7 @@
 <!-- Station Metadata pane (x-data="metadataCard", ui/latest/cards/metadataCard.ts): legacy rows,
      no header row; the one-pager is a link. -->
-<div class="lc-pane lc-scroll" x-data="metadataCard" data-testid="metadata-card">
+<!-- Scrollable, so focusable (tabindex) and named for keyboard scrolling (WCAG 2.1.1). -->
+<div class="lc-pane lc-scroll" x-data="metadataCard" data-testid="metadata-card" tabindex="0" role="region" aria-label="Station metadata">
   <template x-if="state === 'none'"><p class="lc-message">Pick a station for its metadata.</p></template>
   <template x-if="state === 'loading'"><p class="lc-message" role="status">Loading…</p></template>
   <template x-if="state === 'failed'"><p class="lc-message">Station list could not be loaded.</p></template>
