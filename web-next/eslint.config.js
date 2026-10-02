@@ -22,7 +22,7 @@ const layer = (from, banned, why) => ({
 })
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'src/core/api/openapi.d.ts'] },
+  { ignores: ['dist', 'dist-pages', 'node_modules', 'src/core/api/openapi.d.ts'] },
   ...tseslint.configs.recommended,
   {
     rules: {
