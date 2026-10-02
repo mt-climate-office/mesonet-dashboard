@@ -676,7 +676,7 @@ and the preview on small screens. It wraps to two lines at 375px.
 
 ### Outage notice
 - **Same as web/:** `outage.json` from the repo's main branch, shown once per browser tab per notice `id`; any failure means inactive.
-- **New:** a kit `<dialog class="mco-modal">` fed by `$store.data.cached('outage', …)` (60 s TTL, no retry). The sessionStorage key is `mco-dashboard-outage-<id>` (was `outageModalShown:<id>`). sessionStorage is per tab, so the rename makes no one see a notice twice. The tone (`color`) shows as an icon plus a word (Warning, Alert, Information, Resolved, Notice), never as color alone. The MCO logo header is gone; the notice title is the dialog heading.
+- **New:** a kit `<dialog class="mco-modal">` fed by `$store.data.cached('outage', …)` (60 s TTL, no retry), rechecked every 60 s while the tab is visible, so a notice posted while the page is open still appears. The sessionStorage key is `mco-dashboard-outage-<id>` (was `outageModalShown:<id>`). sessionStorage is per tab, so the rename makes no one see a notice twice. The tone (`color`) shows as an icon plus a word (Warning, Alert, Information, Resolved, Notice), never as color alone. The MCO logo header is gone; the notice title is the dialog heading.
 - **Markdown:** a small built-in subset (`core/markdown.ts`): paragraphs, bold, italic, `[links](…)` and `<https://…>` autolinks. Raw HTML in the message shows as text. Only `http(s):` and `mailto:` targets become links (new tab, `rel="noopener noreferrer"`). react-markdown also rendered lists, headings and code, but outage messages have never used them.
 - **Why:** no Mantine or react-markdown. The message is remote content rendered with `x-html`, so it has to be escaped.
 
@@ -694,7 +694,7 @@ and the preview on small screens. It wraps to two lines at 375px.
 - **New:** kit `.info-section` blocks with headings (Welcome, Using the tabs, Data source, Contact, Montana Mesonet background, Source code). Data source adds "Times are Mountain Time." There is no first-visit auto-open: HOUSE-STYLE §4 suggests one, gated by `mco-dashboard-help-seen`, but neither web/ nor the legacy app opened Help on load.
 
 ### Share
-- **New:** copies the address after `$store.url` flushes its pending write (one microtask), so the link always matches the view. The result appears as a toast and is also sent to the page live region.
+- **New:** copies `$store.url.href`, the view's URL built from the store state (`core/url-schema.ts#viewHref`), so the link matches the view even before the store's batched write reaches the address bar. The result appears as a toast and is also sent to the page live region.
 
 ### Theme toggle
 - **New:** one button cycles dark → light → high contrast. Its icon and `aria-label` ("Switch to light theme") name the theme a click switches to, a matching tooltip shows on hover, and the new theme is announced in the live region. `MCO.setTheme` saves the choice in the shared `mco-theme` key.

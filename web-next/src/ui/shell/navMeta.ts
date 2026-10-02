@@ -12,18 +12,16 @@ const THEME_NAMES = { dark: 'Dark', light: 'Light', 'high-contrast': 'High-contr
 export function navMeta() {
   return component({
     /**
-     * Copy the view's URL. `$store.url` batches writes into one replaceState
-     * per microtask, so wait one turn: the address bar is then exactly what
-     * the store wrote (the whole view state, legacy `state` already gone).
-     * The result also goes to the page live region: the kit creates its toast
-     * element on first use, and a just-inserted live region is often not read.
+     * Copy `$store.url.href`, the canonical URL of the view (it includes a
+     * write the store has not flushed yet). The result also goes to the page
+     * live region: the kit creates its toast element on first use, and a
+     * just-inserted live region is often not read.
      */
     async share() {
-      await new Promise<void>((r) => queueMicrotask(r))
       let msg = 'Link copied to clipboard'
       let ms: number | undefined
       try {
-        await navigator.clipboard.writeText(location.href)
+        await navigator.clipboard.writeText(Alpine.store('url').href)
       } catch {
         msg = 'Could not copy. Copy the address bar to share this view.'
         ms = 6000

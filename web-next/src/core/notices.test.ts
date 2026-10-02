@@ -26,14 +26,21 @@ describe('satelliteNotice', () => {
 })
 
 describe('stationResolvedMessage', () => {
-  const row = { station: 'acebozem', name: 'Bozeman' }
+  const catalog = [
+    { station: 'acebozem', name: 'Bozeman', nwsli_id: 'BZMM8' },
+    { station: 'aceabsar', name: 'Absarokee', nwsli_id: null },
+  ]
   it('names the raw id and the station it resolved to', () => {
-    expect(stationResolvedMessage('KEEM8', row)).toBe('Station KEEM8 opened as Bozeman (acebozem).')
-    expect(stationResolvedMessage(' ACEBOZEM ', row)).toBe('Station ACEBOZEM opened as Bozeman (acebozem).')
+    expect(stationResolvedMessage('BZMM8', catalog)).toBe('Station BZMM8 opened as Bozeman (acebozem).')
+    expect(stationResolvedMessage('bzmm8', catalog)).toBe('Station bzmm8 opened as Bozeman (acebozem).')
+    expect(stationResolvedMessage(' ACEBOZEM ', catalog)).toBe('Station ACEBOZEM opened as Bozeman (acebozem).')
   })
-  it('is null when nothing was rewritten or nothing matched', () => {
-    expect(stationResolvedMessage('acebozem', row)).toBeNull()
-    expect(stationResolvedMessage(null, row)).toBeNull()
-    expect(stationResolvedMessage('nope', undefined)).toBeNull()
+  it('is null when s was not rewritten', () => {
+    expect(stationResolvedMessage('acebozem', catalog)).toBeNull()
+    expect(stationResolvedMessage(null, catalog)).toBeNull()
+    // A typo resolves to nothing; a later manual pick must not be "announced" as it.
+    expect(stationResolvedMessage('typo', catalog)).toBeNull()
+    // Catalog failed or not loaded.
+    expect(stationResolvedMessage('BZMM8', undefined)).toBeNull()
   })
 })

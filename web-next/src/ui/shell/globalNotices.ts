@@ -32,13 +32,15 @@ export function globalNotices() {
       checkSatellite()
       window.addEventListener('hashchange', checkSatellite)
 
-      // Announce once when the station store rewrites the incoming ?s=.
+      // Settle once the catalog has loaded or failed: announce only if the
+      // station store rewrote the page-load ?s= (never a later manual pick).
       const raw = Alpine.store('url').state.s
       let done = !raw
-      this.$watch('$store.station.id', (id: string | null) => {
-        if (done || !id) return
+      Alpine.effect(() => {
+        const status = Alpine.store('station').catalog?.status
+        if (done || !status || status === 'loading') return
         done = true
-        const msg = stationResolvedMessage(raw, Alpine.store('station').byId(id))
+        const msg = stationResolvedMessage(raw, Alpine.store('station').catalog?.data)
         if (msg) announce(msg)
       })
     },

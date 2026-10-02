@@ -31,6 +31,11 @@ function tabStorage(): Storage | null {
 export function outageNotice() {
   return component({
     config: { ...DEFAULT_OUTAGE_CONFIG } as OutageConfig,
+    poll: 0,
+
+    destroy() {
+      clearInterval(this.poll)
+    },
 
     init() {
       const dialog = this.$el as HTMLDialogElement
@@ -39,6 +44,13 @@ export function outageNotice() {
         ttl: OUTAGE_TTL_MS,
         retry: false,
       })
+      // cached() is read once here, so its TTL alone never refetches: poll,
+      // so a notice posted while the tab is open still appears. Hidden tabs
+      // skip the request.
+      this.poll = window.setInterval(() => {
+        if (!document.hidden) res.refresh()
+      }, OUTAGE_TTL_MS)
+
       // Runs now and whenever the resource lands or refreshes.
       Alpine.effect(() => {
         const cfg = res.data

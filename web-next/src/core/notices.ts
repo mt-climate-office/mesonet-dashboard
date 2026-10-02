@@ -6,6 +6,7 @@
 import type { Station } from './api'
 import { LEGACY_DASHBOARD_URL } from './config'
 import { legacyStateUrl } from './legacyLinks'
+import { resolveStationId } from './stations'
 
 /** A dismissible banner: a sentence, then a link that opens in a new tab. */
 export interface Notice {
@@ -45,13 +46,17 @@ export function satelliteNotice(): Notice {
 }
 
 /**
- * Live-region line when `?s=<raw>` was rewritten to a catalog id (NWSLI or
- * case mismatch), or null when nothing was rewritten.
+ * Live-region line for the page-load `?s=<raw>` once the catalog is in: set
+ * only when `$store.station` rewrites it to a different catalog id (NWSLI or
+ * case mismatch). An exact id, an unknown id or no catalog → null.
  */
 export function stationResolvedMessage(
   raw: string | null,
-  station: Pick<Station, 'station' | 'name'> | undefined,
+  stations: readonly Pick<Station, 'station' | 'name' | 'nwsli_id'>[] | undefined,
 ): string | null {
-  if (!raw || !station || raw.trim() === station.station) return null
-  return `Station ${raw.trim()} opened as ${station.name} (${station.station}).`
+  if (!raw || !stations) return null
+  const id = resolveStationId(raw, stations)
+  if (!id || id === raw) return null
+  const row = stations.find((s) => s.station === id)
+  return `Station ${raw.trim()} opened as ${row?.name ?? id} (${id}).`
 }
