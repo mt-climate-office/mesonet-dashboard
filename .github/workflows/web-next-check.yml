@@ -1,5 +1,7 @@
 # PR gate for web-next/ (the Alpine + ECharts rebuild): typecheck, lint,
-# unit tests, production build and the bundle-size budget.
+# unit tests, production build and the bundle-size budget; then `verify`:
+# kit-consumer checks, the axe matrix and keyboard walkthroughs in Chromium
+# against the built app, with API data from web-next/scripts/verify/fixtures.
 name: Check web-next/
 
 on:
@@ -33,3 +35,21 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run size
+
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-next
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web-next/package-lock.json
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run verify

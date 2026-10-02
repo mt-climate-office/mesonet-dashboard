@@ -1,6 +1,7 @@
 <!-- Current Conditions pane (x-data="currentCard", ui/latest/cards/currentCard.ts): "Latest Data
      Summary" rows, then the HydroMet-only "Precipitation Summary". -->
-<div class="lc-pane lc-scroll" x-data="currentCard" data-testid="current-card">
+<!-- Scrollable, so focusable (tabindex) and named for keyboard scrolling (WCAG 2.1.1). -->
+<div class="lc-pane lc-scroll" x-data="currentCard" data-testid="current-card" tabindex="0" role="region" aria-label="Current conditions">
   <template x-if="state === 'none'"><p class="lc-message">Pick a station to see current conditions.</p></template>
   <template x-if="state === 'loading'"><p class="lc-message" role="status">Loading…</p></template>
   <template x-if="state === 'error'"><p class="lc-message lc-strong">No data available for selected dates.</p></template>

@@ -66,6 +66,8 @@
 .latest-vars { max-height: 12.5rem; overflow-y: auto; padding: 1px; }
 /* Underlined, not color-only (WCAG 1.4.1). */
 .latest-link { color: var(--accent-line); font-size: 0.78rem; text-decoration: underline; text-underline-offset: 2px; }
+/* Touch: the standalone link (not the one inside running text) gets a 40 px target (HOUSE-STYLE §5.5). */
+@media (hover: none) { div > .latest-link { display: inline-flex; align-items: center; min-height: 40px; } }
 
 /* Empty / loading states: centred text over the (cleared) chart, legacy make_nodata_figure.
    The chart stays displayed underneath so ECharts always initialises at a real size. */
