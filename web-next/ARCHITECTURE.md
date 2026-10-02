@@ -147,6 +147,9 @@ Component `ui/<tab>/<card>.ts` exporting a factory that returns
 **Add a tab.** Add it to `core/tabs.ts`, a link in `partials/shell.html`
 (`.controls`), a `<section class="tab-panel">` in `<main>` that includes
 `partials/<tab>/index.html`, and its URL keys (prefixed `<tab>_`) to the schema.
+Wrap the tab's root in `<template x-if="$store.url.tab === '<tab>'">` (as every
+tab does), so it mounts, and fetches, only while open; components must undo
+in `destroy()` whatever they add outside themselves (listeners, maps, charts).
 
 **Add a URL key.** One entry in `URL_SCHEMA` (`core/url-schema.ts`) with its
 parser and default, a line in that file's key map, and a test. Read it as
@@ -176,7 +179,9 @@ Use: `.mco-navbar` family, `.nav-btn` (`[aria-pressed]` for toggles,
 `.mco-panel` (floating over maps only; it is absolutely positioned),
 `MCO.createLiveRegion` (via `ui/shell/live.ts#announce`), `MCO.viewport`,
 `MCO.reducedMotion()`, `MCO.map.*`. localStorage keys other than
-`mco-theme` are `mco-dashboard-*` and re-validated on read.
+`mco-theme` are `mco-dashboard-*` and re-validated on read (today only
+`mco-dashboard-sidebar`, the Latest sidebar collapse, `core/latest/layout.ts`);
+sessionStorage holds `mco-dashboard-outage-<id>`.
 
 ## Accessibility (HOUSE-STYLE §5, all mandatory)
 
@@ -185,7 +190,8 @@ an `.sr-only` table twin per chart (rendered by the chart host); kit focus
 ring only (no per-selector focus rules); ≥ 40 px touch targets under
 `(hover: none)`; `aria-pressed` drives toggle styling; keyboard twin for every
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
-focus returns. W3 runs axe on 3 tabs × 1440/390 px × 3 themes.
+focus returns. `npm run verify` runs axe on 8 scenarios across the 3 tabs ×
+1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
 
 ## Testing
 
@@ -194,8 +200,10 @@ focus returns. W3 runs axe on 3 tabs × 1440/390 px × 3 themes.
   parity data; live cross-checks run with `AG_LIVE=1`.
 - Stores keep their logic in core (`cache.ts`, `url-schema.ts`, `theme.ts`,
   `stations.ts#confirmedStation`), so they need no DOM tests.
-- UI is verified with Playwright against the dev server and the built Pages
-  artifact (W3 adds the fidelity harness and axe matrix).
+- UI is verified with Playwright: `scripts/verify/` (kit-consumer, axe and
+  keyboard checks on the built app, API from fixtures) and
+  `scripts/fidelity/` (web-next vs web/ and `/derived` on the live API; its
+  `CHECKLIST.md` is the legacy-parity audit).
 
 ## Bundle budget
 
