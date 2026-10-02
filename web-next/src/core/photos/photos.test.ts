@@ -261,6 +261,12 @@ describe('fetchers', () => {
     expect(urls).toHaveLength(2) // N + NS on 2026-09-01; the non-derived frame needs no listing
   })
 
+  it('confirmDerived strict rejects on a failed listing; lenient drops those frames', async () => {
+    const frames = parseManifest(MANIFEST, 'acebozem', { base: B })
+    vi.stubGlobal('fetch', async () => new Response('down', { status: 503 }))
+    await expect(confirmDerived(schedule, cam, frames, { strict: true })).rejects.toThrow()
+    expect((await confirmDerived(schedule, cam, frames)).map((f) => basename(f.webpUrl))).toEqual(['acebozem_N_20260901T150000Z.webp'])
+  })
   it('month manifest URL; 404 → []', async () => {
     const urls: string[] = []
     vi.stubGlobal('fetch', async (url: string) => {

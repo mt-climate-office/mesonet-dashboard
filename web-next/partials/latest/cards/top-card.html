@@ -1,0 +1,32 @@
+<!-- Latest top card (x-data="topCard", ui/latest/cards/topCard.ts): switcher over ?card=, then
+     one of the Wind Rose / Weather Forecast / Latest Photo panes. Sits inside the Latest tab's
+     card <section> (partials/latest/index.html), which draws the border. -->
+<div class="lc" x-data="topCard" data-testid="top-card">
+  <fieldset class="ctl-seg lc-switch" data-testid="top-card-switch"
+            x-data="segmented({ options: () => options(), value: () => card, onChange: (v) => select(v), label: 'Top card' })">
+    <legend class="ctl-legend sr-only" x-text="label"></legend>
+    <div class="seg-btns">
+      <template x-for="opt in options()" :key="opt.value">
+        <label class="nav-btn seg-btn">
+          <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)"
+                 :disabled="opt.disabled ?? false" @change="select(opt.value)">
+          <span x-text="opt.label"></span>
+        </label>
+      </template>
+    </div>
+  </fieldset>
+  <div class="lc-body lc-body-top" :data-card="pane">
+    <template x-if="pane === 'pending'">
+      <p class="lc-message" role="status">Loading…</p>
+    </template>
+    <template x-if="pane === 'wind'">
+      <!-- @include partials/latest/cards/wind-rose.html -->
+    </template>
+    <template x-if="pane === 'forecast'">
+      <!-- @include partials/latest/cards/forecast.html -->
+    </template>
+    <template x-if="pane === 'photo'">
+      <!-- @include partials/latest/cards/photo.html -->
+    </template>
+  </div>
+</div>
