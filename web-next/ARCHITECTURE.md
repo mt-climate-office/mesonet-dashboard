@@ -197,9 +197,9 @@ focus returns. W3 runs axe on 3 tabs × 1440/390 px × 3 themes.
 ## Bundle budget
 
 `scripts/check-size.mjs`: the entry chunk ≤ 200 KB gzip and all JS ≤ 450 KB
-gzip. Alpine + core is ~30 KB today; tree-shaken ECharts (line, bar,
-heatmap, polar, dataZoom, tooltip, legend, markArea/markLine, aria) is
-~150 KB, leaving room for the tabs. The Plotly build this replaces shipped
+gzip. Measured at W1: entry (Alpine + core + shell, controls, map and chart hosts) 43 KB; tree-shaken
+ECharts, a lazy chunk loaded on the first chart render (`ui/charts/echarts.ts`), 233 KB; 268 KB in all,
+leaving ~180 KB for the tabs. The Plotly build this replaces shipped
 ~4.6 MB. Raising a budget needs a reason in the PR.
 
 ## Rules carried from web/

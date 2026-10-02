@@ -1,61 +1,58 @@
 # core/charts — ECharts option builders
 
-Empty at W0. W1 writes one file per figure family here (`timeseries.ts`,
-`windRose.ts`, `downloaderPreview.ts`, `agMet.ts`, `agGdd.ts`, `agSoil.ts`,
-`agAnnual.ts`), each exporting pure builders of type `ChartBuilder<M>`
-(`types.ts`), plus one `*.test.ts` per file.
+Pure builders of type `ChartBuilder<M>` (`types.ts`), one file per figure
+family, each with a sibling `*.test.ts`. The one host that renders them is
+`ui/charts/chart.ts`. Import from `index.ts`.
+
+| File | Exports |
+|---|---|
+| `agMet.ts` | `etrChart`/`etrTable` (`EtrModel`), `feelsLikeChart`/`feelsLikeTable`, `cciChart`/`cciTable` |
+| `agGdd.ts` | `gddChart`/`gddTable` (`GddModel`), `stageLines`, `gddAxisMax`, `GDD_NAMES` |
+| `agSoil.ts` | `soilProfileChart`/`soilProfileTable` (`SoilProfileModel`), `swpChart`/`swpTable`, `percentSaturationChart`/`percentSaturationTable` |
+| `agAnnual.ts` | `annualChart`/`annualTable` (`AnnualModel`) |
+| `theme.ts` | `readChartTheme(name, getVar)` (kit tokens → `ChartTheme`), `echartsTheme(t)`, `paint(t, role)` (palette role → color) |
+
+W2 adds `timeseries.ts`, `windRose.ts`, `downloaderPreview.ts` the same way.
+
+## Shared helpers (internal to this folder)
+
+- `format.ts`: `wallMs` (contract local time → Denver wall-clock ms, daily at noon), `fmtWall`/`isoWall`, `fmtNum`, `plainLabel` (Plotly `<br>`/`<sup>` → text), `escapeHtml`.
+- `axes.ts`: `timeAxis` (wall-clock level ticks), `valueAxis(name)`, `logAxis(name, min, max, {inverse, prefix})`, `dualAxis(left, right)` (y2 aligned, from 0), `grid`, `timeZoom` (inside + slider; no drag-pan on compact), `niceCeil`, `logExtent`.
+- `series.ts`: `points(xs, ys, notes?)` (breaks lines at gaps > 1.5× cadence), `lineSeries` (LTTB over `LTTB_THRESHOLD`), `barSeries`, `markerSeries`; ids starting `AUX` (`aux:`) are drawing aids, skipped by tooltips and legends.
+- `tooltip.ts`: `tooltipBase` (kit `.mco-tooltip`), `axisTooltip(ctx, header, row)`, `tipText`, `legend(ctx, {data, title})` (bottom scroll legend; optional title text).
+- `overlays.ts`: `bandSeries` (stacked q25–q75 style band), `normalsSeries`, `hBandSeries` (horizontal bands + corner labels + dashed lines, e.g. SWP FC/WP), `sensorEventSeries` (hatched spans), `labelledLines` (markLines, e.g. GDD stages), `hatchDecal`.
+- `heatmap.ts`: `colorBar(ctx, scale, extent, {midpoint, ticks})` (hidden visualMap + bar drawn as graphics with min/max and the palette `midpointLabel`; vertical at the right, horizontal under the plot when `ctx.compact`), `frozenSeries` (hatched mask cells).
+- `zoom.ts` (used by the host): wall-clock ms ↔ category index (`categoryMs`, `toAxisRange`, `fromAxisRange`), `sameRange`, `carryState` (zoom + legend toggles across redraws).
+- `testing.ts`: `testCtx(theme)` for tests (kit 0.7.1 token values).
 
 ## Contract
 
-- `(model, ctx) => EChartsOption`. Pure: no DOM, no Alpine, no fetch, no
-  `Date` parsing of strings. Same input → deep-equal output.
-- Input is a model from `core/models/` (Latest, wind rose, Downloader preview)
-  or an Ag contract series from `core/ag/compute` (SI). **Units convert at the
-  edge**, inside the builder, with `core/ag/compute/units.ts` /
-  `core/ag/view/labels.ts` `fromSi`; nothing upstream converts.
-- Colors come only from `core/palette` (W1) and `ctx.theme`. No hex literals
-  in builders.
-- Time axes: x is Denver wall-clock ms; set `useUTC: true`.
-- Large series: `sampling: 'lttb'` on line series over ~2 000 points.
-- Text from `core/params` (axis titles) can carry Plotly markup (`<br>`,
-  `<sup>-1</sup>`): convert `<br>` to `\n` and `<sup>` to Unicode
-  superscripts in one shared helper here, not per builder.
-- Each builder that draws data exports a `…Table(model): ChartTable` twin for
-  the host's `.sr-only` table.
-- Register only the ECharts parts you use in `ui/charts/chart.ts`
-  (tree-shaking); builders import types only from `echarts`.
+- `(model, ctx) => EChartsOption`. Pure: no DOM, no Alpine, no fetch, no `new Date(string)`.
+- Input is a model from `core/models/` or an Ag contract series (SI). **Units convert at the edge**, inside the builder.
+- Colors come only from `core/palette` roles (`paint()` for TokenRefs) and `ctx.theme`. No hex literals in builders. Chrome (text, axes, fonts) comes from the ECharts theme, so builders rarely touch it.
+- Time axes: x is Denver wall-clock ms; set `useUTC: true`. A category x axis (heatmaps) puts each category's wall-clock ms in `xAxis.data` (format labels in `axisLabel.formatter`), so the host's zoom API stays in ms.
+- Don't set `animation`; the host turns it on for first draws unless the user prefers reduced motion.
+- Every builder that draws data exports a `…Table(model): ChartTable` twin.
+- Register any new ECharts part in `ui/charts/echarts.ts`; builders import types only from `echarts`.
 
-## Behaviour to keep from the Plotly builders (web/src/features/ag/figures)
+## How to add a chart
 
-Ported tests live in `core/ag/view/labels.test.ts` (the renderer-free parts).
-The renderer-specific assertions in `figures.test.ts` must be re-expressed
-against ECharts options:
+1. Shape the data in `core/models/<name>.ts` (+ test) if the builder would otherwise need logic beyond layout.
+2. Add `core/charts/<name>.ts` exporting `xChart: ChartBuilder<XModel>` and `xTable(model): ChartTable`, built from the helpers above; colors from `core/palette`.
+3. Add `<name>.test.ts`: series types/count, axes, palette colors per theme (loop `THEMES` with `testCtx`), table columns/rows. No snapshots.
+4. Re-export it from `index.ts`; if it needs a new ECharts part, add it to `ui/charts/echarts.ts`.
+5. In the card's component, expose the bindings and render with the host:
+   `<div class="chart" x-data="chart({ builder: xChart, table: xTable, label: 'X', model: () => xModel() })"></div>`.
+   Optional: `onZoom(fromMs, toMs)` (debounced 250 ms, user zooms only) and `range: () => [fromMs, toMs]` to apply a zoom (e.g. from the URL). `range` runs in its own effect (it never re-renders) and is re-applied after model renders; a range equal to the visible window (±1 min) is ignored, so writing `onZoom` into the URL and reading it back as `range` does not loop. The host element carries `data-zoom="fromMs,toMs"` for tests.
+6. Check it in `ui/charts/demo.html` (`npm run dev`, then `/mesonet-dashboard/next/src/ui/charts/demo.html?theme=light`).
 
-- **ETr**: bars in inches + cumulative line on a second y axis; totals match
-  `Σ etoMm / 25.4`; y titles "Reference ET (a=0.23) [in]" / "Cumulative
-  Reference ET (a=0.23) [in]"; hourly hover shows HH:mm.
-- **Feels like**: one line (no hover) + one marker series per regime present,
-  in °F, named by `FEELS_LIKE_LABELS`; marker count = non-null values.
-- **CCI**: marker series in `CCI_CLASSES` severity order; adult vs newborn
-  differ in winter; legend title "Livestock Risk (adult|newborn)".
-- **GDD**: daily bars named "Daily GDDs (lo–hi °F)" (∞ for an open cap) +
-  cumulative on y2 with per-stage marker colors when a stage table exists;
-  hover "No stage table for <crop>" or "n/a (custom cutoffs)" otherwise.
-  Projection order: q25 (hidden), "Projected range (normals 25th–75th
-  pct.)", "Projected (NWS forecast)" (starts at the last observed day),
-  "Projected (normals median)" (starts at the last forecast day); y2 max ≥
-  the last q75.
-- **SWP**: reversed log axis with a "-" tick prefix; FC/WP bands +
-  dashed lines at `SWP_FIELD_CAPACITY` / `SWP_WILTING_POINT`; one line per
-  depth named `depthLabel(cm)`; "Field Capacity" (top-left) and "Wilting
-  Point" (bottom-left) corner labels.
-- **Soil profile heatmap**: drops all-null depths (and depths with no data
-  before masking, e.g. no EC probe → empty option); frozen cells as a
-  separate grey hatched layer; soil temperature diverging around 32 °F;
-  SWP drawn on log10(bar) with FC/WP ticks.
-- **Annual**: one line per year sorted by year, current year in
-  `--text-primary` at width 3, prior years from batlow; y title from
-  `annualAxisLabel`.
+## Behaviour kept from the Plotly builders (web/src/features/ag/figures)
 
-Latest timeseries, wind rose and Downloader preview behaviour is in the
-model files' docs and tests (`core/models/*.ts`).
+Re-expressed in `agMet.test.ts`, `agGdd.test.ts`, `agSoil.test.ts`, `agAnnual.test.ts`:
+ETr totals and axis titles; feels-like/CCI marker series per class in order,
+°F, adult ≠ newborn, legend titles; GDD bar name, stage tooltip text, the
+projection series order and anchors, y2 ≥ q75; SWP inverse log axis with "-"
+ticks, FC/WP bands, lines and corner labels, depth names; heatmap depth
+dropping, frozen layer, 32 °F and 15 bar midpoints, log10 SWP; annual sort,
+current-year style, cumulative label. Intentional changes are under "Charts"
+in `web-next/DIVERGENCES.md`.

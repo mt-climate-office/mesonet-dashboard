@@ -748,3 +748,38 @@ and DL-018 above.
   table takes one Tab stop; the arrow keys and Home/End move within it.
   Focusing a station's button shows its popup and a focus-coloured halo on the
   map.
+
+## Charts
+
+ECharts host (`ui/charts/chart.ts`) and the Ag builders (`core/charts/ag*.ts`) vs the Plotly figures in `web/src/features/ag/figures`. Color changes are under House style.
+
+### GDD growth stages
+- **web/:** markers on the cumulative line, one color per growth stage.
+- **New:** dashed, labelled horizontal lines at each stage's GDD threshold on the cumulative axis. Stages closer together than 1/16 of the axis are skipped so labels never stack. Every day's stage is still in the tooltip and the table twin.
+- **Why:** the palette has no per-stage color set, and a label reads without color (HOUSE-STYLE §6).
+
+### Legend titles
+- **web/:** Plotly legend titles ("Index Used", "Livestock Risk (adult)").
+- **New:** the same text drawn to the left of the legend. Drawing aids (the grey index line, the band's lower edge, the SWP bands) never appear in the legend or the tooltip.
+- **Why:** ECharts legends have no title.
+
+### Hover and zoom
+- **web/:** Plotly `x` hover and drag-to-zoom.
+- **New:** one axis tooltip per x listing every series (the kit `.mco-tooltip`). Zoom with shift+wheel or pinch, or the slider under wide charts. Drag pans on desktop only; on phones the page scrolls. The date controls are the keyboard alternative.
+- **Why:** a drag gesture inside the plot would trap scrolling on touch screens.
+
+### Daily points at local noon
+- **New:** daily values sit at noon Mountain Time on the time axis, so a daily bar covers its own day between the midnight ticks. Tooltips and tables show the date only.
+
+### Soil Profile heatmap
+- **web/:** Viridis for most variables, a cool–warm diverging scale for temperature, and an auto range for SWP.
+- **New:** palette scales (`HEATMAP`). Soil temperature diverges around 32 °F and SWP (log10 bar, BrBG) diverges around the wilting point (15 bar); each midpoint is labelled on the color bar ("Freezing (32 °F)", "Wilting point (15 bar)"), and SWP also marks FC (0.33 bar). SWP colors cover 0.01–1000 bar; cells beyond that take the end colors, because the inversion gives values in the tens of thousands of bar near residual water content. Frozen cells are grey with a diagonal hatch, so the mask reads without color. The time axis is a category axis (one cell per day or hour), which ECharts heatmaps require. On phones the color bar runs horizontally under the plot.
+
+### Annual comparison
+- **web/:** x axis numbered by day of year; hover "Day of year: 60 (2024-02-29)".
+- **New:** month ticks (Jan–Dec at the 1st, non-leap day of year). The tooltip header is the day of year only ("Day 60"), and each year's row shows that year's own date, so leap years read correctly (2024 "Feb 29", 2025 "Mar 1").
+- **Why:** months are what people scan for; one DOY is a different date in leap years.
+
+### Accessible twin
+- **New:** each chart has an `.sr-only` table twin (date/time column plus the plotted values, "—" for missing, "frozen" for masked soil cells) and an `aria-label` on the canvas. Animations run only on first draw, and not at all under reduced motion.
+- **Why:** HOUSE-STYLE §5.

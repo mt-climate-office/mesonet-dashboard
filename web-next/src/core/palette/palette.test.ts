@@ -95,6 +95,13 @@ describe('depthColor', () => {
     expect(toOklab(depthColor(40, 'light'))[0]).toBeGreaterThan(toOklab(depthColor(2, 'light'))[0])
     expect(toOklab(depthColor(40, 'dark'))[0]).toBeGreaterThan(toOklab(depthColor(2, 'dark'))[0])
   })
+  it('the common depths (2, 4, 8, 20, 40 in) stay distinguishable in every theme', () => {
+    const dist = (a: string, b: string) => Math.hypot(...toOklab(a).map((x, i) => x - toOklab(b)[i]))
+    for (const t of THEMES) {
+      const c = [2, 4, 8, 20, 40].map((d) => depthColor(d, t))
+      for (let i = 1; i < c.length; i++) expect(dist(c[i], c[i - 1]), `${t} ${i}`).toBeGreaterThan(0.07)
+    }
+  })
 })
 
 describe('resolve', () => {

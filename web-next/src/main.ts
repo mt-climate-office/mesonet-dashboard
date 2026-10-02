@@ -9,6 +9,7 @@ import { createDataStore } from './stores/data'
 import { createStationStore } from './stores/station'
 import { createThemeStore } from './stores/theme'
 import { createUrlStore } from './stores/url'
+import { chart } from './ui/charts/chart'
 import { chips } from './ui/controls/chips'
 import { combobox } from './ui/controls/combobox'
 import { dateInput } from './ui/controls/dateInput'
@@ -26,6 +27,7 @@ import { tabBar } from './ui/shell/tabBar'
 import './styles/app.css'
 import './ui/controls/controls.css'
 import './ui/map/map.css'
+import './ui/charts/chart.css'
 
 /* 1. URL fix-ups, before any store reads `location`. ---------------------- */
 
@@ -69,5 +71,9 @@ Alpine.data('rangeSlider', rangeSlider)
 // Station maps (ui/map/presets.ts): x-data="stationMap({ stations, selected, onSelect })".
 Alpine.data('stationMap', stationMap)
 Alpine.data('downloaderMap', downloaderMap)
+
+// Charts (W1): the one ECharts host; ECharts itself loads lazily on the first
+// render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".
+Alpine.data('chart', chart)
 
 Alpine.start()
