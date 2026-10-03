@@ -49,11 +49,34 @@ function canonicalName(t, side) {
   return n.replace(/ mph$/, '')
 }
 
+/** The variable a series name belongs to: the name before " @ " (depth/height) or " [" (unit). */
+const family = (name) => String(name ?? '').replace(/\s*(@|\[).*$/, '').trim()
+
+/**
+ * Panel key per y-axis title: the variable of the panel's first data series (not an AUX series, a
+ * hidden/helper Plotly trace or a normals/index alias). Panels pair by the series they draw, not by
+ * their titles, so web-next's plain axis titles ("Air temperature (°F)", DESIGN "Visual language")
+ * still pair with web/'s ("Air Temp. (°F)"). A panel without such a series keys by its title.
+ */
+function panelKeys(fig, side) {
+  const keys = new Map()
+  for (const t of fig.traces ?? []) {
+    const title = normLabel(t.panel)
+    if (keys.has(title) || t.aux || t.hidden || t.helper || (side === 'A' && t.fill === 'toself')) continue
+    const name = canonicalName(t, side)
+    if (/^(normal (min|max)|index line)$/.test(name)) continue
+    keys.set(title, `panel:${normLabel(family(name)) || title}`)
+  }
+  return (title) => keys.get(normLabel(title)) ?? normLabel(title)
+}
+
 /**
  * Drop drawing aids that have no counterpart (Plotly hover polygons / band helpers; ECharts AUX
- * series without a canonical name), turn constant SWP band/limit lines into refs.
+ * series without a canonical name), turn constant SWP band/limit lines into refs. Traces key by
+ * their panel's key (`panelKeys`) and name.
  */
 function prepare(fig, side) {
+  const panelOf = panelKeys(fig, side)
   const refs = [...(fig.refs ?? [])].map((r) => r.y)
   const traces = []
   for (const t of fig.traces ?? []) {
@@ -72,9 +95,9 @@ function prepare(fig, side) {
     const timed = x.filter((v, i) => ys[i] !== null && /T\d\d:\d\d$/.test(v))
     if (timed.length && timed.length === x.filter((_, i) => ys[i] !== null).length && timed.every((v) => v.endsWith('T12:00')))
       x = x.map((v) => v.replace(/T12:00$/, ''))
-    traces.push({ ...t, name, x, y: t.y, panelKey: normLabel(t.panel), key: `${normLabel(t.panel)}|${normLabel(name)}` })
+    traces.push({ ...t, name, x, y: t.y, panelKey: panelOf(t.panel), key: `${panelOf(t.panel)}|${normLabel(name)}` })
   }
-  return { ...fig, traces, refValues: [...new Set(refs.filter(Number.isFinite).map((v) => +v.toPrecision(4)))].sort((a, b) => a - b) }
+  return { ...fig, traces, panelIds: (fig.panels ?? []).map(panelOf), refValues: [...new Set(refs.filter(Number.isFinite).map((v) => +v.toPrecision(4)))].sort((a, b) => a - b) }
 }
 
 /** Every comparable trace of `figs` after the same normalisation compareFigures applies. */
@@ -225,7 +248,12 @@ export function compareFigures(fa, fb) {
     if (used.has(b) || b.aux) continue
     traces.push({ key: b.key, status: 'FAIL', issue: 'extra in web-next (not in web/)' })
   }
-  const panels = setDiff(A.panels.map(normLabel), B.panels.map(normLabel))
+  // Panels pair by key (their series); a title that differs only in wording is reported, not scored.
+  const panels = setDiff(A.panelIds, B.panelIds)
+  const titleOf = (fig, prep) => new Map(prep.panelIds.map((k, i) => [k, fig.panels[i]]))
+  const ta = titleOf(fa, A)
+  const tb = titleOf(fb, B)
+  const panelTitles = [...ta].filter(([k, t]) => tb.has(k) && normLabel(tb.get(k)) !== normLabel(t)).map(([k, t]) => ({ key: k, a: t, b: tb.get(k) }))
   const spanKey = (s) => `${normX(s.x0)}..${normX(s.x1)}`
   const spans = setDiff((fa.spans ?? []).map(spanKey), (fb.spans ?? []).map(spanKey))
   // Every web/ threshold line must be drawn in web-next (band ends >= 1000 bar and GDD stage lines,
@@ -246,6 +274,7 @@ export function compareFigures(fa, fb) {
     nTracesB: B.traces.length,
     traces,
     panels,
+    panelTitles,
     spans: { nA: fa.spans?.length ?? 0, nB: fb.spans?.length ?? 0, ...spans },
     refs,
     notAvailable,
