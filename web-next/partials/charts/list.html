@@ -41,7 +41,7 @@
                 <li>
                   <a class="charts-row" :href="href(r.id)" @click="open($event, r.id)" :data-testid="'var-' + r.id">
                     <span class="charts-row-name"><span data-vt-source x-text="r.name"></span><span class="charts-row-sub" x-show="r.note" x-text="r.note"></span></span>
-                    <span class="charts-row-value num-display" x-text="r.value"></span>
+                    <span class="charts-row-value" x-text="r.value"></span>
                     <span class="dash-spark charts-row-spark" aria-hidden="true">
                       <template x-if="r.spark"><svg :view-box.camel="r.spark.viewBox" preserveAspectRatio="none" focusable="false" :class="'is-' + r.spark.kind"><path :d="r.spark.d" vector-effect="non-scaling-stroke"/></svg></template>
                       <template x-if="!r.spark && sparkLoading"><span class="dash-skel dash-skel--spark"></span></template>

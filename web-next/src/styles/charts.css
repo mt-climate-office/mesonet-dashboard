@@ -40,7 +40,7 @@
 .charts-row:hover { background: var(--accent-hover); }
 .charts-row-name { font-size: var(--fs-md); font-weight: 500; color: var(--text-primary); }
 .charts-row-sub { display: block; font-size: var(--fs-sm); font-weight: 400; color: var(--text-muted); }
-.charts-row-value { font-size: var(--fs-md); color: var(--text-primary); white-space: nowrap; text-align: right; }
+.charts-row-value { font-size: var(--fs-md); color: var(--text-primary); white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 .charts-row .dash-spark { margin-top: 0; }
 /* Ag tools and More: name over a one-line description, no value or sparkline. */
 .charts-row--tool { grid-template-columns: minmax(0, 1fr); }
@@ -72,10 +72,12 @@
 
 /* Stats card: label over value. */
 .chart-stats { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem 1rem; }
-.chart-stat-row { display: flex; flex-wrap: wrap; gap: 0.35rem 1.5rem; }
-.chart-stat { display: flex; flex-direction: column; min-width: 4.5rem; }
+/* One line per sensor at every width: equal columns up to 7 rem, shrinking on phones (a depth label
+   plus Low, High and Average fit 390 px without wrapping under each other). */
+.chart-stat-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 7rem); gap: 0.35rem 1rem; }
+.chart-stat { display: flex; flex-direction: column; min-width: 0; }
 .chart-stat dt { font-size: var(--fs-xs); color: var(--text-muted); }
-.chart-stat dd { font-size: var(--fs-lg); font-weight: 500; color: var(--text-primary); }
+.chart-stat dd { font-size: var(--fs-lg); font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums; }
 .chart-stat-depth dd { font-size: var(--fs-sm); color: var(--text-secondary); }
 
 /* The chart, its loading/empty overlay and All years. */

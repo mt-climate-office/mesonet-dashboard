@@ -109,7 +109,7 @@
             <dl class="chart-stat-row">
               <template x-if="row.label"><div class="chart-stat chart-stat-depth"><dt class="sr-only">Sensor</dt><dd x-text="row.label"></dd></div></template>
               <template x-for="it in row.items" :key="it.label">
-                <div class="chart-stat"><dt x-text="it.label"></dt><dd class="num-display" x-text="it.value"></dd></div>
+                <div class="chart-stat"><dt x-text="it.label"></dt><dd x-text="it.value"></dd></div>
               </template>
             </dl>
           </template>
