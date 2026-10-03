@@ -1,6 +1,7 @@
 /**
  * `x-data="stationPicker"` on `#station-picker` (partials/picker.html): the
- * station search, Near me, recents, network chips and map, presented as a
+ * station search (Near me inside it), recents, and "Browse on the map"
+ * (network chips + map, revealed on demand), presented as a
  * bottom sheet on compact viewports and a drawer elsewhere (inline at ≥ 1060
  * px, overlay between). The presentations are ui/layout/{sheet,drawer}.ts;
  * this wrapper picks one per viewport, decides when it starts open
@@ -46,7 +47,9 @@ export function stationPicker() {
   return component({
     open: false,
     mode: 'inline' as Mode,
-    /** The map mounts on the first open and then stays (MapLibre is costly to rebuild). */
+    /** "Browse on the map" is open: the network chips and the map show. */
+    mapShown: false,
+    /** The map mounts on the first reveal and then stays (MapLibre is costly to rebuild). */
     mapMounted: false,
     near: { status: 'idle', rows: [] } as Near,
     geoSupported: typeof navigator !== 'undefined' && 'geolocation' in navigator,
@@ -77,7 +80,6 @@ export function stationPicker() {
       this.mode = modeNow()
       const onChange = (open: boolean) => {
         this.open = open
-        if (open) this.mapMounted = true
         if (this.mode === 'inline' && !auto) saveDrawerOpen(browserStorage(), open)
       }
       if (this.mode === 'sheet') {
@@ -136,6 +138,12 @@ export function stationPicker() {
       return c?.status === 'error' ? 'Failed to load stations' : c?.data ? 'Search by name or ID' : 'Loading stations…'
     },
 
+    /* Browse on the map */
+    toggleMap(): void {
+      this.mapShown = !this.mapShown
+      if (this.mapShown) this.mapMounted = true
+    },
+
     /* Networks (ui/controls/chips over ?nets=) */
     networkOptions() {
       return networkOptions(Alpine.store('station').list).map((v) => ({ value: v, label: v }))
@@ -152,11 +160,11 @@ export function stationPicker() {
     },
 
     /* Recents */
-    recent(): { station: string; name: string; current: boolean }[] {
+    recent(): { station: string; name: string; network: string; current: boolean }[] {
       const st = Alpine.store('station')
       return st.recent.flatMap((id) => {
         const s = st.byId(id)
-        return s ? [{ station: id, name: s.name, current: id === st.id }] : []
+        return s ? [{ station: id, name: s.name, network: s.sub_network, current: id === st.id }] : []
       })
     },
 
