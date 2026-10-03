@@ -9,6 +9,7 @@
  *  - snow:       hasSnow (when the snow depth tile shows)
  *  - summary:    summarize (the hero's one-line summary) and its phrase rules
  *  - relevance:  nowTiles (the tiles Now shows), pressure trend, dew point, soil state
+ *  - hero:       buildHero (the Now hero: temperature, summary, 48 h strip model)
  */
 export * from './tiles'
 export * from './conditions'
@@ -19,3 +20,4 @@ export * from './stamp'
 export * from './snow'
 export * from './summary'
 export * from './relevance'
+export * from './hero'
