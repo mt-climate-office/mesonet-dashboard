@@ -59,7 +59,7 @@ describe('variableChart', () => {
     ])
     expect(html).toContain('Low–high')
     expect(html).toContain('55.0–65.0 °F')
-    expect(variableTable(banded).columns).toEqual(['Date', 'Air Temperature @ 2 m [°F]', 'Low: Air Temperature @ 2 m [°F]', 'High: Air Temperature @ 2 m [°F]'])
+    expect(variableTable(banded).columns).toEqual(['Date', 'Air temperature (°F)', 'Low: Air temperature (°F)', 'High: Air temperature (°F)'])
     expect((variableChart(model(), testCtx('light')) as unknown as { series: unknown[] }).series).toHaveLength(1)
   })
   it('the sr-only twin stops at 500 rows; the Table view gets them all', () => {

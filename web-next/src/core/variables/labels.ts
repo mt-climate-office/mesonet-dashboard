@@ -80,6 +80,12 @@ export function formatReading(id: string, value: number | null | undefined, wher
   return text === '—' || !unit ? text : `${text}${unit === '%' || unit === '°' ? '' : ' '}${unit}`
 }
 
+/** API units in plain form ("mi/hr" → "mph", "mbar" → "mb", "deg" → "°", "inches" → "in"); others unchanged. */
+export function plainUnit(unit: string): string {
+  const map: Record<string, string> = { 'mi/hr': 'mph', 'mi/h': 'mph', mbar: 'mb', deg: '°', inches: 'in', 'in.': 'in', 'in/hr': 'in/h', 'W/m^2': 'W/m²' }
+  return map[unit] ?? unit
+}
+
 /** 16-point compass word for a direction in degrees ("SSE"); any real angle; '—' for null. */
 export function compassWord(deg: number | null | undefined): string {
   if (deg === null || deg === undefined || !Number.isFinite(deg)) return '—'

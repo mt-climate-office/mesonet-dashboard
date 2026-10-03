@@ -9,6 +9,7 @@
  */
 import type { EChartsOption, SeriesOption } from 'echarts'
 import { DAILY_RANGE, withAlpha } from '../palette'
+import { plainUnit } from '../variables/labels'
 import { LAYOUT, latestTimeseriesChart, latestTimeseriesTable, seriesColor, type LatestTimeseriesModel } from './latestTimeseries'
 import { bandSeries } from './overlays'
 import { AUX } from './series'
@@ -38,7 +39,7 @@ export const variableChart: ChartBuilder<VariableModel> = (m, ctx) => {
   const xs = pick(m.ts.x).map((x) => x + 12 * 3_600_000)
   const color = withAlpha(seriesColor(ctx, panel, s, 0), DAILY_RANGE.alpha)
   const band = bandSeries(DAILY_RANGE.label, `${AUX}${BAND_ID}-base`, xs, pick(s.band.lo), pick(s.band.hi), { color, digits: 1, stack: BAND_ID })
-  const unit = /\[([^\]]+)\]\s*$/.exec(s.name)?.[1] ?? ''
+  const unit = plainUnit(/\[([^\]]+)\]\s*$/.exec(s.name)?.[1] ?? '')
   const base = (option.tooltip as { formatter: (p: TipParam | TipParam[]) => string }).formatter
   const formatter = (raw: TipParam | TipParam[]) => {
     const fill = (Array.isArray(raw) ? raw : [raw]).find((p) => p.seriesId === `${BAND_ID}-band`)

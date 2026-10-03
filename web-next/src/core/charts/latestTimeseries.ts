@@ -9,7 +9,9 @@ import type { EChartsOption, GraphicComponentOption, SeriesOption, XAXisComponen
 import type { TimeseriesModel, TimeseriesPanel, TimeseriesSeries } from '../models/timeseries'
 import { panelNoDataText } from '../models/timeseries'
 import { ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, variableStyle } from '../palette'
+import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
+import { plainName, plainUnit } from '../variables/labels'
 import { niceCeil, timeAxis, timeZoom, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtWall, isoWall, plainLabel } from './format'
 import { bandSeries, sensorEventSeries } from './overlays'
@@ -56,6 +58,17 @@ const columnKey = (variable: string, col: string) =>
 
 /** Units of a column ("[°F]" → "°F"), or ''. */
 const unitOf = (col: string) => /\[([^\]]+)\]\s*$/.exec(col)?.[1] ?? ''
+
+/**
+ * A series' plain label and unit for tooltips and tables (never the API column): one-sensor panels
+ * use the variable's plain name ("Wind"); depths and sensor heights their key ("2 in"), and `full`
+ * adds the plain name for a table header ("Soil moisture at 2 in"). Series names stay the API's.
+ */
+function plainSeries(p: TimeseriesPanel, s: TimeseriesSeries): { label: string; full: string; unit: string } {
+  const name = plainName(ELEM_MAP[p.variable]?.[0] ?? '', p.variable)
+  const key = s.depth ?? (p.legend ? columnKey(p.variable, s.name) : null)
+  return { label: key ?? name, full: key ? `${name} at ${key}` : name, unit: plainUnit(unitOf(s.name)) }
+}
 
 /** Tooltip/table number: 3 decimals under 0.1 (precip, ETr), else 2; trailing zeros dropped. */
 export function fmtValue(v: number): string {
@@ -130,17 +143,16 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
     const keys: KeyEntry[] = []
     p.series.forEach((s, j) => {
       const color = seriesColor(ctx, p, s, i)
-      const unit = unitOf(s.name)
+      const { label, unit } = plainSeries(p, s)
       if (isBar(p)) {
         // barMinWidth: raw 5–15 min bars over a week are narrower than a pixel and would vanish.
-        push({ ...barSeries(s.name, pts(s.values), color, i), ...axes, barMinWidth: 1, id: `p${i}:${s.name}` }, { panel: i, label: s.hoverLabel, unit })
+        push({ ...barSeries(s.name, pts(s.values), color, i), ...axes, barMinWidth: 1, id: `p${i}:${s.name}` }, { panel: i, label, unit })
         return
       }
       const dash = p.legend ? DASHES[j % DASHES.length] : variableStyle(p.variable, ctx.theme.name)?.dash
       push({ ...lineSeries(s.name, pts(s.values), { color, dash, width: 1.5, yAxisIndex: i, id: `p${i}:${s.name}` }), xAxisIndex: i }, {
         panel: i,
-        // The unit follows the value, so the column's "[°F]" is dropped from the label.
-        label: s.depth ?? (p.legend ? columnKey(p.variable, s.name) : s.hoverLabel.replace(/\s*\[[^\]]*\]\s*$/, '')),
+        label,
         unit,
       })
       if (s.depth) keys.push({ label: s.depth, color })
@@ -250,7 +262,7 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
       const y = p.value[1]
       if (typeof y !== 'number' || !Number.isFinite(y)) continue
       const note = typeof p.value[2] === 'string' ? p.value[2] : undefined
-      const text = note ? tipText(meta.label, note) : tipText(meta.label, `${fmtValue(y)}${meta.unit ? ` ${meta.unit}` : ''}`)
+      const text = note ? tipText(meta.label, note) : tipText(meta.label, `${fmtValue(y)}${meta.unit === '%' || meta.unit === '°' ? meta.unit : meta.unit ? ` ${meta.unit}` : ''}`)
       const panelRows = rows.get(meta.panel) ?? []
       panelRows.push(`<div>${typeof p.marker === 'string' ? p.marker : ''}${text}</div>`)
       rows.set(meta.panel, panelRows)
@@ -302,10 +314,14 @@ export const TABLE_ROW_LIMIT = 500
 export function latestTimeseriesTable(m: LatestTimeseriesModel, limit = TABLE_ROW_LIMIT): ChartTable {
   const period = m.period === 'daily' ? 'daily' : 'hourly'
   const cols = m.ts.panels.flatMap((p) =>
-    p.series.flatMap((s) => [
-      { name: s.name, values: s.values },
-      ...(s.band ? [{ name: `Low: ${s.name}`, values: s.band.lo }, { name: `High: ${s.name}`, values: s.band.hi }] : []),
-    ]),
+    p.series.flatMap((s) => {
+      const { full, unit } = plainSeries(p, s)
+      const name = unit ? `${full} (${unit})` : full
+      return [
+        { name, values: s.values },
+        ...(s.band ? [{ name: `Low: ${name}`, values: s.band.lo }, { name: `High: ${name}`, values: s.band.hi }] : []),
+      ]
+    }),
   )
   const rows: string[][] = []
   let total = 0

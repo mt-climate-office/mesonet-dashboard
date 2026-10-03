@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ELEM_MAP } from '../params'
 import { AG_TOOL_IDS } from '../params/ag'
-import { LABELS, compassWord, formatReading, formatValue, plainName } from './labels'
+import { LABELS, compassWord, formatReading, formatValue, plainName, plainUnit } from './labels'
 
 describe('LABELS', () => {
   it('covers every element family and every Ag tool', () => {
@@ -54,6 +54,12 @@ describe('formatValue', () => {
     expect(formatValue('gdd', 2412.4)).toBe('2,412')
     expect(formatValue('air_temp', -0.3)).toBe('0')
     expect(formatValue('rh', null)).toBe('—')
+  })
+})
+
+describe('plainUnit', () => {
+  it('maps API units to the plain ones and keeps the rest', () => {
+    expect(['mi/hr', 'mbar', 'deg', 'inches', '°F', 'W/m²'].map(plainUnit)).toEqual(['mph', 'mb', '°', 'in', '°F', 'W/m²'])
   })
 })
 
