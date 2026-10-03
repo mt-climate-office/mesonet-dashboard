@@ -7,7 +7,7 @@
  */
 import Alpine from 'alpinejs'
 import { variableChart, variableTable, variableTableAll, type ChartTable, type LatestTimeseriesModel } from '../../core/charts'
-import { datesPatch, plotStatus, todayIso, viewAnnouncement, type PlotStatus } from '../../core/latest'
+import { dataSettled, datesPatch, plotStatus, todayIso, viewAnnouncement, type PlotStatus } from '../../core/latest'
 import { chartWindow, isIsoDate } from '../../core/models/timeseries'
 import { RANGE_PRESETS, activePreset, findVariable, neighbors, panelStats, presetPatch, rangeView, tablePage, type RangeId, type StatRow, type TablePage, type Variable } from '../../core/variables'
 import type { ChartView, LatestAgg } from '../../core/url-schema'
@@ -114,10 +114,16 @@ export function variablePage() {
       const q = this.query()
       return q ? build(q) : null
     },
-    status(): PlotStatus {
+    record(): 'loading' | 'success' | 'error' | null {
       const q = this.query()
-      const res = q ? recordResource(seriesRequest(q)) : null
-      return plotStatus({ empty: null, waiting: this.state === 'loading', record: res?.status ?? null, hasModel: !!this.model() })
+      return q ? (recordResource(seriesRequest(q))?.status ?? null) : null
+    },
+    status(): PlotStatus {
+      return plotStatus({ empty: null, waiting: this.state === 'loading', record: this.record(), hasModel: !!this.model() })
+    },
+    /** The chart shows this window's data (not the previous window's while it loads): stats and the announcement wait. */
+    settled(): boolean {
+      return dataSettled({ record: this.record(), hasModel: !!this.model() })
     },
     /** Visible range: the window, or the last 24 h for the 24 h preset. */
     range(): [number, number] | null {
@@ -129,14 +135,14 @@ export function variablePage() {
     stats(): StatRow[] {
       const m = this.model()
       const r = this.range()
-      return m && r && this.variable ? panelStats(m.ts.panels[0], m.ts.x, r, this.variable.sum) : []
+      return m && r && this.variable && this.settled() ? panelStats(m.ts.panels[0], m.ts.x, r, this.variable.sum) : []
     },
     get announceKey(): string {
       // History has its own data and announcement; reading the model here would fetch the recent window.
       if (this.view() === 'history') return ''
       const m = this.model()
       const w = this.window()
-      if (!m) return ''
+      if (!m || !this.settled()) return ''
       return viewAnnouncement(`${stations().current?.name ?? ''} ${this.variable?.name ?? ''}`.trim(), m.period, w.start, w.end, 1)
     },
 
