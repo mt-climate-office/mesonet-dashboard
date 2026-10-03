@@ -297,12 +297,15 @@ export const VISIBLE_SCOPES = '.tab-panel, .dash-sheet--modal'
 /** Wait until no animation (view transition, sheet or dialog slide) is running: a condition, not a sleep. */
 export const animationsDone = (page) => page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 10000 })
 
-/** Click Run Request once the form allows it (station confirmed, elements loaded); on phones, Next to the Run step first. */
+/** The Download sheet's form is in: the station line names the confirmed station. */
+export const dlReady = (page) =>
+  page.waitForFunction(() => /\(acebozem\)/.test(document.querySelector('[data-testid="dl-station"]')?.textContent ?? ''), null, { timeout: 30000 })
+
+/** Click Preview once the form allows it, then wait for "Download CSV · N rows" (the same button, aria-disabled when it cannot act). */
 export async function runDownload(page) {
-  await page.waitForFunction(() => document.querySelector('[data-testid="dl-run"]')?.disabled === false, null, { timeout: 30000 })
-  const next = page.getByTestId('dl-next')
-  for (let i = 0; i < 2 && (await next.isVisible()); i++) await next.click()
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-run"]')?.getAttribute('aria-disabled') === 'false', null, { timeout: 30000 })
   await page.getByTestId('dl-run').click()
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-download"]')?.getAttribute('aria-disabled') === 'false', null, { timeout: 30000 })
 }
 
 /* ── Reporting ──────────────────────────────────────────────────────────── */

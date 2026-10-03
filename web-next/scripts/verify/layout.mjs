@@ -6,7 +6,7 @@
  * on a solid surface; the Download sheet fits the screen; with reduced motion a section change
  * starts no view transition. Run via `npm run verify`.
  */
-import { VIEWPORTS, check, finish, open, start } from './lib.mjs'
+import { DL_QUERY, VIEWPORTS, check, finish, open, start } from './lib.mjs'
 
 const PHONE = VIEWPORTS[1]
 const env = await start()
@@ -52,7 +52,7 @@ for (const [name, query, evidence] of [
   ['compare', '?s=acebozem#latest', { charts: 1 }],
   ['legacy-ag', '?s=acebozem#ag', { filled: ['[data-testid="charts-ag-tools"] ul'] }],
   ['ag-gdd', '?s=acebozem&v=gdd#charts', { charts: 1 }],
-  ['download', '?s=acebozem&dl=1#charts', { filled: ['[data-testid="dl-step-elements"]'] }],
+  ['download', DL_QUERY, { filled: ['[data-testid="dl-station"]'] }],
   ['about', '?s=acebozem#about', { filled: ['[data-testid="about-readings-table"] tbody'] }],
 ]) {
   const { page, close, rendered } = await open(env, query, { viewport: PHONE })
@@ -122,8 +122,8 @@ for (const vp of VIEWPORTS) {
 
 /* ── Download sheet: inside the screen at both widths ───────────────────── */
 for (const vp of VIEWPORTS) {
-  const { page, close, rendered } = await open(env, '?s=acebozem&dl=1#charts', { viewport: vp })
-  await rendered({ filled: ['[data-testid="dl-step-elements"]'] })
+  const { page, close, rendered } = await open(env, DL_QUERY, { viewport: vp })
+  await rendered({ filled: ['[data-testid="dl-station"]'] })
   await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 10000 })
   const r = await page.evaluate(() => {
     const b = document.getElementById('sheet-download').getBoundingClientRect()

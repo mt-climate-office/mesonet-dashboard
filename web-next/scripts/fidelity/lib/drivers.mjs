@@ -181,13 +181,11 @@ export function captureDownloader(browser, target, station, sc, range, outDir) {
       await runBtn.waitFor({ timeout: TIMEOUTS.render })
       await settle(log)
     } else {
+      // One button: Preview (dl-run), then "Download CSV · N rows" (dl-download); aria-disabled while it cannot act.
       runBtn = page.locator('[data-testid="dl-run"]')
       dlBtn = page.locator('[data-testid="dl-download"]')
-      // Run waits for the station catalog and the element list (DIVERGENCES "Run waits for the station catalog").
-      await page.waitForFunction(() => {
-        const b = document.querySelector('[data-testid="dl-run"]')
-        return b && !b.disabled
-      }, null, { timeout: TIMEOUTS.render, polling: 300 })
+      // Preview waits for the station catalog and the element list (DIVERGENCES "Preview waits for the station catalog").
+      await page.waitForFunction(() => document.querySelector('[data-testid="dl-run"]')?.getAttribute('aria-disabled') === 'false', null, { timeout: TIMEOUTS.render, polling: 300 })
       await settle(log)
     }
     await runBtn.click()
@@ -196,7 +194,7 @@ export function captureDownloader(browser, target, station, sc, range, outDir) {
         (k) =>
           k === 'web'
             ? [...document.querySelectorAll('.js-plotly-plot')].some((g) => g.data?.length) || !!document.querySelector('.mantine-Alert-root')
-            : !document.querySelector('[data-testid="dl-download"]')?.disabled || [...document.querySelectorAll('.dl-msg, .dl-preview-status.is-error')].some((e) => e.offsetParent !== null),
+            : document.querySelector('[data-testid="dl-download"]')?.getAttribute('aria-disabled') === 'false' || [...document.querySelectorAll('.dl-msg, .dl-reason, .dl-preview-status.is-error')].some((e) => e.offsetParent !== null),
         target.kind,
         { timeout: TIMEOUTS.render, polling: 300 },
       )
@@ -205,6 +203,5 @@ export function captureDownloader(browser, target, station, sc, range, outDir) {
     res.figures = await figures(page, target, 'downloader')
     const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60_000 }), dlBtn.click()])
     res.download = await readDownload(dl, join(outDir, 'files'), tag)
-    if (target.kind === 'next') res.map = await extractMap(page, '[data-testid="dl-map"]')
   })
 }

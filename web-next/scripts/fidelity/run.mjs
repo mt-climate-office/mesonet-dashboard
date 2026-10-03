@@ -253,8 +253,8 @@ async function runDownloader(browser) {
       const cb = await capture('downloader', st, sc.id, 'B', () => captureDownloader(browser, B, st, sc, range, dir))
       if (!ca || !cb) continue
       const cmp = { csv: compareCsv(ca, cb), figures: figurePairs(ca, cb), palette: paletteCheck(cb.figures ?? [], cb.palette), network: network(ca, cb) }
-      cmp.map = await mapCheck(cb.map, st, true)
-      cmp.status = cmp.csv.status === 'ERROR' ? 'ERROR' : worst(cmp.csv.status, cmp.figures.map((f) => f.status), cmp.palette.status, cmp.map.status, cmp.network.newInB.length ? 'WARN' : 'PASS')
+      // web-next's Download sheet has no map (the header picks the station), so no map check.
+      cmp.status = cmp.csv.status === 'ERROR' ? 'ERROR' : worst(cmp.csv.status, cmp.figures.map((f) => f.status), cmp.palette.status, cmp.network.newInB.length ? 'WARN' : 'PASS')
       if (cmp.csv.status === 'ERROR') cmp.error = cmp.csv.error
       const item = { station: st, scenario: sc.id, status: cmp.status, summary: summarize(cmp), comparison: cmp, urls: [ca.url, cb.url], shots: [ca.shot, cb.shot] }
       run.items.push(item)
