@@ -221,11 +221,6 @@
    "type": "image/png",
    "file": "api-day_few-e415491edd.png"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,ppt,sol_rad,soil_vwc,bp,snow_depth&start_time=2026-09-29&level=2&rm_na=true&na_info=false&public=true&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-1300d6dc83.csv"
-  },
   "https://api.weather.gov/icons/land/day/skc?size=medium": {
    "status": 200,
    "type": "image/png",
@@ -380,6 +375,11 @@
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-observations_daily-17e7f179ef.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,ppt,sol_rad,soil_vwc,bp,windgust,snow_depth&start_time=2026-09-29&level=2&rm_na=true&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-134d45ed94.csv"
   }
  }
 }
