@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { framesFromListing, parseSchedule, type PhotoFrame, type RawSchedule } from '../photos'
-import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoLabel, photoMinDay, photoPick, photoTimeOptions } from './photo'
+import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoLabel, photoMessage, photoMinDay, photoPick, photoState, photoTimeOptions } from './photo'
 
 const B = 'https://data2.climate.umt.edu/mesonet/'
 const RAW: RawSchedule = {
@@ -110,5 +110,29 @@ describe('derivedKey', () => {
     expect(derivedKey(frames)).toBe('')
     const d = [{ ...frames[1], derived: true }, { ...frames[0], derived: true }]
     expect(derivedKey(d)).toBe('acebozem_N_20261001T150000Z.webp,acebozem_N_20261001T210000Z.webp')
+  })
+})
+
+describe('photoState / photoMessage', () => {
+  const pick = photoPick({ station: 'acebozem', cam, day: '2026-10-01', recent: true, frames, direction: null, slotUtcMs: null })
+  const empty = photoPick({ station: 'acebozem', cam, day: '2026-10-02', recent: true, frames, direction: null, slotUtcMs: null })
+  const ok = { schedule: 'success' as const, cam, source: { status: 'success' as const, data: frames }, pick }
+
+  it('ready with a frame; a message for an empty day', () => {
+    expect(photoState(ok)).toBe('ready')
+    expect(photoState({ ...ok, pick: empty })).toBe('message')
+    expect(photoMessage({ ...ok, pick: empty })).toBe('No camera images are available for North on this date.')
+  })
+  it('loading while the schedule or a first source fetch loads; stale frames stay shown', () => {
+    expect(photoState({ ...ok, schedule: 'loading' })).toBe('loading')
+    expect(photoState({ ...ok, source: null })).toBe('loading')
+    expect(photoState({ ...ok, source: { status: 'loading', data: undefined } })).toBe('loading')
+    expect(photoState({ ...ok, source: { status: 'loading', data: frames } })).toBe('ready')
+  })
+  it('messages for a failed schedule, no camera, a failed source', () => {
+    expect(photoMessage({ ...ok, schedule: 'error' })).toBe('Camera schedule unavailable.')
+    expect(photoState({ ...ok, cam: undefined })).toBe('message')
+    expect(photoMessage({ ...ok, cam: undefined })).toBe('No camera images are available for this station.')
+    expect(photoMessage({ ...ok, source: { status: 'error', data: undefined }, pick: empty })).toBe('Camera images could not be loaded.')
   })
 })

@@ -177,7 +177,7 @@ describe('guards and text', () => {
     expect(requestSummary({ station: 'Bozeman', elements: 1, period: 'hourly', start: '2026-09-24', end: '2026-09-30' }))
       .toEqual(['Bozeman', '1 variable', 'Hourly', '2026-09-24 to 2026-09-30'])
   })
-  it('stationPatch resets the start date and the Latest cards', () => {
-    expect(stationPatch('acebozem')).toEqual({ s: 'acebozem', card: null, info: null, dl_from: null })
+  it('stationPatch sets the station and resets the start date', () => {
+    expect(stationPatch('acebozem')).toEqual({ s: 'acebozem', dl_from: null })
   })
 })

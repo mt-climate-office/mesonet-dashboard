@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_SECTION, SECTIONS, historyMode, legacyRedirect, parseSection, sectionForHash, sectionLabel, sectionNavPatch } from './router'
-import { migrateLegacySearch } from './url-schema'
+import { agCardsPatch } from './ag/view/tab'
+import { migrateLegacySearch, readUrlState, writeUrlSearch } from './url-schema'
 
 describe('parseSection', () => {
   it('reads the five sections with or without #', () => {
@@ -86,8 +87,8 @@ describe('legacyRedirect', () => {
 })
 
 describe('sectionNavPatch', () => {
-  const page = { v: 'air_temp', view: 'table' as const, cmp: false }
-  const list = { v: null, view: 'recent' as const, cmp: false }
+  const page = { v: 'air_temp', cmp: false, var: null }
+  const list = { v: null, cmp: false, var: null }
   it('Charts inside Charts goes back to the list (pushed); nothing new at the list', () => {
     expect(sectionNavPatch('charts', 'charts', page)).toEqual({ patch: { v: null, view: 'recent', cmp: false }, drillDown: true })
     expect(sectionNavPatch('charts', 'charts', { ...list, cmp: true }).drillDown).toBe(true)
@@ -97,5 +98,19 @@ describe('sectionNavPatch', () => {
     expect(sectionNavPatch('charts', 'now', page)).toEqual({ patch: { v: null, view: 'recent' }, drillDown: false })
     expect(sectionNavPatch('now', 'charts', list)).toEqual({ patch: {}, drillDown: false })
     expect(sectionNavPatch('ag', 'about', page)).toEqual({ patch: {}, drillDown: false })
+  })
+  it('Ag inside Ag goes back to the tool cards (pushed from a tool); nothing new at the cards', () => {
+    expect(sectionNavPatch('ag', 'ag', { ...list, var: 'etr' })).toEqual({ patch: agCardsPatch(), drillDown: true })
+    expect(sectionNavPatch('ag', 'ag', list)).toEqual({ patch: agCardsPatch(), drillDown: false })
+    expect(sectionNavPatch('now', 'ag', { ...list, var: 'etr' })).toEqual({ patch: {}, drillDown: false })
+  })
+})
+
+describe('agCardsPatch', () => {
+  it('leaves no Ag key, so the cards URL is not read as an old GDD link', () => {
+    const tool = readUrlState('?s=acebozem&var=gdd&crop=corn&gdd_lo=40&gdd_proj=30&ag_time=hourly&lt=newborn&soilv=soil_temp&annv=air_temp&ag_from=2026-01-01&ag_to=2026-03-01&kbd=1')
+    const search = writeUrlSearch({ ...tool, ...agCardsPatch() }, '?kbd=1')
+    expect(search).toBe('?kbd=1&s=acebozem')
+    expect(legacyRedirect(search, '#ag')).toBeNull()
   })
 })

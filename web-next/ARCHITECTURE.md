@@ -17,7 +17,8 @@ npm run dev        # http://localhost:5174/mesonet-dashboard/next/ (API proxied 
 npm test           # vitest, Node only
 npm run typecheck && npm run lint
 npm run build && npm run size   # size = bundle budget gate
-npm run verify     # build + Playwright: kit-consumer checks, axe matrix, keyboard walks
+npm run verify     # build + Playwright: kit-consumer checks, axe matrix, keyboard walks,
+                   # phone layout + touch + motion (layout.mjs)
                    # (scripts/verify/, API data from its fixtures/; to re-record:
                    #  rm -r scripts/verify/fixtures && VERIFY_RECORD=1 npm run verify)
 ```
@@ -90,11 +91,15 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `#latest`/`#downloader` map). `go(section, patch?, drillDown?)` changes
   section with `pushState` (Back works); `drillDown` pushes inside a section
   too (an Ag tool opened from its card; a Charts variable or sub-view). The
-  section nav applies `sectionNavPatch` (Charts inside Charts → the list;
-  leaving Charts drops `v`). `hrefFor(section, patch?)` gives the
+  section nav applies `sectionNavPatch` (Charts inside Charts → the list,
+  Ag inside Ag → the tool cards; leaving Charts drops `v`). `hrefFor(section, patch?)` gives the
   real href for a link. In-page anchors (the skip link's `#main`) keep the section.
   Back/forward re-read both. Navigate from UI through `ui/shell/navigate.ts`
-  (view transition + scroll + announcement).
+  (view transition + scroll + focus + announcement): an in-app `<a href>` calls
+  `follow(event, section, opts)` on click (a plain click navigates, a modified
+  or middle click follows the href); when the clicked link unmounts, pass
+  `target:` (an id with `tabindex="-1"`, usually the new view's heading) so
+  focus never falls to `<body>`.
 - **`$store.data`** (`stores/data.ts` → `core/cache.ts`):
   `cached(key, fetcher, {ttl, retry})` returns one reactive
   `{status: 'loading'|'success'|'error', data, error, refresh()}` per key.
@@ -107,8 +112,7 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   and fires one `window` event `mco-theme-change` (`detail.theme`).
 - **`$store.station`** (`stores/station.ts`): `catalog` (a Resource), `list`,
   `id` (the `?s=` value once confirmed against the catalog; null while
-  loading), `current` (its row), `byId(id)`, `select(id)` (sets `s` and resets
-  the Latest cards), `recent` (last 5). It rewrites NWSLI / mis-cased `?s=` to
+  loading), `current` (its row), `byId(id)`, `select(id)` (sets `s`), `recent` (last 5). It rewrites NWSLI / mis-cased `?s=` to
   the catalog id and remembers every confirmed station (core/stations/recent.ts).
   With no `?s=`, main.ts puts the remembered station in the URL before the
   stores start; with none, the station picker opens.
@@ -244,8 +248,9 @@ ring only (no per-selector focus rules); ≥ 40 px touch targets under
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
-`npm run verify` runs axe on its scenarios (Now, the picker, the Charts list, a variable page,
-Compare, Ag tools + 4 Ag views, Download, About, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
+`npm run verify` runs axe on its scenarios (Now, the photo dialog, the picker on a first visit and opened with a station,
+the Charts list, a variable page in each view, Compare, Ag tools + 4 Ag views, Download (step 1 and step 3
+on phones), About, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
 
 ## Testing
 
@@ -254,8 +259,8 @@ Compare, Ag tools + 4 Ag views, Download, About, Help) × 1440/390 px × 3 theme
   parity data; live cross-checks run with `AG_LIVE=1`.
 - Stores keep their logic in core (`cache.ts`, `url-schema.ts`, `theme.ts`,
   `stations.ts#confirmedStation`), so they need no DOM tests.
-- UI is verified with Playwright: `scripts/verify/` (kit-consumer, axe and
-  keyboard checks on the built app, API from fixtures) and
+- UI is verified with Playwright: `scripts/verify/` (kit-consumer, axe,
+  keyboard and phone layout/touch/motion checks on the built app, API from fixtures) and
   `scripts/fidelity/` (web-next vs web/ and `/derived` on the live API; its
   `CHECKLIST.md` is the legacy-parity audit).
 

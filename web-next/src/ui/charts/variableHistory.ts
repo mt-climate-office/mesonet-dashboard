@@ -15,6 +15,9 @@ import { announce } from '../shell/live'
 import { chartVariables, recordResource, stationElements } from './resources'
 
 export function variableHistory() {
+  // Pinned at creation: the view lives inside the page's block keyed by variable, so it is rebuilt on a
+  // variable change. Reading `v` live would request the next variable's history before this view closes.
+  const vid = Alpine.store('url').state.v
   return component({
     annualChart,
     annualTable,
@@ -24,7 +27,7 @@ export function variableHistory() {
     },
 
     get variable(): Variable | undefined {
-      return findVariable(chartVariables(Alpine.store('station').id) ?? [], Alpine.store('url').state.v)
+      return findVariable(chartVariables(Alpine.store('station').id) ?? [], vid)
     },
     /** Each year's rows so far (newest first); requests stop at the first year still loading. */
     get years(): { year: number; rows: ObservationRow[] | null; loading: boolean }[] {

@@ -42,22 +42,35 @@ FIDELITY_DEBUG=1 node scripts/fidelity/run.mjs …   # print each wait step
 
 | `--compare` | A | B | What it checks |
 |---|---|---|---|
-| `latest` | web/ Latest Data | web-next | Every station × the old scenario set (hourly default, daily, daily + gridMET, raw, the sensor-change window for `sensor-change` stations, and each top/bottom card). Timeseries and wind-rose traces (values by timestamp, panel titles), sensor-change spans, "not available" notes; card tables (Current Conditions, Metadata, Precipitation Summary) as label/value rows, card text, image sources, select options; the locator map's station list vs `/stations`; web-next palette roles; non-2xx requests and console errors |
+| `latest` | web/ Latest Data | web-next Compare / Now / About | Every station × the old scenario set (hourly default, daily, daily + gridMET, raw, the sensor-change window for `sensor-change` stations, and each top/bottom card). Since the P1 routes web-next shows the plot on Compare (`#charts`, `cmp=1`), the photo, forecast and wind rose on Now (the wind rose only at stations without a camera) and the map, details and readings on About (`config.mjs` `sc.next`). Timeseries and wind-rose traces (values by timestamp, panel titles), sensor-change spans, "not available" notes; card tables (Current Conditions, Metadata, Precipitation Summary) as label/value rows, card text, image sources, select options; the locator map's station list vs `/stations`; web-next palette roles; non-2xx requests and console errors |
 | `ag` | web/ Ag Tools | web-next | Every station × every variable: ETr daily/hourly, GDD wheat/corn and the default window with the projection, feels-like, CCI adult/newborn, SWP and percent saturation (has_swp stations), soil profile VWC/temperature/EC, annual (first element and precipitation). Traces, panels, SWP reference lines, notes/messages, palette |
 | `downloader` | web/ Downloader | web-next | daily / hourly / monthly / derived-only requests: the downloaded CSV (byte-identical, else filename, columns, row count, values by datetime), the preview chart traces, the map's station list, palette |
 | `ag-api` | mesonet2 `/derived` (no `premade`, `keep=true`, `alpha=0.23`, level 2) | web-next Ag | ETr, GDD wheat/corn, feels-like, CCI, SWP, percent saturation: each derived output column is matched to the closest trace (raw or cumulative, depth-aware cm → in) |
 
-Statuses: **PASS** equal within tolerance (`abs 0.0011`, `rel 2e-4`; `FIDELITY_ABS_TOL`,
-`FIDELITY_REL_TOL`). **WARN** label wording, points that differ only at the trailing edge (the two
-captures are seconds apart), advisory card text, off-palette colors, web-next console errors.
+Statuses: **PASS** everything web-next draws matches web/ within tolerance (`abs 0.0011`, `rel 2e-4`;
+`FIDELITY_ABS_TOL`, `FIDELITY_REL_TOL`). **DOCUMENTED** compared content differs on purpose, citing
+its `DIVERGENCES.md` entry: a renamed row (`DOCUMENTED_ROWS`, Real Feel ↔ Feels like), or a moved
+card whose text or row labels changed while every value under a shared label matches. **WARN**
+label wording, points that differ only at the trailing edge (the two captures are seconds apart),
+advisory card text, off-palette colors, web-next console errors.
 **FAIL** a trace, figure or card missing/extra/empty, interior value or null differences, sensor
 spans, CSV columns/rows/values. **ERROR** a side failed to load.
+
+**Moved** (latest only): a figure or card web/ shows that the scenario's web-next page does not
+draw (it moved section, or Now shows the other medium) is not compared. It is listed in the item's
+`comparison.moved` (`{ part, note, see }`, `see` = the DIVERGENCES entry), in the summary
+`results.json` and in the report, and does not lower the status. A card that page should draw and
+does not is still a FAIL.
+
+Known FAIL: ag-api mdamalta feels-like at exactly 50 °F (`/derived` applies no wind chill there,
+web-next and web/ do), filed upstream as mt-climate-office/mesonet-db-rds#201.
 
 ## How the extraction works
 
 - **web/ (Plotly):** `gd.data` / `gd._fullLayout` of every `.js-plotly-plot`.
 - **web-next (ECharts):** for every chart host (`.chart`, `ui/charts/chart.ts`) the harness imports
-  the ECharts module the host lazy-loaded (the same Vite dev URL, so the same instance registry)
+  the ECharts module the host lazy-loaded (the same Vite dev URL, so the same instance registry;
+  its dev path when the resource-timing buffer is full)
   and reads `echarts.getInstanceByDom(canvas).getOption()`. Nothing is exposed globally. Without
   an instance (a production build) it falls back to the host's `.sr-only` table twin (and
   `data-zoom` carries the visible window).
@@ -71,8 +84,10 @@ spans, CSV columns/rows/values. **ERROR** a side failed to load.
   name, then by name, then by content within the panel (a WARN for the label change).
 - **Cards:** visible text (sr-only twins and hidden panes skipped), tables as cell rows, images
   (and whether they loaded), select options. web/'s cards are found by their Mantine switcher
-  label; web-next's by `data-testid` (`top-card`, `bottom-card`).
-- **Maps:** web-next's map hosts (`locator-map`, `dl-map`) via their sr-only station table.
+  label; web-next's by the `data-testid` of the card that replaced it (`now-media`, `now-forecast`,
+  `about-details`, `about-readings`, `about-map`). Table header rows are skipped.
+- **Maps:** web-next's map hosts (`about-map`, `dl-map`) via their sr-only station table. Map tiles
+  MapLibre cancels (`net::ERR_ABORTED` as the view changes) are not request failures.
 - **Colors** are not compared between the apps (the house palette is intentional,
   `DIVERGENCES.md` "House style"). Instead every web-next data series color must be one of the
   colors `core/palette` produces for the light theme (imported from the dev server, sampled
@@ -84,7 +99,7 @@ spans, CSV columns/rows/values. **ERROR** a side failed to load.
 - `stations.json`: the station matrix (copied from `web/scripts/fidelity/`, made by its `select-stations.mjs`).
 - `lib/browser.mjs`: Playwright launch, instrumented page, settle, screenshots.
 - `lib/extract.mjs`: in-page extractors (Plotly, ECharts, cards, map) and the palette color set.
-- `lib/drivers.mjs`: per-tab drivers for both apps (deep link → wait → extract; Downloader clicks Run and Download).
+- `lib/drivers.mjs`: per-tab drivers for both apps (deep link → wait → extract; Downloader clicks Run and Download). web-next follows the P1 routes (`#charts&cmp=1`, `#now`, `#about`, `#download`; Ag links carry `var`).
 - `lib/compare.mjs`: normalisation, trace matching and numeric diff, cards, CSV, palette check.
 - `lib/derived.mjs`: `/derived` fetch and the ag-api comparison.
 - `lib/report.mjs`: `report.html`. `lib/servers.mjs`: dev-server start/stop. `lib/util.mjs`: CSV, dates (Mountain Time), status ranking.

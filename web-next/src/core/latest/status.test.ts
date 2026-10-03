@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { NO_DATA_TITLE } from '../models/timeseries'
-import { plotStatus } from './status'
+import { dataSettled, plotStatus } from './status'
 
 const base = { empty: null, waiting: false, record: 'success' as const, hasModel: true }
 
@@ -19,5 +19,15 @@ describe('plotStatus', () => {
       expect(r.kind === 'empty' && r.title).toBe(NO_DATA_TITLE)
     }
     expect(plotStatus(base).kind).toBe('ready')
+  })
+})
+
+describe('dataSettled', () => {
+  it('only once the current request has loaded a model (not the previous window kept while loading)', () => {
+    expect(dataSettled({ record: 'success', hasModel: true })).toBe(true)
+    expect(dataSettled({ record: 'loading', hasModel: true })).toBe(false)
+    expect(dataSettled({ record: 'success', hasModel: false })).toBe(false)
+    expect(dataSettled({ record: 'error', hasModel: false })).toBe(false)
+    expect(dataSettled({ record: null, hasModel: false })).toBe(false)
   })
 })

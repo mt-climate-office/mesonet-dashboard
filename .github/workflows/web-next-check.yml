@@ -1,6 +1,7 @@
 # PR gate for web-next/ (the Alpine + ECharts rebuild): typecheck, lint,
 # unit tests, production build and the bundle-size budget; then `verify`:
-# kit-consumer checks, the axe matrix and keyboard walkthroughs in Chromium
+# kit-consumer checks, the axe matrix, keyboard walkthroughs and phone
+# layout / touch / motion checks in Chromium
 # against the built app, with API data from web-next/scripts/verify/fixtures.
 name: Check web-next/
 

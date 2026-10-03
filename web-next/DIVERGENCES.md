@@ -23,7 +23,7 @@ layout parts of older entries below; data behaviour is unchanged.
 - **Old links keep working:** `#latest` → `#charts` + `cmp=1` (Compare, keeping `from/to/agg/vars/gridmet`);
   a hash-less link with one of those keys does the same; `#downloader` → `#download` (keys renamed by
   `migrateLegacySearch` first); `#ag` unchanged; `#satellite` → Now with the existing notice. `card`/`info`
-  are ignored (kept so old links round-trip).
+  are no longer schema keys; like any unknown key they stay in the URL, so old links round-trip.
 - **Sections (P1):** each section's own entries follow: About ("About replaces …"), Ag ("Ag: tool cards"),
   Download ("Download: a stepper …") and Charts ("UX refactor: Charts").
 - **Why:** users land on current conditions; history, tools and tables stay one tap away (plan Context).
@@ -76,7 +76,8 @@ layout parts of older entries below; data behaviour is unchanged.
 - **New:** `#ag` without `var` shows one card per tool (Reference ET, Growing degree days, Feels like,
   Livestock risk, Soil profile, Soil water potential, Percent saturation, Annual comparison), each with a
   one-line description. A card opens that tool (`var=…`, the same reset as changing the variable select) with
-  `pushState`, so Back returns to the cards; "All Ag tools" does the same. The controls sit in an "Options"
+  `pushState`, so Back returns to the cards; "All Ag tools" (and the Ag tab inside Ag) does the same and
+  resets the tool's options (crop, cutoffs, dates, …), so the cards URL holds no Ag key. The controls sit in an "Options"
   disclosure above the chart, open on desktop and collapsed on phones (open there too while no station is
   chosen), whose summary line names the options (`core/ag/view/summary.ts`, e.g. "Wheat · 32–70 °F · to
   Oct 31"). Tool names are sentence case and shorter ("Feels like", "Soil profile", "Livestock risk";
@@ -96,7 +97,7 @@ layout parts of older entries below; data behaviour is unchanged.
   would not be a normal total). Stations without `/derived/ppt/` (AgriMet) show since-midnight and 24 h
   from the hourly request. The sparkline request adds `bp` (pressure), and `snow_depth` / `vpd_atmo` when
   the station reports them, to the plan's six elements so every tile has a sparkline. Data older than 2 h
-  shows a stale warning; the provisional badge follows `/latest`'s `provisional` flag.
+  shows a stale warning; the provisional ⓘ note follows `/latest`'s `provisional` flag.
 
 ### Download: a stepper on phones, step cards elsewhere (P1)
 - **Legacy / web/:** one form column (station, variables, QC, aggregation, dates, Run / Download CSV) with
@@ -104,7 +105,8 @@ layout parts of older entries below; data behaviour is unchanged.
   off-screen after Run.
 - **New:** three cards, **1 Elements** (station, variables, uncommon switch, map) · **2 Dates & period**
   (aggregation, dates, then QC) · **3 Run** (a one-line recap, Run, Download CSV), with the preview below.
-  Desktop and tablet show Elements beside Dates & period over Run, the preview full width. Phones show one
+  Desktop and tablet show Elements beside Dates & period over Run, the preview full width. Phones leave out
+  the station map (user decision 2026-10-02: the navbar's station picker has one) and show one
   step at a time with "Step 2 of 3", Back and Next; Next refuses to leave a step that would block Run and
   says why, and Enter in a field means Next until the Run step. Each step change moves focus to the step
   heading and is announced. After Run (any width) the preview scrolls into view and its heading takes
@@ -137,9 +139,15 @@ Data requests are unchanged
   `from/to/agg/vars/gridmet`) keeps the dates, period of record, aggregation, normals and variable chips in
   an "Options" disclosure (open beside the plot on desktop, closed above it on phones). The station comes
   from the station picker; the photo, forecast and wind rose are on Now, the map, metadata and current
-  readings on About. `card`/`info` are read by nothing now and kept only so old links round-trip. The
+  readings on About. `card`/`info` are no longer read (dropped from the schema; kept as unknown keys so old links round-trip). The
   `mco-dashboard-sidebar` key is no longer written.
 - **Why:** one station picker for the whole view; the cards moved to the sections that own them.
+
+### Now's wind rose has its own window
+- **Legacy / web/:** the Latest wind rose followed the plot's dates and aggregation (`from`/`to`/`agg`).
+- **New:** Now's wind rose always shows the 14 days to today, hourly (legacy's default Latest window),
+  whatever range the variable page or Compare last wrote (`core/cards/windRose.ts`).
+- **Why:** Now is an overview; its rose should not change because a Charts preset was picked.
 
 ### Now tiles open the variable page
 - **P0:** a tile opened Compare with its variables.
@@ -297,6 +305,7 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 #### Photo modal (LDT-015)
 - **Same as legacy:** clicking the photo opens a centered 92vw modal (kit dialog, at most 1600 px wide) with the image up to 86vh tall.
 - **New:** the modal has a "Download original" button. It downloads the same large WebP the card shows (`photos/webp/large/…_{slot_utc}.webp`) and saves it under that file's own name, for example `acebozem_N_20261001T150000Z.webp`. If the fetch fails, the image opens in a new tab.
+- **New (UX refactor, P3):** the direction, day and time pickers live in this dialog (DESIGN.md "Now"). The Now tile always shows the newest frame of the default direction (N); the dialog opens on that frame and drops its picks on close, so the tile is never an older frame under a "latest" caption. The image is up to 70dvh tall below the pickers.
 
 #### Card defaults are "auto" (LDT-003, LDB-001, LDB-002)
 - **Same as legacy:** with no `card`/`info` in the URL, the top card is Latest Photo for stations with a camera and Wind Rose otherwise. The bottom card is Current Conditions with a station and Locator Map without one. Choosing a station from the dropdown or the map resets both cards to auto.
@@ -1098,7 +1107,7 @@ Top card (Wind Rose / Weather Forecast / Latest Photo) and bottom card (Locator 
 ### No Wind Rose flash before the photo
 - **web/:** with no `?card=`, the top card drew the Wind Rose (and requested its data) while the camera schedule loaded, then switched to Latest Photo for camera stations.
 - **New:** the auto choice shows "Loading…" until the schedule answers, then the Photo or the Wind Rose. An explicit `?card=` renders at once.
-- **Why:** one less request and no content swap for camera stations; the final card is the same (`core/cards/cardDefaults.ts`).
+- **Why:** one less request and no content swap for camera stations; the final card was the same. (Superseded: the card switchers are gone; Now shows the photo, or the wind rose without a camera.)
 
 ### Wind rose
 - **web/:** Plotly barpolar, Plasma_r bins, title in Courier New over the polar plot, hover "{bin} mph / {dir}: {count}", legend names without units.
@@ -1123,7 +1132,7 @@ Top card (Wind Rose / Weather Forecast / Latest Photo) and bottom card (Locator 
 ### Tables
 - **web/:** Mantine tables, odd rows `rgb(220,220,220)` (legacy TABLE_STYLING).
 - **New:** odd rows `--bg-raised`; row labels are `<th scope="row">`; values in Space Mono. Rows, order and values are unchanged from web/ (LDB-003 to LDB-009); the Precipitation Summary is still HydroMet only.
-- **Station Metadata vs legacy (LDB-003):** the legacy rows in legacy order, then two web/ extras, County and NWSLI ID (`core/cards/metadata.ts`). A blank catalog value shows "—" instead of an empty cell.
+- **Station Metadata vs legacy (LDB-003):** the legacy rows in legacy order, then two web/ extras, County and NWSLI ID. (Superseded by About's station details, `core/about/details.ts`.) A blank catalog value shows "—" instead of an empty cell.
 - **Why:** house tokens in all three themes; the extra rows are the ids people search by.
 
 ### Station one-pager link (OP-001)

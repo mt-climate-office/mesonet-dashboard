@@ -116,3 +116,30 @@ export function photoPick(i: PhotoPickInput): PhotoPick {
 /** Time-select options for a direction's frames: value = slot ms, label = local time. */
 export const photoTimeOptions = (frames: readonly PhotoFrame[]): { value: string; label: string }[] =>
   frames.map((f) => ({ value: String(f.slotUtcMs), label: formatLocal(f.slotUtcMs) }))
+
+type Status = 'loading' | 'success' | 'error'
+
+/** Inputs of a photo view's state: the schedule's fetch status, the camera, the day's source and its pick. */
+export interface PhotoStateInput {
+  schedule: Status
+  cam: StationCamera | undefined
+  /** The day's frames; null when the camera has no source for it. */
+  source: { status: Status; data: readonly PhotoFrame[] | undefined } | null
+  pick: PhotoPick | null
+}
+
+/** 'loading' (skeleton), 'message' (photoMessage) or 'ready' (pick.active is set). */
+export function photoState(i: PhotoStateInput): 'loading' | 'message' | 'ready' {
+  if (i.schedule === 'loading') return 'loading'
+  if (i.schedule === 'error' || noCameraImages(i.cam)) return 'message'
+  if (!i.source || (i.source.status === 'loading' && !i.source.data)) return 'loading'
+  return i.pick?.active ? 'ready' : 'message'
+}
+
+/** The text shown for photoState 'message'. */
+export function photoMessage(i: PhotoStateInput): string {
+  if (i.schedule === 'error') return 'Camera schedule unavailable.'
+  if (noCameraImages(i.cam)) return 'No camera images are available for this station.'
+  if (i.source?.status === 'error') return 'Camera images could not be loaded.'
+  return `No camera images are available for ${i.pick ? i.pick.label : 'this view'} on this date.`
+}

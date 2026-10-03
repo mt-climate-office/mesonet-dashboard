@@ -3,16 +3,17 @@
  * `.mco-section-nav`, KIT-NOTES.md). One behaviour for both the phone bottom
  * tab bar and the desktop segmented row: the links are real `<a href>` (they
  * work without JS, open in a new tab, copy), `aria-current="page"` marks the
- * active one, and a plain left click is handed to `onNavigate` so the app can
- * push history and run a view transition. `publishHeight` keeps a CSS custom
+ * active one, and a click on one is handed to `onNavigate` with its event, so
+ * the app can handle a plain click in-app (push history, view transition) and
+ * leave modified clicks to the href. `publishHeight` keeps a CSS custom
  * property on <html> equal to an element's height (0 while hidden), e.g.
  * `--tabbar-h`, which lifts the toast and the bottom sheet above the bar.
  */
 
 export interface SectionNavOptions {
   root: HTMLElement
-  /** Called for a plain click on `a[data-section]`; the default navigation is prevented. */
-  onNavigate: (section: string, link: HTMLAnchorElement) => void
+  /** Called for a click on `a[data-section]`; it calls `preventDefault()` if it handles the click. */
+  onNavigate: (e: MouseEvent, section: string, link: HTMLAnchorElement) => void
 }
 
 export interface SectionNav {
@@ -21,14 +22,10 @@ export interface SectionNav {
   destroy(): void
 }
 
-const plainClick = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey
-
 export function initSectionNav(o: SectionNavOptions): SectionNav {
   const onClick = (e: MouseEvent) => {
     const a = (e.target as Element).closest<HTMLAnchorElement>('a[data-section]')
-    if (!a || !o.root.contains(a) || !plainClick(e)) return
-    e.preventDefault()
-    o.onNavigate(a.dataset.section ?? '', a)
+    if (a && o.root.contains(a)) o.onNavigate(e, a.dataset.section ?? '', a)
   }
   o.root.addEventListener('click', onClick)
   return {

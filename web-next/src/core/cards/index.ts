@@ -1,17 +1,14 @@
 /**
- * Public surface of core/cards: pure view models for the Latest tab's cards.
- *  - cardDefaults:      which top/bottom card shows (+ switcher labels)
- *  - windRose:          the Wind Rose request over the plotted window
- *  - forecast:          NWS periods → card rows
- *  - photo:             Latest Photo day/source/direction/frame selection
- *  - metadata:          Station Metadata rows
- *  - currentConditions: Current Conditions + Precipitation Summary rows
- *  - onePagers:         station one-pager links
+ * Public surface of core/cards: pure view models for the station cards on
+ * Now and About (carried over from the old Latest tab).
+ *  - windRose:          the Now wind rose request (14 d hourly)
+ *  - forecast:          NWS periods → forecast rows (Now)
+ *  - photo:             camera day/source/direction/frame selection (Now)
+ *  - currentConditions: About's current readings + precipitation summary rows
+ *  - onePagers:         station one-pager links (About)
  */
-export * from './cardDefaults'
 export * from './windRose'
 export * from './forecast'
 export * from './photo'
-export * from './metadata'
 export * from './currentConditions'
 export * from './onePagers'

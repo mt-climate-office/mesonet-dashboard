@@ -9,13 +9,10 @@ import Alpine from 'alpinejs'
 import { listRequest, variableGroups, variableRows, type VariableGroup, type VariableRow } from '../../core/variables'
 import { latestObs } from '../station/resources'
 import { component } from '../component'
-import { navigate } from '../shell/navigate'
+import { follow } from '../shell/navigate'
 import { chartVariables, elementsResource, recordResource, stationElements } from './resources'
 
 type State = 'none' | 'loading' | 'error' | 'ready'
-
-/** A plain left click (others open a new tab through the real href). */
-const plain = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey
 
 export function variableList() {
   return component({
@@ -50,17 +47,14 @@ export function variableList() {
     compareHref(): string {
       return Alpine.store('url').hrefFor('charts', { v: null, cmp: true })
     },
-    /** A row: push its variable page; the row's name morphs into the page heading. */
+    /** A row: push its variable page; the row's name morphs into the page heading, which takes focus. */
     open(e: MouseEvent, id: string): void {
-      if (!plain(e)) return
-      e.preventDefault()
       const morph = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('[data-vt-source]')
-      void navigate('charts', { patch: { v: id, view: 'recent', cmp: false }, drillDown: true, morph })
+      follow(e, 'charts', { patch: { v: id, view: 'recent', cmp: false }, drillDown: true, morph, target: 'var-title' })
     },
+    /** The Compare card: push Compare, focusing its heading. */
     openCompare(e: MouseEvent): void {
-      if (!plain(e)) return
-      e.preventDefault()
-      void navigate('charts', { patch: { v: null, cmp: true }, drillDown: true })
+      follow(e, 'charts', { patch: { v: null, cmp: true }, drillDown: true, target: 'charts-compare-title' })
     },
   })
 }

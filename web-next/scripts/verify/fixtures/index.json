@@ -270,6 +270,41 @@
    "status": 200,
    "type": "text/plain; charset=utf-8",
    "file": "raw-main_one-pagers.json-ca4a6dbbb3.txt"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2026-01-01&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-224d567ae7.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2025-01-01&end_time=2026-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-167eafd9c1.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2024-01-01&end_time=2025-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-c1ca3f2b62.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2023-01-01&end_time=2024-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-25aa319be3.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2022-01-01&end_time=2023-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-bf8be99ec4.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2021-01-01&end_time=2022-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-b35cf4f7fe.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2020-10-30&end_time=2021-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 404,
+   "type": "application/json",
+   "file": "mesonet2-observations_daily-8ac42b3e45.json"
   }
  }
 }

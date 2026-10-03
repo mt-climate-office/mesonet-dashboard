@@ -102,6 +102,7 @@ function summarize(c) {
   if (c.csv) bits.push(c.csv.bytes?.identical ? 'CSV byte-identical' : `CSV ${c.csv.status}: rows ${c.csv.rows?.A}/${c.csv.rows?.B}`)
   if (Array.isArray(c.columns)) bits.push(c.columns.map((x) => `${x.column}:${x.status}`).join(' '))
   if (c.network?.newInB?.length) bits.push(`${c.network.newInB.length} web-next-only errors`)
+  if (c.moved?.length) bits.push(`moved (not scored): ${c.moved.map((m) => m.part).join(', ')}`)
   return bits.join('; ')
 }
 
@@ -155,12 +156,38 @@ async function runLatest(browser) {
       let cmp
       if (ca.error || cb.error) cmp = { status: 'ERROR', error: { 'web/': ca.error, 'web-next': cb.error } }
       else {
-        cmp = { figures: figurePairs(ca, cb), cards: {}, palette: paletteCheck(cb.figures, cb.palette) }
-        for (const k of ['top', 'bottom']) cmp.cards[k] = compareCard(ca.cards?.[k], cb.cards?.[k])
+        // What web-next's page for this scenario shows (config `sc.next`); a Now card only when Now shows its medium.
+        const nx = sc.next
+        const shown = !nx.media || cb.media === nx.media
+        const figs = shown ? nx.figures : []
+        const cards = shown ? nx.cards : {}
+        // Parts web/ shows that this page does not draw (moved section, or absent by design) are
+        // listed as `moved` notes citing DIVERGENCES; they are not compared and do not lower the status.
+        const where = `not on web-next #${nx.tab}${nx.media && !shown ? ` (Now shows the ${cb.media})` : ''}`
+        const pairs = figurePairs(ca, cb)
+        cmp = {
+          figures: pairs.filter((f) => figs.includes(f.role)),
+          cards: {},
+          moved: [],
+          palette: paletteCheck(cb.figures, cb.palette),
+        }
+        const move = (part) => cmp.moved.push({ part, note: where, see: nx.see })
+        for (const f of pairs) if (!figs.includes(f.role)) move(`figure ${f.role}`)
+        for (const k of ['top', 'bottom']) {
+          if (!cards[k]) {
+            move(`${k} card`)
+            continue
+          }
+          const c = compareCard(ca.cards?.[k], cb.cards?.[k])
+          // The card was redesigned on its new page: text (and, if `relabeled`, row label) changes
+          // are documented; a value under a shared label, an image or a missing card still counts.
+          const layoutOnly = c.status === 'WARN' && !c.valueDiffs.length && !c.images.onlyA.length && !c.images.onlyB.length && (nx.relabeled || (!c.keys.onlyA.length && !c.keys.onlyB.length))
+          cmp.cards[k] = layoutOnly ? { ...c, status: 'DOCUMENTED', note: `documented: text changed; ${nx.see}`, see: nx.see } : c
+        }
         // The map pane is compared as data (mapCheck), not as text (web/ and web-next legends differ by design).
         if (cb.map) cmp.cards.bottom = { status: 'PASS', note: 'map pane: see the map check' }
         // web/ draws the wind-rose title inside the Plotly figure; web-next as a heading in the card.
-        const roseTitle = ca.figures.find((f) => f.role === 'windrose')?.title
+        const roseTitle = figs.includes('windrose') && ca.figures.find((f) => f.role === 'windrose')?.title
         if (roseTitle) {
           const text = (cb.cards?.top?.titles ?? []).join(' ')
           cmp.cards.windTitle = text.includes(roseTitle) ? { status: 'PASS' } : { status: 'WARN', note: `title "${roseTitle}" not in web-next card`, lines: { onlyA: [roseTitle], onlyB: [] } }
@@ -274,7 +301,7 @@ async function rebuild() {
       started: r.started,
       finished: r.finished,
       counts: r.items.reduce((m, i) => ((m[i.status] = (m[i.status] ?? 0) + 1), m), {}),
-      items: r.items.map((i) => ({ station: i.station, scenario: i.scenario, status: i.status, summary: i.summary })),
+      items: r.items.map((i) => ({ station: i.station, scenario: i.scenario, status: i.status, summary: i.summary, moved: i.comparison?.moved })),
     })),
   }
   await writeJson(join(OUT, 'results.json'), summary)

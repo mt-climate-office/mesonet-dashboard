@@ -27,15 +27,18 @@ function details(item, outDir) {
   if (c.error) parts.push(`<pre>${esc(JSON.stringify(c.error, null, 1))}</pre>`)
   if (c.issue) parts.push(`<p>${esc(c.issue)}</p>`)
   for (const p of c.figures ?? []) {
-    parts.push(`<h5>figure ${esc(p.role)} ${badge(p.status)} ${p.issue ? esc(p.issue) : `traces web/ ${p.nTracesA} · web-next ${p.nTracesB}; sensor spans ${p.spans?.nA}/${p.spans?.nB}`}</h5>`)
+    parts.push(`<h5>figure ${esc(p.role)} ${badge(p.status)} ${p.issue ? esc(p.see ? `${p.issue}; ${p.see}` : p.issue) : `traces web/ ${p.nTracesA} · web-next ${p.nTracesB}; sensor spans ${p.spans?.nA}/${p.spans?.nB}`}</h5>`)
     parts.push(traceTable(p), both('panels (y-axis titles)', p.panels), both('sensor spans', p.spans), both('reference lines', p.refs), both('"not available" notes', p.notAvailable))
   }
   for (const [k, cd] of Object.entries(c.cards ?? {})) {
     if (cd.status === 'PASS') continue
     parts.push(`<h5>card ${esc(k)} ${badge(cd.status)} ${esc(cd.note ?? '')}</h5>`, both('table rows', cd.keys), both('text', cd.lines), both('images', cd.images), both('select options', cd.options))
     if (cd.valueDiffs?.length) parts.push(`<div class="sd"><b>values</b> ${code(cd.valueDiffs.map((v) => `${v.key}: ${v.a} → ${v.b}`).join(' | '), 900)}</div>`)
+    if (cd.documented?.length) parts.push(`<div class="sd"><b>documented rows</b> ${code(cd.documented.map((d) => `${d.a} ${d.valueA} → ${d.b} ${d.valueB} (${d.see})`).join(' | '), 900)}</div>`)
     if (cd.brokenImages?.length) parts.push(`<div class="sd"><b>broken images (web-next)</b> ${code(cd.brokenImages)}</div>`)
   }
+  // Moved parts: informational, not scored.
+  if (c.moved?.length) parts.push(`<h5>moved (not scored)</h5><ul class="sd">${c.moved.map((m) => `<li>${esc(m.part)}: ${esc(m.note)}; ${esc(m.see)}</li>`).join('')}</ul>`)
   if (c.palette && c.palette.status !== 'PASS') parts.push(`<h5>palette ${badge(c.palette.status)} ${c.palette.checked ?? ''} colors checked</h5><div class="sd">${code(c.palette.off ?? c.palette.note, 900)}</div>`)
   if (c.map && c.map.status !== 'PASS') parts.push(`<h5>map ${badge(c.map.status)}</h5><div class="sd">${code(c.map, 900)}</div>`)
   if (c.messages?.status && c.messages.status !== 'PASS') parts.push(`<h5>messages ${badge(c.messages.status)}</h5>`, both('notes / alerts', c.messages))
@@ -89,21 +92,21 @@ export function renderReport(runs, outFile, meta = {}) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>web-next Fidelity Report</title>
 <style>
-:root{--bg:#fff;--fg:#1b1f24;--muted:#5b6470;--line:#d8dde3;--card:#f6f8fa;--pass:#1a7f37;--warn:#9a6700;--fail:#cf222e;--err:#6e40c9}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1117;--fg:#e6edf3;--muted:#9da7b3;--line:#30363d;--card:#161b22;--pass:#238636;--warn:#9e6a03;--fail:#da3633;--err:#8957e5}}
-:root[data-theme="dark"]{--bg:#0d1117;--fg:#e6edf3;--muted:#9da7b3;--line:#30363d;--card:#161b22;--pass:#238636;--warn:#9e6a03;--fail:#da3633;--err:#8957e5}
+:root{--bg:#fff;--fg:#1b1f24;--muted:#5b6470;--line:#d8dde3;--card:#f6f8fa;--pass:#1a7f37;--warn:#9a6700;--fail:#cf222e;--err:#6e40c9;--doc:#0969da}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1117;--fg:#e6edf3;--muted:#9da7b3;--line:#30363d;--card:#161b22;--pass:#238636;--warn:#9e6a03;--fail:#da3633;--err:#8957e5;--doc:#1f6feb}}
+:root[data-theme="dark"]{--bg:#0d1117;--fg:#e6edf3;--muted:#9da7b3;--line:#30363d;--card:#161b22;--pass:#238636;--warn:#9e6a03;--fail:#da3633;--err:#8957e5;--doc:#1f6feb}
 body{background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;margin:0 auto;padding:16px;max-width:1400px}
 h1{font-size:20px;margin:0 0 4px} h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:4px;margin-top:28px} h5{margin:10px 0 4px;font-size:13px}
 .meta{color:var(--muted);font-size:12px} a{color:inherit}
 table{border-collapse:collapse;margin:6px 0} .scroll{overflow-x:auto} th,td{border:1px solid var(--line);padding:3px 6px;text-align:left;vertical-align:top}
 .t{font-size:12px;display:block;overflow-x:auto} code{font-size:11px;word-break:break-all}
 .b{display:inline-block;padding:0 6px;border-radius:9px;font-size:11px;font-weight:600;color:#fff}
-.PASS{background:var(--pass)}.WARN{background:var(--warn)}.FAIL{background:var(--fail)}.ERROR{background:var(--err)}
+.PASS{background:var(--pass)}.WARN{background:var(--warn)}.FAIL{background:var(--fail)}.ERROR{background:var(--err)}.DOCUMENTED{background:var(--doc)}
 details{background:var(--card);border:1px solid var(--line);border-radius:6px;margin:6px 0;padding:4px 8px} summary{cursor:pointer}
 .sd{margin:4px 0;font-size:12px}
 </style></head><body>
 <h1>web-next fidelity report</h1>
-<p class="meta">generated ${esc(new Date().toISOString())}${meta.note ? ` · ${esc(meta.note)}` : ''}. A = web/ (React, Plotly), B = web-next (Alpine, ECharts), same API and level 2, 1440 px, light theme. PASS equal within tolerance · WARN label wording, edge-only point differences (captures seconds apart), advisory card text, off-palette colors · FAIL missing/extra traces, interior value differences, sensor spans, CSV rows/values · ERROR a side failed to load. Colors are not compared between apps (house palette); web-next data colors are checked against core/palette.</p>
+<p class="meta">generated ${esc(new Date().toISOString())}${meta.note ? ` · ${esc(meta.note)}` : ''}. A = web/ (React, Plotly), B = web-next (Alpine, ECharts), same API and level 2, 1440 px, light theme. PASS everything web-next draws matches · DOCUMENTED compared content differs on purpose (a renamed row, redesigned card text), citing DIVERGENCES · moved parts (web/ figures or cards this web-next page does not draw by design) are listed per item, citing DIVERGENCES, and not scored · WARN label wording, edge-only point differences (captures seconds apart), advisory card text, off-palette colors · FAIL missing/extra traces, interior value differences, sensor spans, CSV rows/values · ERROR a side failed to load. Colors are not compared between apps (house palette); web-next data colors are checked against core/palette.</p>
 ${sections}
 </body></html>`
 }

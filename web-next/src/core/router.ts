@@ -10,6 +10,8 @@
  *                         (the old default tool; a bare #ag opens the tool cards)
  *           #satellite  → #now (globalNotices explains)
  */
+import { AG_KEYS, agCardsPatch } from './ag/view/tab'
+import type { UrlState } from './url-schema'
 
 export const SECTIONS = [
   { id: 'now', label: 'Now' },
@@ -60,16 +62,14 @@ export function historyMode(from: Section, to: Section, drillDown = false): 'pus
 /** Keys that only the old Latest tab read; a hash-less link carrying one meant Latest. */
 const LATEST_KEYS = ['from', 'to', 'agg', 'vars', 'gridmet'] as const
 
-/** Ag keys other than `var`; an old `#ag` link with one of these but no `var` showed GDD. */
-const AG_KEYS = ['crop', 'gdd_lo', 'gdd_hi', 'gdd_proj', 'ag_time', 'lt', 'soilv', 'annv', 'ag_from', 'ag_to'] as const
-
 /**
  * Boot-time rewrite of a legacy link (run after `migrateLegacySearch`, which
  * renames per-tab keys using the OLD hash). Returns the new `{ search, hash }`
  * (`search` is `?…` or `''`), or null when the URL is already current.
  *  - `#latest`, or no hash with a Latest-only key → `#charts` + `cmp=1`
  *  - `#downloader` → `#download`
- *  - `#ag` with an Ag key but no `var` → `var=gdd` appended (it showed GDD)
+ *  - `#ag` with an Ag key (`AG_KEYS`) but no `var` → `var=gdd` appended (it
+ *    showed GDD); "All Ag tools" writes `agCardsPatch`, which keeps none
  * Every other key is kept byte-for-byte.
  */
 export function legacyRedirect(search: string, hash: string): { search: string; hash: string } | null {
@@ -88,24 +88,23 @@ export function legacyRedirect(search: string, hash: string): { search: string; 
   return null
 }
 
-/** The URL keys of a Charts drill-down (core/url-schema): variable, sub-view, Compare. */
-export interface ChartsKeys {
-  v: string | null
-  view: 'recent' | 'history' | 'table'
-  cmp: boolean
-}
+/** The Charts variable list: no variable, no Compare, the default sub-view. */
+export const CHARTS_LIST_PATCH: Partial<UrlState> = { v: null, view: 'recent', cmp: false }
 
 /**
  * A section-nav link from `from` to `to`: the URL patch and whether it adds a
- * history entry. Tapping Charts inside Charts returns to the variable list (a
- * drill-down back up, pushed); leaving Charts drops the variable so the next
- * visit opens the list. Other sections keep their state.
+ * history entry. Tapping Charts inside Charts returns to the variable list,
+ * and Ag inside Ag to the tool cards (a drill-down back up, pushed unless
+ * already there); leaving Charts drops the variable so the next visit opens
+ * the list. Other sections keep their state.
  */
-export function sectionNavPatch(from: Section, to: Section, state: ChartsKeys): { patch: Partial<ChartsKeys>; drillDown: boolean } {
-  if (from === 'charts' && to === 'charts') {
-    const atList = state.v === null && !state.cmp
-    return { patch: { v: null, view: 'recent', cmp: false }, drillDown: !atList }
-  }
+export function sectionNavPatch(
+  from: Section,
+  to: Section,
+  state: Pick<UrlState, 'v' | 'cmp' | 'var'>,
+): { patch: Partial<UrlState>; drillDown: boolean } {
+  if (from === 'charts' && to === 'charts') return { patch: CHARTS_LIST_PATCH, drillDown: state.v !== null || state.cmp }
+  if (from === 'ag' && to === 'ag') return { patch: agCardsPatch(), drillDown: state.var !== null }
   if (from === 'charts') return { patch: { v: null, view: 'recent' }, drillDown: false }
   return { patch: {}, drillDown: false }
 }

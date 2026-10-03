@@ -19,7 +19,7 @@ export interface TransitionOptions {
 const MORPH = 'dash-morph'
 const reduced = () => (typeof MCO !== 'undefined' ? MCO.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches)
 
-type StartVT = (cb: () => Promise<void> | void) => { finished: Promise<void>; updateCallbackDone: Promise<void> }
+type StartVT = (cb: () => Promise<void> | void) => { finished: Promise<void>; ready: Promise<void>; updateCallbackDone: Promise<void> }
 
 /** True when a transition would actually animate here. */
 export const canTransition = (): boolean => typeof document !== 'undefined' && 'startViewTransition' in document && !reduced()
@@ -43,6 +43,8 @@ export async function withTransition(update: () => void | Promise<void>, opts: T
       if (to) to.style.viewTransitionName = MORPH
     }
   })
+  // A quick second navigation skips this one: `ready` then rejects, which is expected, not an error.
+  vt.ready.catch(() => {})
   try {
     await vt.finished
   } catch {
