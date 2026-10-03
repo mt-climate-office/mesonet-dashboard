@@ -2,7 +2,7 @@
  * The station maps (thin wrappers over ui/map/map.ts + stationLayer):
  *   stationMap    — Latest card: select a station, fly to it.
  *   locatorMap    — About: as stationMap, small; the page keeps one-finger and wheel scrolling.
- *   pickerMap     — station picker: the whole state stays in view, click selects.
+ *   pickerMap     — station picker: the whole state stays in view, click selects; cooperative on touch.
  *
  * Markup: an empty element with a height; the component builds the map,
  * legend panel and sr-only table twin inside it.
@@ -120,6 +120,9 @@ export const stationMap = (opts: StationMapOptions) =>
 export const locatorMap = (opts: StationMapOptions) =>
   mapView({ legendCollapsed: true, ...opts }, { label: 'Locator map of Montana Mesonet stations', fly: true, cooperative: true })
 
-/** Station-picker map: picking a station does not move the map (the whole network stays in view). */
+/**
+ * Station-picker map: picking a station does not move the map (the whole network stays in view).
+ * On touch, two fingers move it, so one finger still scrolls the sheet or drawer.
+ */
 export const pickerMap = (opts: StationMapOptions) =>
-  mapView(opts, { label: 'Map of Montana Mesonet stations', fly: false })
+  mapView(opts, { label: 'Map of Montana Mesonet stations', fly: false, cooperative: matchMedia('(hover: none)').matches })

@@ -4,7 +4,7 @@
      overlay) or, on compact viewports, a bottom sheet (.dash-sheet); the class follows the viewport.
      The head's handle button is the sheet's drag/toggle target and is hidden in drawer mode. -->
 <aside id="station-picker" class="dash-picker" x-data="stationPicker"
-       :class="mode === 'sheet' ? 'dash-sheet' : 'dash-drawer'"
+       x-cloak :class="panelClass()"
        :role="modal ? 'dialog' : null" :aria-modal="modal ? 'true' : null"
        aria-labelledby="picker-title" data-testid="station-picker">
   <div class="dash-panel-head">
@@ -27,9 +27,9 @@
                autocomplete="off" spellcheck="false" aria-autocomplete="list" data-autofocus
                :id="ids.input" :placeholder="searchPlaceholder()" :aria-expanded="open"
                :aria-controls="ids.listbox" :aria-activedescendant="activeId()"
-               :value="inputText()" @input="onInput($event)"
+               :value="query" @input="onInput($event)"
                @keydown="onKeydown($event)" @click="toggle()">
-        <button type="button" class="ctl-clear" x-show="hasValue()"
+        <button type="button" class="ctl-clear" x-show="hasText()"
                 :aria-label="'Clear ' + label" @click="clear()">&times;</button>
         <button type="button" class="picker-near" x-show="geoSupported" @click="locate()"
                 :disabled="near.status === 'locating'" data-testid="near-me"
