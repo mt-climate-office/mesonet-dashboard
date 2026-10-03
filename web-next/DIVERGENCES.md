@@ -75,7 +75,11 @@ below, which stay for the record and name what replaced them.
 - **New:** the search field holds a "Near me" chip (the same one-time geolocation); its results show under the
   field once pressed. Recents follow, then "Browse on the map", which reveals the network chips and the map
   (MapLibre starts on the first reveal). Drawer / sheet, focus, `inert` and Esc rules are unchanged.
-- **Why:** DESIGN.md "Redesign 2026-10": most visits search or pick a recent station.
+  The field starts empty (P1 showed the station name in it) and ranks matches across networks while typing
+  (P1 grouped them by network); Esc clears the text, then closes the list, then the picker. On a phone,
+  the map opens the sheet full and fills it (two fingers move it).
+- **Why:** DESIGN.md "Redesign 2026-10": most visits search or pick a recent station. The prefilled name
+  had to be deleted before every search, and grouping put a prefix match under a network of weaker ones.
 
 ### Flat surfaces
 - **P1:** `.dash-card` had a 1 px border and a 12 px radius.

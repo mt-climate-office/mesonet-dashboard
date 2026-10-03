@@ -4,7 +4,8 @@
  * sideways swipe on a variable page walks the list; no
  * view scrolls sideways; the Now hero through its strip is above the fold at 390×844; the header is one
  * row at 390 and 1440 (sections in it only from tablet up); the phone tab bar has three items
- * on a solid surface; the Download sheet fits the screen; with reduced motion a section change
+ * on a solid surface; the Download sheet fits the screen; the picker sheet's map is in view after
+ * "Browse on the map"; with reduced motion a section change
  * starts no view transition. Run via `npm run verify`.
  */
 import { DL_QUERY, VIEWPORTS, check, finish, open, start } from './lib.mjs'
@@ -160,6 +161,28 @@ for (const vp of VIEWPORTS) {
     return { top: Math.round(b.top), bottom: Math.round(b.bottom), left: Math.round(b.left), right: Math.round(b.right), vw: innerWidth, vh: innerHeight }
   })
   check(`[download sheet ${vp.name}] fully on screen`, r.top >= 0 && r.left >= 0 && r.right <= r.vw && r.bottom <= r.vh, JSON.stringify(r))
+  await close()
+}
+
+/* ── Picker sheet (390): "Browse on the map" opens the sheet full with the map in view ── */
+{
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem', { viewport: PHONE })
+  await rendered({ filled: ['[data-testid="now-tiles"]'] })
+  await page.getByTestId('station-switcher').tap()
+  await page.getByTestId('picker-browse').tap()
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-map"] canvas'), null, { timeout: 30000 })
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 10000 })
+  const m = await page.evaluate(() => {
+    const sheet = document.getElementById('station-picker')
+    const body = sheet.querySelector('.dash-panel-body').getBoundingClientRect()
+    const map = sheet.querySelector('[data-testid="picker-map"]').getBoundingClientRect()
+    const bar = document.querySelector('.dash-tabbar').getBoundingClientRect()
+    return { state: sheet.dataset.state, top: Math.round(map.top), bottom: Math.round(map.bottom), h: Math.round(map.height), bodyTop: Math.round(body.top), bodyBottom: Math.round(body.bottom), barTop: Math.round(bar.top) }
+  })
+  check('[picker sheet 390] after "Browse on the map": sheet full, map ≥ 240 px tall and wholly in view above the tab bar',
+    m.state === 'full' && m.h >= 240 && m.top >= m.bodyTop && m.bottom <= m.bodyBottom + 1 && m.bottom <= m.barTop, JSON.stringify(m))
+  const p = await problems()
+  check('[picker sheet 390] console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 

@@ -1,7 +1,7 @@
 /**
  * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, one-row header
  * tab order + focus ring, the ⋯ menu (arrows, Esc, focus return), Help from the menu,
- * the Theme item, the picker's combobox and closing on a pick, the Now Provisional
+ * the Theme item, the picker's combobox (closing on a pick, Recent after it, ×, the Esc order), the Now Provisional
  * toggletip, tile → variable heading, "All readings" → About's readings sheet and the photo
  * dialog, the Charts drill-down and Back, views mounting only while
  * open (no cross-view requests), legacy links (#ag, #downloader), the Download sheet
@@ -140,8 +140,11 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
 {
   // First visit (no station): the in-flow drawer is open at 1440 px.
   const { page, problems, close } = await open(env, '?theme=light#now')
+  // One earlier station in Recent, so the pick below should make two rows without a reload.
+  await page.evaluate(() => localStorage.setItem('mco-dashboard-recent', 'mdaglasw'))
+  await page.reload({ waitUntil: 'load' })
   const input = page.getByTestId('picker-search').getByRole('combobox')
-  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Search by name or ID')
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Name or ID')
   await input.focus()
   await page.keyboard.type('acebozem')
   await page.keyboard.press('ArrowDown')
@@ -160,8 +163,57 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   }))
   check('picker: a pick closes the desktop drawer (saved closed), focus moves to <main>',
     picked.drawer === false && picked.saved === 'closed' && picked.focus === 'main', JSON.stringify(picked))
+  // Recent follows the pick at once (it used to need a reload).
+  await page.getByTestId('station-switcher').click()
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="recent-list"] .picker-row').length === 2, null, { timeout: 5000 }).catch(() => {})
+  const recent = await page.locator('[data-testid="recent-list"] .picker-row').allInnerTexts()
+  check('picker: after a pick, reopening shows 2 Recent rows (new first)', recent.length === 2 && /Bozeman/.test(recent[0]), JSON.stringify(recent))
   const p = await problems()
   check('picker: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Station picker search: starts empty; × clears, keeps focus, shows the full list; Esc order ── */
+{
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=light#now')
+  await rendered({ filled: ['[data-testid="now-tiles"]'] })
+  await page.getByTestId('station-switcher').click()
+  const search = page.getByTestId('picker-search')
+  const input = search.getByRole('combobox')
+  await input.waitFor({ state: 'visible' })
+  // Read after two frames, so Alpine has applied the last key or click.
+  const view = () => page.evaluate(async () => {
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+    const el = document.querySelector('[data-testid="picker-search"] input')
+    const popup = document.querySelector('[data-testid="picker-search"] .ctl-combobox-popup')
+    return {
+      value: el.value,
+      focused: document.activeElement === el,
+      list: !!popup && getComputedStyle(popup).display !== 'none',
+      options: document.querySelectorAll('[data-testid="picker-search"] [role="option"]').length,
+      clear: getComputedStyle(document.querySelector('[data-testid="picker-search"] .ctl-clear')).display !== 'none',
+      picker: document.getElementById('station-picker').classList.contains('is-open'),
+    }
+  })
+  const v0 = await view()
+  check('picker search: starts empty with no ×', v0.value === '' && !v0.clear, JSON.stringify(v0))
+  await input.fill('bo')
+  const v1 = await view()
+  await search.locator('.ctl-clear').click()
+  const v2 = await view()
+  check('picker search: × shows with text; it clears the text, keeps focus and shows the full list',
+    v1.clear && v2.value === '' && v2.focused && v2.list && v2.options > v1.options && !v2.clear, JSON.stringify([v1, v2]))
+  await input.fill('gl')
+  await page.keyboard.press('Escape')
+  const e1 = await view()
+  await page.keyboard.press('Escape')
+  const e2 = await view()
+  await page.keyboard.press('Escape')
+  const e3 = await view()
+  check('picker search: Esc clears the text, then closes the list, then closes the picker',
+    e1.value === '' && e1.list && e1.picker && !e2.list && e2.picker && !e3.picker, JSON.stringify([e1, e2, e3]))
+  const p = await problems()
+  check('picker search: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
