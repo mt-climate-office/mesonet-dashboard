@@ -39,7 +39,7 @@ export const TARGETS = {
   },
 }
 
-/** Deep link for `target`: ?s=…&params… #tab. Arrays join with commas (kept literal, as the apps write them). */
+/** Deep link for `target`: ?s=…&params… #tab ('latest' = no hash, web/'s default tab). Arrays join with commas (kept literal, as the apps write them). */
 export function appUrl(target, station, { tab = 'latest', params = {} } = {}) {
   const q = new URLSearchParams()
   if (station) q.set('s', station)
@@ -57,6 +57,21 @@ export function loadStations() {
   return JSON.parse(readFileSync(join(here, 'stations.json'), 'utf8')).stations
 }
 
+/**
+ * Where web-next shows web/'s Latest Data since the P1 routes (DESIGN.md "Information architecture"):
+ * the plot is Compare (`#charts`, cmp=1); the photo, forecast and wind rose are on Now; the map,
+ * metadata and current readings on About. `figures` (roles) and `cards` (web/ card → web-next host)
+ * are what that page shows; anything else web/ shows is reported DOCUMENTED with `see`.
+ * `media`: Now shows the photo at camera stations and the wind rose elsewhere, so a card scenario
+ * is compared only when Now shows its medium. `relabeled`: the card's rows were redesigned, so
+ * label changes are documented too (values under a shared label still WARN).
+ */
+const SEE_COMPARE = 'DIVERGENCES "Compare loses the Latest sidebar\'s station picker, network filter, collapse and the card column"'
+const SEE_ABOUT = 'DIVERGENCES "About replaces the metadata and current-conditions cards"'
+const compare = (params) => ({ tab: 'charts', params: { ...params, cmp: 1 }, figures: ['timeseries'], cards: {}, see: SEE_COMPARE })
+const now = (more) => ({ tab: 'now', params: {}, figures: [], see: SEE_COMPARE, ...more })
+const about = (more) => ({ tab: 'about', params: {}, figures: [], see: SEE_ABOUT, ...more })
+
 /** Latest Data scenarios (the old ui-latest set). `onlyRoles` limits a scenario to matrix roles. */
 export const LATEST_SCENARIOS = [
   { id: 'default', label: 'Default (hourly, default variables)', params: {} },
@@ -70,13 +85,13 @@ export const LATEST_SCENARIOS = [
     params: { agg: 'daily', from: '2026-05-01', to: '2026-06-15' },
   },
   { id: 'raw', label: 'Raw', params: { agg: 'raw' } },
-  { id: 'card-wind', label: 'Top card: Wind Rose', params: { card: 'wind' } },
-  { id: 'card-forecast', label: 'Top card: Weather Forecast', params: { card: 'forecast' } },
-  { id: 'card-photo', label: 'Top card: Latest Photo', params: { card: 'photo' } },
-  { id: 'info-map', label: 'Bottom card: Locator Map', params: { info: 'map' } },
-  { id: 'info-metadata', label: 'Bottom card: Station Metadata', params: { info: 'metadata' } },
-  { id: 'info-current', label: 'Bottom card: Current Conditions', params: { info: 'current' } },
-]
+  { id: 'card-wind', label: 'Top card: Wind Rose', params: { card: 'wind' }, next: now({ media: 'wind', figures: ['windrose'], cards: { top: '[data-testid="now-media"]' } }) },
+  { id: 'card-forecast', label: 'Top card: Weather Forecast', params: { card: 'forecast' }, next: now({ cards: { top: '[data-testid="now-forecast"]' }, relabeled: true }) },
+  { id: 'card-photo', label: 'Top card: Latest Photo', params: { card: 'photo' }, next: now({ media: 'photo', cards: { top: '[data-testid="now-media"]' } }) },
+  { id: 'info-map', label: 'Bottom card: Locator Map', params: { info: 'map' }, next: about({ cards: { bottom: '[data-testid="about-map"]' }, map: '[data-testid="about-map"]' }) },
+  { id: 'info-metadata', label: 'Bottom card: Station Metadata', params: { info: 'metadata' }, next: about({ cards: { bottom: '[data-testid="about-details"]' }, relabeled: true }) },
+  { id: 'info-current', label: 'Bottom card: Current Conditions', params: { info: 'current' }, next: about({ cards: { bottom: '[data-testid="about-readings"]' } }) },
+].map((sc) => ({ ...sc, next: sc.next ?? compare(sc.params) }))
 
 /**
  * Ag Tools scenarios (web/ vs web-next). `days`: window ending yesterday (null = the tab default,

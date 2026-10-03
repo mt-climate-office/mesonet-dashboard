@@ -1,6 +1,8 @@
 // Scenario drivers: open one tab of web/ (kind 'web') or web-next (kind 'next') from a deep link,
 // wait for render evidence (never networkidle), and return a capture:
-//   { url, figures[], cards{}, map, palette, messages[], download, log, shot, loadMs, error }
+//   { url, figures[], cards{}, map, media, palette, messages[], download, log, shot, loadMs, error }
+// web-next pages follow the P1 routes: Latest → Compare / Now / About (config `sc.next`),
+// #downloader → #download; Ag deep links carry `var`, so they open the tool, not the cards.
 import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import { appUrl, TIMEOUTS } from '../config.mjs'
@@ -17,7 +19,7 @@ function role(fig, tab) {
 }
 
 async function figures(page, target, tab) {
-  const figs = target.kind === 'web' ? await extractPlotly(page) : await extractECharts(page)
+  const figs = target.kind === 'web' ? await extractPlotly(page) : await extractECharts(page, target.base)
   return figs.map((f) => ({ ...f, role: role(f, tab) }))
 }
 
@@ -37,8 +39,6 @@ async function tagWebCards(page) {
     return out
   })
 }
-
-const NEXT_CARDS = { top: '[data-testid="top-card"] .lc-body', bottom: '[data-testid="bottom-card"] .lc-body' }
 
 /** True once nothing on the page says it is loading (both apps). */
 const quietUi = (kind) =>
@@ -101,22 +101,35 @@ const webLatestReady = () =>
   [...document.querySelectorAll('.js-plotly-plot')].some((g) => g.data?.length) ||
   /No data available|Select Station|No variables selected|Station not found/.test(document.querySelector('main')?.innerText ?? '')
 
-const nextLatestReady = () => {
-  const host = document.querySelector('[data-testid="latest-timeseries"]')
-  const status = document.querySelector('[data-testid="timeseries-status"]')
-  const chart = host?.querySelector('.chart')
-  return !!(chart?.dataset.zoom || (status && status.offsetParent !== null && !/Loading/.test(status.textContent)))
+/** web-next's page for the scenario (config `sc.next.tab`): Compare, Now or About. */
+const nextLatestReady = (tab) => {
+  const q = (s) => document.querySelector(s)
+  if (tab === 'charts') {
+    const status = q('[data-testid="timeseries-status"]')
+    return !!(q('[data-testid="latest-timeseries"] .chart')?.dataset.zoom || (status && status.offsetParent !== null && !/Loading/.test(status.textContent)))
+  }
+  if (tab === 'now') {
+    // Tiles in, the photo schedule known (no media skeleton), a wind rose drawn once it has data.
+    const rose = q('[data-testid="wind-rose-chart"]')
+    return !!(q('[data-testid="now-empty"]') || (q('[data-testid="now-tiles"]') && !q('[data-testid="now-media"] > .dash-skel') && (!rose || rose.querySelector('canvas'))))
+  }
+  // About: the readings settled, the details listed, the map drawn.
+  return !!(q('[data-testid="about-empty"]') || ((q('[data-testid="about-readings-table"]') || q('.about-message')) && q('.about-dl-row') && q('[data-testid="about-map"] canvas')))
 }
 
 export function captureLatest(browser, target, station, sc, outDir) {
-  const url = appUrl(target, station, { params: sc.params })
+  const next = target.kind === 'next'
+  const url = next ? appUrl(target, station, { tab: sc.next.tab, params: sc.next.params }) : appUrl(target, station, { params: sc.params })
   return withPage(browser, target, url, join(outDir, 'shots'), `${station}-${sc.id}-${target.kind}`, async (page, log, res) => {
-    await page.waitForFunction(target.kind === 'web' ? webLatestReady : nextLatestReady, null, { timeout: TIMEOUTS.render, polling: 300 })
+    if (next) await page.waitForFunction(nextLatestReady, sc.next.tab, { timeout: TIMEOUTS.render, polling: 300 })
+    else await page.waitForFunction(webLatestReady, null, { timeout: TIMEOUTS.render, polling: 300 })
     await waitQuiet(page, log, target.kind)
     res.figures = await figures(page, target, 'latest')
-    const cards = target.kind === 'web' ? await tagWebCards(page) : NEXT_CARDS
-    res.cards = await extractCards(page, cards)
-    if (target.kind === 'next') res.map = await extractMap(page, '[data-testid="locator-map"]')
+    res.cards = await extractCards(page, next ? sc.next.cards : await tagWebCards(page))
+    if (!next) return
+    // Now's medium: the photo at camera stations, the wind rose elsewhere.
+    res.media = await page.evaluate(() => (document.querySelector('[data-testid="now-photo"]') ? 'photo' : document.querySelector('[data-testid="wind-rose-card"]') ? 'wind' : null))
+    if (sc.next.map) res.map = await extractMap(page, sc.next.map)
   })
 }
 
@@ -155,7 +168,7 @@ async function readDownload(dl, dir, tag) {
 
 export function captureDownloader(browser, target, station, sc, range, outDir) {
   const params = { els: sc.elements, period: sc.period, qc: sc.qc, dl_from: range.start, dl_to: range.end }
-  const url = appUrl(target, station, { tab: 'downloader', params })
+  const url = appUrl(target, station, { tab: target.kind === 'next' ? 'download' : 'downloader', params })
   const tag = `${station}-${sc.id}-${target.kind}`
   return withPage(browser, target, url, join(outDir, 'shots'), tag, async (page, log, res) => {
     let runBtn, dlBtn
