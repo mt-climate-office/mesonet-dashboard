@@ -300,6 +300,16 @@ export const SENSOR_EVENT = {
   label: 'Sensor change',
 }
 
+/**
+ * Now hero 48 h strip: the observed area fill (this alpha on the air
+ * temperature line color; decorative, so no contrast floor) and the "now"
+ * rule (`--text-dim`, the same neutral as the other reference lines).
+ */
+export const HERO_STRIP = {
+  areaAlpha: 0.15,
+  nowRule: { token: '--text-dim' } as TokenRef,
+}
+
 /** SWP field-capacity / wilting-point bands and their dashed boundary lines. */
 export const SWP_BANDS = {
   fill: { token: '--text-dim', alpha: 0.12 } as TokenRef,
