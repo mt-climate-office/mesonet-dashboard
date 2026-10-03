@@ -21,6 +21,8 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
 ```
 
 - **Entry:** `?s=` opens that station; otherwise the last one; otherwise the picker (first visit).
+- **Picking** a station closes the picker at every size (the desktop drawer saves "closed") and moves focus
+  to `<main>`, the new station's content.
 - **History:** a section change is `pushState`, so Back returns to the previous section; changes inside a
   section (dates, toggles) replace the entry. Section links are real `<a href>`s: they open in a new tab
   and work before the JS runs.
