@@ -27,9 +27,10 @@ const CROW = st('acecrowa', 'Crow Agency', false)
 const url = (q: string) => readUrlState(q)
 
 describe('resolveAgTab', () => {
-  it('defaults: GDD, wheat, daily, last 365 days through today', () => {
+  it('defaults: the tool cards (GDD behind them), wheat, daily, last 365 days through today', () => {
     const t = resolveAgTab(url(''), BOZ, TODAY)
-    expect(t).toMatchObject({ variable: 'gdd', crop: 'wheat', period: 'daily', start: '2025-10-01', end: TODAY, soilVar: 'soil_vwc' })
+    expect(resolveAgTab(url('?var=etr'), BOZ, TODAY).open).toBe(true)
+    expect(t).toMatchObject({ open: false, variable: 'gdd', crop: 'wheat', period: 'daily', start: '2025-10-01', end: TODAY, soilVar: 'soil_vwc' })
     expect(t.cut.custom).toBe(false)
   })
   it('unknown var/crop fall back; time agg only for etr/feels/cci/swp/ps', () => {
