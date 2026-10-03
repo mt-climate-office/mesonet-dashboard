@@ -147,7 +147,7 @@ const webAgReady = () =>
 
 const nextAgReady = () => {
   const vis = (s) => [...document.querySelectorAll(s)].some((e) => e.offsetParent !== null)
-  return vis('.ag-chart-card .chart-canvas canvas') || vis('[data-testid="ag-empty"]') || vis('[data-testid="ag-error"]') || vis('[data-testid="ag-no-station"]')
+  return vis('.ag-chart-card .chart-canvas canvas') || vis('[data-testid="ag-empty"]') || vis('[data-testid="ag-error"]') || vis('[data-testid="ag-no-station"]') || vis('[data-testid="ag-not-here"]')
 }
 
 /** web-next names the open Ag tool `v` (one namespace with the Charts variables); web/ calls it `var`. */

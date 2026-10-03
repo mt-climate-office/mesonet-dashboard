@@ -264,9 +264,10 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await rendered({ filled: ['[data-testid="now-tiles"]'] })
   await page.getByTestId('tile-rh').focus()
   await page.keyboard.press('Enter')
-  await page.waitForFunction(() => document.querySelector('[data-testid="variable-title"]')?.textContent === 'Relative Humidity', null, { timeout: 10000 }).catch(() => {})
-  const opened = await page.evaluate(() => ({ hash: location.hash, v: new URLSearchParams(location.search).get('v') }))
-  check('charts: Enter on a Now tile opens its variable page (#charts&v=rh)', opened.hash === '#charts' && opened.v === 'rh', JSON.stringify(opened))
+  // The plain name (core/variables/labels); a timeout fails the check below instead of passing quietly.
+  await page.waitForFunction(() => document.querySelector('[data-testid="variable-title"]')?.textContent === 'Humidity', null, { timeout: 10000 }).catch(() => {})
+  const opened = await page.evaluate(() => ({ hash: location.hash, v: new URLSearchParams(location.search).get('v'), title: document.querySelector('[data-testid="variable-title"]')?.textContent }))
+  check('charts: Enter on a Now tile opens its variable page (#charts&v=rh, "Humidity")', opened.hash === '#charts' && opened.v === 'rh' && opened.title === 'Humidity', JSON.stringify(opened))
   await rendered({ charts: 1 })
   // ⋯ → Show as table from the keyboard: Enter opens the menu on its first item, ArrowDown, Enter.
   await page.getByTestId('var-menu-button').focus()
