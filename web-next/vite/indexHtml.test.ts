@@ -40,7 +40,8 @@ describe('index.html', () => {
     for (const s of ['now', 'charts', 'ag', 'download', 'about']) expect(out).toContain(`id="section-${s}"`)
     // Each section's partial (and its nested includes) made it into the page.
     expect(out).toContain('x-data="nowView')
-    expect(out).toContain('x-data="latestSidebar')
+    expect(out).toContain('x-data="variablePage')
+    expect(out).toContain('x-data="compareControls')
     expect(out).toContain('x-data="agTab')
     expect(out).toContain('x-data="downloader')
     expect(out).toContain('x-data="stationPicker')

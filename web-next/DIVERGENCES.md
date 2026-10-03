@@ -66,6 +66,47 @@ layout parts of older entries below; data behaviour is unchanged.
   the station reports them, to the plan's six elements so every tile has a sparkline. Data older than 2 h
   shows a stale warning; the provisional badge follows `/latest`'s `provisional` flag.
 
+## UX refactor: Charts (P1, 2026-10)
+
+These entries supersede the P0 note that Charts shows the Latest view. Data requests are unchanged
+(v2 API, QC level 2, no `premade`, inclusive end dates sent as an exclusive `end_time`).
+
+### Charts is a variable list with a page per variable; the stacked plot is "Compare"
+- **Legacy / web/:** one Latest Data plot with variable chips; no per-variable view, no history view.
+- **New:** `#charts` lists the station's variables by group (Weather, Precipitation & ET, Soil, Well, Other)
+  with a current value and a 48 h sparkline. A variable page (`v=<element family>`, e.g. `air_temp`) has
+  range presets 24 h · 7 d · 14 d · 30 d · 1 y · Custom (stored in `from`/`to`/`agg`), a min / max / mean
+  (or total) row, gridMET normals on daily views, prev/next chips, and History (years overlaid, daily, one
+  request per year, at most 10 years) and Table (the chart's rows, paged) views (`view=`). Every drill-down
+  is a history entry, so Back returns through them.
+- **Why:** plan "Variable page" / "Charts list": a reading leads to its history, not to a form.
+
+### Compare loses the Latest sidebar's station picker, network filter, collapse and the card column
+- **web/ (P0):** the Latest grid: sidebar (station combobox, network chips, dates, aggregation, normals,
+  variables; collapsible at ≥ 1200 px, `mco-dashboard-sidebar`, LDC-002), plot, and two card switchers
+  (photo / forecast / wind rose; map / metadata / current conditions; `card`/`info`).
+- **New:** Compare (`cmp=1`; `#latest` and hash-less Latest links still land here with
+  `from/to/agg/vars/gridmet`) keeps the dates, period of record, aggregation, normals and variable chips in
+  an "Options" disclosure (open beside the plot on desktop, closed above it on phones). The station comes
+  from the station picker; the photo, forecast and wind rose are on Now, the map, metadata and current
+  readings on About. `card`/`info` are read by nothing now and kept only so old links round-trip. The
+  `mco-dashboard-sidebar` key is no longer written.
+- **Why:** one station picker for the whole view; the cards moved to the sections that own them.
+
+### Now tiles open the variable page
+- **P0:** a tile opened Compare with its variables.
+- **New:** a tile opens its first variable's page (wind → Wind Speed, soil → Soil VWC), with the
+  shared-element morph into the page heading (none under reduced motion).
+
+### Charts on touch screens
+- **web/ and P0:** the inside dataZoom took drags and pinches, so a swipe over a chart panned it instead of
+  scrolling the page; tooltips followed the finger and covered up to ~45 % of a phone screen.
+- **New:** on touch devices (`(hover: none) and (pointer: coarse)`) every chart ignores swipes and pinches
+  (the page scrolls; presets, dates and the tablet slider zoom), tooltips open on a tap and close on a tap
+  outside the chart, and on phones they sit under the chart (Compare: under the tapped panel) at full width.
+  The variable chart is `min(60dvh, 420px)` tall on phones; Compare stacks ~3 panels per screen and scrolls.
+  A single-variable tooltip drops the repeated variable sub-header.
+
 ## House style
 
 ### Data colors

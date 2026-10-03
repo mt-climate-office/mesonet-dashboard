@@ -87,8 +87,9 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `set(patch)`; writes batch into one `replaceState` per tick, keep the hash,
   omit defaults (Ag `var` stays once set) and keep unknown keys. `section`
   comes from the hash (core/router.ts: now · charts · ag · download · about;
-  legacy `#latest`/`#downloader` map). `go(section, patch?)` changes section
-  with `pushState` (Back works); `hrefFor(section, patch?)` gives the real
+  legacy `#latest`/`#downloader` map). `go(section, patch?, drillDown?)` changes
+  section with `pushState` (Back works), as does a `drillDown` inside one (a Charts
+  variable or sub-view); `hrefFor(section, patch?)` gives the real
   href for a link. In-page anchors (the skip link's `#main`) keep the section.
   Back/forward re-read both. Navigate from UI through `ui/shell/navigate.ts`
   (view transition + scroll + announcement).
@@ -168,12 +169,25 @@ prefixed `<id>_` in the schema.
 **Add a Now tile.** (1) In `core/overview/tiles.ts`, push a `Tile` in
 `tiles()` when the station reports the value (read it in
 `core/overview/conditions.ts` if it is a new `/latest` column), with its
-`vars` (the Compare display variables it links to) and a `SeriesKey` for the
+`vars` (display variables; the tile opens the first one's Charts page) and a `SeriesKey` for the
 sparkline; add the element code to `SPARK_ELEMENTS` (or
 `OPTIONAL_SPARK_ELEMENTS`) and its column to `keyFor` in `series.ts`. (2) A
 test in `core/overview/overview.test.ts`. The partial renders every tile
 from the model, so no markup is needed unless the tile has a custom block
 (like `windDeg` or `soil`); styling hooks are `.now-tile--<id>`.
+
+**Add a variable (Charts).** A variable is a display name from the
+station's `/elements` (`latestVarsFromElements`: `description_short` before
+"@"), so a new API element already shows under Other with its element code
+as id. To place it: (1) its element-code prefix in `ELEM_MAP` and axis title
+in `AXIS_MAPPER` (`core/params/latest.ts`; the first `ELEM_MAP` code is its
+`v=` id), and a column rule in `variableForColumn` (`core/params/columns.ts`)
+if its column name is not "<name> [unit]"; (2) its group and position in
+`GROUPED` (`core/variables/catalog.ts`), and `SUMMED` if it is a total
+(bars, a total stat, a cumulative history); (3) a color in `core/palette`
+(`variableStyle`) or it takes a preview color; (4) a line in
+`core/variables/catalog.test.ts`. The list, variable page, history and
+Compare need no other change.
 
 **Add a layout primitive.** Framework-free first: CSS on kit tokens in
 `ui/layout/<name>.css` and, if it has behaviour, a vanilla
@@ -209,7 +223,6 @@ Use: `.mco-navbar` family, `.nav-btn` (`[aria-pressed]` for toggles,
 `MCO.createLiveRegion` (via `ui/shell/live.ts#announce`), `MCO.viewport`,
 `MCO.reducedMotion()`, `MCO.map.*`, `.mco-scrim`. localStorage keys other
 than `mco-theme` are `mco-dashboard-*` and re-validated on read:
-`mco-dashboard-sidebar` (Compare sidebar collapse, `core/latest/layout.ts`),
 `mco-dashboard-station`, `mco-dashboard-recent`, `mco-dashboard-drawer`
 (station picker, `core/stations/recent.ts`); sessionStorage holds
 `mco-dashboard-outage-<id>`. Where the kit has no piece (drawer, sheet, tab
@@ -225,8 +238,8 @@ ring only (no per-selector focus rules); ≥ 40 px touch targets under
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
-`npm run verify` runs axe on 10 scenarios (Now, the picker, Compare, Ag,
-Download, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
+`npm run verify` runs axe on 11 scenarios (Now, the picker, the Charts list,
+a variable page, Compare, Ag, Download, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
 
 ## Testing
 

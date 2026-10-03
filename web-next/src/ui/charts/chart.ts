@@ -112,7 +112,8 @@ export class ChartHost<M> {
         this.pending = true
         return
       }
-      this.chart?.resize()
+      // (TS narrowed `this.chart` to null above; init() has just set it.)
+      ;(this.chart as ECharts | null)?.resize()
     }
     this.draw(false)
     if (this.range) this.zoomTo(this.range[0], this.range[1])

@@ -3,16 +3,16 @@
 How the dashboard is laid out and why: the information architecture, the
 layout ladder, the shared components, motion and type. Read it with
 ARCHITECTURE.md (code layers, data flow, "How to …"). It describes the P0
-prototype of the UX refactor (plan "offer-this-as-a-unified-quill"); P1 fills
-in Charts, Ag, Download and About.
+prototype of the UX refactor (plan "offer-this-as-a-unified-quill") and the
+P1 sections as they land (Charts below).
 
 ## Information architecture
 
 ```
 Station view (?s=<id>; remembered in localStorage mco-dashboard-station)
 ├─ Now       #now (default)  current-conditions overview
-├─ Charts    #charts         P0: the existing Latest view as "Compare" (cmp=1)
-│                            P1: variable list → variable page (v=…) | Compare
+├─ Charts    #charts         variable list → variable page (v=…, view=recent|history|table)
+│                            | Compare (cmp=1)
 ├─ Ag        #ag             the Ag Tools view
 ├─ Download  #download       the Data Downloader view
 └─ About     #about          metadata, all current readings, locator map
@@ -69,6 +69,52 @@ Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png
 `390-dark-sheet-peek.png`, `768-light-now-acebozem.png`, `1440-dark-now-acebozem.png`,
 `1440-dark-drawer-open.png`, `390-light-now-arskeogh.png` (AgriMet, wind rose).
 
+## Charts
+
+```
+#charts                      list: groups Weather · Precipitation & ET · Soil · Well · Other
+#charts&v=air_temp           variable page, Recent (range presets, chart, stats)
+#charts&v=air_temp&view=history   years overlaid (daily)
+#charts&v=air_temp&view=table     the chart's rows, newest first, 50 per page
+#charts&cmp=1                Compare: stacked panels + options (legacy #latest lands here)
+```
+
+- **List** (`partials/charts/list.html`, `ui/charts/variableList.ts`, model `core/variables`): the station's
+  variables from `/elements/{s}`, one card per group, one row per variable: name · current value (from
+  `/latest`, shallowest depth for soil; the last 24 h total for precipitation and ETr) · 48 h sparkline (one
+  72 h hourly request for every listed variable). The last card opens Compare.
+- **Variable page** (`partials/charts/variable.html`, `ui/charts/variablePage.ts`): "‹ All variables", the
+  heading (`[data-vt-target]`: a tapped Now tile or list row morphs into it), prev/next chips in list order,
+  a Recent · History · Table switch, then
+  - **Recent:** presets **24 h · 7 d · 14 d · 30 d · 1 y · Custom** stored in `from`/`to`/`agg` (14 d hourly =
+    no keys; 1 y daily; 24 h shows the 24 hours before the newest reading); Custom opens dates + Hourly /
+    Daily / Raw; a gridMET normals switch for variables with normals, enabled on daily views; the chart
+    (`core/charts/variable.ts`, the Compare panel drawing for one variable) and a stats row: min / max /
+    mean per sensor over the visible range, or the total for precipitation and ETr.
+  - **History:** one line per year on a day-of-year axis (`annualChart`), running totals for summed
+    variables. Daily data, **one calendar year per request**, newest first; the next older year is requested
+    once the newer ones settle, so the chart fills in progressively (skeleton until the first year). At most
+    10 years; never a long hourly window.
+  - **Table:** the chart's table twin made visible, newest first, paged 50 rows (Newer / Older).
+- **Compare** (`partials/charts/compare.html`, `ui/charts/compare.ts` + `compareControls.ts`): the stacked
+  chart from the old Latest tab with its options (dates, period of record, aggregation, normals, variable
+  chips) in an "Options" disclosure, beside the plot on desktop and closed above it on phones. The station
+  comes from the picker; the photo, forecast and map cards live on Now and About.
+- **History:** every list → variable, variable → variable and sub-view change is a `pushState`
+  (`navigate(…, { drillDown: true })`), so Back walks back through them to the list or to Now; presets,
+  dates and switches replace the entry.
+
+### Charts on touch
+
+`ChartContext.touch` (`(hover: none) and (pointer: coarse)`, set by the chart host) changes every chart:
+- the `inside` dataZoom is `disabled`: it still holds the window, but a swipe over a chart scrolls the
+  page (no drag-pan, no pinch); range presets, date fields and the slider (tablet) zoom instead;
+- tooltips open on a **tap** and close on a tap outside the chart (host), compact (12 px);
+- on compact screens the tooltip is **pinned under the chart** at full width (Compare: under the tapped
+  panel), so it never covers the data;
+- chart height on phones: the variable chart `min(60dvh, 420px)`; Compare ~160 px per panel, about three
+  per screen, and the page scrolls past the stack.
+
 ## Components (`src/ui/layout/`; kit candidates, see KIT-NOTES.md)
 
 Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; the Alpine wrappers
@@ -118,7 +164,10 @@ New CSS uses only these. Older per-tab CSS (latest/ag/downloader) moves onto the
 
 ## Accessibility notes
 
-- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `picker`) × 3 themes × 1440/390.
+- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `picker`, `charts-list`,
+  `variable`, `compare`) × 3 themes × 1440/390.
+- Charts: the Table view is a real `<table>` (caption, scoped headers) in a focusable, labelled scroll region;
+  presets and view switches are radios / links with `aria-current`; stats are a `<dl>`.
 - Touch targets ≥ 40 px under `(hover: none)`; the tab bar is 56 px.
 - Status is text: "Provisional", "No report for over 2 hours", "Feels like 41° · Wind chill".
 - The picker is `role="dialog" aria-modal="true"` only when it is modal (sheet, overlay drawer); the inline
