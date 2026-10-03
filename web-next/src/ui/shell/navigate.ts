@@ -72,7 +72,7 @@ export function revealWhenReady(id: string): void {
 }
 
 /** A plain left click (no modifier key): handled in-app; anything else follows the href. */
-const plainClick = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey
+export const plainClick = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey
 
 /** Click handler for an in-app link: a plain click is `navigate(section, opts)` instead of the href. */
 export function follow(e: MouseEvent, section: Section, opts: NavigateOptions = {}): void {

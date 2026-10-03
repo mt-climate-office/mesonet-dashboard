@@ -63,6 +63,11 @@
         <span class="charts-row-name">Compare</span>
         <span class="dash-section-note">Several variables stacked on one time axis.</span>
       </a>
+      <!-- Until each chart's ⋯ menu offers it (REDESIGN.md "Download sheet"), the sheet opens from here. -->
+      <a class="dash-card charts-compare" :href="downloadHref()" @click="openDownload($event)" data-testid="charts-download-link">
+        <span class="charts-row-name">Download data</span>
+        <span class="dash-section-note">Any variables and dates as a CSV file.</span>
+      </a>
     </div>
   </template>
 </div>
