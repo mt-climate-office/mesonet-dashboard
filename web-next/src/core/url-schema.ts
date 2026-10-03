@@ -270,7 +270,7 @@ export function latestVars(state: Pick<UrlState, 'vars'>): string[] {
   return state.vars ?? [...SELECTED_VARS]
 }
 
-/** Patch for "user picked a station" (picker, Download's combobox and map). */
+/** Patch for "user picked a station" (the station picker and its map). */
 export function selectStationPatch(id: string | null): Partial<UrlState> {
   return { s: id }
 }

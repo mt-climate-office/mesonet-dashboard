@@ -1,6 +1,6 @@
-<!-- Download sheet (x-data="sheet", ui/shell/sheet.ts): the downloader (partials/downloader/index.html)
+<!-- Download sheet (x-data="sheet", ui/shell/sheet.ts): one short form (partials/downloader/index.html)
      in a modal sheet, open while ?dl=1. Old #download / #downloader links land here (core/router).
-     The form mounts only while the sheet is open. Its scrim is #sheet-download-scrim. -->
+     The form mounts only while the sheet is open; the body scrolls. Its scrim is #sheet-download-scrim. -->
 <div class="mco-scrim dash-scrim dash-sheet-scrim" id="sheet-download-scrim" hidden></div>
 <section id="sheet-download" class="dash-sheet dash-sheet--modal dl-sheet" role="dialog" aria-modal="true"
          aria-labelledby="sheet-download-title" x-data="sheet({ id: 'download', urlKey: 'dl' })" data-testid="sheet-download" hidden>

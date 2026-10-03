@@ -27,7 +27,7 @@ import { rangeSlider } from './ui/controls/rangeSlider'
 import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
 import { downloader } from './ui/downloader/downloader'
-import { downloaderMap, locatorMap, pickerMap, stationMap } from './ui/map/presets'
+import { locatorMap, pickerMap, stationMap } from './ui/map/presets'
 import { forecastCard } from './ui/now/forecastCard'
 import { photoCard } from './ui/now/photoCard'
 import { windRoseCard } from './ui/now/windRoseCard'
@@ -142,7 +142,6 @@ Alpine.data('rangeSlider', rangeSlider)
 
 // Station maps (ui/map/presets.ts): x-data="stationMap({ stations, selected, onSelect })".
 Alpine.data('stationMap', stationMap)
-Alpine.data('downloaderMap', downloaderMap)
 Alpine.data('pickerMap', pickerMap)
 Alpine.data('locatorMap', locatorMap)
 
