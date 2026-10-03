@@ -46,6 +46,9 @@ export function listRequest(station: string, vars: readonly Variable[], elements
   return recordRequest({ station, window, agg: 'hourly', vars: vars.map((v) => v.name), stationElements: elements })
 }
 
+/** Rain and its rate draw no sparkline when every value is zero (as Now's Rain tile after a dry week). */
+const HIDE_WHEN_DRY = new Set(['ppt', 'ppt_max_rate'])
+
 const unitOf = (col: string) => /\[([^\]]+)\]\s*$/.exec(col)?.[1] ?? ''
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 
@@ -62,8 +65,9 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
   return vars.map((v) => {
     const col = primaryColumn(hourlyCols, v.name)
     const series = col ? { t: last48.map((x) => x.t), v: last48.map((x) => num(x.r[col])) } : null
-    const spark = series ? sparkline(series, { kind: v.sum ? 'bars' : 'line' }) : null
     const vals = series ? series.v.filter((x): x is number => x !== null) : []
+    const dry = HIDE_WHEN_DRY.has(v.id) && !vals.some((x) => x > 0)
+    const spark = series && !dry ? sparkline(series, { kind: v.sum ? 'bars' : 'line' }) : null
     const unit = col ? unitOf(col) : ''
     const fmt = (x: number, u: string) => `${fmtStat(x)}${u ? ` ${u}` : ''}`
     // The plain unit and precision where labels.ts knows the variable (totals at table precision, as the stats).
@@ -72,8 +76,8 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
     const sparkLabel = !spark
       ? ''
       : v.sum
-        ? `Last 48 hours: ${fmt(vals.reduce((a, b) => a + b, 0), unit)} in total.`
-        : `Last 48 hours: from ${fmt(vals.reduce((a, b) => Math.min(a, b)), unit)} to ${fmt(vals.reduce((a, b) => Math.max(a, b)), unit)}.`
+        ? `Last 48 hours: ${show(vals.reduce((a, b) => a + b, 0), unit, 'table')} in total.`
+        : `Last 48 hours: from ${show(vals.reduce((a, b) => Math.min(a, b)), unit)} to ${show(vals.reduce((a, b) => Math.max(a, b)), unit)}.`
 
     if (v.sum) {
       const [from, to] = last24h(end)

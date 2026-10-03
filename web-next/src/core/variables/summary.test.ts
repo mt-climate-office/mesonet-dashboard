@@ -60,11 +60,15 @@ describe('variableRows', () => {
   it('summed variables show the last 24 h total and bars', () => {
     expect(byId.ppt).toMatchObject({ value: '0.30 in', note: 'last 24 h' })
     expect(byId.ppt.spark?.kind).toBe('bars')
-    expect(byId.ppt.sparkLabel).toBe('Last 48 hours: 0.3 in in total.')
+    expect(byId.ppt.sparkLabel).toBe('Last 48 hours: 0.30 in in total.')
   })
   it('draws a 48 h line and describes its range', () => {
     expect(byId.air_temp.spark?.kind).toBe('line')
     expect(byId.air_temp.sparkLabel).toBe('Last 48 hours: from 40 °F to 63 °F.')
+  })
+  it('Rain draws no sparkline when the 48 h are dry (as the Now Rain tile)', () => {
+    const dry = HOURLY.map((r) => ({ ...r, 'Precipitation [in]': 0 }))
+    expect(variableRows(VARS, LATEST, dry).find((r) => r.id === 'ppt')).toMatchObject({ value: '0.00 in', spark: null, sparkLabel: '' })
   })
   it('shows "—" and no sparkline without values, and works before the hourly rows load', () => {
     expect(byId.bp).toMatchObject({ value: '—', spark: null, sparkLabel: '' })

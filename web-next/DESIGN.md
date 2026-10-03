@@ -171,7 +171,7 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
   (`#charts-ag-tools`, `LIST_AG_TOOLS`: every tool but Annual comparison and Reference ET, which is listed once,
   under Rain and evaporation) and **More** (Compare variables). A row: plain name over a sub-label ("at 2 in",
   "last 24 h", what an Ag tool is) · the current value in plain units and precision (`formatReading`; the
-  last 24 h total for totals; none for Ag tools) · a 48 h sparkline (one 72 h hourly request for every listed
+  last 24 h total for totals; none for Ag tools) · a 48 h sparkline (none for Rain and Rain rate when all 48 h are dry, as on Now; one 72 h hourly request for every listed
   variable). Every row opens its page through `chartPatch(id)` (core/variables).
 - **Chart page frame** (variable page and Ag tools, `.chart-page` in styles/charts.css): back chevron (to the
   list) · title (`[data-vt-target]`: a tapped Now tile or list row morphs into it) · **⋯ menu**; under it one
