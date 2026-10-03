@@ -97,7 +97,7 @@ layout parts of older entries below; data behaviour is unchanged.
   would not be a normal total). Stations without `/derived/ppt/` (AgriMet) show since-midnight and 24 h
   from the hourly request. The sparkline request adds `bp` (pressure), and `snow_depth` / `vpd_atmo` when
   the station reports them, to the plan's six elements so every tile has a sparkline. Data older than 2 h
-  shows a stale warning; the provisional badge follows `/latest`'s `provisional` flag.
+  shows a stale warning; the provisional ⓘ note follows `/latest`'s `provisional` flag.
 
 ### Download: a stepper on phones, step cards elsewhere (P1)
 - **Legacy / web/:** one form column (station, variables, QC, aggregation, dates, Run / Download CSV) with

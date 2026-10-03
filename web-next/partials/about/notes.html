@@ -4,13 +4,13 @@
   <h3 class="dash-card-title" id="about-notes-title">About the data</h3>
   <dl class="about-notes-list">
     <dt>Quality control</dt>
-    <dd>Every value in this dashboard is quality-controlled (QC level 2): the daily QC pipeline removes
+    <dd>The dashboard requests quality-controlled data (QC level 2): the daily QC pipeline removes
         spikes, steps, stuck sensors and wind-affected precipitation. Download also offers the raw and
         provisional levels.</dd>
     <dt>Provisional data</dt>
-    <dd>The newest observations, usually the last day, have not been through the daily pipeline yet. They
-        are marked <strong>Provisional</strong> on Now and in the <code>provisional</code> column of
-        downloads, and they may still change.</dd>
+    <dd>Observations since the last daily QC run (about 8 AM) have had only basic range checks, so they are
+        served at QC level 1. They are flagged by the ⓘ on Now and in the <code>provisional</code> column of
+        downloads, and are replaced by level 2 values after the next run.</dd>
     <dt>Times and units</dt>
     <dd>Times are Mountain Time. Values are in US units as the Mesonet API sends them; “Feels like” is the
         NWS wind chill or heat index when one applies, otherwise the air temperature.</dd>

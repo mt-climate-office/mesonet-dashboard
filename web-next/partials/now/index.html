@@ -45,7 +45,7 @@
         <template x-if="o.freshness?.provisional">
           <span class="dash-toggletip" x-data="toggletip" data-testid="now-provisional">
             <button type="button" class="nav-btn mco-btn-info dash-toggletip-btn" aria-label="Provisional data" aria-controls="now-provisional-tip" aria-expanded="false"><span aria-hidden="true">i</span></button>
-            <span class="dash-toggletip-tip" id="now-provisional-tip" hidden><strong>Provisional data.</strong> The dashboard shows quality-controlled data (QC level 2), but the newest readings have not been through the daily quality-control pass yet, so they may change.</span>
+            <span class="dash-toggletip-tip" id="now-provisional-tip" hidden><strong>Provisional data.</strong> Readings since the last daily quality-control run (about 8 AM) have had only basic range checks (QC level 1). They are replaced by fully checked level 2 values after the next run, so they may change.</span>
           </span>
         </template>
         <template x-if="o.freshness?.stale">

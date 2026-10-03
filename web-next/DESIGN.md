@@ -59,7 +59,7 @@ switcher already shows the name, so the heading is `.sr-only` there and only the
 
 | Slot | Content | Data (tier) |
 |---|---|---|
-| Freshness | "Updated 7 min ago", an ⓘ toggletip when the data are provisional (QC level 2, not yet through the daily QC pass), **No report for over 2 hours** warning | `/latest` (1) |
+| Freshness | "Updated 7 min ago", an ⓘ toggletip when the data are provisional (served at QC level 1 until the next daily QC run, about 8 AM), **No report for over 2 hours** warning | `/latest` (1) |
 | Hero | Air temperature; NWS feels-like with "Wind chill"/"Heat index"; today's high/low; gridMET normal high/low; 48 h sparkline | `/latest` (1); hourly + `tmmx`/`tmmn` (2) |
 | Tiles | Wind (speed, gust, compass glyph pointing where it blows), Precipitation (today, 24 h, 7 d, YTD vs normal), Humidity, Solar, Pressure, Soil (depth profile: temp + VWC bar), Snow depth (only with snow: ≥ 0.5 in now or in any hour of the last 72 h), VPD (AgriMet); each a link to its variable, with a 48 h sparkline | `/latest`, `/derived/ppt/` (1); hourly + `pr` (2) |
 | Media | Latest camera frame of the default direction (opens the photo dialog), or the wind rose without a camera | photo schedule, latest listings (1) |
