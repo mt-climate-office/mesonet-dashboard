@@ -22,7 +22,7 @@ const model = (n = 24, vars = ['Air Temperature']): VariableModel => ({
   extent: [view[0] - DAY, view[1]],
 })
 
-type Opt = { grid: Record<string, number>[]; series: { type: string; color: string }[]; dataZoom: { type: string; disabled?: boolean }[]; tooltip: { triggerOn?: string } }
+type Opt = { grid: Record<string, number>[]; series: { type: string; color: string }[]; dataZoom: { type: string; disabled?: boolean; startValue?: number; endValue?: number }[]; tooltip: { triggerOn?: string } }
 
 describe('variableChart', () => {
   it('draws the Compare panel for one variable, its plot filling the host height', () => {
@@ -43,8 +43,8 @@ describe('variableChart', () => {
   it("the x axis is the shown window, so the slider's track matches the chart (no empty zoom-out padding)", () => {
     const o = variableChart(model(), testCtx('dark')) as unknown as Opt & { xAxis: { min: number; max: number }[] }
     expect(o.xAxis[0]).toMatchObject({ min: view[0], max: view[1] })
-    const slider = o.dataZoom.find((z) => z.type === 'slider') as { startValue: number; endValue: number }
-    expect([slider.startValue, slider.endValue]).toEqual([o.xAxis[0].min, o.xAxis[0].max])
+    const slider = o.dataZoom.find((z) => z.type === 'slider')
+    expect([slider?.startValue, slider?.endValue]).toEqual([o.xAxis[0].min, o.xAxis[0].max])
   })
   it('compact tooltip: no panel sub-header for one variable', () => {
     const o = variableChart(model(), testCtx('dark')) as unknown as { tooltip: { formatter: (p: unknown) => string } }
