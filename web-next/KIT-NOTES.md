@@ -70,7 +70,7 @@ falls short.
   with the kit documenting `--chrome-h`, `--tabbar-h`, `--sheet-h` as the shared names.
 
 ### In-flow card — new
-- **Here:** `.dash-card`, `.dash-card-head`, `.dash-card-title`, `--card-pad`, `--card-radius` (16 px),
+- **Here:** `.dash-card`, `.dash-card-title`, `--card-pad`, `--card-radius` (16 px),
   `--card-shadow` (`ui/layout/card.css`). Since the redesign: flat, no border (high contrast keeps one).
 - **Shadow:** the kit's `--shadow` is one 24 px floating shadow; a card needs a lighter one. A value cannot be
   scaled in CSS, so `--card-shadow` is two short layers tinted with `color-mix()` of the kit `--scrim`, which

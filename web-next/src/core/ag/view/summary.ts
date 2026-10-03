@@ -6,6 +6,7 @@
  */
 import type { LocalDate } from '../contract'
 import { GDD_CUTOFFS_F } from '../compute/gdd'
+import { intervalWord } from '../../variables/interval'
 import type { AgTab } from './tab'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -85,7 +86,7 @@ export function optionChips(t: AgTab, annualLabel: string | null, today: LocalDa
       case 'projection':
         return PROJECTION_TEXT[t.gddProj]
       case 'interval':
-        return t.period === 'hourly' ? 'Hourly' : 'Daily'
+        return intervalWord(t.period)
       case 'livestock':
         return t.livestock === 'newborn' ? 'Newborn' : 'Adult'
       case 'soil':

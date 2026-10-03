@@ -2,7 +2,6 @@
      .dash-popover         the positioned wrapper around the button and the panel
      .dash-popover-panel   role="dialog": a surface under the button, left-aligned, at --z-flyout;
                            on phones docked at the bottom, full width, like a small sheet
-     .dash-popover-title   its heading (the option's name)
    Kit tokens only. */
 
 .dash-popover { position: relative; display: inline-flex; }
@@ -18,7 +17,6 @@
   box-shadow: var(--shadow);
 }
 .dash-popover-panel[hidden] { display: none; }
-.dash-popover-title { margin: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
 
 @media (max-width: 640px), (max-height: 560px) {
   .dash-popover { position: static; }

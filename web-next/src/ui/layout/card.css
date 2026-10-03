@@ -35,9 +35,7 @@ a.dash-card {
 a.dash-card:hover { background: var(--accent-hover); }
 [data-theme="high-contrast"] a.dash-card:hover { border-color: var(--accent-line); }
 
-.dash-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; }
 .dash-card-title { margin: 0 0 0.6rem; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
-.dash-card-head .dash-card-title { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Display numerals (readings ≥ 1.75 rem: the Now hero, tiles): Outfit with tabular figures and a
    slight negative tracking. Space Mono stays for tables, ids, timestamps and axes. The one app

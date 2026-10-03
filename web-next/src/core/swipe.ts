@@ -6,8 +6,8 @@
  */
 
 /** Least sideways travel (CSS px), and how much more sideways than vertical it must be. */
-export const SWIPE_MIN_PX = 60
-export const SWIPE_RATIO = 2
+const SWIPE_MIN_PX = 60
+const SWIPE_RATIO = 2
 
 /** −1 (swipe right: the previous variable), 1 (swipe left: the next), or 0 (not a swipe). */
 export function swipeStep(dx: number, dy: number): -1 | 0 | 1 {
