@@ -50,6 +50,9 @@ covers content) and the toast.
 **Navbar:** logo · brand · **station switcher** (pin icon + "Bozeman ▾", truncates, opens the picker) · Share ·
 theme · Help. One row at every width. Feedback lives in Help and the footer.
 
+**Station header:** the station name (`--fs-xl` heading) over "network · county · elevation". On compact the
+switcher already shows the name, so the heading is `.sr-only` there and only the meta line shows.
+
 ## Now
 
 | Slot | Content | Data (tier) |
@@ -110,7 +113,7 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 | `--fs-xs` | 0.75 | labels, captions, badges, tab-bar labels |
 | `--fs-sm` | 0.875 | card text, secondary lines, section links |
 | `--fs-md` | 1 | body, **inputs on touch** (≥ 16 px stops iOS zoom) |
-| `--fs-lg` | 1.25 | station name on phones, section titles |
+| `--fs-lg` | 1.25 | section titles |
 | `--fs-xl` | 1.75 | tile values, station name |
 | `--fs-2xl` | 2.5 | the hero value |
 
