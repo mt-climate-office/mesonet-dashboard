@@ -23,6 +23,11 @@ export interface MapHostOptions {
   layers: (map: MapLibre.Map, theme: Theme) => void
   /** Stronger county lines (Downloader, as in legacy). */
   emphasiseCounties?: boolean
+  /**
+   * One finger (touch) and a plain wheel scroll the page; two fingers or
+   * Ctrl/⌘ + wheel move the map. For small maps in a scrolling page.
+   */
+  cooperativeGestures?: boolean
 }
 
 export interface MapHost {
@@ -48,6 +53,7 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
     dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
+    cooperativeGestures: opts.cooperativeGestures === true,
   })
   map.touchZoomRotate.disableRotation()
   map.keyboard.disableRotation()
