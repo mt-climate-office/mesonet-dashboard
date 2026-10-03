@@ -50,6 +50,11 @@ a.dash-card:hover { background: var(--accent-hover); }
 /* Display numerals (readings ≥ 1.75 rem: the Now hero, tiles): Outfit with tabular figures and a
    slight negative tracking. Space Mono stays for tables, ids, timestamps and axes. The one app
    utility for it until the kit ships one (mco-web-style#36; KIT-NOTES.md). */
+:root {
+  --fs-display-tile: 1.9rem;  /* Now's tile values */
+  --fs-display-hero: 5rem;    /* Now's temperature; 7 rem beside the tiles (desktop) */
+}
+@media (min-width: 1060px) and (min-height: 561px) { :root { --fs-display-hero: 7rem; } }
 .num-display {
   font-family: var(--font-ui);
   font-variant-numeric: tabular-nums;
