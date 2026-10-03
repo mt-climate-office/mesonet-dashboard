@@ -107,6 +107,12 @@ export class ChartHost<M> {
       await loadECharts()
       if (this.disposed) return
       if (!this.chart) await this.init()
+      // The box may have changed (or been hidden) while ECharts loaded; a resize then found no instance.
+      if (!this.hasSize()) {
+        this.pending = true
+        return
+      }
+      this.chart?.resize()
     }
     this.draw(false)
     if (this.range) this.zoomTo(this.range[0], this.range[1])

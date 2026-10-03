@@ -1,80 +1,33 @@
 /**
- * `latestSidebar`: bindings for the Latest controls (partials/latest/index.html):
- * station combobox, network chips, dates + period of record, aggregation,
- * gridMET switch and variable chips. State lives in `$store.url`; the rules
- * are in core/latest/sidebar.ts.
+ * `x-data="compareControls"`: the Compare options (partials/charts/compare.html):
+ * dates + period of record, aggregation, the gridMET switch and the variable
+ * chips. State lives in `$store.url` (the legacy Latest keys); the rules are
+ * in core/latest/sidebar.ts. The station comes from the station picker.
  */
 import Alpine from 'alpinejs'
-import { getStationElements, type StationElement } from '../../core/api'
-import type { Resource } from '../../core/cache'
-import type { ComboboxItem } from '../../core/controls/comboboxModel'
-import {
-  TTL,
-  datesPatch,
-  elementsKey,
-  installDate,
-  netsValue,
-  networkOptions,
-  periodOfRecordPatch,
-  showingPeriodOfRecord,
-  stationItems,
-  todayIso,
-  variableOptions,
-  varsValue,
-} from '../../core/latest'
+import { datesPatch, installDate, periodOfRecordPatch, showingPeriodOfRecord, todayIso, variableOptions, varsValue } from '../../core/latest'
 import { availableVars, chartWindow, isIsoDate } from '../../core/models/timeseries'
 import { latestVars, type LatestAgg } from '../../core/url-schema'
 import { component } from '../component'
+import { stationElements } from './resources'
 
 const url = () => Alpine.store('url')
 const stations = () => Alpine.store('station')
 
-/** The station's `/elements/{id}/` resource (shared by the sidebar and the timeseries), or null. */
-export function elementsResource(id: string | null): Resource<StationElement[]> | null {
-  return id ? Alpine.store('data').cached(elementsKey(id), () => getStationElements(id), { ttl: TTL.elements }) : null
-}
-
-/** The station's element list, or undefined while loading / without a station. */
-export function stationElements(id: string | null): StationElement[] | undefined {
-  const d = elementsResource(id)?.data
-  return d ? (Alpine.raw(d) as StationElement[]) : undefined
-}
-
 const opts = (values: readonly string[]) => values.map((v) => ({ value: v, label: v }))
 
-export function latestSidebar() {
+export function compareControls() {
   return component({
+    /** The `<details>` starts open beside the plot, closed above it on phones. */
+    init() {
+      ;(this.$el as HTMLDetailsElement).open = !MCO.viewport.isCompact()
+    },
+
     aggOptions: [
       { value: 'hourly', label: 'Hourly' },
       { value: 'daily', label: 'Daily' },
       { value: 'raw', label: 'Raw' },
     ],
-
-    /* Station */
-    stationItems(): ComboboxItem[] {
-      return stationItems(stations().list, url().state.nets, stations().id)
-    },
-    stationValue(): string | null {
-      return stations().id
-    },
-    stationPlaceholder(): string {
-      const c = stations().catalog
-      return c?.status === 'error' ? 'Failed to load stations' : c?.data ? 'Select a Mesonet Station...' : 'Loading stations…'
-    },
-    selectStation(id: string | null): void {
-      stations().select(id)
-    },
-
-    /* Networks */
-    networkOptions() {
-      return opts(networkOptions(stations().list))
-    },
-    nets(): string[] {
-      return [...url().state.nets]
-    },
-    setNets(next: string[]): void {
-      url().set({ nets: netsValue(next, networkOptions(stations().list)) })
-    },
 
     /* Dates */
     installed(): string | null {
@@ -84,9 +37,6 @@ export function latestSidebar() {
       // A malformed ?from/?to shows as an empty input (the plot shows the no-data message).
       const w = chartWindow(url().state.from, url().state.to)
       return { start: isIsoDate(w.start) ? w.start : '', end: isIsoDate(w.end) ? w.end : '' }
-    },
-    dateMin(): string | null {
-      return this.installed()
     },
     dateMax(): string {
       return todayIso()

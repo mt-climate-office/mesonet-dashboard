@@ -12,6 +12,12 @@ import { browserStorage, createStationStore } from './stores/station'
 import { createThemeStore } from './stores/theme'
 import { createUrlStore } from './stores/url'
 import { chart } from './ui/charts/chart'
+import { chartsView } from './ui/charts/chartsView'
+import { compare } from './ui/charts/compare'
+import { compareControls } from './ui/charts/compareControls'
+import { variableHistory } from './ui/charts/variableHistory'
+import { variableList } from './ui/charts/variableList'
+import { variablePage } from './ui/charts/variablePage'
 import { chips } from './ui/controls/chips'
 import { combobox } from './ui/controls/combobox'
 import { dateInput } from './ui/controls/dateInput'
@@ -22,12 +28,10 @@ import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
 import { downloader } from './ui/downloader/downloader'
 import { downloaderMap, pickerMap, stationMap } from './ui/map/presets'
-import { bottomCard } from './ui/latest/cards/bottomCard'
 import { currentCard } from './ui/latest/cards/currentCard'
 import { forecastCard } from './ui/latest/cards/forecastCard'
 import { metadataCard } from './ui/latest/cards/metadataCard'
 import { photoCard } from './ui/latest/cards/photoCard'
-import { topCard } from './ui/latest/cards/topCard'
 import { windRoseCard } from './ui/latest/cards/windRoseCard'
 import { nowView } from './ui/now/nowView'
 import { stationPicker } from './ui/picker/stationPicker'
@@ -52,13 +56,10 @@ import './ui/charts/chart.css'
 import './styles/downloader.css'
 import './styles/picker.css'
 import './styles/now.css'
+import './styles/charts.css'
 import './styles/about.css'
 
-// Latest Data (W2 layout/sidebar/timeseries), shown as Charts → Compare until P1.
-import { latestLayout } from './ui/latest/layout'
-import { latestSidebar } from './ui/latest/sidebar'
-import { latestTimeseries } from './ui/latest/timeseries'
-import './styles/latest.css'
+// Latest Data card panes still used by Now and About (ui/latest/cards/*).
 import './styles/cards.css'
 // Ag Tools (W2)
 import { agAnnualView } from './ui/ag/agAnnualView'
@@ -135,6 +136,14 @@ Alpine.data('pickerMap', pickerMap)
 // render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".
 Alpine.data('chart', chart)
 
+// Charts (ui/charts): section view switch, variable list, variable page + history, Compare.
+Alpine.data('chartsView', chartsView)
+Alpine.data('variableList', variableList)
+Alpine.data('variablePage', variablePage)
+Alpine.data('variableHistory', variableHistory)
+Alpine.data('compare', compare)
+Alpine.data('compareControls', compareControls)
+
 // Now (ui/now): the overview section.
 Alpine.data('nowView', nowView)
 
@@ -142,17 +151,11 @@ Alpine.data('nowView', nowView)
 // x-data="downloader" in partials/downloader/index.html.
 Alpine.data('downloader', downloader)
 
-// Latest Data (W2 layout/sidebar/timeseries): partials/latest/index.html (Charts → Compare).
-Alpine.data('latestLayout', latestLayout)
-Alpine.data('latestSidebar', latestSidebar)
-Alpine.data('latestTimeseries', latestTimeseries)
-// Latest cards (W2; partials/latest/cards/*): top and bottom card switchers and their panes,
-// also reused by Now (photo, wind rose, forecast) and About (metadata, current readings).
-Alpine.data('topCard', topCard)
+// Latest card panes (W2; partials/latest/cards/*), reused by Now (photo, wind rose, forecast)
+// and About (metadata, current readings).
 Alpine.data('windRoseCard', windRoseCard)
 Alpine.data('forecastCard', forecastCard)
 Alpine.data('photoCard', photoCard)
-Alpine.data('bottomCard', bottomCard)
 Alpine.data('metadataCard', metadataCard)
 Alpine.data('currentCard', currentCard)
 // Ag Tools (W2, ui/ag/*): tab wrapper, controls card, one view per variable group.

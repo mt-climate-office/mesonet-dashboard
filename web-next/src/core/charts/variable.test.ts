@@ -40,6 +40,12 @@ describe('variableChart', () => {
     expect(o.dataZoom).toEqual([expect.objectContaining({ type: 'inside', disabled: true })])
     expect(o.tooltip.triggerOn).toBe('click')
   })
+  it('compact tooltip: no panel sub-header for one variable', () => {
+    const o = variableChart(model(), testCtx('dark')) as unknown as { tooltip: { formatter: (p: unknown) => string } }
+    const html = o.tooltip.formatter([{ seriesIndex: 0, value: [view[0], 61], axisValue: view[0], marker: '' }])
+    expect(html).toContain('61 °F')
+    expect(html).not.toContain('tooltip-sub')
+  })
   it('the sr-only twin stops at 500 rows; the Table view gets them all', () => {
     expect(variableTable(model(600)).rows).toHaveLength(501)
     expect(variableTableAll(model(600)).rows).toHaveLength(600)

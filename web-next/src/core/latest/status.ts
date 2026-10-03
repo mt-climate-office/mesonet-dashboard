@@ -1,6 +1,6 @@
 /**
  * What the Latest plot area shows: the chart, a loading note, or a legacy
- * empty-state message. ui/latest/timeseries.ts feeds it the current inputs.
+ * empty-state message. ui/charts (Compare, variable page) feed it the current inputs.
  */
 import { noData, type TimeseriesEmpty } from '../models/timeseries'
 

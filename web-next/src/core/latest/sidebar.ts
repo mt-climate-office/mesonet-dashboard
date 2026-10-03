@@ -1,6 +1,6 @@
 /**
  * Latest sidebar logic: station picker items, the network filter, variable
- * chips, the date window and the period-of-record toggle. ui/latest/sidebar.ts
+ * chips, the date window and the period-of-record toggle. ui/charts/compareControls.ts
  * reads these and writes the results to `$store.url`.
  */
 import dayjs from 'dayjs'

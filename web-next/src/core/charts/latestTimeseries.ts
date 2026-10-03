@@ -260,7 +260,9 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
       const r = rows.get(i) ?? []
       if (!r.length && !spans.length) return ''
       const notes = spans.map((s) => `<div class="tooltip-sub">${escapeHtml(plainLabel(s.text)).replace(/\n/g, '<br>')}</div>`)
-      return `<div class="tooltip-sub">${escapeHtml(pn.variable)}</div>${r.join('')}${notes.join('')}`
+      // One panel (the variable page): the rows already name the variable.
+      const head = n > 1 ? `<div class="tooltip-sub">${escapeHtml(pn.variable)}</div>` : ''
+      return `${head}${r.join('')}${notes.join('')}`
     })
     return `<div class="tooltip-name">${escapeHtml(fmtWall(x, tipPeriod))}</div>${parts.join('')}`
   }

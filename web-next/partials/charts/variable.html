@@ -1,0 +1,165 @@
+<!-- Variable page (x-data="variablePage", ui/charts/variablePage.ts): back to the list, the heading
+     (the shared-element target a tapped tile or list row morphs into), prev/next chips, the
+     recent | history | table switch (links: each pushes history), then per view:
+       recent  range presets (+ custom dates and aggregation), normals switch, chart, stats row
+       history years overlaid (x-data="variableHistory", one year per request, skeleton until the first)
+       table   the chart's table twin, visible and paged (newest first) -->
+<div class="var-page" x-data="variablePage" data-testid="variable-page">
+  <a class="dash-link var-back" :href="listHref()" @click="toList($event)">‹ All variables</a>
+
+  <template x-if="state === 'loading'">
+    <div aria-busy="true"><p class="sr-only" role="status">Loading…</p><span class="dash-skel dash-skel--line" style="width: 40%" aria-hidden="true"></span></div>
+  </template>
+  <template x-if="state === 'unknown'">
+    <div class="dash-card" role="status"><p>This station does not report that variable. Pick another from the list.</p></div>
+  </template>
+
+  <!-- Keyed by the variable: prev/next mounts a fresh body (chart label, history, table page). -->
+  <template x-for="variable in (state === 'ready' ? [variable] : [])" :key="variable.id">
+    <div class="var-body">
+      <div class="var-head">
+        <h2 class="dash-section-title var-title" data-vt-target x-text="variable.name" data-testid="variable-title"></h2>
+        <nav class="var-near" aria-label="Other variables">
+          <template x-if="near.prev">
+            <a class="nav-btn var-chip" :href="href({ v: near.prev.id })" @click="go($event, { v: near.prev.id })" data-testid="var-prev">
+              <span aria-hidden="true">‹ </span><span class="sr-only">Previous: </span><span x-text="near.prev.name"></span></a>
+          </template>
+          <template x-if="near.next">
+            <a class="nav-btn var-chip" :href="href({ v: near.next.id })" @click="go($event, { v: near.next.id })" data-testid="var-next">
+              <span class="sr-only">Next: </span><span x-text="near.next.name"></span><span aria-hidden="true"> ›</span></a>
+          </template>
+        </nav>
+      </div>
+
+      <nav class="seg-btns var-views" aria-label="View">
+        <a class="nav-btn seg-btn" :href="href({ view: 'recent' })" @click="go($event, { view: 'recent' })" :aria-current="view() === 'recent' ? 'page' : null">Recent</a>
+        <a class="nav-btn seg-btn" :href="href({ view: 'history' })" @click="go($event, { view: 'history' })" :aria-current="view() === 'history' ? 'page' : null" data-testid="view-history">History</a>
+        <a class="nav-btn seg-btn" :href="href({ view: 'table' })" @click="go($event, { view: 'table' })" :aria-current="view() === 'table' ? 'page' : null" data-testid="view-table">Table</a>
+      </nav>
+
+      <template x-if="view() !== 'history'">
+        <div class="var-recent">
+          <div class="var-controls">
+            <fieldset class="ctl-seg var-presets" data-testid="range-presets"
+                      x-data="segmented({ options: () => [...presets.map((p) => ({ value: p.id, label: p.label })), { value: 'custom', label: 'Custom' }], value: () => (showCustom() ? 'custom' : preset()), onChange: (v) => setPreset(v), label: 'Range' })">
+              <legend class="sr-only" x-text="label"></legend>
+              <div class="seg-btns">
+                <template x-for="opt in options()" :key="opt.value">
+                  <label class="nav-btn seg-btn">
+                    <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)" @change="select(opt.value)">
+                    <span x-text="opt.label"></span>
+                  </label>
+                </template>
+              </div>
+            </fieldset>
+            <label class="ctl-check var-normals" x-show="variable.normals">
+              <input type="checkbox" role="switch" :checked="$store.url.state.gridmet" :disabled="!normalsAvailable()" @change="setGridmet($event)" aria-describedby="var-normals-help">
+              <span>gridMET normals</span>
+            </label>
+            <p class="ctl-note" id="var-normals-help" x-show="variable.normals && !normalsAvailable()">Normals show on daily views (1 y, or Custom with Daily).</p>
+          </div>
+
+          <template x-if="showCustom()">
+            <div class="var-custom">
+              <fieldset class="ctl-fieldset"
+                        x-data="dateRange({ value: () => dates(), onChange: (r) => setDates(r), min: () => null, max: () => dateMax(), label: 'Dates' })">
+                <legend class="ctl-legend" x-text="label"></legend>
+                <div class="ctl-row">
+                  <div class="ctl-field">
+                    <label class="ctl-label" :for="ids.start">Start</label>
+                    <input type="date" class="ctl-input" :id="ids.start" :max="max()" :value="start" :aria-invalid="invalid('start')" :aria-describedby="describedBy()" @change="setStart($event)">
+                  </div>
+                  <div class="ctl-field">
+                    <label class="ctl-label" :for="ids.end">End</label>
+                    <input type="date" class="ctl-input" :id="ids.end" :max="max()" :value="end" :aria-invalid="invalid('end')" :aria-describedby="describedBy()" @change="setEnd($event)">
+                  </div>
+                </div>
+                <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
+              </fieldset>
+              <fieldset class="ctl-seg" x-data="segmented({ options: () => aggOptions, value: () => agg(), onChange: (v) => setAgg(v), label: 'Time step' })">
+                <legend class="ctl-legend" x-text="label"></legend>
+                <div class="seg-btns">
+                  <template x-for="opt in options()" :key="opt.value">
+                    <label class="nav-btn seg-btn">
+                      <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)" @change="select(opt.value)">
+                      <span x-text="opt.label"></span>
+                    </label>
+                  </template>
+                </div>
+              </fieldset>
+            </div>
+          </template>
+
+          <div class="var-plot" x-show="view() === 'recent'">
+            <!-- The chart stays laid out under the loading/empty overlay, so ECharts always starts at its real size. -->
+            <div class="var-canvas">
+              <div class="var-status" x-show="status().kind !== 'ready'">
+                <template x-if="status().kind === 'loading'">
+                  <div><p class="sr-only" role="status">Loading the chart…</p><span class="dash-skel dash-skel--chart var-skel" aria-hidden="true"></span></div>
+                </template>
+                <template x-if="status().kind === 'empty'">
+                  <p class="charts-empty" role="status" x-text="status().title"></p>
+                </template>
+              </div>
+              <div class="chart var-chart" :aria-hidden="status().kind !== 'ready'" data-testid="variable-chart"
+                   x-data="chart({ builder: variableChart, table: variableTable, label: variable.name + ' chart', model: () => model(), range: () => range() })"></div>
+            </div>
+            <div class="var-stats" x-show="status().kind === 'ready'" data-testid="variable-stats">
+              <template x-for="row in stats()" :key="row.label">
+                <dl class="var-stat-row">
+                  <template x-if="row.label"><div class="var-stat var-stat-depth"><dt class="sr-only">Sensor</dt><dd x-text="row.label"></dd></div></template>
+                  <template x-for="it in row.items" :key="it.label">
+                    <div class="var-stat"><dt x-text="it.label"></dt><dd x-text="it.value"></dd></div>
+                  </template>
+                </dl>
+              </template>
+            </div>
+          </div>
+
+          <template x-if="view() === 'table'">
+            <div class="var-table" data-testid="variable-table">
+              <template x-if="!table()">
+                <span class="dash-skel dash-skel--table" aria-hidden="true"></span>
+              </template>
+              <template x-if="table()">
+                <div>
+                  <div class="var-table-scroll" tabindex="0" role="region" :aria-label="table().caption">
+                    <table class="var-table-grid">
+                      <caption class="sr-only" x-text="table().caption + ', newest first'"></caption>
+                      <thead><tr><template x-for="c in table().columns" :key="c"><th scope="col" x-text="c"></th></template></tr></thead>
+                      <tbody>
+                        <template x-for="(r, i) in tablePage().rows" :key="i">
+                          <tr><template x-for="(cell, j) in r" :key="j"><td x-text="cell"></td></template></tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="var-pager">
+                    <button type="button" class="nav-btn" :disabled="tablePage().page <= 1" @click="page = tablePage().page - 1">Newer</button>
+                    <span role="status" x-text="tablePage().summary"></span>
+                    <button type="button" class="nav-btn" :disabled="tablePage().page >= tablePage().pages" @click="page = tablePage().page + 1">Older</button>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <template x-if="view() === 'history'">
+        <div class="var-history" x-data="variableHistory" data-testid="variable-history">
+          <p class="dash-section-note">Daily values, one line per year<span x-show="variable.sum">, as a running total within each year</span>. <span x-text="progress"></span></p>
+          <div class="var-canvas">
+            <div class="var-status" x-show="!model()">
+              <p class="sr-only" role="status" x-text="loading() ? 'Loading history…' : 'No history for this variable.'"></p>
+              <template x-if="loading()"><span class="dash-skel dash-skel--chart var-skel" aria-hidden="true"></span></template>
+              <template x-if="!loading()"><p class="charts-empty">No daily history for this variable.</p></template>
+            </div>
+            <div class="chart var-chart" :aria-hidden="!model()" data-testid="history-chart"
+                 x-data="chart({ builder: annualChart, table: annualTable, label: variable.name + ' by year', model: () => model() })"></div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </template>
+</div>
