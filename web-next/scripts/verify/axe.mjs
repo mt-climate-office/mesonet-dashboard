@@ -4,20 +4,31 @@
  * console error or CSP violation. Run via `npm run verify` (needs dist/).
  */
 import { AxeBuilder } from '@axe-core/playwright'
-import { DL_QUERY, THEMES, VIEWPORTS, check, finish, open, runDownload, start } from './lib.mjs'
+import { DL_QUERY, THEMES, VIEWPORTS, animationsDone, check, finish, open, runDownload, start } from './lib.mjs'
 
-/** Opened over a rendered Compare chart: the dialog's own contrast and names. */
+/** Help, opened from the header ⋯ menu over a rendered Compare chart: the dialog's own contrast and names. */
 const openHelp = async (page) => {
-  await page.locator('#btn-help').click()
+  await page.getByTestId('header-menu-button').click()
+  await page.getByTestId('menu-help').click()
   await page.waitForFunction(() => document.getElementById('help-modal')?.open)
-  await page.waitForTimeout(400) // kit open transition
+  await animationsDone(page)
 }
-/** The picker opened from the station switcher (with a station: recents show). */
+/** The header ⋯ menu, open. */
+const openMenu = async (page) => {
+  await page.getByTestId('header-menu-button').click()
+  await page.waitForFunction(() => !document.getElementById('header-menu')?.hidden)
+}
+/** "Browse on the map" in an open picker: the network chips and the map, drawn. */
+const browseMap = async (page) => {
+  await page.getByTestId('picker-browse').click()
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-map"] tbody')?.children.length > 0, null, { timeout: 30000 })
+  await animationsDone(page)
+}
+/** The picker opened from the station button (with a station: recents show), then its map. */
 const openPicker = async (page) => {
   await page.getByTestId('station-switcher').click()
-  await page.waitForFunction(() => document.querySelector('[data-testid="recent-list"]')?.offsetParent !== null
-    && document.querySelector('[data-testid="picker-map"] tbody')?.children.length > 0, null, { timeout: 30000 })
-  await page.waitForTimeout(400) // drawer/sheet slide
+  await page.waitForFunction(() => document.querySelector('[data-testid="recent-list"]')?.offsetParent !== null, null, { timeout: 30000 })
+  await browseMap(page)
 }
 /** The Now photo dialog with its pickers, once its frame is in and its open transition has ended. */
 const openPhoto = async (page) => {
@@ -25,30 +36,32 @@ const openPhoto = async (page) => {
   await page.waitForFunction(() => document.querySelector('[data-testid="photo-modal-image"]')?.complete
     && document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 30000 })
 }
-/** Download on phones, step 1 (Elements) once the station and its elements are in. */
+/** The Download sheet on phones, step 1 (Elements) once the station and its elements are in. */
 const dlReady = (page) => page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
 
 // `before` runs once the page loads, `after` once the evidence is in; `only` limits the viewports.
 const SCENARIOS = [
-  // The Now overview (default section) and a first visit (no station: the picker is open).
+  // The Now overview (default section), with the header ⋯ menu open, and a first visit (no station: the picker is open).
   { name: 'now', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]', '[data-testid="now-hero"] .dash-spark svg'] } },
+  { name: 'header-menu', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openMenu },
   // About: details, locator map, all current readings, sensor changes, data notes.
   { name: 'about', query: '?s=acebozem#about', evidence: { filled: ['[data-testid="about-readings-table"] tbody', '[data-testid="about-history"] .about-days', '[data-testid="about-map"] tbody'] } },
-  { name: 'picker', query: '', evidence: { filled: ['[data-testid="picker-map"] tbody'] } },
+  { name: 'picker', query: '', evidence: {}, after: browseMap },
   { name: 'picker-open', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPicker },
-  // Charts: the variable list, a variable page, and Compare (a legacy #latest link lands there).
-  { name: 'charts-list', query: '?s=acebozem#charts', evidence: { filled: ['[data-testid="var-air_temp"] .dash-spark svg'] } },
+  // Charts: the variable list (with the Ag tools group), a variable page, and Compare (a legacy #latest link lands there).
+  { name: 'charts-list', query: '?s=acebozem#charts', evidence: { filled: ['[data-testid="var-air_temp"] .dash-spark svg', '[data-testid="charts-ag-tools"] ul'] } },
   { name: 'variable', query: '?s=acebozem&v=air_temp#charts', evidence: { charts: 1 } },
   { name: 'variable-history', query: '?s=acebozem&v=air_temp&view=history#charts', evidence: { charts: 1 } },
   { name: 'variable-table', query: '?s=acebozem&v=air_temp&view=table#charts', evidence: { filled: ['.var-table-grid tbody'] } },
   { name: 'compare', query: '?s=acebozem#latest', evidence: { charts: 1 } },
-  // Ag: the tool cards (no `var`), then four open tools.
-  { name: 'ag-tools', query: '?s=acebozem#ag', evidence: { filled: ['[data-testid="ag-tools"] ul'] } },
-  { name: 'ag-gdd', query: '?s=acebozem&var=gdd#ag', evidence: { charts: 1 } },
-  { name: 'ag-soil-profile', query: '?s=acebozem&var=soil_temp,soil_ec_blk#ag', evidence: { charts: 1 } },
-  { name: 'ag-etr', query: '?s=acebozem&var=etr#ag', evidence: { charts: 1 } },
-  { name: 'ag-annual', query: '?s=acebozem&var=annual#ag', evidence: { charts: 1 } },
-  { name: 'download-step1', query: '?s=acebozem#download', only: ['390'], before: dlReady, evidence: {} },
+  // Ag tools inside Charts (v = an Ag tool id); a bare legacy #ag lands on the list's Ag tools group.
+  { name: 'legacy-ag', query: '?s=acebozem#ag', evidence: { filled: ['[data-testid="charts-ag-tools"] ul'] } },
+  { name: 'ag-gdd', query: '?s=acebozem&v=gdd#charts', evidence: { charts: 1 } },
+  { name: 'ag-soil-profile', query: '?s=acebozem&v=soil_temp,soil_ec_blk#charts', evidence: { charts: 1 } },
+  { name: 'ag-etr', query: '?s=acebozem&v=etr#charts', evidence: { charts: 1 } },
+  { name: 'ag-annual', query: '?s=acebozem&v=annual#charts', evidence: { charts: 1 } },
+  // The Download sheet (dl=1): step 1 on phones, and a finished request with its preview.
+  { name: 'download-step1', query: '?s=acebozem&dl=1#charts', only: ['390'], before: dlReady, evidence: {} },
   { name: 'downloader', query: DL_QUERY, before: runDownload, evidence: { charts: 1 } },
   { name: 'photo-dialog', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPhoto },
   { name: 'help-dialog', query: '?s=acebozem#latest', evidence: { charts: 1 }, after: openHelp },

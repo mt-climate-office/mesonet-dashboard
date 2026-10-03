@@ -1,8 +1,10 @@
 /**
- * Phone layout and motion checks (DESIGN.md "Charts on touch", "Layout ladder", "Motion"):
+ * Layout and motion checks (DESIGN.md "Charts on touch", "Layout ladder", "Motion"):
  * at 390 px with touch, a vertical swipe over a chart or the About map scrolls the page; no
- * section scrolls sideways; the first Now tile is above the fold at 390×844; with reduced
- * motion a section change starts no view transition. Run via `npm run verify`.
+ * view scrolls sideways; the first Now tile is above the fold at 390×844; the header is one
+ * row at 390 and 1440 (sections in it only from tablet up); the phone tab bar has three items
+ * on a solid surface; the Download sheet fits the screen; with reduced motion a section change
+ * starts no view transition. Run via `npm run verify`.
  */
 import { VIEWPORTS, check, finish, open, start } from './lib.mjs'
 
@@ -13,7 +15,7 @@ const env = await start()
 for (const [name, query, evidence, target] of [
   ['variable chart', '?s=acebozem&v=air_temp#charts', { charts: 1 }, '[data-testid="variable-chart"] canvas'],
   ['Compare', '?s=acebozem#latest', { charts: 1 }, '.cmp-chart canvas'],
-  ['Ag chart', '?s=acebozem&var=gdd#ag', { charts: 1 }, '[data-testid="ag-chart-gdd"] canvas'],
+  ['Ag chart', '?s=acebozem&v=gdd#charts', { charts: 1 }, '[data-testid="ag-chart-gdd"] canvas'],
   ['About locator map', '?s=acebozem#about', { filled: ['[data-testid="about-map"] tbody'] }, '[data-testid="about-map"] canvas'],
 ]) {
   const { page, problems, close, rendered } = await open(env, query, { viewport: PHONE })
@@ -48,9 +50,9 @@ for (const [name, query, evidence] of [
   ['variable-history', '?s=acebozem&v=air_temp&view=history#charts', { charts: 1 }],
   ['variable-table', '?s=acebozem&v=air_temp&view=table#charts', { filled: ['.var-table-grid tbody'] }],
   ['compare', '?s=acebozem#latest', { charts: 1 }],
-  ['ag-tools', '?s=acebozem#ag', { filled: ['[data-testid="ag-tools"] ul'] }],
-  ['ag-gdd', '?s=acebozem&var=gdd#ag', { charts: 1 }],
-  ['download', '?s=acebozem#download', { filled: ['[data-testid="dl-step-elements"]'] }],
+  ['legacy-ag', '?s=acebozem#ag', { filled: ['[data-testid="charts-ag-tools"] ul'] }],
+  ['ag-gdd', '?s=acebozem&v=gdd#charts', { charts: 1 }],
+  ['download', '?s=acebozem&dl=1#charts', { filled: ['[data-testid="dl-step-elements"]'] }],
   ['about', '?s=acebozem#about', { filled: ['[data-testid="about-readings-table"] tbody'] }],
 ]) {
   const { page, close, rendered } = await open(env, query, { viewport: PHONE })
@@ -71,6 +73,63 @@ for (const [name, query, evidence] of [
     })
     check('[now 390×844] the first tile is above the fold (above the tab bar)', fold.tileBottom <= fold.foldAt, JSON.stringify(fold))
   }
+  await close()
+}
+
+/* ── Header: one row at both widths; sections in it only from tablet up ──── */
+for (const vp of VIEWPORTS) {
+  const { page, close, rendered } = await open(env, '?s=acebozem', { viewport: vp })
+  await rendered({ filled: ['[data-testid="now-tiles"]'] })
+  const h = await page.evaluate(() => {
+    const bar = document.getElementById('navbar')
+    const shown = (sel) => { const el = document.querySelector(sel); return !!el && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden' }
+    const r = (sel) => document.querySelector(sel).getBoundingClientRect()
+    return {
+      height: Math.round(bar.getBoundingClientRect().height),
+      sections: shown('[data-testid="section-row"]'),
+      brand: r('.mco-navbar > .brand').width > 1,
+      menu: shown('[data-testid="header-menu-button"]'),
+      // One row: the station button and the ⋯ button share a vertical band.
+      oneRow: Math.abs(r('[data-testid="station-switcher"]').top + r('[data-testid="station-switcher"]').height / 2 - (r('[data-testid="header-menu-button"]').top + r('[data-testid="header-menu-button"]').height / 2)) < 4,
+      tabbar: shown('[data-testid="tabbar"]'),
+      meta: !!document.querySelector('.dash-station-meta, [data-testid="station-header"]'),
+    }
+  })
+  const desk = !vp.touch
+  check(`[header ${vp.name}] one row (≤ 64 px), ⋯ menu shown, no station meta line`, h.oneRow && h.height <= 64 && h.menu && !h.meta, JSON.stringify(h))
+  check(`[header ${vp.name}] ${desk ? 'sections and brand in the header, no tab bar' : 'no sections or brand in the header; the tab bar instead'}`,
+    desk ? h.sections && h.brand && !h.tabbar : !h.sections && !h.brand && h.tabbar, JSON.stringify(h))
+  await close()
+}
+
+/* ── Tab bar (390): three items on a solid surface ──────────────────────── */
+{
+  const { page, close, rendered } = await open(env, '?s=acebozem', { viewport: PHONE })
+  await rendered({ filled: ['[data-testid="now-tiles"]'] })
+  const t = await page.evaluate(() => {
+    const bar = document.querySelector('[data-testid="tabbar"]')
+    const probe = document.createElement('div')
+    probe.style.background = 'var(--bg-surface)'
+    document.body.append(probe)
+    const surface = getComputedStyle(probe).backgroundColor
+    probe.remove()
+    const cs = getComputedStyle(bar)
+    return { items: bar.querySelectorAll('a[data-section]').length, bg: cs.backgroundColor, surface, blur: cs.backdropFilter, tabbarH: getComputedStyle(document.documentElement).getPropertyValue('--tabbar-h').trim() }
+  })
+  check('[tab bar 390] three items, solid --bg-surface, no glass blur, --tabbar-h published', t.items === 3 && t.bg === t.surface && (t.blur === 'none' || t.blur === '') && parseFloat(t.tabbarH) >= 56, JSON.stringify(t))
+  await close()
+}
+
+/* ── Download sheet: inside the screen at both widths ───────────────────── */
+for (const vp of VIEWPORTS) {
+  const { page, close, rendered } = await open(env, '?s=acebozem&dl=1#charts', { viewport: vp })
+  await rendered({ filled: ['[data-testid="dl-step-elements"]'] })
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 10000 })
+  const r = await page.evaluate(() => {
+    const b = document.getElementById('sheet-download').getBoundingClientRect()
+    return { top: Math.round(b.top), bottom: Math.round(b.bottom), left: Math.round(b.left), right: Math.round(b.right), vw: innerWidth, vh: innerHeight }
+  })
+  check(`[download sheet ${vp.name}] fully on screen`, r.top >= 0 && r.left >= 0 && r.right <= r.vw && r.bottom <= r.vh, JSON.stringify(r))
   await close()
 }
 
