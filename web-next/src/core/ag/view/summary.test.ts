@@ -32,7 +32,7 @@ describe('optionChips', () => {
   })
   it('livestock adds the animal; soil profile names its variable', () => {
     expect(texts('?v=cci&lt=newborn&ag_from=2026-09-01')).toEqual(['Daily', 'Newborn', 'Since Sep 1, 2026'])
-    expect(texts('?v=soil_temp,soil_ec_blk&soilv=soil_temp&ag_from=2026-09-01')).toEqual(['Temperature', 'Since Sep 1, 2026'])
+    expect(texts('?v=soil_temp,soil_ec_blk&soilv=soil_temp&ag_from=2026-09-01')).toEqual(['Soil temperature', 'Since Sep 1, 2026'])
   })
   it('annual: the comparison variable, or a prompt while it loads', () => {
     expect(texts('?v=annual', 'Air Temperature [°F]')).toEqual(['Air Temperature [°F]'])
