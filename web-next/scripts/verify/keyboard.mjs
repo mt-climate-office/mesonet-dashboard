@@ -231,7 +231,8 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&var=gdd#ag', 1], ['down
   await page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
   check('stepper: Step 1 of 3, only Elements shown', (await progress()).includes('Step 1 of 3') && JSON.stringify(await shown()) === '["dl-step-elements"]', JSON.stringify(await shown()))
   await page.getByTestId('dl-next').click()
-  await page.waitForTimeout(200)
+  // Wait for the hint rather than a fixed delay (a 200 ms sleep was flaky under load).
+  await page.getByTestId('dl-step-hint').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
   check('stepper: Next without elements stays and says why', (await progress()).includes('Step 1 of 3') && (await page.getByTestId('dl-step-hint').isVisible()))
   await close()
 }
