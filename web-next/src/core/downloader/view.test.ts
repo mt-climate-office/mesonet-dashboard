@@ -171,11 +171,11 @@ describe('guards and text', () => {
     expect(resultAnnouncement(0, 3)).toBe('Request finished: no data for this selection.')
     expect(resultAnnouncement(1234, 6)).toBe('Request finished: 1,234 rows, 6 columns. Download CSV is ready.')
   })
-  it('requestSummary recaps the request on one line', () => {
+  it('requestSummary recaps the request in parts', () => {
     expect(requestSummary({ station: 'Bozeman', elements: 2, period: 'daily', start: '2026-09-01', end: '2026-09-30' }))
-      .toBe('Bozeman · 2 variables · Daily · 2026-09-01 to 2026-09-30')
+      .toEqual(['Bozeman', '2 variables', 'Daily', '2026-09-01 to 2026-09-30'])
     expect(requestSummary({ station: 'Bozeman', elements: 1, period: 'hourly', start: '2026-09-24', end: '2026-09-30' }))
-      .toBe('Bozeman · 1 variable · Hourly · 2026-09-24 to 2026-09-30')
+      .toEqual(['Bozeman', '1 variable', 'Hourly', '2026-09-24 to 2026-09-30'])
   })
   it('stationPatch resets the start date and the Latest cards', () => {
     expect(stationPatch('acebozem')).toEqual({ s: 'acebozem', card: null, info: null, dl_from: null })

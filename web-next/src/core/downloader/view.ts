@@ -176,11 +176,11 @@ export function resultAnnouncement(rows: number, columns: number): string {
   return `Request finished: ${rows.toLocaleString('en-US')} ${rows === 1 ? 'row' : 'rows'}, ${columns} columns. Download CSV is ready.`
 }
 
-/** One-line recap above Run: "Bozeman · 2 variables · Daily · 2026-09-01 to 2026-09-30". */
-export function requestSummary(o: { station: string; elements: number; period: DlPeriod; start: string; end: string }): string {
+/** Recap above Run, as parts the view joins with " · ": ["Bozeman", "2 variables", "Daily", "2026-09-01 to 2026-09-30"]. */
+export function requestSummary(o: { station: string; elements: number; period: DlPeriod; start: string; end: string }): string[] {
   const period = PERIOD_OPTIONS.find((p) => p.value === o.period)?.label ?? o.period
   const vars = `${o.elements} ${o.elements === 1 ? 'variable' : 'variables'}`
-  return `${o.station} · ${vars} · ${period} · ${o.start} to ${o.end}`
+  return [o.station, vars, period, `${o.start} to ${o.end}`]
 }
 
 /** URL patch for a Downloader station pick: shared station reset + start back to the install date (legacy). */
