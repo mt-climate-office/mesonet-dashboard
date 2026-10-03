@@ -148,7 +148,7 @@ config) are one function each in `ui/station/resources.ts`; a section's own fetc
 Former TanStack hooks map to `cached()` keys with these TTLs (keep them):
 stations / elements 1 h; station config, ppt summary, NWS forecast 30 min;
 observations 5 min (default); latest obs 5 min; Ag series 10 min; soil
-params, GDD stages, normals `Infinity`; photo schedule 60 min, latest frames
+params, GDD stages, normals `Infinity`; Now's 7-day daily rain (`rainDailyQuery`) 30 min; photo schedule 60 min, latest frames
 5 min, current-month manifest 5 min, past months `Infinity`; Ag gridpoint
 forecast: 1 h (5 min when degraded, `retry: false`).
 
@@ -194,8 +194,9 @@ Component `ui/<section>/<card>.ts` exporting a factory that returns
 `SECTIONS` (`core/router.ts`) + its router test. (2) A link in both navs in
 `partials/shell.html` (the header's `.dash-sections` and the `.dash-tabbar`
 with an icon; same `data-section`; the tab bar's grid has one column per
-item). (3) A `<section id="section-<id>" class="tab-panel">` in
-`.dash-section-host` that includes `partials/<id>/index.html`. (4) Wrap that
+item). (3) A `<section id="section-<id>" class="tab-panel" aria-label="…" x-data
+x-show="$store.url.section === '<id>'" x-cloak>` in `.dash-section-host` that
+includes `partials/<id>/index.html`. (4) Wrap that
 partial's root in `<template x-if="$store.url.section === '<id>'">` so it
 mounts, and fetches, only while open; components undo in `destroy()` whatever
 they add outside themselves (listeners, maps, charts). Its URL keys are
@@ -213,12 +214,16 @@ component (`variablePage`, `agTab`). A chart's Download data writes
 `core/downloader/fromChart(…)` (its element codes, dates and interval as
 `els`/`dl_from`/`dl_to`/`period`), then `openSheet('download')`.
 
-**Add a sheet.** `partials/sheets/<id>.html`: a scrim `<div class="mco-scrim
-dash-scrim dash-sheet-scrim" id="sheet-<id>-scrim" hidden>` and a `<section
+**Add a sheet.** Copy `partials/sheets/dates.html` (the smallest) to
+`partials/sheets/<id>.html`: a scrim `<div class="mco-scrim dash-scrim
+dash-sheet-scrim" id="sheet-<id>-scrim" hidden>` and a `<section
 id="sheet-<id>" class="dash-sheet dash-sheet--modal" role="dialog"
-aria-modal="true" aria-labelledby=… x-data="sheet({ id: '<id>' })" hidden>`
-with the head (handle, title, ×) and a body whose content sits in `<template
-x-if="isOpen">`; include it at the end of `partials/shell.html`. Open it with
+aria-modal="true" aria-labelledby="sheet-<id>-title" x-data="sheet({ id: '<id>' })"
+hidden>` holding a `.dash-panel-head` (the `.dash-sheet-handle` button, an
+`<h2 class="dash-panel-title" id="sheet-<id>-title" tabindex="-1"
+data-autofocus>` and ×) and a body whose content sits in `<template
+x-if="isOpen">`; add its `<!-- @include partials/sheets/<id>.html -->` beside
+the others at the end of `partials/shell.html`. Open it with
 `openSheet('<id>', opener)` and close it with `closeSheet('<id>')`
 (`ui/shell/sheet.ts`). Pass `urlKey` (a boolean schema key, like `dl`) only
 if the URL should hold the open state.
@@ -227,7 +232,8 @@ if the URL should hold the open state.
 `tiles()` when the station reports the value (read it in
 `core/overview/conditions.ts` if it is a new `/latest` column), with its
 `vars` (display variables; the tile opens the first one's Charts page) and a `SeriesKey` for the
-sparkline; add the element code to `SPARK_ELEMENTS` (or
+48 h sparkline (a tile with its own graphic overrides it in `tileView`, `nowPage.ts`, as Rain does with
+`rainBars`: seven daily bars, none after a dry week); add the element code to `SPARK_ELEMENTS` (or
 `OPTIONAL_SPARK_ELEMENTS`) and its column to `keyFor` in `series.ts`. (2) A
 test in `core/overview/overview.test.ts`. (3) If it should hide when it means
 nothing, a rule in `nowTiles` (`core/overview/relevance.ts`); its plain name,

@@ -1,7 +1,7 @@
 /**
  * Plain labels: the one map from a Charts `v=` id (element family or Ag tool,
  * one namespace) to a sentence-case name, its unit and its display precision
- * (REDESIGN.md "Visual language"). Never show an API label where this has
+ * (DESIGN.md "Visual language"). Never show an API label where this has
  * one. Pure; the Charts list reads it, and every new surface should.
  */
 import { degToCompass } from '../params/latest'

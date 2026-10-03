@@ -48,15 +48,17 @@ falls short.
   and focus-return itself.
 - **Proposed:** `MCO.focusScope({ panel, background, onEscape }) → { activate({modal, opener, focus}), deactivate({restoreFocus}), setModal, destroy }`.
 
-### Bottom tab bar and section row — new
+### Bottom tab bar and header segmented nav — new
 - **Here:** `.dash-tabbar` / `.dash-tab` (compact) and `.dash-sections` / `.dash-section-link`
-  (tablet/desktop), `initSectionNav({ root, onNavigate })` (`ui/layout/sectionNav.{ts,css}`).
+  (the header's segmented control, tablet/desktop), `initSectionNav({ root, onNavigate })`
+  (`ui/layout/sectionNav.{ts,css}`). Three items since the redesign (Now · Charts · About); the tab bar is a
+  solid `--bg-surface` with a top border.
 - **Why:** the kit's chrome is the top navbar only. A phone app with several sections needs a bottom bar
   (56 px targets, safe-area padding, `--z-chrome`), and the links must stay real `<a href>` (new tab, copy,
   no-JS) while a plain click goes through the app's router and view transition.
 - **Also:** current = `aria-current="page"`. The kit styles toggles by `[aria-pressed]` only, so app.css
-  already mirrors that for `a.nav-btn[aria-current]` (W1). Not colour alone: the tab bar adds an indicator
-  line and a bolder label.
+  already mirrors that for `a.nav-btn[aria-current]` (W1). Not colour alone: the current tab has a pill
+  behind its icon and a bold label; the current segment is a raised pill, bold.
 - **Proposed:** `.mco-tabbar` / `.mco-tab`, `.mco-section-nav` / `.mco-section-link`, kit styling for
   `.nav-btn[aria-current="page"]`, and `MCO.initSectionNav({ root, onNavigate }) → { setCurrent, destroy }`.
 
@@ -168,7 +170,7 @@ falls short.
 ### Display numerals — new (mco-web-style#36)
 - **Here:** `.num-display` (`ui/layout/card.css`): Outfit (`--font-ui`), `font-variant-numeric: tabular-nums`,
   `letter-spacing: -0.02em`. For readings at display size (≥ 1.75 rem: the Now hero, tiles).
-- **Why:** Space Mono at hero sizes reads as code (REDESIGN.md decision 4). Space Mono stays for tables, ids,
+- **Why:** Space Mono at hero sizes reads as code (DESIGN.md "Redesign 2026-10", decision 4). Space Mono stays for tables, ids,
   timestamps and axes. Filed as https://github.com/mt-climate-office/mco-web-style/issues/36; until the kit
   ships a token or class, this is the one app utility. Swap it for the kit's when the pin moves.
 - **Proposed:** a kit `--font-display-num` (or `.mco-num-display`) with the same three properties.
@@ -191,6 +193,7 @@ falls short.
 | `.dash-toggletip-btn.mco-btn-info { width/height: 1.5rem }` under `(hover: hover)` (`ui/layout/toggletip.css`) | An ⓘ inline next to text; the kit's is a 34 px navbar button. Touch keeps 40 px. | An inline `.mco-btn-info--sm`. |
 | `.dash-link` and `.dash-section-link` get `min-height: 40px` under `(hover: none)` | HOUSE-STYLE §5.5 for standalone links (not prose). | A kit `.mco-link` for standalone links. |
 | `.mco-navbar > .brand` visually hidden below 1060 px (`ui/layout/shell.css`) | The brand is desktop-only so the station button and sections fit one row; the kit sheds it at 750 px. | Let the app choose the brand's breakpoint (a custom property or modifier). |
+| `.chart .mco-tooltip:empty { display: none !important }` (`ui/charts/chart.css`) | ECharts creates its tooltip element empty and keeps it; the kit's border and `backdrop-filter` showed it as a faint outline under charts on phones even at `opacity: 0`. | `.mco-tooltip:empty { display: none }` in the kit. |
 | `.dash-sheet--modal { z-index: var(--z-flyout) }`, `.dash-sheet-scrim { z-index: var(--z-chrome-top) }` | A modal sheet covers the chrome; `.mco-scrim` sits under it. | A `--z-modal` tier (see "Modal sheet"). |
 
 ## Notes for kit consumers (not kit changes)

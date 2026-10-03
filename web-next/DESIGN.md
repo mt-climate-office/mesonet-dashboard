@@ -1,11 +1,38 @@
 # web-next design
 
-How the dashboard is laid out and why: the information architecture, the
-layout ladder, the shared components, motion and type. Read it with
-ARCHITECTURE.md (code layers, data flow, "How to …"). It describes the
-redesign's three places (REDESIGN.md; phase A: the shell, routing and
-primitives) over the P1 section content (Now, Charts, Ag tools, Download, About),
-which phase B restyles.
+How the dashboard is laid out and why: the redesign's reasons and decisions,
+the information architecture, the visual language, the layout ladder, each
+page, the shared components, motion and type. Read it with ARCHITECTURE.md
+(code layers, data flow, "How to …"); what changed from P1 and web/ is in
+DIVERGENCES.md ("Redesign 2026-10").
+
+## Redesign 2026-10
+
+Three places, chart first. The user found P1 "too complicated, and not modern enough"; the usability audit
+named the reasons: five places, three of them mini-apps of their own; controls before content; every reading
+with equal weight, empty ones included (0 W/m² at night, a flat 0.00 of rain); labels in API words; outlines
+everywhere; Space Mono at hero sizes. A static mockup came first (session scratchpad `mockup/mockup-v2.html`,
+published as a private artifact); the build matches its hierarchy and feel with kit tokens only (where the
+mockup and the kit disagree, the kit wins).
+
+The decisions:
+1. **Three places:** Now · Charts · About. Ag tools are ordinary entries in the Charts list (an "Ag tools"
+   group). Download is not a place: it is a sheet opened from a chart's ⋯ menu, prefilled from that chart.
+2. **Navigation:** on phones a 3-item bottom tab bar on a solid surface; from tablet up the same three as a
+   segmented control in the header. No separate section row.
+3. **Now hero:** a large temperature, high/low against normal, a one-line plain summary, then one **48 h
+   strip**: the last 24 h observed (solid) into the next 24 h of NWS hourly forecast (dashed).
+4. **Display numerals:** readings at ≥ 1.75 rem use Outfit with `tabular-nums` (`.num-display`;
+   mco-web-style#36). Space Mono stays for tables, ids, timestamps and axes.
+5. **Interval** on every variable page: Auto · 5-min · Hourly · Daily (Auto: hourly up to 30 d, daily beyond;
+   5-min only up to 7 d; Daily draws the mean inside a low–high band, and the stats' Low/High are the true
+   extremes).
+
+Unchanged rules: logic in pure, tested `core/`; mesonet2 v2 at QC level 2, no `premade`, `end_time`
+exclusive, Ag computed client-side (SWP and porosity from the API), photos from data2 `webp_large`; axe-clean
+in three themes at 1440 and 390; every canvas has an sr-only table and a live region; toggles styled by
+`aria-pressed`; focus managed on every drill-down, sheet and menu. `web/` and `mesonet.climate.umt.edu/dash`
+are untouched.
 
 ## Information architecture
 
@@ -30,8 +57,32 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
   so Back returns; other changes inside a section (dates, toggles, opening the Download sheet) replace the
   entry. Section links are real `<a href>`s: they open in a new tab and work before the JS runs.
 - **Old links** keep working (DIVERGENCES "Three places"): `#latest` → Compare; `#ag&var=<tool>` →
-  `#charts&v=<tool>`; a bare `#ag` → the list at its Ag tools group; `var=annual` → that variable's
-  All-years view; `#download` / `#downloader` → `#charts&dl=1`.
+  `#charts&v=<tool>` with every Ag key; a bare `#ag` → the list at its Ag tools group; `var=annual` → that
+  variable's All-years view; `#download` / `#downloader` + `dl_*` keys → `#charts&dl=1` (closing the sheet
+  clears `dl`); a bare `?s=` → Now.
+- **One namespace:** `v` holds an element family id (`air_temp`, …) or an Ag tool id (the
+  `DERIVED_VAR_OPTIONS` values). The interval is the `agg` key: absent = Auto, `raw|hourly|daily` explicit.
+
+## Visual language
+
+- **Surfaces:** `.dash-card` is flat: `--bg-surface`, radius 16 px, a soft shadow lighter than `--shadow`, no
+  border (high contrast keeps one for separation). `.mco-panel` (glass) stays for panels over maps.
+- **Chips:** range and interval chips are pills; the active range is filled with high contrast
+  (`--text-primary` fill, `--bg-deep` text), the interval row is quieter (an accent-hover fill). `aria-pressed`
+  alone drives both.
+- **Labels:** sentence case, plain names, never an API label, tooltips and tables included. One map,
+  `core/variables/labels.ts` (tested): "Air temperature", "Humidity", "Wind", "Pressure", "Sunlight",
+  "Rain", "Rain rate", "Soil moisture", "Soil temperature", "Soil salinity (EC)", "Reference ET", "Snow depth";
+  units °F, %, mph, mb, W/m², in (`plainUnit` maps API units: "mi/hr" → "mph", "mbar" → "mb", "deg" → "°");
+  wind direction as a compass word ("SSE"). Known gaps: chart y-axis titles (see "Charts").
+- **Precision:** one rule per variable (`LABELS[v].digits`): e.g. temperature as an integer on Now, one
+  decimal in tables.
+- **Hide what means nothing on Now** (pure, tested rules in `core/overview`): sunlight at night; rain draws
+  no graphic after a dry week; snow per the snow rule; pressure is a text trend ("steady", "rising",
+  "falling" over 3 h), not a tile.
+- **Numerals:** `.num-display` only at display sizes (the hero, the tiles); smaller readings (list values,
+  stats) use the UI font with `tabular-nums`.
+- **Motion:** View Transitions and the reduced-motion rules (see "Motion").
 
 ## Layout ladder
 
@@ -42,7 +93,7 @@ drawer) reads `MCO.viewport` and the desktop query in JS.
 |---|---|---|---|---|
 | compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) | bottom sheet (peek / full) | one column, tiles 2-up |
 | tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | one column, tiles 2-up |
-| desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero + photo beside tiles (2-up) + rows |
+| desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero + tiles (4-up) beside photo + rows |
 
 The brand shows only on desktop (visually hidden below 1060 px; the kit's own step is 750 px).
 
@@ -66,15 +117,17 @@ then Send feedback (a link). One row at every width.
 
 One model, `core/overview` `buildNowPage` (hero.ts + relevance.ts + nowPage.ts), bound by `partials/now/index.html`
 and `ui/now/nowView.ts`. **Phones and tablets:** one column, hero → photo → tiles (2-up) → rows. **Desktop
-(≥ 1060 px):** two columns, hero + photo | tiles + rows (1.35 : 1), as in the mockup.
+(≥ 1060 px):** two columns (1.35 : 1), hero + tiles (4-up) | photo (at most 360 px tall) + rows: the pairing
+that keeps the columns closest in height. The column wrappers dissolve (`display: contents`) onto one grid
+with named areas, so the DOM, reading and Tab order stays hero, photo, tiles, rows at every width.
 
 | Slot | Content | Data (tier) |
 |---|---|---|
 | Hero | Air temperature (`.num-display`, 5 rem phones / 7 rem desktop); on the right today's high/low, the gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
-| Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, observed high/low and period labels; its sr-only table. Below it the NWS period icons (api.weather.gov only, alt = the short forecast), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
-| Media | Latest camera frame of the default direction (16:9; 16:8 on desktop; opens the photo dialog), or the wind rose without a camera | photo schedule, latest listings (1) |
-| Tiles | Only the relevant ones (`nowTiles`): Wind (speed; compass word · gusts), Rain (7 d total, 24 h without the ppt summary; % of normal this year), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has SWP sensors), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page that morphs into the page heading, which takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, `/derived/hourly` SWP (2) |
+| Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table. Below it the forecast periods as an icon row (api.weather.gov only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
+| Media | Latest camera frame of the default direction (16:9, at most 360 px tall on desktop; opens the photo dialog), or the wind rose without a camera | photo schedule, latest listings (1) |
+| Tiles | Only the relevant ones (`nowTiles`): Wind (speed; compass word · gusts), Rain (7 d total, 24 h without the ppt summary; % of normal this year; seven daily bars, `rainBars`, or no graphic after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has SWP sensors), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page that morphs into the page heading, which takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, `/derived/hourly` SWP (2) |
 | Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens About's readings sheet (`target: 'about-readings'`, the row's `data-sheet`; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
@@ -92,7 +145,8 @@ focus returns to the tile.
 mounts and renders the hero and tiles. Tier 2 (one 72 h hourly request for the strip, sparklines, high/low and
 pressure trend; the normals CSVs; the NWS hourly forecast from the periods' `forecastHourly` URL, `nwsh:<url>`,
 30 min; SWP for stations with SWP sensors, `nowSwpQuery`) starts once `/latest` is in and fills the strip,
-sparklines and chip. Every slot holds its size with a skeleton (the strip a fixed 9.5 / 11 rem box), so
+sparklines and chip. The Rain tile's bars come from one small daily request (`rainDailyQuery`: `ppt`, the 7 days
+ending today, 30 min). Every slot holds its size with a skeleton (the strip a fixed 9.5 / 11 rem box), so
 nothing shifts. Labels are sentence case in `--text-muted`; readings are `.num-display`.
 
 Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|dark|high-contrast>-<acebozem|arskeogh>.png`
@@ -138,7 +192,8 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
     daily request with `agg_func=min,max` (`recordRequest({ extremes })`, `core/variables/band.ts`), drawn for a
     one-column variable (the band, in the line's color, is in the tooltip and the table's Low/High columns).
   - **Stats card:** Low · High · Average per sensor over the visible range (Total for precipitation and ETr), in
-    the variable's plain unit (`panelStats(…, id)`); on Daily, Low and High are the band's true extremes.
+    the variable's plain unit (`panelStats(…, id)`); on Daily, Low and High are the band's true extremes. One
+    line per sensor at every width (equal columns up to 7 rem); values in the UI font with `tabular-nums`.
   - **⋯ menu:** Download data (the sheet prefilled: `core/downloader/fromChart`, the variable's element codes,
     the window (All years: install date … today) and the interval, 5-min as hourly) · Show as table / Show as
     chart (`tbl`, pushed, so Back returns; replaces the chart in place; All years tables its years) · Custom
@@ -151,6 +206,11 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
   variables", then the stacked chart in a flat card with its options (dates, period of record, aggregation,
   normals, variable chips) in an "Options" disclosure, beside the plot on desktop and closed above it on phones.
   It reads `agg` absent as hourly (`latestAgg`), as the old Latest tab did.
+- **Labels:** tooltips and table headers use the plain name and unit (`plainSeries` in
+  `core/charts/latestTimeseries.ts`: "Wind: 4.1 mph", "Soil moisture at 2 in (%)"). The ECharts series names
+  and the y-axis titles are still the legacy API ones ("Air Temp. (°F)", `AXIS_MAPPER`), because the fidelity
+  harness matches traces and panels by them against web/; moving them to plain names needs the harness to
+  match by element code first.
 - **History:** every list → page and page → page change is a `pushState` (`navigate(…, { drillDown: true })`),
   and so are Show as table / chart; range and interval chips, dates and options replace the entry. The Charts
   tab inside Charts returns to the list (pushed); leaving Charts drops `v` and `tbl` (`sectionNavPatch`).
@@ -263,7 +323,7 @@ with a label (the sheet body itself does not scroll, so the table head stays put
   ("57.0 °F"; wind direction as "ESE (111.6 deg)"; **Feels like** by the NWS method), `core/about/readings.ts`.
   For HydroMet, the rain totals ("Last 7 days", "Year to date"). Each row header carries its API column in
   `data-col` (the fidelity harness keys rows by it).
-- **Sensor changes** (`ui/about/history.ts`): installs and removals by day, newest first
+- **Sensor changes** (`ui/about/history.ts`): installs and removals by day, newest first, with what each sensor measures in plain words ("Soil moisture at 2 in")
   (`core/about/sensorHistory`), from `/config/{station}/` (the response Compare's overlays use).
 
 **The readings target (contract with Now):** the readings row is `#about-readings` with

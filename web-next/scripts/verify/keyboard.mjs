@@ -719,7 +719,7 @@ for (const vp of VIEWPORTS) {
   await close()
 }
 
-/* ── Legacy links land somewhere sensible (REDESIGN.md "Information architecture and URLs") ── */
+/* ── Legacy links land somewhere sensible (DESIGN.md "Information architecture") ── */
 {
   const at = (page) => page.evaluate(() => ({ hash: location.hash, q: Object.fromEntries(new URLSearchParams(location.search)) }))
   {

@@ -4,7 +4,7 @@
  * `stores/url.ts` applies the results to `location`/`history`.
  *
  * Sections: #now (default) · #charts · #about.
- * Legacy (REDESIGN.md "Information architecture and URLs"):
+ * Legacy (DESIGN.md "Information architecture"):
  *   #latest               → #charts&cmp=1 (Compare; from/to/agg/vars/gridmet kept)
  *   #ag (bare)            → #charts, scrolled to the Ag tools group
  *   #ag&var=<tool>        → #charts&v=<tool>, every Ag key kept

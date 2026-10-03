@@ -1,5 +1,5 @@
 /* .dash-card: the one in-flow surface (kit candidate .mco-card, KIT-NOTES.md). Kit .mco-panel is
-   glass floating over maps; this is the flat surface for page content (REDESIGN.md "Visual
+   glass floating over maps; this is the flat surface for page content (DESIGN.md "Visual
    language"): --bg-surface, radius 16 px, a soft shadow and no border, except in high contrast,
    where a border keeps the separation (a shadow is invisible on black). One padding scale
    (--card-pad), one title style. A card may be an <a> (tiles): it then shows a hover fill and

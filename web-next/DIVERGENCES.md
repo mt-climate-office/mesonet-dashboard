@@ -8,11 +8,34 @@ What web-next deliberately does differently, in three parts:
 
 Each entry gives the old behaviour, the new one, and why. Add an entry in the same PR as the change.
 
-## Redesign: three places, chart first (2026-10)
+## Redesign 2026-10: three places, chart first
 
-The redesign (REDESIGN.md) narrows the station view to three places. These entries supersede the
-section, navbar, picker, Ag-cards and Download-layout parts of the P0/P1 entries below; data, request
-code and CSV bytes are unchanged.
+### Redesign 2026-10 (summary)
+- **P1:** five sections (Now · Charts · Ag · Download · About), controls before content, every reading with
+  equal weight, API labels, outlined cards, Space Mono at hero sizes.
+- **New:** three places, Now · Charts · About (DESIGN.md "Redesign 2026-10" and "Information architecture").
+  The detailed entries, each with its old behaviour, new behaviour and reason:
+  - [Three places: Now, Charts, About](#three-places-now-charts-about): Ag tools are Charts entries, Download
+    is a sheet, every old link still lands;
+  - [Header: one row and one ⋯ menu](#header-one-row-and-one--menu-no-station-meta-line) and
+    [Station picker: search first](#station-picker-search-first-the-map-on-demand);
+  - [Flat surfaces](#flat-surfaces) and [plain names in charts](#charts-plain-names-in-tooltips-and-tables);
+  - Now: [the 48 h strip](#now-the-forecast-card-becomes-the-heros-48-h-strip),
+    [desktop columns](#now-desktop-columns),
+    [tiles only where they mean something](#now-tiles-only-where-they-mean-something),
+    [pressure as a trend](#now-pressure-as-a-trend-in-the-all-readings-row);
+  - [About: details, map, two rows that open sheets](#about-details-map-two-rows-that-open-sheets);
+  - [Download: one short form](#download-one-short-form-preview-then-download-csv--n-rows);
+  - Charts: [one chart frame](#charts-one-chart-frame-range-chips-an-interval-row-a--menu),
+    [Interval and the Daily band](#interval-auto-and-the-daily-lowhigh-band),
+    [Reference ET is one page](#reference-et-is-one-page),
+    [Ag tools: option chips](#ag-tools-option-chips-the-station-comes-from-the-header).
+- **Unchanged:** data requests (v2 API, QC level 2, no `premade`, exclusive `end_time`), Ag numbers, request
+  code, CSV bytes and the `dl_*` keys.
+- **Why:** the user's review of P1, "too complicated, and not modern enough" (DESIGN.md "Redesign 2026-10").
+
+These entries supersede the section, navbar, picker, Ag-cards and Download-layout parts of the P0/P1 entries
+below, which stay for the record and name what replaced them.
 
 ### Three places: Now, Charts, About
 - **P1:** five sections, Now · Charts · Ag · Download · About, in a segmented row under the station header
@@ -33,7 +56,7 @@ code and CSV bytes are unchanged.
   `#download` / `#downloader` → `#charts&dl=1` with every `dl_*` / `els` / `period` / `qc` / `pub` key
   (`#downloader`'s `from`/`to` renamed first); `#latest` → Compare, unchanged. `var` left the schema; the
   boot redirect removes it, and any other unknown key round-trips.
-- **Why:** user decision (REDESIGN.md "User decisions" 1–2): P1 had three mini-apps of its own.
+- **Why:** user decision (DESIGN.md "Redesign 2026-10", decisions 1–2): P1 had three mini-apps of its own.
 
 ### Header: one row and one ⋯ menu; no station meta line
 - **P1:** logo · brand · station switcher · Share · theme · Help, a station header (name and "network · county
@@ -43,21 +66,21 @@ code and CSV bytes are unchanged.
   feedback. The menu is a WAI-ARIA menu button (focus moves in, arrows, Esc returns focus). The meta line is
   gone from the shell (About has the details; the Now hero gets them in phase B). The tab bar is a solid
   surface, no longer glass.
-- **Why:** REDESIGN.md "Shell": controls before content, outlines everywhere.
+- **Why:** DESIGN.md "Redesign 2026-10": controls before content, outlines everywhere.
 
 ### Station picker: search first, the map on demand
 - **P1:** search, a "Near me" section with its own button, recents, then the network chips and the map, always shown.
 - **New:** the search field holds a "Near me" chip (the same one-time geolocation); its results show under the
   field once pressed. Recents follow, then "Browse on the map", which reveals the network chips and the map
   (MapLibre starts on the first reveal). Drawer / sheet, focus, `inert` and Esc rules are unchanged.
-- **Why:** REDESIGN.md "Station picker": most visits search or pick a recent station.
+- **Why:** DESIGN.md "Redesign 2026-10": most visits search or pick a recent station.
 
 ### Flat surfaces
 - **P1:** `.dash-card` had a 1 px border and a 12 px radius.
 - **New:** a flat surface with a 16 px radius and a soft two-layer shadow tinted by the kit `--scrim`; no border,
   except in high contrast, which keeps the border (a shadow does not show on black). Phase A changes the
   primitive only; sections adopt the new chips and numerals in phase B.
-- **Why:** REDESIGN.md "Visual language".
+- **Why:** DESIGN.md "Visual language".
 
 ### About: details, map, two rows that open sheets
 - **P1:** About was five cards: details (nine rows: name, id, network, NWS ID, county, coordinates, elevation,
@@ -70,18 +93,28 @@ code and CSV bytes are unchanged.
   unit on the value at table precision ("13.4%", "57.0 °F"); the rain totals read "Last 7 days", "Year to
   date". The NWS ID row is gone (the station picker still accepts an NWSLI in `?s=`). Now's "All readings"
   opens the readings sheet over About; closing it leaves focus on the row.
-- **Why:** REDESIGN.md "About": flat surfaces, plain labels, and a sheet is easier than a long in-place table
+- **Why:** DESIGN.md "About": flat surfaces, plain labels, and a sheet is easier than a long in-place table
   on phones.
 
 ### Now: the forecast card becomes the hero's 48 h strip
 - **P1:** an NWS forecast card: the next 8 text periods (name, icon, temperature, short forecast, chance of
   precipitation) in a horizontal scroll-snap strip, with a "{place} · NWS forecast" heading and a Retry button.
 - **New:** no forecast card. The hero's 48 h strip draws the last 24 h observed into the next 24 h of the NWS
-  **hourly** forecast (`forecastHourly`, one more request, `nwsh:<url>`, 30 min), labels the periods it spans
-  ("Tonight 45°"), and lists their icons under it (api.weather.gov only, alt text = the short forecast) beside a
-  "Full forecast" link to the NWS page. The current period's sky feeds the summary sentence. Beyond 24 h, and
+  **hourly** forecast (`forecastHourly`, one more request, `nwsh:<url>`, 30 min), with the observed high
+  above its point and the low below it, inside the plot, and plain hour ticks ("Now", "6 AM", "Noon"; every 6 h
+  on phones, 3 h wider). The periods it spans ("Tonight 45°") are an icon row under it (api.weather.gov only,
+  alt text = the short forecast; not labels inside the plot, which crowded it at 390 px) beside a "Full
+  forecast" link to the NWS page. The current period's sky feeds the summary sentence. Beyond 24 h, and
   the chance of precipitation, are on the NWS page. Without NWS coverage the strip shows the observed day only.
-- **Why:** REDESIGN.md "Now" 1 and 5: one picture of yesterday into tomorrow instead of a second card of text.
+- **Why:** DESIGN.md "Now": one picture of yesterday into tomorrow instead of a second card of text.
+
+### Now: desktop columns
+- **P1 / phase B:** hero + photo | tiles + rows, the photo 16:8 across the wide column (about 400 px tall at
+  1440 px), leaving the right column half empty.
+- **New:** from 1060 px, hero + tiles (4-up) | photo + rows, the photo at most 360 px tall: the pairing that
+  keeps the two columns closest in height. Phones and tablets keep one column in DOM order (hero, photo, tiles,
+  rows), which is also the reading and Tab order at every width.
+- **Why:** the user's review of the phase B preview.
 
 ### Now: tiles only where they mean something
 - **P1:** a tile for every reading the station reports: Wind (with a compass glyph), Precipitation today (24 h,
@@ -89,13 +122,14 @@ code and CSV bytes are unchanged.
   depth (with snow), VPD; labels in API words ("Solar radiation", "mbar").
 - **New:** `nowTiles` (core/overview/relevance.ts) hides Sunlight at night (< 5 W/m²) and Pressure always;
   precipitation is one **Rain** tile (the 7 d total, or 24 h without the ppt summary, with "% of normal this
-  year"), shown whenever there is a source, even after a dry week; humidity carries the dew point; soil
+  year"), shown whenever there is a source, even after a dry week; its graphic is seven daily bars (one small
+  daily `ppt` request, `rainBars`), and nothing at all after a dry week (a flat line said nothing); humidity carries the dew point; soil
   moisture shows the shallowest depth only, with a **Dry/Wet** badge from soil water potential (≥ 15 bar / ≤ 0.33
   bar, the Ag SWP thresholds) for stations with SWP sensors (one `/derived/hourly` request; VWC alone gets no
   badge, its thresholds depend on soil texture). Names, units and precision come from `core/variables/labels`
   ("Sunlight", "mb", soil moisture as an integer). The full profile and every reading stay on About. The badge
   is a neutral `.dash-badge` (the kit has no warm status token).
-- **Why:** REDESIGN.md "Visual language": every reading had equal weight, including empty ones.
+- **Why:** DESIGN.md "Visual language": every reading had equal weight, including empty ones.
 
 ### Now: pressure as a trend in the "All readings" row
 - **P1:** a Pressure tile (847.2 mbar and a sparkline).
@@ -129,7 +163,7 @@ code and CSV bytes are unchanged.
   the request code is unchanged.
 - **Unchanged:** the request code, the CSV bytes (fidelity: byte-identical to web/), every `dl_*` / `els` /
   `period` / `qc` / `pub` key, the `dl-run` / `dl-download` test ids the fidelity driver clicks.
-- **Why:** REDESIGN.md "Download sheet": a short form opened from a chart, prefilled from its keys.
+- **Why:** DESIGN.md "Download (a sheet)": a short form opened from a chart, prefilled from its keys.
 
 ### Charts: one chart frame; range chips, an Interval row, a ⋯ menu
 - **P1:** a variable page with "‹ All variables", prev/next chips, a Recent · History · Table switch, range presets
@@ -145,9 +179,18 @@ code and CSV bytes are unchanged.
   under the names; Compare is "Compare variables" under More; "Download data" left the list (each chart's ⋯
   has it, prefilled). Presets no longer set `agg` (P1's 1 y meant daily; it now means Auto, which is daily
   there), so an old `from`/`to`/`agg=daily` 1 y link opens 1 y with Daily pressed.
-- **Normals:** no switch; gridMET normals draw on daily air temperature by themselves (REDESIGN.md). The other
+- **Normals:** no switch; gridMET normals draw on daily air temperature by themselves (DESIGN.md "Charts"). The other
   variables with normals (precipitation, humidity) show theirs on Compare's switch.
-- **Why:** REDESIGN.md "Charts": chart first, controls under it, one menu for the rest.
+- **Why:** DESIGN.md "Charts": chart first, controls under it, one menu for the rest.
+
+### Charts: plain names in tooltips and tables
+- **web/ / P1:** chart tooltips and table headers used the API column ("Wind Speed: 4.1 mi/hr", "Air
+  Temperature [°F]"); About's sensor changes listed "Soil VWC @ 2 in".
+- **New:** the plain name and unit from `core/variables/labels` ("Wind: 4.1 mph", "Air temperature (°F)",
+  "Soil moisture at 2 in (%)"; `plainUnit`), on the variable page and Compare, and in the sensor changes. The
+  ECharts series names (the fidelity harness keys traces by them) and the y-axis titles (`AXIS_MAPPER`,
+  LDP-005, matched panel by panel) are still the legacy ones.
+- **Why:** DESIGN.md "Visual language": no API label in visible UI.
 
 ### Interval: Auto, and the Daily low–high band
 - **P1:** `agg` absent meant hourly; Daily drew the API's daily mean only, and the stats' Min / Max were the
@@ -159,7 +202,7 @@ code and CSV bytes are unchanged.
   variable; not totals or wind direction); the stats' Low / High are those true extremes (one 5-minute reading,
   where the old Min was a daily average). The table gains Low / High columns. Compare is unchanged: there `agg`
   absent is still hourly (`latestAgg`), so every old `#latest` link draws what it did.
-- **Why:** REDESIGN.md "User decisions" 5: daily means alone hide the day's range, and "Min 34.9" next to a daily
+- **Why:** DESIGN.md "Redesign 2026-10", decision 5: daily means alone hide the day's range, and "Min 34.9" next to a daily
   mean line read as a measured low.
 
 ### Reference ET is one page
@@ -184,7 +227,7 @@ code and CSV bytes are unchanged.
   station and says so ("… has no soil water potential sensors, so this tool does not apply there.") with a
   button that opens the picker. A stats card shows Reference ET's total, feels-like and livestock-risk low and
   high, and GDD so far with the stage reached. Every Ag number, `.ag-chart-card` and its test ids are unchanged.
-- **Why:** REDESIGN.md "Ag tool pages": controls before content, and a second station control beside the header's.
+- **Why:** DESIGN.md "Ag tools (inside Charts)": controls before content, and a second station control beside the header's.
 
 ## UX refactor (P0 prototype, 2026-10)
 
@@ -192,7 +235,7 @@ The user-approved refactor (overview first, mobile first; DESIGN.md) changes the
 information architecture and layout on purpose. These entries supersede the
 layout parts of older entries below; data behaviour is unchanged.
 
-### One station view with five sections, instead of three tabs
+### One station view with sections, instead of three tabs (P0; superseded by "Three places")
 - **Legacy / web/:** top-level tabs Latest Data · Ag Tools · Data Downloader (`#latest` default).
 - **New:** a station view with sections **Now** (`#now`, default) · **Charts** · **Ag** · **Download** · **About**
   (core/router.ts). Section changes are `pushState`, so Back returns to the previous section; in-section
@@ -212,14 +255,14 @@ layout parts of older entries below; data behaviour is unchanged.
   the station picker opens (first visit). The five most recent stations are `mco-dashboard-recent`.
 - **Why:** user decision (2026-10-02): reopen the last station.
 
-### Station picker: drawer / bottom sheet with Near me
+### Station picker: drawer / bottom sheet with Near me (P0; its contents now follow "Station picker: search first")
 - **web/:** a combobox and network chips in the Latest sidebar, plus the locator map card.
 - **New:** one picker (search, **Near me**, recents, network chips, map), a drawer on desktop (in-flow,
   remembered in `mco-dashboard-drawer`), an overlay drawer on tablets and a bottom sheet on phones. Near me
   asks for the location only when tapped. The Compare view keeps its own combobox until P1.
 - **Why:** station choice is the first decision on every visit and must work one-handed on a phone.
 
-### Navbar: one row; Feedback moved
+### Navbar: one row; Feedback moved (P0; superseded by "Header: one row and one ⋯ menu")
 - **Before (MOB-003):** the bar wrapped to two rows at 390 px and carried the tab links and Feedback.
 - **New:** one row at every width: logo, brand (hidden ≤ 750 px by the kit), the station switcher
   ("Bozeman ▾"), Share, theme, Help. Feedback is in Help and the footer.
@@ -248,7 +291,7 @@ layout parts of older entries below; data behaviour is unchanged.
   links. The Compare cards keep the legacy rows until P1 retires them.
 - **Why:** plan "About": details stay reachable without crowding the overview.
 
-### Ag: tool cards, an Options disclosure, phone-sized charts (P1)
+### Ag: tool cards, an Options disclosure, phone-sized charts (P1; superseded by "Ag tools: option chips")
 - **Legacy / web/:** Ag Tools opened on Growing Degree Days with a three-column controls card above the
   chart; the variable select was the only way to change tools; `var` stayed in the URL once set.
 - **New:** `#ag` without `var` shows one card per tool (Reference ET, Growing degree days, Feels like,
@@ -456,7 +499,7 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 
 ### Latest Data UI
 
-#### Native NWS forecast cards (LDT-009)
+#### Native NWS forecast cards (LDT-009; since the redesign, the Now strip and its "Full forecast" link)
 - **Legacy:** embedded `forecast.weather.gov/MapClick.php` in an iframe.
 - **New:** renders the NWS API forecast periods as cards, with a link to the full MapClick page.
 - **Why:** the iframe is not mobile friendly, can't be themed, and shows NWS chrome inside our card.
@@ -1278,7 +1321,7 @@ Plotted values were checked against web/ point for point: acebozem hourly, mdama
 - **New:** when a new station, window or aggregation finishes loading, the live region says "Chart updated: {station}, {hourly|daily|raw} data, {start} to {end}, {n} variables." Plotly had no announcement.
 - **Why:** HOUSE-STYLE §5.1 (canvas changes are invisible to screen readers).
 
-## Latest cards
+## Latest cards (pre-redesign; their content now lives on Now and About, see "Redesign 2026-10")
 
 Top card (Wind Rose / Weather Forecast / Latest Photo) and bottom card (Locator Map / Station Metadata / Current Conditions). Card defaults, the camera-schedule rule for Latest Photo, data2-only photos and the NWS forecast cards are carried over from web/ (LDT-002, LDT-003, LDT-009 to LDT-015, LDB-002, LDB-010 above); this section lists what changes versus web/.
 
