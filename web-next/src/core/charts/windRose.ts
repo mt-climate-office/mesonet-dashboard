@@ -40,7 +40,7 @@ export const windRoseChart: ChartBuilder<WindRoseModel> = (m, ctx) => {
   return {
     // Room above for the "N" label under the card's title (it touched it at 390 px), and the bottom
     // ~quarter for the legend, which wraps to two rows in a narrow card.
-    polar: { center: ['50%', '45%'], radius: '68%' },
+    polar: { center: ['50%', '44%'], radius: '64%' },
     angleAxis: {
       type: 'category',
       data: [...m.directions],
