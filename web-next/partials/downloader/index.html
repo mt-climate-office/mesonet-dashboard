@@ -108,8 +108,11 @@
       </div>
       <p class="dl-msg" x-show="droppedNotice" x-text="droppedNotice" data-testid="dl-dropped-swp"></p>
 
-      <div class="dl-map" x-data="downloaderMap({ stations: () => $store.station.list,
-           selected: () => stationId, onSelect: (id) => pickStation(id) })" data-testid="dl-map"></div>
+      <!-- Not on phones: the navbar's station picker has the map, and MapLibre never starts there. -->
+      <template x-if="!compact">
+        <div class="dl-map" x-data="downloaderMap({ stations: () => $store.station.list,
+             selected: () => stationId, onSelect: (id) => pickStation(id) })" data-testid="dl-map"></div>
+      </template>
     </section>
 
     <!-- Step 2: time aggregation, dates, quality control. -->

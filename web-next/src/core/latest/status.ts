@@ -1,6 +1,7 @@
 /**
  * What the Latest plot area shows: the chart, a loading note, or a legacy
- * empty-state message. ui/charts (Compare, variable page) feed it the current inputs.
+ * empty-state message. ui/charts (Compare, variable page) feed it the current inputs;
+ * `dataSettled` gates what describes the data (announcements, stats).
  */
 import { noData, type TimeseriesEmpty } from '../models/timeseries'
 
@@ -29,4 +30,13 @@ export function plotStatus(i: PlotStatusInput): PlotStatus {
   if ((i.record === null && i.waiting) || i.record === 'loading') return i.hasModel ? { kind: 'ready' } : { kind: 'loading' }
   if (i.record === null || i.record === 'error' || !i.hasModel) return message(noData())
   return { kind: 'ready' }
+}
+
+/**
+ * The drawn model belongs to the current request: it has loaded and nothing is
+ * in flight. While a new window loads, the plot keeps the previous model, so
+ * the live-region announcement and the stats wait for this.
+ */
+export function dataSettled(i: Pick<PlotStatusInput, 'record' | 'hasModel'>): boolean {
+  return i.record === 'success' && i.hasModel
 }

@@ -5,11 +5,10 @@
  * pushes history like every drill-down.
  */
 import Alpine from 'alpinejs'
+import { CHARTS_LIST_PATCH } from '../../core/router'
 import { chartsMode } from '../../core/variables'
 import { component } from '../component'
-import { navigate } from '../shell/navigate'
-
-const LIST = { v: null, view: 'recent', cmp: false } as const
+import { follow } from '../shell/navigate'
 
 export function chartsView() {
   return component({
@@ -17,12 +16,11 @@ export function chartsView() {
       return chartsMode(Alpine.store('url').state)
     },
     listHref(): string {
-      return Alpine.store('url').hrefFor('charts', LIST)
+      return Alpine.store('url').hrefFor('charts', CHARTS_LIST_PATCH)
     },
+    /** "All variables": back to the list (pushed), focusing its heading. */
     toList(e: MouseEvent): void {
-      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
-      e.preventDefault()
-      void navigate('charts', { patch: LIST, drillDown: true })
+      follow(e, 'charts', { patch: CHARTS_LIST_PATCH, drillDown: true, target: 'charts-list-title' })
     },
   })
 }

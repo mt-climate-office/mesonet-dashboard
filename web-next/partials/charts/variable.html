@@ -18,7 +18,7 @@
   <template x-for="variable in (state === 'ready' ? [variable] : [])" :key="variable.id">
     <div class="var-body">
       <div class="var-head">
-        <h2 class="dash-section-title var-title" data-vt-target x-text="variable.name" data-testid="variable-title"></h2>
+        <h2 class="dash-section-title var-title" id="var-title" tabindex="-1" data-vt-target x-text="variable.name" data-testid="variable-title"></h2>
         <nav class="var-near" aria-label="Other variables">
           <template x-if="near.prev">
             <a class="nav-btn var-chip" :href="href({ v: near.prev.id })" @click="go($event, { v: near.prev.id })" data-testid="var-prev">
@@ -105,6 +105,7 @@
                    x-data="chart({ builder: variableChart, table: variableTable, label: variable.name + ' chart', model: () => model(), range: () => range() })"></div>
             </div>
             <div class="var-stats" x-show="status().kind === 'ready'" data-testid="variable-stats">
+              <span class="dash-skel dash-skel--line" style="width: 50%" x-show="!settled()" aria-hidden="true"></span>
               <template x-for="row in stats()" :key="row.label">
                 <dl class="var-stat-row">
                   <template x-if="row.label"><div class="var-stat var-stat-depth"><dt class="sr-only">Sensor</dt><dd x-text="row.label"></dd></div></template>

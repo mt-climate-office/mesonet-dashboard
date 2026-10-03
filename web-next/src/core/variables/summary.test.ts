@@ -2,6 +2,10 @@ import dayjs from 'dayjs'
 import { describe, expect, it } from 'vitest'
 import type { ObservationRow } from '../api'
 import { stationVariables } from './catalog'
+import { parseWallClock } from '../sensorEvents'
+import type { TimeseriesPanel } from '../models/timeseries'
+import { rangeView } from './range'
+import { panelStats } from './stats'
 import { listRequest, primaryColumn, variableRows } from './summary'
 
 const ELEMENTS = [
@@ -61,5 +65,20 @@ describe('variableRows', () => {
     expect(byId.bp).toMatchObject({ value: '—', spark: null, sparkLabel: '' })
     expect(variableRows(VARS, LATEST, undefined).find((r) => r.id === 'air_temp')).toMatchObject({ value: '57 °F', spark: null })
     expect(variableRows(VARS, undefined, HOURLY).find((r) => r.id === 'air_temp')?.value).toBe('63 °F')
+  })
+})
+
+describe('24 h totals', () => {
+  it("the variable page's 24 h total equals the list's: the 24 readings ending at the newest", () => {
+    // 1 in exactly 24 h before the newest reading (outside), 0.1 in at the newest (inside).
+    const rows = HOURLY.map((r, i) => ({ ...r, 'Precipitation [in]': i === 47 ? 1 : i === 71 ? 0.1 : 0 }))
+    const list = variableRows(VARS, undefined, rows).find((r) => r.id === 'ppt')!
+    const x = rows.map((r) => parseWallClock(r.datetime)!)
+    const panel = {
+      series: [{ name: 'Precipitation [in]', type: 'bar', depth: null, values: rows.map((r) => r['Precipitation [in]'] as number), hoverLabel: '' }],
+    } as unknown as TimeseriesPanel
+    const [page] = panelStats(panel, x, rangeView('24h', '2026-10-01', '2026-10-02', x[x.length - 1]), true)
+    expect(list.value).toBe('0.1 in')
+    expect(page.items).toEqual([{ label: 'Total', value: list.value }])
   })
 })

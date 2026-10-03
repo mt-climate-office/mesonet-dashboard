@@ -23,8 +23,6 @@
  *                         the 5 defaults; `vars=` = explicitly none)
  *              nets       map network filter
  *              gridmet    overlay normals
- *              card       top card: wind | forecast | photo (absent = auto)
- *              info       bottom card: map | metadata | current (absent = auto)
  *     (Latest keeps the un-prefixed legacy names because it is the most-shared
  *      tab and existing links must keep working.)
  *
@@ -50,7 +48,8 @@
  *   Satellite  mode, pct, sat_vars, cmpx, cmpy, sat_from, sat_to
  *              (tab hidden; keys kept so old links round-trip untouched)
  *
- * Keys not in this schema (e.g. legacy `state`, `kbd`) are preserved as-is.
+ * Keys not in this schema (e.g. legacy `state`, `kbd`, and the old Latest
+ * cards' `card`/`info`) are preserved as-is, so old links round-trip.
  */
 import { SELECTED_VARS } from './params/latest'
 
@@ -68,11 +67,6 @@ export const CHART_VIEWS = ['recent', 'history', 'table'] as const
 export type ChartView = (typeof CHART_VIEWS)[number]
 
 export const NETWORK_OPTIONS = ['HydroMet', 'AgriMet', 'Cooperator'] as const
-
-export const TOP_CARDS = ['wind', 'forecast', 'photo'] as const
-export type TopCard = (typeof TOP_CARDS)[number]
-export const BOTTOM_CARDS = ['map', 'metadata', 'current'] as const
-export type BottomCard = (typeof BOTTOM_CARDS)[number]
 
 export const AG_TIME_OPTIONS = ['hourly', 'daily'] as const
 export type AgTime = (typeof AG_TIME_OPTIONS)[number]
@@ -177,8 +171,6 @@ export const URL_SCHEMA = {
   vars: list(null),
   nets: list(NETWORK_OPTIONS),
   gridmet: bool(false),
-  card: oneOf(TOP_CARDS, null),
-  info: oneOf(BOTTOM_CARDS, null),
   // Ag Tools
   var: str(),
   crop: strOr('wheat'),
@@ -272,9 +264,9 @@ export function latestVars(state: Pick<UrlState, 'vars'>): string[] {
   return state.vars ?? [...SELECTED_VARS]
 }
 
-/** Patch for "user picked a station": cards go back to auto (legacy select_default_tab). */
+/** Patch for "user picked a station" (picker, Download's combobox and map). */
 export function selectStationPatch(id: string | null): Partial<UrlState> {
-  return { s: id, card: null, info: null }
+  return { s: id }
 }
 
 /* -------------------------------------------------------------------------- */

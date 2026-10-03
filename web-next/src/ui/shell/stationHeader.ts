@@ -5,7 +5,7 @@
  * station picker (ui/picker/stationPicker.ts).
  */
 import Alpine from 'alpinejs'
-import { metersToFeet } from '../../core/cards'
+import { metersToFeet } from '../../core/about'
 import { component } from '../component'
 import { togglePicker } from '../picker/stationPicker'
 

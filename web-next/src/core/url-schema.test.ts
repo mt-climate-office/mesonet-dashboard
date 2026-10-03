@@ -22,12 +22,11 @@ describe('readUrlState / writeUrlSearch', () => {
   })
 
   it('rejects values outside an enum and keeps `vars=` as an explicit empty list', () => {
-    const s = readUrlState('?agg=weekly&vars=&qc=7&theme=sepia&card=photo')
+    const s = readUrlState('?agg=weekly&vars=&qc=7&theme=sepia')
     expect(s.agg).toBe('hourly')
     expect(s.vars).toEqual([])
     expect(s.qc).toBeNull()
     expect(s.theme).toBeNull()
-    expect(s.card).toBe('photo')
     expect(readUrlState('?qc=0').qc).toBe(0)
     expect(readUrlState('?gridmet=TRUE').gridmet).toBe(true)
   })
@@ -58,10 +57,15 @@ describe('readUrlState / writeUrlSearch', () => {
     expect(readUrlState(out)).toEqual(readUrlState(qs))
   })
 
-  it('latestVars resolves absent to the defaults; selectStationPatch resets cards', () => {
+  it('an old Latest link keeps card/info (no longer in the schema) through a write', () => {
+    const qs = '?s=acebozem&card=photo&info=map'
+    expect(writeUrlSearch({ ...readUrlState(qs), s: 'aceabsar' }, qs)).toBe('?card=photo&info=map&s=aceabsar')
+  })
+
+  it('latestVars resolves absent to the defaults; selectStationPatch sets the station', () => {
     expect(latestVars({ vars: null })).toHaveLength(5)
     expect(latestVars({ vars: [] })).toEqual([])
-    expect(selectStationPatch('x')).toEqual({ s: 'x', card: null, info: null })
+    expect(selectStationPatch('x')).toEqual({ s: 'x' })
   })
 })
 

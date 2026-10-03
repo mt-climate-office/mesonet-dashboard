@@ -7,7 +7,7 @@
  */
 import Alpine from 'alpinejs'
 import { latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, type LatestTimeseriesModel } from '../../core/charts'
-import { datesPatch, installDate, plotStatus, todayIso, viewAnnouncement, windowRange, zoomWindow, type PlotStatus } from '../../core/latest'
+import { dataSettled, datesPatch, installDate, plotStatus, todayIso, viewAnnouncement, windowRange, zoomWindow, type PlotStatus } from '../../core/latest'
 import { availableVars, chartWindow, emptyState, type TimeseriesEmpty } from '../../core/models/timeseries'
 import { latestVars } from '../../core/url-schema'
 import { component } from '../component'
@@ -106,7 +106,7 @@ export function compare() {
     /** Live-region text once a new view has data; '' while loading. */
     get announceKey(): string {
       const m = this.model()
-      if (!m || this.loading()) return ''
+      if (!m || !dataSettled({ record: this.record()?.status ?? null, hasModel: true })) return ''
       const w = this.window()
       return viewAnnouncement(stations().current?.name ?? stations().id ?? '', m.period, w.start, w.end, m.ts.panels.length)
     },

@@ -3,7 +3,6 @@
  * newest `/latest` stamp → label/value rows for a definition list.
  */
 import type { Station } from '../api'
-import { metersToFeet } from '../cards/metadata'
 import { fmtWall, MISSING } from '../charts/format'
 import { parseWallClock } from '../sensorEvents'
 
@@ -24,7 +23,10 @@ export function formatCoordinates(lat: number, lon: number): string {
   return `${Math.abs(lat)}° ${lat < 0 ? 'S' : 'N'}, ${Math.abs(lon)}° ${lon < 0 ? 'W' : 'E'}`
 }
 
-/** "4,905 ft (1,495 m)" from metres; feet as legacy round(m × 3.281). */
+/** Elevation in feet from metres, as legacy: round(m × 3.281). */
+export const metersToFeet = (m: number): number => Math.round(m * 3.281)
+
+/** "4,905 ft (1,495 m)" from metres (`metersToFeet`). */
 export function formatElevation(m: number): string {
   if (!Number.isFinite(m)) return MISSING
   return `${metersToFeet(m).toLocaleString('en-US')} ft (${Math.round(m).toLocaleString('en-US')} m)`

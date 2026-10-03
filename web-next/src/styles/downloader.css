@@ -97,7 +97,6 @@
   .dl-stepnav .dl-actions { justify-content: flex-end; }
   .dl-stepnav .nav-btn { flex: 0 1 50%; }
 
-  .dl-map { height: 240px; }
   .dl-preview-status { min-height: 10rem; }
   /* The page scrolls; a second scroll box inside it would trap the thumb. */
   .dl-form .ctl-multiselect-panel { max-height: none; overflow-y: visible; }

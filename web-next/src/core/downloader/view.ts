@@ -183,7 +183,7 @@ export function requestSummary(o: { station: string; elements: number; period: D
   return [o.station, vars, period, `${o.start} to ${o.end}`]
 }
 
-/** URL patch for a Downloader station pick: shared station reset + start back to the install date (legacy). */
+/** URL patch for a Downloader station pick: the station, and the start back to the install date (legacy). */
 export function stationPatch(id: string | null): Partial<UrlState> {
   return { ...selectStationPatch(id), dl_from: null }
 }

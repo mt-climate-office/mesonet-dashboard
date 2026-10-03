@@ -46,10 +46,18 @@ export function activePreset(state: Pick<UrlState, 'from' | 'to' | 'agg'>, today
 }
 
 /**
- * Visible x range (wall-clock ms) for the window: the whole days, except 24 h,
- * which shows the 24 hours up to the newest observation (`lastMs`) once it is known.
+ * The 24 hours up to and including the newest reading `lastMs` (wall-clock
+ * ms), as a half-open `[from, to)` range like every view: the 24 hourly
+ * readings ending at the newest. The list's "last 24 h" total and the 24 h
+ * preset both use it, so their totals agree.
+ */
+export const last24h = (lastMs: number): [number, number] => [lastMs - 24 * HOUR + 1, lastMs + 1]
+
+/**
+ * Visible x range (wall-clock ms, `[from, to)`) for the window: the whole days,
+ * except 24 h, which is `last24h` of the newest observation (`lastMs`) once it is known.
  */
 export function rangeView(id: RangeId, start: string, end: string, lastMs: number | null): [number, number] {
-  if (id === '24h' && lastMs !== null) return [lastMs - 24 * HOUR, lastMs]
+  if (id === '24h' && lastMs !== null) return last24h(lastMs)
   return windowRange(start, end)
 }

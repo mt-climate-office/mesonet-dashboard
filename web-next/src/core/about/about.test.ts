@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Station } from '../api'
 import { apiLinks } from './apiLinks'
-import { formatCoordinates, formatDay, formatElevation, periodOfRecord, stationDetails } from './details'
+import { formatCoordinates, formatDay, formatElevation, metersToFeet, periodOfRecord, stationDetails } from './details'
 import { measuresText, sensorHistory, sensorName } from './sensorHistory'
 
 const bozeman: Station = {
@@ -28,6 +28,7 @@ describe('details', () => {
     expect(formatCoordinates(45.66, -111.07)).toBe('45.66° N, 111.07° W')
     expect(formatElevation(1495.09)).toBe('4,905 ft (1,495 m)')
     expect(formatElevation(Number.NaN)).toBe('—')
+    expect(metersToFeet(1000)).toBe(3281)
   })
 
   it('period of record runs to the newest report, or "Since" until it arrives', () => {

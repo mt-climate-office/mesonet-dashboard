@@ -109,6 +109,9 @@ Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png
   (`navigate(…, { drillDown: true })`), so Back walks back through them to the list or to Now; presets,
   dates and switches replace the entry. The Charts tab inside Charts returns to the list (pushed);
   leaving Charts drops `v`, so the next visit opens the list (`core/router.ts#sectionNavPatch`).
+- **Focus:** a drill-down moves focus to the new view's heading (`#charts-list-title`, `#var-title`,
+  `#charts-compare-title`; prev/next chips too), so it never falls to `<body>`; a Recent · History · Table
+  link keeps focus.
 
 ### Charts on touch
 
@@ -128,8 +131,10 @@ Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png
 | `var=<tool>` | "‹ All Ag tools" link · heading "<tool>: <station>" · **Options** disclosure · chart card (notes, then the chart or its state) |
 
 - **Navigation:** a card is a real link (`?…&var=<tool>#ag`); a plain click opens it with `pushState`
-  (`navigate('ag', { drillDown: true })`) and focuses the heading. "All Ag tools" clears `var` the same way
-  and focuses the card just left. Back returns to the cards. Opening a tool applies `variablePatch` (the
+  (`navigate('ag', { drillDown: true })`) and focuses the heading. "All Ag tools", and the Ag tab inside Ag,
+  return to the cards the same way (`core/ag/view/tab.ts#agCardsPatch`: `var` and every other Ag key back to
+  its default, so the link is not read as an old GDD one); the link focuses the card just left. Back returns
+  to the cards. Opening a tool applies `variablePatch` (the
   same reset as changing the variable select inside Options).
 - **Options** (`<details class="dash-card ag-options">`): open on desktop, collapsed on phones (open there too
   while no station is chosen, since the station combobox is inside). The summary is one line, ellipsized:
@@ -150,13 +155,14 @@ Three step cards (`.dash-card`, `partials/downloader/index.html`) and the previe
 
 | Step | Contents |
 |---|---|
-| 1 Elements | station combobox, variables multiselect, "Show uncommon variables", the station map |
+| 1 Elements | station combobox, variables multiselect, "Show uncommon variables", the station map (not on compact) |
 | 2 Dates & period | time aggregation, dates (install date … today), quality control |
 | 3 Run | recap ("Bozeman · 2 variables · Daily · 2026-09-01 to 2026-09-30"), Run, Download CSV, warnings |
 
 - **Desktop and tablet:** a two-column grid, Elements beside Dates & period over Run; the preview spans
   both columns. No stepper.
-- **Compact:** a stepper. Only `.dl-step.is-current` shows (the Run step and the preview share step 3),
+- **Compact:** no station map in Elements (the navbar's station picker has one; MapLibre is not started),
+  and a stepper. Only `.dl-step.is-current` shows (the Run step and the preview share step 3),
   under "Step 2 of 3" and a three-segment bar, with Back / Next below. Next stays enabled; when the step
   would block Run (no station or element; invalid dates, from the date control's `onValidity`) it stays put
   and shows why. A step change scrolls the progress line into view, focuses the step heading and announces

@@ -21,7 +21,7 @@ describe('range presets', () => {
   })
   it('24 h shows the day up to the newest observation; others the whole days', () => {
     const last = windowRange('2026-10-02', '2026-10-02')[0] + 9 * H
-    expect(rangeView('24h', '2026-10-01', '2026-10-02', last)).toEqual([last - 24 * H, last])
+    expect(rangeView('24h', '2026-10-01', '2026-10-02', last)).toEqual([last - 24 * H + 1, last + 1])
     expect(rangeView('24h', '2026-10-01', '2026-10-02', null)).toEqual(windowRange('2026-10-01', '2026-10-02'))
     expect(rangeView('7d', '2026-09-25', '2026-10-02', last)).toEqual(windowRange('2026-09-25', '2026-10-02'))
   })

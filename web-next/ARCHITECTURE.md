@@ -91,11 +91,15 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `#latest`/`#downloader` map). `go(section, patch?, drillDown?)` changes
   section with `pushState` (Back works); `drillDown` pushes inside a section
   too (an Ag tool opened from its card; a Charts variable or sub-view). The
-  section nav applies `sectionNavPatch` (Charts inside Charts → the list;
-  leaving Charts drops `v`). `hrefFor(section, patch?)` gives the
+  section nav applies `sectionNavPatch` (Charts inside Charts → the list,
+  Ag inside Ag → the tool cards; leaving Charts drops `v`). `hrefFor(section, patch?)` gives the
   real href for a link. In-page anchors (the skip link's `#main`) keep the section.
   Back/forward re-read both. Navigate from UI through `ui/shell/navigate.ts`
-  (view transition + scroll + announcement).
+  (view transition + scroll + focus + announcement): an in-app `<a href>` calls
+  `follow(event, section, opts)` on click (a plain click navigates, a modified
+  or middle click follows the href); when the clicked link unmounts, pass
+  `target:` (an id with `tabindex="-1"`, usually the new view's heading) so
+  focus never falls to `<body>`.
 - **`$store.data`** (`stores/data.ts` → `core/cache.ts`):
   `cached(key, fetcher, {ttl, retry})` returns one reactive
   `{status: 'loading'|'success'|'error', data, error, refresh()}` per key.
@@ -108,8 +112,7 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   and fires one `window` event `mco-theme-change` (`detail.theme`).
 - **`$store.station`** (`stores/station.ts`): `catalog` (a Resource), `list`,
   `id` (the `?s=` value once confirmed against the catalog; null while
-  loading), `current` (its row), `byId(id)`, `select(id)` (sets `s` and resets
-  the Latest cards), `recent` (last 5). It rewrites NWSLI / mis-cased `?s=` to
+  loading), `current` (its row), `byId(id)`, `select(id)` (sets `s`), `recent` (last 5). It rewrites NWSLI / mis-cased `?s=` to
   the catalog id and remembers every confirmed station (core/stations/recent.ts).
   With no `?s=`, main.ts puts the remembered station in the URL before the
   stores start; with none, the station picker opens.
