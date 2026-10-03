@@ -22,6 +22,10 @@ export interface CachedOptions {
   ttl?: number
   /** Retry network/5xx failures (default true; 4xx never retries). */
   retry?: boolean
+  /** Time-sensitive: this read depends on the freshness tick (`deps.track`), so it re-runs, and refetches past `ttl`, on each tick. */
+  live?: boolean
+  /** Entries sharing a slot (a key that carries today's date): a new key shows the slot's last data while it loads. */
+  slot?: string
 }
 
 export interface CacheDeps {
@@ -29,11 +33,14 @@ export interface CacheDeps {
   reactive?: <T extends object>(o: T) => T
   now?: () => number
   sleep?: (ms: number) => Promise<void>
+  /** Called on every `live` read: reads the reactive freshness tick (stores/data.ts). */
+  track?: () => void
 }
 
 interface Entry {
   res: Resource<unknown>
-  fetchedAt: number
+  /** When the last fetch finished, successful or not. */
+  settledAt: number
   ttl: number
   inFlight: boolean
   /** Bumped per fetch; a response from an older fetch is ignored. */
@@ -45,12 +52,14 @@ export const DEFAULT_TTL_MS = 5 * 60 * 1000
 
 /**
  * Create a cache. `cached(key, fetcher, opts)`:
- *  - first call for `key` starts the fetch (status 'loading');
+ *  - first call for `key` starts the fetch (status 'loading', or the slot's
+ *    last data with status 'success');
  *  - later calls return the same object; in-flight requests are shared;
- *  - once older than `ttl`, the next call refetches in the background
- *    (status and data stay as they were until the new value lands);
- *  - errors stay errors until `refresh()` — reading an errored key never
- *    refetches by itself, so a template re-render cannot loop on a failure.
+ *  - once the last fetch is older than `ttl`, the next call refetches in the
+ *    background (status and data stay as they were until the new value lands);
+ *  - a failed fetch keeps the last good data (status 'success', `error` set)
+ *    or, with none, is an error; either way it is retried only after `ttl`
+ *    (or on `refresh()`), so a template re-render cannot loop on a failure.
  * The fetcher is captured on the first call for a key; keys must encode
  * every input the fetcher depends on.
  */
@@ -58,24 +67,27 @@ export function createCache(deps: CacheDeps = {}) {
   const reactive = deps.reactive ?? (<T extends object>(o: T) => o)
   const now = deps.now ?? Date.now
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
+  const track = deps.track ?? (() => {})
   const entries = new Map<string, Entry>()
+  const slots = new Map<string, unknown>()
 
   function cached<T>(key: string, fetcher: () => Promise<T>, opts: CachedOptions = {}): Resource<T> {
+    if (opts.live) track()
     const hit = entries.get(key)
     if (hit) {
-      const stale = now() - hit.fetchedAt > hit.ttl
-      if (stale && !hit.inFlight && hit.res.status === 'success') hit.run()
+      if (!hit.inFlight && now() - hit.settledAt > hit.ttl) hit.run()
       return hit.res as Resource<T>
     }
     const retry = opts.retry ?? true
+    const seed = opts.slot === undefined ? undefined : slots.get(opts.slot)
     const entry: Entry = {
       res: reactive({
-        status: 'loading' as ResourceStatus,
-        data: undefined as unknown,
+        status: (seed === undefined ? 'loading' : 'success') as ResourceStatus,
+        data: seed,
         error: null as unknown,
         refresh: () => entry.run(),
       }),
-      fetchedAt: -Infinity,
+      settledAt: -Infinity,
       ttl: opts.ttl ?? DEFAULT_TTL_MS,
       inFlight: false,
       gen: 0,
@@ -92,7 +104,7 @@ export function createCache(deps: CacheDeps = {}) {
           entry.res.data = value
           entry.res.error = null
           entry.res.status = 'success'
-          entry.fetchedAt = now()
+          if (opts.slot !== undefined) slots.set(opts.slot, value)
           break
         } catch (err) {
           if (gen !== entry.gen) return
@@ -102,10 +114,11 @@ export function createCache(deps: CacheDeps = {}) {
             continue
           }
           entry.res.error = err
-          entry.res.status = 'error'
+          entry.res.status = entry.res.data === undefined ? 'error' : 'success'
           break
         }
       }
+      entry.settledAt = now()
       entry.inFlight = false
     }
     entries.set(key, entry)

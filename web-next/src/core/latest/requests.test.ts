@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { configKey, elementsKey, normalsKey, recordRequest } from './requests'
+import { configKey, elementsKey, endsToday, normalsKey, recordRequest } from './requests'
 
 describe('recordRequest', () => {
   const window = { start: '2026-09-17', end: '2026-10-01', valid: true }
@@ -20,5 +20,14 @@ describe('recordRequest', () => {
   })
   it('names the metadata keys by station', () => {
     expect([elementsKey('a'), configKey('a'), normalsKey('a', 'Precipitation')]).toEqual(['elements:a', 'config:a', 'normals:a:Precipitation'])
+  })
+})
+
+describe('endsToday', () => {
+  const req = (end: string) => recordRequest({ station: 'x', window: { start: '2026-09-17', end, valid: true }, agg: 'hourly', vars: ['Air Temperature'] })!
+  it('is live when the window reaches today, not when it ended before', () => {
+    expect(endsToday(req('2026-10-01'), '2026-10-01')).toBe(true)
+    expect(endsToday(req('2026-10-01'), '2026-10-02')).toBe(false)
+    expect(endsToday({ key: 'k', query: { station: 'x', start: '2026-09-17', period: 'hourly' } }, '2026-10-02')).toBe(true)
   })
 })
