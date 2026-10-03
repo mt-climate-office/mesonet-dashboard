@@ -53,19 +53,18 @@ function canonicalName(t, side) {
 const family = (name) => String(name ?? '').replace(/\s*(@|\[).*$/, '').trim()
 
 /**
- * Panel key per y-axis title: the variable of the panel's first data series (not an AUX series, a
- * hidden/helper Plotly trace or a normals/index alias). Panels pair by the series they draw, not by
- * their titles, so web-next's plain axis titles ("Air temperature (°F)", DESIGN "Visual language")
- * still pair with web/'s ("Air Temp. (°F)"). A panel without such a series keys by its title.
+ * Panel key per y-axis title, from the compared traces: the variable of the panel's first data series
+ * (not an AUX series, a hidden/helper Plotly trace or a normals/index alias). Panels pair by the
+ * series they draw, not by their titles, so web-next's plain axis titles ("Air temperature (°F)",
+ * DESIGN "Visual language") still pair with web/'s ("Air Temp. (°F)"). A panel without such a
+ * series keys by its title.
  */
-function panelKeys(fig, side) {
+function panelKeys(traces) {
   const keys = new Map()
-  for (const t of fig.traces ?? []) {
+  for (const t of traces) {
     const title = normLabel(t.panel)
-    if (keys.has(title) || t.aux || t.hidden || t.helper || (side === 'A' && t.fill === 'toself')) continue
-    const name = canonicalName(t, side)
-    if (/^(normal (min|max)|index line)$/.test(name)) continue
-    keys.set(title, `panel:${normLabel(family(name)) || title}`)
+    if (keys.has(title) || t.aux || t.hidden || t.helper || /^(normal (min|max)|index line)$/.test(t.name)) continue
+    keys.set(title, `panel:${normLabel(family(t.name)) || title}`)
   }
   return (title) => keys.get(normLabel(title)) ?? normLabel(title)
 }
@@ -76,7 +75,6 @@ function panelKeys(fig, side) {
  * their panel's key (`panelKeys`) and name.
  */
 function prepare(fig, side) {
-  const panelOf = panelKeys(fig, side)
   const refs = [...(fig.refs ?? [])].map((r) => r.y)
   const traces = []
   for (const t of fig.traces ?? []) {
@@ -95,7 +93,12 @@ function prepare(fig, side) {
     const timed = x.filter((v, i) => ys[i] !== null && /T\d\d:\d\d$/.test(v))
     if (timed.length && timed.length === x.filter((_, i) => ys[i] !== null).length && timed.every((v) => v.endsWith('T12:00')))
       x = x.map((v) => v.replace(/T12:00$/, ''))
-    traces.push({ ...t, name, x, y: t.y, panelKey: panelOf(t.panel), key: `${panelOf(t.panel)}|${normLabel(name)}` })
+    traces.push({ ...t, name, x, y: t.y })
+  }
+  const panelOf = panelKeys(traces)
+  for (const t of traces) {
+    t.panelKey = panelOf(t.panel)
+    t.key = `${t.panelKey}|${normLabel(t.name)}`
   }
   return { ...fig, traces, panelIds: (fig.panels ?? []).map(panelOf), refValues: [...new Set(refs.filter(Number.isFinite).map((v) => +v.toPrecision(4)))].sort((a, b) => a - b) }
 }

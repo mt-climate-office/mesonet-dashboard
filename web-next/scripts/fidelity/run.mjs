@@ -138,10 +138,15 @@ async function mapCheck(map, station, required) {
   return { status: bad ? 'WARN' : 'PASS', note: bad ? 'station list/selection differs from /stations' : undefined, rows: rows.length, catalog: ids.length, missing: missing.slice(0, 20), extra, current, canvas: map.canvas }
 }
 
+/** web/ wording → web-next's plain name in Ag notes: DOCUMENTED (DIVERGENCES "Charts: plain names in tooltips and tables"). */
+const DOCUMENTED_WORDING = [[/^Percent saturation /, 'Soil saturation ']]
+
 function messageCheck(ca, cb) {
   const norm = (l) => (l ?? []).map((m) => m.replace(/\s+/g, ' ').trim()).filter(Boolean)
-  const d = setDiff(norm(ca?.messages), norm(cb?.messages))
-  return { status: d.onlyA.length || d.onlyB.length ? 'WARN' : 'PASS', ...d }
+  let renamed = false
+  const a = norm(ca?.messages).map((m) => DOCUMENTED_WORDING.reduce((s, [re, to]) => (re.test(s) ? ((renamed = true), s.replace(re, to)) : s), m))
+  const d = setDiff(a, norm(cb?.messages))
+  return { status: d.onlyA.length || d.onlyB.length ? 'WARN' : renamed ? 'DOCUMENTED' : 'PASS', ...d }
 }
 
 async function runLatest(browser) {
