@@ -10,6 +10,7 @@ import { NORMALS_VARS } from '../models/timeseries'
 import { variablePatch } from '../ag/view/tab'
 import { AG_TOOL_IDS, isAgTool } from '../params/ag'
 import type { UrlState } from '../url-schema'
+import { plainName } from './labels'
 
 type ElementRow = { element: string; description_short: string }
 
@@ -111,6 +112,14 @@ export function stationVariables(elements: readonly ElementRow[]): Variable[] {
       normals: (NORMALS_VARS as readonly string[]).includes(name),
     }))
     .sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name))
+}
+
+/**
+ * Compare's variable chips: each display variable (`names`, the values `vars=` stores) under its
+ * plain name (`plainName`; an unknown one keeps its API name), sorted by that name.
+ */
+export function plainVariableOptions(names: readonly string[], elements: readonly ElementRow[] = []): { value: string; label: string }[] {
+  return names.map((name) => ({ value: name, label: plainName(variableId(name, elements), name) })).sort((a, b) => a.label.localeCompare(b.label))
 }
 
 /** `vars` (in list order) split into their non-empty groups. */
