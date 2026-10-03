@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { HERO_STRIP, THEMES, variableStyle, withAlpha } from '../palette'
-import { heroStripChart, heroStripTable, type HeroStripModel } from './heroStrip'
+import { heroStripChart, heroStripTable, stripTickLabel, stripTicks, type HeroStripModel } from './heroStrip'
 import { paint } from './theme'
 import { testCtx } from './testing'
 
@@ -44,14 +44,31 @@ describe('heroStripChart', () => {
     expect(o.xAxis).toMatchObject({ type: 'time', min: NOW - 24 * H, max: NOW + 24 * H })
     expect(o.dataZoom).toBeUndefined()
   })
-  it('labels the observed high and low, and each period on the forecast line', () => {
-    const ext = series().find((s) => s.id === 'aux:extremes')!.data as { value: number[]; label: { formatter: string } }[]
-    expect(ext.map((d) => [d.value, d.label.formatter])).toEqual([
-      [[obsT[20], 66], 'High 66°'],
-      [[obsT[5], 38], 'Low 38°'],
+  it('labels the observed high above its point and the low below; no period labels in the chart', () => {
+    const ext = series().find((s) => s.id === 'aux:extremes')!.data as { value: number[]; label: { formatter: string; position: string } }[]
+    expect(ext.map((d) => [d.value, d.label.formatter, d.label.position])).toEqual([
+      [[obsT[20], 66], 'High 66°', 'top'],
+      [[obsT[5], 38], 'Low 38°', 'bottom'],
     ])
-    const per = series().find((s) => s.id === 'aux:periods')!.data as { value: number[]; label: { formatter: string } }[]
-    expect(per.map((d) => [d.value, d.label.formatter])).toEqual([[[NOW + 10 * H, 45], 'Tonight 45°']])
+    expect(series().find((s) => s.id === 'aux:periods')).toBeUndefined()
+  })
+  it('pads the y range so the high and low labels stay inside the grid', () => {
+    const y = heroStripChart(MODEL, testCtx()).yAxis as { min: number; max: number }
+    // values span 38–66 (28°): 30% pad ≈ 8.4° each side
+    expect(y.min).toBe(29)
+    expect(y.max).toBe(75)
+  })
+  it('x ticks: Now plus every 6 h on phones, every 3 h wider, none crowding Now', () => {
+    const ticks = (compact: boolean) => {
+      const x = heroStripChart(MODEL, testCtx('dark', compact ? 390 : 900, compact)).xAxis as { axisLabel: { customValues: number[] } }
+      return x.axisLabel.customValues.map((t) => stripTickLabel(t, NOW))
+    }
+    // NOW is 14:00 wall clock: Noon (2 h before) would crowd Now.
+    expect(ticks(true)).toEqual(['6 PM', '12 AM', '6 AM', 'Now', '6 PM', '12 AM', '6 AM', 'Noon'])
+    expect(ticks(false)).toHaveLength(16)
+    const wide = ticks(false)
+    expect(wide.slice(wide.indexOf('Now') - 1, wide.indexOf('Now') + 2)).toEqual(['Noon', 'Now', '6 PM'])
+    expect(stripTicks(0, 12 * H, 5 * H, 6)).toEqual([0, 5 * H, 12 * H])
   })
   it('palette colors per theme', () => {
     for (const t of THEMES) {

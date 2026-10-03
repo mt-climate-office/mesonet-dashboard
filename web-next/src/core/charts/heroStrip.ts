@@ -1,26 +1,27 @@
 /**
  * The Now hero's 48 h strip: the last 24 h of observed hourly air
  * temperature (solid line, light area fill) running into the next 24 h of
- * NWS hourly forecast (dashed), a "now" rule and dot, the observed high and
- * low, and small forecast-period labels ("Tonight 45°"). No zoom; tooltip on
- * hover or tap. Model from core/overview/hero.ts; °F, Denver wall-clock ms.
+ * NWS hourly forecast (dashed), a "now" rule and dot, and the observed high
+ * (above its point) and low (below), kept inside the grid by padding the y
+ * range. The forecast periods are the icon row under the chart, not labels in
+ * it. No zoom; tooltip on hover or tap. Model from core/overview/hero.ts; °F,
+ * Denver wall-clock ms.
  */
 import type { EChartsOption, ScatterSeriesOption } from 'echarts'
 import { HERO_STRIP, variableStyle, withAlpha } from '../palette'
-import { timeAxis } from './axes'
 import { fmtNum, fmtWall, isoWall, MISSING } from './format'
 import { AUX, lineSeries, points } from './series'
 import { paint } from './theme'
 import { axisTooltip, tipText } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
 
-/** A forecast period's label on the strip. */
+/** A forecast period in the strip's next 24 h (the icon row and the table caption). */
 export interface StripPeriod {
-  /** Where the label sits: the period's midpoint, wall-clock ms. */
+  /** The period's midpoint, wall-clock ms. */
   t: number
   /** "Tonight 45°". */
   label: string
-  /** NWS icon URL (api.weather.gov only) for the UI to draw beside the label, or null. */
+  /** NWS icon URL (api.weather.gov only) for the icon row, or null. */
   icon: string | null
   /** The period's short forecast (icon alt text). */
   short: string
@@ -39,13 +40,35 @@ export interface HeroStripModel {
 const H24 = 24 * 3_600_000
 const deg = (v: number) => `${Math.round(v)}°`
 
-/** Forecast value at `t`: the nearest forecast hour (or `now` before the first). */
-function forecastAt(m: HeroStripModel, t: number): number | null {
-  let best: [number, number | null] = [Math.abs(t - m.now.t), m.now.v]
-  m.forecast.t.forEach((x, i) => {
-    if (Math.abs(t - x) < best[0]) best = [Math.abs(t - x), m.forecast.v[i]]
-  })
-  return best[1]
+const H = 3_600_000
+
+/** "Now", "Noon", else "6 AM" / "3 PM": a strip tick label (wall-clock ms, read as UTC). */
+export function stripTickLabel(t: number, now: number): string {
+  if (t === now) return 'Now'
+  const h = new Date(t).getUTCHours()
+  if (h === 0) return '12 AM'
+  if (h === 12) return 'Noon'
+  return `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`
+}
+
+/**
+ * The strip's x ticks: `now` plus every `stepH`-th wall-clock hour in [min, max],
+ * dropping hours closer to `now` than half a step so no two labels touch.
+ */
+export function stripTicks(min: number, max: number, now: number, stepH: number): number[] {
+  const step = stepH * H
+  const out = [now]
+  for (let t = Math.ceil(min / step) * step; t <= max; t += step) if (Math.abs(t - now) >= step / 2) out.push(t)
+  return out.sort((a, b) => a - b)
+}
+
+/** y range padded so the High/Low labels fit inside the grid: 30% of the span (≥ 4°) each side. */
+function yRange(m: HeroStripModel): { min: number; max: number } | null {
+  const vs = [...m.observed.v, ...m.forecast.v, m.now.v].filter((v): v is number => v !== null)
+  if (!vs.length) return null
+  const [lo, hi] = [Math.min(...vs), Math.max(...vs)]
+  const pad = Math.max(4, (hi - lo) * 0.3)
+  return { min: Math.floor(lo - pad), max: Math.ceil(hi + pad) }
 }
 
 /** Observed high and low (first occurrence of each), or null with no data. */
@@ -62,8 +85,13 @@ function extremes(m: HeroStripModel): { hi: [number, number]; lo: [number, numbe
   return out
 }
 
-/** A labelled-point drawing aid (no tooltip, no legend). */
-function labels(id: string, ctx: ChartContext, color: string, pts: { x: number; y: number; text: string; below?: boolean }[]): ScatterSeriesOption {
+/**
+ * A labelled-point drawing aid (no tooltip, no legend). A label near either
+ * end of the x span is aligned inward so it never runs past the grid.
+ */
+function labels(id: string, ctx: ChartContext, color: string, span: [number, number], pts: { x: number; y: number; text: string; below?: boolean }[]): ScatterSeriesOption {
+  const edge = (span[1] - span[0]) * 0.1
+  const align = (x: number) => (x < span[0] + edge ? 'left' : x > span[1] - edge ? 'right' : 'center')
   return {
     type: 'scatter',
     id: `${AUX}${id}`,
@@ -72,12 +100,12 @@ function labels(id: string, ctx: ChartContext, color: string, pts: { x: number; 
     itemStyle: { color },
     data: pts.map((p) => ({
       value: [p.x, p.y],
-      label: { show: true, formatter: p.text, position: p.below ? 'bottom' : 'top', color: ctx.theme.textMuted, fontFamily: ctx.theme.fontUi, fontSize: ctx.compact ? 10 : 11 },
+      label: { show: true, formatter: p.text, position: p.below ? 'bottom' : 'top', align: align(p.x), color: ctx.theme.textMuted, fontFamily: ctx.theme.fontUi, fontSize: ctx.compact ? 10 : 11 },
     })),
   }
 }
 
-/** Observed (solid + area) → forecast (dashed), now rule + dot, high/low and period labels. */
+/** Observed (solid + area) → forecast (dashed), now rule + dot, high/low labels. */
 export const heroStripChart: ChartBuilder<HeroStripModel> = (m, ctx) => {
   const color = variableStyle('Air Temperature', ctx.theme.name)!.color
   const rule = paint(ctx.theme, HERO_STRIP.nowRule)
@@ -86,15 +114,30 @@ export const heroStripChart: ChartBuilder<HeroStripModel> = (m, ctx) => {
   const fcX = m.now.v === null ? m.forecast.t : [m.now.t, ...m.forecast.t]
   const fcY = m.now.v === null ? m.forecast.v : [m.now.v, ...m.forecast.v]
   const ext = extremes(m)
-  const periodPts = m.periods.flatMap((p) => {
-    const y = forecastAt(m, p.t)
-    return y === null ? [] : [{ x: p.t, y, text: p.label }]
-  })
+  const span: [number, number] = [m.now.t - H24, m.now.t + H24]
+  // Ticks every 6 h on phones ("Now", "6 PM", "12 AM", …), every 3 h wider.
+  const ticks = stripTicks(span[0], span[1], m.now.t, ctx.compact ? 6 : 3)
+  const y = yRange(m)
   return {
     useUTC: true,
-    grid: { left: ctx.compact ? 32 : 40, right: 12, top: 28, bottom: 24 },
-    xAxis: timeAxis({ min: m.now.t - H24, max: m.now.t + H24 }),
-    yAxis: { type: 'value', scale: true, splitNumber: 3, axisLabel: { formatter: '{value}°' } },
+    grid: { left: ctx.compact ? 32 : 40, right: 12, top: 8, bottom: 24 },
+    xAxis: {
+      type: 'time',
+      min: span[0],
+      max: span[1],
+      splitLine: { show: false },
+      axisTick: { customValues: ticks },
+      axisLabel: { hideOverlap: true, customValues: ticks, formatter: (t: number) => stripTickLabel(t, m.now.t) },
+    },
+    yAxis: {
+      type: 'value',
+      min: y?.min,
+      max: y?.max,
+      scale: true,
+      splitNumber: 3,
+      // The padded ends are not round numbers: label only the inner ticks.
+      axisLabel: { formatter: '{value}°', showMinLabel: false, showMaxLabel: false },
+    },
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, 'hourly'), (name, y) => tipText(name, `${Math.round(y)} °F`)),
     series: [
       { ...observed, areaStyle: { color: withAlpha(color, HERO_STRIP.areaAlpha), origin: 'start' } },
@@ -108,11 +151,10 @@ export const heroStripChart: ChartBuilder<HeroStripModel> = (m, ctx) => {
         data: m.now.v === null ? [] : [[m.now.t, m.now.v]],
         markLine: { silent: true, symbol: 'none', label: { show: false }, lineStyle: { color: rule, type: 'solid', width: 1 }, data: [{ xAxis: m.now.t }] },
       },
-      labels('extremes', ctx, color, ext ? [
+      labels('extremes', ctx, color, span, ext ? [
         { x: ext.hi[0], y: ext.hi[1], text: `High ${deg(ext.hi[1])}` },
         { x: ext.lo[0], y: ext.lo[1], text: `Low ${deg(ext.lo[1])}`, below: true },
       ] : []),
-      labels('periods', ctx, rule, periodPts),
     ],
   } satisfies EChartsOption
 }
