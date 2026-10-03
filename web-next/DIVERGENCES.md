@@ -520,7 +520,7 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 - **New:** DESIGN.md "Chart style" (`core/charts/style.ts`): one line width; gaps are breaks from the known
   interval (one null midway across a step over 1.5 intervals, inserted by the chart only); precipitation and ETr
   are bars at every interval, in the preview too, and no chart draws symbols on its lines; the y axis follows the
-  variable's family (zero-based, fixed 0–100 % / 0–360°, or free ± 5 %) rounded to nice steps; the slider shows on
+  variable's family (zero-based, fixed 0–100 % / 0–360°, or free ± 2 %, stopping at 0 for never-negative variables) rounded to nice steps (4–7 intervals, least padding); the slider shows on
   wide screens for windows over 2 days with ≥ 30 points, sits in one place, starts at the whole extent, spans
   exactly the plotted extent and traces one sensible series in token colors; charts animate their first draw only.
 - **Same:** every value drawn, in every table and download, and every Ag number. Fidelity: one-sided nulls are not
