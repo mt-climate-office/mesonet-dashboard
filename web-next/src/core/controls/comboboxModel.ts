@@ -44,10 +44,11 @@ export function matchRank(item: ComboboxItem, query: string): number {
   return Infinity
 }
 
-/** Case-insensitive substring filter over label, id and keywords. Groups keep
- *  their first-appearance order in `items` (so the list doesn't jump while
- *  typing); within a group, better rank first, then input order. `best` points
- *  at the top-ranked match wherever its group sits. Keeps at most `limit` items. */
+/** Case-insensitive substring filter over label, id and keywords. With no query,
+ *  every item in its group, groups in first-appearance order. With a query, one
+ *  ungrouped list, best match first (rank, then group order, then input order),
+ *  so a prefix match never sits under a whole group of weaker ones. `best` points
+ *  at the top-ranked match. Keeps at most `limit` items. */
 export function filterItems(
   items: readonly ComboboxItem[],
   query: string,
@@ -61,7 +62,7 @@ export function filterItems(
   const matches = items
     .map((item, index) => ({ item, index, rank: matchRank(item, q), group: groupIndex.get(item.group) ?? 0 }))
     .filter((m) => m.rank !== Infinity)
-    .sort((a, b) => a.group - b.group || a.rank - b.rank || a.index - b.index)
+    .sort((a, b) => a.rank - b.rank || a.group - b.group || a.index - b.index)
 
   const kept = matches.slice(0, Math.max(0, limit))
   const flat = kept.map((m) => m.item)
@@ -71,7 +72,7 @@ export function filterItems(
   })
   const groups: ComboboxGroup[] = []
   for (const item of flat) {
-    const name = item.group ?? null
+    const name = q === '' ? (item.group ?? null) : null
     const last = groups[groups.length - 1]
     if (last && last.name === name) last.items.push(item)
     else groups.push({ name, items: [item] })
@@ -103,4 +104,10 @@ export function resultSummary(shown: number, total: number): string {
   if (total === 0) return 'No results'
   if (shown < total) return `Showing ${shown} of ${total} results; type to narrow`
   return total === 1 ? '1 result' : `${total} results`
+}
+
+/** What Esc does in the combobox: clear the text first, then close the list, then pass (the enclosing dialog closes). */
+export function escapeAction(query: string, open: boolean): 'clear' | 'close' | 'pass' {
+  if (query !== '') return 'clear'
+  return open ? 'close' : 'pass'
 }

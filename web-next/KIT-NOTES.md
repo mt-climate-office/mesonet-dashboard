@@ -167,6 +167,13 @@ falls short.
 - **Why:** the kit sets sizes per component (0.55–1.05 rem, nine distinct values in this app alone).
 - **Proposed:** kit `--fs-*` tokens (theme-independent, one `:root` block), used by the kit's own components over time.
 
+### Spacing scale and radii — new
+- **Here:** `--gap-tight 4px · --gap 12px compact / 16px · --gutter 16px · --card-pad 14px compact / 16px`,
+  `--card-radius 16px`, `--panel-radius = --radius-lg` (`ui/layout/card.css`).
+- **Why:** the app had seven card paddings and four surface gaps (polish audit G1–G3); the kit has no
+  spacing tokens and its radii stop at 12 px.
+- **Proposed:** kit `--space-*` (4 px base) and a `--radius-xl` (16 px) for in-flow cards.
+
 ### Display numerals — new (mco-web-style#36)
 - **Here:** `.num-display` (`ui/layout/card.css`): Outfit (`--font-ui`), `font-variant-numeric: tabular-nums`,
   `letter-spacing: -0.02em`. For readings at display size (≥ 1.75 rem: the Now hero, tiles).
@@ -189,6 +196,7 @@ falls short.
 | `.mco-navbar > .controls { flex: 1 1 auto; min-width: 0 }`, `.dash-switcher { flex-shrink: 1; min-width: 0 }` | The station switcher takes the free width and truncates; `.nav-btn` is `flex-shrink: 0; white-space: nowrap`. | `.nav-btn.is-truncating` (shrinks, ellipsis on its text span). |
 | `.mco-toast { bottom: calc(var(--tabbar-h) + var(--sheet-h) + 1rem) }` on compact (`ui/layout/sectionNav.css`) | The toast must clear the tab bar and an open sheet; explorer has the same override for `--sheet-h`. | Kit toast `bottom: calc(1.5rem + var(--tabbar-h, 0px) + var(--sheet-h, 0px))` by default. |
 | `.ctl-input { font-size: 1rem }` under `(hover: none)` (`ui/controls/controls.css`) | iOS Safari zooms into any focused field under 16 px. | Kit base rule for form fields on touch, or an `.mco-input`. |
+| MapLibre zoom / fit buttons and `.mco-panel-toggle` at 40 px under `(hover: none)` (`ui/map/map.css`) | HOUSE-STYLE §5.5; MapLibre's buttons are 29 px, the kit's panel toggle 36 px. | The same rule in the kit's map controls and `.mco-panel-toggle`. |
 | `.dash-scrim` adds `backdrop-filter: blur(2px)` to `.mco-scrim` | Explorer's look. | Optional `.mco-scrim--blur`. |
 | `.dash-toggletip-btn.mco-btn-info { width/height: 1.5rem }` under `(hover: hover)` (`ui/layout/toggletip.css`) | An ⓘ inline next to text; the kit's is a 34 px navbar button. Touch keeps 40 px. | An inline `.mco-btn-info--sm`. |
 | `.dash-link` and `.dash-section-link` get `min-height: 40px` under `(hover: none)` | HOUSE-STYLE §5.5 for standalone links (not prose). | A kit `.mco-link` for standalone links. |

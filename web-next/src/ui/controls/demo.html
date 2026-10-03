@@ -79,9 +79,9 @@
                autocomplete="off" spellcheck="false" aria-autocomplete="list"
                :id="ids.input" :placeholder="placeholder" :aria-expanded="open"
                :aria-controls="ids.listbox" :aria-activedescendant="activeId()"
-               :value="inputText()" @input="onInput($event)"
+               :value="query" @input="onInput($event)"
                @keydown="onKeydown($event)" @click="toggle()">
-        <button type="button" class="ctl-clear" x-show="hasValue()"
+        <button type="button" class="ctl-clear" x-show="hasText()"
                 :aria-label="'Clear ' + label" @click="clear()">&times;</button>
       </div>
       <div class="ctl-combobox-popup" x-show="open">

@@ -10,10 +10,10 @@
 .map-legend-rows { list-style: none; margin: 0; padding: 0; }
 .map-legend-row {
   display: flex; align-items: center; gap: 0.5rem;
-  padding: 3px 0; font-size: 0.78rem; color: var(--text-secondary);
+  padding: 3px 0; font-size: var(--fs-xs); color: var(--text-secondary);
 }
 .map-legend-swatch { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; box-sizing: border-box; }
-.map-legend-count { margin-left: auto; padding-left: 0.5rem; font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); }
+.map-legend-count { margin-left: auto; padding-left: 0.5rem; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
 
 /* kit-override: MapLibre's popup is white with a black tip; repaint it from
    tokens so it follows the theme. Pointer events off: it is hover decoration. */
@@ -31,6 +31,13 @@
 .map-popup.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip { border-top-color: var(--bg-surface); }
 .map-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--bg-surface); }
 .map-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--bg-surface); }
-.map-popup-name { margin: 0; font-size: 0.78rem; font-weight: 600; line-height: 1.25; }
-.map-popup-detail { margin: 0 0 0.2rem; font-size: 0.72rem; color: var(--text-secondary); }
+.map-popup-name { margin: 0; font-size: var(--fs-sm); font-weight: 600; line-height: 1.25; }
+.map-popup-detail { margin: 0 0 0.2rem; font-size: var(--fs-xs); color: var(--text-secondary); }
 .map-popup-detail:last-child { margin-bottom: 0; }
+
+/* kit-override: ≥ 40 px touch targets (HOUSE-STYLE §5.5; KIT-NOTES "Overrides"): MapLibre's zoom / fit
+   buttons are 29 px, the kit's panel toggle 36 px. */
+@media (hover: none) {
+  .maplibregl-ctrl-group button { width: 40px; height: 40px; }
+  .map-frame .mco-panel-toggle { width: 40px; height: 40px; }
+}

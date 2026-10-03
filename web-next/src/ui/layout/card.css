@@ -1,8 +1,8 @@
 /* .dash-card: the one in-flow surface (kit candidate .mco-card, KIT-NOTES.md). Kit .mco-panel is
    glass floating over maps; this is the flat surface for page content (DESIGN.md "Visual
    language"): --bg-surface, radius 16 px, a soft shadow and no border, except in high contrast,
-   where a border keeps the separation (a shadow is invisible on black). One padding scale
-   (--card-pad), one title style. A card may be an <a> (tiles): it then shows a hover fill and
+   where a border keeps the separation (a shadow is invisible on black), and dark, which adds a
+   hairline. The spacing scale (--gap*, --gutter, --card-pad) and radii live here; one title style. A card may be an <a> (tiles): it then shows a hover fill and
    keeps the kit focus ring. Badges (.dash-badge) and the display numerals (.num-display) live here. */
 
 :root {
@@ -11,10 +11,18 @@
   --card-shadow: 0 1px 2px color-mix(in srgb, var(--scrim) 22%, transparent),
                  0 4px 16px color-mix(in srgb, var(--scrim) 16%, transparent);
   --card-radius: 16px;
+  /* One spacing scale (DESIGN.md "Visual language"); 4 px base. Compact values below. */
+  --gap-tight: 4px;              /* title ↔ subline, icon ↔ label */
+  --gap: 16px;                   /* between surfaces (cards, chip rows, tiles) */
+  --gutter: 16px;                /* page side and top padding */
+  --card-pad: 16px;              /* inside a .dash-card */
+  --panel-radius: var(--radius-lg); /* floating panels (sheets, popovers, menus) */
+}
+@media (max-width: 640px), (max-height: 560px) {
+  :root { --gap: 12px; --card-pad: 14px; }
 }
 
 .dash-card {
-  --card-pad: 1rem;
   position: relative; /* anchors .sr-only descendants, which would otherwise widen the page */
   min-width: 0;
   padding: var(--card-pad);
@@ -25,6 +33,8 @@
   color: var(--text-primary);
 }
 [data-theme="high-contrast"] .dash-card { border: 1px solid var(--border); box-shadow: none; }
+/* Dark: the shadow barely reads on a dark page, so a glass hairline separates the card. */
+[data-theme="dark"] .dash-card { box-shadow: var(--card-shadow), inset 0 0 0 1px var(--border-glass); }
 
 a.dash-card {
   display: block;
@@ -85,6 +95,3 @@ a.dash-card:hover { background: var(--accent-hover); }
 [data-theme="high-contrast"] .dash-chip { border: 1px solid var(--border); }
 @media (hover: none) { .dash-chip { min-height: 40px; } }
 
-@media (max-width: 640px), (max-height: 560px) {
-  .dash-card { --card-pad: 0.875rem; }
-}
