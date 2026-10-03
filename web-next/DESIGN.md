@@ -54,7 +54,8 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
 - **Picking** a station closes the picker at every size (the desktop drawer saves "closed") and moves focus
   to `<main>`, the new station's content. Recent updates at once.
 - **Search** starts empty (the header names the station; Recent marks it). With text, matches rank across
-  networks (a name or id prefix first); with none, the full list groups by network. × shows whenever there is
+  networks (exact name or id, then the name starting with the text, then a later word, an id, any substring;
+  shorter names first within each), and on a phone the sheet goes full; with none, the list groups by network. × shows whenever there is
   text: it clears it, keeps focus and shows the full list. Esc clears the text, then closes the list, then
   closes the picker.
 - **Browse on the map** on a phone opens the sheet full; recents and Near me step aside and the map takes the
@@ -148,11 +149,11 @@ tiles, rows at every width.
 
 | Slot | Content | Data (tier) |
 |---|---|---|
-| Hero | Air temperature (`.num-display`, 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("24 h high 74° · low 41°", so the two agree), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain; "calm after gusts to 43 mph earlier" when the 24 h peak gust is ≥ 25 mph) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
+| Hero | Air temperature (`.num-display`, `--fs-display-hero`: 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("24 h high 74° · low 41°", so the two agree), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain; "calm after gusts to 43 mph earlier" when the 24 h peak gust is ≥ 25 mph) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
 | Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table; a "Loading the 48-hour strip…" status while tier 2 loads and a short note in its place when there is nothing to draw. Below it the forecast periods as an icon row (api.weather.gov only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
 | Media | Latest camera frame of the default direction (opens the photo dialog; its caption bottom right, clear of the camera's own label), or the wind rose without a camera (a fixed 20 rem card) | photo schedule, latest listings (1) |
-| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Gusts to 43 mph · 24 h" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, 24 h without the ppt summary; % of normal this year; seven daily bars, `rainBars`, or no graphic after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has SWP sensors), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page that morphs into the page heading, which takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, `/derived/hourly` SWP (2) |
+| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Gusts to 43 mph · 24 h" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, 24 h without the ppt summary; % of normal this year; seven daily bars, `rainBars`, or no graphic after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has SWP sensors), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page that morphs into the page heading, which takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, `/derived/hourly` SWP (2) |
 | Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens About's readings sheet (`target: 'about-readings'`, the row's `data-sheet`; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
@@ -218,7 +219,7 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
     one-column variable (the band, in the line's color, is in the tooltip and the table's Low/High columns).
   - **Stats card:** Low · High · Average per sensor over the visible range (Total for precipitation and ETr), in
     the variable's plain unit (`panelStats(…, id)`); on Daily, Low and High are the band's true extremes. One
-    line per sensor at every width (equal columns up to 7 rem); values in the UI font with `tabular-nums`.
+    line per sensor at every width (equal columns up to 7 rem; a text value such as a growth stage takes two on phones); values in the UI font with `tabular-nums`.
   - **⋯ menu:** Download data (the sheet prefilled: `core/downloader/fromChart`, the variable's element codes,
     the window (All years: install date … today) and the interval, 5-min as hourly) · Show as table / Show as
     chart (`tbl`, pushed, so Back returns; replaces the chart in place; All years tables its years) · Custom

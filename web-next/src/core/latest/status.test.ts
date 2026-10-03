@@ -13,8 +13,13 @@ describe('plotStatus', () => {
     expect(plotStatus({ ...base, record: 'loading', hasModel: false }).kind).toBe('loading')
     expect(plotStatus({ ...base, record: 'loading' }).kind).toBe('ready')
   })
-  it('shows no data for no request, an error or no rows (never loads forever)', () => {
-    for (const s of [{ record: null }, { record: 'error' }, { hasModel: false }] as const) {
+  it('shows the error state when the record or the element list failed, not "no data"', () => {
+    expect(plotStatus({ ...base, record: 'error', hasModel: false })).toEqual({ kind: 'error' })
+    expect(plotStatus({ ...base, record: null, waiting: false, hasModel: false, failed: true })).toEqual({ kind: 'error' })
+    expect(plotStatus({ ...base, failed: true, empty: { kind: 'no-vars', title: 'No variables selected' } }).kind).toBe('empty')
+  })
+  it('shows no data for no request or no rows (never loads forever)', () => {
+    for (const s of [{ record: null }, { hasModel: false }] as const) {
       const r = plotStatus({ ...base, ...s })
       expect(r.kind === 'empty' && r.title).toBe(NO_DATA_TITLE)
     }

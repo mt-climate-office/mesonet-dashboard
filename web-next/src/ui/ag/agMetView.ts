@@ -12,13 +12,17 @@ import { AG_TTL, agKeys } from '../../core/ag/view/keys'
 import { fetchDailyMet, fetchHourlyMet, fetchStationMeta } from '../../core/ag/data'
 import type { DailyMet, HourlyMet } from '../../core/ag/contract'
 import { component } from '../component'
-import { AG_CHARTS, LOADING, currentTab, raw, trackView, windowQuery } from './shared'
+import { AG_CHARTS, LOADING, agLoadError, currentTab, raw, trackView, windowQuery } from './shared'
 
 export function agMetView() {
   let stop = () => {}
   return component({
     view: LOADING as AgView<MetChart>,
     charts: AG_CHARTS,
+    /** The error state's text (partials/ag/status.html → partials/load-error.html). */
+    loadError(): string {
+      return agLoadError(this.view)
+    },
 
     init() {
       stop = trackView(this, () => compute())

@@ -7,6 +7,7 @@
 import Alpine from 'alpinejs'
 import { sensorHistory, type SensorChangeDay } from '../../core/about'
 import type { RawInstrument } from '../../core/sensorEvents'
+import { loadErrorText } from '../../core/loadError'
 import { component } from '../component'
 import { stationConfig } from '../station/resources'
 
@@ -18,6 +19,12 @@ export function sensorChanges(id: string | null): SensorChangeDay[] {
 
 export function aboutHistory() {
   return component({
+    /** The error state's text (partials/load-error.html); '' unless the request failed. */
+    loadError(): string {
+      const id = Alpine.store('station').id
+      const r = id ? stationConfig(id) : null
+      return r?.status === 'error' ? loadErrorText('Sensor history', r.error) : ''
+    },
     get state(): 'loading' | 'error' | 'empty' | 'ready' {
       const id = Alpine.store('station').id
       if (!id) return 'loading'

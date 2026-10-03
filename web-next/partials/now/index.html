@@ -14,9 +14,12 @@
   </template>
 
   <template x-if="state === 'error'">
+    <div class="dash-card now-empty"><!-- @include partials/load-error.html --></div>
+  </template>
+  <template x-if="state === 'empty'">
     <div class="dash-card now-empty" role="status">
       <h2 class="dash-card-title">Current conditions are unavailable</h2>
-      <p>This station has no recent observations, or the Mesonet API did not answer. Its history is still in Charts.</p>
+      <p>This station has no recent observations. Its history is still in Charts.</p>
     </div>
   </template>
 
@@ -81,7 +84,10 @@
             <template x-if="!tier2 && page.hero.strip">
               <div class="chart now-strip-chart" x-data="chart(stripChart())"></div>
             </template>
-            <template x-if="!tier2 && !page.hero.strip">
+            <template x-if="!tier2 && !page.hero.strip && loadError()">
+              <!-- @include partials/load-error.html -->
+            </template>
+            <template x-if="!tier2 && !page.hero.strip && !loadError()">
               <p class="now-strip-empty" role="status" data-testid="now-strip-empty">No hourly temperatures or forecast to draw for the last and next 24 hours.</p>
             </template>
           </div>

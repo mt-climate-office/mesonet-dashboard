@@ -4,7 +4,7 @@
   <section class="dash-card chart-stats" aria-label="Summary" data-testid="ag-stats">
     <dl class="chart-stat-row">
       <template x-for="it in stats()" :key="it.label">
-        <div class="chart-stat"><dt x-text="it.label"></dt><dd x-text="it.value"></dd></div>
+        <div class="chart-stat" :class="{ 'is-wide': it.wide }"><dt x-text="it.label"></dt><dd x-text="it.value"></dd></div>
       </template>
     </dl>
   </section>

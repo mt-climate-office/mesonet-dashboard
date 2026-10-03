@@ -50,6 +50,11 @@ a.dash-card:hover { background: var(--accent-hover); }
 /* Display numerals (readings ≥ 1.75 rem: the Now hero, tiles): Outfit with tabular figures and a
    slight negative tracking. Space Mono stays for tables, ids, timestamps and axes. The one app
    utility for it until the kit ships one (mco-web-style#36; KIT-NOTES.md). */
+:root {
+  --fs-display-tile: 1.9rem;  /* Now's tile values */
+  --fs-display-hero: 5rem;    /* Now's temperature; 7 rem beside the tiles (desktop) */
+}
+@media (min-width: 1060px) and (min-height: 561px) { :root { --fs-display-hero: 7rem; } }
 .num-display {
   font-family: var(--font-ui);
   font-variant-numeric: tabular-nums;
@@ -94,4 +99,9 @@ a.dash-card:hover { background: var(--accent-hover); }
 .dash-chip:disabled { opacity: 0.45; cursor: not-allowed; }
 [data-theme="high-contrast"] .dash-chip { border: 1px solid var(--border); }
 @media (hover: none) { .dash-chip { min-height: 40px; } }
+
+/* The error state (partials/load-error.html): what failed and why, then Retry. Inside a card, or
+   centred in a chart's loading slot (charts.css). */
+.dash-load-error { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gap); }
+.dash-load-error p { margin: 0; color: var(--text-secondary); font-size: var(--fs-sm); }
 

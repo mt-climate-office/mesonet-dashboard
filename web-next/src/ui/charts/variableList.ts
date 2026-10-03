@@ -12,7 +12,7 @@ import { LABELS, LIST_AG_TOOLS, chartHeading, chartPatch, listRequest, matchesQu
 import { latestObs } from '../station/resources'
 import { component } from '../component'
 import { follow } from '../shell/navigate'
-import { chartVariables, elementsResource, recordResource, stationElements } from './resources'
+import { chartVariables, elementsResource, recordResource, stationElements, variablesError } from './resources'
 
 type State = 'none' | 'loading' | 'error' | 'ready'
 type Row = Pick<VariableRow, 'id' | 'name' | 'note' | 'value' | 'spark' | 'sparkLabel'>
@@ -28,9 +28,9 @@ export function variableList() {
 
     get state(): State {
       const id = Alpine.store('station').id
+      if (variablesError(id)) return 'error'
       if (!id) return Alpine.store('url').state.s ? 'loading' : 'none'
-      const els = elementsResource(id)
-      return els?.data ? 'ready' : els?.status === 'error' ? 'error' : 'loading'
+      return elementsResource(id)?.data ? 'ready' : 'loading'
     },
     /** The variable groups with their rows; values and sparklines fill in as `/latest` and the hourly rows arrive. */
     get groups(): Group[] {
@@ -61,8 +61,9 @@ export function variableList() {
       const vars = chartVariables(id)
       return !!id && !!vars && recordResource(listRequest(id, vars, stationElements(id) ?? []), { slot: `list:${id}` })?.status === 'loading'
     },
-    retry(): void {
-      elementsResource(Alpine.store('station').id)?.refresh()
+    /** The error state's text (partials/load-error.html). */
+    loadError(): string {
+      return variablesError(Alpine.store('station').id)
     },
 
     href(id: string): string {

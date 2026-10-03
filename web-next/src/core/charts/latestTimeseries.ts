@@ -25,8 +25,6 @@ export interface LatestTimeseriesModel {
   period: LatestAgg
   /** Visible window (the URL dates), wall-clock ms. */
   view: [number, number]
-  /** Zoomable axis extent, wall-clock ms (core/latest `axisExtent`). */
-  extent: [number, number]
 }
 
 /** Layout in CSS px. Each panel has a key row (depths, columns) in the gap above it. */
@@ -233,7 +231,8 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
 
   const xIdx = panels.map((_, i) => i)
   const xAxis: XAXisComponentOption[] = panels.map((_, i) => {
-    const base = timeAxis({ min: m.extent[0], max: m.extent[1], compact: ctx.compact })
+    // The axis is the loaded window, so the slider's track is what is plotted and its window starts full.
+    const base = timeAxis({ min: m.view[0], max: m.view[1], compact: ctx.compact })
     const last = i === n - 1
     return { ...base, gridIndex: i, axisLabel: { ...(base.axisLabel as object), show: last }, axisTick: { show: last } } as XAXisComponentOption
   })

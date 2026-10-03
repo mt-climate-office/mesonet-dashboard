@@ -6,6 +6,7 @@
  */
 import Alpine from 'alpinejs'
 import { pptRows, readingRows, type Reading } from '../../core/about'
+import { loadErrorText } from '../../core/loadError'
 import { component } from '../component'
 import { latestObs, pptSummary } from '../station/resources'
 
@@ -17,6 +18,12 @@ export function currentReadings(id: string | null): Reading[] {
 
 export function aboutReadings() {
   return component({
+    /** The error state's text (partials/load-error.html); '' unless the request failed. */
+    loadError(): string {
+      const id = Alpine.store('station').id
+      const r = id ? latestObs(id) : null
+      return r?.status === 'error' ? loadErrorText('Current readings', r.error) : ''
+    },
     get state(): 'loading' | 'error' | 'empty' | 'ready' {
       const id = Alpine.store('station').id
       if (!id) return 'loading'

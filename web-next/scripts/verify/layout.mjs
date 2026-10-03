@@ -5,7 +5,7 @@
  * view scrolls sideways; the Now hero through its strip is above the fold at 390×844; the header is one
  * row at 390 and 1440 (sections in it only from tablet up); the phone tab bar has three items
  * on a solid surface; the Download sheet fits the screen; the picker sheet's map is in view after
- * "Browse on the map"; with reduced motion a section change
+ * "Browse on the map" and a short handle drag never closes it; with reduced motion a section change
  * starts no view transition. Run via `npm run verify`.
  */
 import { DL_QUERY, VIEWPORTS, check, finish, open, start } from './lib.mjs'
@@ -183,6 +183,27 @@ for (const vp of VIEWPORTS) {
     m.state === 'full' && m.h >= 240 && m.top >= m.bodyTop && m.bottom <= m.bodyBottom + 1 && m.bottom <= m.barTop, JSON.stringify(m))
   const p = await problems()
   check('[picker sheet 390] console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Picker sheet (390): a short upward drag on the handle that ends above the sheet keeps it open ── */
+// The touch click after the drag lands on the scrim; the sheet ignores it (ui/layout/sheet.ts).
+{
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem', { viewport: PHONE })
+  await rendered({ filled: ['[data-testid="now-tiles"]'] })
+  await page.getByTestId('station-switcher').tap()
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 10000 })
+  const top = await page.evaluate(() => document.getElementById('station-picker').getBoundingClientRect().top)
+  const cdp = await page.context().newCDPSession(page)
+  const touch = (type, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: 135, y }] })
+  await touch('touchStart', top + 12)
+  for (let i = 1; i <= 10; i++) await touch('touchMove', top + 12 - i * 1.4)
+  await touch('touchEnd')
+  await page.waitForTimeout(500)
+  const open_ = await page.evaluate(() => !document.getElementById('station-picker').hidden)
+  check('[picker sheet 390] a short upward handle drag ending above the sheet keeps it open', open_, `top ${Math.round(top)}`)
+  const p = await problems()
+  check('[picker sheet drag] console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 

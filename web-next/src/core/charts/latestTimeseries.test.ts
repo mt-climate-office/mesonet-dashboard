@@ -18,12 +18,11 @@ const hourRows = (n: number, cols: (i: number) => Record<string, number | null>,
     ...cols(i),
   })) as ObservationRow[]
 
-const DAY = 86_400_000
 const view: [number, number] = [Date.UTC(2026, 6, 1), Date.UTC(2026, 6, 2)]
 
 function model(rows: ObservationRow[], vars: string[], extra: Partial<Parameters<typeof buildTimeseriesModel>[0]> = {}, period: 'hourly' | 'daily' | 'raw' = 'hourly'): LatestTimeseriesModel {
   const ts = buildTimeseriesModel({ rows, vars, period, ...extra })!
-  return { ts, period, view, extent: [view[0] - DAY, view[1]] }
+  return { ts, period, view }
 }
 
 const build = (m: LatestTimeseriesModel, theme: (typeof THEMES)[number] = 'dark', compact = false) =>
@@ -41,11 +40,16 @@ describe('latestTimeseriesChart', () => {
     expect(o.grid).toHaveLength(3)
     expect(o.grid[1].top).toBeGreaterThan(o.grid[0].top + o.grid[0].height)
     expect(o.xAxis.map((x) => x.axisLabel.show)).toEqual([false, false, true])
-    expect(o.xAxis[0].min).toBe(view[0] - DAY)
     for (const z of o.dataZoom) {
       expect(z.xAxisIndex).toEqual([0, 1, 2])
       expect([z.startValue, z.endValue]).toEqual(view)
     }
+  })
+
+  it('the axes span exactly the plotted window, so the zoom slider starts full (track = window = what is drawn)', () => {
+    const o = build(model(hourRows(6, met), ['Precipitation', 'Air Temperature']))
+    for (const x of o.xAxis) expect([x.min, x.max]).toEqual(view)
+    for (const z of o.dataZoom) expect([z.startValue, z.endValue]).toEqual([o.xAxis[0].min, o.xAxis[0].max])
     expect(o.yAxis[0].name).toBe('Rain (in)')
     expect(o.yAxis[0].min).toBe(0)
   })

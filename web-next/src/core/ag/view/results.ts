@@ -14,6 +14,7 @@ import type { Period, SoilProfileVar } from './labels'
 import { POROSITY_SOURCE, percentSaturationFromApiPorosity } from './porositySource'
 import { SWP_SOURCE, swpFromApiRows, swpFromParams } from './swpSource'
 import type { AgTab, AgVariable } from './tab'
+import { loadErrorText } from '../../loadError'
 
 export type ViewStatus = 'loading' | 'error' | 'empty' | 'ready'
 
@@ -42,9 +43,8 @@ const view = <M>(status: ViewStatus, message: string | null, notes: string[] = [
 export const emptyView = <M>(message: string, notes: string[] = []) => view<M>('empty', message, notes)
 const ready = <M>(model: M, notes: string[]) => view<M>('ready', null, notes, model)
 
-export function errorText(err: unknown): string {
-  return err instanceof Error && err.message ? err.message : 'Failed to load data for this selection.'
-}
+/** The error view's text (partials/load-error.html): what failed and why (core/loadError). */
+export const errorText = (err: unknown): string => loadErrorText('This chart', err)
 
 /** Loading / error view while any needed resource has no data yet; null once all have loaded. */
 export function gate<M>(resources: (Loaded<unknown> | null | undefined)[]): AgView<M> | null {
@@ -238,12 +238,10 @@ export function soilView(i: SoilInputs): AgView<SoilChart> {
 
 /* --------------------------------------------------------------- Annual */
 
-export const ELEMENTS_ERROR = 'Variables could not be loaded.'
-
 /** Annual card while the station's element list is loading or failed; null once loaded. */
 export function elementsGate<M>(res: Loaded<unknown>): AgView<M> | null {
   if (res.data !== undefined) return null
-  return res.status === 'error' ? view('error', ELEMENTS_ERROR) : view('loading', null)
+  return res.status === 'error' ? view('error', loadErrorText("This station's variables", res.error)) : view('loading', null)
 }
 
 /** Years to request, newest first: from the install year (or 5 years back) to `currentYear`. */

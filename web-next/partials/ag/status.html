@@ -16,5 +16,7 @@
 <div class="ag-state" x-show="view.status === 'loading'" data-testid="ag-loading">
   <span class="ag-spinner" aria-hidden="true"></span><span>Loading…</span>
 </div>
-<p class="ag-state ag-error" x-show="view.status === 'error'" x-text="view.message" data-testid="ag-error"></p>
+<template x-if="view.status === 'error'">
+  <div class="ag-state" data-testid="ag-error"><!-- @include partials/load-error.html --></div>
+</template>
 <p class="ag-state" x-show="view.status === 'empty'" x-text="view.message" data-testid="ag-empty"></p>

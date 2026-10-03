@@ -3,7 +3,7 @@
  * from this repo's `normals/` CSVs (raw.githubusercontent.com).
  */
 import { parseCsv } from './csv'
-import type { ObservationRow } from './api'
+import { timedFetch, type ObservationRow } from './api'
 
 /**
  * GridMET 1991-2020 normals are pre-computed CSVs hosted in this repo.
@@ -48,12 +48,11 @@ async function loadCsv(station: string, varCode: string): Promise<NormalRow[]> {
   const key = `${station}/${varCode}`
   if (cache.has(key)) return cache.get(key)!
   const url = `${NORMALS_BASE}/${station}_${varCode}.csv`
-  const r = await fetch(url)
-  if (!r.ok) {
+  const text = await timedFetch(url, {}, async (r) => (r.ok ? r.text() : null))
+  if (text === null) {
     cache.set(key, [])
     return []
   }
-  const text = await r.text()
   const rows = parseCsv<NormalRow>(text)
   // Keep only daily aggregations.
   const daily = rows.filter((row) => row.type === 'daily')

@@ -19,7 +19,7 @@
         <template x-if="state === 'loading'">
           <div aria-busy="true"><p class="sr-only" role="status">Loading current readings…</p><span class="dash-skel dash-skel--table" aria-hidden="true"></span></div>
         </template>
-        <template x-if="state === 'error'"><p class="about-message">Current readings are unavailable: the Mesonet API did not answer.</p></template>
+        <template x-if="state === 'error'"><!-- @include partials/load-error.html --></template>
         <template x-if="state === 'empty'"><p class="about-message">No recent observations.</p></template>
         <template x-if="state === 'ready'">
           <div class="about-scroll" role="region" aria-label="All current readings (scrollable)" tabindex="0">

@@ -25,7 +25,7 @@ describe('gddStats', () => {
   it('the accumulation so far and, with a stage table, the stage reached', () => {
     expect(gddStats(m('table'))).toEqual([
       { label: 'So far', value: '2,412 GDD' },
-      { label: 'Stage', value: 'Haun 2' },
+      { label: 'Stage', value: 'Haun 2', wide: true },
     ])
     expect(gddStats(m('custom'))).toEqual([{ label: 'So far', value: '2,412 GDD' }])
     expect(gddStats(null)).toEqual([])

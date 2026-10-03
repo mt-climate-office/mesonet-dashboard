@@ -11,6 +11,10 @@
   </div>
   <p class="chart-sub">Several variables stacked on one time axis.</p>
 
+  <template x-if="!compareReady()">
+    <div class="cmp-layout" aria-busy="true"><p class="sr-only" role="status">Loading…</p><span class="dash-skel cmp-skel" aria-hidden="true"></span></div>
+  </template>
+  <template x-if="compareReady()">
   <div class="cmp-layout">
     <details class="dash-card cmp-options" x-data="compareControls" data-testid="compare-options">
       <summary class="cmp-summary">Options</summary>
@@ -70,10 +74,14 @@
             <p x-show="status().hint" x-text="status().hint"></p>
           </div>
         </template>
+        <template x-if="status().kind === 'error'">
+          <!-- @include partials/load-error.html -->
+        </template>
       </div>
       <p class="cmp-refreshing" x-show="status().kind === 'ready' && loading()" aria-hidden="true">Updating…</p>
       <div class="chart cmp-chart" :aria-hidden="status().kind !== 'ready'" :style="heightStyle()"
            x-data="chart({ builder: latestTimeseriesChart, table: latestTimeseriesTable, label: 'Station timeseries', model: () => model(), onZoom: (a, b) => onZoom(a, b), range: () => range() })"></div>
     </section>
   </div>
+  </template>
 </div>

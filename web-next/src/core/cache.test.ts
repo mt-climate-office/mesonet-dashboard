@@ -180,4 +180,25 @@ describe('createCache', () => {
     cache.cached('meta', f)
     expect(f).toHaveBeenCalledTimes(3)
   })
+
+  it('retryFailed refetches only the entries in an error state', async () => {
+    const { cache } = setup()
+    let up = false
+    const flaky = vi.fn(async () => {
+      if (!up) throw new HttpError(404, 'u', '')
+      return 'back'
+    })
+    const ok = vi.fn(async () => 1)
+    const failed = cache.cached('flaky', flaky)
+    cache.cached('ok', ok)
+    await tick()
+    expect(failed.status).toBe('error')
+    up = true
+    cache.retryFailed()
+    expect(failed.status).toBe('loading')
+    await tick()
+    expect(failed).toMatchObject({ status: 'success', data: 'back' })
+    expect(ok).toHaveBeenCalledTimes(1)
+    expect(flaky).toHaveBeenCalledTimes(2)
+  })
 })

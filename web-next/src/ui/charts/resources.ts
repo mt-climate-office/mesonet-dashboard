@@ -2,16 +2,17 @@
  * The Charts section's fetches and its one timeseries model, shared by the
  * variable list, the variable page and Compare. Each fetch is one
  * `$store.data.cached` call (keys and TTLs from core/latest/requests); the
- * model is core/models/timeseries with the URL window as view and extent.
+ * model is core/models/timeseries with the URL window as its view (and axis).
  */
 import Alpine from 'alpinejs'
 import { getStationElements, getStationRecord, type ObservationRow, type StationConfig, type StationElement } from '../../core/api'
 import type { Resource } from '../../core/cache'
 import type { LatestTimeseriesModel } from '../../core/charts'
-import { TTL, axisExtent, elementsKey, endsToday, installDate, normalsKey, recordRequest, todayIso, windowRange, type RecordRequest } from '../../core/latest'
+import { TTL, elementsKey, endsToday, normalsKey, recordRequest, windowRange, type RecordRequest } from '../../core/latest'
 import { NORMALS_VARS, buildTimeseriesModel, type WindowPlan } from '../../core/models/timeseries'
 import { fetchNormals, type StationNormals } from '../../core/normals'
 import { explodeInstruments, type ConfigRow, type RawInstrument } from '../../core/sensorEvents'
+import { loadErrorText } from '../../core/loadError'
 import { stationVariables, type Variable } from '../../core/variables'
 import type { LatestAgg } from '../../core/url-schema'
 import { stationConfig } from '../station/resources'
@@ -22,6 +23,14 @@ const raw = <T>(v: T): T => (v && typeof v === 'object' ? (Alpine.raw(v) as T) :
 /** The station's `/elements/{id}/` resource, or null without a station. */
 export function elementsResource(id: string | null): Resource<StationElement[]> | null {
   return id ? data().cached(elementsKey(id), () => getStationElements(id), { ttl: TTL.elements }) : null
+}
+
+/** Why Charts cannot list the station's variables: the station list or its element list failed ('' when neither did; core/loadError). */
+export function variablesError(id: string | null): string {
+  const catalog = Alpine.store('station').catalog
+  if (!id && catalog?.status === 'error') return loadErrorText('The station list', catalog.error)
+  const els = elementsResource(id)
+  return els?.status === 'error' ? loadErrorText("This station's variables", els.error) : ''
 }
 
 /** The station's element list, or undefined while loading / without a station. */
@@ -94,8 +103,7 @@ export function seriesModel(): (q: SeriesQuery) => LatestTimeseriesModel | null 
     if (memo && memo.inputs.length === inputs.length && memo.inputs.every((v, i) => v === inputs[i])) return memo.model
     const ts = buildTimeseriesModel({ rows, vars: q.vars, period: q.agg, normalsByVar: normals, sensorConfig: config })
     const view = windowRange(w.start, w.end)
-    const installed = installDate(Alpine.store('station').byId(q.station))
-    const model = ts ? { ts, period: q.agg, view, extent: axisExtent(view, todayIso(), installed) } : null
+    const model = ts ? { ts, period: q.agg, view } : null
     memo = { inputs, model, scope }
     return model
   }

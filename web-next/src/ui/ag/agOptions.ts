@@ -86,7 +86,6 @@ export function agOptions() {
       const res = elements()
       return !!res && res.status === 'error' && res.data === undefined
     },
-    retryElements: () => elements()?.refresh(),
     annualEmptyText(): string {
       if (this.elementsFailed()) return 'Unavailable'
       return Alpine.store('station').id ? 'Loading…' : 'Pick a station first'

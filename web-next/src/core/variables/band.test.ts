@@ -14,7 +14,7 @@ const extremes = [1, 3].map((d) => ({
 })) as ObservationRow[]
 const model = (): LatestTimeseriesModel => {
   const ts = buildTimeseriesModel({ rows: means, vars: ['Air Temperature'], period: 'daily' })!
-  return { ts, period: 'daily', view: [0, 1], extent: [0, 1] }
+  return { ts, period: 'daily', view: [0, 1] }
 }
 
 describe('band', () => {

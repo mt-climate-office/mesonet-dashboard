@@ -24,6 +24,8 @@
 /* The value takes the rest and ellipsizes. */
 .dl-row-value { display: flex; justify-content: flex-end; align-items: baseline; flex: 1; min-width: 0; font-weight: 500; }
 .dl-row-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The selection while its names load (never raw element ids). */
+.dl-row-skel { width: 8rem; margin: 0; align-self: center; }
 .dl-row-chevron { flex: none; stroke: var(--text-secondary); transition: transform var(--transition); }
 .dl-row-btn[aria-expanded="true"] .dl-row-chevron { transform: rotate(180deg); }
 /* Same columns as a button row, minus the chevron's space. */
@@ -58,8 +60,6 @@
   border-radius: var(--radius-md);
 }
 .dl-msg::before { content: "\26A0\FE0E  " / ""; }
-.dl-msg-action { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.dl-msg-action > span { flex: 1; }
 
 /* kit-override: the kit has no primary button; this uses the pressed segment's fill
    (--accent with --text-on-accent, border --accent-line for 3:1). */

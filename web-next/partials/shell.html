@@ -17,11 +17,12 @@
   </div>
 
   <div class="controls">
-    <!-- Opens the station picker; the name truncates, never wraps. -->
+    <!-- Opens the station picker; the name truncates, never wraps. Empty (a skeleton, shell.css) until
+         Alpine runs and while a ?s= station loads, so a link never flashes "Choose a station". -->
     <button type="button" class="dash-switcher" x-data="stationHeader" data-picker-toggle
             aria-controls="station-picker" aria-expanded="false" aria-haspopup="true"
-            :aria-label="'Station: ' + name + '. Change station'" @click="pick($event)" data-testid="station-switcher">
-      <span class="dash-switcher-name" x-text="name">Choose a station</span>
+            aria-label="Change station" :aria-label="label" @click="pick($event)" data-testid="station-switcher">
+      <span class="dash-switcher-name" x-text="name"></span>
       <svg class="dash-switcher-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
     </button>
   </div>

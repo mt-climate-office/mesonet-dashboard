@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { axisExtent, dayMs, msDay, viewAnnouncement, windowRange, zoomDates, zoomWindow } from './view'
+import { dayMs, msDay, viewAnnouncement, windowRange, zoomDates, zoomWindow } from './view'
 
 const DAY = 86_400_000
 
@@ -8,13 +8,6 @@ describe('window ↔ ms', () => {
     expect(msDay(dayMs('2026-09-17'))).toBe('2026-09-17')
     const [a, b] = windowRange('2026-09-17', '2026-10-01')
     expect(b - a).toBe(15 * DAY)
-  })
-  it('pads the extent by the window, capped at tomorrow and the install date', () => {
-    const v = windowRange('2026-09-17', '2026-10-01')
-    const [lo, hi] = axisExtent(v, '2026-10-01', null)
-    expect(lo).toBe(v[0] - 15 * DAY)
-    expect(hi).toBe(v[1])
-    expect(axisExtent(v, '2026-10-01', '2026-09-20')[0]).toBe(v[0])
   })
   it('turns a zoom into day-granular, clamped dates', () => {
     const [a, b] = windowRange('2026-09-20', '2026-09-25')

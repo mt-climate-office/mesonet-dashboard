@@ -107,7 +107,8 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `cached(key, fetcher, {ttl, retry, live, slot})` returns one reactive
   `{status: 'loading'|'success'|'error', data, error, refresh()}` per key.
   In-flight requests are shared; stale entries refetch in the background on
-  the next read; network/5xx/429 retry twice, other 4xx never; a response from an older
+  the next read; every request times out after 30 s (`core/api/http.ts` `timedFetch`, an
+  `AbortController`); network/timeout/5xx/429 retry twice, other 4xx never; a response from an older
   fetch never overwrites a newer one; a failed fetch keeps the last data
   (status stays 'success', `error` set) and is retried only after its TTL or
   on `refresh()`. **The key must encode every input of the fetcher** (e.g.
@@ -174,6 +175,17 @@ variable page; Compare). Not live: normals, stations/elements/config, past photo
 All years (`live: false`). Now's "Updated N min ago" uses the current time on each recompute; if
 refetches fail, its "No report for over 2 hours" warning still comes from the last row's stamp.
 To make a new time-sensitive fetch live, pass `live: true` (and a `slot` if its key carries today).
+
+### Errors
+
+Every resource-driven view (the variable page, Compare, the Charts list, Ag tools, the Download sheet,
+Now's tiers, About and its sheets) shows one error state when a request it needs failed with nothing to
+show: `partials/load-error.html`, included in place of the skeleton inside a component that has
+`loadError()` (the text, '' when nothing failed). The text is `core/loadError` `loadErrorText(what, err)`:
+what could not be loaded and why (timed out, busy, server problem, refused, unreachable), never a raw
+URL, body or "no data". Retry calls `$store.data.retryFailed()`, which refreshes every entry in an error
+state. A failed element list is an error, not "this station does not report that variable".
+`scripts/verify/errors.mjs` fakes a 503 and checks the state, Retry and the recovery.
 
 ### Time
 

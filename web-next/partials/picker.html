@@ -19,7 +19,7 @@
   <div class="dash-panel-body">
     <div class="ctl-combobox picker-search" data-testid="picker-search"
          x-data="combobox({ items: () => items(), value: () => $store.station.id, onSelect: (id) => choose(id), label: 'Search stations' })"
-         @focusout="onFocusOut($event)">
+         x-effect="searchList(open)" @focusout="onFocusOut($event)">
       <label class="ctl-label sr-only" :id="ids.label" :for="ids.input" x-text="label"></label>
       <div class="ctl-combobox-field">
         <svg class="picker-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
@@ -31,7 +31,7 @@
                @keydown="onKeydown($event)" @click="toggle()">
         <button type="button" class="ctl-clear" x-show="hasText()"
                 :aria-label="'Clear ' + label" @click="clear()">&times;</button>
-        <button type="button" class="picker-near" x-show="geoSupported" @click="locate()"
+        <button type="button" class="picker-near" x-show="geoSupported" @click="close(); locate()"
                 :disabled="near.status === 'locating'" data-testid="near-me"
                 aria-label="Near me: list the closest stations (uses your location once, in this browser)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
@@ -62,7 +62,7 @@
       <div role="status" class="sr-only" x-text="status()"></div>
     </div>
 
-    <!-- Near me results: shown once the chip in the field was pressed. -->
+    <!-- Near me results: shown once the chip in the field was pressed (it closes the search list, close() is the combobox's). -->
     <section class="picker-group" aria-labelledby="picker-near-title" x-show="near.status !== 'idle'" data-testid="near-results">
       <h3 class="picker-group-title" id="picker-near-title">Near me</h3>
       <p class="picker-note" role="status" x-show="near.status === 'locating'">Finding your location…</p>

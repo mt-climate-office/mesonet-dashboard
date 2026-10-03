@@ -11,7 +11,7 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 | `agLegend.ts` | `agLegend` (the Ag charts' plain wrapping legend: short names and no title on compact screens), `liftForLegend`, `legendRows`, `sentenceCase` |
 | `agSoil.ts` | `soilProfileChart`/`soilProfileTable` (`SoilProfileModel`), `swpChart`/`swpTable`, `percentSaturationChart`/`percentSaturationTable` |
 | `agAnnual.ts` | `annualChart`/`annualTable` (`AnnualModel`) |
-| `latestTimeseries.ts` | `latestTimeseriesChart`/`latestTimeseriesTable` (`LatestTimeseriesModel`: core/models/timeseries + view/extent), `latestTimeseriesHeight(n, compact)` |
+| `latestTimeseries.ts` | `latestTimeseriesChart`/`latestTimeseriesTable` (`LatestTimeseriesModel`: core/models/timeseries + the view, also the axis extent), `latestTimeseriesHeight(n, compact)` |
 | `variable.ts` | `variableChart`/`variableTable`/`variableTableAll` (`VariableModel`: a one-panel `LatestTimeseriesModel`; the plot fills the host height) |
 | `windRose.ts` | `windRoseChart`/`windRoseTable` (`WindRoseModel` from `core/models/windRose`), `windRoseTitle`, `binName` |
 | `downloaderPreview.ts` | `downloaderPreviewChart`/`downloaderPreviewTable` (`PreviewModel` from `core/models/downloaderPreview`), `previewHeight(m, compact)` |

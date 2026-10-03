@@ -12,6 +12,9 @@
       <button type="button" class="nav-btn" data-picker-toggle aria-controls="station-picker" aria-expanded="false" @click="pick($event)">Choose a station</button>
     </div>
   </template>
+  <template x-if="state === 'error'">
+    <div class="dash-card"><!-- @include partials/load-error.html --></div>
+  </template>
   <template x-if="state === 'loading'">
     <div class="dash-card" aria-busy="true">
       <p class="sr-only" role="status">Loading station details…</p>

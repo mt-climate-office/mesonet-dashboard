@@ -12,9 +12,7 @@
     <div class="dash-card" role="status"><p>Choose a station to see its charts.</p></div>
   </template>
   <template x-if="state === 'error'">
-    <div class="dash-card" role="status">
-      <p>This station's variables could not be loaded. <button type="button" class="nav-btn" @click="retry()">Retry</button></p>
-    </div>
+    <div class="dash-card"><!-- @include partials/load-error.html --></div>
   </template>
   <!-- About the list's final height (a search pill, then group cards of row-sized lines), so it does not jump as it fills. -->
   <template x-if="state === 'loading'">
