@@ -132,7 +132,7 @@
                   <span x-text="t.name"></span>
                   <template x-if="t.chip"><span class="dash-badge" x-text="t.chip" data-testid="now-soil-chip"></span></template>
                 </span>
-                <span class="now-tile-value"><span class="num-display" x-text="t.value"></span><span class="now-unit" x-text="t.unit"></span></span>
+                <span class="now-tile-value"><span class="num-display" x-text="t.value"></span><span class="now-unit" x-text="t.unit"></span><span class="now-unit" x-text="t.note" x-show="t.note"></span></span>
                 <span class="now-tile-sub" x-text="t.sub"></span>
                 <span class="dash-spark" aria-hidden="true">
                   <template x-if="t.spark"><svg :view-box.camel="t.spark.viewBox" preserveAspectRatio="none" focusable="false" :class="'is-' + t.spark.kind"><path :d="t.spark.d" vector-effect="non-scaling-stroke"/></svg></template>

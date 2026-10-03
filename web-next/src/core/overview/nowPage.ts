@@ -18,7 +18,7 @@ import { nowPrecip, type PrecipSummary } from './precip'
 import { ytdNormal } from './normals'
 import { dewPointF, nowTiles, pressureChange3h, pressureTrend, shallowestSwpBar, soilState, type SoilState } from './relevance'
 import { rainBars } from './rainBars'
-import { sparkSeries, type SeriesKey } from './series'
+import { peakGust, sparkSeries, type SeriesKey } from './series'
 import { hasSnow } from './snow'
 import type { Tile, TileId } from './tiles'
 
@@ -40,7 +40,9 @@ export interface NowTileView {
   /** The number at the variable's display precision ("7", "0.05"), '—' when missing. */
   value: string
   unit: string
-  /** One secondary line ("SSE · gusts 12", "Dew point 38°", "Last 7 days · 87% of normal this year"), or "". */
+  /** Wind only: "now · SE" after the unit, beside the 24 h peak gust sub-line; else "". */
+  note: string
+  /** One secondary line ("Gusts to 43 mph in the last 24 h", "SSE · gusts 12", "Dew point 38°", "Last 7 days · 87% of normal this year"), or "". */
   sub: string
   /** Soil only: "Dry"/"Wet" from soil water potential, else null. */
   chip: SoilState | null
@@ -65,7 +67,7 @@ function reading(id: TileId, c: Conditions, p: PrecipSummary): number | null {
   return m[id]
 }
 
-/** The line under the value: "SSE · gusts 12", "Last 7 days · 87% of normal this year", "Dew point 49°", "2 in deep", or "". */
+/** The line under the value: "SSE · gusts 12" (wind without a 24 h peak gust), "Last 7 days · 87% of normal this year", "Dew point 49°", "2 in deep", or "". */
 function sub(id: TileId, c: Conditions, input: NowPageInput, p: PrecipSummary): string {
   if (id === 'wind') return [c.windDeg === null ? null : compassWord(c.windDeg), c.gustMph === null ? null : `gusts ${formatValue('windgust', c.gustMph)}`].filter(Boolean).join(' · ')
   if (id === 'precip') {
@@ -89,7 +91,18 @@ function spark(s: SparkSeries | undefined, v: string): { spark: Sparkline | null
   return { spark: g, sparkLabel: `Last 48 hours: from ${formatValue(v, Math.min(...vals))} to ${formatReading(v, Math.max(...vals))}.` }
 }
 
-function tileView(t: Tile, c: Conditions, input: NowPageInput, p: PrecipSummary, series: Partial<Record<SeriesKey, SparkSeries>>): NowTileView {
+/** Below this the Wind tile reads "Calm". */
+export const CALM_MPH = 1
+
+/** Wind with a 24 h peak gust: "7 mph now · SE" (or "Calm") over "Gusts to 43 mph in the last 24 h"; null keeps the plain tile. */
+function windView(c: Conditions, gust: number | null): Pick<NowTileView, 'value' | 'unit' | 'note' | 'sub'> | null {
+  if (gust === null) return null
+  const sub = `Gusts to ${formatReading('windgust', gust)} in the last 24 h`
+  if (c.windMph !== null && c.windMph < CALM_MPH) return { value: 'Calm', unit: '', note: '', sub }
+  return { value: formatValue('wind_spd', c.windMph), unit: LABELS.wind_spd.unit, note: ['now', c.windDeg === null ? null : compassWord(c.windDeg)].filter(Boolean).join(' · '), sub }
+}
+
+function tileView(t: Tile, c: Conditions, input: NowPageInput, p: PrecipSummary, series: Partial<Record<SeriesKey, SparkSeries>>, gust: number | null): NowTileView {
   // Rain draws 7 daily bars, or nothing in a dry week (rainBars), not the 48 h hourly line.
   const g = t.id === 'precip' ? (rainBars(input.rainDaily, input.today) ?? { spark: null, sparkLabel: '' }) : spark(series[t.series], t.v)
   return {
@@ -98,10 +111,12 @@ function tileView(t: Tile, c: Conditions, input: NowPageInput, p: PrecipSummary,
     name: LABELS[t.v].name,
     value: formatValue(t.v, reading(t.id, c, p)),
     unit: LABELS[t.v].unit,
+    note: '',
     sub: sub(t.id, c, input, p),
     chip: t.id === 'soil' ? soilState(input.swpBar) : null,
     spark: g.spark,
     sparkLabel: g.sparkLabel,
+    ...(t.id === 'wind' ? windView(c, gust) : null),
   }
 }
 
@@ -131,7 +146,9 @@ export function buildNowPage(input: NowPageInput): NowPage {
   if (!input.latest) return { ...base, tiles: [], readingsMeta: '' }
   const c = readConditions(input.latest)
   const series = input.hourly ? sparkSeries(input.hourly) : {}
-  const tiles = nowTiles(input, p).map((t) => tileView(t, c, input, p, series))
+  const now = parseWallClock(c.stamp)
+  const gust = now === null ? null : peakGust(input.hourly, c.gustMph, now)
+  const tiles = nowTiles(input, p).map((t) => tileView(t, c, input, p, series, gust))
   return { ...base, tiles, readingsMeta: readingsMeta(c, input) }
 }
 
