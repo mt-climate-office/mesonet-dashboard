@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import type { ObservationRow } from '../api'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { getStationRecord, type ObservationRow } from '../api'
 import { stationVariables } from './catalog'
-import { HISTORY_MAX_YEARS, historyModel, historyRequest, historyYears } from './history'
+import { HISTORY_MAX_YEARS, historyModel, historyRequest, historyRows, historyYears } from './history'
 
 const ELEMENTS = [
   ['air_temp_0200', 'Air Temperature @ 2 m'],
@@ -47,5 +47,27 @@ describe('historyModel', () => {
   it('null until a year has a value', () => {
     expect(historyModel(AIR, [], 2026)).toBeNull()
     expect(historyModel(AIR, [daily(2026, 2, 'Air Temperature [°F]', () => null)], 2026)).toBeNull()
+  })
+})
+
+describe('historyRows', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  const stub = (status: number, body: string) => vi.stubGlobal('fetch', vi.fn(async () => new Response(body, { status })))
+  const year = (y: number) => historyRequest('acebozem', y, AIR, ELEMENTS, '2026-10-02', '2020-10-30')!.query
+
+  it("the API's 404 for a year without data is an empty year", async () => {
+    stub(404, '{"detail":"No data available for the specified time period."}')
+    await expect(historyRows(() => getStationRecord(year(2020)))).resolves.toEqual([])
+  })
+  it('a year with data parses its rows', async () => {
+    stub(200, 'station,datetime,Air Temperature @ 2 m [°F],provisional\nacebozem,2021-09-03 00:00:00-06:00,62.051,False\n')
+    const rows = await historyRows(() => getStationRecord(year(2021)))
+    expect(rows).toHaveLength(1)
+    expect(Object.values(rows[0])).toContain(62.051)
+  })
+  it('other failures still fail (the cache retries or shows the error)', async () => {
+    stub(503, 'busy')
+    await expect(historyRows(() => getStationRecord(year(2025)))).rejects.toMatchObject({ status: 503 })
+    await expect(historyRows(() => Promise.reject(new TypeError('Failed to fetch')))).rejects.toThrow('Failed to fetch')
   })
 })

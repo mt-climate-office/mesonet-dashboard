@@ -6,13 +6,13 @@
  * fills in progressively and the API sees one request at a time.
  */
 import Alpine from 'alpinejs'
-import type { ObservationRow } from '../../core/api'
+import { getStationRecord, type ObservationRow } from '../../core/api'
 import { annualChart, annualTable, type AnnualModel } from '../../core/charts'
 import { installDate, todayIso } from '../../core/latest'
-import { findVariable, historyModel, historyRequest, historyYears, plainName, type Variable } from '../../core/variables'
+import { findVariable, historyModel, historyRequest, historyRows, historyYears, plainName, type Variable } from '../../core/variables'
 import { component } from '../component'
 import { announce } from '../shell/live'
-import { chartVariables, recordResource, stationElements } from './resources'
+import { chartVariables, stationElements } from './resources'
 
 export function variableHistory() {
   // Pinned at creation: the view lives inside the page's block keyed by variable, so it is rebuilt on a
@@ -43,8 +43,10 @@ export function variableHistory() {
       const installed = installDate(st.current)
       const out: { year: number; rows: ObservationRow[] | null; loading: boolean }[] = []
       for (const year of historyYears(installed, today)) {
-        // All years is history: not re-read on the freshness tick, even for the current year.
-        const res = recordResource(historyRequest(st.id, year, v, stationElements(st.id) ?? [], today, installed), { live: false })
+        // All years is history: not re-read on the freshness tick, even for the current year. A year
+        // without data (the API's 404) is an empty year (historyRows); its own key, as its own fetcher.
+        const req = historyRequest(st.id, year, v, stationElements(st.id) ?? [], today, installed)
+        const res = req ? Alpine.store('data').cached(`history:${req.key}`, () => historyRows(() => getStationRecord(req.query))) : null
         const loading = res?.status === 'loading'
         out.push({ year, rows: res?.data ? (Alpine.raw(res.data) as ObservationRow[]) : null, loading })
         if (loading) break
