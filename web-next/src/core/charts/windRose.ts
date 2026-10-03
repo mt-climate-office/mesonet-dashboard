@@ -38,8 +38,9 @@ export const windRoseChart: ChartBuilder<WindRoseModel> = (m, ctx) => {
   // One category spans 22.5°; start half a band past 12 o'clock so N is centred at the top.
   const startAngle = 90 + 360 / m.directions.length / 2
   return {
-    // Leave the bottom ~quarter for the legend, which wraps to two rows in a narrow card.
-    polar: { center: ['50%', '42%'], radius: '72%' },
+    // Room above for the "N" label under the card's title (it touched it at 390 px), and the bottom
+    // ~quarter for the legend, which wraps to two rows in a narrow card.
+    polar: { center: ['50%', '45%'], radius: '68%' },
     angleAxis: {
       type: 'category',
       data: [...m.directions],

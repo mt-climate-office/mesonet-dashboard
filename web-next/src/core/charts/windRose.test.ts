@@ -37,6 +37,12 @@ describe('windRoseChart', () => {
       expect(s.map((x) => x.name)).toEqual(model.bins.map((b) => binName(b.label)))
     }
   })
+  it('leaves room above the rose for the "N" label under the card title (Now at 390 px: a 17 rem, wider-than-tall chart)', () => {
+    const { center, radius } = windRoseChart(model, testCtx('dark')).polar as { center: string[]; radius: string }
+    // The rose's top edge, as a share of the chart height when height is the short side.
+    const top = parseFloat(center[1]) / 100 - parseFloat(radius) / 100 / 2
+    expect(top).toBeGreaterThanOrEqual(0.1)
+  })
   it('counts per compass point equal the model; every observation counted once', () => {
     const s = windRoseChart(model, testCtx()).series as Bar[]
     s.forEach((x, i) => expect(x.data).toEqual(model.bins[i].counts))
