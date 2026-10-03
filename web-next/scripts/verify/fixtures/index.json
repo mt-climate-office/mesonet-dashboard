@@ -245,6 +245,11 @@
    "status": 200,
    "type": "image/png",
    "file": "api-night_few-00bb73bdfb.png"
+  },
+  "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/one-pagers.json": {
+   "status": 200,
+   "type": "text/plain; charset=utf-8",
+   "file": "raw-main_one-pagers.json-ca4a6dbbb3.txt"
   }
  }
 }
