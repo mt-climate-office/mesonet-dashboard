@@ -20,7 +20,7 @@ export interface UrlStore {
   hrefFor(section: Section, patch?: Partial<UrlState>): string
   /**
    * Go to `section` (with an optional patch): pushState for a section change
-   * or a drill-down (opening an Ag tool), else replaceState.
+   * or a drill-down (a Charts variable or Ag tool, a sub-view), else replaceState.
    */
   go(section: Section, patch?: Partial<UrlState>, drillDown?: boolean): void
   init(): void
