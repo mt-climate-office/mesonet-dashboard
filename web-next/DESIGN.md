@@ -62,9 +62,20 @@ switcher already shows the name, so the heading is `.sr-only` there and only the
 | Freshness | "Updated 7 min ago", an ⓘ toggletip when the data are provisional (QC level 2, not yet through the daily QC pass), **No report for over 2 hours** warning | `/latest` (1) |
 | Hero | Air temperature; NWS feels-like with "Wind chill"/"Heat index"; today's high/low; gridMET normal high/low; 48 h sparkline | `/latest` (1); hourly + `tmmx`/`tmmn` (2) |
 | Tiles | Wind (speed, gust, compass glyph pointing where it blows), Precipitation (today, 24 h, 7 d, YTD vs normal), Humidity, Solar, Pressure, Soil (depth profile: temp + VWC bar), Snow depth (only with snow: ≥ 0.5 in now or in any hour of the last 72 h), VPD (AgriMet); each a link to its variable, with a 48 h sparkline | `/latest`, `/derived/ppt/` (1); hourly + `pr` (2) |
-| Media | Latest camera frame (opens the photo dialog), or the wind rose without a camera | photo schedule (1) |
+| Media | Latest camera frame of the default direction (opens the photo dialog), or the wind rose without a camera | photo schedule, latest listings (1) |
 | Forecast | NWS periods in a horizontal strip with scroll snap | NWS (1) |
 | All readings | link to About's readings table (`navigate('about', { target: 'about-readings' })`) | — |
+
+**Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
+`<dialog class="mco-modal">` with a **Direction** segmented control (the directions with frames that day, legacy
+labels, N first), a **Day** date input (the camera's first archived month … today) and a **Time** select (the
+frames that exist, newest first), over the `webp_large` frame and "Download original" (the same WebP). Today
+and yesterday come from the data2 S3 listings, older days from the monthly manifest. The frame area keeps a
+16:9 box while a day loads. **The tile always shows the latest frame**; the picks live only in the dialog and
+are dropped on close, so it reopens on the tile's frame (the tile never shows an old frame under a "latest"
+caption). The dialog's content mounts only while open. On phones the day and time stack, inputs are 16 px and
+targets 44 px; nothing scrolls sideways at 390 px. Focus stays in the modal (the page is inert), Esc closes,
+focus returns to the tile.
 
 Tier 1 requests start together when Now mounts; tier 2 (one 72 h hourly request for every sparkline, the
 normals CSVs) once `/latest` is in. Every slot holds its size with a skeleton while it loads, so nothing
@@ -243,10 +254,10 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
 
 ## Accessibility notes
 
-- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `about`, `picker`, `picker-open`,
+- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `photo-dialog`, `about`, `picker`, `picker-open`,
   `charts-list`, `variable` + `-history` + `-table`, `compare`, `ag-tools`, four Ag tools, `download-step1`
   (390), `downloader`, `help-dialog`) × 3 themes × 1440/390. `keyboard.mjs` walks the picker, tab bar,
-  variable page and Ag Options; `layout.mjs` checks touch swipes over charts, sideways scroll at 390, the
+  photo dialog, variable page and Ag Options; `layout.mjs` checks touch swipes over charts, sideways scroll at 390, the
   fold and reduced motion.
 - Charts: the Table view is a real `<table>` (caption, scoped headers) in a focusable, labelled scroll region;
   presets and view switches are radios / links with `aria-current`; stats are a `<dl>`.

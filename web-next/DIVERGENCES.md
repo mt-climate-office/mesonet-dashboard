@@ -305,6 +305,7 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 #### Photo modal (LDT-015)
 - **Same as legacy:** clicking the photo opens a centered 92vw modal (kit dialog, at most 1600 px wide) with the image up to 86vh tall.
 - **New:** the modal has a "Download original" button. It downloads the same large WebP the card shows (`photos/webp/large/…_{slot_utc}.webp`) and saves it under that file's own name, for example `acebozem_N_20261001T150000Z.webp`. If the fetch fails, the image opens in a new tab.
+- **New (UX refactor, P3):** the direction, day and time pickers live in this dialog (DESIGN.md "Now"). The Now tile always shows the newest frame of the default direction (N); the dialog opens on that frame and drops its picks on close, so the tile is never an older frame under a "latest" caption. The image is up to 70dvh tall below the pickers.
 
 #### Card defaults are "auto" (LDT-003, LDB-001, LDB-002)
 - **Same as legacy:** with no `card`/`info` in the URL, the top card is Latest Photo for stations with a camera and Wind Rose otherwise. The bottom card is Current Conditions with a station and Locator Map without one. Choosing a station from the dropdown or the map resets both cards to auto.
