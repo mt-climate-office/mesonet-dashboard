@@ -5,13 +5,15 @@
  */
 import type { RawInstrument } from '../sensorEvents'
 import { ELEMENT_LABELS, parseWallClock } from '../sensorEvents'
+import { ELEM_MAP } from '../params/latest'
+import { plainName } from '../variables/labels'
 import { formatDay } from './details'
 
 export interface SensorChange {
   kind: 'installed' | 'removed'
   /** "Vaisala HMP155E (RH/T)". */
   sensor: string
-  /** Readable measurements, e.g. "Air Temperature, Relative Humidity"; "" when none are public. */
+  /** Plain measurements, e.g. "Air temperature, Humidity"; "" when none are public. */
   measures: string
 }
 
@@ -26,10 +28,17 @@ export interface SensorChangeDay {
 
 const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '')
 
-/** Element codes → unique labels without units ("Soil VWC @ 2 in"); codes with no public label are dropped. */
+/** An API label without its unit → its plain name ("Soil VWC @ 2 in" → "Soil moisture at 2 in"). */
+function plainMeasure(label: string): string {
+  const [name, depth] = label.replace(/\s*\[[^\]]*\]$/, '').split(/\s*@\s*/)
+  const plain = plainName(ELEM_MAP[name]?.[0] ?? '', name)
+  return depth ? `${plain} at ${depth}` : plain
+}
+
+/** Element codes → unique plain labels without units ("Soil moisture at 2 in"); codes with no public label are dropped. */
 export function measuresText(elements: unknown): string {
   const codes = Array.isArray(elements) ? elements.map(String) : elements == null ? [] : [String(elements)]
-  const labels = codes.map((c) => ELEMENT_LABELS[c]?.replace(/\s*\[[^\]]*\]$/, '')).filter((l): l is string => !!l)
+  const labels = codes.map((c) => ELEMENT_LABELS[c]).filter((l): l is string => !!l).map(plainMeasure)
   return [...new Set(labels)].join(', ')
 }
 

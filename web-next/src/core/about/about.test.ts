@@ -99,9 +99,9 @@ describe('sensorHistory', () => {
   it('names sensors and their public measurements', () => {
     expect(sensorName({ manufacturer: 'Vaisala', model: 'HMP155E', type: 'RH/T' })).toBe('Vaisala HMP155E (RH/T)')
     expect(sensorName({})).toBe('Unknown sensor')
-    expect(measuresText(['air_temp_0200', 'rh'])).toBe('Air Temperature, Relative Humidity')
+    expect(measuresText(['air_temp_0200', 'rh'])).toBe('Air temperature, Humidity')
     expect(measuresText('door')).toBe('')
-    expect(measuresText(['soil_vwc_0005', 'soil_ec_perm_0005'])).toBe('Soil VWC @ 2 in')
+    expect(measuresText(['soil_vwc_0005', 'soil_ec_perm_0005'])).toBe('Soil moisture at 2 in')
   })
 
   it('groups installs and removals by day, newest first, skipping "None" and duplicates', () => {
@@ -110,8 +110,8 @@ describe('sensorHistory', () => {
     const days = sensorHistory([hmpA, hmpE, hmpE])
     expect(days.map((d) => d.label)).toEqual(['Aug 2, 2024', 'Oct 30, 2020'])
     expect(days[0].changes).toEqual([
-      { kind: 'installed', sensor: 'Vaisala HMP155E (RH/T)', measures: 'Air Temperature, Relative Humidity' },
-      { kind: 'removed', sensor: 'Vaisala HMP155A (RH/T)', measures: 'Air Temperature, Relative Humidity' },
+      { kind: 'installed', sensor: 'Vaisala HMP155E (RH/T)', measures: 'Air temperature, Humidity' },
+      { kind: 'removed', sensor: 'Vaisala HMP155A (RH/T)', measures: 'Air temperature, Humidity' },
     ])
     expect(days[1].changes.map((c) => c.kind)).toEqual(['installed'])
   })
