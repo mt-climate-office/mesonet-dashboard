@@ -22,12 +22,13 @@
     <div class="about-grid">
       <div class="about-col">
         <!-- @include partials/about/details.html -->
-        <section class="about-map" aria-labelledby="about-map-title">
+        <section class="dash-card about-map" aria-labelledby="about-map-title">
           <h3 class="sr-only" id="about-map-title">Location</h3>
           <div class="about-map-frame" data-testid="about-map"
                x-data="locatorMap({ stations: () => $store.station.list, selected: () => $store.station.id,
                         onSelect: (id) => $store.station.select(id) })"></div>
-          <p class="about-hint">Use two fingers, or Ctrl / ⌘ and scroll, to move the map.</p>
+          <!-- Touch only (about.css): a mouse gets MapLibre's own Ctrl / ⌘ + scroll prompt. -->
+          <p class="about-hint">Use two fingers to move the map.</p>
         </section>
       </div>
       <div class="about-col">

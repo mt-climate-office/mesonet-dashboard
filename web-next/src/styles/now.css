@@ -1,38 +1,41 @@
 /* Now (partials/now/index.html; DESIGN.md "Now"). Phones and tablets: one column, hero → photo →
-   tiles (2-up) → rows, in DOM order. Desktop (≥ 1060 px): hero + tiles (4-up) | photo + rows, the
-   pairing that keeps the columns closest in height. Readings in .num-display (Outfit, tabular);
-   every slot keeps its size while loading (skeletons). Kit tokens only. */
+   tiles (2-up) → rows, in DOM order. Desktop (≥ 1060 px): two columns, hero over the photo | tiles
+   (2-up) over the rows, ending level: the photo and the tiles grow to fill. Readings in
+   .num-display (Outfit, tabular); every slot keeps its size while loading (skeletons). Kit tokens
+   only; spacing from the app scale (--gap, --gap-tight, --card-pad) with fallbacks. */
 
-.now-grid { display: grid; gap: 0.875rem; grid-template-columns: minmax(0, 1fr); }
-.now-col { display: grid; gap: 0.875rem; align-content: start; min-width: 0; }
+.now-grid { display: grid; gap: var(--gap, 12px); grid-template-columns: minmax(0, 1fr); }
+.now-col { display: grid; gap: var(--gap, 12px); align-content: start; min-width: 0; }
 @media (min-width: 1060px) and (min-height: 561px) {
-  /* The columns dissolve so the four slots place on one grid without reordering the DOM. The
-     middle row is flexible: a spanning hero or rows card grows it, never the photo's or tiles' row,
-     so nothing leaves a gap inside a column. */
-  .now-grid {
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    grid-template-rows: auto 1fr auto;
-    grid-template-areas: "hero media" "hero rows" "tiles rows";
-    gap: 1rem; align-items: start;
-  }
-  .now-col { display: contents; }
-  .now-hero { grid-area: hero; }
-  .now-media { grid-area: media; }
-  .now-tiles { grid-area: tiles; }
-  .now-rows { grid-area: rows; }
+  /* The grid stretches both columns to the taller one; in each, one slot takes the rest (the photo
+     on the left, from 20 rem; the tiles on the right, rows shared evenly), so neither column ends
+     early whatever the tile count. DOM, reading and Tab order stay hero, photo, tiles, rows. */
+  .now-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+  .now-col { display: flex; flex-direction: column; }
+  .dash-card.now-media:not(.is-rose) { flex: 1 0 20rem; aspect-ratio: auto; max-height: none; }
+  .now-tiles { flex: 1 0 auto; grid-auto-rows: 1fr; }
 }
 
 .now-dim { color: var(--text-muted); }
 
 /* Hero: the temperature left, high/low and normal right; summary, freshness, then the strip. */
-.dash-card.now-hero { --card-pad: 1.125rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.dash-card.now-hero { display: flex; flex-direction: column; gap: 0.4rem; }
 .now-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
 .now-temp { margin: 0; font-size: 5rem; font-weight: 300; line-height: 0.95; letter-spacing: -0.04em; color: var(--text-primary); }
 .now-temp-unit { font-size: 0.4em; font-weight: 400; vertical-align: 0.95em; margin-left: 0.05em; letter-spacing: 0; color: var(--text-secondary); }
 .now-hilo { display: grid; justify-items: end; gap: 0.1rem; margin: 0.25rem 0 0; text-align: right; font-size: var(--fs-sm); line-height: 1.45; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.now-hilo > * { white-space: nowrap; }
 .now-hilo-skel { width: 8rem; }
+/* Narrow phones: high/low and normal stack under the temperature instead of breaking mid-fact. */
+@media (max-width: 359px) {
+  .now-hero-top { flex-direction: column; gap: var(--gap-tight, 4px); }
+  .now-hilo { justify-items: start; margin: 0; text-align: left; }
+}
 .now-skel-temp { width: 9rem; height: 4.75rem; margin-bottom: 0.4rem; }
 .now-summary { margin: 0.4rem 0 0; font-size: 1.125rem; line-height: 1.35; color: var(--text-primary); text-wrap: pretty; }
+/* Phones: two lines reserved, so the clauses tier 2 adds (rain today, gusts earlier) don't move the
+   page below. */
+@media (max-width: 640px) { .now-summary { min-height: calc(2 * 1.35em); } }
 /* Positioned so the Provisional note can use the row's width. */
 .now-fresh { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.4rem; margin: 0; font-size: var(--fs-sm); color: var(--text-muted); }
 .now-fresh .dash-toggletip { align-items: center; gap: 0.4rem; }
@@ -49,7 +52,8 @@
 .now-strip-skel { position: absolute; inset: 0.25rem 0.375rem; border-radius: var(--radius-md); }
 .now-strip-chart { --chart-height: 9.5rem; --chart-height-compact: 9.5rem; }
 .now-strip-empty { display: grid; place-items: center; height: 100%; margin: 0; padding: 0 1rem; text-align: center; font-size: var(--fs-sm); color: var(--text-secondary); }
-.now-icons { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin: 0; padding: 0; list-style: none; font-size: var(--fs-xs); color: var(--text-secondary); }
+/* Shown (one icon high) while the forecast loads, so its arrival doesn't push the page down. */
+.now-icons { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; min-height: 32px; margin: 0; padding: 0; list-style: none; font-size: var(--fs-xs); color: var(--text-secondary); }
 .now-icons li { display: inline-flex; align-items: center; gap: 0.4rem; }
 .now-icons img { width: 32px; height: 32px; border-radius: var(--radius-sm); }
 .now-strip-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; font-size: var(--fs-xs); color: var(--text-muted); }
@@ -58,15 +62,18 @@
 .now-legend i.is-forecast { border-top-style: dashed; }
 .now-forecast-link { margin-left: auto; }
 
-/* Photo (16:9) or the wind rose. */
-.dash-card.now-media { --card-pad: 0; overflow: hidden; display: flex; aspect-ratio: 16 / 9; }
-.dash-card.now-media.is-rose { aspect-ratio: auto; min-height: 20rem; }
+/* Photo: the column's width, 16:9 up to 20 rem tall (cropped beyond; on desktop it fills its
+   column). The wind rose: a fixed 20 rem, so its card never changes height as it loads. width: 100%
+   keeps an aspect-ratio grid item from shrinking when the height cap applies. */
+.dash-card.now-media { padding: 0; overflow: hidden; display: flex; width: 100%; aspect-ratio: 16 / 9; max-height: 20rem; }
+.dash-card.now-media.is-rose { aspect-ratio: auto; height: 20rem; }
 .now-media .dash-skel--media { min-height: 0; border-radius: 0; }
 .now-photo, .now-rose { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .now-photo-frame { position: relative; flex: 1; display: block; padding: 0; border: 0; background: var(--bg-raised); cursor: zoom-in; }
 .now-photo-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Bottom right: the camera burns its own label into the bottom left. */
 .now-photo-cap {
-  position: absolute; left: 0.625rem; bottom: 0.625rem;
+  position: absolute; right: 0.5rem; bottom: 0.5rem;
   display: inline-flex; gap: 0.5rem;
   padding: 0.2rem 0.625rem; border-radius: 999px;
   background: var(--glass); color: var(--text-primary);
@@ -77,9 +84,11 @@
 .now-rose .lc-rose-chart { --chart-height: 17rem; --chart-height-compact: 17rem; }
 
 /* Tiles: flat surfaces, two-up; label, value, a sub-line and a sparkline. */
-.now-tiles { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.now-tiles { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap, 12px); grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .now-tile-item { display: flex; min-width: 0; }
-.dash-card.now-tile { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; min-height: 8.75rem; padding: 0.875rem 0.875rem 0.625rem; }
+/* An odd count: the last tile spans its row, so no cell is left empty. */
+.now-tile-item:last-of-type:nth-of-type(odd) { grid-column: 1 / -1; }
+.dash-card.now-tile { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; min-height: 8.75rem; }
 .now-tile-head { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; min-height: 1.4rem; font-size: var(--fs-sm); font-weight: 500; color: var(--text-muted); }
 .now-tile-value { display: flex; align-items: baseline; gap: 0.2rem; font-size: 1.9rem; line-height: 1.1; color: var(--text-primary); }
 .now-unit { font-family: var(--font-ui); font-size: var(--fs-sm); color: var(--text-muted); letter-spacing: 0; }
@@ -93,14 +102,14 @@
 .dash-spark svg.is-bars path { fill: currentColor; stroke: none; }
 
 /* Rows to About: name, meta, chevron. */
-.dash-card.now-rows { --card-pad: 0; overflow: hidden; }
+.dash-card.now-rows { padding: 0; overflow: hidden; }
 .now-row {
-  display: flex; align-items: center; gap: 0.75rem; min-height: 3.25rem; padding: 0.75rem 1rem;
+  display: flex; align-items: center; gap: 0.75rem; min-height: 3.25rem; padding: 0.75rem var(--card-pad, 16px);
   color: var(--text-primary); text-decoration: none; font-weight: 500;
 }
 .now-row + .now-row { border-top: 1px solid var(--border); }
 .now-row:hover { background: var(--accent-hover); }
-.now-row-meta { flex: 1; min-width: 0; text-align: right; font-size: var(--fs-sm); font-weight: 400; color: var(--text-muted); }
+.now-row-meta { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: right; font-size: var(--fs-sm); font-weight: 400; color: var(--text-muted); }
 .now-row-chev { color: var(--text-muted); }
 
 /* No station / no data. */
@@ -110,8 +119,7 @@
 
 @media (min-width: 1060px) and (min-height: 561px) {
   .now-temp { font-size: 7rem; }
-  .dash-card.now-media:not(.is-rose) { max-height: 360px; }
-  /* Under the wide hero the tiles go 4-up (3-up when the picker drawer narrows the column). */
-  .now-tiles { grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
   .now-strip, .now-strip-chart { height: 11rem; --chart-height: 11rem; }
+  /* A tile stretched taller grows its sparkline, up to 4 rem. */
+  .now-tile .dash-spark { flex: 1 0 auto; height: auto; min-height: calc(28px + 0.375rem); max-height: calc(4rem + 0.375rem); }
 }

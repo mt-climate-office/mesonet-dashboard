@@ -10,12 +10,14 @@ import type { Resource } from '../../core/cache'
 import { downloaderPreviewChart, downloaderPreviewTable, previewHeight } from '../../core/charts'
 import { toCsv } from '../../core/csv'
 import * as form from '../../core/downloader/form'
+import { prefillsFromChart } from '../../core/downloader/fromChart'
 import { downloadFilename, fetchDownload, QC_LEVEL_OPTIONS, type DownloadQuery, type DownloadResult, type QcLevel } from '../../core/downloader/request'
 import * as view from '../../core/downloader/view'
 import { labelFor, type MultiselectGroup, type MultiselectOption } from '../../core/controls/multiselectModel'
 import { buildPreviewModel, type PreviewModel } from '../../core/models/downloaderPreview'
 import { denverToday } from '../../core/today'
 import type { DlPeriod, UrlState } from '../../core/url-schema'
+import { elementsResource } from '../charts/resources'
 import { component } from '../component'
 import { announce } from '../shell/live'
 
@@ -115,8 +117,13 @@ export function downloader() {
       return this.dates.largeHourly && this.confirmedKey !== view.confirmKey(this.stationId, this.dates, this.url.period)
     },
     largeHourlyText(): string { return view.largeHourlyText(this.dates.span, this.needsConfirm) },
-    /** `?s=` is set but the catalog has not confirmed it yet: Preview waits rather than saying "pick a station". */
-    get resolving(): boolean { return !!this.url.s && this.$store.station.catalog?.status === 'loading' },
+    /** Preview waits (no reason line) while `?s=` is unconfirmed or the chart behind is about to prefill the form. */
+    get resolving(): boolean {
+      return form.formWaiting({
+        catalogLoading: !!this.url.s && this.$store.station.catalog?.status === 'loading',
+        prefillPending: prefillsFromChart(this.url) && elementsResource(this.stationId)?.status === 'loading',
+      })
+    },
     get action(): form.PrimaryAction {
       return form.primaryAction({
         blocker: this.resolving ? null : this.blocker,

@@ -16,11 +16,14 @@ export const DRY_CAP_DAYS = 7
 /** A calm reading after a 24 h peak gust at least this strong (mph) says so. */
 export const NOTABLE_GUST_MPH = 25
 
+/** Below this (mph) the wind is calm (Beaufort 0): the summary's "calm" and the Wind tile's "Calm". */
+export const CALM_MPH = 1
+
 export type WindClass = 'calm' | 'light' | 'breezy' | 'windy'
 
-/** calm < 3 mph ≤ light < 10 ≤ breezy < 20 ≤ windy. */
+/** calm < 1 mph (CALM_MPH) ≤ light < 10 ≤ breezy < 20 ≤ windy. */
 export function windClass(mph: number): WindClass {
-  return mph < 3 ? 'calm' : mph < 10 ? 'light' : mph < 20 ? 'breezy' : 'windy'
+  return mph < CALM_MPH ? 'calm' : mph < 10 ? 'light' : mph < 20 ? 'breezy' : 'windy'
 }
 
 // [pattern, phrase, is precipitation], first match wins: precipitation before cloud cover.

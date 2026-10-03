@@ -37,7 +37,7 @@ export function installDateOf(s: Station | undefined): string | null {
   return s?.date_installed ? String(s.date_installed).slice(0, 10) : null
 }
 
-/** Standard element options: unique, derived codes excluded, US-unit labels, natural sort. */
+/** Measured-variable options (the API's standard elements): unique, derived codes excluded, US-unit labels, natural sort. */
 export function standardOptions(elements: readonly StationElement[]): MultiselectOption[] {
   const seen = new Set<string>()
   const out: MultiselectOption[] = []
@@ -52,7 +52,7 @@ export function standardOptions(elements: readonly StationElement[]): Multiselec
 /** The two picker groups; SWP-only derived variables only at `has_swp` stations. */
 export function elementGroups(standard: MultiselectOption[], hasSwp: boolean): MultiselectGroup[] {
   return [
-    { id: 'standard', label: 'Standard elements', options: standard },
+    { id: 'standard', label: 'Measured variables', options: standard },
     { id: 'derived', label: 'Derived variables', options: derivedOptionsFor(hasSwp).map((o) => ({ value: o.value, label: o.label })) },
   ]
 }

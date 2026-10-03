@@ -75,7 +75,7 @@ Group = { id, label, options: { value, label }[] }
 - A disclosure button shows the label and the selected count, and opens a panel.
 - The panel has a filter box and one fieldset per group, each with a "Select all" checkbox. That
   checkbox shows a mixed state and applies to the group's visible options.
-- Escape closes the panel and returns focus to the button.
+- Escape clears the filter text first; the next Escape closes the panel (clearing the filter) and returns focus to the button.
 - The selection shows as removable chips. Removing one moves focus to the next chip.
 - Output is always in option order, not click order.
 
