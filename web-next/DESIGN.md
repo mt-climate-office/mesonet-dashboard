@@ -71,7 +71,7 @@ then Send feedback (a link). One row at every width.
 | Tiles | Wind (speed, gust, compass glyph pointing where it blows), Precipitation (today, 24 h, 7 d, YTD vs normal), Humidity, Solar, Pressure, Soil (depth profile: temp + VWC bar), Snow depth (only with snow: ≥ 0.5 in now or in any hour of the last 72 h), VPD (AgriMet); each a link to its variable, with a 48 h sparkline | `/latest`, `/derived/ppt/` (1); hourly + `pr` (2) |
 | Media | Latest camera frame of the default direction (opens the photo dialog), or the wind rose without a camera | photo schedule, latest listings (1) |
 | Forecast | NWS periods in a horizontal strip with scroll snap | NWS (1) |
-| All readings | link to About's readings table (`navigate('about', { target: 'about-readings' })`) | — |
+| All readings | opens About's readings sheet (`navigate('about', { target: 'about-readings' })`; the target is the row, `data-sheet` opens its sheet) | — |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
 `<dialog class="mco-modal">` with a **Direction** segmented control (the directions with frames that day, legacy
@@ -199,19 +199,33 @@ Inside, unchanged: three step cards (`.dash-card`, `partials/downloader/index.ht
 ## About
 
 Details that stay reachable but not front and center (`partials/about/*`, `ui/about/*`, models in
-`core/about`). One column on phones; from tablet up two (details | map, readings | sensor changes), notes
-full width.
+`core/about`; styles `src/styles/about.css`). One column on phones; from tablet up two: details + map |
+rows + notes. Flat `.dash-card` surfaces; no visible card titles except "About the data" (each section has
+an sr-only heading).
 
-| Card | Content | Data |
+| Slot | Content | Data |
 |---|---|---|
-| Station details | name, id, network, NWS ID, county, coordinates, elevation (ft and m), installed, period of record (install → newest report); one-pager link | `/stations`, `/latest`, one-pagers.json |
-| Location | `locatorMap` (ui/map/presets): the station map flown to the station, legend collapsed, **cooperative gestures** (one finger and a plain wheel scroll the page; two fingers or Ctrl/⌘ move the map) | `/stations` |
-| All current readings | the former Current Conditions table (`core/cards/currentConditions`, with **Feels like** by the NWS method) and, for HydroMet, the precipitation summary; `#about-readings` is the target of Now's link | `/latest`, `/derived/ppt/` |
-| Sensor changes | installs and removals by day, newest first (`core/about/sensorHistory`) | `/config/{station}/` (the response Compare's overlays use) |
-| About the data | QC level 2, provisional data, time and units; links to the API docs and this station's requests | — |
+| Details | Station (name, id in mono), Network, Location (county · coordinates), Elevation (ft and m), Record (install date – "today", or the newest report's date; "Since …" until `/latest` answers): `core/about/details.ts`. Then a **Station one-pager (PDF)** row when one is listed. This is where the old "network · county · elevation" meta line lives now. | `/stations`, `/latest`, one-pagers.json |
+| Map | `locatorMap` (ui/map/presets) in a flat frame with the card radius: the station map flown to the station, legend collapsed, **cooperative gestures** (one finger and a plain wheel scroll the page; two fingers or Ctrl/⌘ move the map) | `/stations` |
+| Rows | **All current readings · N** (N readings now, Observed not counted) and **Sensor changes · latest date**: `<button class="about-row" aria-haspopup="dialog" data-sheet="…">`, each opening a modal sheet | as the sheets |
+| About the data | QC level 2, provisional data (the corrected wording), time and units; links to the API docs and this station's requests (`core/about/apiLinks.ts`) | — |
 
-Long tables and lists scroll inside `.about-scroll`, a focusable `role="region"` with a label, so the page
-never scrolls sideways at 390 px. Every fetch is in `ui/station/resources.ts`, shared with Now.
+**Sheets** (`partials/sheets/about-readings.html`, `about-history.html`; the modal sheet primitive, `--sheet-w`
+34 rem): content mounts only while open, and scrolls inside `.about-scroll`, a focusable `role="region"`
+with a label (the sheet body itself does not scroll, so the table head stays put).
+- **All current readings** (`ui/about/readings.ts`): the readings table, plain labels from
+  `core/variables/labels.ts` with depths ("Soil moisture at 4 in"), values with units at table precision
+  ("57.0 °F"; wind direction as "ESE (111.6 deg)"; **Feels like** by the NWS method), `core/about/readings.ts`.
+  For HydroMet, the rain totals ("Last 7 days", "Year to date"). Each row header carries its API column in
+  `data-col` (the fidelity harness keys rows by it).
+- **Sensor changes** (`ui/about/history.ts`): installs and removals by day, newest first
+  (`core/about/sensorHistory`), from `/config/{station}/` (the response Compare's overlays use).
+
+**The readings target (contract with Now):** the readings row is `#about-readings` with
+`data-sheet="about-readings"`. `navigate('about', { target: 'about-readings' })` (Now's "All readings")
+focuses it and, because of `data-sheet`, opens that sheet with the row as opener (`ui/shell/navigate.ts`), so
+closing the sheet leaves focus on the row. Any `target` with `data-sheet="<id>"` works the same way. Leaving
+About closes its sheets. Every fetch is in `ui/station/resources.ts`, shared with Now.
 
 ## Components (`src/ui/layout/`; kit candidates, see KIT-NOTES.md)
 
@@ -292,10 +306,11 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
 ## Accessibility notes
 
 - Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `header-menu`, `photo-dialog`, `about`,
-  `picker`, `picker-open` (both with the map revealed), `charts-list`, `variable` + `-history` + `-table`, `compare`,
+  `about-readings`, `about-history` (each sheet open), `picker`, `picker-open` (both with the map revealed), `charts-list`, `variable` + `-history` + `-table`, `compare`,
   `legacy-ag`, four Ag tools, `download-step1` (390), `downloader`, `help-dialog`) × 3 themes × 1440/390.
   `keyboard.mjs` walks the header and its ⋯ menu (Help, Theme), the picker, the Download sheet, tab bar,
-  photo dialog, variable page, Ag Options and the legacy links; `layout.mjs` checks touch swipes over charts,
+  photo dialog, About's two sheets (and Now's "All readings" opening the readings sheet), variable page, Ag
+  Options and the legacy links; `layout.mjs` checks touch swipes over charts,
   sideways scroll at 390, the fold, the one-row header, the solid tab bar, the sheet's fit and reduced motion.
 - Charts: the Table view is a real `<table>` (caption, scoped headers) in a focusable, labelled scroll region;
   presets and view switches are radios / links with `aria-current`; stats are a `<dl>`.

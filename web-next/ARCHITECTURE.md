@@ -99,7 +99,9 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `follow(event, section, opts)` on click (a plain click navigates, a modified
   or middle click follows the href); when the clicked link unmounts, pass
   `target:` (an id with `tabindex="-1"`, usually the new view's heading) so
-  focus never falls to `<body>`.
+  focus never falls to `<body>`. A target with `data-sheet="<id>"` also opens
+  that sheet with the target as opener (Now's "All readings" → About's
+  readings sheet).
 - **`$store.data`** (`stores/data.ts` → `core/cache.ts`):
   `cached(key, fetcher, {ttl, retry})` returns one reactive
   `{status: 'loading'|'success'|'error', data, error, refresh()}` per key.
@@ -289,7 +291,7 @@ focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
 `npm run verify` runs axe on its scenarios (Now, the header ⋯ menu, the photo dialog, the picker on a first visit and
 opened with a station, the Charts list, the legacy `#ag` landing, a variable page in each view, Compare, 4 Ag
-tools, the Download sheet (step 1 on phones, after Run), About, Help) × 1440/390 px × 3 themes
+tools, the Download sheet (step 1 on phones, after Run), About and its two sheets, Help) × 1440/390 px × 3 themes
 (`scripts/verify/axe.mjs`).
 
 ## Testing
