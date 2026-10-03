@@ -1,6 +1,7 @@
 /**
  * Layout and motion checks (DESIGN.md "Charts on touch", "Layout ladder", "Motion"):
- * at 390 px with touch, a vertical swipe over a chart or the About map scrolls the page; no
+ * at 390 px with touch, a vertical swipe over a chart or the About map scrolls the page and a
+ * sideways swipe on a variable page walks the list; no
  * view scrolls sideways; the first Now tile is above the fold at 390×844; the header is one
  * row at 390 and 1440 (sections in it only from tablet up); the phone tab bar has three items
  * on a solid surface; the Download sheet fits the screen; with reduced motion a section change
@@ -20,12 +21,13 @@ for (const [name, query, evidence, target] of [
 ]) {
   const { page, problems, close, rendered } = await open(env, query, { viewport: PHONE })
   await rendered(evidence)
-  // Centre the target, then swipe 200 px over its middle with real touch events: up when the
-  // page has room below (it scrolls down), else down (a short page is already at its bottom).
+  // Centre the target, then swipe 200 px over its middle with real touch events, toward the side
+  // with more room to scroll; it must move the page at least `want` px.
   await page.locator(target).first().evaluate((el) => el.scrollIntoView({ block: 'center' }))
   const box = await page.locator(target).first().boundingBox()
   const { y0, room } = await page.evaluate(() => ({ y0: scrollY, room: document.documentElement.scrollHeight - innerHeight - scrollY }))
-  const dir = room >= 100 ? -1 : 1
+  const dir = room >= y0 ? -1 : 1
+  const want = Math.min(50, Math.max(room, y0) * 0.6)
   const x = box.x + box.width / 2
   const y = box.y + box.height / 2 - (dir * 100)
   const cdp = await page.context().newCDPSession(page)
@@ -33,12 +35,39 @@ for (const [name, query, evidence, target] of [
   await touch('touchStart', y)
   for (let i = 1; i <= 10; i++) await touch('touchMove', y + dir * i * 20)
   await touch('touchEnd')
-  const moved = (y0) => Math.abs(scrollY - y0) > 50
-  await page.waitForFunction(moved, y0, { timeout: 3000 }).catch(() => {})
+  await page.waitForFunction(([y0, want]) => Math.abs(scrollY - y0) > want, [y0, want], { timeout: 3000 }).catch(() => {})
   const y1 = await page.evaluate(() => scrollY)
-  check(`touch: a vertical swipe over the ${name} scrolls the page`, Math.abs(y1 - y0) > 50, `scrollY ${y0} → ${y1} (room below ${room})`)
+  check(`touch: a vertical swipe over the ${name} scrolls the page`, Math.abs(y1 - y0) > want, `scrollY ${y0} → ${y1} (room below ${room})`)
   const p = await problems()
   check(`touch ${name}: console + CSP clean`, p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Touch: a sideways swipe on a variable page walks the list (core/swipe) ── */
+{
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&v=air_temp#charts', { viewport: PHONE })
+  await rendered({ charts: 1 })
+  const cdp = await page.context().newCDPSession(page)
+  const box = await page.locator('[data-testid="variable-chart"] canvas').first().boundingBox()
+  const y = box.y + box.height / 2
+  /** A 240 px horizontal swipe over the chart, from `x0` towards `dir` (−1 left, 1 right). */
+  const swipe = async (x0, dir) => {
+    const touch = (type, x) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] })
+    await touch('touchStart', x0)
+    for (let i = 1; i <= 12; i++) await touch('touchMove', x0 + dir * i * 20)
+    await touch('touchEnd')
+  }
+  const v = () => page.evaluate(() => new URLSearchParams(location.search).get('v'))
+  await swipe(330, -1)
+  await page.waitForFunction(() => new URLSearchParams(location.search).get('v') !== 'air_temp', null, { timeout: 5000 }).catch(() => {})
+  const next = await v()
+  await rendered({ charts: 1 })
+  await swipe(60, 1)
+  await page.waitForFunction(() => new URLSearchParams(location.search).get('v') === 'air_temp', null, { timeout: 5000 }).catch(() => {})
+  const prev = await v()
+  check('touch: a left swipe opens the next variable, a right swipe the previous', next === 'rh' && prev === 'air_temp', JSON.stringify({ next, prev }))
+  const p = await problems()
+  check('touch swipe: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
@@ -48,10 +77,11 @@ for (const [name, query, evidence] of [
   ['charts-list', '?s=acebozem#charts', { filled: ['[data-testid="var-air_temp"] .dash-spark svg'] }],
   ['variable', '?s=acebozem&v=air_temp#charts', { charts: 1 }],
   ['variable-history', '?s=acebozem&v=air_temp&view=history#charts', { charts: 1 }],
-  ['variable-table', '?s=acebozem&v=air_temp&view=table#charts', { filled: ['.var-table-grid tbody'] }],
+  ['variable-table', '?s=acebozem&v=air_temp&tbl=1#charts', { filled: ['.var-table-grid tbody'] }],
   ['compare', '?s=acebozem#latest', { charts: 1 }],
   ['legacy-ag', '?s=acebozem#ag', { filled: ['[data-testid="charts-ag-tools"] ul'] }],
   ['ag-gdd', '?s=acebozem&v=gdd#charts', { charts: 1 }],
+  ['ag-etr-history', '?s=acebozem&v=etr&view=history#charts', { charts: 1 }],
   ['download', '?s=acebozem&dl=1#charts', { filled: ['[data-testid="dl-step-elements"]'] }],
   ['about', '?s=acebozem#about', { filled: ['[data-testid="about-readings-table"] tbody'] }],
 ]) {

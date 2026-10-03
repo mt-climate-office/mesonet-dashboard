@@ -67,6 +67,8 @@
 .chart-interval-label { margin-right: 0.35rem; font-size: var(--fs-sm); color: var(--text-muted); }
 .chart-interval .dash-chip { padding-inline: 0.65rem; }
 @media (max-width: 640px) { .chart-chips .dash-chip { padding-inline: 0.75rem; } }
+/* "1 y" is narrower than a 40 px touch target (HOUSE-STYLE §5.5). */
+@media (hover: none) { .chart-chips .dash-chip { min-width: 44px; } }
 
 /* Stats card: label over value. */
 .chart-stats { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem 1rem; }

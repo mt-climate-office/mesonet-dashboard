@@ -5,9 +5,10 @@
  * toggletip and photo dialog, the Charts drill-down and Back, views mounting only while
  * open (no cross-view requests), legacy links (#ag, #downloader), the Download sheet
  * (focus, Esc, inert, dl key) and its phone stepper, the picker drawer and sheet (focus,
- * Esc, inert), the tab bar and history, the variable page's view switch and chips, focus
- * after Charts drill-downs (variables and Ag tools), the Ag Options disclosure, chart
- * table twins, map sr-table selection, reduced motion.
+ * Esc, inert), the tab bar and history, the variable page (⋯ Show as table, Previous / Next,
+ * range and interval chips, Custom dates), focus after Charts drill-downs (variables and Ag
+ * tools), Ag option chips and their popovers, Download prefilled from a chart's ⋯, chart table
+ * twins, map sr-table selection, reduced motion.
  * Run via `npm run verify`.
  */
 import { DL_QUERY, VIEWPORTS, VISIBLE_SCOPES, animationsDone, check, finish, open, runDownload, start } from './lib.mjs'
@@ -241,10 +242,13 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   const opened = await page.evaluate(() => ({ hash: location.hash, v: new URLSearchParams(location.search).get('v') }))
   check('charts: Enter on a Now tile opens its variable page (#charts&v=rh)', opened.hash === '#charts' && opened.v === 'rh', JSON.stringify(opened))
   await rendered({ charts: 1 })
-  await page.getByTestId('view-table').focus()
+  // ⋯ → Show as table from the keyboard: Enter opens the menu on its first item, ArrowDown, Enter.
+  await page.getByTestId('var-menu-button').focus()
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('ArrowDown')
   await page.keyboard.press('Enter')
   await page.waitForSelector('.var-table-grid tbody tr', { timeout: 15000 }).catch(() => {})
-  check('charts: the Table view shows the chart\'s rows', (await page.locator('.var-table-grid tbody tr').count()) > 0)
+  check('charts: ⋯ → Show as table replaces the chart with its rows (tbl=1)', (await page.locator('.var-table-grid tbody tr').count()) > 0 && (await urlParam(page, 'tbl')) === '1')
   await page.goBack()
   await page.goBack()
   await page.waitForSelector('[data-testid="now-tiles"]', { timeout: 10000 }).catch(() => {})
@@ -444,27 +448,51 @@ for (const vp of VIEWPORTS) {
   await close()
 }
 
-/* ── Variable page: the view switch and prev/next chips work from the keyboard ── */
+/* ── Variable page: ⋯ Previous / Next, range and interval chips, Custom dates, from the keyboard ── */
 {
   const { page, problems, close, rendered } = await open(env, '?s=acebozem&v=air_temp&theme=dark#charts')
   await rendered({ charts: 1 })
-  const at = () => page.evaluate(() => ({ v: new URLSearchParams(location.search).get('v'), view: new URLSearchParams(location.search).get('view') }))
-  // Chips before History: a chip pressed in History can fetch the next variable's history (unfixtured).
-  await page.getByTestId('var-next').focus()
-  await page.keyboard.press('Enter')
+  const at = () => page.evaluate(() => Object.fromEntries(new URLSearchParams(location.search)))
+  /** Open the ⋯ menu from the keyboard and choose the item with `testid`. */
+  const choose = async (testid) => {
+    await page.getByTestId('var-menu-button').focus()
+    await page.keyboard.press('Enter')
+    for (let i = 0; i < 8 && (await page.evaluate(() => document.activeElement?.dataset.testid)) !== testid; i++) await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
+  }
+  // Next/Previous before All years: a press in All years can fetch the next variable's history (unfixtured).
+  await choose('var-next')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('v') !== 'air_temp', null, { timeout: 5000 }).catch(() => {})
   const n = await at()
-  await page.getByTestId('var-prev').focus()
-  await page.keyboard.press('Enter')
+  await rendered({ charts: 1 })
+  await choose('var-prev')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('v') === 'air_temp', null, { timeout: 5000 }).catch(() => {})
   const pr = await at()
-  check('variable: Enter on the next chip, then the previous chip, walks the list', n.v && n.v !== 'air_temp' && pr.v === 'air_temp', JSON.stringify([n, pr]))
-  await page.getByTestId('view-history').focus()
+  check('variable: ⋯ → Next, then ⋯ → Previous, walk the list from the keyboard', n.v && n.v !== 'air_temp' && pr.v === 'air_temp', JSON.stringify([n.v, pr.v]))
+  await rendered({ charts: 1 })
+  await page.getByTestId('range-7d').focus()
   await page.keyboard.press('Enter')
-  await page.waitForFunction(() => new URLSearchParams(location.search).get('view') === 'history', null, { timeout: 5000 }).catch(() => {})
-  const h = await at()
-  const current = await page.evaluate(() => document.querySelector('.var-views [aria-current="page"]')?.textContent?.trim())
-  check('variable: Enter on History switches the view (aria-current follows)', h.view === 'history' && current === 'History', JSON.stringify({ ...h, current }))
+  await page.waitForFunction(() => !!new URLSearchParams(location.search).get('from'), null, { timeout: 5000 }).catch(() => {})
+  const pressed = await page.evaluate(() => document.querySelector('[data-testid="range-7d"]')?.getAttribute('aria-pressed'))
+  check('variable: Enter on the 7 d chip sets the window and presses it', !!(await at()).from && pressed === 'true', JSON.stringify({ ...(await at()), pressed }))
+  await rendered({ charts: 1 })
+  await page.getByTestId('interval-daily').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => new URLSearchParams(location.search).get('agg') === 'daily', null, { timeout: 5000 }).catch(() => {})
+  const raw = await page.evaluate(() => document.querySelector('[data-testid="interval-raw"]')?.disabled)
+  check('variable: Enter on Daily sets agg=daily; 5-min is offered for 7 d', (await at()).agg === 'daily' && raw === false, JSON.stringify({ ...(await at()), raw }))
+  await rendered({ charts: 1 })
+  const auto = await page.evaluate(() => document.querySelector('[data-testid="interval-auto"]')?.textContent?.trim())
+  check('variable: the Auto chip names what it picks', auto === 'Auto (hourly)', auto)
+  // Custom dates…: a modal sheet, focus inside, Esc closes, focus back on ⋯.
+  await choose('var-menu-dates')
+  await page.waitForFunction(() => !document.getElementById('sheet-dates').hidden, null, { timeout: 5000 }).catch(() => {})
+  await animationsDone(page)
+  const inside = await page.evaluate(() => document.getElementById('sheet-dates').contains(document.activeElement) && !!document.querySelector('[data-testid="custom-dates"]'))
+  await page.keyboard.press('Escape')
+  await page.waitForFunction(() => document.getElementById('sheet-dates').hidden, null, { timeout: 5000 }).catch(() => {})
+  const back = await page.evaluate(() => document.activeElement?.dataset.testid)
+  check('variable: ⋯ → Custom dates… opens its sheet (focus inside); Esc returns focus to ⋯', inside && back === 'var-menu-button', JSON.stringify({ inside, back }))
   const p = await problems()
   check('variable keyboard: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
@@ -484,40 +512,65 @@ for (const vp of VIEWPORTS) {
     const at = await page.evaluate(() => document.activeElement?.id || document.activeElement?.tagName.toLowerCase())
     check(`charts: Enter on ${name} moves focus to #${heading}`, ok, `focus on ${at}`)
   }
+  /** ⋯ → `testid` (Previous / Next) from the keyboard, then as `lands`. */
+  const viaMenu = async (name, testid) => {
+    await page.getByTestId('var-menu-button').focus()
+    await page.keyboard.press('Enter')
+    for (let i = 0; i < 8 && (await page.evaluate(() => document.activeElement?.dataset.testid)) !== testid; i++) await page.keyboard.press('ArrowDown')
+    await lands(name, `[data-testid="${testid}"]`, 'var-title')
+  }
   await lands('a list row', '[data-testid="var-air_temp"]', 'var-title')
-  await lands('the next chip', '[data-testid="var-next"]', 'var-title')
-  await lands('the previous chip', '[data-testid="var-prev"]', 'var-title')
-  await lands('"‹ All variables"', '.var-back', 'charts-list-title')
+  await viaMenu('⋯ → Next', 'var-next')
+  await viaMenu('⋯ → Previous', 'var-prev')
+  await lands('the back button', '[data-testid="var-back"]', 'charts-list-title')
   await lands('an Ag tools row', '[data-testid="ag-tool-gdd"]', 'ag-chart-title')
-  await lands('"‹ All charts"', '[data-testid="ag-back"]', 'charts-list-title')
+  await lands('the Ag back button', '[data-testid="ag-back"]', 'charts-list-title')
   await lands('the Compare entry', '[data-testid="charts-compare-link"]', 'charts-compare-title')
   const p = await problems()
   check('charts drill-down focus: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
-/* ── Ag Options disclosure (390, collapsed): Enter and Space toggle it ──── */
-{
-  const { page, problems, close, rendered } = await open(env, '?s=acebozem&v=gdd&theme=light#charts', { viewport: VIEWPORTS[1] })
+/* ── Ag option chips: a popover per chip; Enter opens (focus in), a change applies, Esc returns focus ── */
+for (const vp of VIEWPORTS) {
+  const label = `Ag option chips (${vp.name})`
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&v=gdd&theme=light#charts', { viewport: vp })
   await rendered({ charts: 1 })
-  const isOpen = () => page.evaluate(() => document.querySelector('[data-testid="ag-controls"]').open)
-  const o0 = await isOpen()
-  await page.locator('[data-testid="ag-controls"] > summary').focus()
+  const state = (id) => page.evaluate((id) => ({
+    open: !document.getElementById(`ag-opt-${id}-panel`).hidden,
+    expanded: document.querySelector(`[data-testid="ag-opt-${id}"]`).getAttribute('aria-expanded'),
+    inside: document.getElementById(`ag-opt-${id}-panel`).contains(document.activeElement),
+    focus: document.activeElement?.dataset.testid ?? null,
+    text: document.querySelector(`[data-testid="ag-opt-${id}"]`).textContent.trim(),
+  }), id)
+  await page.getByTestId('ag-opt-crop').focus()
   await page.keyboard.press('Enter')
-  const o1 = await isOpen()
-  await page.keyboard.press('Space')
-  const o2 = await isOpen()
-  check('Ag Options: collapsed on phones, Enter opens, Space closes', !o0 && o1 && !o2, JSON.stringify([o0, o1, o2]))
+  const s1 = await state('crop')
+  check(`${label}: Enter on the crop chip opens its popover, focus inside`, s1.open && s1.expanded === 'true' && s1.inside, JSON.stringify(s1))
+  // Focus starts on the first crop (Wheat); Tab to Barley, Enter picks it and closes.
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => new URLSearchParams(location.search).get('crop') === 'barley', null, { timeout: 5000 }).catch(() => {})
+  const s2 = await state('crop')
+  check(`${label}: choosing a crop applies it (crop=barley), closes, focus back on the chip, its text follows`,
+    !s2.open && s2.focus === 'ag-opt-crop' && s2.text === 'Barley' && (await urlParam(page, 'crop')) === 'barley', JSON.stringify(s2))
+  await page.getByTestId('ag-opt-projection').focus()
+  await page.keyboard.press('Enter')
+  const s3 = await state('projection')
+  await page.keyboard.press('Escape')
+  const s4 = await state('projection')
+  check(`${label}: the projection popover opens with focus inside; Esc closes it and returns focus to its chip`,
+    s3.open && s3.inside && !s4.open && s4.focus === 'ag-opt-projection' && s4.expanded === 'false', JSON.stringify([s3, s4]))
   const p = await problems()
-  check('Ag Options: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  check(`${label}: console + CSP clean`, p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
-/* ── Download sheet (1440 centred, 390 bottom): opens from the list, focus in, inert, Esc, dl ── */
+/* ── Download sheet (1440 centred, 390 bottom): ⋯ → Download data, prefilled; focus in, inert, Esc, dl ── */
 for (const vp of VIEWPORTS) {
   const label = `Download sheet (${vp.name})`
-  const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=dark#charts', { viewport: vp })
-  await rendered({ filled: ['[data-testid="charts-ag-tools"] ul'] })
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&v=air_temp&theme=dark#charts', { viewport: vp })
+  await rendered({ charts: 1 })
   const state = () => page.evaluate(() => {
     const s = document.getElementById('sheet-download')
     return {
@@ -529,18 +582,22 @@ for (const vp of VIEWPORTS) {
       form: !!s.querySelector('[data-testid="downloader"]'),
     }
   })
-  await page.getByTestId('charts-download-link').focus()
+  await page.getByTestId('var-menu-button').focus()
   await page.keyboard.press('Enter')
+  await page.keyboard.press('Enter') // the first item: Download data
   await page.waitForFunction(() => new URLSearchParams(location.search).get('dl') === '1' && !document.getElementById('sheet-download').hidden, null, { timeout: 5000 }).catch(() => {})
   await animationsDone(page)
   const s1 = await state()
-  check(`${label}: Enter on "Download data" opens it (dl=1), focus inside, the form mounted`, s1.shown && s1.inside && s1.dl === '1' && s1.form, JSON.stringify(s1))
+  const keys = await page.evaluate(() => Object.fromEntries(['els', 'dl_from', 'dl_to', 'period'].map((k) => [k, new URLSearchParams(location.search).get(k)])))
+  check(`${label}: ⋯ → Download data opens it (dl=1), focus inside, the form mounted`, s1.shown && s1.inside && s1.dl === '1' && s1.form, JSON.stringify(s1))
+  check(`${label}: prefilled from the chart (els = its elements, the 14 d window, hourly)`,
+    keys.els === 'air_temp_0200' && !!keys.dl_from && !!keys.dl_to && keys.period === 'hourly', JSON.stringify(keys))
   check(`${label}: header, content and tab bar inert while open`, s1.inert.every(Boolean), JSON.stringify(s1.inert))
   await page.keyboard.press('Escape')
   await page.waitForFunction(() => document.getElementById('sheet-download').hidden, null, { timeout: 5000 }).catch(() => {})
   const s2 = await state()
-  check(`${label}: Esc closes it, clears dl, unmounts the form, focus returns to the link`,
-    !s2.shown && s2.dl === null && !s2.form && s2.focus === 'charts-download-link' && !s2.inert.some(Boolean), JSON.stringify(s2))
+  check(`${label}: Esc closes it, clears dl, unmounts the form, focus returns to ⋯`,
+    !s2.shown && s2.dl === null && !s2.form && s2.focus === 'var-menu-button' && !s2.inert.some(Boolean), JSON.stringify(s2))
   const p = await problems()
   check(`${label}: console + CSP clean`, p.length === 0, p.slice(0, 4).join(' | '))
   await close()
@@ -554,8 +611,8 @@ for (const vp of VIEWPORTS) {
     const { page, problems, close, rendered } = await open(env, '?s=acebozem&crop=corn#ag')
     await rendered({ charts: 1 })
     const u = await at(page)
-    const head = await page.evaluate(() => ({ title: document.getElementById('ag-chart-title')?.textContent, summary: document.querySelector('[data-testid="ag-options-summary"]')?.textContent }))
-    check('legacy ?crop=corn#ag → #charts&v=gdd with corn', u.hash === '#charts' && u.q.v === 'gdd' && u.q.crop === 'corn' && /^Growing degree days/.test(head.title ?? '') && /^Corn/.test(head.summary ?? ''), JSON.stringify({ ...u, ...head }))
+    const head = await page.evaluate(() => ({ title: document.getElementById('ag-chart-title')?.textContent, crop: document.querySelector('[data-testid="ag-opt-crop"]')?.textContent?.trim() }))
+    check('legacy ?crop=corn#ag → #charts&v=gdd with corn', u.hash === '#charts' && u.q.v === 'gdd' && u.q.crop === 'corn' && /^Growing degree days/.test(head.title ?? '') && head.crop === 'Corn', JSON.stringify({ ...u, ...head }))
     const p = await problems()
     check('legacy #ag link: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
     await close()

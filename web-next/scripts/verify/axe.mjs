@@ -36,6 +36,23 @@ const openPhoto = async (page) => {
   await page.waitForFunction(() => document.querySelector('[data-testid="photo-modal-image"]')?.complete
     && document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 30000 })
 }
+/** A chart page's ⋯ menu (`testid` of its button), open. */
+const chartMenu = (testid) => async (page) => {
+  await page.getByTestId(testid).click()
+  await page.waitForFunction(() => [...document.querySelectorAll('.chart-head .dash-menu-panel')].some((p) => !p.hidden))
+}
+/** An Ag option chip's popover, open. */
+const optionPopover = (id) => async (page) => {
+  await page.getByTestId(`ag-opt-${id}`).click()
+  await page.waitForFunction((id) => !document.getElementById(`ag-opt-${id}-panel`).hidden, id)
+}
+/** The Custom dates sheet, from the variable page's ⋯ menu. */
+const datesSheet = async (page) => {
+  await chartMenu('var-menu-button')(page)
+  await page.getByTestId('var-menu-dates').click()
+  await page.waitForFunction(() => !!document.querySelector('[data-testid="custom-dates"]'))
+  await animationsDone(page)
+}
 /** The Download sheet on phones, step 1 (Elements) once the station and its elements are in. */
 const dlReady = (page) => page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
 
@@ -50,13 +67,20 @@ const SCENARIOS = [
   { name: 'picker-open', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPicker },
   // Charts: the variable list (with the Ag tools group), a variable page, and Compare (a legacy #latest link lands there).
   { name: 'charts-list', query: '?s=acebozem#charts', evidence: { filled: ['[data-testid="var-air_temp"] .dash-spark svg', '[data-testid="charts-ag-tools"] ul'] } },
+  // The variable page: its ⋯ menu, All years, the table, the Daily interval's band, the Custom dates sheet.
   { name: 'variable', query: '?s=acebozem&v=air_temp#charts', evidence: { charts: 1 } },
+  { name: 'variable-menu', query: '?s=acebozem&v=air_temp#charts', evidence: { charts: 1 }, after: chartMenu('var-menu-button') },
   { name: 'variable-history', query: '?s=acebozem&v=air_temp&view=history#charts', evidence: { charts: 1 } },
-  { name: 'variable-table', query: '?s=acebozem&v=air_temp&view=table#charts', evidence: { filled: ['.var-table-grid tbody'] } },
+  { name: 'variable-table', query: '?s=acebozem&v=air_temp&tbl=1#charts', evidence: { filled: ['.var-table-grid tbody'] } },
+  { name: 'variable-daily', query: '?s=acebozem&v=air_temp&agg=daily#charts', evidence: { charts: 1, filled: ['[data-testid="variable-stats"] dl'] } },
+  { name: 'dates-sheet', query: '?s=acebozem&v=air_temp#charts', evidence: { charts: 1 }, after: datesSheet },
   { name: 'compare', query: '?s=acebozem#latest', evidence: { charts: 1 } },
   // Ag tools inside Charts (v = an Ag tool id); a bare legacy #ag lands on the list's Ag tools group.
   { name: 'legacy-ag', query: '?s=acebozem#ag', evidence: { filled: ['[data-testid="charts-ag-tools"] ul'] } },
   { name: 'ag-gdd', query: '?s=acebozem&v=gdd#charts', evidence: { charts: 1 } },
+  { name: 'ag-gdd-crop', query: '?s=acebozem&v=gdd#charts', evidence: { charts: 1 }, after: optionPopover('crop') },
+  { name: 'ag-gdd-cutoffs', query: '?s=acebozem&v=gdd#charts', evidence: { charts: 1 }, after: optionPopover('cutoffs') },
+  { name: 'ag-etr-menu', query: '?s=acebozem&v=etr#charts', evidence: { charts: 1 }, after: chartMenu('ag-menu-button') },
   { name: 'ag-soil-profile', query: '?s=acebozem&v=soil_temp,soil_ec_blk#charts', evidence: { charts: 1 } },
   { name: 'ag-etr', query: '?s=acebozem&v=etr#charts', evidence: { charts: 1 } },
   { name: 'ag-annual', query: '?s=acebozem&v=annual#charts', evidence: { charts: 1 } },
