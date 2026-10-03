@@ -63,11 +63,13 @@ async function waitQuiet(page, log, kind) {
 
 async function messages(page, kind) {
   return page.evaluate((kind) => {
-    // web/ empty states are plain Mantine Text; web-next's are ag-empty / ag-error.
-    const sel = kind === 'web' ? '.mantine-Alert-root, .mantine-Notification-root, .mantine-Text-root' : '[data-testid="ag-notes"] li, [data-testid="ag-empty"], [data-testid="ag-error"], .dl-msg, [data-testid="notices"]'
+    // web/ empty states are plain Mantine Text; web-next's are ag-empty / ag-error. web-next's Ag notes
+    // sit in a closed ⓘ toggletip (.ag-note), so they count while hidden.
+    const sel = kind === 'web' ? '.mantine-Alert-root, .mantine-Notification-root, .mantine-Text-root' : '[data-testid="ag-notes"] .ag-note, [data-testid="ag-empty"], [data-testid="ag-error"], .dl-msg, [data-testid="notices"]'
+    const note = (e) => e.classList.contains('ag-note') && e.closest('[data-testid="ag-notes"]')?.offsetParent !== null
     return [...document.querySelectorAll(sel)]
-      .filter((e) => e.offsetParent !== null)
-      .map((e) => [e, e.innerText.replace(/\s+/g, ' ').trim()])
+      .filter((e) => e.offsetParent !== null || note(e))
+      .map((e) => [e, e.textContent.replace(/\s+/g, ' ').trim()])
       .filter(([e, t]) => t && (!e.classList.contains('mantine-Text-root') || (!e.closest('.mantine-Alert-root') && /^No .*(data|selection)/i.test(t))))
       .map(([, t]) => t)
   }, kind)

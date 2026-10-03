@@ -254,6 +254,12 @@ and the stage reached).
   list (plus the swipe). Annual comparison (`v=annual`) still renders for old links, but is not listed.
 - **Navigation:** a list row is a real link; a plain click opens the tool with `pushState` (`chartPatch` →
   `variablePatch`: the tool's options reset, chart view) and focuses its heading.
+- **Notes** (the NDAWN cutoff switch, the projection's sources, partial coverage, …) fold into one ⓘ
+  toggletip on a short row at the chart card's top right, just under the option chips, so they never push
+  the chart down (`partials/ag/status.html`; the button names the count, "Notes about this chart (2)").
+- **GDD on phones:** the legend uses short names (Daily · Cumulative · Range · Forecast · Normals) so it fits
+  one row without a pager; the stage lines' labels sit at the right end of each line on the chart surface,
+  clear of the daily bars.
 - **Charts:** 540 px tall; on phones `min(60dvh, 420px)`. On touch they follow "Charts on touch" above.
   Every Ag number, the `.ag-chart-card` and its `data-testid`s are unchanged (fidelity `ag` / `ag-api`).
 

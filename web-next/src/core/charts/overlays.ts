@@ -169,7 +169,8 @@ export function sensorEventSeries(ctx: ChartContext, spans: EventSpan[]): Custom
 
 /**
  * Labelled horizontal markLines at `y` values (GDD growth stages on the
- * cumulative axis). Labels sit at the line's left end, above it.
+ * cumulative axis). Labels sit at the line's right end, above it, on the
+ * chart surface, clear of the daily bars that fill the left of the plot.
  */
 export function labelledLines(
   color: string,
@@ -182,7 +183,7 @@ export function labelledLines(
     lineStyle: { color, type: 'dashed', width: 1 },
     label: {
       show: true,
-      position: 'insideStartTop',
+      position: 'insideEndTop',
       formatter: '{b}',
       color: ctx.theme.textMuted,
       fontFamily: ctx.theme.fontUi,

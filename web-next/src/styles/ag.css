@@ -18,15 +18,10 @@
 /* Chart card: shorter on phones so the page around it stays reachable. */
 .ag-view { display: flex; flex-direction: column; gap: 0.75rem; }
 .ag-chart { --chart-height: 540px; --chart-height-compact: min(60dvh, 420px); }
-.ag-notes { list-style: none; margin: 0.25rem 0.25rem 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
-.ag-note {
-  display: flex; gap: 0.45rem; align-items: flex-start;
-  font-size: var(--fs-xs); color: var(--text-secondary);
-  background: var(--bg-raised);
-  border-radius: var(--radius-md);
-  padding: 0.4rem 0.6rem;
-}
-.ag-note > svg { flex-shrink: 0; margin-top: 0.1rem; stroke: var(--text-secondary); }
+/* Notes: one ⓘ toggletip, right-aligned on its own short row; the tip opens under it, as wide as the card. */
+.ag-notes { position: relative; display: flex; justify-content: flex-end; margin: 0 0.25rem; }
+.ag-notes-tip { inset-inline: 0; max-width: none; }
+.ag-notes-tip:not([hidden]) { display: flex; flex-direction: column; gap: 0.4rem; }
 .ag-state {
   min-height: 12rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;
   font-size: var(--fs-sm); color: var(--text-secondary); text-align: center; padding: 1rem;

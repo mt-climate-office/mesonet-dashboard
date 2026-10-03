@@ -37,6 +37,14 @@ export const GDD_NAMES = {
   normals: 'Projected (normals median)',
 } as const
 
+/** Legend names on phones, short enough for one row without paging (the series keep their full names). */
+const SHORT: Record<string, string> = {
+  [GDD_NAMES.cumulative]: 'Cumulative',
+  [GDD_NAMES.band]: 'Range',
+  [GDD_NAMES.forecast]: 'Forecast',
+  [GDD_NAMES.normals]: 'Normals',
+}
+
 const fmtF = (f: number) => (Number.isFinite(f) ? `${f}` : '∞')
 
 /** "Daily GDDs (32–∞ °F)". */
@@ -134,21 +142,22 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
       ? projectionSeries(m, m.projection, { line: c.cumulative, band: withAlpha(c.cumulative, c.bandAlpha) })
       : []
   const barName = gddBarName(m.cutoffsF)
+  const lg = legend(ctx, {
+    data: [
+      barName,
+      GDD_NAMES.cumulative,
+      ...proj.flatMap((s): (string | { name: string; icon: string })[] =>
+        s.name === GDD_NAMES.q25 ? [] : s.name === GDD_NAMES.band ? [{ name: GDD_NAMES.band, icon: 'rect' }] : [String(s.name)],
+      ),
+    ],
+  }).legend
   return {
     useUTC: true,
     grid: grid(ctx, { right: 64 }),
     xAxis: timeAxis(),
     yAxis: dualAxis('Daily GDD (°F)', 'Cumulative GDD (°F)', { rightMax: y2max }),
     dataZoom: timeZoom(ctx),
-    legend: legend(ctx, {
-      data: [
-        barName,
-        GDD_NAMES.cumulative,
-        ...proj.flatMap((s): (string | { name: string; icon: string })[] =>
-          s.name === GDD_NAMES.q25 ? [] : s.name === GDD_NAMES.band ? [{ name: GDD_NAMES.band, icon: 'rect' }] : [String(s.name)],
-        ),
-      ],
-    }).legend,
+    legend: ctx.compact ? { ...lg, itemGap: 8, formatter: (n: string) => (n === barName ? 'Daily' : (SHORT[n] ?? n)) } : lg,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, 'daily'), (name, y, note) => {
       if (name === barName) return tipText('Daily GDD', y.toFixed(1))
       if (name === GDD_NAMES.band) return note ? tipText('Projected range', note) : null

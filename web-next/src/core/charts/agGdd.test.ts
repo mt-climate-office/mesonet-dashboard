@@ -25,6 +25,21 @@ function withProjection() {
   return { s, p, last, fc }
 }
 
+describe('gddChart on phones', () => {
+  it('short legend names (series keep theirs) and stage labels at the right end, on the surface', () => {
+    const { s, p } = withProjection()
+    const o = gddChart({ series: s, cutoffsF: [41, 86], stageMode: 'table', stages: stageTable('hemp').stages, projection: p }, testCtx('light', 390, true))
+    const lg = o.legend as { data: (string | { name: string })[]; formatter: (n: string) => string }
+    const names = lg.data.map((d) => (typeof d === 'string' ? d : d.name))
+    expect(names.map(lg.formatter)).toEqual(['Daily', 'Cumulative', 'Range', 'Forecast', 'Normals'])
+    expect(series(o).map((x) => x.name)).toContain(GDD_NAMES.cumulative)
+    const label = (series(o)[1].markLine as unknown as { label: { position: string; backgroundColor: string } }).label
+    expect(label.position).toBe('insideEndTop')
+    expect(label.backgroundColor).toBe(testCtx('light').theme.surface)
+    expect((gddChart({ series: s, cutoffsF: [41, 86], stageMode: 'table' }, testCtx('light')).legend as { formatter?: unknown }).formatter).toBeUndefined()
+  })
+})
+
 describe('gddChart', () => {
   it('bars + cumulative on y2 with stage lines from the table; palette colors per theme', () => {
     const s = gdd(met, { crop: 'wheat', stages: stageTable('wheat') })
