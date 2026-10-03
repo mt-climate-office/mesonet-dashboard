@@ -75,7 +75,7 @@ export function speedBins(rawSpeeds: readonly number[], n = 8): SpeedBins {
 
 /**
  * First and last local calendar date of the fetched rows ("YYYY-MM-DD"), for
- * the legacy title "Wind Data from {start} to {end}". API datetimes are
+ * the title ("Wind, Sep 19 – Oct 2", core/charts windRoseTitle). API datetimes are
  * America/Denver wall clock ("2026-10-01 10:00:00-06:00"), so the date is the
  * leading 10 characters. Null when no row has a date.
  */
@@ -98,7 +98,7 @@ export interface WindRoseModel {
   directions: readonly string[]
   /** Slowest → fastest; every qcut bin is present, even with zero counts. */
   bins: WindRoseBin[]
-  /** Legacy title span "Wind Data from {start} to {end}" (local dates), or null. */
+  /** The data's first and last local dates (YYYY-MM-DD), for the title, or null. */
   span: [string, string] | null
   /** Rows that had both a direction and a speed. */
   n: number

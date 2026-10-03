@@ -80,6 +80,20 @@ export function formatReading(id: string, value: number | null | undefined, wher
   return text === '—' || !unit ? text : `${text}${unit === '%' || unit === '°' ? '' : ' '}${unit}`
 }
 
+/**
+ * A chart's y-axis title: the plain name and unit ("Air temperature (°F)",
+ * "Soil moisture (%)", "Wind gusts (mph)"); the name alone for degrees or no
+ * unit ("Wind direction"). An id the map does not know keeps `fallback`.
+ */
+export function axisTitle(id: string, fallback: string): string {
+  const l = LABELS[id]
+  if (!l) return fallback
+  return l.unit && l.unit !== '°' ? `${l.name} (${l.unit})` : l.name
+}
+
+/** The running-total form of an axis title: "Rain (in)" → "Cumulative rain (in)". */
+export const cumulativeTitle = (title: string): string => `Cumulative ${title.charAt(0).toLowerCase()}${title.slice(1)}`
+
 /** API units in plain form ("mi/hr" → "mph", "mbar" → "mb", "deg" → "°", "inches" → "in"); others unchanged. */
 export function plainUnit(unit: string): string {
   const map: Record<string, string> = { 'mi/hr': 'mph', 'mi/h': 'mph', mbar: 'mb', deg: '°', inches: 'in', 'in.': 'in', 'in/hr': 'in/h', 'W/m^2': 'W/m²' }

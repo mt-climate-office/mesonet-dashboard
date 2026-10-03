@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ELEM_MAP } from '../params'
 import { AG_TOOL_IDS } from '../params/ag'
-import { LABELS, compassWord, formatReading, formatValue, plainName, plainUnit } from './labels'
+import { LABELS, axisTitle, compassWord, formatReading, formatValue, plainName, plainUnit } from './labels'
 
 describe('LABELS', () => {
   it('covers every element family and every Ag tool', () => {
@@ -54,6 +54,17 @@ describe('formatValue', () => {
     expect(formatValue('gdd', 2412.4)).toBe('2,412')
     expect(formatValue('air_temp', -0.3)).toBe('0')
     expect(formatValue('rh', null)).toBe('—')
+  })
+})
+
+describe('axisTitle', () => {
+  it('plain name and unit; degrees and unitless take the name alone; unknown ids keep the fallback', () => {
+    expect(axisTitle('air_temp', 'Air Temperature')).toBe('Air temperature (°F)')
+    expect(axisTitle('soil_vwc', 'Soil VWC')).toBe('Soil moisture (%)')
+    expect(axisTitle('windgust', 'Gust Speed')).toBe('Wind gusts (mph)')
+    expect(axisTitle('wind_dir', 'Wind Direction')).toBe('Wind direction')
+    expect(axisTitle('cci', 'cci')).toBe('Livestock risk')
+    expect(axisTitle('new_thing', 'New Thing')).toBe('New Thing')
   })
 })
 

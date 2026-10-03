@@ -12,7 +12,7 @@
         <template x-if="!loading()"><p class="charts-empty">No daily history for this variable.</p></template>
       </div>
       <div class="chart var-chart" :aria-hidden="!model()" data-testid="history-chart"
-           x-data="chart({ builder: annualChart, table: annualTable, label: (variable?.name ?? '') + ' by year', model: () => model() })"></div>
+           x-data="chart({ builder: annualChart, table: annualTable, label: label(), model: () => model() })"></div>
     </div>
   </template>
   <template x-if="tableMode()">

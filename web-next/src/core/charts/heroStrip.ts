@@ -164,7 +164,7 @@ export function heroStripTable(m: HeroStripModel): ChartTable {
   const periods = m.periods.map((p) => p.label).join(', ')
   return {
     caption: `Air temperature, °F: the last 24 hours observed and the next 24 hours of NWS forecast${periods ? `. Forecast periods: ${periods}` : ''}.`,
-    columns: ['Time (MT)', 'Observed [°F]', 'Forecast [°F]'],
+    columns: ['Time (MT)', 'Observed (°F)', 'Forecast (°F)'],
     rows: [
       ...m.observed.t.map((t, i) => [isoWall(t, 'hourly'), fmtNum(m.observed.v[i], 0), MISSING]),
       ...m.forecast.t.map((t, i) => [isoWall(t, 'hourly'), MISSING, fmtNum(m.forecast.v[i], 0)]),

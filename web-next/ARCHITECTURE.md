@@ -244,9 +244,9 @@ partial renders every tile from `buildNowPage`, so no markup is needed.
 **Add a variable (Charts).** A variable is a display name from the
 station's `/elements` (`latestVarsFromElements`: `description_short` before
 "@"), so a new API element already shows under Other with its element code
-as id. To place it: (1) its element-code prefix in `ELEM_MAP` and axis title
-in `AXIS_MAPPER` (`core/params/latest.ts`; the first `ELEM_MAP` code is its
-`v=` id), and a column rule in `variableForColumn` (`core/params/columns.ts`)
+as id. To place it: (1) its element-code prefix in `ELEM_MAP`
+(`core/params/latest.ts`; the first `ELEM_MAP` code is its `v=` id; its axis
+title comes from `LABELS`, step 5), and a column rule in `variableForColumn` (`core/params/columns.ts`)
 if its column name is not "<name> [unit]"; (2) its group and position in
 `GROUPED` (`core/variables/catalog.ts`), and `SUMMED` if it is a total
 (bars, a total stat, a cumulative history); (3) a color in `core/palette`

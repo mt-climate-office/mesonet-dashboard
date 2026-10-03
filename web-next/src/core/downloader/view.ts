@@ -82,7 +82,9 @@ export function pruneSelection(
 
 /** Notice for SWP-only codes removed at a non-SWP station. */
 export function droppedSwpNotice(dropped: readonly string[], stationName: string): string {
-  const names = dropped.map((c) => DERIVED_OPTIONS.find((o) => o.value === c)?.label ?? c).join(' and ')
+  const label = (c: string) => DERIVED_OPTIONS.find((o) => o.value === c)?.label ?? c
+  // Sentence case: names after the first start lower case ("Soil water potential and soil saturation").
+  const names = dropped.map((c, i) => (i ? label(c).charAt(0).toLowerCase() + label(c).slice(1) : label(c))).join(' and ')
   const many = dropped.length > 1
   return `${names} ${many ? 'are' : 'is'} not available at ${stationName} (no soil water potential parameters), so ${many ? 'they were' : 'it was'} removed from the request.`
 }

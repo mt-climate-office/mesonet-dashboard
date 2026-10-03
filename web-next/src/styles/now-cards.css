@@ -13,7 +13,7 @@
 
 /* Wind rose: title above the chart, chart fills the rest of the pane. */
 .lc-rose { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.lc-rose .lc-title { text-align: center; padding: 0 0.5rem; font-family: var(--font-mono); font-size: 0.78rem; }
+.lc-rose .lc-title { text-align: center; padding: 0 0.5rem; font-size: var(--fs-sm); }
 .lc-rose-chart { flex: 1; min-height: 0; --chart-height: calc(max(300px, 40vh) - 1.5rem); --chart-height-compact: calc(max(300px, 40vh) - 1.5rem); }
 
 /* Photo dialog: pickers over the frame. 92vw wide; the box scrolls, never sideways. */

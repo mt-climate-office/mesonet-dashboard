@@ -22,13 +22,13 @@ describe('annualChart', () => {
       expect(s[0].data).toEqual([[1, 1, 'Jan 1'], [2, 3, 'Jan 2']])
     }
   })
-  it('axes: day of year 1–366 with month ticks at the 1st, legacy cumulative y title', () => {
+  it('axes: day of year 1–366 with month ticks at the 1st, plain cumulative y title', () => {
     const o = annualChart(model, testCtx())
     const x = o.xAxis as { type: string; min: number; max: number; axisLabel: { customValues: number[]; formatter: (v: number) => string } }
     expect(x).toMatchObject({ type: 'value', min: 1, max: 366 })
     expect(x.axisLabel.customValues).toEqual(MONTH_START_DOY)
     expect(MONTH_START_DOY.map(x.axisLabel.formatter)).toEqual(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
-    expect(o.yAxis).toMatchObject({ name: 'Annual Cumulative Precipitation [in]' })
+    expect(o.yAxis).toMatchObject({ name: 'Cumulative rain (in)' })
   })
   it('tooltip: DOY-only header; each year shows its own (leap-aware) date', () => {
     const leap = groupByYear(['2024-02-29', '2024-03-01'], [1, 2])

@@ -14,8 +14,8 @@ import type { ObservationRow } from '../api'
 import { insertGaps } from '../gaps'
 import { mergeNormals, type StationNormals } from '../normals'
 import {
+  ELEM_MAP,
   depthLabelFromColumn,
-  latestAxisTitle,
   latestElementCodes,
   latestVariableForColumn,
   latestVarsFromElements,
@@ -28,6 +28,7 @@ import {
   type SubplotKind,
 } from '../sensorEvents'
 import type { LatestAgg } from '../url-schema'
+import { axisTitle } from '../variables/labels'
 
 /** Default window: the last 14 days (legacy). */
 export const DEFAULT_WINDOW_DAYS = 14
@@ -163,7 +164,7 @@ export interface SensorSpan {
 export interface TimeseriesPanel {
   /** Display variable, e.g. "Air Temperature". Palette key. */
   variable: string
-  /** Legacy axis title (may carry `<br>` / `<sup>` markup from params). */
+  /** Plain y-axis title, "Air temperature (°F)" (core/variables/labels `axisTitle`). */
   axisTitle: string
   isSoil: boolean
   /** Variable selected but no column had a value: draw the panel with a note. */
@@ -202,7 +203,7 @@ const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFin
 
 /** Build the panel model; null when there are no rows or no variables. */
 export function buildTimeseriesModel(input: TimeseriesInput): TimeseriesModel | null {
-  const { rows, vars, period } = input
+  const { rows, vars } = input
   if (rows.length === 0 || vars.length === 0) return null
   // Null rows wherever the API skipped an observation, so lines break there.
   const gapped = insertGaps([...rows])
@@ -224,7 +225,7 @@ export function buildTimeseriesModel(input: TimeseriesInput): TimeseriesModel | 
   const xRange: [number, number] | null = days.length ? [dayMs(days[0], -1), dayMs(days[days.length - 1], 1)] : null
 
   const panels = vars.map((v) =>
-    buildPanel(v, columnsByVar.get(v) ?? [], gapped, rows, period, input),
+    buildPanel(v, columnsByVar.get(v) ?? [], gapped, rows, input),
   )
   return { x, xRange, panels }
 }
@@ -234,7 +235,6 @@ function buildPanel(
   cols: string[],
   gapped: ObservationRow[],
   rawRows: readonly ObservationRow[],
-  period: LatestAgg,
   input: TimeseriesInput,
 ): TimeseriesPanel {
   const isSoil = SOIL_VARS.has(variable)
@@ -290,7 +290,7 @@ function buildPanel(
 
   return {
     variable,
-    axisTitle: latestAxisTitle(variable, period),
+    axisTitle: axisTitle(ELEM_MAP[variable]?.[0] ?? '', variable),
     isSoil,
     noData,
     yRange,

@@ -88,9 +88,9 @@ describe('annual options', () => {
       { element: 'air_temp_0200', description_short: 'Air Temperature @ 2 m' },
     ] as StationElement[]
     expect(annualOptions(els)).toEqual([
-      { value: 'air_temp_0200', label: 'Air Temperature @ 6.6 ft' },
-      { value: 'soil_vwc_0010', label: 'Soil VWC @ 4 in' },
-      { value: 'soil_vwc_1000', label: 'Soil VWC @ 40 in' },
+      { value: 'air_temp_0200', label: 'Air temperature at 6.6 ft' },
+      { value: 'soil_vwc_0010', label: 'Soil moisture at 4 in' },
+      { value: 'soil_vwc_1000', label: 'Soil moisture at 40 in' },
     ])
   })
 })

@@ -12,6 +12,7 @@ import { aggregateMonthly, DAYS_WITH_DATA_COLUMN, type Row } from '../aggregate'
 import { exclusiveEnd, fetchText, HttpError } from '../api'
 import { MISSING_DATA_COLUMN, parseCsv } from '../csv'
 import { DERIVED_ENDPOINTS, ENDPOINTS } from '../params'
+import { LABELS } from '../variables/labels'
 
 /** Union of row keys in first-seen order. */
 function mergeKeyOrder(rows: ReadonlyArray<Row>): string[] {
@@ -63,13 +64,13 @@ export interface DerivedOption {
 }
 
 export const DERIVED_OPTIONS: ReadonlyArray<DerivedOption> = [
-  { value: 'feels_like', label: 'Feels Like Temperature' },
-  { value: 'etr', label: 'Reference ET' },
-  { value: 'cci', label: 'Livestock Risk Index' },
+  { value: 'feels_like', label: LABELS.feels_like.name },
+  { value: 'etr', label: LABELS.etr.name },
+  { value: 'cci', label: LABELS.cci.name },
   // Legacy had these commented out of the picker but still treated them as
   // derived, so old `els=swp,…` links rely on them. Monthly = mean.
-  { value: 'swp', label: 'Soil Water Potential', requiresSwp: true },
-  { value: 'percent_saturation', label: 'Percent Saturation', requiresSwp: true },
+  { value: 'swp', label: LABELS.swp.name, requiresSwp: true },
+  { value: 'percent_saturation', label: LABELS.percent_saturation.name, requiresSwp: true },
 ]
 export const DERIVED_CODES: ReadonlySet<string> = new Set(DERIVED_OPTIONS.map((o) => o.value))
 export const SWP_CODES: ReadonlySet<string> = new Set(

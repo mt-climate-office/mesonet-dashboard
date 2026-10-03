@@ -78,7 +78,7 @@ describe('gddChart', () => {
   it('table: observed then projected rows', () => {
     const { s, p } = withProjection()
     const t = gddTable({ series: s, cutoffsF: [32, Infinity], stageMode: 'table', projection: p })
-    expect(t.columns).toEqual(['Date', 'Source', 'Daily GDDs', 'Cumulative GDDs', 'Growth stage'])
+    expect(t.columns).toEqual(['Date', 'Source', 'Daily GDD (°F)', 'Cumulative GDD (°F)', 'Growth stage'])
     expect(t.rows).toHaveLength(s.date.length + p.date.length)
     expect(t.rows.at(-1)![1]).toBe('Projected (normals median)')
   })

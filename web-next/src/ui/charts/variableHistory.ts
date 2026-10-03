@@ -9,7 +9,7 @@ import Alpine from 'alpinejs'
 import type { ObservationRow } from '../../core/api'
 import { annualChart, annualTable, type AnnualModel } from '../../core/charts'
 import { installDate, todayIso } from '../../core/latest'
-import { findVariable, historyModel, historyRequest, historyYears, type Variable } from '../../core/variables'
+import { findVariable, historyModel, historyRequest, historyYears, plainName, type Variable } from '../../core/variables'
 import { component } from '../component'
 import { announce } from '../shell/live'
 import { chartVariables, recordResource, stationElements } from './resources'
@@ -28,6 +28,11 @@ export function variableHistory() {
 
     get variable(): Variable | undefined {
       return findVariable(chartVariables(Alpine.store('station').id) ?? [], vid)
+    },
+    /** The chart's accessible name: "Air temperature by year". */
+    label(): string {
+      const v = this.variable
+      return `${v ? plainName(v.id, v.name) : 'History'} by year`
     },
     /** Each year's rows so far (newest first); requests stop at the first year still loading. */
     get years(): { year: number; rows: ObservationRow[] | null; loading: boolean }[] {

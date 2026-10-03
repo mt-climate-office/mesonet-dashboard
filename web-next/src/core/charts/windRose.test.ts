@@ -63,8 +63,9 @@ describe('windRoseChart', () => {
 })
 
 describe('title + table', () => {
-  it('legacy title from the data span', () => {
-    expect(windRoseTitle(model)).toBe('Wind Data from 2026-09-17 to 2026-09-19')
+  it('plain title from the data span; the years only when they differ', () => {
+    expect(windRoseTitle(model)).toBe('Wind, Sep 17 – Sep 19')
+    expect(windRoseTitle({ ...model, span: ['2025-12-25', '2026-01-07'] })).toBe('Wind, Dec 25, 2025 – Jan 7, 2026')
     expect(windRoseTitle({ ...model, span: null })).toBeNull()
   })
   it('one row per direction, one column per bin', () => {
@@ -72,6 +73,6 @@ describe('title + table', () => {
     expect(t.columns).toEqual(['Direction', ...model.bins.map((b) => `${b.label} mph`)])
     expect(t.rows).toHaveLength(16)
     expect(t.rows[0][0]).toBe('N')
-    expect(t.caption).toContain('Wind Data from 2026-09-17 to 2026-09-19')
+    expect(t.caption).toContain('Wind, Sep 17 – Sep 19')
   })
 })

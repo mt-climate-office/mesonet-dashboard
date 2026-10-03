@@ -193,9 +193,17 @@ below, which stay for the record and name what replaced them.
 - **web/ / P1:** chart tooltips and table headers used the API column ("Wind Speed: 4.1 mi/hr", "Air
   Temperature [°F]"); About's sensor changes listed "Soil VWC @ 2 in".
 - **New:** the plain name and unit from `core/variables/labels` ("Wind: 4.1 mph", "Air temperature (°F)",
-  "Soil moisture at 2 in (%)"; `plainUnit`), on the variable page and Compare, and in the sensor changes. The
-  ECharts series names (the fidelity harness keys traces by them) and the y-axis titles (`AXIS_MAPPER`,
-  LDP-005, matched panel by panel) are still the legacy ones.
+  "Soil moisture at 2 in (%)"; `plainUnit`), on the variable page and Compare, and in the sensor changes.
+  Since Redesign C the **y-axis titles** are plain too (`axisTitle`: "Air temperature (°F)", "Rain (in)",
+  "Wind direction", "Daily GDD (°F)", "Soil saturation (%)"; LDP-005's legacy "Air Temp. (°F)" and the
+  per-period "(inches/day)" are gone, and AXIS_MAPPER with them), as are the All-years and Annual axes
+  ("Cumulative rain (in)"), the Ag table headers, the Ag notes and live region ("Soil saturation", one name
+  map), the wind-rose title ("Wind, Sep 19 – Oct 2", UI font; was "Wind Data from 2026-09-19 to
+  2026-10-02") and the Download sheet's Variables row and checklist ("Air temperature at 6.6 ft"; was "Air
+  Temperature @ 6.6 ft"; the element codes stay the values, and CSV headers and filenames are unchanged).
+  The ECharts series names stay the API ones: the fidelity harness pairs traces by them, and pairs panels by
+  their first series instead of their titles (title wording is reported, not scored; the wind-rose title
+  and the Soil saturation note are DOCUMENTED). The Download preview table keeps the CSV's API headers.
 - **Why:** DESIGN.md "Visual language": no API label in visible UI.
 
 ### Interval: Auto, and the Daily low–high band

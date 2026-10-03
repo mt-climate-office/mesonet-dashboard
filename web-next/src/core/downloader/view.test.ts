@@ -57,7 +57,7 @@ describe('standardOptions / elementGroups', () => {
     el('etr', 'Reference ET'),
   ])
   it('dedupes, drops derived codes, swaps units and sorts naturally', () => {
-    expect(opts.map((o) => o.label)).toEqual(['Air Temperature @ 6.6 ft', 'Soil VWC @ 4 in', 'Soil VWC @ 40 in'])
+    expect(opts.map((o) => o.label)).toEqual(['Air temperature at 6.6 ft', 'Soil moisture at 4 in', 'Soil moisture at 40 in'])
   })
   it('groups standard and derived; SWP options only at has_swp stations', () => {
     expect(elementGroups(opts, false).map((g) => [g.label, g.options.length])).toEqual([
@@ -84,9 +84,9 @@ describe('pruneSelection', () => {
   })
   it('names the dropped variables', () => {
     expect(droppedSwpNotice(['swp'], 'Lolo Lower')).toBe(
-      'Soil Water Potential is not available at Lolo Lower (no soil water potential parameters), so it was removed from the request.',
+      'Soil water potential is not available at Lolo Lower (no soil water potential parameters), so it was removed from the request.',
     )
-    expect(droppedSwpNotice(['swp', 'percent_saturation'], 'X')).toMatch(/^Soil Water Potential and Percent Saturation are .* so they were removed/)
+    expect(droppedSwpNotice(['swp', 'percent_saturation'], 'X')).toMatch(/^Soil water potential and soil saturation are .* so they were removed/)
   })
 })
 

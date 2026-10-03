@@ -46,7 +46,7 @@ describe('latestTimeseriesChart', () => {
       expect(z.xAxisIndex).toEqual([0, 1, 2])
       expect([z.startValue, z.endValue]).toEqual(view)
     }
-    expect(o.yAxis[0].name).toBe('Precipitation\n(inches/hour)')
+    expect(o.yAxis[0].name).toBe('Rain (in)')
     expect(o.yAxis[0].min).toBe(0)
   })
 

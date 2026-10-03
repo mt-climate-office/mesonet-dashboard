@@ -138,7 +138,7 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
     useUTC: true,
     grid: grid(ctx, { right: 64 }),
     xAxis: timeAxis(),
-    yAxis: dualAxis('Daily GDDs [GDD °F]', 'Cumulative GDDs [GDD °F]', { rightMax: y2max }),
+    yAxis: dualAxis('Daily GDD (°F)', 'Cumulative GDD (°F)', { rightMax: y2max }),
     dataZoom: timeZoom(ctx),
     legend: legend(ctx, {
       data: [
@@ -150,7 +150,7 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
       ],
     }).legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, 'daily'), (name, y, note) => {
-      if (name === barName) return tipText('Daily GDDs', y.toFixed(1))
+      if (name === barName) return tipText('Daily GDD', y.toFixed(1))
       if (name === GDD_NAMES.band) return note ? tipText('Projected range', note) : null
       const label = name === GDD_NAMES.cumulative ? 'Cumulative GDDs' : name === GDD_NAMES.forecast ? 'Projected (forecast)' : 'Projected (normals)'
       return tipText(label, y.toFixed(0), note ? `Growth stage: ${note}` : undefined)
@@ -172,7 +172,7 @@ export function gddTable(m: GddModel): ChartTable {
   }
   return {
     caption: `Growing degree days, ${gddBarName(m.cutoffsF).replace('Daily GDDs ', '')}`,
-    columns: ['Date', 'Source', 'Daily GDDs', 'Cumulative GDDs', 'Growth stage'],
+    columns: ['Date', 'Source', 'Daily GDD (°F)', 'Cumulative GDD (°F)', 'Growth stage'],
     rows,
   }
 }

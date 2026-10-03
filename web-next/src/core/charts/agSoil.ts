@@ -16,6 +16,7 @@ import { hBandSeries } from './overlays'
 import { lineSeries, points } from './series'
 import { axisTooltip, legend, tipText, tooltipBase } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
+import { axisTitle } from '../variables/labels'
 
 /** Nominal inches of a sensor depth (91 cm → 36), for depthColor. */
 const depthInches = (cm: number) => Number.parseInt(depthLabel(cm), 10)
@@ -100,7 +101,7 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
   return {
     grid: g,
     xAxis: { type: 'category', data: xMs, axisLabel: { formatter: categoryLabel(m.period), hideOverlap: true }, axisTick: { alignWithLabel: true } },
-    yAxis: { type: 'category', data: y, inverse: true, name: 'Soil Depth', nameLocation: 'middle', nameGap: 44, nameRotate: 90 },
+    yAxis: { type: 'category', data: y, inverse: true, name: 'Soil depth', nameLocation: 'middle', nameGap: 44, nameRotate: 90 },
     visualMap: cb.visualMap,
     graphic: cb.graphic,
     dataZoom: timeZoom(ctx).map((z) => ({ ...z, bottom: z.type === 'slider' ? (cells.length ? 36 : 12) : undefined })),
@@ -196,7 +197,7 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
     useUTC: true,
     grid: grid(ctx),
     xAxis: timeAxis(),
-    yAxis: logAxis('Soil Water Potential [bar]', min, max, { inverse: true, prefix: '-' }),
+    yAxis: logAxis(axisTitle('swp', 'Soil water potential'), min, max, { inverse: true, prefix: '-' }),
     dataZoom: timeZoom(ctx),
     legend: lg.legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y) => tipText(name, `-${y.toFixed(2)} bar`)),
@@ -223,7 +224,7 @@ export const percentSaturationChart: ChartBuilder<PercentSaturationModel> = (m, 
     useUTC: true,
     grid: grid(ctx),
     xAxis: timeAxis(),
-    yAxis: valueAxis('Percent Saturation [%]', { min: 0, max: 100 }),
+    yAxis: valueAxis(axisTitle('percent_saturation', 'Soil saturation'), { min: 0, max: 100 }),
     dataZoom: timeZoom(ctx),
     legend: legend(ctx).legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y) => tipText(name, `${y.toFixed(1)} %`)),

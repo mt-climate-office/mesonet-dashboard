@@ -95,7 +95,7 @@ describe('heroStripChart', () => {
 describe('heroStripTable', () => {
   it('one row per hour, observed then forecast, periods in the caption', () => {
     const t = heroStripTable(MODEL)
-    expect(t.columns).toEqual(['Time (MT)', 'Observed [°F]', 'Forecast [°F]'])
+    expect(t.columns).toEqual(['Time (MT)', 'Observed (°F)', 'Forecast (°F)'])
     expect(t.rows).toHaveLength(27)
     expect(t.rows[23]).toEqual(['2026-10-02 14:00', '50', '—'])
     expect(t.rows[24]).toEqual(['2026-10-02 15:00', '—', '60'])

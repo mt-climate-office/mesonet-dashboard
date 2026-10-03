@@ -74,7 +74,8 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
   `core/variables/labels.ts` (tested): "Air temperature", "Humidity", "Wind", "Pressure", "Sunlight",
   "Rain", "Rain rate", "Soil moisture", "Soil temperature", "Soil salinity (EC)", "Reference ET", "Snow depth";
   units °F, %, mph, mb, W/m², in (`plainUnit` maps API units: "mi/hr" → "mph", "mbar" → "mb", "deg" → "°");
-  wind direction as a compass word ("SSE"). Known gaps: chart y-axis titles (see "Charts").
+  wind direction as a compass word ("SSE"); chart y-axis titles are the name and unit (`axisTitle`: "Air
+  temperature (°F)", "Wind direction"), the Download checklist "Air temperature at 6.6 ft".
 - **Precision:** one rule per variable (`LABELS[v].digits`): e.g. temperature as an integer on Now, one
   decimal in tables.
 - **Hide what means nothing on Now** (pure, tested rules in `core/overview`): sunlight at night; rain draws
@@ -206,11 +207,11 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
   variables", then the stacked chart in a flat card with its options (dates, period of record, aggregation,
   normals, variable chips) in an "Options" disclosure, beside the plot on desktop and closed above it on phones.
   It reads `agg` absent as hourly (`latestAgg`), as the old Latest tab did.
-- **Labels:** tooltips and table headers use the plain name and unit (`plainSeries` in
-  `core/charts/latestTimeseries.ts`: "Wind: 4.1 mph", "Soil moisture at 2 in (%)"). The ECharts series names
-  and the y-axis titles are still the legacy API ones ("Air Temp. (°F)", `AXIS_MAPPER`), because the fidelity
-  harness matches traces and panels by them against web/; moving them to plain names needs the harness to
-  match by element code first.
+- **Labels:** tooltips, table headers and y-axis titles use the plain name and unit (`plainSeries` in
+  `core/charts/latestTimeseries.ts`: "Wind: 4.1 mph", "Soil moisture at 2 in (%)"; `axisTitle`: "Air
+  temperature (°F)"), at each variable's table precision in tables (`LABELS[v].digits.table`). The ECharts
+  series names stay the API ones: the fidelity harness pairs traces by them (and panels by their first
+  series) against web/.
 - **History:** every list → page and page → page change is a `pushState` (`navigate(…, { drillDown: true })`),
   and so are Show as table / chart; range and interval chips, dates and options replace the entry. The Charts
   tab inside Charts returns to the list (pushed); leaving Charts drops `v`, `tbl` and `cmp` (`sectionNavPatch`).

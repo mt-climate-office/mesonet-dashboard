@@ -195,7 +195,16 @@ async function runLatest(browser) {
         const roseTitle = figs.includes('windrose') && ca.figures.find((f) => f.role === 'windrose')?.title
         if (roseTitle) {
           const text = (cb.cards?.top?.titles ?? []).join(' ')
-          cmp.cards.windTitle = text.includes(roseTitle) ? { status: 'PASS' } : { status: 'WARN', note: `title "${roseTitle}" not in web-next card`, lines: { onlyA: [roseTitle], onlyB: [] } }
+          // web-next words it plainly ("Wind, Sep 17 – Sep 19"): the same dates are DOCUMENTED.
+          const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+          const md = (d) => `${MON[Number(d.slice(5, 7)) - 1]} ${Number(d.slice(8, 10))}`
+          const span = /(\d{4}-\d\d-\d\d) to (\d{4}-\d\d-\d\d)/.exec(roseTitle)
+          const sameDates = span && text.includes(md(span[1])) && text.includes(md(span[2]))
+          cmp.cards.windTitle = text.includes(roseTitle)
+            ? { status: 'PASS' }
+            : sameDates
+              ? { status: 'DOCUMENTED', note: `plain wording of "${roseTitle}": DIVERGENCES "Charts: plain names in tooltips and tables"` }
+              : { status: 'WARN', note: `title "${roseTitle}" not in web-next card`, lines: { onlyA: [roseTitle], onlyB: [] } }
         }
         cmp.map = await mapCheck(cb.map, st, sc.id === 'info-map')
         cmp.network = network(ca, cb)
