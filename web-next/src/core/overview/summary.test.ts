@@ -34,15 +34,17 @@ describe('skyPhrase', () => {
 describe('wind', () => {
   it.each([
     [0, 'calm'],
-    [2.9, 'calm'],
-    [3, 'light'],
+    [0.9, 'calm'],
+    [1, 'light'],
+    [2.9, 'light'],
     [9.9, 'light'],
     [10, 'breezy'],
     [19.9, 'breezy'],
     [20, 'windy'],
   ] as const)('%s mph is %s', (mph, c) => expect(windClass(mph)).toBe(c))
   it.each([
-    [2, 160, 'calm'],
+    [0.5, 160, 'calm'],
+    [2, 157.5, 'light SSE wind'],
     [5, 157.5, 'light SSE wind'],
     [12, 270, 'breezy W wind'],
     [25, 0, 'strong N wind'],
@@ -89,7 +91,7 @@ describe('summarize', () => {
     ['tonight', { ...base, shortForecast: 'Mostly Clear', nowWallMs: NIGHT }, 'Mostly clear tonight, light SSE wind, no rain in 5 days.'],
     ['no forecast', { ...base, shortForecast: null }, 'Light SSE wind, no rain in 5 days.'],
     ['raining, windy', { ...base, shortForecast: 'Rain', windMph: 24, windDeg: 270, rainTodayIn: 0.42, daysSinceRain: 0 }, 'Rain, strong W wind, 0.42 in of rain today.'],
-    ['calm, dry week', { ...base, windMph: 1, daysSinceRain: Infinity }, 'Partly cloudy, calm, no rain in over a week.'],
+    ['calm, dry week', { ...base, windMph: 0.5, daysSinceRain: Infinity }, 'Partly cloudy, calm, no rain in over a week.'],
     ['calm after a windy day', { ...base, windMph: 0.4, peakGustMph: 43.24 }, 'Partly cloudy, calm after gusts to 43 mph earlier, no rain in 5 days.'],
     ['calm after light gusts', { ...base, windMph: 0.4, peakGustMph: 24 }, 'Partly cloudy, calm, no rain in 5 days.'],
     ['nothing known', { ...base, shortForecast: null, windMph: null, daysSinceRain: null }, ''],

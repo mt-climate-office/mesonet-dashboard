@@ -20,6 +20,7 @@ import { dewPointF, nowTiles, pressureChange3h, pressureTrend, shallowestSwpBar,
 import { rainBars } from './rainBars'
 import { peakGust, sparkSeries, type SeriesKey } from './series'
 import { hasSnow } from './snow'
+import { CALM_MPH } from './summary'
 import type { Tile, TileId } from './tiles'
 
 export interface NowPageInput extends HeroInput {
@@ -42,7 +43,7 @@ export interface NowTileView {
   unit: string
   /** Wind only: "now · SE" after the unit, beside the 24 h peak gust sub-line; else "". */
   note: string
-  /** One secondary line ("Gusts to 43 mph in the last 24 h", "SSE · gusts 12", "Dew point 38°", "Last 7 days · 87% of normal this year"), or "". */
+  /** One secondary line ("Gusts to 43 mph · 24 h", "SSE · gusts 12", "Dew point 38°", "Last 7 days · 87% of normal this year"), or "". */
   sub: string
   /** Soil only: "Dry"/"Wet" from soil water potential, else null. */
   chip: SoilState | null
@@ -91,13 +92,10 @@ function spark(s: SparkSeries | undefined, v: string): { spark: Sparkline | null
   return { spark: g, sparkLabel: `Last 48 hours: from ${formatValue(v, Math.min(...vals))} to ${formatReading(v, Math.max(...vals))}.` }
 }
 
-/** Below this the Wind tile reads "Calm". */
-export const CALM_MPH = 1
-
-/** Wind with a 24 h peak gust: "7 mph now · SE" (or "Calm") over "Gusts to 43 mph in the last 24 h"; null keeps the plain tile. */
+/** Wind with a 24 h peak gust: "7 mph now · SE" (or "Calm", under CALM_MPH) over "Gusts to 43 mph · 24 h"; null keeps the plain tile. */
 function windView(c: Conditions, gust: number | null): Pick<NowTileView, 'value' | 'unit' | 'note' | 'sub'> | null {
   if (gust === null) return null
-  const sub = `Gusts to ${formatReading('windgust', gust)} in the last 24 h`
+  const sub = `Gusts to ${formatReading('windgust', gust)} · 24 h`
   if (c.windMph !== null && c.windMph < CALM_MPH) return { value: 'Calm', unit: '', note: '', sub }
   return { value: formatValue('wind_spd', c.windMph), unit: LABELS.wind_spd.unit, note: ['now', c.windDeg === null ? null : compassWord(c.windDeg)].filter(Boolean).join(' · '), sub }
 }
