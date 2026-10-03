@@ -1,5 +1,7 @@
 // Station picker: editable WAI-ARIA combobox with list autocomplete (APG), best
-// match highlighted; filtering in comboboxModel.ts. Options mirror the kit's
+// match highlighted; filtering in comboboxModel.ts. The field is a search box: it
+// holds only the typed text (the selection shows elsewhere); × clears the text.
+// Esc clears the text, then closes the list, then lets an enclosing dialog close. Options mirror the kit's
 // planned MCO.initSearchBox({items, onSelect, …}) so it can be swapped in later.
 //
 // Markup (register with Alpine.data('combobox', combobox)):
@@ -13,9 +15,9 @@
 //              autocomplete="off" spellcheck="false" aria-autocomplete="list"
 //              :id="ids.input" :placeholder="placeholder" :aria-expanded="open"
 //              :aria-controls="ids.listbox" :aria-activedescendant="activeId()"
-//              :value="inputText()" @input="onInput($event)"
+//              :value="query" @input="onInput($event)"
 //              @keydown="onKeydown($event)" @click="toggle()">
-//       <button type="button" class="ctl-clear" x-show="hasValue()"
+//       <button type="button" class="ctl-clear" x-show="hasText()"
 //               :aria-label="'Clear ' + label" @click="clear()">&times;</button>
 //     </div>
 //     <div class="ctl-combobox-popup" x-show="open">
@@ -42,7 +44,7 @@
 //     <div role="status" class="sr-only" x-text="status()"></div>
 //   </div>
 
-import { DEFAULT_LIMIT, filterItems, resultSummary, stepIndex, type ComboboxItem } from '../../core/controls/comboboxModel'
+import { DEFAULT_LIMIT, escapeAction, filterItems, resultSummary, stepIndex, type ComboboxItem } from '../../core/controls/comboboxModel'
 import { component } from '../component'
 import { uniqueId } from './ids'
 
@@ -53,8 +55,8 @@ export interface ComboboxOptions {
   items: () => ComboboxItem[]
   /** Currently selected id, or null for none. */
   value: () => string | null
-  /** Called with the chosen id, or null when cleared. The caller updates `value`. */
-  onSelect: (id: string | null) => void
+  /** Called with the chosen id. The caller updates `value`. */
+  onSelect: (id: string) => void
   /** Visible label text; also names the listbox. */
   label: string
   placeholder?: string
@@ -70,30 +72,23 @@ export function combobox(opts: ComboboxOptions) {
     placeholder: opts.placeholder ?? '',
     ids: { label: `${base}-label`, input: `${base}-input`, listbox: `${base}-listbox` },
     open: false,
-    /** True while the user has typed since opening; the input then shows `query`. */
-    editing: false,
+    /** The typed text (the input's value). */
     query: '',
     active: -1,
 
     get result() {
-      return filterItems(opts.items(), this.editing ? this.query : '', opts.limit ?? DEFAULT_LIMIT)
+      return filterItems(opts.items(), this.query, opts.limit ?? DEFAULT_LIMIT)
     },
 
-    hasValue(): boolean {
-      return opts.value() !== null
+    /** The × shows whenever there is text to clear. */
+    hasText(): boolean {
+      return this.query !== ''
     },
     isCurrent(id: string): boolean {
       return opts.value() === id
     },
     isActive(id: string): boolean {
       return this.result.flat[this.active]?.id === id
-    },
-    /** Text shown in the input: the typed query while editing, else the selected label. */
-    inputText(): string {
-      if (this.editing) return this.query
-      const id = opts.value()
-      if (id === null) return ''
-      return opts.items().find((i) => i.id === id)?.label ?? id
     },
     optionId(id: string): string {
       return `${this.ids.listbox}-${id.replace(/[^\w-]/g, '_')}`
@@ -125,7 +120,6 @@ export function combobox(opts: ComboboxOptions) {
     },
     close(): void {
       this.open = false
-      this.editing = false
       this.query = ''
       this.active = -1
     },
@@ -137,15 +131,15 @@ export function combobox(opts: ComboboxOptions) {
       this.close()
       opts.onSelect(id)
     },
+    /** × : empty the text, keep focus, show the full list. */
     clear(): void {
-      this.close()
-      opts.onSelect(null)
+      this.query = ''
       this.$refs.input.focus()
+      this.openList()
     },
 
     onInput(event: Event): void {
       this.query = (event.target as HTMLInputElement).value
-      this.editing = true
       this.open = true
       this.active = this.result.best
       this.reveal()
@@ -173,13 +167,16 @@ export function combobox(opts: ComboboxOptions) {
           this.select(item.id)
           return
         }
-        case 'Escape':
-          if (!this.open) return
+        case 'Escape': {
+          const action = escapeAction(this.query, this.open)
+          if (action === 'pass') return // the enclosing dialog closes
           // Consumed here so an enclosing dialog doesn't also close.
           event.preventDefault()
           event.stopPropagation()
-          this.close()
+          if (action === 'clear') this.clear()
+          else this.close()
           return
+        }
         default:
           return
       }
