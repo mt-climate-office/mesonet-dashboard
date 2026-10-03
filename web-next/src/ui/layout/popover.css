@@ -1,0 +1,31 @@
+/* Popover (ui/layout/popover.ts; kit candidate .mco-popover, KIT-NOTES.md).
+     .dash-popover         the positioned wrapper around the button and the panel
+     .dash-popover-panel   role="dialog": a surface under the button, left-aligned, at --z-flyout;
+                           on phones docked at the bottom, full width, like a small sheet
+     .dash-popover-title   its heading (the option's name)
+   Kit tokens only. */
+
+.dash-popover { position: relative; display: inline-flex; }
+
+.dash-popover-panel {
+  position: absolute; top: calc(100% + 0.4rem); left: 0; z-index: var(--z-flyout);
+  width: max-content; min-width: 16rem; max-width: min(26rem, calc(100vw - 2rem));
+  display: flex; flex-direction: column; gap: 0.75rem;
+  padding: 0.875rem 1rem 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.dash-popover-panel[hidden] { display: none; }
+.dash-popover-title { margin: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
+
+@media (max-width: 640px), (max-height: 560px) {
+  .dash-popover { position: static; }
+  .dash-popover-panel {
+    position: fixed; top: auto; left: 0; right: 0; bottom: var(--tabbar-h, 0px);
+    width: auto; min-width: 0; max-width: none; max-height: 70dvh; overflow-y: auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+}

@@ -1,16 +1,24 @@
-<!-- Soil profile / soil water potential / percent saturation card body (ui/ag/agSoilView.ts). -->
+<!-- Soil profile / soil water potential / percent saturation (ui/ag/agSoilView.ts): the chart card
+     (or its table with tbl=1). No stats: many depths, and the chart is the summary. -->
 <div class="ag-view" x-data="agSoilView" data-testid="ag-chart">
-  <!-- @include partials/ag/status.html -->
-  <template x-if="view.status === 'ready' && kind() === 'profile'">
-    <div class="chart ag-chart" data-testid="ag-chart-profile"
-         x-data="chart({ ...charts.profile, model: () => modelOf('profile') })"></div>
-  </template>
-  <template x-if="view.status === 'ready' && kind() === 'swp'">
-    <div class="chart ag-chart" data-testid="ag-chart-swp"
-         x-data="chart({ ...charts.swp, model: () => modelOf('swp') })"></div>
-  </template>
-  <template x-if="view.status === 'ready' && kind() === 'percent_saturation'">
-    <div class="chart ag-chart" data-testid="ag-chart-percent_saturation"
-         x-data="chart({ ...charts.percent_saturation, model: () => modelOf('percent_saturation') })"></div>
-  </template>
+  <section class="dash-card ag-chart-card chart-card" aria-labelledby="ag-chart-title">
+    <!-- @include partials/ag/status.html -->
+    <template x-if="view.status === 'ready' && !tableMode() && kind() === 'profile'">
+      <div class="chart ag-chart" data-testid="ag-chart-profile"
+           x-data="chart({ ...charts.profile, model: () => modelOf('profile') })"></div>
+    </template>
+    <template x-if="view.status === 'ready' && !tableMode() && kind() === 'swp'">
+      <div class="chart ag-chart" data-testid="ag-chart-swp"
+           x-data="chart({ ...charts.swp, model: () => modelOf('swp') })"></div>
+    </template>
+    <template x-if="view.status === 'ready' && !tableMode() && kind() === 'percent_saturation'">
+      <div class="chart ag-chart" data-testid="ag-chart-percent_saturation"
+           x-data="chart({ ...charts.percent_saturation, model: () => modelOf('percent_saturation') })"></div>
+    </template>
+    <template x-if="view.status === 'ready' && tableMode()">
+      <div class="var-table" x-data="chartTable({ table: () => tableOf() })" data-testid="ag-table">
+        <!-- @include partials/charts/table.html -->
+      </div>
+    </template>
+  </section>
 </div>

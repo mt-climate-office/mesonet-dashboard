@@ -12,9 +12,11 @@ import { browserStorage, createStationStore } from './stores/station'
 import { createThemeStore } from './stores/theme'
 import { createUrlStore } from './stores/url'
 import { chart } from './ui/charts/chart'
+import { chartTable } from './ui/charts/chartTable'
 import { chartsView } from './ui/charts/chartsView'
 import { compare } from './ui/charts/compare'
 import { compareControls } from './ui/charts/compareControls'
+import { customDates } from './ui/charts/customDates'
 import { variableHistory } from './ui/charts/variableHistory'
 import { variableList } from './ui/charts/variableList'
 import { variablePage } from './ui/charts/variablePage'
@@ -45,6 +47,7 @@ import { menu } from './ui/shell/menu'
 import { revealWhenReady } from './ui/shell/navigate'
 import { navMeta } from './ui/shell/navMeta'
 import { outageNotice } from './ui/shell/outageNotice'
+import { popover } from './ui/shell/popover'
 import { sections } from './ui/shell/sections'
 import { sheet } from './ui/shell/sheet'
 import { stationHeader } from './ui/shell/stationHeader'
@@ -57,6 +60,7 @@ import './ui/layout/sectionNav.css'
 import './ui/layout/drawer.css'
 import './ui/layout/sheet.css'
 import './ui/layout/menu.css'
+import './ui/layout/popover.css'
 import './ui/layout/transition.css'
 import './ui/layout/toggletip.css'
 import './ui/controls/controls.css'
@@ -71,9 +75,9 @@ import './styles/about.css'
 
 // Ag tools, shown inside Charts while `v` is an Ag tool id
 import { agAnnualView } from './ui/ag/agAnnualView'
-import { agControls } from './ui/ag/agControls'
 import { agGddView } from './ui/ag/agGddView'
 import { agMetView } from './ui/ag/agMetView'
+import { agOptions } from './ui/ag/agOptions'
 import { agSoilView } from './ui/ag/agSoilView'
 import { agTab } from './ui/ag/agTab'
 import './styles/ag.css'
@@ -117,12 +121,13 @@ Alpine.store('station', createStationStore())
 
 /* 3. Components (one line each; x-data="<name>" in the partials). -------- */
 
-// Shell (ui/shell/*): header actions, station button, section navs, ⋯ menus, modal
+// Shell (ui/shell/*): header actions, station button, section navs, ⋯ menus, popovers, modal
 // sheets, notices, Help and outage dialogs, toggletips; the station picker (ui/picker).
 Alpine.data('navMeta', navMeta)
 Alpine.data('stationHeader', stationHeader)
 Alpine.data('sections', sections)
 Alpine.data('menu', menu)
+Alpine.data('popover', popover)
 Alpine.data('sheet', sheet)
 Alpine.data('stationPicker', stationPicker)
 Alpine.data('helpDialog', helpDialog)
@@ -150,11 +155,14 @@ Alpine.data('locatorMap', locatorMap)
 // render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".
 Alpine.data('chart', chart)
 
-// Charts (ui/charts): section view switch, variable list, variable page + history, Compare.
+// Charts (ui/charts): section view switch, variable list, variable page + history, a chart as a
+// table, the Custom dates sheet's form, Compare.
 Alpine.data('chartsView', chartsView)
 Alpine.data('variableList', variableList)
 Alpine.data('variablePage', variablePage)
 Alpine.data('variableHistory', variableHistory)
+Alpine.data('chartTable', chartTable)
+Alpine.data('customDates', customDates)
 Alpine.data('compare', compare)
 Alpine.data('compareControls', compareControls)
 
@@ -175,9 +183,9 @@ Alpine.data('aboutHistory', aboutHistory)
 // x-data="downloader" in partials/downloader/index.html, inside partials/sheets/download.html.
 Alpine.data('downloader', downloader)
 
-// Ag tools (W2, ui/ag/*): the open tool in Charts, its controls, one view per variable group.
+// Ag tools (W2, ui/ag/*): the open tool in Charts, its option chips, one view per variable group.
 Alpine.data('agTab', agTab)
-Alpine.data('agControls', agControls)
+Alpine.data('agOptions', agOptions)
 Alpine.data('agMetView', agMetView)
 Alpine.data('agGddView', agGddView)
 Alpine.data('agSoilView', agSoilView)

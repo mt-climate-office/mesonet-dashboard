@@ -6,7 +6,7 @@
  */
 import Alpine from 'alpinejs'
 import type { Resource } from '../../core/cache'
-import type { AnnualModel } from '../../core/charts'
+import type { AnnualModel, ChartTable } from '../../core/charts'
 import { type AgView, annualView, annualYears, elementsGate } from '../../core/ag/view/results'
 import { AG_TTL, agKeys } from '../../core/ag/view/keys'
 import { annualElement, annualOptions } from '../../core/ag/view/tab'
@@ -22,6 +22,9 @@ export function agAnnualView() {
   return component({
     view: LOADING as AgView<AnnualModel>,
     charts: AG_CHARTS,
+    tableOf(): ChartTable | null {
+      return this.view.model ? AG_CHARTS.annual.table(this.view.model) : null
+    },
     init() {
       stop = trackView(this, () => compute(used))
     },

@@ -1,0 +1,176 @@
+<!-- Ag option chips (x-data="agOptions", ui/ag/agOptions.ts): one chip per option of the open tool
+     (core/ag/view/summary optionChips), naming its value; each opens a popover (x-data="popover",
+     ui/shell/popover.ts) holding the control. Static blocks in chip order (crop, cutoffs, interval,
+     livestock, soil, annual, dates, projection), so each popover's ids are fixed. A chip choice
+     (crop, soil) closes its popover; radios, selects, dates and the slider stay open (Esc closes). -->
+<div class="chart-chips ag-opts" role="group" aria-label="Options" x-data="agOptions" data-testid="ag-options">
+  <template x-if="has('crop')">
+    <div class="dash-popover" x-data="popover">
+      <button type="button" class="dash-chip ag-opt" data-popover-button :aria-label="label('crop')" data-testid="ag-opt-crop">
+        <span x-text="text('crop')"></span><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+      </button>
+      <div class="dash-popover-panel" id="ag-opt-crop-panel" role="dialog" aria-label="Crop" hidden>
+        <div class="ctl-chips" role="group" :aria-labelledby="ids.label" data-testid="ag-crop"
+             x-data="chips({ options: () => crops, value: () => [tab.crop], onChange: (v) => { setCrop(v); closePopover() }, label: 'GDD crop' })">
+          <span class="ctl-legend" :id="ids.label" x-text="label"></span>
+          <template x-for="opt in options()" :key="opt.value">
+            <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)" @click="toggle(opt.value)" x-text="opt.label"></button>
+          </template>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template x-if="has('cutoffs')">
+    <div class="dash-popover" x-data="popover">
+      <button type="button" class="dash-chip ag-opt" data-popover-button :aria-label="label('cutoffs')" data-testid="ag-opt-cutoffs">
+        <span x-text="text('cutoffs')"></span><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+      </button>
+      <div class="dash-popover-panel" id="ag-opt-cutoffs-panel" role="dialog" aria-label="Temperature cutoffs" hidden>
+        <fieldset class="ctl-fieldset ctl-range" data-testid="ag-cutoffs"
+                  x-data="rangeSlider({ ...slider, value: () => sliderValue(), onChange: (v) => setSlider(v), label: 'Temperature cutoffs', lowLabel: 'Base', highLabel: 'Upper cutoff' })">
+          <legend class="ctl-legend" x-text="label"></legend>
+          <div class="ctl-range-row">
+            <label class="ctl-label" :for="ids.low" x-text="lowLabel"></label>
+            <span class="ctl-range-value" aria-hidden="true" x-text="lowText()"></span>
+            <input type="range" :id="ids.low" :min="cfg.min" :max="cfg.max" :step="cfg.step" :value="draft.low" :aria-valuetext="lowText()" @input="onLow($event)" @change="commit()">
+          </div>
+          <div class="ctl-range-row">
+            <label class="ctl-label" :for="ids.high" x-text="highLabel"></label>
+            <span class="ctl-range-value" aria-hidden="true" x-text="highText()"></span>
+            <input type="range" :id="ids.high" :min="cfg.min" :max="highMax()" :step="cfg.step" :value="highPosition()" :aria-valuetext="highText()" @input="onHigh($event)" @change="commit()">
+          </div>
+        </fieldset>
+        <p class="ctl-note" data-testid="gdd-cutoff-mode" x-text="cutoffText()"></p>
+        <button type="button" class="nav-btn ag-reset" x-show="tab.cut.custom" @click="resetCutoffs()" x-text="'Reset to ' + tab.cropLabel.toLowerCase() + ' cutoffs'"></button>
+      </div>
+    </div>
+  </template>
+
+  <template x-if="has('interval')">
+    <div class="dash-popover" x-data="popover">
+      <button type="button" class="dash-chip ag-opt" data-popover-button :aria-label="label('interval')" data-testid="ag-opt-interval">
+        <span x-text="text('interval')"></span><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+      </button>
+      <div class="dash-popover-panel" id="ag-opt-interval-panel" role="dialog" aria-label="Interval" hidden>
+        <fieldset class="ctl-seg" data-testid="ag-time"
+                  x-data="segmented({ options: () => times, value: () => tab.period, onChange: (v) => setTime(v), label: 'Interval' })">
+          <legend class="ctl-legend" x-text="label"></legend>
+          <div class="seg-btns">
+            <template x-for="opt in options()" :key="opt.value">
+              <label class="nav-btn seg-btn">
+                <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)" @change="select(opt.value)">
+                <span x-text="opt.label"></span>
+              </label>
+            </template>
+          </div>
+        </fieldset>
+      </div>
+    </div>
+  </template>
+
+  <template x-if="has('livestock')">
+    <div class="dash-popover" x-data="popover">
+      <button type="button" class="dash-chip ag-opt" data-popover-button :aria-label="label('livestock')" data-testid="ag-opt-livestock">
+        <span x-text="text('livestock')"></span><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+      </button>
+      <div class="dash-popover-panel" id="ag-opt-livestock-panel" role="dialog" aria-label="Livestock" hidden>
+        <fieldset class="ctl-seg" data-testid="ag-livestock"
+                  x-data="segmented({ options: () => livestock, value: () => tab.livestock, onChange: (v) => setLivestock(v), label: 'Livestock type' })">
+          <legend class="ctl-legend" x-text="label"></legend>
+          <div class="seg-btns">
+            <template x-for="opt in options()" :key="opt.value">
+              <label class="nav-btn seg-btn">
+                <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)" @change="select(opt.value)">
+                <span x-text="opt.label"></span>
+              </label>
+            </template>
+          </div>
+        </fieldset>
+      </div>
+    </div>
+  </template>
+
+  <template x-if="has('soil')">
+    <div class="dash-popover" x-data="popover">
+      <button type="button" class="dash-chip ag-opt" data-popover-button :aria-label="label('soil')" data-testid="ag-opt-soil">
+        <span x-text="text('soil')"></span><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+      </button>
+      <div class="dash-popover-panel" id="ag-opt-soil-panel" role="dialog" aria-label="Soil variable" hidden>
+        <div class="ctl-chips" role="group" :aria-labelledby="ids.label" data-testid="ag-soil-var"
+             x-data="chips({ options: () => tab.soilOptions, value: () => [tab.soilVar], onChange: (v) => { setSoil(v); closePopover() }, label: 'Soil variable' })">
+          <span class="ctl-legend" :id="ids.label" x-text="label"></span>
+          <template x-for="opt in options()" :key="opt.value">
+            <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)" @click="toggle(opt.value)" x-text="opt.label"></button>
+          </template>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template x-if="has('annual')">
+    <div class="dash-popover" x-data="popover">
+      <button type="button" class="dash-chip ag-opt" data-popover-button :aria-label="label('annual')" data-testid="ag-opt-annual">
+        <span x-text="text('annual')"></span><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+      </button>
+      <div class="dash-popover-panel" id="ag-opt-annual-panel" role="dialog" aria-label="Comparison variable" hidden>
+        <div class="ctl-field" data-testid="ag-annual-var"
+             x-data="timeSelect({ options: () => annualOptions(), value: () => tab.annualVar, onChange: (v) => setAnnual(v), label: 'Comparison variable', emptyText: annualEmptyText() })">
+          <label class="ctl-label" :for="ids.select" x-text="label"></label>
+          <select class="ctl-input ctl-select" :id="ids.select" :disabled="isEmpty()" @change="set($event)">
+            <template x-if="isEmpty()"><option value="" x-text="annualEmptyText()"></option></template>
+            <template x-for="opt in options()" :key="opt.value">
+              <option :value="opt.value" :selected="isSelected(opt.value)" x-text="opt.label"></option>
+            </template>
+          </select>
+        </div>
+        <p class="ctl-error" x-show="elementsFailed()" data-testid="ag-annual-error">Variables could not be loaded.
+          <button type="button" class="nav-btn ag-retry" @click="retryElements()">Retry</button></p>
+      </div>
+    </div>
+  </template>
+
+  <template x-if="has('dates')">
+    <div class="dash-popover" x-data="popover">
+      <button type="button" class="dash-chip ag-opt" data-popover-button :aria-label="label('dates')" data-testid="ag-opt-dates">
+        <span x-text="text('dates')"></span><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+      </button>
+      <div class="dash-popover-panel" id="ag-opt-dates-panel" role="dialog" aria-label="Dates" hidden>
+        <fieldset class="ctl-fieldset" data-testid="ag-dates"
+                  x-data="dateRange({ value: () => ({ start: tab.start, end: tab.end }), onChange: (r) => setDates(r), max: () => today(), label: 'Date range' })">
+          <legend class="ctl-legend" x-text="label"></legend>
+          <div class="ctl-row">
+            <div class="ctl-field">
+              <label class="ctl-label" :for="ids.start">Start</label>
+              <input type="date" class="ctl-input" :id="ids.start" :min="min()" :max="max()" :value="start" :aria-invalid="invalid('start')" :aria-describedby="describedBy()" @change="setStart($event)">
+            </div>
+            <div class="ctl-field">
+              <label class="ctl-label" :for="ids.end">End</label>
+              <input type="date" class="ctl-input" :id="ids.end" :min="min()" :max="max()" :value="end" :aria-invalid="invalid('end')" :aria-describedby="describedBy()" @change="setEnd($event)">
+            </div>
+          </div>
+          <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
+        </fieldset>
+      </div>
+    </div>
+  </template>
+
+  <template x-if="has('projection')">
+    <div class="dash-popover" x-data="popover">
+      <button type="button" class="dash-chip ag-opt" data-popover-button :aria-label="label('projection')" data-testid="ag-opt-projection">
+        <span x-text="text('projection')"></span><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+      </button>
+      <div class="dash-popover-panel" id="ag-opt-projection-panel" role="dialog" aria-label="Projection" hidden>
+        <div class="ctl-field" data-testid="ag-projection"
+             x-data="timeSelect({ options: () => projections, value: () => tab.gddProj, onChange: (v) => setProjection(v), label: 'Projection' })">
+          <label class="ctl-label" :for="ids.select" x-text="label"></label>
+          <select class="ctl-input ctl-select" :id="ids.select" @change="set($event)">
+            <template x-for="opt in options()" :key="opt.value">
+              <option :value="opt.value" :selected="isSelected(opt.value)" x-text="opt.label"></option>
+            </template>
+          </select>
+        </div>
+      </div>
+    </div>
+  </template>
+</div>

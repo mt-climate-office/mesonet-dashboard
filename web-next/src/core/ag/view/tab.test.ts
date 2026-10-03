@@ -6,6 +6,7 @@ import {
   annualElement,
   annualOptions,
   chartState,
+  hasAllYears,
   cropPatch,
   cutoffSummary,
   dateWindow,
@@ -129,6 +130,11 @@ describe('cache keys', () => {
 it('pickOne: chips as a single choice', () => {
   expect(pickOne(['wheat', 'corn'], 'wheat')).toBe('corn')
   expect(pickOne([], 'wheat')).toBe('wheat')
+})
+
+it('hasAllYears: Reference ET only', () => {
+  expect(hasAllYears('etr')).toBe(true)
+  expect(hasAllYears('gdd')).toBe(false)
 })
 
 it('variableGroup + chartState', () => {

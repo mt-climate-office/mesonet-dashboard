@@ -1,0 +1,11 @@
+<!-- An Ag tool's stats card (needs `stats()` on the view component): label over value, hidden when
+     the tool has none or its chart has not loaded. -->
+<template x-if="view.status === 'ready' && stats().length">
+  <section class="dash-card chart-stats" aria-label="Summary" data-testid="ag-stats">
+    <dl class="chart-stat-row">
+      <template x-for="it in stats()" :key="it.label">
+        <div class="chart-stat"><dt x-text="it.label"></dt><dd class="num-display" x-text="it.value"></dd></div>
+      </template>
+    </dl>
+  </section>
+</template>

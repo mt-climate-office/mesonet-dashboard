@@ -55,10 +55,10 @@ describe('variableRows', () => {
   })
   it('takes current values from /latest, with the depth for soil', () => {
     expect(byId.air_temp).toMatchObject({ value: '57 °F', note: '' })
-    expect(byId.soil_vwc).toMatchObject({ value: '8.65 %', note: 'at 2 in' })
+    expect(byId.soil_vwc).toMatchObject({ value: '9%', note: 'at 2 in' })
   })
   it('summed variables show the last 24 h total and bars', () => {
-    expect(byId.ppt).toMatchObject({ value: '0.3 in', note: 'last 24 h' })
+    expect(byId.ppt).toMatchObject({ value: '0.30 in', note: 'last 24 h' })
     expect(byId.ppt.spark?.kind).toBe('bars')
     expect(byId.ppt.sparkLabel).toBe('Last 48 hours: 0.3 in in total.')
   })
@@ -82,8 +82,8 @@ describe('24 h totals', () => {
     const panel = {
       series: [{ name: 'Precipitation [in]', type: 'bar', depth: null, values: rows.map((r) => r['Precipitation [in]'] as number), hoverLabel: '' }],
     } as unknown as TimeseriesPanel
-    const [page] = panelStats(panel, x, rangeView('24h', '2026-10-01', '2026-10-02', x[x.length - 1]), true)
-    expect(list.value).toBe('0.1 in')
+    const [page] = panelStats(panel, x, rangeView('24h', '2026-10-01', '2026-10-02', x[x.length - 1]), true, 'ppt')
+    expect(list.value).toBe('0.10 in')
     expect(page.items).toEqual([{ label: 'Total', value: list.value }])
   })
 })

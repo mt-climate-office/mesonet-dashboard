@@ -1,29 +1,31 @@
 /**
  * `x-data="variableList"`: Charts' landing list (partials/charts/list.html).
- * The station's variables grouped (core/variables), each row with its current
- * value and a 48 h sparkline, linking to its variable page; then the Ag tools
- * (core/variables LIST_AG_TOOLS, plain labels), each opening its tool; then
- * Compare and Download data (the Download sheet).
+ * A search field, then the station's variables grouped (core/variables),
+ * each row a plain name over a sub-label, its current value and a 48 h
+ * sparkline; then Ag tools (LIST_AG_TOOLS: name and what it is) and More
+ * (Compare variables). Every row opens its page (core/variables `chartPatch`).
  * Values come from `/latest` (shared with Now); sparklines from one 72 h
  * hourly request (core/variables `listRequest`).
  */
 import Alpine from 'alpinejs'
-import { variablePatch } from '../../core/ag/view/tab'
-import { LABELS, LIST_AG_TOOLS, listRequest, variableGroups, variableRows, type VariableGroup, type VariableRow } from '../../core/variables'
+import { LABELS, LIST_AG_TOOLS, chartPatch, listRequest, matchesQuery, variableGroups, variableRows, type VariableRow } from '../../core/variables'
+import { isAgTool } from '../../core/params/ag'
 import { latestObs } from '../station/resources'
 import { component } from '../component'
-import { follow, plainClick } from '../shell/navigate'
-import { openSheet } from '../shell/sheet'
+import { follow } from '../shell/navigate'
 import { chartVariables, elementsResource, recordResource, stationElements } from './resources'
 
 type State = 'none' | 'loading' | 'error' | 'ready'
+type Row = Pick<VariableRow, 'id' | 'name' | 'note' | 'value' | 'spark' | 'sparkLabel'>
+type Group = { group: string; rows: Row[] }
 
-/** The Ag tools group's rows: plain name and a one-line description. */
-const AG_TOOLS = LIST_AG_TOOLS.map((id) => ({ id, name: LABELS[id]?.name ?? id, sub: LABELS[id]?.sub ?? '' }))
+/** The Ag tools rows: plain name over what the tool is; no value or sparkline. */
+const AG_TOOLS: Row[] = LIST_AG_TOOLS.map((id) => ({ id, name: LABELS[id]?.name ?? id, note: LABELS[id]?.sub ?? '', value: '', spark: null, sparkLabel: '' }))
 
 export function variableList() {
   return component({
-    agTools: AG_TOOLS,
+    /** The search field's text. */
+    query: '',
 
     get state(): State {
       const id = Alpine.store('station').id
@@ -31,8 +33,8 @@ export function variableList() {
       const els = elementsResource(id)
       return els?.data ? 'ready' : els?.status === 'error' ? 'error' : 'loading'
     },
-    /** The groups with their rows; values and sparklines fill in as `/latest` and the hourly rows arrive. */
-    get groups(): { group: VariableGroup; rows: VariableRow[] }[] {
+    /** The variable groups with their rows; values and sparklines fill in as `/latest` and the hourly rows arrive. */
+    get groups(): Group[] {
       const id = Alpine.store('station').id
       const vars = chartVariables(id)
       if (!id || !vars) return []
@@ -40,6 +42,20 @@ export function variableList() {
       const hourly = recordResource(listRequest(id, vars, stationElements(id) ?? []))?.data
       const rows = variableRows(vars, latest ? Alpine.raw(latest) : undefined, hourly ? Alpine.raw(hourly) : undefined)
       return variableGroups(vars).map((g) => ({ group: g.group, rows: g.items.map((v) => rows.find((r) => r.id === v.id)!) }))
+    },
+    /** `rows` matching the search (name, sub-label or group). */
+    filter(group: string, rows: Row[]): Row[] {
+      return rows.filter((r) => matchesQuery(this.query, r.name, r.note, group))
+    },
+    agTools(): Row[] {
+      return this.filter('Ag tools', AG_TOOLS)
+    },
+    showCompare(): boolean {
+      return matchesQuery(this.query, 'Compare variables', 'Stack several on one time axis', 'More')
+    },
+    /** Nothing matches the search. */
+    noMatch(): boolean {
+      return !!this.query.trim() && this.groups.every((g) => !this.filter(g.group, g.rows).length) && !this.agTools().length && !this.showCompare()
     },
     get sparkLoading(): boolean {
       const id = Alpine.store('station').id
@@ -51,34 +67,17 @@ export function variableList() {
     },
 
     href(id: string): string {
-      return Alpine.store('url').hrefFor('charts', { v: id, view: 'recent', cmp: false })
+      return Alpine.store('url').hrefFor('charts', chartPatch(id))
     },
-    /** An Ag tool opens with its options reset (core/ag/view/tab `variablePatch`), as it always did. */
-    toolHref(id: string): string {
-      return Alpine.store('url').hrefFor('charts', variablePatch(id))
+    /** A row: push its page; the row's name morphs into the page heading, which takes focus. */
+    open(e: MouseEvent, id: string): void {
+      const morph = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('[data-vt-source]')
+      follow(e, 'charts', { patch: chartPatch(id), drillDown: true, morph, target: isAgTool(id) ? 'ag-chart-title' : 'var-title' })
     },
     compareHref(): string {
       return Alpine.store('url').hrefFor('charts', { v: null, cmp: true })
     },
-    /** A row: push its variable page; the row's name morphs into the page heading, which takes focus. */
-    open(e: MouseEvent, id: string): void {
-      const morph = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('[data-vt-source]')
-      follow(e, 'charts', { patch: { v: id, view: 'recent', cmp: false }, drillDown: true, morph, target: 'var-title' })
-    },
-    /** An Ag tool row: push the tool, focusing its heading. */
-    openTool(e: MouseEvent, id: string): void {
-      follow(e, 'charts', { patch: variablePatch(id), drillDown: true, target: 'ag-chart-title' })
-    },
-    downloadHref(): string {
-      return Alpine.store('url').hrefFor('charts', { dl: true })
-    },
-    /** Download data: a plain click opens the sheet (focus returns here); others follow the href. */
-    openDownload(e: MouseEvent): void {
-      if (!plainClick(e)) return
-      e.preventDefault()
-      openSheet('download', e.currentTarget as HTMLElement)
-    },
-    /** The Compare card: push Compare, focusing its heading. */
+    /** Compare variables: push Compare, focusing its heading. */
     openCompare(e: MouseEvent): void {
       follow(e, 'charts', { patch: { v: null, cmp: true }, drillDown: true, target: 'charts-compare-title' })
     },

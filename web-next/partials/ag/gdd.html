@@ -1,8 +1,17 @@
-<!-- Growing degree days card body (ui/ag/agGddView.ts). -->
+<!-- Growing degree days (ui/ag/agGddView.ts): the chart card (or its table with tbl=1) and the
+     stats card (core/ag/view/stats gddStats: so far, stage). -->
 <div class="ag-view" x-data="agGddView" data-testid="ag-chart">
-  <!-- @include partials/ag/status.html -->
-  <template x-if="view.status === 'ready'">
-    <div class="chart ag-chart" data-testid="ag-chart-gdd"
-         x-data="chart({ ...charts.gdd, model: () => view.model })"></div>
-  </template>
+  <section class="dash-card ag-chart-card chart-card" aria-labelledby="ag-chart-title">
+    <!-- @include partials/ag/status.html -->
+    <template x-if="view.status === 'ready' && !tableMode()">
+      <div class="chart ag-chart" data-testid="ag-chart-gdd"
+           x-data="chart({ ...charts.gdd, model: () => view.model })"></div>
+    </template>
+    <template x-if="view.status === 'ready' && tableMode()">
+      <div class="var-table" x-data="chartTable({ table: () => tableOf() })" data-testid="ag-table">
+        <!-- @include partials/charts/table.html -->
+      </div>
+    </template>
+  </section>
+  <!-- @include partials/ag/stats.html -->
 </div>

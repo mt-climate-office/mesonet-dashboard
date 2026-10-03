@@ -1,11 +1,19 @@
-<!-- Annual comparison card body (ui/ag/agAnnualView.ts). -->
+<!-- Annual comparison (ui/ag/agAnnualView.ts; v=annual, kept for old links, not listed): the chart
+     card (or its table with tbl=1), with Retry on an error. -->
 <div class="ag-view" x-data="agAnnualView" data-testid="ag-chart">
-  <!-- @include partials/ag/status.html -->
-  <div class="ag-retry-row" x-show="view.status === 'error'">
-    <button type="button" class="nav-btn ag-retry" @click="retry()" data-testid="ag-retry">Retry</button>
-  </div>
-  <template x-if="view.status === 'ready'">
-    <div class="chart ag-chart" data-testid="ag-chart-annual"
-         x-data="chart({ ...charts.annual, model: () => view.model })"></div>
-  </template>
+  <section class="dash-card ag-chart-card chart-card" aria-labelledby="ag-chart-title">
+    <!-- @include partials/ag/status.html -->
+    <div class="ag-retry-row" x-show="view.status === 'error'">
+      <button type="button" class="nav-btn ag-retry" @click="retry()" data-testid="ag-retry">Retry</button>
+    </div>
+    <template x-if="view.status === 'ready' && !tableMode()">
+      <div class="chart ag-chart" data-testid="ag-chart-annual"
+           x-data="chart({ ...charts.annual, model: () => view.model })"></div>
+    </template>
+    <template x-if="view.status === 'ready' && tableMode()">
+      <div class="var-table" x-data="chartTable({ table: () => tableOf() })" data-testid="ag-table">
+        <!-- @include partials/charts/table.html -->
+      </div>
+    </template>
+  </section>
 </div>

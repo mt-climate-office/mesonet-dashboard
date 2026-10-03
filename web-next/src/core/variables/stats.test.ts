@@ -49,6 +49,10 @@ describe('panelStats', () => {
     expect(rows.map((r) => r.label)).toEqual(['2 in', '4 in'])
     expect(rows[1].items[0].value).toBe('—')
   })
+  it('in the plain unit and table precision with the variable id', () => {
+    const [row] = panelStats(panel([{ name: 'Wind Speed [mi/hr]', values: [4.04, 10.06, null, 1] }]), x, [0, 30], false, 'wind_spd')
+    expect(row.items.map((i) => i.value)).toEqual(['4.0 mph', '10.1 mph', '7.1 mph'])
+  })
   it('formats by magnitude', () => {
     expect([0.0349, 5.678, 56.78, 848.93, -12.34].map(fmtStat)).toEqual(['0.03', '5.68', '56.8', '849', '-12.3'])
   })

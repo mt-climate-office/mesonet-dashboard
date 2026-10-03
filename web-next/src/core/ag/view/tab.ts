@@ -197,6 +197,13 @@ export const notHereMessage = (name: string) => `${name} has no soil water poten
 /** Single-choice chips: the newly pressed value, or `current` when the pressed chip was clicked again. */
 export const pickOne = (values: string[], current: string): string => values.find((v) => v !== current) ?? current
 
+/**
+ * Tools with an All-years view (`view=history`): Reference ET, which is also
+ * an observed variable (`etr`) and keeps that variable's history and place in
+ * the list (DIVERGENCES "Reference ET is one page").
+ */
+export const hasAllYears = (v: AgVariable): boolean => v === 'etr'
+
 /** Which card draws a variable. */
 export function variableGroup(v: AgVariable): 'met' | 'gdd' | 'soil' | 'annual' {
   if (v === 'gdd' || v === 'annual') return v

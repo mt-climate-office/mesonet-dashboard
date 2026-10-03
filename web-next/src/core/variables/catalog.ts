@@ -113,6 +113,9 @@ export function variableGroups(vars: readonly Variable[]): { group: VariableGrou
   return VARIABLE_GROUPS.map((group) => ({ group, items: vars.filter((v) => v.group === group) })).filter((g) => g.items.length > 0)
 }
 
+/** The variable page draws gridMET normals by itself: daily air temperature (no switch). */
+export const showsNormals = (v: Pick<Variable, 'name'>, agg: string): boolean => v.name === 'Air Temperature' && agg === 'daily'
+
 /** The variable with URL id `id`, or undefined. */
 export const findVariable = (vars: readonly Variable[], id: string | null): Variable | undefined =>
   id === null ? undefined : vars.find((v) => v.id === id)

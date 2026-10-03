@@ -6,6 +6,7 @@
  * from the band, not the extremes of the daily means.
  */
 import type { TimeseriesPanel } from '../models/timeseries'
+import { LABELS, formatReading } from './labels'
 
 export interface StatItem {
   label: 'Low' | 'High' | 'Average' | 'Total'
@@ -30,9 +31,10 @@ export function fmtStat(v: number): string {
 
 /**
  * One row per series of `panel`, over the points with `view[0] <= x < view[1]`
- * (`x` aligned with the series values, wall-clock ms).
+ * (`x` aligned with the series values, wall-clock ms). With the variable's
+ * `id`, values use its plain unit and table precision (core/variables/labels).
  */
-export function panelStats(panel: TimeseriesPanel, x: readonly number[], view: readonly [number, number], sum: boolean): StatRow[] {
+export function panelStats(panel: TimeseriesPanel, x: readonly number[], view: readonly [number, number], sum: boolean, id?: string): StatRow[] {
   const single = panel.series.length === 1
   return panel.series.map((s) => {
     const within = (ys: readonly (number | null)[]) => {
@@ -44,7 +46,8 @@ export function panelStats(panel: TimeseriesPanel, x: readonly number[], view: r
     }
     const vals = within(s.values)
     const unit = unitOf(s.name)
-    const fmt = (v: number | null) => (v === null ? '—' : `${fmtStat(v)}${unit ? ` ${unit}` : ''}`)
+    const plain = id !== undefined && id in LABELS
+    const fmt = (v: number | null) => (v === null ? '—' : plain ? formatReading(id, v, 'table') : `${fmtStat(v)}${unit ? ` ${unit}` : ''}`)
     const label = single ? '' : (s.depth ?? s.name.replace(/\s*\[[^\]]*\]\s*$/, ''))
     if (sum) return { label, items: [{ label: 'Total', value: fmt(vals.length ? vals.reduce((a, b) => a + b, 0) : null) }] }
     // A reduce, not Math.min(...vals): a long raw window would overflow the argument list.

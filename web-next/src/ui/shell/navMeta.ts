@@ -11,6 +11,7 @@ import { publishHeight } from '../layout/sectionNav'
 import { component } from '../component'
 import { openHelp } from './helpDialog'
 import { announce } from './live'
+import { shareView } from './share'
 
 export function navMeta() {
   return component({
@@ -25,24 +26,8 @@ export function navMeta() {
       publishHeight(this.$el as HTMLElement, '--chrome-h')
     },
 
-    /**
-     * Copy `$store.url.href`, the canonical URL of the view (it includes a
-     * write the store has not flushed yet). The result also goes to the page
-     * live region: the kit creates its toast element on first use, and a
-     * just-inserted live region is often not read.
-     */
-    async share() {
-      let msg = 'Link copied to clipboard'
-      let ms: number | undefined
-      try {
-        await navigator.clipboard.writeText(Alpine.store('url').href)
-      } catch {
-        msg = 'Could not copy. Copy the address bar to share this view.'
-        ms = 6000
-      }
-      MCO.showToast(msg, ms)
-      announce(msg)
-    },
+    /** Copy the view's URL (ui/shell/share.ts). */
+    share: () => shareView(),
 
     /** dark → light → high contrast; the menu stays open and the item's state text follows. */
     cycleTheme() {

@@ -13,7 +13,7 @@ import { depthLabelFromColumn, latestVariableForColumn } from '../params'
 import { parseWallClock } from '../sensorEvents'
 import type { Variable } from './catalog'
 import { last24h } from './range'
-import { compassWord, formatReading, plainName } from './labels'
+import { LABELS, compassWord, formatReading, plainName } from './labels'
 import { fmtStat } from './stats'
 
 type ElementRow = { element: string; description_short: string }
@@ -66,6 +66,9 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
     const vals = series ? series.v.filter((x): x is number => x !== null) : []
     const unit = col ? unitOf(col) : ''
     const fmt = (x: number, u: string) => `${fmtStat(x)}${u ? ` ${u}` : ''}`
+    // The plain unit and precision where labels.ts knows the variable (totals at table precision, as the stats).
+    const show = (x: number, u: string, where: 'display' | 'table' = 'display') =>
+      v.id === 'wind_dir' ? compassWord(x) : v.id in LABELS ? formatReading(v.id, x, where) : fmt(x, u)
     const sparkLabel = !spark
       ? ''
       : v.sum
@@ -75,7 +78,7 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
     if (v.sum) {
       const [from, to] = last24h(end)
       const day = col ? timed.filter((x) => x.t >= from && x.t < to).map((x) => num(x.r[col])).filter((x): x is number => x !== null) : []
-      return { id: v.id, name: plainName(v.id, v.name), value: day.length ? fmt(day.reduce((a, b) => a + b, 0), unit) : '—', note: day.length ? 'last 24 h' : '', spark, sparkLabel }
+      return { id: v.id, name: plainName(v.id, v.name), value: day.length ? show(day.reduce((a, b) => a + b, 0), unit, 'table') : '—', note: day.length ? 'last 24 h' : '', spark, sparkLabel }
     }
     // The current reading: /latest first (fresher), else the newest hourly value.
     const latestCol = latest ? primaryColumn(Object.keys(latest), v.name) : null
@@ -84,7 +87,7 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
     const value = now ?? newest
     const valueCol = now !== null ? latestCol : col
     const depth = valueCol ? depthLabelFromColumn(valueCol) : null
-    return { id: v.id, name: plainName(v.id, v.name), value: value === null ? '—' : fmt(value, unitOf(valueCol ?? '')), note: depth ? `at ${depth}` : '', spark, sparkLabel }
+    return { id: v.id, name: plainName(v.id, v.name), value: value === null ? '—' : show(value, unitOf(valueCol ?? '')), note: depth ? `at ${depth}` : '', spark, sparkLabel }
   })
 }
 

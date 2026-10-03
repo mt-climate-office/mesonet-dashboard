@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chartPatch, chartsMode, findVariable, matchesQuery, neighbors, stationVariables, variableGroups, variableId, variableIdForElement, LIST_AG_TOOLS } from './catalog'
+import { chartPatch, chartsMode, showsNormals, findVariable, matchesQuery, neighbors, stationVariables, variableGroups, variableId, variableIdForElement, LIST_AG_TOOLS } from './catalog'
 
 // acebozem's /elements (2026-10-01), one row per element family plus a new, unmapped element.
 const ELEMENTS = [
@@ -87,6 +87,14 @@ describe('chartPatch', () => {
   it('opens a variable on its chart, an Ag tool through its reset patch', () => {
     expect(chartPatch('air_temp')).toEqual({ v: 'air_temp', view: 'recent', tbl: false, cmp: false })
     expect(chartPatch('etr')).toMatchObject({ v: 'etr', view: 'recent', tbl: false, crop: 'wheat', ag_time: 'daily' })
+  })
+})
+
+describe('showsNormals', () => {
+  it('daily air temperature only', () => {
+    expect(showsNormals({ name: 'Air Temperature' }, 'daily')).toBe(true)
+    expect(showsNormals({ name: 'Air Temperature' }, 'hourly')).toBe(false)
+    expect(showsNormals({ name: 'Precipitation' }, 'daily')).toBe(false)
   })
 })
 

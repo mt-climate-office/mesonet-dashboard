@@ -1,29 +1,21 @@
 /**
- * `x-data="agControls"`: the Ag "Options" disclosure (partials/ag/controls.html).
- * Reads and writes only `$store.url`; also applies the one-off URL fix-ups
- * and clears a station without SWP sensors for the SWP variables (with a toast).
+ * `x-data="agOptions"`: an Ag tool's option chips (partials/ag/options.html).
+ * One chip per option of the open tool (core/ag/view/summary `optionChips`:
+ * its name and current value); each opens a popover (`x-data="popover"`)
+ * holding the existing control: crop chips, the cutoff `rangeSlider`,
+ * `dateRange`, the projection and comparison selects, the interval,
+ * livestock and soil chips. Reads and writes only `$store.url`, and applies
+ * the one-off URL fix-ups (core/ag/view/tab `urlFixups`). The station comes
+ * from the header picker.
  */
 import Alpine from 'alpinejs'
 import type { RangeValue } from '../../core/controls/rangeModel'
-import { DERIVED_VAR_OPTIONS, GDD_CROPS } from '../../core/params/ag'
-import { learnMoreUrl } from '../../core/ag/view/learnMore'
+import { GDD_CROPS } from '../../core/params/ag'
 import { PROJECTION_OPTIONS } from '../../core/ag/view/projection'
 import { SLIDER_MAX, SLIDER_MIN } from '../../core/ag/view/gddCutoffs'
 import { denverToday } from '../../core/ag/data/parse'
-import { optionsSummary } from '../../core/ag/view/summary'
-import {
-  annualElement,
-  annualOptions,
-  cropPatch,
-  cutoffSummary,
-  pickOne,
-  sliderPatch,
-  sliderValue,
-  stationItems,
-  swpClearedMessage,
-  urlFixups,
-  variablePatch,
-} from '../../core/ag/view/tab'
+import { optionChips, type OptionChip, type OptionId } from '../../core/ag/view/summary'
+import { annualElement, annualOptions, cropPatch, cutoffSummary, pickOne, sliderPatch, sliderValue, urlFixups } from '../../core/ag/view/tab'
 import type { UrlState } from '../../core/url-schema'
 import { component } from '../component'
 import { currentTab, elementsResource, raw } from './shared'
@@ -42,10 +34,9 @@ function elementOptions(): { value: string; label: string }[] | null {
   return res?.data ? annualOptions(raw(res.data)) : null
 }
 
-export function agControls() {
+export function agOptions() {
   let fx: ReturnType<typeof Alpine.effect> | null = null
   return component({
-    variables: DERIVED_VAR_OPTIONS,
     crops: GDD_CROPS,
     projections: PROJECTION_OPTIONS,
     times: [
@@ -59,19 +50,8 @@ export function agControls() {
     slider: { min: SLIDER_MIN, max: SLIDER_MAX, step: 1, allowNone: true, unit: '°F' },
 
     init() {
-      // Open on desktop; on phones collapsed, unless there is no station yet (its picker is inside).
-      const details = this.$el as HTMLDetailsElement
-      details.open = !MCO.viewport.isCompact() || !Alpine.store('url').state.s
       fx = Alpine.effect(() => {
-        const t = currentTab()
-        const url = Alpine.store('url').state
-        const station = Alpine.store('station').current
-        if (t.swpOnly && station && !t.hasSwp) {
-          MCO.showToast(swpClearedMessage(station.name), 10_000)
-          Alpine.store('station').select(null)
-          return
-        }
-        const patch = urlFixups(t, url, !!station, elementOptions())
+        const patch = urlFixups(currentTab(), Alpine.store('url').state, !!Alpine.store('station').current, elementOptions())
         if (patch) set(patch)
       })
     },
@@ -83,12 +63,22 @@ export function agControls() {
       return currentTab()
     },
     today: () => denverToday(),
-    stations() {
-      return stationItems(Alpine.store('station').list, this.tab.swpOnly)
+    /** The chips for the open tool, each naming its option's value ("Wheat", "32–70 °F"). */
+    chips(): OptionChip[] {
+      const options = elementOptions()
+      const annv = annualElement(this.tab.annualVar, options)
+      return optionChips(this.tab, options?.find((o) => o.value === annv)?.label ?? null, denverToday())
     },
-    stationPlaceholder(): string {
-      if (Alpine.store('station').catalog?.status === 'loading') return 'Loading stations…'
-      return this.tab.swpOnly ? 'Pick a station with soil water potential' : 'Pick a station'
+    has(id: OptionId): boolean {
+      return this.chips().some((c) => c.id === id)
+    },
+    text(id: OptionId): string {
+      return this.chips().find((c) => c.id === id)?.text ?? ''
+    },
+    /** The chip's accessible name: "Crop: Wheat". */
+    label(id: OptionId): string {
+      const c = this.chips().find((x) => x.id === id)
+      return c ? `${c.name}: ${c.text}` : ''
     },
     annualOptions: () => elementOptions() ?? [],
     /** The element list failed (no cached data): show the error and a Retry button. */
@@ -101,15 +91,6 @@ export function agControls() {
       if (this.elementsFailed()) return 'Unavailable'
       return Alpine.store('station').id ? 'Loading…' : 'Pick a station first'
     },
-    /** The disclosure's one-line summary, e.g. "Wheat · 32–70 °F · to Oct 31". */
-    summary(): string {
-      const options = elementOptions()
-      const annv = annualElement(this.tab.annualVar, options)
-      return optionsSummary(this.tab, options?.find((o) => o.value === annv)?.label ?? null)
-    },
-    learnHref(): string {
-      return learnMoreUrl(this.tab.variable, this.tab.crop)
-    },
     cutoffText(): string {
       return cutoffSummary(this.tab)
     },
@@ -117,11 +98,6 @@ export function agControls() {
       return sliderValue(this.tab)
     },
 
-    setStation: (id: string | null) => Alpine.store('station').select(id),
-    /** A new tool is a variable change: pushed, so Back returns to the previous tool. */
-    setVariable(v: string) {
-      if (v !== this.tab.variable) Alpine.store('url').go('charts', variablePatch(v), true)
-    },
     setDates: (r: { start: string; end: string }) => set({ ag_from: r.start, ag_to: r.end }),
     setTime: (v: string) => set({ ag_time: v as UrlState['ag_time'] }),
     setLivestock: (v: string) => set({ lt: v as UrlState['lt'] }),
