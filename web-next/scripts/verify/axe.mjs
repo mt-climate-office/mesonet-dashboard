@@ -19,6 +19,12 @@ const openPicker = async (page) => {
     && document.querySelector('[data-testid="picker-map"] tbody')?.children.length > 0, null, { timeout: 30000 })
   await page.waitForTimeout(400) // drawer/sheet slide
 }
+/** The Now photo dialog with its pickers, once its frame is in and its open transition has ended. */
+const openPhoto = async (page) => {
+  await page.getByTestId('now-photo-open').click()
+  await page.waitForFunction(() => document.querySelector('[data-testid="photo-modal-image"]')?.complete
+    && document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 30000 })
+}
 /** Download on phones, step 1 (Elements) once the station and its elements are in. */
 const dlReady = (page) => page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
 
@@ -44,6 +50,7 @@ const SCENARIOS = [
   { name: 'ag-annual', query: '?s=acebozem&var=annual#ag', evidence: { charts: 1 } },
   { name: 'download-step1', query: '?s=acebozem#download', only: ['390'], before: dlReady, evidence: {} },
   { name: 'downloader', query: DL_QUERY, before: runDownload, evidence: { charts: 1 } },
+  { name: 'photo-dialog', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPhoto },
   { name: 'help-dialog', query: '?s=acebozem#latest', evidence: { charts: 1 }, after: openHelp },
 ]
 

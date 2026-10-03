@@ -1,7 +1,7 @@
 /**
  * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, one-row navbar
  * tab order + focus ring, the picker's combobox and closing on a pick, Help dialog,
- * theme toggle, the Now Provisional toggletip, the Charts drill-down and Back,
+ * theme toggle, the Now Provisional toggletip and photo dialog, the Charts drill-down and Back,
  * tabs mounting only while open (no cross-tab requests), the Download stepper,
  * the picker drawer and sheet (focus, Esc, inert), the tab bar and history, the
  * variable page's view switch and chips, focus after Charts drill-downs, the Ag
@@ -145,6 +145,50 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
     s1.expanded === 'true' && s1.shown && s2.expanded === 'false' && !s2.shown && s3.expanded === 'false' && !s3.shown, JSON.stringify([s1, s2, s3]))
   const p = await problems()
   check('Provisional toggletip: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Now: the photo dialog (direction / day / time pickers) ─────────────── */
+{
+  const { page, problems, close } = await open(env, '?s=acebozem&theme=dark#now')
+  const tile = page.getByTestId('now-photo-open')
+  await tile.waitFor({ timeout: 10000 })
+  const tileSrc = await page.getByTestId('now-photo-image').getAttribute('src')
+  await tile.focus()
+  await page.keyboard.press('Enter')
+  const img = page.getByTestId('photo-modal-image')
+  await img.waitFor({ timeout: 10000 })
+  const src0 = await img.getAttribute('src')
+  check('photo dialog: Enter on the tile opens it on the tile\'s frame', src0 === tileSrc, `${src0} vs ${tileSrc}`)
+  // Arrow keys move the checked direction radio (a native radio group) and so the frame.
+  await page.locator('[data-testid="photo-directions"] input:checked').focus()
+  await page.keyboard.press('ArrowRight')
+  const changed = await page.waitForFunction((s) => {
+    const src = document.querySelector('[data-testid="photo-modal-image"]')?.getAttribute('src')
+    return src && src !== s ? src : null
+  }, src0, { timeout: 10000 }).then((h) => h.jsonValue()).catch(() => null)
+  check('photo dialog: ArrowRight on the direction changes the image src', !!changed, String(changed))
+  // A modal <dialog> makes the page inert: Tab cycles its controls and the browser chrome (body), never the page.
+  const stops = []
+  for (let i = 0; i < 10; i++) {
+    await page.keyboard.press('Tab')
+    stops.push(await page.evaluate(() => {
+      const el = document.activeElement
+      return !el || el === document.body ? 'chrome' : el.closest('[data-testid="photo-modal"]') ? 'in' : 'page'
+    }))
+  }
+  check('photo dialog: Tab never leaves it for the page', !stops.includes('page') && stops.lastIndexOf('in') > stops.indexOf('chrome'), stops.join(' '))
+  await page.keyboard.press('Escape')
+  await page.waitForFunction(() => !document.querySelector('[data-testid="photo-modal"]')?.open, null, { timeout: 5000 }).catch(() => {})
+  const after = await page.evaluate(() => ({
+    open: !!document.querySelector('[data-testid="photo-modal"]')?.open,
+    focus: document.activeElement?.getAttribute('data-testid'),
+    tile: document.querySelector('[data-testid="now-photo-image"]')?.getAttribute('src'),
+  }))
+  check('photo dialog: Esc closes, focus returns to the tile, the tile still shows the latest frame',
+    !after.open && after.focus === 'now-photo-open' && after.tile === tileSrc, JSON.stringify(after))
+  const p = await problems()
+  check('photo dialog: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
