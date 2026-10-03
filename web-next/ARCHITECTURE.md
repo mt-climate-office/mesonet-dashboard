@@ -17,7 +17,8 @@ npm run dev        # http://localhost:5174/mesonet-dashboard/next/ (API proxied 
 npm test           # vitest, Node only
 npm run typecheck && npm run lint
 npm run build && npm run size   # size = bundle budget gate
-npm run verify     # build + Playwright: kit-consumer checks, axe matrix, keyboard walks
+npm run verify     # build + Playwright: kit-consumer checks, axe matrix, keyboard walks,
+                   # phone layout + touch + motion (layout.mjs)
                    # (scripts/verify/, API data from its fixtures/; to re-record:
                    #  rm -r scripts/verify/fixtures && VERIFY_RECORD=1 npm run verify)
 ```
@@ -244,8 +245,10 @@ ring only (no per-selector focus rules); ≥ 40 px touch targets under
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
-`npm run verify` runs axe on its scenarios (Now, the picker, the Charts list, a variable page,
-Compare, Ag tools + 4 Ag views, Download, About, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
+`npm run verify` runs axe on its scenarios (Now, the picker on a first visit and opened with a station,
+the Charts list, a variable page in each view, Compare, Ag tools + 4 Ag views, Download (step 1 and step 3
+on phones), About, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`). A known gap expected to
+fail until a fix lands is a `known(…)` in the verify scripts: printed, not failing; make it a `check` then.
 
 ## Testing
 
@@ -254,8 +257,8 @@ Compare, Ag tools + 4 Ag views, Download, About, Help) × 1440/390 px × 3 theme
   parity data; live cross-checks run with `AG_LIVE=1`.
 - Stores keep their logic in core (`cache.ts`, `url-schema.ts`, `theme.ts`,
   `stations.ts#confirmedStation`), so they need no DOM tests.
-- UI is verified with Playwright: `scripts/verify/` (kit-consumer, axe and
-  keyboard checks on the built app, API from fixtures) and
+- UI is verified with Playwright: `scripts/verify/` (kit-consumer, axe,
+  keyboard and phone layout/touch/motion checks on the built app, API from fixtures) and
   `scripts/fidelity/` (web-next vs web/ and `/derived` on the live API; its
   `CHECKLIST.md` is the legacy-parity audit).
 

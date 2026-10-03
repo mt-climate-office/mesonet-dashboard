@@ -237,8 +237,11 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
 
 ## Accessibility notes
 
-- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `about`, `picker`, `charts-list`,
-  `variable`, `compare`, `ag-tools`) × 3 themes × 1440/390.
+- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `about`, `picker`, `picker-open`,
+  `charts-list`, `variable` + `-history` + `-table`, `compare`, `ag-tools`, four Ag tools, `download-step1`
+  (390), `downloader`, `help-dialog`) × 3 themes × 1440/390. `keyboard.mjs` walks the picker, tab bar,
+  variable page and Ag Options; `layout.mjs` checks touch swipes over charts, sideways scroll at 390, the
+  fold and reduced motion.
 - Charts: the Table view is a real `<table>` (caption, scoped headers) in a focusable, labelled scroll region;
   presets and view switches are radios / links with `aria-current`; stats are a `<dl>`.
 - Touch targets ≥ 40 px under `(hover: none)`; the tab bar is 56 px.
