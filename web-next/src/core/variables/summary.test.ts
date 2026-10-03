@@ -6,7 +6,7 @@ import { parseWallClock } from '../sensorEvents'
 import type { TimeseriesPanel } from '../models/timeseries'
 import { rangeView } from './range'
 import { panelStats } from './stats'
-import { listRequest, primaryColumn, variableRows } from './summary'
+import { currentReading, listRequest, primaryColumn, variableRows } from './summary'
 
 const ELEMENTS = [
   ['air_temp_0200', 'Air Temperature @ 2 m'],
@@ -85,5 +85,16 @@ describe('24 h totals', () => {
     const [page] = panelStats(panel, x, rangeView('24h', '2026-10-01', '2026-10-02', x[x.length - 1]), true)
     expect(list.value).toBe('0.1 in')
     expect(page.items).toEqual([{ label: 'Total', value: list.value }])
+  })
+})
+
+describe('currentReading', () => {
+  const v = (id: string) => VARS.find((x) => x.id === id)!
+  it('the /latest reading in plain units at the shallowest depth; none for totals or without a reading', () => {
+    expect(currentReading(v('air_temp'), LATEST)).toBe('57 °F')
+    expect(currentReading(v('soil_vwc'), LATEST)).toBe('9% at 2 in')
+    expect(currentReading(v('ppt'), LATEST)).toBeNull()
+    expect(currentReading(v('bp'), LATEST)).toBeNull()
+    expect(currentReading(v('air_temp'), undefined)).toBeNull()
   })
 })

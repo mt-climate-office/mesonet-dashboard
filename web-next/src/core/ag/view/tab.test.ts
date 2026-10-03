@@ -13,7 +13,6 @@ import {
   resolveAgTab,
   sliderPatch,
   sliderValue,
-  stationItems,
   urlFixups,
   variableGroup,
   variablePatch,
@@ -54,7 +53,7 @@ describe('resolveAgTab', () => {
 
 describe('patches', () => {
   it('a variable change resets crop, cutoffs, time agg and soil var', () => {
-    expect(variablePatch('etr')).toEqual({ v: 'etr', crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' })
+    expect(variablePatch('etr')).toEqual({ v: 'etr', view: 'recent', tbl: false, cmp: false, crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' })
     expect(cropPatch('corn')).toEqual({ crop: 'corn', gdd_lo: null, gdd_hi: null })
   })
   it('slider: crop cutoffs ↔ value; only a moved thumb is written; open cap = null', () => {
@@ -79,11 +78,7 @@ describe('patches', () => {
   })
 })
 
-describe('station + annual options', () => {
-  it('sorted by name; SWP variables list only has_swp stations; NWSLI searchable', () => {
-    expect(stationItems([CROW, BOZ], false).map((s) => s.id)).toEqual(['acebozem', 'acecrowa'])
-    expect(stationItems([CROW, BOZ], true)).toEqual([{ id: 'acebozem', label: 'Bozeman (HydroMet)', keywords: ['BZMM8'] }])
-  })
+describe('annual options', () => {
   it('annual: unique elements, US-unit labels, natural sort', () => {
     const els = [
       { element: 'soil_vwc_1000', description_short: 'Soil VWC @ -100 cm' },
@@ -141,7 +136,7 @@ it('variableGroup + chartState', () => {
   expect(vars.map((v) => variableGroup(v))).toEqual(['met', 'met', 'met', 'gdd', 'soil', 'soil', 'soil', 'annual'])
   const swp = { swpOnly: true, hasSwp: false }
   expect(chartState(swp, 'acecrowa', null, false)).toBe('loading-stations')
-  expect(chartState(swp, 'acecrowa', 'acecrowa', true)).toBe('no-station')
+  expect(chartState(swp, 'acecrowa', 'acecrowa', true)).toBe('not-here')
   expect(chartState({ swpOnly: false, hasSwp: false }, 'acecrowa', 'acecrowa', true)).toBe('chart')
   expect(chartState({ swpOnly: false, hasSwp: false }, null, null, true)).toBe('no-station')
 })

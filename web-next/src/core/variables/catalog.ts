@@ -7,6 +7,7 @@
  */
 import { ELEM_MAP, LATEST_EXCLUDED_ELEMENTS, latestVarName, latestVarsFromElements } from '../params'
 import { NORMALS_VARS } from '../models/timeseries'
+import { variablePatch } from '../ag/view/tab'
 import { AG_TOOL_IDS, isAgTool } from '../params/ag'
 import type { UrlState } from '../url-schema'
 
@@ -25,9 +26,28 @@ const GROUPED: Record<Exclude<VariableGroup, 'Other'>, readonly string[]> = {
 
 /**
  * The Charts list's "Ag tools" group, in tool order: every Ag tool except
- * Annual comparison, which is now any variable's All-years view.
+ * Annual comparison (any variable's All-years view) and Reference ET, which
+ * is listed once, under Rain and evaporation (its `etr` row opens the tool).
  */
-export const LIST_AG_TOOLS: readonly string[] = AG_TOOL_IDS.filter((id) => id !== 'annual')
+export const LIST_AG_TOOLS: readonly string[] = AG_TOOL_IDS.filter((id) => id !== 'annual' && id !== 'etr')
+
+/**
+ * The URL patch that opens a Charts entry: an Ag tool through its reset patch
+ * (core/ag/view/tab `variablePatch`), a variable on its chart (not All years
+ * or a table).
+ */
+export function chartPatch(id: string): Partial<UrlState> {
+  return isAgTool(id) ? variablePatch(id) : { v: id, view: 'recent', tbl: false, cmp: false }
+}
+
+/**
+ * True when every word of `query` (any case) appears in one of `texts`; an
+ * empty query matches everything. The Charts list's search field.
+ */
+export function matchesQuery(query: string, ...texts: readonly string[]): boolean {
+  const hay = texts.join(' ').toLowerCase()
+  return query.toLowerCase().split(/\s+/).filter(Boolean).every((w) => hay.includes(w))
+}
 
 /** Variables summed over time: bars, a total instead of min/max/mean, a cumulative history. */
 const SUMMED = new Set(['Precipitation', 'Reference ET'])

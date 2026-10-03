@@ -5,7 +5,6 @@
  * Pure; the ui/ag components call these.
  */
 import type { Station, StationElement } from '../../api'
-import type { ComboboxItem } from '../../controls/comboboxModel'
 import type { RangeValue } from '../../controls/rangeModel'
 import { DERIVED_VAR_OPTIONS, type DerivedVar, GDD_CROPS, SOIL_VAR_OPTIONS, isAgTool } from '../../params/ag'
 import { stationHasSwp } from '../../stations'
@@ -95,12 +94,13 @@ export function resolveAgTab(url: AgUrl, station: Station | undefined, today: Lo
 }
 
 /**
- * A user's variable change resets crop, custom cutoffs, time aggregation and
- * soil variable (legacy app.py ~567-599). Only this patch resets, so a deep
- * link's explicit params survive the initial load.
+ * Opening a tool resets crop, custom cutoffs, time aggregation and soil
+ * variable (legacy app.py ~567-599), and shows its chart (not All years or a
+ * table). Only this patch resets, so a deep link's explicit params survive
+ * the initial load.
  */
 export function variablePatch(v: string): Partial<UrlState> {
-  return { v, crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' }
+  return { v, view: 'recent', tbl: false, cmp: false, crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' }
 }
 
 /** Ag keys other than the tool itself: every option a tool reads (old `#ag` links carry them; core/router). */
@@ -108,15 +108,6 @@ export const AG_KEYS = ['crop', 'gdd_lo', 'gdd_hi', 'gdd_proj', 'ag_time', 'lt',
 
 /** A new crop starts from its own cutoffs. */
 export const cropPatch = (crop: string): Partial<UrlState> => ({ crop, gdd_lo: null, gdd_hi: null })
-
-/** Station picker rows, sorted by name; SWP variables list only has_swp stations. */
-export function stationItems(stations: readonly Station[], swpOnly: boolean): ComboboxItem[] {
-  return stations
-    .filter((s) => !swpOnly || stationHasSwp(s))
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((s) => ({ id: s.station, label: `${s.name} (${s.sub_network})`, keywords: s.nwsli_id ? [s.nwsli_id] : [] }))
-}
 
 /** Annual comparison options: one per element, US-unit labels (legacy dist_swap), natural sort. */
 export function annualOptions(elements: readonly StationElement[]): { value: string; label: string }[] {
@@ -200,9 +191,8 @@ export function annualElement(annv: string | null, options: { value: string }[] 
   return annv && options.some((o) => o.value === annv) ? annv : (options[0]?.value ?? null)
 }
 
-/** Toast text when an SWP variable clears a station without SWP sensors. */
-export const swpClearedMessage = (name: string) =>
-  `${name} has no soil water potential sensors. Pick a station with soil water potential to see this variable.`
+/** Why an SWP tool shows nothing at a station without SWP sensors (its empty state, beside "Choose a station"). */
+export const notHereMessage = (name: string) => `${name} has no soil water potential sensors, so this tool does not apply there.`
 
 /** Single-choice chips: the newly pressed value, or `current` when the pressed chip was clicked again. */
 export const pickOne = (values: string[], current: string): string => values.find((v) => v !== current) ?? current
@@ -215,16 +205,17 @@ export function variableGroup(v: AgVariable): 'met' | 'gdd' | 'soil' | 'annual' 
 
 /**
  * What the chart card shows: the chart, "Loading stations…" while `?s=` waits
- * on the catalog, or the legacy "Select Station" prompt (no station, or one
- * without SWP sensors for an SWP variable).
+ * on the catalog, the "Select Station" prompt without a station, or
+ * `not-here` for an SWP tool at a station without SWP sensors
+ * (`notHereMessage`). The station comes from the header picker.
  */
 export function chartState(
   t: Pick<AgTab, 'swpOnly' | 'hasSwp'>,
   param: string | null,
   stationId: string | null,
   catalogLoaded: boolean,
-): 'chart' | 'loading-stations' | 'no-station' {
+): 'chart' | 'loading-stations' | 'no-station' | 'not-here' {
   if (param && !catalogLoaded) return 'loading-stations'
-  if (!stationId || (t.swpOnly && !t.hasSwp)) return 'no-station'
-  return 'chart'
+  if (!stationId) return 'no-station'
+  return t.swpOnly && !t.hasSwp ? 'not-here' : 'chart'
 }

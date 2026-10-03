@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chartsMode, findVariable, neighbors, stationVariables, variableGroups, variableId, variableIdForElement, LIST_AG_TOOLS } from './catalog'
+import { chartPatch, chartsMode, findVariable, matchesQuery, neighbors, stationVariables, variableGroups, variableId, variableIdForElement, LIST_AG_TOOLS } from './catalog'
 
 // acebozem's /elements (2026-10-01), one row per element family plus a new, unmapped element.
 const ELEMENTS = [
@@ -78,8 +78,24 @@ describe('chartsMode', () => {
 })
 
 describe('LIST_AG_TOOLS', () => {
-  it('lists every Ag tool but Annual comparison, in tool order', () => {
-    expect(LIST_AG_TOOLS).toEqual(['etr', 'gdd', 'feels_like', 'cci', 'soil_temp,soil_ec_blk', 'swp', 'percent_saturation'])
+  it('lists every Ag tool but Annual comparison and Reference ET (listed under Rain and evaporation), in tool order', () => {
+    expect(LIST_AG_TOOLS).toEqual(['gdd', 'feels_like', 'cci', 'soil_temp,soil_ec_blk', 'swp', 'percent_saturation'])
+  })
+})
+
+describe('chartPatch', () => {
+  it('opens a variable on its chart, an Ag tool through its reset patch', () => {
+    expect(chartPatch('air_temp')).toEqual({ v: 'air_temp', view: 'recent', tbl: false, cmp: false })
+    expect(chartPatch('etr')).toMatchObject({ v: 'etr', view: 'recent', tbl: false, crop: 'wheat', ag_time: 'daily' })
+  })
+})
+
+describe('matchesQuery', () => {
+  it('every word, any case, in any of the texts; empty matches all', () => {
+    expect(matchesQuery('', 'Air temperature')).toBe(true)
+    expect(matchesQuery('soil moist', 'Soil moisture', 'at 2 in')).toBe(true)
+    expect(matchesQuery('TEMP', 'Air temperature')).toBe(true)
+    expect(matchesQuery('rain', 'Air temperature', 'Weather')).toBe(false)
   })
 })
 

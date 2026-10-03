@@ -13,7 +13,7 @@ import { depthLabelFromColumn, latestVariableForColumn } from '../params'
 import { parseWallClock } from '../sensorEvents'
 import type { Variable } from './catalog'
 import { last24h } from './range'
-import { plainName } from './labels'
+import { compassWord, formatReading, plainName } from './labels'
 import { fmtStat } from './stats'
 
 type ElementRow = { element: string; description_short: string }
@@ -86,4 +86,17 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
     const depth = valueCol ? depthLabelFromColumn(valueCol) : null
     return { id: v.id, name: plainName(v.id, v.name), value: value === null ? '—' : fmt(value, unitOf(valueCol ?? '')), note: depth ? `at ${depth}` : '', spark, sparkLabel }
   })
+}
+
+/**
+ * The variable page's "value now": the `/latest` reading in plain units at the
+ * shallowest depth ("57 °F", "8% at 2 in", wind direction as "SSE"); null for
+ * totals (precipitation, ETr) or without a reading.
+ */
+export function currentReading(v: Variable, latest: Record<string, unknown> | undefined): string | null {
+  const col = !v.sum && latest ? primaryColumn(Object.keys(latest), v.name) : null
+  const value = col ? num(latest?.[col]) : null
+  if (col === null || value === null) return null
+  const depth = depthLabelFromColumn(col)
+  return `${v.id === 'wind_dir' ? compassWord(value) : formatReading(v.id, value)}${depth ? ` at ${depth}` : ''}`
 }

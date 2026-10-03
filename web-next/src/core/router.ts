@@ -129,7 +129,7 @@ export function legacyRedirect(search: string, hash: string): { search: string; 
 }
 
 /** The Charts variable list: no variable or Ag tool, no Compare, the default sub-view. */
-export const CHARTS_LIST_PATCH: Partial<UrlState> = { v: null, view: 'recent', cmp: false }
+export const CHARTS_LIST_PATCH: Partial<UrlState> = { v: null, view: 'recent', tbl: false, cmp: false }
 
 /**
  * A section-nav link from `from` to `to`: the URL patch and whether it adds a
@@ -143,6 +143,6 @@ export function sectionNavPatch(
   state: Pick<UrlState, 'v' | 'cmp'>,
 ): { patch: Partial<UrlState>; drillDown: boolean } {
   if (from === 'charts' && to === 'charts') return { patch: CHARTS_LIST_PATCH, drillDown: state.v !== null || state.cmp }
-  if (from === 'charts') return { patch: { v: null, view: 'recent' }, drillDown: false }
+  if (from === 'charts') return { patch: { v: null, view: 'recent', tbl: false }, drillDown: false }
   return { patch: {}, drillDown: false }
 }
