@@ -223,6 +223,41 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&var=gdd#ag', 1], ['down
   await close()
 }
 
+/* ── Download stepper (390 px): Next validates, focus + announcement follow ─ */
+{
+  const { page, close } = await open(env, '?s=acebozem#download', { viewport: VIEWPORTS[1] })
+  const progress = () => page.getByTestId('dl-progress').innerText()
+  const shown = () => page.evaluate(() => [...document.querySelectorAll('.dl-step')].filter((e) => e.offsetParent !== null).map((e) => e.dataset.testid))
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
+  check('stepper: Step 1 of 3, only Elements shown', (await progress()).includes('Step 1 of 3') && JSON.stringify(await shown()) === '["dl-step-elements"]', JSON.stringify(await shown()))
+  await page.getByTestId('dl-next').click()
+  await page.waitForTimeout(200)
+  check('stepper: Next without elements stays and says why', (await progress()).includes('Step 1 of 3') && (await page.getByTestId('dl-step-hint').isVisible()))
+  await close()
+}
+{
+  const { page, problems, close } = await open(env, DL_QUERY, { viewport: VIEWPORTS[1] })
+  const focused = () => page.evaluate(() => document.activeElement?.id)
+  const live = () => page.evaluate(() => [...document.querySelectorAll('[aria-live]')].map((e) => e.textContent).join(' '))
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
+  await page.getByTestId('dl-next').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(300)
+  check('stepper: Enter on Next → step 2, focus on its heading, announced',
+    (await focused()) === 'dl-step-1' && (await live()).includes('Step 2 of 3: Dates & period'), `${await focused()} | ${await live()}`)
+  await page.getByTestId('dl-next').click()
+  await page.waitForTimeout(300)
+  check('stepper: step 3 shows Run and the preview', (await focused()) === 'dl-step-2' && (await page.getByTestId('dl-run').isVisible()) && (await page.getByTestId('dl-preview').isVisible()))
+  await page.getByTestId('dl-run').click()
+  await page.waitForFunction(() => !document.querySelector('[data-testid="dl-download"]')?.disabled, null, { timeout: 30000 })
+  await page.waitForTimeout(300)
+  check('stepper: after Run, focus on the result heading and the row count announced',
+    (await focused()) === 'dl-preview-title' && /Request finished: [\d,]+ rows/.test(await live()), `${await focused()} | ${await live()}`)
+  const p = await problems()
+  check('stepper: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
 /* ── Map sr-only table: keyboard selection ──────────────────────────────── */
 // On the Downloader map: selecting on Latest resets its cards (and so the map) by design.
 {

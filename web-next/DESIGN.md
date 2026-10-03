@@ -14,7 +14,7 @@ Station view (?s=<id>; remembered in localStorage mco-dashboard-station)
 ├─ Charts    #charts         P0: the existing Latest view as "Compare" (cmp=1)
 │                            P1: variable list → variable page (v=…) | Compare
 ├─ Ag        #ag             the Ag Tools view
-├─ Download  #download       the Data Downloader view
+├─ Download  #download       Elements → Dates & period → Run, preview (a stepper on phones)
 └─ About     #about          metadata, all current readings, locator map
 Station picker: drawer (desktop/tablet) or bottom sheet (phones):
                 search · Near me · recents · network chips · map
@@ -73,6 +73,29 @@ shifts. Values are Space Mono on the type scale; labels are small caps in `--tex
 Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png`,
 `390-dark-sheet-peek.png`, `768-light-now-acebozem.png`, `1440-dark-now-acebozem.png`,
 `1440-dark-drawer-open.png`, `390-light-now-arskeogh.png` (AgriMet, wind rose).
+
+## Download
+
+Three step cards (`.dash-card`, `partials/downloader/index.html`) and the preview below them:
+
+| Step | Contents |
+|---|---|
+| 1 Elements | station combobox, variables multiselect, "Show uncommon variables", the station map |
+| 2 Dates & period | time aggregation, dates (install date … today), quality control |
+| 3 Run | recap ("Bozeman · 2 variables · Daily · 2026-09-01 to 2026-09-30"), Run, Download CSV, warnings |
+
+- **Desktop and tablet:** a two-column grid, Elements beside Dates & period over Run; the preview spans
+  both columns. No stepper.
+- **Compact:** a stepper. Only `.dl-step.is-current` shows (the Run step and the preview share step 3),
+  under "Step 2 of 3" and a three-segment bar, with Back / Next below. Next stays enabled; when the step
+  would block Run (no station or element; invalid dates, from the date control's `onValidity`) it stays put
+  and shows why. A step change scrolls the progress line into view, focuses the step heading and announces
+  "Step 2 of 3: Dates & period". Enter in a field is Next until step 3, then Run. The step is view state
+  (not in the URL); the logic is `core/downloader/stepper.ts`.
+- **After Run** (every width): the preview scrolls to the top of the view (instantly under reduced
+  motion), its heading takes focus, and the live region gives the row count.
+- **Touch:** inputs 16 px (controls.css), variable rows 44 px; on phones the variable list grows with the
+  page instead of scrolling inside its panel.
 
 ## About
 
@@ -139,7 +162,8 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 | `--fs-xl` | 1.75 | tile values, station name |
 | `--fs-2xl` | 2.5 | the hero value |
 
-New CSS uses only these. Older per-tab CSS (latest/ag/downloader) moves onto them as P1 rebuilds each section.
+New CSS uses only these. Older per-tab CSS (latest/ag) moves onto them as P1 rebuilds each section;
+downloader.css is done.
 
 ## Accessibility notes
 

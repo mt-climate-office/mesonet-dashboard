@@ -1,7 +1,8 @@
 /**
- * Data Downloader tab: request controls, the preview chart and the CSV
- * download (`x-data="downloader"` in partials/downloader/index.html). Reads
- * the URL and station stores; all request and view logic is core/downloader.
+ * Download section: request controls, the preview chart and the CSV download
+ * (`x-data="downloader"` in partials/downloader/index.html); a three-step
+ * stepper on phones. Reads the URL and station stores; all request, view and
+ * step logic is core/downloader.
  */
 import Alpine from 'alpinejs'
 import dayjs from 'dayjs'
@@ -10,6 +11,7 @@ import type { Resource } from '../../core/cache'
 import { downloaderPreviewChart, downloaderPreviewTable, previewHeight } from '../../core/charts'
 import { toCsv } from '../../core/csv'
 import { downloadFilename, fetchDownload, QC_LEVEL_OPTIONS, type DownloadQuery, type DownloadResult, type QcLevel } from '../../core/downloader/request'
+import * as stepper from '../../core/downloader/stepper'
 import * as view from '../../core/downloader/view'
 import { buildPreviewModel, type PreviewModel } from '../../core/models/downloaderPreview'
 import type { ComboboxItem } from '../../core/controls/comboboxModel'
@@ -31,6 +33,12 @@ interface Run {
   error: unknown
 }
 
+/** Scroll `box` to the top of the view (instantly under reduced motion), then focus `heading` without a second jump. */
+function reveal(box: HTMLElement | undefined, heading: HTMLElement | undefined): void {
+  box?.scrollIntoView({ block: 'start', behavior: MCO.reducedMotion() ? 'auto' : 'smooth' })
+  heading?.focus({ preventScroll: true })
+}
+
 export function downloader() {
   // Preview model memo, keyed by the result object (rows can be large).
   let modelFor: DownloadResult | null = null
@@ -45,6 +53,10 @@ export function downloader() {
     triedDownload: false,
     /** The date inputs' drafts are valid (dateRange `onValidity`). */
     rangeValid: true,
+    /** Phone stepper: the visible step (index into `steps`), and whether Next was tried on it. */
+    step: 0,
+    triedNext: false,
+    steps: stepper.STEPS,
     confirmedKey: null as string | null,
     today: dayjs().format('YYYY-MM-DD'),
     periodOptions: view.PERIOD_OPTIONS,
@@ -114,6 +126,36 @@ export function downloader() {
       return null
     },
 
+    get stepInputs(): stepper.StepInputs {
+      return { station: this.stationId, elements: this.pruned.selected, dateError: this.dates.error, rangeValid: this.rangeValid }
+    },
+    /** Message under Next: shown once Next was tried on this step, cleared as soon as it no longer applies. */
+    get stepHint(): string | null { return this.triedNext ? stepper.stepBlocker(this.step, this.stepInputs) : null },
+    get progress(): string { return stepper.progressText(this.step) },
+    get summary(): string[] {
+      const w = this.dates
+      return view.requestSummary({ station: this.station?.name ?? this.url.s ?? '', elements: this.pruned.selected.length, period: this.url.period, start: w.start, end: w.end })
+    },
+
+    next() {
+      this.triedNext = true
+      const to = stepper.nextStep(this.step, this.stepInputs)
+      if (to !== this.step) this.showStep(to)
+    },
+    back() { this.showStep(stepper.prevStep(this.step)) },
+    /** Show step `i`: bring the stepper's top into view, focus the step heading, announce it. */
+    showStep(i: number) {
+      this.step = i
+      this.triedNext = false
+      announce(stepper.stepAnnouncement(i))
+      void this.$nextTick(() => reveal(this.$refs.progress, this.$refs[`step${i}`]))
+    },
+    /** Enter in a field: Next on a phone's earlier steps, otherwise Run. */
+    submit() {
+      if (MCO.viewport.isCompact() && this.step < stepper.LAST_STEP) this.next()
+      else void this.runRequest()
+    },
+
     pickStation(id: string | null) { this.$store.url.set(view.stationPatch(id)) },
     setRangeValid(v: boolean) { this.rangeValid = v },
     /** Show the date control's own error, except where the install-specific message replaces it. */
@@ -155,6 +197,8 @@ export function downloader() {
         this.run = { query, status: 'error', data: null, error }
         announce('Request failed.')
       }
+      // The result can be below the fold (always on phones): bring it up and focus its heading.
+      void this.$nextTick(() => reveal(this.$refs.preview, this.$refs.previewTitle))
     },
 
     download() {

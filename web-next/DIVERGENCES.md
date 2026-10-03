@@ -79,6 +79,22 @@ layout parts of older entries below; data behaviour is unchanged.
   the station reports them, to the plan's six elements so every tile has a sparkline. Data older than 2 h
   shows a stale warning; the provisional badge follows `/latest`'s `provisional` flag.
 
+### Download: a stepper on phones, step cards elsewhere (P1)
+- **Legacy / web/:** one form column (station, variables, QC, aggregation, dates, Run / Download CSV) with
+  the map under it, beside the preview; ≤ 900 px it all stacked, so on a phone the result landed
+  off-screen after Run.
+- **New:** three cards, **1 Elements** (station, variables, uncommon switch, map) · **2 Dates & period**
+  (aggregation, dates, then QC) · **3 Run** (a one-line recap, Run, Download CSV), with the preview below.
+  Desktop and tablet show Elements beside Dates & period over Run, the preview full width. Phones show one
+  step at a time with "Step 2 of 3", Back and Next; Next refuses to leave a step that would block Run and
+  says why, and Enter in a field means Next until the Run step. Each step change moves focus to the step
+  heading and is announced. After Run (any width) the preview scrolls into view and its heading takes
+  focus; the row-count announcement is unchanged. Variable rows are 44 px on phones and touch screens, and
+  on phones the list no longer scrolls inside its panel.
+- **Unchanged:** the request, the `dl_*` / `els` / `period` / `qc` / `pub` keys and the CSV (fidelity:
+  byte-identical); the step is view state, not in the URL.
+- **Why:** the plan's "Download" item; Run's result was a dead end on phones.
+
 ## House style
 
 ### Data colors
