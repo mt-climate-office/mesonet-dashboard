@@ -20,11 +20,12 @@ code and CSV bytes are unchanged.
 - **New:** **Now** (`#now`) · **Charts** (`#charts`) · **About** (`#about`) (core/router.ts). Ag tools are
   entries in the Charts list's "Ag tools" group, opened at `#charts&v=<tool>`: `v` is one namespace, an Ag
   tool id (core/params/ag `AG_TOOL_IDS`) or an element family. Download is a modal sheet, open while
-  `dl=1` (from the list's "Download data" entry for now; from each chart's ⋯ menu in phase B). The Ag tool
+  `dl=1` (from each chart's ⋯ menu, prefilled from the chart). The Ag tool
   cards page and the Ag and Download sections are gone. The sections sit in the header from tablet up; phones
   keep a three-item tab bar. Section and variable changes push history; the rest replaces.
 - **`etr` is one id:** it was both the observed Reference ET variable page and the Ag Reference ET tool; it is
-  now the Ag tool (it keeps every Ag number and the hourly/daily toggle). The list's Reference ET row opens it.
+  now the Ag tool (it keeps every Ag number and the hourly/daily toggle). The list's Reference ET row opens it
+  (see "Reference ET is one page").
 - **Annual comparison:** no longer in the list; an old `var=annual` link opens the `annv` variable's
   All-years view (`view=history`; air temperature without `annv`). `v=annual` still renders the old tool.
 - **Old links:** `#ag&var=<tool>` → `#charts&v=<tool>` with every Ag key; `#ag` with Ag keys but no `var`
@@ -115,6 +116,61 @@ code and CSV bytes are unchanged.
 - **Unchanged:** the request code, the CSV bytes (fidelity: byte-identical to web/), every `dl_*` / `els` /
   `period` / `qc` / `pub` key, the `dl-run` / `dl-download` test ids the fidelity driver clicks.
 - **Why:** REDESIGN.md "Download sheet": a short form opened from a chart, prefilled from its keys.
+
+### Charts: one chart frame; range chips, an Interval row, a ⋯ menu
+- **P1:** a variable page with "‹ All variables", prev/next chips, a Recent · History · Table switch, range presets
+  plus Custom (dates + Hourly / Daily / Raw), a gridMET normals switch, and a min / max / mean stats row; the list
+  ended with Compare and "Download data" cards.
+- **New:** back · title · ⋯ (Download data, Show as table / chart, Custom dates…, Share this chart, Previous /
+  Next), "57 °F now · Last 14 days", the chart, range chips **24 h · 7 d · 14 d · 30 d · 1 y · All years** (All
+  years is the old History, `view=history`), the **Interval** row (see below) and a Low · High · Average card
+  (Total for totals) in plain units and table precision ("81.0 °F", "4.0 mph"; was "81 °F", "4.04 mi/hr"). The
+  Table view is "Show as table" (`tbl=1`, pushed; an old `view=table` link still opens it), and All years can be
+  tabled too. Prev/next chips became ⋯ → Previous / Next plus a sideways swipe on touch. The list gained a
+  search field, values in the variable's plain unit and precision ("6 mph", wind direction as "S") and sub-labels
+  under the names; Compare is "Compare variables" under More; "Download data" left the list (each chart's ⋯
+  has it, prefilled). Presets no longer set `agg` (P1's 1 y meant daily; it now means Auto, which is daily
+  there), so an old `from`/`to`/`agg=daily` 1 y link opens 1 y with Daily pressed.
+- **Normals:** no switch; gridMET normals draw on daily air temperature by themselves (REDESIGN.md). The other
+  variables with normals (precipitation, humidity) show theirs on Compare's switch.
+- **Why:** REDESIGN.md "Charts": chart first, controls under it, one menu for the rest.
+
+### Interval: Auto, and the Daily low–high band
+- **P1:** `agg` absent meant hourly; Daily drew the API's daily mean only, and the stats' Min / Max were the
+  extremes of the daily means.
+- **New:** on the variable page, `agg` absent is **Auto**: hourly up to 30 days, daily beyond and for All years
+  (`core/variables/interval`). 5-min (`raw`) is offered for windows of 7 days or less; on a longer window the page
+  draws Auto. **Daily** adds one request, `/observations/daily` with `agg_func=min,max` over the same elements
+  (`core/api/record` `aggFunc`), and draws each day's true low–high as a band behind the mean line (a one-column
+  variable; not totals or wind direction); the stats' Low / High are those true extremes (one 5-minute reading,
+  where the old Min was a daily average). The table gains Low / High columns. Compare is unchanged: there `agg`
+  absent is still hourly (`latestAgg`), so every old `#latest` link draws what it did.
+- **Why:** REDESIGN.md "User decisions" 5: daily means alone hide the day's range, and "Min 34.9" next to a daily
+  mean line read as a measured low.
+
+### Reference ET is one page
+- **P1 / phase A:** `etr` was the observed Reference ET variable (with History and Table) and the Ag Reference ET
+  tool; phase A made `v=etr` the tool, which lost the variable's History and Table.
+- **New:** one Reference ET page, the Ag tool (client-side ETr, every number unchanged) in the chart frame, with
+  an **All years** chip (`view=history`: the variable page's years-overlaid history of the API's daily ETr, one
+  year per request), **Show as table** (the tool's table twin), and ⋯ → Previous / Next (and the swipe) in the
+  variable list, where Reference ET stays under Rain and evaporation with its 24 h total and sparkline. It is not
+  repeated in the Ag tools group (`LIST_AG_TOOLS` drops `etr`).
+- **Why:** one id must be one page, and neither the tool's numbers nor the variable's history and table may be lost.
+
+### Ag tools: option chips; the station comes from the header
+- **P1:** an "Options" disclosure (station combobox, variable select, Learn More, dates, time aggregation,
+  livestock, crop, cutoffs, projection, soil variable, annual element) above the chart card, headed
+  "<tool>: <station>". Opening an SWP tool at a station without SWP sensors cleared the station with a toast
+  (SWP-001).
+- **New:** the chart frame (back · the tool's plain name · ⋯ with Download data, Show as table, Share this chart,
+  About this tool) and **option chips** naming each option's value (`Wheat` · `32–70 °F` · `Since Oct 2, 2025` ·
+  `Projected to Oct 31`), each opening a popover with the same control as before. The station is the header's;
+  the tool select is gone (the list is the tool picker). An SWP tool at a station without SWP sensors keeps the
+  station and says so ("… has no soil water potential sensors, so this tool does not apply there.") with a
+  button that opens the picker. A stats card shows Reference ET's total, feels-like and livestock-risk low and
+  high, and GDD so far with the stage reached. Every Ag number, `.ag-chart-card` and its test ids are unchanged.
+- **Why:** REDESIGN.md "Ag tool pages": controls before content, and a second station control beside the header's.
 
 ## UX refactor (P0 prototype, 2026-10)
 

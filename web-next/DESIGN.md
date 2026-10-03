@@ -12,11 +12,11 @@ which phase B restyles.
 ```
 Station view (?s=<id>; remembered in localStorage mco-dashboard-station)
 ├─ Now       #now (default)  current-conditions overview
-├─ Charts    #charts         the list: variable groups · Ag tools · Compare · Download data
-│                            → a variable page (v=<family>, view=recent|history|table)
-│                            → an Ag tool (v=<Ag tool id>): Options disclosure + chart
+├─ Charts    #charts         the list: search · variable groups · Ag tools · More (Compare variables)
+│                            → a variable page (v=<family>; view=history: All years; tbl=1: as a table)
+│                            → an Ag tool (v=<Ag tool id>): option chips + chart, the same frame
 │                            → Compare (cmp=1)
-│            &dl=1           the Download sheet over any of them
+│            &dl=1           the Download sheet over any of them (a chart's ⋯ → Download data)
 └─ About     #about          metadata, all current readings, locator map
 Header ⋯ menu: Share this view · Theme · Help · Send feedback
 Station picker: drawer (desktop/tablet) or bottom sheet (phones):
@@ -101,44 +101,62 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
 ## Charts
 
 ```
-#charts                      list: groups Weather · Precipitation & ET · Soil · Well · Other
-#charts&v=air_temp           variable page, Recent (range presets, chart, stats)
-#charts&v=air_temp&view=history   years overlaid (daily)
-#charts&v=air_temp&view=table     the chart's rows, newest first, 50 per page
-#charts&cmp=1                Compare: stacked panels + options (legacy #latest lands here)
+#charts                              list: search · Weather · Rain and evaporation · Soil · … · Ag tools · More
+#charts&v=air_temp                   variable page, 14 d, Auto interval (no keys)
+#charts&v=air_temp&from=…&to=…       another window (a range chip or Custom dates…)
+#charts&v=air_temp&agg=daily         Interval: absent = Auto · raw (5-min) · hourly · daily
+#charts&v=air_temp&view=history      All years: one line per year (daily)
+#charts&v=air_temp&tbl=1             the chart as a table (newest first, 50 per page)
+#charts&v=gdd&crop=corn              an Ag tool with its keys (core/ag/view/tab)
+#charts&cmp=1                        Compare: stacked panels + options (legacy #latest lands here)
 ```
 
-- **List** (`partials/charts/list.html`, `ui/charts/variableList.ts`, model `core/variables`): the station's
-  variables from `/elements/{s}`, one card per group (Weather · Rain and evaporation · Soil · Well · Other),
-  one row per variable: plain name (`core/variables/labels.ts`) · current value (from `/latest`, shallowest
-  depth for soil; the last 24 h total for precipitation and ETr) · 48 h sparkline (one 72 h hourly request
-  for every listed variable). Then **Ag tools** (`#charts-ag-tools`; `LIST_AG_TOOLS`: every Ag tool but
-  Annual comparison, each a plain name over a one-line description), then Compare and **Download data**
-  (opens the Download sheet; phase B moves it to each chart's ⋯ menu).
-- **Variable page** (`partials/charts/variable.html`, `ui/charts/variablePage.ts`): "‹ All variables", the
-  heading (`[data-vt-target]`: a tapped Now tile or list row morphs into it), prev/next chips in list order,
-  a Recent · History · Table switch, then
-  - **Recent:** presets **24 h · 7 d · 14 d · 30 d · 1 y · Custom** stored in `from`/`to`/`agg` (14 d hourly =
-    no keys; 1 y daily; 24 h shows the 24 hours before the newest reading); Custom opens dates + Hourly /
-    Daily / Raw; a gridMET normals switch for variables with normals, enabled on daily views; the chart
-    (`core/charts/variable.ts`, the Compare panel drawing for one variable) and a stats row: min / max /
-    mean per sensor over the visible range, or the total for precipitation and ETr.
-  - **History:** one line per year on a day-of-year axis (`annualChart`), running totals for summed
-    variables. Daily data, **one calendar year per request**, newest first; the next older year is requested
-    once the newer ones settle, so the chart fills in progressively (skeleton until the first year). At most
-    10 years; never a long hourly window.
-  - **Table:** the chart's table twin made visible, newest first, paged 50 rows (Newer / Older).
-- **Compare** (`partials/charts/compare.html`, `ui/charts/compare.ts` + `compareControls.ts`): the stacked
-  chart from the old Latest tab with its options (dates, period of record, aggregation, normals, variable
-  chips) in an "Options" disclosure, beside the plot on desktop and closed above it on phones. The station
-  comes from the picker; the photo, forecast and map cards live on Now and About.
-- **History:** every list → variable, variable → variable and sub-view change is a `pushState`
-  (`navigate(…, { drillDown: true })`), so Back walks back through them to the list or to Now; presets,
-  dates and switches replace the entry. The Charts tab inside Charts returns to the list (pushed);
-  leaving Charts drops `v`, so the next visit opens the list (`core/router.ts#sectionNavPatch`).
-- **Focus:** a drill-down moves focus to the new view's heading (`#charts-list-title`, `#var-title`,
-  `#charts-compare-title`; prev/next chips too), so it never falls to `<body>`; a Recent · History · Table
-  link keeps focus.
+- **List** (`partials/charts/list.html`, `ui/charts/variableList.ts`, model `core/variables`): a **search field**
+  (`matchesQuery`: every word in the name, sub-label or group) over one card per group: the station's
+  variables from `/elements/{s}` (Weather · Rain and evaporation · Soil · Well · Other), then **Ag tools**
+  (`#charts-ag-tools`, `LIST_AG_TOOLS`: every tool but Annual comparison and Reference ET, which is listed once,
+  under Rain and evaporation) and **More** (Compare variables). A row: plain name over a sub-label ("at 2 in",
+  "last 24 h", what an Ag tool is) · the current value in plain units and precision (`formatReading`; the
+  last 24 h total for totals; none for Ag tools) · a 48 h sparkline (one 72 h hourly request for every listed
+  variable). Every row opens its page through `chartPatch(id)` (core/variables).
+- **Chart page frame** (variable page and Ag tools, `.chart-page` in styles/charts.css): back chevron (to the
+  list) · title (`[data-vt-target]`: a tapped Now tile or list row morphs into it) · **⋯ menu**; under it one
+  line (the variable page: "57 °F now · Last 14 days", `currentReading` + `rangeLabel`; an Ag tool: the station);
+  then the chart card, the chips and a stats card. Cards are flat `.dash-card`s.
+- **Variable page** (`partials/charts/variable.html`, `ui/charts/variablePage.ts`):
+  - **Chart:** full width, 420 px; on phones `min(60dvh, 420px)` (`core/charts/variable.ts`, the Compare panel
+    drawing for one variable). Normals (gridMET 1991–2020) draw by themselves on daily air temperature
+    (`showsNormals`; no switch).
+  - **Range chips** (`RANGE_CHIPS`, `.dash-chip` pills, one scrolling row): 24 h · 7 d · 14 d · 30 d · 1 y over
+    `from`/`to` (14 d = no keys; 24 h shows the 24 hours up to the newest reading) and **All years**
+    (`view=history`, the progressive years-overlaid chart: one calendar year per request, newest first, at most
+    10). A window from Custom dates… presses no chip. Chips replace the history entry.
+  - **Interval row** (`intervalChips`, quiet chips over `agg`): **Auto** (key absent; hourly up to 30 days,
+    daily beyond and for All years; its label says which, "Auto (hourly)") · **5-min** (`raw`; only for windows
+    of 7 days or less, disabled with the reason otherwise) · Hourly · Daily. A range chip drops 5-min where the
+    new window does not offer it. **Daily** draws the daily mean as a line inside a **low–high band**: one more
+    daily request with `agg_func=min,max` (`recordRequest({ extremes })`, `core/variables/band.ts`), drawn for a
+    one-column variable (the band, in the line's color, is in the tooltip and the table's Low/High columns).
+  - **Stats card:** Low · High · Average per sensor over the visible range (Total for precipitation and ETr), in
+    the variable's plain unit (`panelStats(…, id)`); on Daily, Low and High are the band's true extremes.
+  - **⋯ menu:** Download data (the sheet prefilled: `core/downloader/fromChart`, the variable's element codes,
+    the window (All years: install date … today) and the interval, 5-min as hourly) · Show as table / Show as
+    chart (`tbl`, pushed, so Back returns; replaces the chart in place; All years tables its years) · Custom
+    dates… (the `dates` modal sheet, `partials/sheets/dates.html`: `dateRange` over `from`/`to`, install date …
+    today; a valid range applies at once) · Share this chart (`shareView`) · Previous / Next variable.
+  - **Swipe:** on touch, a sideways swipe on the page (`ui/layout/swipe.ts`, `core/swipe.ts`: ≥ 60 px and
+    twice as sideways as vertical) opens the previous or next variable in list order; the page is
+    `touch-action: pan-y pinch-zoom`, so vertical scrolling is untouched. ⋯ → Previous / Next is its keyboard twin.
+- **Compare** (`partials/charts/compare.html`, `ui/charts/compare.ts` + `compareControls.ts`): back · "Compare
+  variables", then the stacked chart in a flat card with its options (dates, period of record, aggregation,
+  normals, variable chips) in an "Options" disclosure, beside the plot on desktop and closed above it on phones.
+  It reads `agg` absent as hourly (`latestAgg`), as the old Latest tab did.
+- **History:** every list → page and page → page change is a `pushState` (`navigate(…, { drillDown: true })`),
+  and so are Show as table / chart; range and interval chips, dates and options replace the entry. The Charts
+  tab inside Charts returns to the list (pushed); leaving Charts drops `v` and `tbl` (`sectionNavPatch`).
+- **Focus:** a drill-down moves focus to the new page's heading (`#charts-list-title`, `#var-title`,
+  `#ag-chart-title`, `#charts-compare-title`; ⋯ → Previous / Next too), so it never falls to `<body>`; chips
+  keep focus.
 
 ### Charts on touch
 
@@ -153,31 +171,37 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
 ## Ag tools (inside Charts)
 
 An Ag tool is a Charts entry: `#charts&v=<tool>` (`v` is an Ag tool id, `core/params/ag` `AG_TOOL_IDS`;
-`chartsMode` → `'ag'`). Until phase B gives it the variable-page frame, it renders the P1 tool view
-(`partials/ag/index.html`, `ui/ag/agTab.ts`): "‹ All charts" · heading "<tool>: <station>" · **Options**
-disclosure · chart card (notes, then the chart or its state).
+`chartsMode` → `'ag'`), in the chart page frame (`partials/ag/index.html`, `ui/ag/agTab.ts`): back · the tool's
+plain name · ⋯ (Download data prefilled through `fromChart` + `agToolElements`, Show as table / chart, Share
+this chart, About this tool) · the station · **option chips** · the chart card · a stats card where it means
+something (`core/ag/view/stats.ts`: Reference ET's total, feels-like and livestock-risk low and high, GDD so far
+and the stage reached).
 
-- **Navigation:** a list row is a real link; a plain click opens the tool with `pushState`
-  (`navigate('charts', { drillDown: true })`, `variablePatch`: the tool's options reset) and focuses the
-  heading. "‹ All charts", and the Charts tab, return to the list (pushed). Changing the tool in the
-  Options variable select pushes too.
-- **Options** (`<details class="dash-card ag-options">`): open on desktop, collapsed on phones (open there too
-  while no station is chosen, since the station combobox is inside). The summary is one line, ellipsized:
-  `core/ag/view/summary.ts#optionsSummary`, e.g. "Wheat · 32–70 °F · to Oct 31" (GDD: crop · cutoffs ·
-  projection), "Hourly · Jan 1 – Jan 7, 2026" (ETr, Feels like, SWP, % saturation; Livestock adds the
-  animal), "Temperature · …" (soil profile), the comparison variable (annual). Inside: the three-column
-  controls grid (one column ≤ 900 px); inputs are 16 px on touch (`ui/controls/controls.css`).
-- **Charts:** 540 px tall; on phones `min(60dvh, 420px)`. On touch they follow "Charts on touch" above
-  (`timeZoom(ctx)` with `ctx.touch`: a swipe scrolls the page; the dates, and the slider on wider screens, zoom).
+- **Option chips** (`partials/ag/options.html`, `ui/ag/agOptions.ts`): one `.dash-chip` per option the tool has
+  (`optionChips` in `core/ag/view/summary.ts`), naming its value: GDD `Wheat` · `32–70 °F` · `Since Oct 2, 2025`
+  · `Projected to Oct 31`; ETr, Feels like, SWP, saturation `Daily` · dates; Livestock adds `Adult`; soil
+  profile its variable; Annual its element. Each chip opens a **popover** (`x-data="popover"`) holding the
+  existing control: crop chips, the cutoff `rangeSlider` (with its reset and note), `dateRange`, the
+  projection and comparison selects, the interval and livestock radios, the soil chips. A chip choice (crop,
+  soil) applies and closes; the rest apply as they change and stay open until Esc, a press outside or Tab
+  away. Chips wrap; on phones the popover docks at the bottom like a small sheet.
+- **Station:** from the header's picker; there is no station control on the page. With no station, or for an
+  SWP tool at a station without SWP sensors (`chartState` `'not-here'`), the card names why ("Crow Agency has no
+  soil water potential sensors, so this tool does not apply there.") with a button that opens the picker.
+- **Reference ET** is also the observed `etr` variable (one id, one page): its page adds an **All years** chip
+  (`view=history`, the variable page's history of the derived ETr) and ⋯ → Previous / Next in the variable
+  list (plus the swipe). Annual comparison (`v=annual`) still renders for old links, but is not listed.
+- **Navigation:** a list row is a real link; a plain click opens the tool with `pushState` (`chartPatch` →
+  `variablePatch`: the tool's options reset, chart view) and focuses its heading.
+- **Charts:** 540 px tall; on phones `min(60dvh, 420px)`. On touch they follow "Charts on touch" above.
+  Every Ag number, the `.ag-chart-card` and its `data-testid`s are unchanged (fidelity `ag` / `ag-api`).
 
-Screenshots (P1, in the session scratchpad `ag/`): `390-<theme>-landing.png`, `390-<theme>-gdd.png`,
-`390-<theme>-gdd-options.png`, `1440-<theme>-landing.png`, `1440-<theme>-gdd.png` for light, dark and
-high-contrast.
+Screenshots (phase B, in the session scratchpad `rd-charts/`): `<390|1440>-<light|dark|high-contrast>-<list|var|var1y|vartable|varall|varmenu|vardates|gdd|gddcrop|etr|swpcrow|compare>.png`.
 
 ## Download (a sheet)
 
-The Download sheet (`partials/sheets/download.html`) is open while `dl=1`: from the Charts list's "Download
-data" entry (`openSheet('download', opener)`), from an old `#download` / `#downloader` link, or any URL with
+The Download sheet (`partials/sheets/download.html`) is open while `dl=1`: from a chart's ⋯ → Download data
+(prefilled by `core/downloader/fromChart`, then `openSheet('download', opener)`), from an old `#download` / `#downloader` link, or any URL with
 `dl=1`. Closing (×, Esc, the scrim, a drag down on phones) clears `dl` and returns focus to the opener (to
 `<main>` when the URL opened it). It is a bottom sheet on phones and a centred panel (34 rem) from 641 px;
 its body scrolls on its own. Every value comes from the URL's existing keys, so whatever opened it (a chart's
@@ -266,6 +290,14 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 - **Plain labels** (`core/variables/labels.ts`, not a layout primitive but used by every surface) — `LABELS[v]`
   (name, unit, `digits.display` / `digits.table`, an optional `sub`), `plainName(v, fallback)`,
   `formatReading(v, value, 'display' | 'table')` ("54 °F", "8%", "0.05 in"), `compassWord(deg)` ("SSE").
+- **Popover** (`popover.ts`/`.css`; Alpine `x-data="popover"`) — a chip or button (`[data-popover-button]`,
+  `aria-expanded`, `aria-controls`, `aria-haspopup="dialog"`) toggles a non-modal `role="dialog"` panel with a
+  label (`.dash-popover-panel`, `--z-flyout`, under the button; docked at the bottom on phones). Opening moves
+  focus to its first control; Esc closes and returns focus to the button; a press outside, or focus leaving,
+  closes. `closePopover()` closes it from a control inside (after a single choice). The Ag option chips use it.
+- **Swipe** (`swipe.ts`) — `initSwipe({ el, onStep })`: a touch pointer's sideways travel past
+  `core/swipe#swipeStep`'s threshold calls `onStep(−1 | 1)`; mouse and pen never swipe; gestures starting in a
+  `[data-no-swipe]` element (chip rows, tables) are ignored. The chart pages use it for Previous / Next.
 - **Bottom sheet** (`sheet.ts`/`.css`) — peek/full, drag on the handle (up = full, down = peek, then
   close), Enter/Space on the handle toggles, Esc closes, focus moves in and returns to the opener, the
   rest of the page is `inert`, the body scrolls with `overscroll-behavior: contain`. Sits on the tab bar.
@@ -313,14 +345,18 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
 ## Accessibility notes
 
 - Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `header-menu`, `photo-dialog`, `about`,
-  `picker`, `picker-open` (both with the map revealed), `charts-list`, `variable` + `-history` + `-table`, `compare`,
-  `legacy-ag`, four Ag tools, `download-variables`, `download-dates`, `downloader` (after Preview), `help-dialog`)
+  `picker`, `picker-open` (both with the map revealed), `charts-list`, `variable` + `-menu` + `-history` + `-table` +
+  `-daily` (the band), `dates-sheet`, `compare`, `legacy-ag`, four Ag tools, the GDD crop and cutoff popovers,
+  the Reference ET ⋯ menu, `download-variables`, `download-dates`, `downloader` (after Preview), `help-dialog`)
   × 3 themes × 1440/390.
   `keyboard.mjs` walks the header and its ⋯ menu (Help, Theme), the picker, the Download sheet and its form, tab bar,
-  photo dialog, variable page, Ag Options and the legacy links; `layout.mjs` checks touch swipes over charts,
+  photo dialog, variable page (⋯ Show as table / Previous / Next / Custom dates, range and interval chips),
+  Download prefilled from ⋯, Ag option chips (Enter opens, a pick applies, Esc returns focus) and the legacy
+  links; `layout.mjs` checks touch swipes over charts (vertical scrolls, sideways walks the list),
   sideways scroll at 390, the fold, the one-row header, the solid tab bar, the sheet's fit and reduced motion.
-- Charts: the Table view is a real `<table>` (caption, scoped headers) in a focusable, labelled scroll region;
-  presets and view switches are radios / links with `aria-current`; stats are a `<dl>`.
+- Charts: a chart as a table is a real `<table>` (caption, scoped headers) in a focusable, labelled scroll
+  region; range and interval chips are `aria-pressed` buttons in labelled groups; option chips name their option
+  ("Crop: Wheat"); stats are a `<dl>`.
 - Touch targets ≥ 40 px under `(hover: none)`; the tab bar is 56 px.
 - Status is text: "No report for over 2 hours", "Feels like 41° · Wind chill"; the Provisional text button opens its note (`aria-expanded`).
 - The picker is `role="dialog" aria-modal="true"` only when it is modal (sheet, overlay drawer); the inline

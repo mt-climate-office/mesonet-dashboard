@@ -36,7 +36,8 @@ src/
   stores/   the four shared pieces of app state (Alpine.store)
   ui/       thin Alpine components (Alpine.data) + their CSS;
             ui/layout/ holds the framework-free primitives (drawer, sheet,
-            menu, section nav, transitions, card + chips, skeleton, type scale)
+            menu, popover, swipe, section nav, transitions, card + chips,
+            skeleton, type scale)
   types/    globals from the CDN (window.MCO, maplibregl) and $store typing
   main.ts   URL fix-ups → register stores → register components → Alpine.start()
 partials/   HTML, one file per section/card, inlined into index.html at build
@@ -132,8 +133,11 @@ Every other key is kept byte for byte.
 
 Router helpers for components: `$store.url.go(section, patch, drillDown)` (or, from a link,
 `follow(event, section, { patch, drillDown, target })` in `ui/shell/navigate.ts`), `$store.url.hrefFor(section,
-patch)` for the real href, `CHARTS_LIST_PATCH` for "back to the list", `chartsMode(state)` for what Charts
-shows, `isAgTool(v)` for the namespace.
+patch)` for the real href, `CHARTS_LIST_PATCH` for "back to the list", `chartPatch(id)` (core/variables) to
+open any Charts entry (a variable on its chart, an Ag tool through its reset `variablePatch`), `chartsMode(state)`
+for what Charts shows, `isAgTool(v)` for the namespace. On a chart page, `view=history` is All years, `tbl=1`
+shows the chart as a table (pushed, so Back returns), and `agg` absent is the Auto interval
+(core/variables/interval; Compare reads it as hourly, `latestAgg`).
 
 Per-station fetches shared by sections (latest obs, ppt summary, NWS, photos, one-pagers, station
 config) are one function each in `ui/station/resources.ts`; a section's own fetches sit beside it
@@ -201,7 +205,11 @@ prefixed `<id>_` in the schema. Most new places are a Charts entry instead
 `#header-menu` (`partials/shell.html`); its `@click` calls a method you add to
 `navMeta` (`ui/shell/navMeta.ts`). Add `data-keep-open` if the menu should stay
 open after it (like Theme). A new ⋯ menu elsewhere is the same markup with its
-own `x-data="menu"` wrapper (DESIGN.md "Components").
+own `x-data="menu"` wrapper (DESIGN.md "Components"): the chart pages' ⋯ menus
+(`partials/charts/variable.html`, `partials/ag/index.html`) call their page
+component (`variablePage`, `agTab`). A chart's Download data writes
+`core/downloader/fromChart(…)` (its element codes, dates and interval as
+`els`/`dl_from`/`dl_to`/`period`), then `openSheet('download')`.
 
 **Add a sheet.** `partials/sheets/<id>.html`: a scrim `<div class="mco-scrim
 dash-scrim dash-sheet-scrim" id="sheet-<id>-scrim" hidden>` and a `<section
@@ -238,7 +246,24 @@ if its column name is not "<name> [unit]"; (2) its group and position in
 `core/variables/catalog.test.ts`; (5) its plain name, unit and precision in
 `LABELS` (`core/variables/labels.ts`; its test fails for an `ELEM_MAP` id
 without one). The `v=` id must not be an Ag tool id (`core/params/ag`). The
-list, variable page, history and Compare need no other change.
+list (search included), variable page, history, the Download prefill
+(`variableElements`: every station element with that display name) and Compare
+need no other change. Totals and wind direction get no Daily low–high band
+(`hasBand`, core/variables/band.ts); normals draw by themselves only where
+`showsNormals` says (daily air temperature).
+
+**Add an Ag tool option chip.** (1) An `OptionId`, its name in `NAMES` and
+its place in each tool's list in `OPTIONS`, and its value text in
+`optionChips` (`core/ag/view/summary.ts`), with a line in `summary.test.ts`.
+(2) A block in `partials/ag/options.html` at its place in the chip order:
+`<template x-if="has('<id>')">` around a `.dash-popover` (`x-data="popover"`)
+holding the chip (`data-popover-button`, `:aria-label="label('<id>')"`,
+`data-testid="ag-opt-<id>"`) and a `role="dialog"` panel with a fixed id
+(`ag-opt-<id>-panel`) and `aria-label`, around the existing control
+(`ui/controls/README.md`). (3) Its setter in `ui/ag/agOptions.ts`, writing the
+URL key (a new key: "Add a URL key"); call `closePopover()` after it for a
+single choice. If the tool's download changes, `agToolElements`
+(`core/downloader/fromChart.ts`).
 
 **Add a layout primitive.** Framework-free first: CSS on kit tokens in
 `ui/layout/<name>.css` and, if it has behaviour, a vanilla
@@ -290,8 +315,8 @@ pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
 `npm run verify` runs axe on its scenarios (Now, the header ⋯ menu, the photo dialog, the picker on a first visit and
-opened with a station, the Charts list, the legacy `#ag` landing, a variable page in each view, Compare, 4 Ag
-tools, the Download sheet (a row open, after Preview), About, Help) × 1440/390 px × 3 themes
+opened with a station, the Charts list, the legacy `#ag` landing, a variable page in each view (⋯ menu, All
+years, table, the Daily band, the Custom dates sheet), Compare, 4 Ag tools (two option popovers, a ⋯ menu), the Download sheet (a row open, after Preview), About, Help) × 1440/390 px × 3 themes
 (`scripts/verify/axe.mjs`).
 
 ## Testing

@@ -98,6 +98,16 @@ falls short.
   the button; `data-keep-open` keeps it open (a cycling Theme item).
 - **Proposed:** `.mco-menu` family and `MCO.initMenu({ button, panel, onChange }) → { open(focus), close({focusButton}), isOpen, destroy }`.
 
+### Popover — new
+- **Here:** `.dash-popover` / `.dash-popover-panel` (`ui/layout/popover.css`), `initPopover({ button, panel,
+  onChange })` (`ui/layout/popover.ts`); Alpine wrapper `x-data="popover"` (`ui/shell/popover.ts`). The Ag tools'
+  option chips, each holding a form control.
+- **Why:** the kit has no non-modal flyout for controls; a menu (`role="menu"`) is wrong for form fields.
+- **Behaviour:** the button gets `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`; the panel is a
+  labelled `role="dialog"` at `--z-flyout`, under the button (docked at the bottom on compact). Opening focuses
+  its first control; Esc closes and returns focus to the button; a press outside or focus leaving closes it.
+- **Proposed:** `.mco-popover` and `MCO.initPopover({ button, panel, onChange }) → { open(), close({focusButton}), isOpen, destroy }`.
+
 ### Modal sheet — new (a variant of the bottom sheet)
 - **Here:** `.dash-sheet.dash-sheet--modal` + `.dash-sheet-scrim` (`ui/layout/sheet.css`), the same
   `initSheet`, wrapped by `x-data="sheet({ id, urlKey })"` with `openSheet(id, opener)` / `closeSheet(id)`
