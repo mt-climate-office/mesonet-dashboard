@@ -2,8 +2,31 @@
  * Axis, grid and zoom helpers. Chrome colors and fonts come from the ECharts
  * theme (theme.ts); these set structure only: types, names, ticks, ranges.
  */
-import type { DataZoomComponentOption, GridComponentOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
+import type { DataZoomComponentOption, EChartsOption, GridComponentOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { ChartContext } from './types'
+
+/**
+ * `option` without the y-axis titles longer than their plot on a canvas `height` px tall (a
+ * short chart: a landscape phone), so a rotated title is never clipped; the unit stays in the
+ * page header and tooltip. Text is estimated at 0.6 em a character (its font size, else 12 px).
+ * A grid sized in px uses its height; any other, the canvas less its px margins.
+ */
+export function fitAxisNames(option: EChartsOption, height: number): EChartsOption {
+  if (!option.yAxis || !(height > 0)) return option
+  const grids = (Array.isArray(option.grid) ? option.grid : option.grid ? [option.grid] : []) as GridComponentOption[]
+  const px = (v: unknown) => (typeof v === 'number' ? v : 0)
+  const plotH = (i: number) => {
+    const g = grids[i] ?? grids[0] ?? {}
+    return typeof g.height === 'number' ? g.height : height - px(g.top) - px(g.bottom)
+  }
+  const fit = (a: YAXisComponentOption): YAXisComponentOption => {
+    if (typeof a.name !== 'string' || !a.name) return a
+    const size = Number((a.nameTextStyle as { fontSize?: number } | undefined)?.fontSize) || 12
+    const longest = Math.max(...a.name.split('\n').map((l) => l.length))
+    return longest * size * 0.6 > plotH((a as { gridIndex?: number }).gridIndex ?? 0) ? { ...a, name: '' } : a
+  }
+  return { ...option, yAxis: Array.isArray(option.yAxis) ? option.yAxis.map(fit) : fit(option.yAxis) }
+}
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
