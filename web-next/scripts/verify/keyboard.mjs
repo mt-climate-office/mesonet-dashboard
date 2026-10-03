@@ -8,7 +8,7 @@
  * Options disclosure, chart table twins, map sr-table selection, reduced motion.
  * Run via `npm run verify`.
  */
-import { DL_QUERY, VIEWPORTS, check, finish, known, open, runDownload, start } from './lib.mjs'
+import { DL_QUERY, VIEWPORTS, check, finish, open, runDownload, start } from './lib.mjs'
 
 const env = await start()
 
@@ -380,32 +380,25 @@ for (const vp of VIEWPORTS) {
   await close()
 }
 
-/* ── Charts drill-downs: focus lands inside the new view, not on <body> ─── */
+/* ── Charts drill-downs: focus moves to the new view's heading ─────────── */
 {
   const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=light#charts')
   await rendered({ filled: ['[data-testid="var-air_temp"] .dash-spark svg'] })
-  /** Press Enter on `from`, wait for `view` to show, then report where focus is. */
-  const step = async (from, view) => {
+  /** Enter on `from`; then wait (the focus follows the view transition) for the URL to change and `#heading` to hold focus. */
+  const lands = async (name, from, heading) => {
+    const before = page.url()
     await page.locator(from).first().focus()
     await page.keyboard.press('Enter')
-    await page.waitForSelector(view, { timeout: 10000 }).catch(() => {})
-    // Focus is moved after the view mounts (a tick, or after the view transition).
-    await page.waitForFunction((view) => document.querySelector(view)?.contains(document.activeElement), view, { timeout: 2000 }).catch(() => {})
-    return page.evaluate((view) => ({
-      tag: document.activeElement?.tagName.toLowerCase(),
-      inside: !!document.querySelector(view)?.contains(document.activeElement),
-    }), view)
+    const ok = await page.waitForFunction(({ before, heading }) => location.href !== before && document.activeElement?.id === heading,
+      { before, heading }, { timeout: 10000 }).then(() => true, () => false)
+    const at = await page.evaluate(() => document.activeElement?.id || document.activeElement?.tagName.toLowerCase())
+    check(`charts: Enter on ${name} moves focus to #${heading}`, ok, `focus on ${at}`)
   }
-  const steps = {
-    'a list row': await step('[data-testid="var-air_temp"]', '[data-testid="variable-title"]'),
-    'the next chip': await step('[data-testid="var-next"]', '[data-testid="variable-page"]'),
-    'the previous chip': await step('[data-testid="var-prev"]', '[data-testid="variable-page"]'),
-    '"‹ All variables"': await step('.var-back', '[data-testid="charts-list"]'),
-    'the Compare entry': await step('[data-testid="charts-compare-link"]', '[data-testid="compare"]'),
-  }
-  for (const [name, f] of Object.entries(steps)) {
-    known(`charts: Enter on ${name} leaves focus inside the new view, not on <body>`, f.tag !== 'body' && f.inside, 'ux/p3-review-fixes focuses the Charts headings', JSON.stringify(f))
-  }
+  await lands('a list row', '[data-testid="var-air_temp"]', 'var-title')
+  await lands('the next chip', '[data-testid="var-next"]', 'var-title')
+  await lands('the previous chip', '[data-testid="var-prev"]', 'var-title')
+  await lands('"‹ All variables"', '.var-back', 'charts-list-title')
+  await lands('the Compare entry', '[data-testid="charts-compare-link"]', 'charts-compare-title')
   const p = await problems()
   check('charts drill-down focus: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()

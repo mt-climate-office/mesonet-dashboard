@@ -250,8 +250,7 @@ focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
 `npm run verify` runs axe on its scenarios (Now, the picker on a first visit and opened with a station,
 the Charts list, a variable page in each view, Compare, Ag tools + 4 Ag views, Download (step 1 and step 3
-on phones), About, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`). A known gap expected to
-fail until a fix lands is a `known(…)` in the verify scripts: printed, not failing; make it a `check` then.
+on phones), About, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
 
 ## Testing
 

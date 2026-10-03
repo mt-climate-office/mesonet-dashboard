@@ -307,14 +307,6 @@ export function check(label, ok, detail = '') {
   if (!ok) failures++
 }
 
-/**
- * A known app gap, expected to fail until `fix` lands: printed, never fails the run.
- * When it starts passing it says so; then make it a `check`.
- */
-export function known(label, ok, fix, detail = '') {
-  console.log(ok ? `✓ ${label} (now passes: make it a check; was expected to fail until ${fix})` : `~ ${label} — expected to fail until ${fix}${detail ? ' — ' + detail : ''}`)
-}
-
 /** Fail on unfixtured requests, print the summary and exit. */
 export function finish(name) {
   if (!RECORD) check(`${name}: every third-party request served from fixtures`, unfixtured.size === 0, [...unfixtured].slice(0, 5).join(' | '))
