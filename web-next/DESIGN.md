@@ -61,7 +61,7 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
   variable's All-years view; `#download` / `#downloader` + `dl_*` keys → `#charts&dl=1` (closing the sheet
   clears `dl` and the prefill keys); a bare `?s=` → Now.
 - **One namespace:** `v` holds an element family id (`air_temp`, …) or an Ag tool id (the
-  `DERIVED_VAR_OPTIONS` values). The interval is the `agg` key: absent = Auto, `raw|hourly|daily` explicit.
+  `AG_TOOL_IDS`, named in `LABELS`). The interval is the `agg` key: absent = Auto, `raw|hourly|daily` explicit.
 
 ## Visual language
 

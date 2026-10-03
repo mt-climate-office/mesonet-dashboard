@@ -232,5 +232,5 @@ export const percentSaturationChart: ChartBuilder<PercentSaturationModel> = (m, 
 }
 
 export function percentSaturationTable(m: PercentSaturationModel): ChartTable {
-  return depthTable('Percent saturation by depth, %', m.period, m.series.time, m.series.depthsCm, m.series.pct, (v) => fmtNum(v, 1))
+  return depthTable('Soil saturation by depth, %', m.period, m.series.time, m.series.depthsCm, m.series.pct, (v) => fmtNum(v, 1))
 }

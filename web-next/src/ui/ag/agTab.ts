@@ -12,7 +12,7 @@ import { learnMoreUrl } from '../../core/ag/view/learnMore'
 import { chartState, hasAllYears, notHereMessage, variableGroup } from '../../core/ag/view/tab'
 import { agToolElements, fromChart } from '../../core/downloader/fromChart'
 import { POR_FALLBACK_START, installDate, todayIso } from '../../core/latest'
-import { LABELS, neighbors, plainName, type Variable } from '../../core/variables'
+import { neighbors, plainName, type Variable } from '../../core/variables'
 import { chartVariables, stationElements } from '../charts/resources'
 import { component } from '../component'
 import { initSwipe } from '../layout/swipe'
@@ -45,8 +45,7 @@ export function agTab() {
       return this.state() === 'chart' && !this.history() && variableGroup(currentTab().variable) === group
     },
     title(): string {
-      const v = currentTab().variable
-      return LABELS[v]?.name ?? currentTab().variableLabel
+      return currentTab().variableLabel
     },
     /** Under the title: the station, and All years when it shows. */
     subline(): string {

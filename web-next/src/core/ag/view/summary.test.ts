@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Station } from '../../api'
-import { DERIVED_VAR_OPTIONS } from '../../params/ag'
+import { AG_TOOL_IDS } from '../../params/ag'
+import { LABELS } from '../../variables/labels'
 import { readUrlState } from '../../url-schema'
 import { dateRangeText, optionChips } from './summary'
 import { resolveAgTab } from './tab'
@@ -37,13 +38,14 @@ describe('optionChips', () => {
     expect(texts('?v=annual', 'Air Temperature [°F]')).toEqual(['Air Temperature [°F]'])
     expect(texts('?v=annual')).toEqual(['Choose a variable'])
   })
-  it('every tool has chips, each named, and a card description', () => {
+  it('every tool has chips, each named, and a plain name and sub-line in LABELS', () => {
     expect(ids('?v=cci')).toEqual(['interval', 'livestock', 'dates'])
-    for (const o of DERIVED_VAR_OPTIONS) {
-      const chips = optionChips(tab(`?v=${o.value}`), 'x', TODAY)
-      expect(chips.length, o.value).toBeGreaterThan(0)
-      for (const c of chips) expect(c.name && c.text, `${o.value} ${c.id}`).toBeTruthy()
-      expect(o.description, o.value).toMatch(/\.$/)
+    for (const id of AG_TOOL_IDS) {
+      const chips = optionChips(tab(`?v=${id}`), 'x', TODAY)
+      expect(chips.length, id).toBeGreaterThan(0)
+      for (const c of chips) expect(c.name && c.text, `${id} ${c.id}`).toBeTruthy()
+      expect(LABELS[id]?.name, id).toBeTruthy()
+      expect(LABELS[id]?.sub, id).toBeTruthy()
     }
   })
 })

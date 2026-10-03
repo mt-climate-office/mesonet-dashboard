@@ -6,7 +6,8 @@
  */
 import type { Station, StationElement } from '../../api'
 import type { RangeValue } from '../../controls/rangeModel'
-import { DERIVED_VAR_OPTIONS, type DerivedVar, GDD_CROPS, SOIL_VAR_OPTIONS, isAgTool } from '../../params/ag'
+import { type DerivedVar, GDD_CROPS, SOIL_VAR_OPTIONS, isAgTool } from '../../params/ag'
+import { plainName } from '../../variables/labels'
 import { stationHasSwp } from '../../stations'
 import type { UrlKey, UrlState } from '../../url-schema'
 import { elementLabel } from '../../downloader/labels'
@@ -75,7 +76,7 @@ export function resolveAgTab(url: AgUrl, station: Station | undefined, today: Lo
   return {
     open: isAgTool(url.v),
     variable,
-    variableLabel: DERIVED_VAR_OPTIONS.find((o) => o.value === variable)?.label ?? variable,
+    variableLabel: plainName(variable, variable),
     crop,
     cropLabel: GDD_CROPS.find((c) => c.value === crop)?.label ?? crop,
     cut: parseGddCutoffs(crop, url.gdd_lo, url.gdd_hi),
