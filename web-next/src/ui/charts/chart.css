@@ -1,8 +1,9 @@
 /* Chart host sizing (ui/charts/chart.ts). ECharts needs a sized box; set
-   --chart-height on the .chart element to change it per card. */
+   --chart-height on the .chart element to change it per card, --chart-height-compact for the
+   shell's compact query (MCO.viewport.COMPACT_MQ: narrow, or short as a landscape phone). */
 .chart { position: relative; min-width: 0; }
 .chart-canvas { width: 100%; height: var(--chart-height, 380px); }
-@media (max-width: 640px) {
+@media (max-width: 640px), (max-height: 560px) {
   .chart-canvas { height: var(--chart-height-compact, 320px); }
 }
 
