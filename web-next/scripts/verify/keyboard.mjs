@@ -181,7 +181,9 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   const search = page.getByTestId('picker-search')
   const input = search.getByRole('combobox')
   await input.waitFor({ state: 'visible' })
-  const view = () => page.evaluate(() => {
+  // Read after two frames, so Alpine has applied the last key or click.
+  const view = () => page.evaluate(async () => {
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
     const el = document.querySelector('[data-testid="picker-search"] input')
     const popup = document.querySelector('[data-testid="picker-search"] .ctl-combobox-popup')
     return {
