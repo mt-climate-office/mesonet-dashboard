@@ -6,7 +6,7 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { DL_QUERY, THEMES, VIEWPORTS, check, finish, open, runDownload, start } from './lib.mjs'
 
-/** Opened over a rendered Latest tab: the dialog's own contrast and names. */
+/** Opened over a rendered Compare chart: the dialog's own contrast and names. */
 const openHelp = async (page) => {
   await page.locator('#btn-help').click()
   await page.waitForFunction(() => document.getElementById('help-modal')?.open)
@@ -18,9 +18,10 @@ const SCENARIOS = [
   // The Now overview (default section) and a first visit (no station: the picker is open).
   { name: 'now', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]', '[data-testid="now-hero"] .dash-spark svg'] } },
   { name: 'picker', query: '', evidence: { filled: ['[data-testid="picker-map"] tbody'] } },
-  // Default cards (current conditions + the auto top card), then the map + wind rose pair.
-  { name: 'latest', query: '?s=acebozem#latest', evidence: { charts: 1, filled: ['[data-testid="current-table"] tbody'] } },
-  { name: 'latest-map', query: '?s=acebozem&info=map&card=wind#latest', evidence: { charts: 2, filled: ['[data-testid="locator-map"] tbody'] } },
+  // Charts: the variable list, a variable page, and Compare (a legacy #latest link lands there).
+  { name: 'charts-list', query: '?s=acebozem#charts', evidence: { filled: ['[data-testid="var-air_temp"] .dash-spark svg'] } },
+  { name: 'variable', query: '?s=acebozem&v=air_temp#charts', evidence: { charts: 1 } },
+  { name: 'compare', query: '?s=acebozem#latest', evidence: { charts: 1 } },
   { name: 'ag-gdd', query: '?s=acebozem&var=gdd#ag', evidence: { charts: 1 } },
   { name: 'ag-soil-profile', query: '?s=acebozem&var=soil_temp,soil_ec_blk#ag', evidence: { charts: 1 } },
   { name: 'ag-etr', query: '?s=acebozem&var=etr#ag', evidence: { charts: 1 } },

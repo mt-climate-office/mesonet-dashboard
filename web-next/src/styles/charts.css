@@ -41,6 +41,8 @@
 .var-views .seg-btn { text-decoration: none; }
 .var-views .seg-btn[aria-current="page"] { background: var(--accent); border-color: var(--accent-line); color: var(--text-on-accent); font-weight: 700; }
 .var-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin-bottom: 0.5rem; }
+/* "7 d" and "1 y" are narrower than a 40 px touch target (HOUSE-STYLE §5.5). */
+@media (hover: none) { .var-presets .seg-btn { min-width: 44px; justify-content: center; } }
 .var-controls .ctl-note { flex-basis: 100%; margin: 0; }
 .var-custom { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.5rem 1.5rem; margin-bottom: 0.75rem; }
 .var-plot, .var-history, .var-table { padding: 0.5rem 0.25rem 0.25rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
