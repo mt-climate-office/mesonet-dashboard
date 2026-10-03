@@ -107,7 +107,7 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `cached(key, fetcher, {ttl, retry, live, slot})` returns one reactive
   `{status: 'loading'|'success'|'error', data, error, refresh()}` per key.
   In-flight requests are shared; stale entries refetch in the background on
-  the next read; network/5xx retry twice, 4xx never; a response from an older
+  the next read; network/5xx/429 retry twice, other 4xx never; a response from an older
   fetch never overwrites a newer one; a failed fetch keeps the last data
   (status stays 'success', `error` set) and is retried only after its TTL or
   on `refresh()`. **The key must encode every input of the fetcher** (e.g.

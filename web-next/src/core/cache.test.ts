@@ -12,10 +12,12 @@ function setup() {
 }
 
 describe('shouldRetry', () => {
-  it('retries network and 5xx twice, never 4xx', () => {
+  it('retries network, 5xx and 429 (rate limited) twice, never other 4xx', () => {
     expect(shouldRetry(new TypeError('Failed to fetch'), 1)).toBe(true)
     expect(shouldRetry(new HttpError(503, 'u', ''), 2)).toBe(true)
     expect(shouldRetry(new HttpError(503, 'u', ''), 3)).toBe(false)
+    expect(shouldRetry(new HttpError(429, 'u', ''), 1)).toBe(true)
+    expect(shouldRetry(new HttpError(429, 'u', ''), 3)).toBe(false)
     expect(shouldRetry(new HttpError(404, 'u', ''), 1)).toBe(false)
     expect(shouldRetry(new HttpError(422, 'u', ''), 1)).toBe(false)
   })
