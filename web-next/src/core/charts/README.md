@@ -7,7 +7,8 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 | File | Exports |
 |---|---|
 | `agMet.ts` | `etrChart`/`etrTable` (`EtrModel`), `feelsLikeChart`/`feelsLikeTable`, `cciChart`/`cciTable` |
-| `agGdd.ts` | `gddChart`/`gddTable` (`GddModel`), `stageLines`, `gddAxisMax`, `GDD_NAMES` |
+| `agGdd.ts` | `gddChart`/`gddTable` (`GddModel`), `stageLines`, `stageGutter`, `gddAxisMax`, `GDD_NAMES` |
+| `agLegend.ts` | `agLegend` (the Ag charts' plain wrapping legend: short names and no title on compact screens), `liftForLegend`, `legendRows`, `sentenceCase` |
 | `agSoil.ts` | `soilProfileChart`/`soilProfileTable` (`SoilProfileModel`), `swpChart`/`swpTable`, `percentSaturationChart`/`percentSaturationTable` |
 | `agAnnual.ts` | `annualChart`/`annualTable` (`AnnualModel`) |
 | `latestTimeseries.ts` | `latestTimeseriesChart`/`latestTimeseriesTable` (`LatestTimeseriesModel`: core/models/timeseries + view/extent), `latestTimeseriesHeight(n, compact)` |

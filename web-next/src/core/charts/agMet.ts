@@ -12,9 +12,10 @@ import { dualAxis, grid, timeAxis, timeZoom, valueAxis } from './axes'
 import { fmtNum, fmtWall, isoWall, wallMs, type Period } from './format'
 import { AUX, barSeries, lineSeries, markerSeries, points } from './series'
 import { paint } from './theme'
-import { axisTooltip, legend, tipText } from './tooltip'
+import { agLegend, liftForLegend, sentenceCase } from './agLegend'
+import { axisTooltip, tipText } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
-import { axisTitle, cumulativeTitle } from '../variables/labels'
+import { axisTitle, cumulativeTitle, plainName } from '../variables/labels'
 
 /* ------------------------------------------------------------------ ETr */
 
@@ -38,13 +39,16 @@ function etrValues(m: EtrModel) {
 export const etrChart: ChartBuilder<EtrModel> = (m, ctx) => {
   const { xs, inches, cumulative } = etrValues(m)
   const c = ETR[ctx.theme.name]
-  const lg = legend(ctx)
+  const name = plainName('etr', 'Reference ET')
+  const lg = agLegend(ctx, [
+    { name: 'ETr', text: name },
+    { name: 'Cumulative ETr', text: cumulativeTitle(name), short: 'Cumulative' },
+  ])
   return {
     useUTC: true,
-    grid: grid(ctx, { right: 64 }),
+    ...liftForLegend(grid(ctx, { right: 64 }), timeZoom(ctx), lg.extra),
     xAxis: timeAxis(),
     yAxis: dualAxis(ETR_AXIS, ETR_CUM_AXIS),
-    dataZoom: timeZoom(ctx),
     legend: lg.legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y) =>
       tipText(name === 'ETr' ? 'Reference ET' : 'Cumulative', `${y.toFixed(3)} in`),
@@ -75,7 +79,9 @@ function indexChart<K extends string>(
     yF: (number | null)[]
     classOf: (K | null)[]
     order: readonly K[]
+    /** Legend and tooltip name (sentence case); `short` on compact screens. */
     label: (k: K) => string
+    short?: (k: K) => string
     style: (k: K) => { color: string; symbol?: string }
     period: Period
     yName: string
@@ -88,16 +94,21 @@ function indexChart<K extends string>(
     if (ix.length === 0) return []
     return [markerSeries(o.label(k), ix.map((i) => [o.xs[i], o.yF[i]] as [number, number]), { ...o.style(k), size })]
   })
-  const lg = legend(ctx, { title: o.legendTitle, data: markers.map((s) => String(s.name)) })
+  const present = o.order.filter((k) => markers.some((s) => s.name === o.label(k)))
+  const textOf = new Map(present.map((k) => [o.label(k), sentenceCase(o.label(k))]))
+  const lg = agLegend(
+    ctx,
+    present.map((k) => ({ name: o.label(k), text: textOf.get(o.label(k)), short: o.short?.(k) })),
+    { title: o.legendTitle },
+  )
   return {
     useUTC: true,
-    grid: grid(ctx),
+    ...liftForLegend(grid(ctx), timeZoom(ctx), lg.extra),
     xAxis: timeAxis(),
     yAxis: valueAxis(o.yName),
-    dataZoom: timeZoom(ctx),
     legend: lg.legend,
     graphic: lg.graphic,
-    tooltip: axisTooltip(ctx, (x) => fmtWall(x, o.period), (name, y) => tipText(name, `${y.toFixed(1)} °F`)),
+    tooltip: axisTooltip(ctx, (x) => fmtWall(x, o.period), (name, y) => tipText(textOf.get(name) ?? name, `${y.toFixed(1)} °F`)),
     series: [
       lineSeries('Index', points(o.xs, o.yF), { color: paint(ctx.theme, INDEX_LINE), width: 1, id: `${AUX}index-line` }),
       ...markers,
@@ -122,10 +133,11 @@ export const feelsLikeChart: ChartBuilder<FeelsLikeModel> = (m, ctx) =>
     classOf: m.series.regime,
     order: REGIMES,
     label: (k) => FEELS_LIKE_LABELS[k],
+    short: (k) => (k === 'air_temp' ? plainName('air_temp', 'Air temperature') : sentenceCase(FEELS_LIKE_LABELS[k])),
     style: (k) => FEELS_LIKE[ctx.theme.name][k],
     period: m.period,
     yName: axisTitle('feels_like', 'Feels like'),
-    legendTitle: 'Index Used',
+    legendTitle: 'Index used',
   })
 
 export function feelsLikeTable(m: FeelsLikeModel): ChartTable {
@@ -148,7 +160,7 @@ export interface CciModel {
 }
 
 export const cciLegendTitle = (livestock: CciSeries['livestock']) =>
-  livestock === 'newborn' ? 'Livestock Risk (newborn)' : 'Livestock Risk (adult)'
+  `${plainName('cci', 'Livestock risk')} (${livestock === 'newborn' ? 'newborn' : 'adult'})`
 
 /** Livestock risk index °F: grey line + markers by class in severity order. */
 export const cciChart: ChartBuilder<CciModel> = (m, ctx) =>

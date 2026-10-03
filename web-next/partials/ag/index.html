@@ -1,7 +1,7 @@
 <!-- An Ag tool inside Charts (x-data="agTab", ui/ag/agTab.ts), shown while `v` is an Ag tool id
      (core/variables chartsMode 'ag'; partials/charts/index.html), in the variable page's frame: back ·
-     title · ⋯ menu; the station; the option chips (partials/ag/options.html; Reference ET adds All
-     years); the chart card (or its table with tbl=1) and, where meaningful, a stats card. Without a
+     title · ⋯ menu; the station; the option chips (partials/ag/options.html), only where the tool
+     applies; the chart card (Reference ET adds All years under it, partials/ag/history-chip.html) (or its table with tbl=1) and, where meaningful, a stats card. Without a
      station, or for an SWP tool at a station without SWP sensors, the card says why and opens the
      header's station picker. -->
 <div class="ag chart-page" x-data="agTab" data-testid="ag-tool">
@@ -49,14 +49,11 @@
   </div>
   <p class="chart-sub" x-show="subline()" x-text="subline()"></p>
 
-  <div class="ag-opts-row">
-    <template x-if="!history()">
+  <template x-if="!history() && showsOptions(state())">
+    <div class="ag-opts-row">
       <!-- @include partials/ag/options.html -->
-    </template>
-    <template x-if="hasHistory()">
-      <button type="button" class="dash-chip" :aria-pressed="history()" @click="toggleHistory()" data-testid="range-all">All years</button>
-    </template>
-  </div>
+    </div>
+  </template>
 
   <template x-if="state() !== 'chart'">
     <section class="dash-card ag-chart-card chart-card" aria-labelledby="ag-chart-title">
@@ -93,5 +90,8 @@
     <section class="dash-card chart-card" aria-label="All years">
       <!-- @include partials/charts/history.html -->
     </section>
+  </template>
+  <template x-if="state() === 'chart' && history()">
+    <!-- @include partials/ag/history-chip.html -->
   </template>
 </div>

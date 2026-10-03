@@ -39,6 +39,7 @@ describe('overlays', () => {
   it('labelled lines carry the stage name as {b}', () => {
     const ml = labelledLines('#000000', [{ y: 100, label: 'Leaf 2' }], ctx)
     expect(ml.data).toEqual([{ yAxis: 100, name: 'Leaf 2' }])
-    expect(ml.label).toMatchObject({ show: true, formatter: '{b}' })
+    expect(ml.label).toMatchObject({ show: true, position: 'end', formatter: '{b}' })
+    expect(labelledLines('#000000', [], ctx, { labels: false }).label).toMatchObject({ show: false })
   })
 })

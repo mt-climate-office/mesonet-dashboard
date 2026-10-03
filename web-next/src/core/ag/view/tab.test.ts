@@ -6,6 +6,7 @@ import {
   annualElement,
   annualOptions,
   chartState,
+  showsOptions,
   hasAllYears,
   cropPatch,
   cutoffSummary,
@@ -145,6 +146,7 @@ it('variableGroup + chartState', () => {
   expect(chartState(swp, 'acecrowa', 'acecrowa', true)).toBe('not-here')
   expect(chartState({ swpOnly: false, hasSwp: false }, 'acecrowa', 'acecrowa', true)).toBe('chart')
   expect(chartState({ swpOnly: false, hasSwp: false }, null, null, true)).toBe('no-station')
+  expect((['chart', 'loading-stations', 'no-station', 'not-here'] as const).map(showsOptions)).toEqual([true, true, false, false])
 })
 
 it('annualElement: waits for the list; a stale annv falls to the first option', () => {
