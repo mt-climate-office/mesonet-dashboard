@@ -317,7 +317,8 @@ bar, card, skeleton, type scale, transitions) the app's version lives in
 
 Skip link + `<main id="main" tabindex="-1">`; live region for canvas changes;
 an `.sr-only` table twin per chart (rendered by the chart host); kit focus
-ring only (no per-selector focus rules); ≥ 40 px touch targets under
+ring only (no per-selector focus rules; the one exception, `main` and headings
+with `tabindex="-1"`, are focus targets, not controls: no ring); ≥ 40 px touch targets under
 `(hover: none)`; `aria-pressed` drives toggle styling; keyboard twin for every
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
