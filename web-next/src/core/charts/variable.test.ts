@@ -40,6 +40,12 @@ describe('variableChart', () => {
     expect(o.dataZoom).toEqual([expect.objectContaining({ type: 'inside', disabled: true })])
     expect(o.tooltip.triggerOn).toBe('click')
   })
+  it("the x axis is the shown window, so the slider's track matches the chart (no empty zoom-out padding)", () => {
+    const o = variableChart(model(), testCtx('dark')) as unknown as Opt & { xAxis: { min: number; max: number }[] }
+    expect(o.xAxis[0]).toMatchObject({ min: view[0], max: view[1] })
+    const slider = o.dataZoom.find((z) => z.type === 'slider') as { startValue: number; endValue: number }
+    expect([slider.startValue, slider.endValue]).toEqual([o.xAxis[0].min, o.xAxis[0].max])
+  })
   it('compact tooltip: no panel sub-header for one variable', () => {
     const o = variableChart(model(), testCtx('dark')) as unknown as { tooltip: { formatter: (p: unknown) => string } }
     const html = o.tooltip.formatter([{ seriesIndex: 0, value: [view[0], 61], axisValue: view[0], marker: '' }])
