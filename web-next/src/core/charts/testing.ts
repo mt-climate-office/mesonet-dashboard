@@ -5,6 +5,7 @@
  */
 import { TOKENS_SNAPSHOT } from '../palette/tokens.snapshot'
 import type { Theme } from '../palette'
+import { ZOOM_TRACE_ID } from './style'
 import { readChartTheme } from './theme'
 import type { ChartContext } from './types'
 
@@ -23,4 +24,15 @@ export const fakeGetVar = (theme: Theme) => (name: string): string =>
 /** Builder context for a theme at a desktop width (mouse unless `touch`). */
 export function testCtx(theme: Theme = 'dark', width = 900, compact = false, touch = false): ChartContext {
   return { theme: readChartTheme(theme, fakeGetVar(theme)), width, compact, touch }
+}
+
+/** A built option's series without the zoom slider's hidden trace (style `zoomTrace`). */
+export function drawn<S>(o: { series?: unknown }): S[] {
+  return ((o.series ?? []) as { id?: string }[]).filter((s) => s.id !== ZOOM_TRACE_ID) as S[]
+}
+
+/** A built option's y axes without the trace's hidden one (`show: false`). */
+export function shownY<A>(o: { yAxis?: unknown }): A[] {
+  const all = (Array.isArray(o.yAxis) ? o.yAxis : [o.yAxis]) as { show?: boolean }[]
+  return all.filter((a) => a.show !== false) as A[]
 }

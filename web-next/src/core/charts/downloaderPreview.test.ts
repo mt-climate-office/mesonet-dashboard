@@ -19,6 +19,15 @@ const hourly = buildPreviewModel(
   'hourly',
 )!
 
+const daily = buildPreviewModel(
+  Array.from({ length: 40 }, (_, i) => ({
+    datetime: `2026-0${7 + Math.floor(i / 31)}-${String((i % 31) + 1).padStart(2, '0')}`,
+    'Precipitation [in]': i % 2 ? 0.1 : 0,
+    'Air Temperature @ 2 m [°F]': 60,
+  })),
+  'daily',
+)!
+
 describe('downloaderPreviewChart', () => {
   it('one grid, axis pair and line per column, linked through one zoom', () => {
     const o = downloaderPreviewChart(hourly, testCtx())
@@ -37,7 +46,8 @@ describe('downloaderPreviewChart', () => {
 
   it('breaks lines at missing hours and nulls', () => {
     const [air, rh] = downloaderPreviewChart(hourly, testCtx()).series as S[]
-    expect(air.data.map((p) => p[1])).toEqual([50, 51, 52, 53, null, null, 56])
+    // One null midway across the 3 h step (style `points`, hourly interval).
+    expect(air.data.map((p) => p[1])).toEqual([50, 51, 52, 53, null, 56])
     expect(rh.data[1][1]).toBeNull()
   })
 
@@ -48,22 +58,34 @@ describe('downloaderPreviewChart', () => {
     }
   })
 
-  it('monthly shows markers and month labels; compact drops the slider', () => {
+  it('monthly: lines without markers (style), month labels; compact drops the slider', () => {
     const m = buildPreviewModel(
       [{ datetime: '2026-01-01', x: 1 }, { datetime: '2026-02-01', x: 2 }, { datetime: '2026-03-01', x: 3 }],
       'monthly',
     )!
     const o = downloaderPreviewChart(m, testCtx('light', 390, true))
-    expect((o.series as S[])[0].showSymbol).toBe(true)
+    expect((o.series as S[])[0].showSymbol).toBe(false)
     const x = (o.xAxis as { minInterval?: number; maxInterval?: number }[])[0]
     expect([x.minInterval, x.maxInterval]).toEqual([28 * 86_400_000, 31 * 86_400_000])
     expect((downloaderPreviewChart(hourly, testCtx()).xAxis as { minInterval?: number }[])[0].minInterval).toBeUndefined()
     expect((o.dataZoom as { type: string }[]).map((z) => z.type)).toEqual(['inside'])
   })
 
-  it('grows one panel slot per column', () => {
-    expect(previewHeight(hourly, false) - previewHeight(hourly, true)).toBeGreaterThan(0)
+  it('grows one panel slot per column, plus the slider where it shows', () => {
+    expect(previewHeight(hourly, false)).toBe(previewHeight(hourly, true)) // 6 h: no slider
     expect(previewHeight(hourly, true)).toBeGreaterThanOrEqual(2 * PREVIEW_PANEL_PX)
+    expect(previewHeight(daily, false) - previewHeight(daily, true)).toBeGreaterThan(0)
+  })
+
+  it('precipitation is bars; the slider traces the first panel (its running total for an accumulation)', () => {
+    const o = downloaderPreviewChart(daily, testCtx())
+    const [trace, ppt, air] = o.series as (S & { id?: string })[]
+    expect(trace).toMatchObject({ id: 'aux:zoom-trace', yAxisIndex: 2 })
+    expect([ppt.type, air.type]).toEqual(['bar', 'line'])
+    const ys = trace.data.map((p) => p[1]).filter((v) => v != null)
+    expect(ys.at(-1)).toBeCloseTo(0.1 * 20, 9)
+    expect((o.yAxis as { min?: number; show?: boolean }[])[0]).toMatchObject({ min: 0 })
+    expect((o.yAxis as { show?: boolean }[])[2].show).toBe(false)
   })
 })
 

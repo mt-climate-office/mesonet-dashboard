@@ -13,6 +13,7 @@ import { plainUnit } from '../variables/labels'
 import { LAYOUT, latestTimeseriesChart, latestTimeseriesTable, seriesColor, type LatestTimeseriesModel } from './latestTimeseries'
 import { bandSeries } from './overlays'
 import { AUX } from './series'
+import { DAY, bottomLayout } from './style'
 import { tipText, type TipParam } from './tooltip'
 import type { ChartBuilder, ChartTable } from './types'
 
@@ -26,19 +27,21 @@ export const variableChart: ChartBuilder<VariableModel> = (m, ctx) => {
   const [g] = option.grid as { left: number; right: number }[]
   const panel = m.ts.panels[0]
   const s = panel?.series.length === 1 ? panel.series[0] : undefined
+  // Room under the plot for the x labels, and the slider when it shows (style `bottomLayout`).
+  const slider = (option.dataZoom as { type?: string }[]).some((z) => z.type === 'slider')
   const out: EChartsOption = {
     ...option,
-    grid: [{ left: g.left, right: g.right, top: LAYOUT.top, bottom: ctx.compact ? LAYOUT.compactBottom : LAYOUT.bottom }],
+    grid: [{ left: g.left, right: g.right, top: LAYOUT.top, bottom: bottomLayout(slider).grid }],
   }
   if (!s?.band) return out
 
-  // Appended (the base tooltip reads series by index), drawn behind the line (z).
+  // The one band style (overlays `bandSeries`): the line's color at DAILY_RANGE alpha, under the mean line.
   const ok = m.ts.x.map(Number.isFinite)
   const pick = <T>(a: readonly T[]) => a.filter((_, j) => ok[j])
   // Daily rows sit at local noon, as latestTimeseries draws them.
   const xs = pick(m.ts.x).map((x) => x + 12 * 3_600_000)
   const color = withAlpha(seriesColor(ctx, panel, s, 0), DAILY_RANGE.alpha)
-  const band = bandSeries(DAILY_RANGE.label, `${AUX}${BAND_ID}-base`, xs, pick(s.band.lo), pick(s.band.hi), { color, digits: 1, stack: BAND_ID })
+  const band = bandSeries(DAILY_RANGE.label, `${AUX}${BAND_ID}-base`, xs, pick(s.band.lo), pick(s.band.hi), { color, digits: 1, stack: BAND_ID, step: DAY })
   const unit = plainUnit(/\[([^\]]+)\]\s*$/.exec(s.name)?.[1] ?? '')
   const base = (option.tooltip as { formatter: (p: TipParam | TipParam[]) => string }).formatter
   const formatter = (raw: TipParam | TipParam[]) => {
@@ -49,7 +52,7 @@ export const variableChart: ChartBuilder<VariableModel> = (m, ctx) => {
   return {
     ...out,
     tooltip: { ...(option.tooltip as object), formatter: formatter as never },
-    series: [...(option.series as SeriesOption[]), ...band.map((b) => ({ ...b, z: 1 }))],
+    series: [...(option.series as SeriesOption[]), ...band],
   }
 }
 

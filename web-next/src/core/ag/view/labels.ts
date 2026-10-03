@@ -117,38 +117,3 @@ export const finiteMax = (values: Nullable[]): number => {
   for (const v of values) if (v != null && Number.isFinite(v) && v > m) m = v
   return m
 }
-
-/**
- * Columnar counterpart of `core/gaps.ts` `insertGaps`: a step longer than
- * `thresholdRatio` × the median cadence gets a null row, so line series break
- * there. The data layer already gap-fills its axes, so this is normally a
- * no-op; it guards series built from an axis that skips rows. Gap rows reuse
- * the preceding x.
- */
-export function insertGapsColumnar<T extends Nullable[]>(
-  epochMs: number[],
-  x: string[],
-  ys: T[],
-  thresholdRatio = 1.5,
-): { x: string[]; ys: Nullable[][] } {
-  if (epochMs.length < 3) return { x, ys }
-  const deltas: number[] = []
-  for (let i = 1; i < epochMs.length; i++) {
-    const d = epochMs[i] - epochMs[i - 1]
-    if (d > 0) deltas.push(d)
-  }
-  if (deltas.length === 0) return { x, ys }
-  const cadence = [...deltas].sort((a, b) => a - b)[Math.floor(deltas.length / 2)]
-  const threshold = cadence * thresholdRatio
-  const outX: string[] = [x[0]]
-  const outYs: Nullable[][] = ys.map((y) => [y[0]])
-  for (let i = 1; i < epochMs.length; i++) {
-    if (epochMs[i] - epochMs[i - 1] > threshold) {
-      outX.push(x[i - 1])
-      outYs.forEach((y) => y.push(null))
-    }
-    outX.push(x[i])
-    outYs.forEach((y, k) => y.push(ys[k][i]))
-  }
-  return { x: outX, ys: outYs }
-}

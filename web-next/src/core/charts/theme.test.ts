@@ -45,4 +45,12 @@ describe('echartsTheme', () => {
     expect(e.categoryAxis.axisLabel).toMatchObject({ fontFamily: t.fontUi })
     expect(e.tooltip).toMatchObject({ backgroundColor: 'rgba(0,0,0,0.96)', borderColor: '#93d0ff' })
   })
+  it("draws the slider's trace in token colors, in and out of the window", () => {
+    for (const name of ['dark', 'light', 'high-contrast'] as const) {
+      const t = readChartTheme(name, fakeGetVar(name))
+      const z = (echartsTheme(t) as Record<string, Record<string, { lineStyle: { color: string }; areaStyle: { color: string } }>>).dataZoom
+      expect([z.dataBackground.lineStyle.color, z.dataBackground.areaStyle.color]).toEqual([t.textMuted, t.grid])
+      expect([z.selectedDataBackground.lineStyle.color, z.selectedDataBackground.areaStyle.color]).toEqual([t.text, t.textMuted])
+    }
+  })
 })

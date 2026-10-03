@@ -1,12 +1,11 @@
 /**
  * Downloader preview chart as a renderer-free model: one stacked panel per
- * exported numeric column (legacy `make_single_plot`), gaps broken, x in
- * Denver wall-clock ms. Extracted from
+ * exported numeric column (legacy `make_single_plot`), x in Denver
+ * wall-clock ms (the chart breaks lines at gaps, core/charts/style). Extracted from
  * web/src/components/charts/DownloaderPreviewChart.tsx.
  */
 import { DAYS_WITH_DATA_COLUMN } from '../aggregate'
 import { META_COLUMNS, MISSING_DATA_COLUMN } from '../csv'
-import { withGaps } from '../downloader/previewRows'
 import { parseWallClock } from '../sensorEvents'
 import type { DlPeriod } from '../url-schema'
 
@@ -38,13 +37,11 @@ export interface PreviewPanel {
 
 export interface PreviewModel {
   period: DlPeriod
-  /** Wall-clock ms per row (monthly rows are not gap-filled). */
+  /** Wall-clock ms per row. */
   x: number[]
   panels: PreviewPanel[]
   /** Monthly with ≤ 36 rows: one tick per month (legacy dtick M1). */
   monthlyTicks: boolean
-  /** Markers on the line (monthly only). */
-  markers: boolean
 }
 
 /** Panels for `rows` (as exported, after any monthly aggregation); null when nothing numeric. */
@@ -54,15 +51,13 @@ export function buildPreviewModel(rows: readonly Row[], period: DlPeriod): Previ
   for (const r of rows) for (const k of Object.keys(r)) if (!PREVIEW_SKIP_COLUMNS.has(k)) colSet.add(k)
   const cols = [...colSet].filter((c) => rows.some((r) => typeof r[c] === 'number'))
   if (cols.length === 0) return null
-  const shown = period === 'monthly' ? rows.slice() : withGaps(rows)
   return {
     period,
-    x: shown.map((r) => parseWallClock(r.datetime) ?? NaN),
+    x: rows.map((r) => parseWallClock(r.datetime) ?? NaN),
     panels: cols.map((column) => ({
       column,
-      values: shown.map((r) => (typeof r[column] === 'number' ? (r[column] as number) : null)),
+      values: rows.map((r) => (typeof r[column] === 'number' ? (r[column] as number) : null)),
     })),
-    monthlyTicks: period === 'monthly' && shown.length <= 36,
-    markers: period === 'monthly',
+    monthlyTicks: period === 'monthly' && rows.length <= 36,
   }
 }

@@ -505,6 +505,29 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 - **New:** chart x values are Denver wall-clock milliseconds rendered with `useUTC: true`, so labels and hovers read in Mountain Time for every viewer, as the Plotly charts did by ignoring offsets.
 - **Why:** HOUSE-STYLE settled precedent (Mountain Time stamps), no time-zone library.
 
+### Chart style: one way to draw every chart
+- **web/ (and web-next before this):** each chart drew its own way. Gaps were found from the data's median step
+  (`insertGaps` on the rows, then again in the chart), so a mostly-gappy hourly series could be drawn as if
+  connected, and the Download preview had two nulls per gap. The Download preview drew precipitation as a line
+  (legacy `make_single_plot`) and its monthly panels with markers; the other charts drew it as bars. Line widths
+  were 1.4, 1.5 or 2 px by chart. The y axis was each library's auto-scale (relative humidity and wind direction
+  rescaled with the data; a precipitation preview panel was not zero-based; temperature over 35–81 °F was drawn
+  20–100). web-next's slider showed at every range (24 h included), and drew its background from whichever series
+  came first: precipitation bars on Compare (a near-flat strip), ETr and GDD daily bars, a flat line from the SWP
+  bands' helper, nothing for the soil profile; its track was the data's extent while the axis was the window's,
+  and the part inside the window was ECharts' default blue. A range or interval change replayed the entrance
+  animation.
+- **New:** DESIGN.md "Chart style" (`core/charts/style.ts`): one line width; gaps are breaks from the known
+  interval (one null midway across a step over 1.5 intervals, inserted by the chart only); precipitation and ETr
+  are bars at every interval, in the preview too, and no chart draws symbols on its lines; the y axis follows the
+  variable's family (zero-based, fixed 0–100 % / 0–360°, or free ± 5 %) rounded to nice steps; the slider shows on
+  wide screens for windows over 2 days with ≥ 30 points, sits in one place, starts at the whole extent, spans
+  exactly the plotted extent and traces one sensible series in token colors; charts animate their first draw only.
+- **Same:** every value drawn, in every table and download, and every Ag number. Fidelity: one-sided nulls are not
+  differences (`scripts/fidelity` already ignored a gap point present on one side only), so the gap nulls change
+  point counts but no comparison.
+- **Why:** the user saw different ranges and intervals draw differently; one rule per thing makes them the same.
+
 ### "Today" is the Denver date
 - **web/:** default windows and "today" came from `dayjs()`, the browser's own zone (the Ag tab, Latest window, Download dates); the Now page of P1 already used Mountain Time.
 - **New:** one helper, `core/today.ts` (`denverToday`, `denverDay`), gives the America/Denver date for every default window, preset, date bound, the Download defaults, the GDD default start, Now's high/low, rain today and normals day, and the photo day. A viewer in another zone, or a test browser in UTC, sees Montana's day; in Mountain Time nothing changes (the fidelity harness runs in America/Denver, so its dates match).
@@ -1443,8 +1466,8 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
 - **Preview chart (DL-017).** ECharts small multiples, one grid per column,
   linked x zoom and axis pointer, the column name as each panel's title above
   the plot (not a rotated y title). Lines use the palette's preview cycle
-  (`previewColor`, Tol bright) instead of black; lines break at gaps,
-  monthly panels add markers. The canvas grows 200 px per column. A
+  (`previewColor`, Tol bright) instead of black, in the house chart style
+  (precipitation and ETr as bars, no markers, gaps broken: "Chart style: one way to draw every chart"). The canvas grows 200 px per column. A
   `.sr-only` table twin lists every timestamp with data.
 - **Live region (new).** Run announces "Requesting … data for {station}…" and
   then "Request finished: N rows, M columns. Download CSV is ready." (or no

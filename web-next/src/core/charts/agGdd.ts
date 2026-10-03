@@ -8,10 +8,11 @@ import type { EChartsOption, LineSeriesOption } from 'echarts'
 import type { GddProjection, GddSeries, GddStage, Nullable } from '../ag/contract'
 import { finiteMax, stageText } from '../ag/view/labels'
 import { GDD, GDD_STAGE_LINE, withAlpha } from '../palette'
-import { dualAxis, grid, niceCeil, timeAxis, timeZoom } from './axes'
+import { dualAxis, niceCeil } from './axes'
 import { fmtNum, fmtWall, wallMs } from './format'
 import { bandSeries, labelledLines } from './overlays'
-import { barSeries, lineSeries, points } from './series'
+import { barSeries, lineSeries } from './series'
+import { DAY, LEGEND_PX, plotExtent, points, timeFrame } from './style'
 import { paint } from './theme'
 import { agLegend, liftForLegend } from './agLegend'
 import { axisTooltip, tipText } from './tooltip'
@@ -97,6 +98,7 @@ function projectionSeries(m: GddModel, p: GddProjection, colors: { line: string;
     points(
       [...start.x, ...ix.map((i) => px[i])],
       [...start.y, ...ix.map((i) => p.cumulative[i])],
+      DAY,
       [...start.x.map(() => ''), ...ix.map((i) => stage[i])],
     )
   const out: LineSeriesOption[] = []
@@ -106,6 +108,7 @@ function projectionSeries(m: GddModel, p: GddProjection, colors: { line: string;
         color: colors.band,
         yAxisIndex: 1,
         stack: 'gdd-proj',
+        step: DAY,
       }),
     )
   }
@@ -147,7 +150,8 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
   const xs = m.series.date.map(wallMs)
   const stages = stageLabels(m)
   const y2max = gddAxisMax(m)
-  const cumulative = lineSeries(GDD_NAMES.cumulative, points(xs, m.series.cumulative, stages), {
+  const cumPoints = points(xs, m.series.cumulative, DAY, stages)
+  const cumulative = lineSeries(GDD_NAMES.cumulative, cumPoints, {
     color: c.cumulative,
     yAxisIndex: 1,
   })
@@ -167,12 +171,15 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
     ),
   ])
   const [y1, y2] = dualAxis('Daily GDD (°F)', 'Cumulative GDD (°F)', { rightMax: y2max })
+  // The slider traces the cumulative GDDs, over the observed days and any projection.
+  const allXs = [...xs, ...(m.projection?.date.map(wallMs) ?? [])]
+  const f = timeFrame(ctx, { extent: plotExtent(allXs, DAY, true), trace: cumPoints, yAxisIndex: 2, legendPx: LEGEND_PX, right: 64 + gutter })
   return {
     useUTC: true,
-    ...liftForLegend(grid(ctx, { right: 64 + gutter }), timeZoom(ctx), lg.extra),
-    xAxis: timeAxis(),
+    ...liftForLegend(f.grid, f.dataZoom, lg.extra),
+    xAxis: f.xAxis,
     // The cumulative axis moves right of the stage-label gutter.
-    yAxis: [y1, gutter > 0 ? { ...y2, offset: gutter } : y2],
+    yAxis: [y1, gutter > 0 ? { ...y2, offset: gutter } : y2, ...(f.trace ? [f.trace.yAxis] : [])],
     legend: lg.legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, 'daily'), (name, y, note) => {
       if (name === barName) return tipText('Daily GDD', y.toFixed(1))
@@ -180,7 +187,7 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
       const label = name === GDD_NAMES.cumulative ? 'Cumulative GDDs' : name === GDD_NAMES.forecast ? 'Projected (forecast)' : 'Projected (normals)'
       return tipText(label, y.toFixed(0), note ? `Growth stage: ${note}` : undefined)
     }),
-    series: [barSeries(barName, points(xs, m.series.daily), c.bar), cumulative, ...proj],
+    series: [...(f.trace ? [f.trace.series] : []), barSeries(barName, points(xs, m.series.daily, DAY), c.bar), cumulative, ...proj],
   } satisfies EChartsOption
 }
 

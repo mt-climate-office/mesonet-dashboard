@@ -10,20 +10,19 @@ describe('buildPreviewModel', () => {
     note: 'text',
   }))
 
-  it('one panel per numeric, non-bookkeeping column; gaps are broken', () => {
+  it('one panel per numeric, non-bookkeeping column, one point per row (the chart breaks the gaps)', () => {
     const m = buildPreviewModel(rows, 'hourly')!
     expect(m.panels.map((p) => p.column)).toEqual(['Air Temperature @ 2 m [°F]'])
-    expect(m.panels[0].values).toEqual([50, 51, 52, null, 54, 55])
+    expect(m.panels[0].values).toEqual([50, 51, 52, 54, 55])
     expect(m.x[0]).toBe(Date.parse('2026-08-28T00:00:00Z'))
-    expect(m.x[3]).toBe(Date.parse('2026-08-28T03:00:00Z'))
-    expect(m.markers).toBe(false)
+    expect(m.x[3]).toBe(Date.parse('2026-08-28T04:00:00Z'))
   })
 
-  it('monthly rows are not gap-filled and get month ticks and markers', () => {
+  it('monthly rows get month ticks', () => {
     const monthly = [{ datetime: '2026-01-01', x: 1 }, { datetime: '2026-03-01', x: 2 }, { datetime: '2026-04-01', x: 3 }]
     const m = buildPreviewModel(monthly, 'monthly')!
     expect(m.panels[0].values).toEqual([1, 2, 3])
-    expect(m).toMatchObject({ monthlyTicks: true, markers: true })
+    expect(m).toMatchObject({ monthlyTicks: true })
   })
 
   it('null when there is nothing to plot', () => {

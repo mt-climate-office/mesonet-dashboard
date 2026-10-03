@@ -65,11 +65,11 @@ describe('buildTimeseriesModel', () => {
     expect(m.panels[0].axisTitle).toBe('Rain (in)')
   })
 
-  it('x is wall-clock ms, gaps get null rows, and the x range pads a day each side', () => {
+  it('x is wall-clock ms, one value per row (the chart breaks the gaps), and the x range pads a day each side', () => {
     const rows = hourly(6, (i) => ({ 'Air Temperature [°F]': i })).filter((_, i) => i !== 3)
     const m = buildTimeseriesModel({ rows, vars: ['Air Temperature'], period: 'hourly' })!
     expect(m.x[0]).toBe(Date.parse('2026-07-01T00:00:00Z'))
-    expect(m.panels[0].series[0].values).toEqual([0, 1, 2, null, 4, 5])
+    expect(m.panels[0].series[0].values).toEqual([0, 1, 2, 4, 5])
     expect(m.xRange).toEqual([Date.parse('2026-06-30T00:00:00Z'), Date.parse('2026-07-02T00:00:00Z')])
   })
 
@@ -95,7 +95,6 @@ describe('buildTimeseriesModel', () => {
     })!
     expect(m.panels[0].normals).toEqual({ kind: 'band', min: [50, null], max: [80, null], label: 'Air Temperature [°F]' })
     expect(m.panels[1].normals).toMatchObject({ kind: 'markers', median: [65, null] })
-    expect(m.panels[2].yRange).toEqual([0, 1])
   })
 
   it('sensor spans come from the station config, except on Reference ET', () => {
