@@ -5,11 +5,11 @@
  * with "Download original" (the same WebP, saved under its basename).
  */
 import Alpine from 'alpinejs'
-import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoMinDay, photoPick, photoTimeOptions, type PhotoPick } from '../../../core/cards'
-import { basename, framesFor, localToday, type PhotoFrame, type StationCamera } from '../../../core/photos'
-import type { SelectOption } from '../../controls/timeSelect'
-import { component } from '../../component'
-import { confirmedDay, latestFrames, monthFrames, photoSchedule } from './resources'
+import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoMinDay, photoPick, photoTimeOptions, type PhotoPick } from '../../core/cards'
+import { basename, framesFor, localToday, type PhotoFrame, type StationCamera } from '../../core/photos'
+import type { SelectOption } from '../controls/timeSelect'
+import { component } from '../component'
+import { confirmedDay, latestFrames, monthFrames, photoSchedule } from '../station/resources'
 
 type Source = { status: 'loading' | 'success' | 'error'; data: PhotoFrame[] | undefined }
 

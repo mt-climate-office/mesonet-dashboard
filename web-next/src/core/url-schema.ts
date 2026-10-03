@@ -28,8 +28,7 @@
  *     (Latest keeps the un-prefixed legacy names because it is the most-shared
  *      tab and existing links must keep working.)
  *
- *   Ag Tools   var        derived variable (etr, gdd, …) — once set, written
- *                         even at its default, so shared links name it
+ *   Ag Tools   var        the open tool (etr, gdd, …); absent = the tool cards
  *              crop       GDD crop
  *              gdd_lo, gdd_hi  custom GDD cutoffs, °F (absent = the crop's)
  *              gdd_proj   GDD projection horizon: season | 30 | 60 | off
@@ -75,8 +74,6 @@ export type TopCard = (typeof TOP_CARDS)[number]
 export const BOTTOM_CARDS = ['map', 'metadata', 'current'] as const
 export type BottomCard = (typeof BOTTOM_CARDS)[number]
 
-// Legacy default (layout.py:1151): Growing Degree Days.
-export const AG_VAR_DEFAULT = 'gdd'
 export const AG_TIME_OPTIONS = ['hourly', 'daily'] as const
 export type AgTime = (typeof AG_TIME_OPTIONS)[number]
 export const AG_LIVESTOCK_OPTIONS = ['adult', 'newborn'] as const
@@ -103,8 +100,6 @@ export interface KeySpec<T> {
   parse: (raw: string | null) => T
   /** Query value for `v`; only called when `v` should be written. */
   format: (v: T) => string
-  /** Keep at the default once set or present (Ag `var` only; see writeUrlSearch). */
-  alwaysWrite?: boolean
 }
 
 /** Any KeySpec, whatever its value type (format's parameter is contravariant). */
@@ -185,7 +180,7 @@ export const URL_SCHEMA = {
   card: oneOf(TOP_CARDS, null),
   info: oneOf(BOTTOM_CARDS, null),
   // Ag Tools
-  var: { ...strOr(AG_VAR_DEFAULT), alwaysWrite: true },
+  var: str(),
   crop: strOr('wheat'),
   gdd_lo: str(),
   gdd_hi: str(),
@@ -238,16 +233,9 @@ const same = (a: unknown, b: unknown) =>
 /**
  * Serialize `state` into a query string (`?…`, or `''` when nothing is set).
  * Schema keys at their default are omitted, so an all-defaults view has a
- * clean URL. Exception: an `alwaysWrite` key (Ag `var`) is kept at its
- * default once it is in `current` or in `touched` (keys the caller set
- * explicitly), as nuqs `clearOnDefault: false` did. Non-schema keys from
- * `current` are kept in their original order.
+ * clean URL. Non-schema keys from `current` are kept in their original order.
  */
-export function writeUrlSearch(
-  state: UrlState,
-  current = '',
-  touched: ReadonlySet<string> = new Set(),
-): string {
+export function writeUrlSearch(state: UrlState, current = ''): string {
   const params = new URLSearchParams(current)
   const pairs: [string, string][] = []
   for (const [k, v] of params) {
@@ -257,8 +245,7 @@ export function writeUrlSearch(
     const spec = URL_SCHEMA[k] as AnyKeySpec
     const v = state[k]
     if (v === null || v === undefined) continue
-    const pinned = spec.alwaysWrite && (params.has(k) || touched.has(k))
-    if (!pinned && same(v, spec.default)) continue
+    if (same(v, spec.default)) continue
     pairs.push([k, (spec.format as (v: unknown) => string)(v)])
   }
   if (pairs.length === 0) return ''
@@ -276,9 +263,8 @@ export function writeUrlSearch(
 export function viewHref(
   loc: Pick<Location, 'origin' | 'pathname' | 'search' | 'hash'>,
   state: UrlState,
-  touched: ReadonlySet<string> = new Set(),
 ): string {
-  return `${loc.origin}${loc.pathname}${writeUrlSearch(state, loc.search, touched)}${loc.hash}`
+  return `${loc.origin}${loc.pathname}${writeUrlSearch(state, loc.search)}${loc.hash}`
 }
 
 /** The Latest selection with "absent = defaults" resolved. */

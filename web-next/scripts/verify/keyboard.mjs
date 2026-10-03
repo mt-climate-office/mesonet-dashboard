@@ -1,10 +1,11 @@
 /**
  * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, one-row navbar
- * tab order + focus ring, station combobox, Help dialog, theme toggle, the
- * Charts drill-down and Back, tabs mounting only while open (no cross-tab requests), chart
- * table twins, map sr-table selection, reduced motion. Run via `npm run verify`.
+ * tab order + focus ring, the picker's combobox and closing on a pick, Help dialog,
+ * theme toggle, the Now Provisional toggletip, the Charts drill-down and Back,
+ * tabs mounting only while open (no cross-tab requests), chart table twins, map
+ * sr-table selection, reduced motion. Run via `npm run verify`.
  */
-import { DL_QUERY, check, finish, open, runDownload, start } from './lib.mjs'
+import { DL_QUERY, VIEWPORTS, check, finish, open, runDownload, start } from './lib.mjs'
 
 const env = await start()
 
@@ -91,11 +92,12 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await close()
 }
 
-/* ── Station combobox by keyboard (the picker's search; first visit opens the picker) ── */
+/* ── Station picker: a pick closes the desktop drawer ───────────────────── */
 {
-  const { page, problems, close } = await open(env, '?theme=light')
+  // First visit (no station): the in-flow drawer is open at 1440 px.
+  const { page, problems, close } = await open(env, '?theme=light#now')
   const input = page.getByTestId('picker-search').getByRole('combobox')
-  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder')?.length > 0)
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Search by name or ID')
   await input.focus()
   await page.keyboard.type('acebozem')
   await page.keyboard.press('ArrowDown')
@@ -107,11 +109,39 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('s') === 'acebozem', null, { timeout: 10000 }).catch(() => {})
   check('combobox: Enter selects the station (?s=acebozem)', (await urlParam(page, 's')) === 'acebozem')
-  check('combobox: popup closes, focus stays on the input',
-    await input.evaluate((el) => el.getAttribute('aria-expanded') === 'false' && document.activeElement === el))
-  await page.keyboard.press('Escape')
+  const picked = await page.evaluate(() => ({
+    drawer: document.getElementById('station-picker')?.classList.contains('is-open'),
+    saved: localStorage.getItem('mco-dashboard-drawer'),
+    focus: document.activeElement?.id,
+  }))
+  check('picker: a pick closes the desktop drawer (saved closed), focus moves to <main>',
+    picked.drawer === false && picked.saved === 'closed' && picked.focus === 'main', JSON.stringify(picked))
   const p = await problems()
-  check('combobox: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  check('picker: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Now: the Provisional toggletip ─────────────────────────────────────── */
+{
+  const { page, problems, close } = await open(env, '?s=acebozem&theme=dark#now')
+  const btn = page.getByTestId('now-provisional').getByRole('button')
+  await btn.waitFor({ timeout: 10000 })
+  const state = () => page.evaluate(() => ({
+    expanded: document.querySelector('[data-testid="now-provisional"] button')?.getAttribute('aria-expanded'),
+    shown: !document.getElementById('now-provisional-tip')?.hidden,
+  }))
+  await btn.focus()
+  await page.keyboard.press('Enter')
+  const s1 = await state()
+  await page.keyboard.press('Escape')
+  const s2 = await state()
+  await btn.click()
+  await page.locator('.now-updated').click()
+  const s3 = await state()
+  check('Provisional toggletip: Enter opens (aria-expanded), Esc and a click outside close',
+    s1.expanded === 'true' && s1.shown && s2.expanded === 'false' && !s2.shown && s3.expanded === 'false' && !s3.shown, JSON.stringify([s1, s2, s3]))
+  const p = await problems()
+  check('Provisional toggletip: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
@@ -147,6 +177,42 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&var=gdd#ag', 1], ['down
     // Latest-only endpoints (hourly record + derived ETr, latest obs, ppt summary, sensor config, camera schedule).
     .filter((u) => /observations\/(hourly|raw)|derived\/hourly|\/latest\b|derived\/ppt|\/config\/|photos\/schedule/.test(u)))
   check(`[${name}] first load makes no Latest-tab requests`, latest.length === 0, latest.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Download stepper (390 px): Next validates, focus + announcement follow ─ */
+{
+  const { page, close } = await open(env, '?s=acebozem#download', { viewport: VIEWPORTS[1] })
+  const progress = () => page.getByTestId('dl-progress').innerText()
+  const shown = () => page.evaluate(() => [...document.querySelectorAll('.dl-step')].filter((e) => e.offsetParent !== null).map((e) => e.dataset.testid))
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
+  check('stepper: Step 1 of 3, only Elements shown', (await progress()).includes('Step 1 of 3') && JSON.stringify(await shown()) === '["dl-step-elements"]', JSON.stringify(await shown()))
+  await page.getByTestId('dl-next').click()
+  // Wait for the hint rather than a fixed delay (a 200 ms sleep was flaky under load).
+  await page.getByTestId('dl-step-hint').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
+  check('stepper: Next without elements stays and says why', (await progress()).includes('Step 1 of 3') && (await page.getByTestId('dl-step-hint').isVisible()))
+  await close()
+}
+{
+  const { page, problems, close } = await open(env, DL_QUERY, { viewport: VIEWPORTS[1] })
+  const focused = () => page.evaluate(() => document.activeElement?.id)
+  const live = () => page.evaluate(() => [...document.querySelectorAll('[aria-live]')].map((e) => e.textContent).join(' '))
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
+  await page.getByTestId('dl-next').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(300)
+  check('stepper: Enter on Next → step 2, focus on its heading, announced',
+    (await focused()) === 'dl-step-1' && (await live()).includes('Step 2 of 3: Dates & period'), `${await focused()} | ${await live()}`)
+  await page.getByTestId('dl-next').click()
+  await page.waitForTimeout(300)
+  check('stepper: step 3 shows Run and the preview', (await focused()) === 'dl-step-2' && (await page.getByTestId('dl-run').isVisible()) && (await page.getByTestId('dl-preview').isVisible()))
+  await page.getByTestId('dl-run').click()
+  await page.waitForFunction(() => !document.querySelector('[data-testid="dl-download"]')?.disabled, null, { timeout: 30000 })
+  await page.waitForTimeout(300)
+  check('stepper: after Run, focus on the result heading and the row count announced',
+    (await focused()) === 'dl-preview-title' && /Request finished: [\d,]+ rows/.test(await live()), `${await focused()} | ${await live()}`)
+  const p = await problems()
+  check('stepper: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 

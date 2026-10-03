@@ -1,0 +1,30 @@
+<!-- Sensor-change history (x-data="aboutHistory", ui/about/history.ts): installs and removals by day,
+     newest first, in a named, focusable scroll region. -->
+<section class="dash-card about-history" x-data="aboutHistory" aria-labelledby="about-history-title" data-testid="about-history">
+  <h3 class="dash-card-title" id="about-history-title">Sensor changes</h3>
+  <template x-if="state === 'loading'">
+    <div aria-busy="true"><p class="sr-only" role="status">Loading sensor history…</p><span class="dash-skel dash-skel--table" aria-hidden="true"></span></div>
+  </template>
+  <template x-if="state === 'error'"><p class="about-message">Sensor history is unavailable: the Mesonet API did not answer.</p></template>
+  <template x-if="state === 'empty'"><p class="about-message">No sensor changes on record.</p></template>
+  <template x-if="state === 'ready'">
+    <div class="about-scroll" role="region" aria-label="Sensor changes (scrollable)" tabindex="0">
+      <ol class="about-days">
+        <template x-for="d in days" :key="d.date">
+          <li>
+            <h4 class="about-day"><time :datetime="d.date" x-text="d.label"></time></h4>
+            <ul class="about-changes">
+              <template x-for="c in d.changes" :key="c.kind + c.sensor + c.measures">
+                <li>
+                  <span class="dash-badge" x-text="c.kind === 'installed' ? 'Installed' : 'Removed'"></span>
+                  <span class="about-sensor" x-text="c.sensor"></span>
+                  <template x-if="c.measures"><span class="about-measures" x-text="c.measures"></span></template>
+                </li>
+              </template>
+            </ul>
+          </li>
+        </template>
+      </ol>
+    </div>
+  </template>
+</section>

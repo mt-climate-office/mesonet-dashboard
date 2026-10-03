@@ -4,11 +4,11 @@
  * a Retry button and the NWS page link.
  */
 import Alpine from 'alpinejs'
-import type { NwsForecast, Station } from '../../../core/api'
-import type { Resource } from '../../../core/cache'
-import { forecastDetailUrl, forecastHeading, forecastRows, type ForecastCardRow } from '../../../core/cards'
-import { component } from '../../component'
-import { nwsForecast } from './resources'
+import type { NwsForecast, Station } from '../../core/api'
+import type { Resource } from '../../core/cache'
+import { forecastDetailUrl, forecastHeading, forecastRows, type ForecastCardRow } from '../../core/cards'
+import { component } from '../component'
+import { nwsForecast } from '../station/resources'
 
 export function forecastCard() {
   return component({

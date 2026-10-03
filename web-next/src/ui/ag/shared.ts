@@ -32,7 +32,7 @@ export const raw = <T>(v: T): T => (v == null ? v : Alpine.raw(v))
 /** Host bindings per chart kind: `x-data="chart({ ...charts.etr, model: () => … })"`. */
 export const AG_CHARTS = {
   etr: { builder: C.etrChart, table: C.etrTable, label: 'Reference ET chart' },
-  feels_like: { builder: C.feelsLikeChart, table: C.feelsLikeTable, label: 'Feels-like temperature chart' },
+  feels_like: { builder: C.feelsLikeChart, table: C.feelsLikeTable, label: 'Feels like chart' },
   cci: { builder: C.cciChart, table: C.cciTable, label: 'Livestock risk index chart' },
   gdd: { builder: C.gddChart, table: C.gddTable, label: 'Growing degree days chart' },
   profile: { builder: C.soilProfileChart, table: C.soilProfileTable, label: 'Soil profile heatmap' },

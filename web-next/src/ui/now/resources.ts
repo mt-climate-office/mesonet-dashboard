@@ -1,6 +1,6 @@
 /**
  * The Now overview's fetches beyond the shared Latest ones
- * (ui/latest/cards/resources.ts: latest obs, ppt summary, NWS, photos):
+ * (ui/station/resources.ts: latest obs, ppt summary, NWS, photos):
  * the one 72 h hourly request for the sparklines and the normals CSVs.
  * Both are tier 2: callers ask only once `/latest` has arrived.
  */

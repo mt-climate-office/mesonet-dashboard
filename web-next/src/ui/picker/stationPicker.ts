@@ -112,13 +112,18 @@ export function stationPicker() {
       ctl?.close()
     },
 
-    /** A station was picked here: select it; modal presentations close (focus back to the opener). */
+    /**
+     * A station was picked here: select it and close at every size (the inline
+     * drawer saves 'closed'). Focus goes to <main>, the new station's content;
+     * the opener may be gone (the Now empty state's button).
+     */
     choose(id: string | null): void {
       if (!id) return
       const st = Alpine.store('station')
       st.select(id)
       announce(`${st.byId(id)?.name ?? id} selected`)
-      if (this.modal) ctl?.close()
+      ctl?.close({ restoreFocus: false })
+      document.getElementById('main')?.focus({ preventScroll: true })
     },
 
     /* Search (ui/controls/combobox) */

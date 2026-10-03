@@ -23,9 +23,9 @@ layout parts of older entries below; data behaviour is unchanged.
 - **Old links keep working:** `#latest` → `#charts` + `cmp=1` (Compare, keeping `from/to/agg/vars/gridmet`);
   a hash-less link with one of those keys does the same; `#downloader` → `#download` (keys renamed by
   `migrateLegacySearch` first); `#ag` unchanged; `#satellite` → Now with the existing notice. `card`/`info`
-  are still read by Compare's cards and ignored elsewhere.
-- **P0 placeholders:** Charts shows the existing Latest view (as "Compare"); About shows the metadata,
-  current-readings table and locator map; Ag and Download are the existing views. P1 rebuilds them.
+  are ignored (kept so old links round-trip).
+- **Sections (P1):** each section's own entries follow: About ("About replaces …"), Ag ("Ag: tool cards"),
+  Download ("Download: a stepper …") and Charts ("UX refactor: Charts").
 - **Why:** users land on current conditions; history, tools and tables stay one tap away (plan Context).
 
 ### A bare `?s=` opens Now; no `?s=` reopens the last station
@@ -47,15 +47,47 @@ layout parts of older entries below; data behaviour is unchanged.
   ("Bozeman ▾"), Share, theme, Help. Feedback is in Help and the footer.
 - **Why:** the old bar took 100 px of a phone screen and hid the app name.
 
-### Feels like uses the NWS method on Now
+### Feels like uses the NWS method
 - **Legacy / web/:** Current Conditions showed "Real Feel", the NWS wind-chill formula at every temperature
   (a legacy bug kept for parity; LDB-007).
-- **New:** the Now hero shows **Feels like** from `core/ag/compute/feelsLike.ts`, the same NWS rules the Ag
+- **New:** **Feels like** from `core/ag/compute/feelsLike.ts` everywhere, the same NWS rules the Ag
   tool uses: heat index at ≥ 80 °F, wind chill at ≤ 50 °F with wind > 3 mph, otherwise the air
-  temperature, labelled "Wind chill" / "Heat index" when it applies.
-- **Still legacy:** the About section's current-readings table (`core/cards/currentConditions.ts`) keeps
-  its Real Feel row until P1, so the fidelity rows stay comparable. Decision pending: drop or rename it.
+  temperature. The Now hero labels it "Wind chill" / "Heat index" when one applies. The About
+  current-readings table (`core/cards/currentConditions.ts`) replaces the "Real Feel [°F]" row with
+  "Feels like [°F]" (2 decimals, "(wind chill)" / "(heat index)" when one applies), shown whenever there
+  is an air temperature, calm wind included. The wind chill is MetPy's metric formula, so it can differ
+  from the °F formula by a few hundredths. The fidelity harness reports the Real Feel / Feels like pair
+  as `documented` (`scripts/fidelity/lib/compare.mjs`, LDB-007).
 - **Why:** user decision (2026-10-02): the NWS method everywhere.
+
+### About replaces the metadata and current-conditions cards
+- **Legacy / web/:** Station Metadata and Current Conditions were bottom-card tabs beside the locator map.
+- **New:** the About section (DESIGN.md "About"): station details with readable labels and formats (Network,
+  Coordinates "45.66° N, 111.07° W", Elevation "4,905 ft (1,495 m)", Installed "Oct 30, 2020") plus a
+  **period of record** (install date to the newest report); the one-pager as a link; a locator map that
+  needs two fingers or Ctrl/⌘ to move; the current-readings table with a header row and the
+  precipitation summary; a **sensor-change history** from `/config/{station}/` (new); data notes and API
+  links. The Compare cards keep the legacy rows until P1 retires them.
+- **Why:** plan "About": details stay reachable without crowding the overview.
+
+### Ag: tool cards, an Options disclosure, phone-sized charts (P1)
+- **Legacy / web/:** Ag Tools opened on Growing Degree Days with a three-column controls card above the
+  chart; the variable select was the only way to change tools; `var` stayed in the URL once set.
+- **New:** `#ag` without `var` shows one card per tool (Reference ET, Growing degree days, Feels like,
+  Livestock risk, Soil profile, Soil water potential, Percent saturation, Annual comparison), each with a
+  one-line description. A card opens that tool (`var=…`, the same reset as changing the variable select) with
+  `pushState`, so Back returns to the cards; "All Ag tools" does the same. The controls sit in an "Options"
+  disclosure above the chart, open on desktop and collapsed on phones (open there too while no station is
+  chosen), whose summary line names the options (`core/ag/view/summary.ts`, e.g. "Wheat · 32–70 °F · to
+  Oct 31"). Tool names are sentence case and shorter ("Feels like", "Soil profile", "Livestock risk";
+  legacy "Feels Like Temperature", "Soil Profile Plot", "Livestock Risk Index"), so the chart heading reads
+  "Feels like: Bozeman". On phones a chart is `min(60dvh, 420px)` tall, and on touch screens the `inside`
+  dataZoom is off so a swipe over a chart scrolls the page (zoom with the dates, or the slider on wider
+  screens).
+- **Old links:** every Ag key is unchanged. `#ag` with an Ag key but no `var` (e.g. `?crop=corn#ag`, which
+  web/ wrote when only the crop changed) gets `var=gdd`, its old default, at boot (core/router.ts
+  `legacyRedirect`); only a bare `#ag` opens the cards. `var=gdd` is now written like any other tool.
+- **Why:** plan "Ag": tools first, controls out of the way on phones, no scroll trap.
 
 ### Now overview data
 - **New (no legacy equivalent):** today's high/low comes from today's hourly means plus the current
@@ -66,9 +98,24 @@ layout parts of older entries below; data behaviour is unchanged.
   the station reports them, to the plan's six elements so every tile has a sparkline. Data older than 2 h
   shows a stale warning; the provisional badge follows `/latest`'s `provisional` flag.
 
+### Download: a stepper on phones, step cards elsewhere (P1)
+- **Legacy / web/:** one form column (station, variables, QC, aggregation, dates, Run / Download CSV) with
+  the map under it, beside the preview; ≤ 900 px it all stacked, so on a phone the result landed
+  off-screen after Run.
+- **New:** three cards, **1 Elements** (station, variables, uncommon switch, map) · **2 Dates & period**
+  (aggregation, dates, then QC) · **3 Run** (a one-line recap, Run, Download CSV), with the preview below.
+  Desktop and tablet show Elements beside Dates & period over Run, the preview full width. Phones show one
+  step at a time with "Step 2 of 3", Back and Next; Next refuses to leave a step that would block Run and
+  says why, and Enter in a field means Next until the Run step. Each step change moves focus to the step
+  heading and is announced. After Run (any width) the preview scrolls into view and its heading takes
+  focus; the row-count announcement is unchanged. Variable rows are 44 px on phones and touch screens, and
+  on phones the list no longer scrolls inside its panel.
+- **Unchanged:** the request, the `dl_*` / `els` / `period` / `qc` / `pub` keys and the CSV (fidelity:
+  byte-identical); the step is view state, not in the URL.
+- **Why:** the plan's "Download" item; Run's result was a dead end on phones.
 ## UX refactor: Charts (P1, 2026-10)
 
-These entries supersede the P0 note that Charts shows the Latest view. Data requests are unchanged
+Data requests are unchanged
 (v2 API, QC level 2, no `premade`, inclusive end dates sent as an exclusive `end_time`).
 
 ### Charts is a variable list with a page per variable; the stacked plot is "Compare"
@@ -78,7 +125,8 @@ These entries supersede the P0 note that Charts shows the Latest view. Data requ
   range presets 24 h · 7 d · 14 d · 30 d · 1 y · Custom (stored in `from`/`to`/`agg`), a min / max / mean
   (or total) row, gridMET normals on daily views, prev/next chips, and History (years overlaid, daily, one
   request per year, at most 10 years) and Table (the chart's rows, paged) views (`view=`). Every drill-down
-  is a history entry, so Back returns through them.
+  is a history entry, so Back returns through them. The Charts tab inside Charts returns to the list;
+  leaving Charts drops `v`, so the next visit opens the list.
 - **Why:** plan "Variable page" / "Charts list": a reading leads to its history, not to a form.
 
 ### Compare loses the Latest sidebar's station picker, network filter, collapse and the card column
@@ -167,7 +215,8 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 - **Why:** the hash is navigation, so links are the native control; it keeps the shell to one tiny component.
 
 ### URL writing
-- **Same as web/:** key names, defaults, legacy-key migration, `/<station>` path links, commas kept literal and spaces as `+`; Ag `var` stays in the URL at its default once it has been set or was in the link (nuqs `clearOnDefault: false`).
+- **Same as web/:** key names, defaults, legacy-key migration, `/<station>` path links, commas kept literal and spaces as `+`.
+- **Changed (UX refactor P1):** Ag `var` has no default: absent means the Ag tool cards, and any tool (GDD included) is written. web/ kept `var` at its default once set (nuqs `clearOnDefault: false`); see "Ag: tool cards" above.
 - **New:** every write is one batched `replaceState` per tick that keeps the hash. A value outside a key's allowed set (for example `agg=weekly`) is dropped from the URL on the first write instead of lingering.
 - **Why:** one URL owner (`stores/url.ts`), HOUSE-STYLE §4.
 
@@ -259,14 +308,13 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 
 #### Current Conditions rows (LDB-006, LDB-007, LDB-008)
 - **Same as legacy:**
-  - The row set and order: Timestamp, then the legacy `elem_labs` columns in API order, then Real Feel.
+  - The row set and order: Timestamp, then the legacy `elem_labs` columns in API order, then Feels like (was Real Feel; "Feels like uses the NWS method").
   - Raw values, and wind direction as "N (357.3 deg)".
-  - The wind-chill-at-all-temperatures Real Feel (legacy bug kept for parity).
 - **New:**
   - Snow Depth is shown. Legacy listed it as `Snow Depth [in.]` while the API sends `[in]`, so legacy silently dropped it (legacy bug not ported).
   - The timestamp is formatted ("Oct 1, 2026 2:30 PM").
   - Precipitation Summary values are rounded to 2 decimals and carry an " in" suffix ("0.10 in"; LDB-009).
-  - Real Feel is left out when the wind speed is 0 (or missing). Legacy still printed `35.74 + 0.6215·T` at calm wind, which is not a wind chill (LDB-007). Kept as web/ does, so the card matches web/ row for row.
+  - Real Feel (the wind-chill formula at every temperature, a legacy bug) is replaced by the NWS feels-like (LDB-007; "Feels like uses the NWS method").
 
 #### Wind rose (LDT-005, LDT-006, LDT-007)
 - **Same as legacy:** the rose follows the plotted date range and aggregation, and is titled "Wind Data from {start} to {end}" (Courier New).
@@ -1151,7 +1199,7 @@ The Ag tab UI (`partials/ag/*`, `ui/ag/*`, logic in `core/ag/view/tab.ts`, `resu
 - **Why:** kit-first controls with a keyboard and screen-reader twin for every gesture; one label vocabulary across the three tabs.
 
 ### Chart card
-- **New:** the card heading names the variable and the station ("Growing Degree Days: Bozeman"). Notes are a list above the chart; the chart host is mounted only once a view is ready, so loading shows a spinner, and empty / error states show their text in place of the chart (same texts as web/). Each settled view is announced in the page's polite live region ("Growing Degree Days chart updated for Bozeman.", or the empty / error text).
+- **New:** the heading names the tool and the station ("Growing degree days: Bozeman"). Notes are a list above the chart; the chart host is mounted only once a view is ready, so loading shows a spinner, and empty / error states show their text in place of the chart (same texts as web/). Each settled view is announced in the page's polite live region ("Growing Degree Days chart updated for Bozeman.", or the empty / error text).
 - **Why:** HOUSE-STYLE §5 (canvas changes need a live region).
 
 ### Fetching

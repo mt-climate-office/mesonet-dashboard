@@ -16,7 +16,7 @@ describe('readUrlState / writeUrlSearch', () => {
     expect(s.agg).toBe('hourly')
     expect(s.vars).toBeNull()
     expect(s.nets).toEqual(['HydroMet', 'AgriMet', 'Cooperator'])
-    expect(s.var).toBe('gdd')
+    expect(s.var).toBeNull()
     expect(s.qc).toBeNull()
     expect(s.pct).toBe(true)
   })
@@ -44,11 +44,11 @@ describe('readUrlState / writeUrlSearch', () => {
     expect(writeUrlSearch({ ...readUrlState(''), vars: [] })).toBe('?vars=')
   })
 
-  it('Ag var stays at its default once set or present (nuqs clearOnDefault: false)', () => {
+  it('Ag var: absent (the tool cards) reads null; any tool is written, gdd included', () => {
     const d = readUrlState('')
-    expect(writeUrlSearch(d, '', new Set(['var']))).toBe('?var=gdd')
-    expect(writeUrlSearch(d, '?var=etr')).toBe('?var=gdd')
-    expect(writeUrlSearch({ ...d, crop: 'wheat' }, '', new Set(['crop']))).toBe('')
+    expect(d.var).toBeNull()
+    expect(writeUrlSearch({ ...d, var: 'gdd' })).toBe('?var=gdd')
+    expect(writeUrlSearch({ ...d, var: null }, '?var=etr')).toBe('')
   })
 
   it('keeps non-schema keys and round-trips', () => {
@@ -157,11 +157,6 @@ describe('viewHref', () => {
   })
   it('reflects a write the store has not flushed yet', () => {
     expect(viewHref(loc(''), { ...readUrlState(''), s: 'acebozem' })).toBe(`${BASE}?s=acebozem#latest`)
-  })
-  it('passes touched keys through (Ag var pinned at its default)', () => {
-    const d = readUrlState('')
-    expect(viewHref(loc('', '#ag'), d)).toBe(`${BASE}#ag`)
-    expect(viewHref(loc('', '#ag'), d, new Set(['var']))).toBe(`${BASE}?var=${d.var}#ag`)
   })
 })
 

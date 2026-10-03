@@ -7,7 +7,7 @@
  */
 import Alpine from 'alpinejs'
 import { listRequest, variableGroups, variableRows, type VariableGroup, type VariableRow } from '../../core/variables'
-import { latestObs } from '../latest/cards/resources'
+import { latestObs } from '../station/resources'
 import { component } from '../component'
 import { navigate } from '../shell/navigate'
 import { chartVariables, elementsResource, recordResource, stationElements } from './resources'

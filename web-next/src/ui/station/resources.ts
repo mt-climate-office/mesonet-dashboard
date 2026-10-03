@@ -1,12 +1,14 @@
 /**
- * The Latest cards' fetches, each one `$store.data.cached` call with its key
+ * Per-station fetches shared by the sections (Now, About, the Compare cards),
+ * each one `$store.data.cached` call with its key
  * and TTL (ARCHITECTURE "Data flow"). Keys encode every fetcher input.
  * Components call these from getters; the cache dedupes repeated reads.
  */
 import Alpine from 'alpinejs'
-import { fetchNwsForecast, getPptSummary, getStationLatest, getStationRecord, type ObservationRow } from '../../../core/api'
-import type { Resource } from '../../../core/cache'
-import { fetchOnePagers, ONE_PAGERS_STALE_MS, type WindRoseRequest } from '../../../core/cards'
+import { fetchNwsForecast, getPptSummary, getStationConfig, getStationLatest, getStationRecord, type ObservationRow } from '../../core/api'
+import type { Resource } from '../../core/cache'
+import { fetchOnePagers, ONE_PAGERS_STALE_MS, type WindRoseRequest } from '../../core/cards'
+import { configKey, TTL } from '../../core/latest'
 import {
   confirmDerived,
   fetchLatestFrames,
@@ -16,7 +18,7 @@ import {
   type PhotoFrame,
   type PhotoSchedule,
   type StationCamera,
-} from '../../../core/photos'
+} from '../../core/photos'
 
 const MIN = 60_000
 const cached = <T>(key: string, fn: () => Promise<T>, ttl: number): Resource<T> =>
@@ -52,6 +54,9 @@ export const nwsForecast = (lat: number, lon: number) => cached(`nws:${lat},${lo
 
 /** Station one-pager links (expiring URLs: short TTL, memory only). */
 export const onePagers = () => cached('one-pagers', fetchOnePagers, ONE_PAGERS_STALE_MS)
+
+/** `/config/{station}/` (instruments): About's sensor history; same key and TTL as Compare's sensor overlays. */
+export const stationConfig = (station: string) => cached(configKey(station), () => getStationConfig(station), TTL.config)
 
 /** Wind speed/direction over the plotted window. */
 export const windObs = (r: WindRoseRequest): Resource<ObservationRow[]> => cached(r.key, () => getStationRecord(r.query), 5 * MIN)

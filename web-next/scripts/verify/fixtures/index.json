@@ -265,6 +265,11 @@
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-derived_hourly-d8e9db64b0.csv"
+  },
+  "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/one-pagers.json": {
+   "status": 200,
+   "type": "text/plain; charset=utf-8",
+   "file": "raw-main_one-pagers.json-ca4a6dbbb3.txt"
   }
  }
 }

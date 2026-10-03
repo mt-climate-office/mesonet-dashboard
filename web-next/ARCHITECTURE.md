@@ -85,12 +85,14 @@ URL ──► $store.url.state ──► component getters ──► core fetche
 - **`$store.url`** (`stores/url.ts`): `state` holds every key in
   `core/url-schema.ts`, parsed, defaults filled in. Change it only with
   `set(patch)`; writes batch into one `replaceState` per tick, keep the hash,
-  omit defaults (Ag `var` stays once set) and keep unknown keys. `section`
-  comes from the hash (core/router.ts: now · charts · ag · download · about;
-  legacy `#latest`/`#downloader` map). `go(section, patch?, drillDown?)` changes
-  section with `pushState` (Back works), as does a `drillDown` inside one (a Charts
-  variable or sub-view); `hrefFor(section, patch?)` gives the real
-  href for a link. In-page anchors (the skip link's `#main`) keep the section.
+  omit defaults and keep unknown keys. `section` comes from the hash
+  (core/router.ts: now · charts · ag · download · about; legacy
+  `#latest`/`#downloader` map). `go(section, patch?, drillDown?)` changes
+  section with `pushState` (Back works); `drillDown` pushes inside a section
+  too (an Ag tool opened from its card; a Charts variable or sub-view). The
+  section nav applies `sectionNavPatch` (Charts inside Charts → the list;
+  leaving Charts drops `v`). `hrefFor(section, patch?)` gives the
+  real href for a link. In-page anchors (the skip link's `#main`) keep the section.
   Back/forward re-read both. Navigate from UI through `ui/shell/navigate.ts`
   (view transition + scroll + announcement).
 - **`$store.data`** (`stores/data.ts` → `core/cache.ts`):
@@ -110,6 +112,10 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   the catalog id and remembers every confirmed station (core/stations/recent.ts).
   With no `?s=`, main.ts puts the remembered station in the URL before the
   stores start; with none, the station picker opens.
+
+Per-station fetches shared by sections (latest obs, ppt summary, NWS, photos, one-pagers, station
+config) are one function each in `ui/station/resources.ts`; a section's own fetches sit beside it
+(e.g. `ui/now/resources.ts`).
 
 Former TanStack hooks map to `cached()` keys with these TTLs (keep them):
 stations / elements 1 h; station config, ppt summary, NWS forecast 30 min;
@@ -238,8 +244,8 @@ ring only (no per-selector focus rules); ≥ 40 px touch targets under
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
-`npm run verify` runs axe on 11 scenarios (Now, the picker, the Charts list,
-a variable page, Compare, Ag, Download, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
+`npm run verify` runs axe on its scenarios (Now, the picker, the Charts list, a variable page,
+Compare, Ag tools + 4 Ag views, Download, About, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
 
 ## Testing
 

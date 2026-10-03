@@ -5,15 +5,16 @@
  * model is core/models/timeseries with the URL window as view and extent.
  */
 import Alpine from 'alpinejs'
-import { getStationConfig, getStationElements, getStationRecord, type ObservationRow, type StationConfig, type StationElement } from '../../core/api'
+import { getStationElements, getStationRecord, type ObservationRow, type StationConfig, type StationElement } from '../../core/api'
 import type { Resource } from '../../core/cache'
 import type { LatestTimeseriesModel } from '../../core/charts'
-import { TTL, axisExtent, configKey, elementsKey, installDate, normalsKey, recordRequest, todayIso, windowRange, type RecordRequest } from '../../core/latest'
+import { TTL, axisExtent, elementsKey, installDate, normalsKey, recordRequest, todayIso, windowRange, type RecordRequest } from '../../core/latest'
 import { NORMALS_VARS, buildTimeseriesModel, type WindowPlan } from '../../core/models/timeseries'
 import { fetchNormals, type StationNormals } from '../../core/normals'
 import { explodeInstruments, type ConfigRow, type RawInstrument } from '../../core/sensorEvents'
 import { stationVariables, type Variable } from '../../core/variables'
 import type { LatestAgg } from '../../core/url-schema'
+import { stationConfig } from '../station/resources'
 
 const data = () => Alpine.store('data')
 const raw = <T>(v: T): T => (v && typeof v === 'object' ? (Alpine.raw(v) as T) : v)
@@ -41,7 +42,7 @@ export function recordResource(req: RecordRequest | null): Resource<ObservationR
 
 /** The station's sensor-change config (hatched spans), or undefined while it loads. */
 export function sensorConfig(id: string): ConfigRow[] | undefined {
-  const cfg = raw(data().cached(configKey(id), () => getStationConfig(id), { ttl: TTL.config }).data) as StationConfig | undefined
+  const cfg = raw(stationConfig(id).data) as StationConfig | undefined
   return cfg ? explodeInstruments(cfg.instruments as unknown as RawInstrument[]) : undefined
 }
 

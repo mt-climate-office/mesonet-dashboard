@@ -18,7 +18,10 @@ export interface UrlStore {
   set(patch: Partial<UrlState>): void
   /** URL (`?…#section`) for `section` with `patch` applied: real hrefs for section links. */
   hrefFor(section: Section, patch?: Partial<UrlState>): string
-  /** Go to `section` (with an optional patch): pushState for a section change or a `drillDown`, else replaceState. */
+  /**
+   * Go to `section` (with an optional patch): pushState for a section change
+   * or a drill-down (opening an Ag tool), else replaceState.
+   */
   go(section: Section, patch?: Partial<UrlState>, drillDown?: boolean): void
   init(): void
 }
@@ -26,8 +29,6 @@ export interface UrlStore {
 export function createUrlStore(): UrlStore {
   let pending = false
   let booted = false
-  // Keys ever passed to set()/go(); lets `alwaysWrite` keys stay at their default.
-  const touched = new Set<string>()
   const path = () => location.pathname
   return {
     state: readUrlState(''),
@@ -46,17 +47,16 @@ export function createUrlStore(): UrlStore {
     },
 
     get href() {
-      return viewHref(location, this.state, touched)
+      return viewHref(location, this.state)
     },
 
     set(patch) {
       Object.assign(this.state, patch)
-      for (const k of Object.keys(patch)) touched.add(k)
       if (pending) return
       pending = true
       queueMicrotask(() => {
         pending = false
-        const search = writeUrlSearch(this.state, location.search, touched)
+        const search = writeUrlSearch(this.state, location.search)
         const next = `${path()}${search}${location.hash}`
         if (next !== `${path()}${location.search}${location.hash}`) {
           history.replaceState(history.state, '', next)
@@ -65,14 +65,12 @@ export function createUrlStore(): UrlStore {
     },
 
     hrefFor(section, patch = {}) {
-      const keys = new Set([...touched, ...Object.keys(patch)])
-      return `${path()}${writeUrlSearch({ ...this.state, ...patch }, location.search, keys)}#${section}`
+      return `${path()}${writeUrlSearch({ ...this.state, ...patch }, location.search)}#${section}`
     },
 
     go(section, patch = {}, drillDown = false) {
       const next = this.hrefFor(section, patch)
       Object.assign(this.state, patch)
-      for (const k of Object.keys(patch)) touched.add(k)
       if (historyMode(this.section, section, drillDown) === 'push') history.pushState(null, '', next)
       else history.replaceState(history.state, '', next)
       this.section = section

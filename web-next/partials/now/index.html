@@ -43,7 +43,10 @@
       <p class="now-fresh" x-show="o.freshness" data-testid="now-freshness">
         <span class="now-updated" x-text="o.freshness?.updated"></span>
         <template x-if="o.freshness?.provisional">
-          <span class="dash-badge" title="Recent data pass automatic quality checks but have not yet been reviewed.">Provisional</span>
+          <span class="dash-toggletip" x-data="toggletip" data-testid="now-provisional">
+            <button type="button" class="nav-btn mco-btn-info dash-toggletip-btn" aria-label="Provisional data" aria-controls="now-provisional-tip" aria-expanded="false"><span aria-hidden="true">i</span></button>
+            <span class="dash-toggletip-tip" id="now-provisional-tip" hidden><strong>Provisional data.</strong> The dashboard shows quality-controlled data (QC level 2), but the newest readings have not been through the daily quality-control pass yet, so they may change.</span>
+          </span>
         </template>
         <template x-if="o.freshness?.stale">
           <span class="dash-badge dash-badge--warn" role="status" data-testid="now-stale">
@@ -87,12 +90,12 @@
                 <span class="now-photo-cap"><span x-text="pick.label"></span><span x-text="pick.stamp" x-show="pick.stamp"></span></span>
               </button>
             </template>
-            <!-- @include partials/latest/cards/photo-dialog.html -->
+            <!-- @include partials/now/photo-dialog.html -->
           </div>
         </template>
         <template x-if="media === 'wind'">
           <div class="now-rose">
-            <!-- @include partials/latest/cards/wind-rose.html -->
+            <!-- @include partials/now/wind-rose.html -->
           </div>
         </template>
       </div>
