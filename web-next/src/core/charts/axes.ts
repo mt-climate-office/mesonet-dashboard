@@ -5,24 +5,40 @@
 import type { DataZoomComponentOption, GridComponentOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { ChartContext } from './types'
 
-/** Tick label templates per time level; read in UTC = Denver wall clock (useUTC). */
-const TIME_LABELS = {
-  year: '{yyyy}',
-  month: '{MMM}',
-  day: '{MMM} {d}',
-  hour: '{HH}:{mm}',
-  minute: '{HH}:{mm}',
-  second: '{HH}:{mm}:{ss}',
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/**
+ * A time-axis tick label for Denver wall-clock ms (read as UTC), 12-hour as on Now: "6 AM",
+ * "Noon", "6:30 AM" inside a day; "Sep 29" at midnight; a month start is "Oct", or "Oct 1"
+ * when `finer` ticks share the axis (ECharts' tick level > 0), so a month never sits bare
+ * beside day labels; Jan 1 is the year.
+ */
+export function timeTickLabel(ms: number, finer: boolean): string {
+  const d = new Date(ms)
+  const h = d.getUTCHours()
+  const m = d.getUTCMinutes()
+  if (h || m) {
+    if (h === 12 && !m) return 'Noon'
+    return `${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''} ${h < 12 ? 'AM' : 'PM'}`
+  }
+  const day = `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`
+  if (d.getUTCDate() !== 1) return day
+  if (d.getUTCMonth() === 0) return String(d.getUTCFullYear())
+  return finer ? day : MONTHS[d.getUTCMonth()]
 }
 
-/** Time x axis over Denver wall-clock ms. Pair with `useUTC: true` on the option. */
-export function timeAxis(opts: { min?: number; max?: number } = {}): XAXisComponentOption {
+/**
+ * Time x axis over Denver wall-clock ms (pair with `useUTC: true` on the option), labelled by
+ * `timeTickLabel`. `compact`: fewer ticks, so phone axes do not crowd.
+ */
+export function timeAxis(opts: { min?: number; max?: number; compact?: boolean } = {}): XAXisComponentOption {
   return {
     type: 'time',
     min: opts.min,
     max: opts.max,
+    splitNumber: opts.compact ? 3 : 5,
     splitLine: { show: false },
-    axisLabel: { hideOverlap: true, formatter: TIME_LABELS },
+    axisLabel: { hideOverlap: true, formatter: (v: number, _i: number, extra?: { level?: number }) => timeTickLabel(v, (extra?.level ?? 0) > 0) },
   }
 }
 

@@ -233,7 +233,7 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
 
   const xIdx = panels.map((_, i) => i)
   const xAxis: XAXisComponentOption[] = panels.map((_, i) => {
-    const base = timeAxis({ min: m.extent[0], max: m.extent[1] })
+    const base = timeAxis({ min: m.extent[0], max: m.extent[1], compact: ctx.compact })
     const last = i === n - 1
     return { ...base, gridIndex: i, axisLabel: { ...(base.axisLabel as object), show: last }, axisTick: { show: last } } as XAXisComponentOption
   })
