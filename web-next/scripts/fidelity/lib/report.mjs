@@ -34,8 +34,11 @@ function details(item, outDir) {
     if (cd.status === 'PASS') continue
     parts.push(`<h5>card ${esc(k)} ${badge(cd.status)} ${esc(cd.note ?? '')}</h5>`, both('table rows', cd.keys), both('text', cd.lines), both('images', cd.images), both('select options', cd.options))
     if (cd.valueDiffs?.length) parts.push(`<div class="sd"><b>values</b> ${code(cd.valueDiffs.map((v) => `${v.key}: ${v.a} → ${v.b}`).join(' | '), 900)}</div>`)
+    if (cd.documented?.length) parts.push(`<div class="sd"><b>documented rows</b> ${code(cd.documented.map((d) => `${d.a} ${d.valueA} → ${d.b} ${d.valueB} (${d.see})`).join(' | '), 900)}</div>`)
     if (cd.brokenImages?.length) parts.push(`<div class="sd"><b>broken images (web-next)</b> ${code(cd.brokenImages)}</div>`)
   }
+  // Moved parts: informational, not scored.
+  if (c.moved?.length) parts.push(`<h5>moved (not scored)</h5><ul class="sd">${c.moved.map((m) => `<li>${esc(m.part)}: ${esc(m.note)}; ${esc(m.see)}</li>`).join('')}</ul>`)
   if (c.palette && c.palette.status !== 'PASS') parts.push(`<h5>palette ${badge(c.palette.status)} ${c.palette.checked ?? ''} colors checked</h5><div class="sd">${code(c.palette.off ?? c.palette.note, 900)}</div>`)
   if (c.map && c.map.status !== 'PASS') parts.push(`<h5>map ${badge(c.map.status)}</h5><div class="sd">${code(c.map, 900)}</div>`)
   if (c.messages?.status && c.messages.status !== 'PASS') parts.push(`<h5>messages ${badge(c.messages.status)}</h5>`, both('notes / alerts', c.messages))
@@ -103,7 +106,7 @@ details{background:var(--card);border:1px solid var(--line);border-radius:6px;ma
 .sd{margin:4px 0;font-size:12px}
 </style></head><body>
 <h1>web-next fidelity report</h1>
-<p class="meta">generated ${esc(new Date().toISOString())}${meta.note ? ` · ${esc(meta.note)}` : ''}. A = web/ (React, Plotly), B = web-next (Alpine, ECharts), same API and level 2, 1440 px, light theme. PASS equal within tolerance · DOCUMENTED differs on purpose (layout / IA), citing DIVERGENCES · WARN label wording, edge-only point differences (captures seconds apart), advisory card text, off-palette colors · FAIL missing/extra traces, interior value differences, sensor spans, CSV rows/values · ERROR a side failed to load. Colors are not compared between apps (house palette); web-next data colors are checked against core/palette.</p>
+<p class="meta">generated ${esc(new Date().toISOString())}${meta.note ? ` · ${esc(meta.note)}` : ''}. A = web/ (React, Plotly), B = web-next (Alpine, ECharts), same API and level 2, 1440 px, light theme. PASS everything web-next draws matches · DOCUMENTED compared content differs on purpose (a renamed row, redesigned card text), citing DIVERGENCES · moved parts (web/ figures or cards this web-next page does not draw by design) are listed per item, citing DIVERGENCES, and not scored · WARN label wording, edge-only point differences (captures seconds apart), advisory card text, off-palette colors · FAIL missing/extra traces, interior value differences, sensor spans, CSV rows/values · ERROR a side failed to load. Colors are not compared between apps (house palette); web-next data colors are checked against core/palette.</p>
 ${sections}
 </body></html>`
 }
