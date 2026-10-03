@@ -13,7 +13,7 @@ Station view (?s=<id>; remembered in localStorage mco-dashboard-station)
 ├─ Now       #now (default)  current-conditions overview
 ├─ Charts    #charts         P0: the existing Latest view as "Compare" (cmp=1)
 │                            P1: variable list → variable page (v=…) | Compare
-├─ Ag        #ag             the Ag Tools view
+├─ Ag        #ag             tool cards → a tool (var=…): Options disclosure + chart
 ├─ Download  #download       Elements → Dates & period → Run, preview (a stepper on phones)
 └─ About     #about          metadata, all current readings, locator map
 Station picker: drawer (desktop/tablet) or bottom sheet (phones):
@@ -73,6 +73,31 @@ shifts. Values are Space Mono on the type scale; labels are small caps in `--tex
 Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png`,
 `390-dark-sheet-peek.png`, `768-light-now-acebozem.png`, `1440-dark-now-acebozem.png`,
 `1440-dark-drawer-open.png`, `390-light-now-arskeogh.png` (AgriMet, wind rose).
+
+## Ag
+
+| State | Content |
+|---|---|
+| No `var` | "Ag tools": one `a.dash-card` per tool (`DERIVED_VAR_OPTIONS` in `core/params/ag.ts`: name + one-line description), as many columns as fit (min 16 rem) |
+| `var=<tool>` | "‹ All Ag tools" link · heading "<tool>: <station>" · **Options** disclosure · chart card (notes, then the chart or its state) |
+
+- **Navigation:** a card is a real link (`?…&var=<tool>#ag`); a plain click opens it with `pushState`
+  (`navigate('ag', { drillDown: true })`) and focuses the heading. "All Ag tools" clears `var` the same way
+  and focuses the card just left. Back returns to the cards. Opening a tool applies `variablePatch` (the
+  same reset as changing the variable select inside Options).
+- **Options** (`<details class="dash-card ag-options">`): open on desktop, collapsed on phones (open there too
+  while no station is chosen, since the station combobox is inside). The summary is one line, ellipsized:
+  `core/ag/view/summary.ts#optionsSummary`, e.g. "Wheat · 32–70 °F · to Oct 31" (GDD: crop · cutoffs ·
+  projection), "Hourly · Jan 1 – Jan 7, 2026" (ETr, Feels like, SWP, % saturation; Livestock adds the
+  animal), "Temperature · …" (soil profile), the comparison variable (annual). Inside: the three-column
+  controls grid (one column ≤ 900 px); inputs are 16 px on touch (`ui/controls/controls.css`).
+- **Charts:** 540 px tall; on phones `min(60dvh, 420px)`. Under `(hover: none)` the builders' `inside`
+  dataZoom is dropped (`core/ag/view/touchZoom.ts`, wrapped in `ui/ag/shared.ts`), so a swipe scrolls the
+  page; the dates (and the slider on wider screens) zoom.
+
+Screenshots (P1, in the session scratchpad `ag/`): `390-<theme>-landing.png`, `390-<theme>-gdd.png`,
+`390-<theme>-gdd-options.png`, `1440-<theme>-landing.png`, `1440-<theme>-gdd.png` for light, dark and
+high-contrast.
 
 ## Download
 
@@ -162,12 +187,12 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 | `--fs-xl` | 1.75 | tile values, station name |
 | `--fs-2xl` | 2.5 | the hero value |
 
-New CSS uses only these. Older per-tab CSS (latest/ag) moves onto them as P1 rebuilds each section;
-downloader.css is done.
+New CSS uses only these. Older per-tab CSS (latest) moves onto them as P1 rebuilds each section;
+ag.css and downloader.css are done.
 
 ## Accessibility notes
 
-- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `about`, `picker`) × 3 themes × 1440/390.
+- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `about`, `picker`, `ag-tools`) × 3 themes × 1440/390.
 - Touch targets ≥ 40 px under `(hover: none)`; the tab bar is 56 px.
 - Status is text: "No report for over 2 hours", "Feels like 41° · Wind chill"; the ⓘ button is named "Provisional data".
 - The picker is `role="dialog" aria-modal="true"` only when it is modal (sheet, overlay drawer); the inline

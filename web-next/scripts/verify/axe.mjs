@@ -23,6 +23,8 @@ const SCENARIOS = [
   // Default cards (current conditions + the auto top card), then the map + wind rose pair.
   { name: 'latest', query: '?s=acebozem#latest', evidence: { charts: 1, filled: ['[data-testid="current-table"] tbody'] } },
   { name: 'latest-map', query: '?s=acebozem&info=map&card=wind#latest', evidence: { charts: 2, filled: ['[data-testid="locator-map"] tbody'] } },
+  // Ag: the tool cards (no `var`), then four open tools.
+  { name: 'ag-tools', query: '?s=acebozem#ag', evidence: { filled: ['[data-testid="ag-tools"] ul'] } },
   { name: 'ag-gdd', query: '?s=acebozem&var=gdd#ag', evidence: { charts: 1 } },
   { name: 'ag-soil-profile', query: '?s=acebozem&var=soil_temp,soil_ec_blk#ag', evidence: { charts: 1 } },
   { name: 'ag-etr', query: '?s=acebozem&var=etr#ag', evidence: { charts: 1 } },

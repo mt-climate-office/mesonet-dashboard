@@ -44,6 +44,9 @@ describe('historyMode', () => {
     expect(historyMode('now', 'charts')).toBe('push')
     expect(historyMode('charts', 'charts')).toBe('replace')
   })
+  it('pushes a drill-down inside one section (an Ag tool opened from its card)', () => {
+    expect(historyMode('ag', 'ag', true)).toBe('push')
+  })
 })
 
 describe('legacyRedirect', () => {
@@ -68,6 +71,11 @@ describe('legacyRedirect', () => {
     const search = migrateLegacySearch('?s=acebozem&from=2026-09-01&to=2026-09-30&els=air_temp', '#downloader')
     expect(search).toBe('?s=acebozem&els=air_temp&dl_from=2026-09-01&dl_to=2026-09-30')
     expect(legacyRedirect(search!, '#downloader')).toEqual({ search: search!, hash: '#download' })
+  })
+  it('an old #ag link with Ag keys but no var opens GDD; a bare #ag opens the tool cards', () => {
+    const search = migrateLegacySearch('?s=a&crop=corn&from=2026-05-01', '#ag')
+    expect(legacyRedirect(search!, '#ag')).toEqual({ search: `${search}&var=gdd`, hash: '#ag' })
+    expect(legacyRedirect('?s=a', '#ag')).toBeNull()
   })
   it('leaves current sections and #ag alone', () => {
     expect(legacyRedirect('?s=a&var=gdd', '#ag')).toBeNull()

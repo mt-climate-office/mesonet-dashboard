@@ -1,5 +1,5 @@
 /**
- * `x-data="agControls"`: the Ag Tools controls card (partials/ag/controls.html).
+ * `x-data="agControls"`: the Ag "Options" disclosure (partials/ag/controls.html).
  * Reads and writes only `$store.url`; also applies the one-off URL fix-ups
  * and clears a station without SWP sensors for the SWP variables (with a toast).
  */
@@ -10,7 +10,9 @@ import { learnMoreUrl } from '../../core/ag/view/learnMore'
 import { PROJECTION_OPTIONS } from '../../core/ag/view/projection'
 import { SLIDER_MAX, SLIDER_MIN } from '../../core/ag/view/gddCutoffs'
 import { denverToday } from '../../core/ag/data/parse'
+import { optionsSummary } from '../../core/ag/view/summary'
 import {
+  annualElement,
   annualOptions,
   cropPatch,
   cutoffSummary,
@@ -57,6 +59,9 @@ export function agControls() {
     slider: { min: SLIDER_MIN, max: SLIDER_MAX, step: 1, allowNone: true, unit: '°F' },
 
     init() {
+      // Open on desktop; on phones collapsed, unless there is no station yet (its picker is inside).
+      const details = this.$el as HTMLDetailsElement
+      details.open = !MCO.viewport.isCompact() || !Alpine.store('url').state.s
       fx = Alpine.effect(() => {
         const t = currentTab()
         const url = Alpine.store('url').state
@@ -95,6 +100,12 @@ export function agControls() {
     annualEmptyText(): string {
       if (this.elementsFailed()) return 'Unavailable'
       return Alpine.store('station').id ? 'Loading…' : 'Pick a station first'
+    },
+    /** The disclosure's one-line summary, e.g. "Wheat · 32–70 °F · to Oct 31". */
+    summary(): string {
+      const options = elementOptions()
+      const annv = annualElement(this.tab.annualVar, options)
+      return optionsSummary(this.tab, options?.find((o) => o.value === annv)?.label ?? null)
     },
     learnHref(): string {
       return learnMoreUrl(this.tab.variable, this.tab.crop)

@@ -14,18 +14,19 @@ import { announce } from './live'
 const order = (s: Section) => SECTIONS.findIndex((x) => x.id === s)
 
 /**
- * Go to `section` (optionally patching URL state); `morph` is the tapped element for a
- * shared-element transition; `target` is the id of an element to land on (it needs `tabindex="-1"`).
+ * Go to `section` (optionally patching URL state); `morph` is the tapped element for a shared-element
+ * transition; `drillDown` adds a history entry inside the section (an Ag tool opened from its card);
+ * `target` is the id of an element to land on (it needs `tabindex="-1"`).
  */
 export async function navigate(
   section: Section,
-  opts: { patch?: Partial<UrlState>; morph?: HTMLElement | null; target?: string } = {},
+  opts: { patch?: Partial<UrlState>; morph?: HTMLElement | null; drillDown?: boolean; target?: string } = {},
 ): Promise<void> {
   const url = Alpine.store('url')
   const from = url.section
   await withTransition(
     async () => {
-      url.go(section, opts.patch)
+      url.go(section, opts.patch, opts.drillDown)
       await Alpine.nextTick()
     },
     { direction: order(section) < order(from) ? 'back' : 'forward', morph: opts.morph },
@@ -34,7 +35,7 @@ export async function navigate(
   if (target) {
     target.scrollIntoView({ block: 'start' })
     target.focus({ preventScroll: true })
-  } else if (from !== section) {
+  } else if (from !== section || opts.drillDown) {
     window.scrollTo({ top: 0 })
   }
   if (from !== section) announce(sectionLabel(section))
