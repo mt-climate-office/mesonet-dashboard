@@ -227,3 +227,6 @@ export function chartState(
   if (!stationId) return 'no-station'
   return t.swpOnly && !t.hasSwp ? 'not-here' : 'chart'
 }
+
+/** The option chips show only while the tool can draw here (or the catalog is still loading). */
+export const showsOptions = (state: ReturnType<typeof chartState>): boolean => state === 'chart' || state === 'loading-stations'
