@@ -1,13 +1,19 @@
-<!-- Station details (x-data="aboutDetails", ui/about/details.ts): a definition list, then the
-     one-pager link when the station has one. -->
+<!-- Station details (x-data="aboutDetails", ui/about/details.ts): station (id in mono), network,
+     location, elevation and record as a definition list, then the one-pager row when the station has one. -->
 <section class="dash-card about-details" x-data="aboutDetails" aria-labelledby="about-details-title" data-testid="about-details">
-  <h3 class="dash-card-title" id="about-details-title">Station details</h3>
+  <h3 class="sr-only" id="about-details-title">Station details</h3>
   <dl class="about-dl">
     <template x-for="r in rows" :key="r.label">
-      <div class="about-dl-row"><dt x-text="r.label"></dt><dd x-text="r.value"></dd></div>
+      <div class="about-dl-row">
+        <dt x-text="r.label"></dt>
+        <dd><span x-text="r.value"></span><template x-if="r.id"><span class="about-id" x-text="r.id"></span></template></dd>
+      </div>
     </template>
   </dl>
   <template x-if="onePager">
-    <p class="about-links"><a class="dash-link" :href="onePager" target="_blank" rel="noopener noreferrer" data-testid="about-one-pager">Station one-pager (PDF)<span class="sr-only"> (opens in a new tab)</span></a></p>
+    <a class="about-row" :href="onePager" target="_blank" rel="noopener noreferrer" data-testid="about-one-pager">
+      <span>Station one-pager (PDF)<span class="sr-only"> (opens in a new tab)</span></span>
+      <span class="about-row-meta" aria-hidden="true">↗</span>
+    </a>
   </template>
 </section>

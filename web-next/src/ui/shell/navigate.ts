@@ -10,6 +10,7 @@ import { SECTIONS, sectionLabel, type Section } from '../../core/router'
 import type { UrlState } from '../../core/url-schema'
 import { withTransition } from '../layout/transition'
 import { announce } from './live'
+import { openSheet } from './sheet'
 
 const order = (s: Section) => SECTIONS.findIndex((x) => x.id === s)
 
@@ -24,7 +25,10 @@ export interface NavigateOptions {
    * Id of the element that takes focus (it needs `tabindex="-1"` unless it is
    * focusable), so focus never falls to <body> when the clicked link unmounts.
    * The page scrolls to the top as usual, then to the target if that left it
-   * below the fold (Now's "All readings" → `#about-readings`).
+   * below the fold. A target with `data-sheet="<id>"` (a row that opens a
+   * sheet) also opens that sheet, with the target as its opener: Now's "All
+   * readings" → `#about-readings` opens About's readings sheet, and closing it
+   * leaves focus on that row.
    */
   target?: string
 }
@@ -46,6 +50,7 @@ export async function navigate(section: Section, opts: NavigateOptions = {}): Pr
   const target = opts.target ? document.getElementById(opts.target) : null
   if (target && target.getBoundingClientRect().bottom > window.innerHeight) target.scrollIntoView({ block: 'start' })
   target?.focus({ preventScroll: true })
+  if (target?.dataset.sheet) openSheet(target.dataset.sheet, target)
   if (from !== section) announce(sectionLabel(section))
 }
 

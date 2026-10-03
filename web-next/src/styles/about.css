@@ -1,44 +1,58 @@
-/* About (partials/about/*): .dash-cards in one column on phones, two from
-   tablet up (details | map, readings | sensor changes, notes full width).
-   Long tables and lists scroll inside .about-scroll, never the page sideways.
-   Kit tokens and the --fs-* scale only. */
+/* About (partials/about/*, partials/sheets/about-*.html): one column on phones; from tablet up two
+   (details + map | rows + notes). The readings and sensor changes open in modal sheets, where they
+   scroll inside .about-scroll, never the page sideways. Kit tokens and the --fs-* scale only. */
 
-.about-grid { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
-.about-notes { grid-column: 1 / -1; }
+.about-grid, .about-col { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
 @media (min-width: 641px) and (min-height: 561px) {
-  .about-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .about-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .about-col { gap: 1rem; }
 }
 
 .about-empty p, .about-message { margin: 0 0 0.75rem; font-size: var(--fs-sm); color: var(--text-secondary); }
 .about-message { margin: 0; }
 .about-hint { margin: 0.4rem 0 0; font-size: var(--fs-xs); color: var(--text-muted); }
 
-/* Now's "All readings" lands here: clear the sticky navbar. */
-.about-readings { scroll-margin-top: calc(var(--chrome-h, 0px) + 0.75rem); }
-
-/* Station details: label / value pairs. */
-.about-dl { margin: 0; font-size: var(--fs-sm); }
-.about-dl-row { display: grid; grid-template-columns: minmax(7.5rem, 2fr) minmax(0, 3fr); gap: 0.75rem; padding: 0.35rem 0; border-top: 1px solid var(--border); }
-.about-dl-row:first-child { border-top: 0; }
+/* Station details: label / value pairs, then the one-pager row. */
+.about-dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.5rem 1.25rem; margin: 0; }
+.about-dl-row { display: contents; }
 .about-dl dt { color: var(--text-muted); }
 .about-dl dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
-.about-links { margin: 0.6rem 0 0; }
+.about-id { margin-left: 0.5rem; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
 
-/* Locator map. */
-.about-map-frame { height: 16rem; border-radius: var(--radius-md); overflow: hidden; }
+/* Rows (one-pager, readings, sensor changes): full-bleed lines inside a card, a hairline between. */
+.about-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  width: calc(100% + 2 * var(--card-pad)); margin: 0 calc(-1 * var(--card-pad));
+  min-height: 48px; padding: 0.75rem var(--card-pad);
+  background: none; border: 0; border-radius: 0; font: inherit; font-weight: 500;
+  color: var(--text-primary); text-align: left; text-decoration: none; cursor: pointer;
+}
+.about-row:hover { background: var(--accent-hover); }
+.about-row + .about-row { border-top: 1px solid var(--border); }
+.about-dl + .about-row { margin-top: var(--card-pad); margin-bottom: calc(-1 * var(--card-pad)); border-top: 1px solid var(--border); }
+.about-row-meta { font-weight: 400; color: var(--text-muted); white-space: nowrap; }
+.about-rows { padding-block: 0; }
+.about-rows .about-row:first-of-type { border-radius: var(--card-radius) var(--card-radius) 0 0; }
+.about-rows .about-row:last-of-type { border-radius: 0 0 var(--card-radius) var(--card-radius); }
+
+/* Locator map: a flat, rounded frame. */
+.about-map-frame { height: 16rem; border-radius: var(--card-radius); overflow: hidden; }
 @media (min-width: 641px) and (min-height: 561px) { .about-map-frame { height: 20rem; } }
 
-/* A long table or list scrolls in its own focusable region. */
-.about-scroll { max-height: 28rem; overflow: auto; overscroll-behavior: contain; border-radius: var(--radius-md); }
+/* The sheets: only the labelled region scrolls (the sticky table head stays put). */
+.about-sheet { --sheet-w: 34rem; }
+.about-sheet .dash-panel-body { overflow: hidden; }
+.about-sheet-content { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.about-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; border-radius: var(--radius-md); }
 
 /* Current readings. */
 .about-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .about-table + .about-table { margin-top: 1rem; }
-.about-table caption { text-align: left; padding: 0 0 0.35rem; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.about-table caption { text-align: left; padding: 0 0 0.35rem; font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); }
 .about-table thead th { position: sticky; top: 0; background: var(--bg-surface); font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border); }
-.about-table tbody th { font-weight: 400; color: var(--text-secondary); text-align: left; padding: 0.35rem 0.5rem; overflow-wrap: anywhere; }
-.about-table td { font-family: var(--font-mono); color: var(--text-primary); text-align: right; padding: 0.35rem 0.5rem; white-space: nowrap; }
-.about-table tbody tr:nth-child(odd) { background: var(--bg-raised); }
+.about-table tbody th { font-weight: 400; color: var(--text-secondary); text-align: left; padding: 0.4rem 0.5rem; overflow-wrap: anywhere; }
+.about-table td { font-family: var(--font-mono); color: var(--text-primary); text-align: right; padding: 0.4rem 0.5rem; white-space: nowrap; }
+.about-table tbody tr + tr { border-top: 1px solid var(--border); }
 
 /* Sensor changes. */
 .about-days, .about-changes { list-style: none; margin: 0; padding: 0; }
@@ -48,9 +62,10 @@
 .about-sensor { color: var(--text-primary); }
 .about-measures { flex-basis: 100%; font-size: var(--fs-xs); color: var(--text-secondary); }
 
-/* Data notes. */
+/* About the data: prose. */
+.about-notes .dash-card-title { font-size: var(--fs-md); color: var(--text-primary); }
 .about-notes-list { margin: 0; font-size: var(--fs-sm); }
 .about-notes-list dt { font-weight: 600; color: var(--text-primary); }
-.about-notes-list dd { margin: 0.15rem 0 0.75rem; color: var(--text-secondary); line-height: 1.5; max-width: 72ch; }
+.about-notes-list dd { margin: 0.15rem 0 0.75rem; color: var(--text-secondary); line-height: 1.5; max-width: 65ch; }
 .about-subtitle { margin: 0.25rem 0 0.4rem; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
 .about-api { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
