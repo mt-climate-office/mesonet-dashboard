@@ -2,7 +2,8 @@
  * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, one-row header
  * tab order + focus ring, the ⋯ menu (arrows, Esc, focus return), Help from the menu,
  * the Theme item, the picker's combobox and closing on a pick, the Now Provisional
- * toggletip and photo dialog, the Charts drill-down and Back, views mounting only while
+ * toggletip, tile → variable heading, "All readings" → About's readings and the photo
+ * dialog, the Charts drill-down and Back, views mounting only while
  * open (no cross-view requests), legacy links (#ag, #downloader), the Download sheet
  * (focus, Esc, inert, dl key) and its phone stepper, the picker drawer and sheet (focus,
  * Esc, inert), the tab bar and history, the variable page's view switch and chips, focus
@@ -187,6 +188,27 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await close()
 }
 
+/* ── Now: a tile focuses its variable's heading; "All readings" focuses About's readings ── */
+{
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=dark')
+  await rendered({ charts: 1, filled: ['[data-testid="now-tiles"]'] })
+  await page.getByTestId('tile-rh').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => document.activeElement?.id === 'var-title', null, { timeout: 10000 }).catch(() => {})
+  const tile = await page.evaluate(() => ({ hash: location.hash, v: new URLSearchParams(location.search).get('v'), focus: document.activeElement?.id }))
+  check('Now: Enter on a tile opens its variable page and focuses its heading', tile.hash === '#charts' && tile.v === 'rh' && tile.focus === 'var-title', JSON.stringify(tile))
+  await page.goBack()
+  await page.waitForSelector('[data-testid="now-all-readings"]', { timeout: 10000 })
+  await page.getByTestId('now-all-readings').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => document.activeElement?.id === 'about-readings', null, { timeout: 10000 }).catch(() => {})
+  const rows = await page.evaluate(() => ({ hash: location.hash, focus: document.activeElement?.id }))
+  check('Now: Enter on "All readings" opens About and focuses its readings (#about-readings)', rows.hash === '#about' && rows.focus === 'about-readings', JSON.stringify(rows))
+  const p = await problems()
+  check('Now tiles and rows: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
 /* ── Now: the photo dialog (direction / day / time pickers) ─────────────── */
 {
   const { page, problems, close } = await open(env, '?s=acebozem&theme=dark#now')
@@ -340,6 +362,7 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&v=gdd#charts', 1]]) {
 
 /* ── Chart table twins: one per rendered chart, on every tab ────────────── */
 for (const [name, query, charts, before] of [
+  ['now-strip', '?s=acebozem', 1],
   ['compare', '?s=acebozem#latest', 1],
   ['variable', '?s=acebozem&v=air_temp#charts', 1],
   ['ag-soil-profile', '?s=acebozem&v=soil_temp,soil_ec_blk#charts', 1],

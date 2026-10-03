@@ -84,7 +84,7 @@ web-next and web/ do), filed upstream as mt-climate-office/mesonet-db-rds#201.
   name, then by name, then by content within the panel (a WARN for the label change).
 - **Cards:** visible text (sr-only twins and hidden panes skipped), tables as cell rows, images
   (and whether they loaded), select options. web/'s cards are found by their Mantine switcher
-  label; web-next's by the `data-testid` of the card that replaced it (`now-media`, `now-forecast`,
+  label; web-next's by the `data-testid` of the card that replaced it (`now-media`, `now-icons` (the forecast periods under the hero strip),
   `about-details`, `about-readings`, `about-map`). Table header rows are skipped.
 - **Maps:** web-next's map hosts (`about-map`, `dl-map`) via their sr-only station table. Map tiles
   MapLibre cancels (`net::ERR_ABORTED` as the view changes) are not request failures.

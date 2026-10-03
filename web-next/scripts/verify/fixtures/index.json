@@ -305,6 +305,16 @@
    "status": 404,
    "type": "application/json",
    "file": "mesonet2-observations_daily-8ac42b3e45.json"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2026-09-30&end_time=2026-10-02&elements=swp&level=2&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_hourly-054cad7148.csv"
+  },
+  "https://api.weather.gov/gridpoints/TFX/95,57/forecast/hourly": {
+   "status": 200,
+   "type": "application/geo+json",
+   "file": "api-forecast_hourly-5fda2b2b6e.json"
   }
  }
 }

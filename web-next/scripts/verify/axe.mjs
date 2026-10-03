@@ -42,7 +42,7 @@ const dlReady = (page) => page.waitForFunction(() => document.querySelector('[da
 // `before` runs once the page loads, `after` once the evidence is in; `only` limits the viewports.
 const SCENARIOS = [
   // The Now overview (default section), with the header ⋯ menu open, and a first visit (no station: the picker is open).
-  { name: 'now', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]', '[data-testid="now-hero"] .dash-spark svg'] } },
+  { name: 'now', query: '?s=acebozem', evidence: { charts: 1, filled: ['[data-testid="now-tiles"]', '[data-testid="tile-wind"] .dash-spark svg'] } },
   { name: 'header-menu', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openMenu },
   // About: details, locator map, all current readings, sensor changes, data notes.
   { name: 'about', query: '?s=acebozem#about', evidence: { filled: ['[data-testid="about-readings-table"] tbody', '[data-testid="about-history"] .about-days', '[data-testid="about-map"] tbody'] } },

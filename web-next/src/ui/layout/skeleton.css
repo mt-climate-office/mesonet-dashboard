@@ -25,7 +25,6 @@
 .dash-skel--value { height: 2.1rem; width: 45%; margin: 0.35rem 0; }
 .dash-skel--spark { height: 28px; width: 100%; }
 .dash-skel--media { width: 100%; height: 100%; min-height: 12rem; }
-.dash-skel--period { flex: 0 0 6.5rem; height: 9rem; border-radius: var(--radius-md); }
 .dash-skel--chart { width: 100%; height: var(--chart-height, 320px); border-radius: var(--radius-md); }
 /* Table: striped rows drawn by the background, one element for any row count. */
 .dash-skel--table {

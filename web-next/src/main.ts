@@ -28,7 +28,6 @@ import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
 import { downloader } from './ui/downloader/downloader'
 import { downloaderMap, locatorMap, pickerMap, stationMap } from './ui/map/presets'
-import { forecastCard } from './ui/now/forecastCard'
 import { photoCard } from './ui/now/photoCard'
 import { windRoseCard } from './ui/now/windRoseCard'
 import { nowView } from './ui/now/nowView'
@@ -160,10 +159,9 @@ Alpine.data('compareControls', compareControls)
 
 // Now (ui/now): the overview section.
 Alpine.data('nowView', nowView)
-// Now's panes (ui/now): the latest photo + its dialog, the wind rose (no camera), the NWS forecast.
+// Now's panes (ui/now): the latest photo + its dialog, the wind rose (no camera).
 Alpine.data('photoCard', photoCard)
 Alpine.data('windRoseCard', windRoseCard)
-Alpine.data('forecastCard', forecastCard)
 
 // About (ui/about): the section wrapper and its cards (details, current readings, sensor changes).
 Alpine.data('aboutView', aboutView)

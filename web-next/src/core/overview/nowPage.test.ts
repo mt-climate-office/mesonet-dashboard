@@ -69,7 +69,7 @@ describe('buildNowPage rows', () => {
     expect(buildNowPage({ ...BASE, latest: { ...LATEST, 'Snow Depth [in]': 3.24 } }).readingsMeta).toBe('Pressure 847 mb · Snow 3.2 in')
   })
   it('leaves out what the station does not report', () => {
-    const { 'Atmospheric Pressure [mbar]': _p, 'Snow Depth [in]': _s, ...bare } = LATEST
+    const bare = Object.fromEntries(Object.entries(LATEST).filter(([k]) => !/^(Atmospheric Pressure|Snow Depth)/.test(k)))
     expect(buildNowPage({ ...BASE, latest: bare }).readingsMeta).toBe('')
   })
   it('station meta: network and elevation in feet', () => {
