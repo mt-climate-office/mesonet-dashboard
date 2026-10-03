@@ -59,6 +59,17 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   MCO.map.addFitControl(map)
   const floor = MCO.map.installZoomFloor(map)
   map.once('load', () => floor.refresh())
+  // MapLibre opens the compact attribution when its text first arrives; on small maps it covers the
+  // data. Collapse it in the same event (its own listener ran first), so it never paints open; ⓘ opens it.
+  const collapseAttribution = () => {
+    const attribution = el.querySelector('.maplibregl-compact')
+    if (!attribution) return
+    attribution.classList.remove('maplibregl-compact-show')
+    map.off('styledata', collapseAttribution)
+    map.off('sourcedata', collapseAttribution)
+  }
+  map.on('styledata', collapseAttribution)
+  map.on('sourcedata', collapseAttribution)
 
   // One automatic basemap retry per failure (see the 'error' handler below).
   let retried = false
