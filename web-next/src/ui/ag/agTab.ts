@@ -1,29 +1,25 @@
 /**
- * `x-data="agTab"` on the Ag section (partials/ag/index.html): the tool
- * cards while no tool is open (`var` absent), else the open tool's chart
- * card and its heading. Opening a tool or going back to the cards pushes a
- * history entry, so Back returns. Controls live in `agControls`; each chart
- * card fetches for itself.
+ * `x-data="agTab"` on an open Ag tool inside Charts (partials/ag/index.html,
+ * mounted while `v` is an Ag tool id): the tool's heading, its chart-card
+ * state and "All charts", which returns to the Charts list (pushed, like
+ * every drill-down). Controls live in `agControls`; each chart card fetches
+ * for itself.
  */
 import Alpine from 'alpinejs'
-import { agCardsPatch, chartState, variableGroup, variablePatch } from '../../core/ag/view/tab'
-import { DERIVED_VAR_OPTIONS } from '../../core/params/ag'
+import { chartState, variableGroup } from '../../core/ag/view/tab'
+import { CHARTS_LIST_PATCH } from '../../core/router'
 import { component } from '../component'
 import { follow } from '../shell/navigate'
 import { currentTab } from './shared'
 
 export function agTab() {
   return component({
-    tools: DERIVED_VAR_OPTIONS,
-
-    /** A tool is open; false = the tool cards. */
-    isOpen: (): boolean => currentTab().open,
     /** 'chart' | 'loading-stations' | 'no-station'. */
     state(): ReturnType<typeof chartState> {
       const station = Alpine.store('station')
       return chartState(currentTab(), Alpine.store('url').state.s, station.id, station.catalog?.status !== 'loading')
     },
-    /** The card for the current variable, when a chart can be drawn. */
+    /** The card for the current tool, when a chart can be drawn. */
     show(group: ReturnType<typeof variableGroup>): boolean {
       return this.state() === 'chart' && variableGroup(currentTab().variable) === group
     },
@@ -33,15 +29,10 @@ export function agTab() {
       return this.state() === 'chart' && name ? `${label}: ${name}` : label
     },
 
-    toolHref: (v: string): string => Alpine.store('url').hrefFor('ag', variablePatch(v)),
-    cardsHref: (): string => Alpine.store('url').hrefFor('ag', agCardsPatch()),
-    /** A card: open the tool (a variable change resets its options, as the select does), focusing its heading. */
-    openTool(e: MouseEvent, v: string): void {
-      follow(e, 'ag', { patch: variablePatch(v), drillDown: true, target: 'ag-chart-title' })
-    },
-    /** "All Ag tools": back to the cards (the tool's options reset too), focusing the card of the tool just left. */
-    toCards(e: MouseEvent): void {
-      follow(e, 'ag', { patch: agCardsPatch(), drillDown: true, target: `ag-tool-${currentTab().variable}` })
+    listHref: (): string => Alpine.store('url').hrefFor('charts', CHARTS_LIST_PATCH),
+    /** "All charts": back to the list (pushed), focusing its heading. */
+    toList(e: MouseEvent): void {
+      follow(e, 'charts', { patch: CHARTS_LIST_PATCH, drillDown: true, target: 'charts-list-title' })
     },
   })
 }

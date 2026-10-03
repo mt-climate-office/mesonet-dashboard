@@ -4,12 +4,14 @@
  * event (`detail.theme`) that chart and map hosts listen for.
  */
 import Alpine from 'alpinejs'
-import { THEME_EVENT, nextTheme, themeToggleLabel, type Theme } from '../core/theme'
+import { THEME_EVENT, nextTheme, themeName, themeToggleLabel, type Theme } from '../core/theme'
 
 export interface ThemeStore {
   current: Theme
-  /** Accessible name for the toggle: the theme a click switches to. */
+  /** Accessible hint for the toggle: the theme a click switches to ("Switch to light theme"). */
   readonly label: string
+  /** The current theme's visible name ("Dark", "Light", "High contrast"). */
+  readonly name: string
   /** dark → light → high-contrast → dark. */
   cycle(): void
   set(theme: Theme): void
@@ -27,6 +29,10 @@ export function createThemeStore(): ThemeStore {
 
     get label() {
       return themeToggleLabel(this.current)
+    },
+
+    get name() {
+      return themeName(this.current)
     },
 
     cycle() {

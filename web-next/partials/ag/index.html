@@ -1,56 +1,33 @@
-<!-- Ag section (x-data="agTab", ui/ag/agTab.ts). No tool open (`var` absent): one card per
-     tool. A tool open: "All Ag tools", its heading, the Options disclosure, the chart card.
-     Mounted only while the section is open, so nothing fetches from another section (the
-     cache keeps the data). -->
-<template x-if="$store.url.section === 'ag'">
-  <div class="ag" x-data="agTab">
-    <template x-if="!isOpen()">
-      <div class="ag-landing" data-testid="ag-tools">
-        <h2 class="ag-heading">Ag tools</h2>
-        <ul class="ag-tools">
-          <template x-for="t in tools" :key="t.value">
-            <li>
-              <a class="dash-card ag-tool" :id="'ag-tool-' + t.value" :href="toolHref(t.value)"
-                 @click="openTool($event, t.value)" :data-testid="'ag-tool-' + t.value">
-                <h3 class="ag-tool-title" x-text="t.label"></h3>
-                <p class="ag-tool-desc" x-text="t.description"></p>
-              </a>
-            </li>
-          </template>
-        </ul>
+<!-- An Ag tool inside Charts (x-data="agTab", ui/ag/agTab.ts), shown while `v` is an Ag tool id
+     (core/variables chartsMode 'ag'; partials/charts/index.html): "‹ All charts", the tool's
+     heading, the Options disclosure, the chart card. Temporary host until the tool pages move to
+     the variable-page frame (REDESIGN.md "Ag tool pages"). -->
+<div class="ag" x-data="agTab" data-testid="ag-tool">
+  <a class="dash-link ag-back" :href="listHref()" @click="toList($event)" data-testid="ag-back">
+    <span aria-hidden="true">‹ </span>All charts</a>
+  <h2 class="ag-heading" id="ag-chart-title" tabindex="-1" x-text="title()"></h2>
+  <!-- @include partials/ag/controls.html -->
+  <section class="dash-card ag-chart-card" aria-labelledby="ag-chart-title">
+    <template x-if="state() === 'loading-stations'">
+      <p class="ag-state">Loading stations…</p>
+    </template>
+    <template x-if="state() === 'no-station'">
+      <div class="ag-state ag-no-station" data-testid="ag-no-station">
+        <p class="ag-no-station-title">Select Station</p>
+        <p>To get started, select a station from the dropdown.</p>
       </div>
     </template>
-
-    <template x-if="isOpen()">
-      <div class="ag-open">
-        <a class="dash-link ag-back" :href="cardsHref()" @click="toCards($event)" data-testid="ag-back">
-          <span aria-hidden="true">‹ </span>All Ag tools</a>
-        <h2 class="ag-heading" id="ag-chart-title" tabindex="-1" x-text="title()"></h2>
-        <!-- @include partials/ag/controls.html -->
-        <section class="dash-card ag-chart-card" aria-labelledby="ag-chart-title">
-          <template x-if="state() === 'loading-stations'">
-            <p class="ag-state">Loading stations…</p>
-          </template>
-          <template x-if="state() === 'no-station'">
-            <div class="ag-state ag-no-station" data-testid="ag-no-station">
-              <p class="ag-no-station-title">Select Station</p>
-              <p>To get started, select a station from the dropdown.</p>
-            </div>
-          </template>
-          <template x-if="show('met')">
-            <!-- @include partials/ag/met.html -->
-          </template>
-          <template x-if="show('gdd')">
-            <!-- @include partials/ag/gdd.html -->
-          </template>
-          <template x-if="show('soil')">
-            <!-- @include partials/ag/soil.html -->
-          </template>
-          <template x-if="show('annual')">
-            <!-- @include partials/ag/annual.html -->
-          </template>
-        </section>
-      </div>
+    <template x-if="show('met')">
+      <!-- @include partials/ag/met.html -->
     </template>
-  </div>
-</template>
+    <template x-if="show('gdd')">
+      <!-- @include partials/ag/gdd.html -->
+    </template>
+    <template x-if="show('soil')">
+      <!-- @include partials/ag/soil.html -->
+    </template>
+    <template x-if="show('annual')">
+      <!-- @include partials/ag/annual.html -->
+    </template>
+  </section>
+</div>

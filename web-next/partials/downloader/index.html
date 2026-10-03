@@ -1,10 +1,9 @@
-<!-- Download section (ui/downloader/downloader.ts): three step cards (1 Elements,
-     2 Dates & period, 3 Run), the preview below them, the BLM funding footer.
+<!-- The downloader (ui/downloader/downloader.ts), shown in the Download sheet (partials/sheets/download.html):
+     three step cards (1 Elements, 2 Dates & period, 3 Run), the preview below them, the BLM funding footer.
      Desktop/tablet show every step (elements | dates over run); phones show
      one step at a time with the progress line and Back/Next (styles/downloader.css).
-     Controls follow ui/controls/README.md. Mounted only while the section is
-     open, so the map and element list load on the first visit. -->
-<template x-if="$store.url.section === 'download'">
+     Controls follow ui/controls/README.md. Mounted only while the sheet is
+     open, so the map and element list load on the first open. -->
 <div class="dl-tab" x-data="downloader" data-testid="downloader">
   <form class="dl-form" aria-label="Download request" novalidate @submit.prevent="submit()">
     <!-- Phones only: where you are in the stepper. The bar is decoration; the text says it. -->
@@ -232,4 +231,3 @@
     <p>Supported by Bureau of Land Management (RM-CESU Award L16AC00359)</p>
   </footer>
 </div>
-</template>

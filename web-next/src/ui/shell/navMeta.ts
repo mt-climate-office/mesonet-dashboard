@@ -1,28 +1,28 @@
 /**
- * `x-data="navMeta"` on the navbar's right-hand group: Share (copy link →
- * toast + live region) and the 3-state theme toggle (`$store.theme`). Also
- * keeps `document.title` naming the selected station (core/pageTitle.ts) and
- * publishes the navbar height as `--chrome-h`. The
- * Help button is wired by its dialog (ui/shell/helpDialog.ts).
+ * `x-data="navMeta"` on the header (partials/shell.html): the ⋯ menu's
+ * actions (Share this view, the 3-state Theme cycle, Help; Send feedback is
+ * a plain link). Also keeps `document.title` naming the selected station
+ * (core/pageTitle.ts) and publishes the header height as `--chrome-h`.
  */
 import Alpine from 'alpinejs'
+import { FEEDBACK_URL } from '../../core/config'
 import { pageTitle } from '../../core/pageTitle'
 import { publishHeight } from '../layout/sectionNav'
 import { component } from '../component'
+import { openHelp } from './helpDialog'
 import { announce } from './live'
-
-const THEME_NAMES = { dark: 'Dark', light: 'Light', 'high-contrast': 'High-contrast' } as const
 
 export function navMeta() {
   return component({
+    feedbackUrl: FEEDBACK_URL,
+
     init() {
-      // The navbar is permanent, so this effect lives as long as the page.
+      // The header is permanent, so this effect lives as long as the page.
       Alpine.effect(() => {
         document.title = pageTitle(Alpine.store('station').current?.name)
       })
-      // --chrome-h: the sticky navbar's height, for the drawer and sheet offsets.
-      const bar = (this.$el as HTMLElement).closest<HTMLElement>('.mco-navbar')
-      if (bar) publishHeight(bar, '--chrome-h')
+      // --chrome-h: the sticky header's height, for the drawer and sheet offsets.
+      publishHeight(this.$el as HTMLElement, '--chrome-h')
     },
 
     /**
@@ -44,20 +44,13 @@ export function navMeta() {
       announce(msg)
     },
 
+    /** dark → light → high contrast; the menu stays open and the item's state text follows. */
     cycleTheme() {
       const theme = Alpine.store('theme')
       theme.cycle()
-      announce(`${THEME_NAMES[theme.current]} theme`)
+      announce(`${theme.name} theme`)
     },
 
-    get themeLabel(): string {
-      return Alpine.store('theme').label
-    },
-
-    /** Which icon the toggle shows: the theme a click switches to. */
-    get themeIcon(): 'sun' | 'contrast' | 'moon' {
-      const t = Alpine.store('theme').current
-      return t === 'dark' ? 'sun' : t === 'light' ? 'contrast' : 'moon'
-    },
+    help: () => openHelp(),
   })
 }

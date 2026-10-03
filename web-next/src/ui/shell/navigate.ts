@@ -49,6 +49,28 @@ export async function navigate(section: Section, opts: NavigateOptions = {}): Pr
   if (from !== section) announce(sectionLabel(section))
 }
 
+/**
+ * Scroll element `id` into view as soon as it exists (it may render after
+ * data loads), once; gives up after 15 s. For a link that lands mid-page
+ * (a bare legacy `#ag` → the Charts list's Ag tools group).
+ */
+export function revealWhenReady(id: string): void {
+  const reveal = () => {
+    const el = document.getElementById(id)
+    if (!el) return false
+    el.scrollIntoView({ block: 'start' })
+    return true
+  }
+  if (reveal()) return
+  const mo = new MutationObserver(() => reveal() && stop())
+  const timer = window.setTimeout(() => stop(), 15_000)
+  const stop = () => {
+    mo.disconnect()
+    clearTimeout(timer)
+  }
+  mo.observe(document.body, { childList: true, subtree: true })
+}
+
 /** A plain left click (no modifier key): handled in-app; anything else follows the href. */
 const plainClick = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey
 

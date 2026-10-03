@@ -28,6 +28,11 @@
 .charts-row-value { display: flex; flex-direction: column; align-items: flex-end; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--text-primary); white-space: nowrap; }
 .charts-row-note { font-family: var(--font-ui); font-size: var(--fs-xs); color: var(--text-muted); }
 .charts-row .dash-spark { margin-top: 0; }
+/* Ag tool rows: name over a one-line description, no value or sparkline (yet). */
+.charts-row--tool { grid-template-columns: minmax(0, 1fr); }
+.charts-row-sub { display: block; font-size: var(--fs-xs); font-weight: 400; color: var(--text-muted); }
+/* A bare legacy #ag link scrolls the Ag tools group under the sticky header. */
+.charts-group { scroll-margin-top: calc(var(--chrome-h, 52px) + 0.75rem); }
 .charts-skel-row { height: 2rem; margin: 0.5rem 0; }
 .charts-compare { display: flex; flex-direction: column; gap: 0.2rem; }
 
