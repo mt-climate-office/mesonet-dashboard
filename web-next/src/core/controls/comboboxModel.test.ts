@@ -22,7 +22,7 @@ describe('matchRank', () => {
     ['later word prefix', bozemanAirport, 'air', 3],
     ['id prefix', bozemanAirport, 'acebo', 4],
     ['label substring', bozemanAirport, 'irpo', 5],
-    ['keyword substring', bozeman, 'zm8', 5],
+    ['keyword substring', bozeman, 'zm8', 6],
     ['no match', bozeman, 'xyz', Infinity],
     ['empty query', absarokee, '', 0],
   ] as const)('%s', (_, item, q, rank) => {
@@ -41,9 +41,10 @@ describe('station search ranking', () => {
     { id: 'acebozm4', label: 'Bozeman 4th', group: 'HydroMet' },
     { id: 'wsrboydw', label: 'Cooney Reservoir W', group: 'AgriMet' },
     { id: 'aceborde', label: 'Big Border', group: 'HydroMet' },
+    { id: 'blmbelfr', label: 'Belfry', group: 'AgriMet', keywords: ['Carbon'] },
   ]
   it.each([
-    ['bo', ['acebozem', 'acebozm4', 'bozmtest', 'acebowma', 'acebootl', 'aceborde', 'blmstmbt', 'wsrboydw']],
+    ['bo', ['acebozem', 'acebozm4', 'bozmtest', 'acebowma', 'acebootl', 'aceborde', 'blmstmbt', 'blmbelfr', 'wsrboydw']],
     ['bozeman', ['acebozem', 'acebozm4', 'bozmtest']],
     ['BZNM8', ['acebozem']],
     ['test', ['bozmtest']],

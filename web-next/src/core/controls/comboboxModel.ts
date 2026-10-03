@@ -33,7 +33,7 @@ export const DEFAULT_LIMIT = 200
  *  0 exact label, id or keyword; 1 the label starts with the query as a whole
  *  word ("bozeman" in "Bozeman Test"); 2 label prefix; 3 a later word of the
  *  label starts with it ("air" in "Bozeman Airport"); 4 id/keyword prefix;
- *  5 substring anywhere; Infinity no match. An empty query ranks everything 0. */
+ *  5 label substring; 6 id/keyword substring (a county); Infinity no match. An empty query ranks everything 0. */
 export function matchRank(item: ComboboxItem, query: string): number {
   if (query === '') return 0
   const label = item.label.toLowerCase()
@@ -42,7 +42,8 @@ export function matchRank(item: ComboboxItem, query: string): number {
   if (label.startsWith(query)) return /[\p{L}\p{N}]/u.test(label.charAt(query.length)) ? 2 : 1
   if (label.split(/[^\p{L}\p{N}]+/u).some((w) => w.startsWith(query))) return 3
   if (codes.some((c) => c.startsWith(query))) return 4
-  if (label.includes(query) || codes.some((c) => c.includes(query))) return 5
+  if (label.includes(query)) return 5
+  if (codes.some((c) => c.includes(query))) return 6
   return Infinity
 }
 
