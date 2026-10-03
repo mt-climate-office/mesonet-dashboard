@@ -105,8 +105,3 @@ export function utcDaysOfLocalDay(ymd: string): string[] {
 export function formatLocal(ms: number): string {
   return LOCAL_LABEL_FMT.format(new Date(ms)).replace(/, (\d{1,2}:\d{2})/, ' $1').replace(/\s/g, ' ')
 }
-
-/** Today's local (America/Denver) date, `YYYY-MM-DD`. */
-export function localToday(): string {
-  return localYmd(Date.now())
-}

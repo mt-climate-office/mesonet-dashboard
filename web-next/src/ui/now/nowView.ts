@@ -13,6 +13,7 @@ import { heroStripChart, heroStripTable, type HeroStripModel } from '../../core/
 import { buildNowPage, latestSwpBar, type NowPage } from '../../core/overview'
 import { hasCamera } from '../../core/photos'
 import { stationHasSwp } from '../../core/stations'
+import { denverToday } from '../../core/today'
 import type { ChartBindings } from '../charts/chart'
 import { component } from '../component'
 import { togglePicker } from '../picker/stationPicker'
@@ -41,7 +42,7 @@ function compute(nowMs: number): View {
     const waiting = !!Alpine.store('url').state.s && st.catalog?.status !== 'success'
     return { ...none, state: waiting ? 'loading' : 'none' }
   }
-  const today = MCO.todayMT()
+  const today = denverToday()
   // Tier 1, in parallel: reading a resource starts its request (the cache dedupes).
   const latestRes = latestObs(s.station)
   const ppt = s.sub_network === 'HydroMet' ? pptSummary(s.station).data?.[0] : undefined

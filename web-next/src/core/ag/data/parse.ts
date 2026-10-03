@@ -189,8 +189,3 @@ export function denverMidnight(date: LocalDate): number {
   }
   return Date.UTC(y, m - 1, d, 7)
 }
-
-/** Today's America/Denver date. */
-export function denverToday(now: number = Date.now()): LocalDate {
-  return denverLocal(now).date
-}

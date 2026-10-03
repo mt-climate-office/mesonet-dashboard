@@ -11,7 +11,7 @@ import { type AgView, gate, gddView } from '../../core/ag/view/results'
 import { AG_TTL, agKeys, forecastNeedsRetry } from '../../core/ag/view/keys'
 import { projectionThrough } from '../../core/ag/view/projection'
 import { fetchDailyMet, fetchDailyNormals, fetchForecastDaily, loadGddStages, type ForecastResult } from '../../core/ag/data'
-import { denverToday } from '../../core/ag/data/parse'
+import { denverToday } from '../../core/today'
 import { component } from '../component'
 import { AG_CHARTS, LOADING, currentTab, raw, trackView, windowQuery } from './shared'
 

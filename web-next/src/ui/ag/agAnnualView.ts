@@ -11,7 +11,7 @@ import { type AgView, annualView, annualYears, elementsGate } from '../../core/a
 import { AG_TTL, agKeys } from '../../core/ag/view/keys'
 import { annualElement, annualOptions } from '../../core/ag/view/tab'
 import { type AnnualDaily, DEFAULT_AG_LEVEL, getAnnualDaily } from '../../core/ag/data'
-import { denverToday } from '../../core/ag/data/parse'
+import { denverToday } from '../../core/today'
 import { component } from '../component'
 import { AG_CHARTS, LOADING, currentTab, elementsResource, raw, trackView } from './shared'
 

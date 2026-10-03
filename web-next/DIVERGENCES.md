@@ -467,6 +467,11 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 - **New:** chart x values are Denver wall-clock milliseconds rendered with `useUTC: true`, so labels and hovers read in Mountain Time for every viewer, as the Plotly charts did by ignoring offsets.
 - **Why:** HOUSE-STYLE settled precedent (Mountain Time stamps), no time-zone library.
 
+### "Today" is the Denver date
+- **web/:** default windows and "today" came from `dayjs()`, the browser's own zone (the Ag tab, Latest window, Download dates); the Now page of P1 already used Mountain Time.
+- **New:** one helper, `core/today.ts` (`denverToday`, `denverDay`), gives the America/Denver date for every default window, preset, date bound, the Download defaults, the GDD default start, Now's high/low, rain today and normals day, and the photo day. A viewer in another zone, or a test browser in UTC, sees Montana's day; in Mountain Time nothing changes (the fidelity harness runs in America/Denver, so its dates match).
+- **Why:** one day boundary everywhere; a browser in UTC turned the day over at 6 PM MDT.
+
 ### Help dialog
 - See "Global UI › Help dialog content".
 ## Carried over from web/: shell, Latest Data and shared data

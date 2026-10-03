@@ -5,7 +5,6 @@
  * the logic is core/downloader (form.ts, view.ts, request.ts).
  */
 import Alpine from 'alpinejs'
-import dayjs from 'dayjs'
 import { getStationElements, type Station, type StationElement } from '../../core/api'
 import type { Resource } from '../../core/cache'
 import { downloaderPreviewChart, downloaderPreviewTable, previewHeight } from '../../core/charts'
@@ -15,6 +14,7 @@ import { downloadFilename, fetchDownload, QC_LEVEL_OPTIONS, type DownloadQuery, 
 import * as view from '../../core/downloader/view'
 import { labelFor, type MultiselectGroup, type MultiselectOption } from '../../core/controls/multiselectModel'
 import { buildPreviewModel, type PreviewModel } from '../../core/models/downloaderPreview'
+import { denverToday } from '../../core/today'
 import type { DlPeriod, UrlState } from '../../core/url-schema'
 import { component } from '../component'
 import { announce } from '../shell/live'
@@ -47,7 +47,7 @@ export function downloader() {
     /** The date inputs' drafts are valid (dateRange `onValidity`). */
     rangeValid: true,
     confirmedKey: null as string | null,
-    today: dayjs().format('YYYY-MM-DD'),
+    today: denverToday(),
     periodOptions: view.PERIOD_OPTIONS,
     qcOptions: QC_LEVEL_OPTIONS.map((o) => ({ value: String(o.value), label: o.label })),
     monthlyNote: view.MONTHLY_NOTE,

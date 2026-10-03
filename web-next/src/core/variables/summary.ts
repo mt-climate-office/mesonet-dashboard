@@ -5,7 +5,7 @@
  * request for every listed variable (`listRequest`). Columns are LAB_SWAP-renamed
  * (core/csv); a multi-depth variable shows its shallowest column.
  */
-import dayjs from 'dayjs'
+import { denverDay } from '../today'
 import type { ObservationRow } from '../api'
 import { sparkline, type Sparkline } from '../charts/sparkline'
 import { recordRequest, type RecordRequest } from '../latest/requests'
@@ -41,7 +41,7 @@ export function primaryColumn(cols: readonly string[], name: string): string | n
 }
 
 /** The list's one hourly request: local midnight two days before today through today, every listed variable. */
-export function listRequest(station: string, vars: readonly Variable[], elements: readonly ElementRow[], today = dayjs()): RecordRequest | null {
+export function listRequest(station: string, vars: readonly Variable[], elements: readonly ElementRow[], today = denverDay()): RecordRequest | null {
   const window = { start: today.subtract(2, 'day').format('YYYY-MM-DD'), end: today.format('YYYY-MM-DD'), valid: true }
   return recordRequest({ station, window, agg: 'hourly', vars: vars.map((v) => v.name), stationElements: elements })
 }

@@ -5,7 +5,8 @@
  */
 import Alpine from 'alpinejs'
 import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoMessage, photoMinDay, photoPick, photoState, photoTimeOptions, type PhotoPick, type PhotoStateInput } from '../../core/cards'
-import { basename, framesFor, localToday, type PhotoFrame, type StationCamera } from '../../core/photos'
+import { denverToday } from '../../core/today'
+import { basename, framesFor, type PhotoFrame, type StationCamera } from '../../core/photos'
 import type { SegmentedOption } from '../controls/segmented'
 import type { SelectOption } from '../controls/timeSelect'
 import { component } from '../component'
@@ -45,7 +46,7 @@ export function photoCard() {
       return this.station ? photoSchedule().data?.stations.get(this.station) : undefined
     },
     get today(): string {
-      return localToday()
+      return denverToday()
     },
     get latest(): Source | null {
       const s = photoSchedule().data

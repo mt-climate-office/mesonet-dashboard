@@ -3,7 +3,7 @@
  * chips, the date window and the period-of-record toggle. ui/charts/compareControls.ts
  * reads these and writes the results to `$store.url`.
  */
-import dayjs from 'dayjs'
+import { denverDay } from '../today'
 import type { Station } from '../api'
 import type { ComboboxItem } from '../controls/comboboxModel'
 import { DEFAULT_VARS, SELECTED_VARS, latestVarsFromElements } from '../params'
@@ -16,8 +16,8 @@ type ElementRow = { element: string; description_short: string }
 /** Stations without a usable install date start here (the network's first year; web/ Sidebar). */
 export const POR_FALLBACK_START = '2017-01-01'
 
-/** Local today as YYYY-MM-DD (`today` injectable for tests). */
-export const todayIso = (today = dayjs()): string => today.format('YYYY-MM-DD')
+/** Today in Denver as YYYY-MM-DD (core/today; `today` injectable for tests). */
+export const todayIso = (today = denverDay()): string => today.format('YYYY-MM-DD')
 
 /* ----------------------------------------------------------- networks */
 
@@ -79,23 +79,23 @@ export function installDate(s: Pick<Station, 'date_installed'> | undefined): str
 }
 
 /** The default window: the last 14 days ending today (LDC-003). */
-export function defaultWindow(today = dayjs()): { start: string; end: string } {
+export function defaultWindow(today = denverDay()): { start: string; end: string } {
   return { start: today.subtract(DEFAULT_WINDOW_DAYS, 'day').format('YYYY-MM-DD'), end: todayIso(today) }
 }
 
 /** `from`/`to` for a picked range; the default window stores as absent so it keeps rolling. */
-export function datesPatch(start: string, end: string, today = dayjs()): Pick<UrlState, 'from' | 'to'> {
+export function datesPatch(start: string, end: string, today = denverDay()): Pick<UrlState, 'from' | 'to'> {
   const d = defaultWindow(today)
   return start === d.start && end === d.end ? { from: null, to: null } : { from: start, to: end }
 }
 
 /** Is the view the period of record (Daily, install date … today)? Read back from the URL (LDC-005). */
-export function showingPeriodOfRecord(agg: LatestAgg, start: string, end: string, installed: string | null, today = dayjs()): boolean {
+export function showingPeriodOfRecord(agg: LatestAgg, start: string, end: string, installed: string | null, today = denverDay()): boolean {
   return agg === 'daily' && start === (installed ?? POR_FALLBACK_START) && end === todayIso(today)
 }
 
 /** The toggle: POR → Hourly + last 14 days; otherwise → Daily + install date … today. */
-export function periodOfRecordPatch(showingPor: boolean, installed: string | null, today = dayjs()): Pick<UrlState, 'agg' | 'from' | 'to'> {
+export function periodOfRecordPatch(showingPor: boolean, installed: string | null, today = denverDay()): Pick<UrlState, 'agg' | 'from' | 'to'> {
   if (showingPor) return { agg: 'hourly', from: null, to: null }
   return { agg: 'daily', from: installed ?? POR_FALLBACK_START, to: todayIso(today) }
 }

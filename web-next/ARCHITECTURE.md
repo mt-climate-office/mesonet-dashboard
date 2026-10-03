@@ -154,7 +154,9 @@ forecast: 1 h (5 min when degraded, `retry: false`).
 
 ### Time
 
-All user-facing stamps are Mountain Time (`MCO.formatStampMT` etc.). Chart
+All user-facing stamps are Mountain Time (`MCO.formatStampMT` etc.). "Today" is always the America/Denver
+date from `core/today.ts` (`denverToday()`, or `denverDay()` for dayjs arithmetic), never `dayjs()` or the
+browser's zone. Chart
 models carry **Denver wall-clock ms** (the API's local reading parsed as if
 UTC; `core/sensorEvents.ts#parseWallClock`); chart builders set
 `useUTC: true`. Never `new Date(string)` on a date-only string (Safari / UTC

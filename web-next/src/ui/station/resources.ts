@@ -9,12 +9,12 @@ import { fetchNwsForecast, getPptSummary, getStationConfig, getStationLatest, ge
 import type { Resource } from '../../core/cache'
 import { fetchOnePagers, ONE_PAGERS_STALE_MS, type WindRoseRequest } from '../../core/cards'
 import { configKey, TTL } from '../../core/latest'
+import { denverToday } from '../../core/today'
 import {
   confirmDerived,
   fetchLatestFrames,
   fetchMonthFrames,
   fetchSchedule,
-  localToday,
   type PhotoFrame,
   type PhotoSchedule,
   type StationCamera,
@@ -33,7 +33,7 @@ export const latestFrames = (s: PhotoSchedule, cam: StationCamera) =>
 
 /** One local month's manifest (`YYYY-MM`); the current month refreshes, past months never change. */
 export const monthFrames = (s: PhotoSchedule, cam: StationCamera, ym: string) =>
-  cached(`photo:month:${cam.station}:${ym}`, () => fetchMonthFrames(s, cam, ym), ym === localToday().slice(0, 7) ? 5 * MIN : Infinity)
+  cached(`photo:month:${cam.station}:${ym}`, () => fetchMonthFrames(s, cam, ym), ym === denverToday().slice(0, 7) ? 5 * MIN : Infinity)
 
 /**
  * A past day's frames with derived WebPs confirmed; `derived` is core/cards/photo `derivedKey(frames)`.

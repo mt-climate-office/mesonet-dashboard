@@ -5,7 +5,7 @@
  * is read back to tell which chip (if any) is pressed; any other window is a
  * custom range (⋯ → Custom dates…). The interval is separate (interval.ts).
  */
-import dayjs from 'dayjs'
+import { denverDay } from '../today'
 import { dateRangeText } from '../ag/view/summary'
 import { datesPatch, todayIso } from '../latest/sidebar'
 import { windowRange } from '../latest/view'
@@ -44,20 +44,20 @@ export const RANGE_CHIPS: readonly { id: RangePreset['id'] | 'all'; label: strin
 const HOUR = 3_600_000
 
 /** `from`/`to` for a preset (`today` injectable for tests). */
-export function presetPatch(id: RangePreset['id'], today = dayjs()): Pick<UrlState, 'from' | 'to'> {
+export function presetPatch(id: RangePreset['id'], today = denverDay()): Pick<UrlState, 'from' | 'to'> {
   const p = RANGE_PRESETS.find((x) => x.id === id) ?? RANGE_PRESETS[2]
   return datesPatch(today.subtract(p.days, 'day').format('YYYY-MM-DD'), todayIso(today), today)
 }
 
 /** The preset the URL window matches, else 'custom'. */
-export function activePreset(state: Pick<UrlState, 'from' | 'to'>, today = dayjs()): RangeId {
+export function activePreset(state: Pick<UrlState, 'from' | 'to'>, today = denverDay()): RangeId {
   const w = chartWindow(state.from, state.to, today)
   if (!w.valid || w.end !== todayIso(today)) return 'custom'
   return RANGE_PRESETS.find((x) => w.start === today.subtract(x.days, 'day').format('YYYY-MM-DD'))?.id ?? 'custom'
 }
 
 /** The page's range: All years (`view=history`), else the window's preset or 'custom'. */
-export function pageRange(state: Pick<UrlState, 'view' | 'from' | 'to'>, today = dayjs()): PageRange {
+export function pageRange(state: Pick<UrlState, 'view' | 'from' | 'to'>, today = denverDay()): PageRange {
   return state.view === 'history' ? 'all' : activePreset(state, today)
 }
 
@@ -65,7 +65,7 @@ export function pageRange(state: Pick<UrlState, 'view' | 'from' | 'to'>, today =
  * URL patch for a range chip. A window chip leaves All years and keeps the
  * interval, except 5-min where the new window does not offer it (Auto then).
  */
-export function rangeChipPatch(id: RangePreset['id'] | 'all', agg: UrlState['agg'], today = dayjs()): Partial<UrlState> {
+export function rangeChipPatch(id: RangePreset['id'] | 'all', agg: UrlState['agg'], today = denverDay()): Partial<UrlState> {
   if (id === 'all') return { view: 'history' }
   const days = RANGE_PRESETS.find((p) => p.id === id)?.days ?? 14
   return { view: 'recent', ...presetPatch(id, today), ...(agg === 'raw' && !rawAllowed(days) ? { agg: null } : {}) }

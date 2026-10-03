@@ -6,7 +6,7 @@
 import Alpine from 'alpinejs'
 import { resolveAgTab, type AgTab } from '../../core/ag/view/tab'
 import { type AgView, viewAnnouncement } from '../../core/ag/view/results'
-import { denverToday } from '../../core/ag/data/parse'
+import { denverToday } from '../../core/today'
 import * as C from '../../core/charts'
 import { getStationElements } from '../../core/api'
 import { AG_TTL, agKeys } from '../../core/ag/view/keys'

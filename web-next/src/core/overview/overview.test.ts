@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ObservationRow } from '../api'
 import { parseCsv } from '../csv'
 import type { NormalRow } from '../normals'
+import { denverToday } from '../today'
 import {
   buildOverview,
   feelsLikeF,
@@ -114,6 +115,12 @@ describe('series', () => {
   it('today high/low from the hourly rows of that local date', () => {
     expect(todayHighLow(HOURLY, '2026-09-30')).toEqual({ hi: 63, lo: 40 })
     expect(todayHighLow(HOURLY, '2026-10-05')).toBeNull()
+  })
+  it('today is the Denver day: 23:30 MDT keeps the whole day, 00:30 MDT starts a new one', () => {
+    const late = denverToday(Date.parse('2026-10-01T05:30:00Z')) // Sep 30, 23:30 MDT
+    const early = denverToday(Date.parse('2026-10-01T06:30:00Z')) // Oct 1, 00:30 MDT
+    expect(todayHighLow(HOURLY, late)).toEqual({ hi: 63, lo: 40 })
+    expect(todayHighLow(HOURLY.slice(0, 49), early)).toEqual({ hi: 40, lo: 40 })
   })
   it('hourly precipitation sums', () => {
     const p = hourlyPrecip(HOURLY, '2026-10-01')!

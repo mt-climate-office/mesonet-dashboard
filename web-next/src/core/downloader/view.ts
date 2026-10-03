@@ -115,7 +115,7 @@ export interface DateWindow {
 /**
  * The request window. Daily/monthly start defaults to the install date (a
  * year back if unknown); hourly to the last 30 days, or the install date if
- * later. End defaults to `today` (YYYY-MM-DD, browser local, as web/).
+ * later. End defaults to `today` (YYYY-MM-DD, Denver, core/today; web/ used the browser's zone).
  */
 export function dateWindow(o: {
   period: DlPeriod

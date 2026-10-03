@@ -9,6 +9,7 @@
  * labels read in Mountain Time with no time-zone library.
  */
 import dayjs from 'dayjs'
+import { denverDay } from '../today'
 import type { ObservationRow } from '../api'
 import { insertGaps } from '../gaps'
 import { mergeNormals, type StationNormals } from '../normals'
@@ -71,7 +72,7 @@ export interface WindowPlan {
  * The chart window from `?from`/`?to` (null = default 14 days ending today,
  * local). `today` is injectable for tests.
  */
-export function chartWindow(from: string | null, to: string | null, today = dayjs()): WindowPlan {
+export function chartWindow(from: string | null, to: string | null, today = denverDay()): WindowPlan {
   const start = from ?? today.subtract(DEFAULT_WINDOW_DAYS, 'day').format('YYYY-MM-DD')
   const end = to ?? today.format('YYYY-MM-DD')
   return { start, end, valid: isIsoDate(start) && isIsoDate(end) && start <= end }
