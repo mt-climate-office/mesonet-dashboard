@@ -142,6 +142,12 @@ Data requests are unchanged
   `mco-dashboard-sidebar` key is no longer written.
 - **Why:** one station picker for the whole view; the cards moved to the sections that own them.
 
+### Now's wind rose has its own window
+- **Legacy / web/:** the Latest wind rose followed the plot's dates and aggregation (`from`/`to`/`agg`).
+- **New:** Now's wind rose always shows the 14 days to today, hourly (legacy's default Latest window),
+  whatever range the variable page or Compare last wrote (`core/cards/windRose.ts`).
+- **Why:** Now is an overview; its rose should not change because a Charts preset was picked.
+
 ### Now tiles open the variable page
 - **P0:** a tile opened Compare with its variables.
 - **New:** a tile opens its first variable's page (wind → Wind Speed, soil → Soil VWC), with the

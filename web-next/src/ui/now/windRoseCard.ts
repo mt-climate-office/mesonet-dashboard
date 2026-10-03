@@ -1,7 +1,8 @@
 /**
- * `x-data="windRoseCard"`: the Wind Rose over the main plot's window and
- * aggregation (core/cards/windRose), drawn by the chart host with the
- * core/charts/windRose builder. Empty until a station is picked (legacy).
+ * `x-data="windRoseCard"`: Now's wind rose over a fixed recent window, 14 days
+ * hourly, whatever the Charts range in the URL (core/cards/windRose), drawn by
+ * the chart host with the core/charts/windRose builder. Empty until a station
+ * is picked (legacy).
  */
 import Alpine from 'alpinejs'
 import type { Resource } from '../../core/cache'
@@ -17,9 +18,7 @@ export function windRoseCard() {
   return component({
     get resource(): Resource<ObservationRow[]> | null {
       const id = Alpine.store('station').id
-      const { from, to, agg } = Alpine.store('url').state
-      const req = id ? windRoseRequest(id, from, to, agg) : null
-      return req ? windObs(req) : null
+      return id ? windObs(windRoseRequest(id)) : null
     },
 
     get model(): WindRoseModel | null {
