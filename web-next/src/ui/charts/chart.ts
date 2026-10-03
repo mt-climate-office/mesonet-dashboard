@@ -7,6 +7,7 @@
 import Alpine from 'alpinejs'
 import type { ECharts } from 'echarts'
 import { fitAxisNames } from '../../core/charts/axes'
+import { animates } from '../../core/charts/style'
 import { echartsTheme, readChartTheme } from '../../core/charts/theme'
 import type { ChartBuilder, ChartContext, ChartTable, ChartTheme } from '../../core/charts/types'
 import { type Range, type ViewState, carryState, categoryMs, fromAxisRange, sameRange, toAxisRange } from '../../core/charts/zoom'
@@ -60,6 +61,8 @@ export class ChartHost<M> {
   private width = 0
   private zoomTimer = 0
   private disposed = false
+  /** A model has been drawn: later draws (range, interval, data, theme, resize) never animate. */
+  private drawn = false
   private silentZoom = false
   /** Wall-clock ms per category when the x axis is categorical (heatmaps), else null. */
   private cats: number[] | null = null
@@ -204,12 +207,13 @@ export class ChartHost<M> {
     // A short canvas (landscape phone) drops y-axis titles that would not fit their plot.
     const option = fitAxisNames(carryState(this.opts.builder(this.model, this.ctx()), state), this.canvas.clientHeight)
     const reduced = reducedMotion()
-    // Animate the first draw only; theme/resize redraws should not replay the entrance.
-    option.animation = !reduced && !keepZoom
+    // Animate the first draw only (style `animates`): a range, interval, data, theme or resize redraw never replays it.
+    option.animation = animates(!this.drawn, reduced)
     option.aria = { enabled: true, label: { description: `${this.opts.label}. The data is in the table that follows.` }, decal: { show: false } }
     if (reduced && option.tooltip && !Array.isArray(option.tooltip)) option.tooltip.transitionDuration = 0
     this.cats = categoryMs(option)
     chart.setOption(option, { notMerge: true })
+    this.drawn = true
     this.width = this.canvas.clientWidth
     this.markZoom()
     if (!keepZoom) this.renderTable(this.opts.table ? this.opts.table(this.model) : null)
