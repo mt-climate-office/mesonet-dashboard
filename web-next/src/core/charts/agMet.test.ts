@@ -68,7 +68,10 @@ describe('feelsLikeChart', () => {
     const i = s.valueC.findIndex((v) => v != null)
     expect(line.data[i][1]).toBeCloseTo((s.valueC[i]! * 9) / 5 + 32, 10)
     expect((o.legend as { data: string[] }).data).not.toContain('Index')
-    expect((o.graphic as { style: { text: string } }[])[0].style.text).toBe('Index Used')
+    expect((o.graphic as { style: { text: string } }[])[0].style.text).toBe('Index used')
+    const lg = o.legend as { type: string; formatter: (n: string) => string }
+    expect(lg.type).toBe('plain')
+    expect(lg.formatter('Average Temperature')).toBe('Average temperature')
   })
   it('table', () => {
     const t = feelsLikeTable({ series: s, period: 'daily' })
@@ -87,8 +90,8 @@ describe('cciChart', () => {
     expect([...an].sort((a, b) => CCI_CLASSES.indexOf(a as never) - CCI_CLASSES.indexOf(b as never))).toEqual(an)
     expect(names(newborn)).not.toEqual(an)
     for (const m of series(adult).slice(1)) expect(m.color).toBe(cciColor(m.name as never, 'dark'))
-    expect((newborn.graphic as { style: { text: string } }[])[0].style.text).toBe('Livestock Risk (newborn)')
-    expect(cciLegendTitle('adult')).toBe('Livestock Risk (adult)')
+    expect((newborn.graphic as { style: { text: string } }[])[0].style.text).toBe('Livestock risk (newborn)')
+    expect(cciLegendTitle('adult')).toBe('Livestock risk (adult)')
   })
   it('table', () => {
     const s = cciDaily(winter, 'adult')
