@@ -37,6 +37,7 @@ import { aboutDetails } from './ui/about/details'
 import { aboutHistory } from './ui/about/history'
 import { aboutReadings } from './ui/about/readings'
 import { stationPicker } from './ui/picker/stationPicker'
+import { startAnalytics } from './ui/shell/analytics'
 import { globalNotices } from './ui/shell/globalNotices'
 import { toggletip } from './ui/shell/toggletip'
 import { helpDialog } from './ui/shell/helpDialog'
@@ -175,4 +176,7 @@ Alpine.data('agSoilView', agSoilView)
 Alpine.data('agAnnualView', agAnnualView)
 
 Alpine.start()
+
+// Page counts (GoatCounter; skipped off production and under DNT/GPC).
+startAnalytics()
 document.documentElement.classList.add('layout-ready')
