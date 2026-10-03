@@ -1,6 +1,6 @@
 /**
  * The Latest plot's x window in Denver wall-clock ms: URL dates → the
- * visible range and the zoomable axis extent, a user zoom → URL dates, and
+ * visible range (also the axis extent), a user zoom → URL dates, and
  * the live-region sentence for a new view.
  */
 import { formatIsoDate, parseIsoDate } from '../controls/dateModel'
@@ -24,18 +24,6 @@ export function msDay(ms: number): string {
 /** Inclusive dates → visible range [start 00:00, end + 1 day 00:00). */
 export function windowRange(start: string, end: string): [number, number] {
   return [dayMs(start), dayMs(end) + DAY]
-}
-
-/**
- * Zoomable axis extent: the window padded by its own length on each side
- * (so the user can zoom out to 3× and pan, which refetches), never past
- * tomorrow 00:00 or before the install date.
- */
-export function axisExtent(view: [number, number], today: string, installed: string | null): [number, number] {
-  const span = view[1] - view[0]
-  const lo = Math.max(view[0] - span, installed ? dayMs(installed) : -Infinity)
-  const hi = Math.min(view[1] + span, dayMs(today) + DAY)
-  return [Math.min(lo, view[0]), Math.max(hi, view[1])]
 }
 
 /**

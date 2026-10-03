@@ -6,7 +6,6 @@ import { LAYOUT, latestTimeseriesChart } from './latestTimeseries'
 import { testCtx } from './testing'
 import { variableChart, variableTable, variableTableAll, type VariableModel } from './variable'
 
-const DAY = 86_400_000
 const view: [number, number] = [Date.UTC(2026, 6, 1), Date.UTC(2026, 6, 2)]
 const rows = (n: number): ObservationRow[] =>
   Array.from({ length: n }, (_, i) => ({
@@ -19,7 +18,6 @@ const model = (n = 24, vars = ['Air Temperature']): VariableModel => ({
   ts: buildTimeseriesModel({ rows: rows(n), vars, period: 'hourly' })!,
   period: 'hourly',
   view,
-  extent: [view[0] - DAY, view[1]],
 })
 
 type Opt = { grid: Record<string, number>[]; series: { type: string; color: string }[]; dataZoom: { type: string; disabled?: boolean; startValue?: number; endValue?: number }[]; tooltip: { triggerOn?: string } }
