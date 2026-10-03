@@ -23,7 +23,8 @@ Each entry gives the old behaviour, the new one, and why. Add an entry in the sa
   - Now: [the 48 h strip](#now-the-forecast-card-becomes-the-heros-48-h-strip),
     [desktop columns](#now-desktop-columns),
     [tiles only where they mean something](#now-tiles-only-where-they-mean-something),
-    [pressure as a trend](#now-pressure-as-a-trend-in-the-all-readings-row);
+    [pressure as a trend](#now-pressure-as-a-trend-in-the-all-readings-row),
+    [wind with the 24 h peak gust](#now-wind-with-the-24-h-peak-gust);
   - [About: details, map, two rows that open sheets](#about-details-map-two-rows-that-open-sheets);
   - [Download: one short form](#download-one-short-form-preview-then-download-csv--n-rows);
   - Charts: [one chart frame](#charts-one-chart-frame-range-chips-an-interval-row-a--menu),
@@ -144,6 +145,16 @@ below, which stay for the record and name what replaced them.
   depth ("Snow none" when the station measures it and there is none). A "Station details" row (network and
   elevation) links to About.
 - **Why:** a station pressure of ~850 mb means little on its own; its 3 h change is what forecasts use.
+
+### Now: wind with the 24 h peak gust
+- **P1:** the latest 5-minute wind speed and gust ("1 mph", "SE · gusts 2").
+- **New:** the Wind tile reads "1 mph now · SE" ("Calm" under 1 mph) over "Gusts to 43 mph in the last 24 h":
+  the max of the hourly gusts (`windgust` joins the 72 h hourly request; the API's hourly gust is already the
+  hour's maximum) and `/latest`'s gust (`peakGust`, core/overview/series.ts). Without gust rows the old
+  "SE · gusts 2" line stays. The hero summary says "calm after gusts to 43 mph earlier" when that peak is
+  ≥ 25 mph. The sparkline is unchanged.
+- **Why:** at Dog Gun Lake E (acedoggu) the wind died off near 7:45 AM after a night of 40+ mph gusts, and
+  the tile said only "1 mph".
 
 ### Download: one short form, Preview then "Download CSV · N rows"
 - **P1:** three step cards (a phone stepper with Back/Next; two columns elsewhere) with a station combobox

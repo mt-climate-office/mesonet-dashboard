@@ -52,6 +52,12 @@ describe('buildNowPage tiles', () => {
     expect(tile('rh').sub).toBe('Dew point 49°')
     expect(tile('precip')).toMatchObject({ value: '0.05', unit: 'in', sub: 'Last 7 days · 87% of normal this year' })
   })
+  it('wind with gust rows: "now · SSE" beside the value, the 24 h peak gust below; "Calm" under 1 mph', () => {
+    const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 02:00:00-06:00', 'Gust Speed [mi/hr]': 43.24 }]
+    const wind = (w: number) => buildNowPage({ ...BASE, latest: { ...LATEST, 'Wind Speed [mi/h]': w }, hourly }).tiles.find((t) => t.id === 'wind')
+    expect(wind(1.2)).toMatchObject({ value: '1', unit: 'mph', note: 'now · SSE', sub: 'Gusts to 43 mph in the last 24 h' })
+    expect(wind(0.4)).toMatchObject({ value: 'Calm', unit: '', note: '', sub: 'Gusts to 43 mph in the last 24 h' })
+  })
   it('rain without the ppt summary: the last 24 h from the hourly rows', () => {
     const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 10:00:00-06:00', 'Precipitation [in]': 0.12 }]
     expect(buildNowPage({ ...BASE, ppt: undefined, hourly }).tiles.find((t) => t.id === 'precip')).toMatchObject({ value: '0.12', sub: 'Last 24 hours' })

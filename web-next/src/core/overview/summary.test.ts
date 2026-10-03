@@ -90,6 +90,8 @@ describe('summarize', () => {
     ['no forecast', { ...base, shortForecast: null }, 'Light SSE wind, no rain in 5 days.'],
     ['raining, windy', { ...base, shortForecast: 'Rain', windMph: 24, windDeg: 270, rainTodayIn: 0.42, daysSinceRain: 0 }, 'Rain, strong W wind, 0.42 in of rain today.'],
     ['calm, dry week', { ...base, windMph: 1, daysSinceRain: Infinity }, 'Partly cloudy, calm, no rain in over a week.'],
+    ['calm after a windy day', { ...base, windMph: 0.4, peakGustMph: 43.24 }, 'Partly cloudy, calm after gusts to 43 mph earlier, no rain in 5 days.'],
+    ['calm after light gusts', { ...base, windMph: 0.4, peakGustMph: 24 }, 'Partly cloudy, calm, no rain in 5 days.'],
     ['nothing known', { ...base, shortForecast: null, windMph: null, daysSinceRain: null }, ''],
   ] as const)('%s', (_name, input, out) => expect(summarize(input)).toBe(out))
   it('evening is 18:00–05:59 wall clock', () => {
