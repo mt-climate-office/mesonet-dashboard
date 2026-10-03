@@ -105,7 +105,8 @@ layout parts of older entries below; data behaviour is unchanged.
   off-screen after Run.
 - **New:** three cards, **1 Elements** (station, variables, uncommon switch, map) · **2 Dates & period**
   (aggregation, dates, then QC) · **3 Run** (a one-line recap, Run, Download CSV), with the preview below.
-  Desktop and tablet show Elements beside Dates & period over Run, the preview full width. Phones show one
+  Desktop and tablet show Elements beside Dates & period over Run, the preview full width. Phones leave out
+  the station map (user decision 2026-10-02: the navbar's station picker has one) and show one
   step at a time with "Step 2 of 3", Back and Next; Next refuses to leave a step that would block Run and
   says why, and Enter in a field means Next until the Run step. Each step change moves focus to the step
   heading and is announced. After Run (any width) the preview scrolls into view and its heading takes

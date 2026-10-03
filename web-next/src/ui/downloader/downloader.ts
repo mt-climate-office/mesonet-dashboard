@@ -45,6 +45,7 @@ export function downloader() {
   let model: PreviewModel | null = null
   // Bumped per Run; a response from an older Run is ignored.
   let gen = 0
+  let offViewport: (() => void) | null = null
 
   return component({
     run: null as Run | null,
@@ -55,6 +56,8 @@ export function downloader() {
     rangeValid: true,
     /** Phone stepper: the visible step (index into `steps`), and whether Next was tried on it. */
     step: 0,
+    /** Compact viewport (MCO.viewport): the stepper, and no station map (the navbar's picker has one). */
+    compact: MCO.viewport.isCompact(),
     triedNext: false,
     steps: stepper.STEPS,
     confirmedKey: null as string | null,
@@ -66,6 +69,7 @@ export function downloader() {
     previewTable: downloaderPreviewTable,
 
     init() {
+      offViewport = MCO.viewport.onChange(() => (this.compact = MCO.viewport.isCompact()))
       // A result belongs to its station: drop it when the station changes (here or on another tab).
       // The first resolution (null → deep-linked id) is not a change.
       this.$watch('stationId', (_id: string | null, old: string | null) => {
@@ -74,6 +78,9 @@ export function downloader() {
         this.run = null
         this.triedRun = this.triedDownload = false
       })
+    },
+    destroy() {
+      offViewport?.()
     },
 
     get url(): UrlState { return this.$store.url.state },

@@ -155,13 +155,14 @@ Three step cards (`.dash-card`, `partials/downloader/index.html`) and the previe
 
 | Step | Contents |
 |---|---|
-| 1 Elements | station combobox, variables multiselect, "Show uncommon variables", the station map |
+| 1 Elements | station combobox, variables multiselect, "Show uncommon variables", the station map (not on compact) |
 | 2 Dates & period | time aggregation, dates (install date … today), quality control |
 | 3 Run | recap ("Bozeman · 2 variables · Daily · 2026-09-01 to 2026-09-30"), Run, Download CSV, warnings |
 
 - **Desktop and tablet:** a two-column grid, Elements beside Dates & period over Run; the preview spans
   both columns. No stepper.
-- **Compact:** a stepper. Only `.dl-step.is-current` shows (the Run step and the preview share step 3),
+- **Compact:** no station map in Elements (the navbar's station picker has one; MapLibre is not started),
+  and a stepper. Only `.dl-step.is-current` shows (the Run step and the preview share step 3),
   under "Step 2 of 3" and a three-segment bar, with Back / Next below. Next stays enabled; when the step
   would block Run (no station or element; invalid dates, from the date control's `onValidity`) it stays put
   and shows why. A step change scrolls the progress line into view, focuses the step heading and announces
