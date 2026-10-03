@@ -19,19 +19,22 @@ export function formatDay(value: string | null | undefined): string | null {
   return ms === null ? null : fmtWall(ms, 'daily')
 }
 
-/** "45.66° N, 111.07° W", as the catalog sends the degrees. */
+/** No-break space: keeps a number with its unit or hemisphere, so a narrow line never strands "W" or "ft". */
+const NBSP = '\u00a0'
+
+/** "45.66° N, 111.07° W" (each coordinate joined by NBSP), as the catalog sends the degrees. */
 export function formatCoordinates(lat: number, lon: number): string {
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return MISSING
-  return `${Math.abs(lat)}° ${lat < 0 ? 'S' : 'N'}, ${Math.abs(lon)}° ${lon < 0 ? 'W' : 'E'}`
+  return `${Math.abs(lat)}°${NBSP}${lat < 0 ? 'S' : 'N'}, ${Math.abs(lon)}°${NBSP}${lon < 0 ? 'W' : 'E'}`
 }
 
 /** Elevation in feet from metres, as legacy: round(m × 3.281). */
 export const metersToFeet = (m: number): number => Math.round(m * 3.281)
 
-/** "4,905 ft (1,495 m)" from metres (`metersToFeet`). */
+/** "4,905 ft (1,495 m)" from metres (`metersToFeet`; numbers and units joined by NBSP). */
 export function formatElevation(m: number): string {
   if (!Number.isFinite(m)) return MISSING
-  return `${metersToFeet(m).toLocaleString('en-US')} ft (${Math.round(m).toLocaleString('en-US')} m)`
+  return `${metersToFeet(m).toLocaleString('en-US')}${NBSP}ft (${Math.round(m).toLocaleString('en-US')}${NBSP}m)`
 }
 
 /**

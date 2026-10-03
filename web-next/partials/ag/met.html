@@ -1,7 +1,7 @@
 <!-- Reference ET / feels-like / livestock risk (ui/ag/agMetView.ts): the chart card (notes, then the
      chart, its state, or its table with tbl=1) and the stats card (core/ag/view/stats metStats). -->
 <div class="ag-view" x-data="agMetView" data-testid="ag-chart">
-  <section class="dash-card ag-chart-card chart-card" aria-labelledby="ag-chart-title">
+  <section class="dash-card ag-chart-card chart-card" :class="{ 'has-notes': view.notes.length > 0 }" aria-labelledby="ag-chart-title">
     <!-- @include partials/ag/status.html -->
     <template x-if="view.status === 'ready' && !tableMode() && kind() === 'etr'">
       <div class="chart ag-chart" data-testid="ag-chart-etr"
@@ -21,5 +21,6 @@
       </div>
     </template>
   </section>
+  <!-- @include partials/ag/history-chip.html -->
   <!-- @include partials/ag/stats.html -->
 </div>

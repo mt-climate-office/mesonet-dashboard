@@ -10,7 +10,7 @@
  */
 import Alpine from 'alpinejs'
 import { learnMoreUrl } from '../../core/ag/view/learnMore'
-import { chartState, hasAllYears, notHereMessage, variableGroup } from '../../core/ag/view/tab'
+import { chartState, hasAllYears, notHereMessage, showsOptions, variableGroup } from '../../core/ag/view/tab'
 import { agToolElements, fromChart, prefillsFromChart } from '../../core/downloader/fromChart'
 import { POR_FALLBACK_START, installDate, todayIso } from '../../core/latest'
 import { neighbors, plainName, type Variable } from '../../core/variables'
@@ -48,6 +48,7 @@ export function agTab() {
       const station = stations()
       return chartState(currentTab(), url().state.s, station.id, station.catalog?.status !== 'loading')
     },
+    showsOptions,
     /** The card for the current tool, when a chart can be drawn (not All years). */
     show(group: ReturnType<typeof variableGroup>): boolean {
       return this.state() === 'chart' && !this.history() && variableGroup(currentTab().variable) === group

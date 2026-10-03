@@ -148,11 +148,11 @@ below, which stay for the record and name what replaced them.
 
 ### Now: wind with the 24 h peak gust
 - **P1:** the latest 5-minute wind speed and gust ("1 mph", "SE · gusts 2").
-- **New:** the Wind tile reads "1 mph now · SE" ("Calm" under 1 mph) over "Gusts to 43 mph in the last 24 h":
+- **New:** the Wind tile reads "1 mph now · SE" ("Calm" under 1 mph) over "Gusts to 43 mph · 24 h":
   the max of the hourly gusts (`windgust` joins the 72 h hourly request; the API's hourly gust is already the
   hour's maximum) and `/latest`'s gust (`peakGust`, core/overview/series.ts). Without gust rows the old
   "SE · gusts 2" line stays. The hero summary says "calm after gusts to 43 mph earlier" when that peak is
-  ≥ 25 mph. The sparkline is unchanged.
+  ≥ 25 mph. The summary and the tile share one calm threshold, under 1 mph (Beaufort 0; `CALM_MPH`). The sparkline is unchanged.
 - **Why:** at Dog Gun Lake E (acedoggu) the wind died off near 7:45 AM after a night of 40+ mph gusts, and
   the tile said only "1 mph".
 
@@ -1415,7 +1415,7 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
 `core/aggregate.ts` and `core/csv.ts`.
 
 - **Variables picker.** A grouped checkbox panel (`multiselect`: filter box,
-  "Standard elements" / "Derived variables", per-group Select all, removable
+  "Measured variables" (the API's standard elements) / "Derived variables", per-group Select all, removable
   chips) replaces the Mantine dropdown. Ticking options writes `els` in option
   order; a URL's own order is kept until the user edits it.
 - **"Show uncommon variables"** is a native checkbox with `role="switch"`.

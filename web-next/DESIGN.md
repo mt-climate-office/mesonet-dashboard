@@ -117,18 +117,20 @@ then Send feedback (a link). One row at every width.
 ## Now
 
 One model, `core/overview` `buildNowPage` (hero.ts + relevance.ts + nowPage.ts), bound by `partials/now/index.html`
-and `ui/now/nowView.ts`. **Phones and tablets:** one column, hero → photo → tiles (2-up) → rows. **Desktop
-(≥ 1060 px):** two columns (1.35 : 1), hero + tiles (4-up) | photo (at most 360 px tall) + rows: the pairing
-that keeps the columns closest in height. The column wrappers dissolve (`display: contents`) onto one grid
-with named areas, so the DOM, reading and Tab order stays hero, photo, tiles, rows at every width.
+and `ui/now/nowView.ts`. **Phones and tablets:** one column, hero → photo (16:9, at most 20 rem tall) →
+tiles (2-up) → rows. **Desktop (≥ 1060 px):** two columns (1.35 : 1), hero over the photo | tiles (2-up) over
+the rows. The columns end level: the photo (from 20 rem, cropped to fit) and the tiles (rows shared evenly,
+sparklines growing to 4 rem) take up the difference, so there is no dead area for 4–6 tiles. With an odd
+tile count the last tile spans its row at every width. The DOM, reading and Tab order stays hero, photo,
+tiles, rows at every width.
 
 | Slot | Content | Data (tier) |
 |---|---|---|
 | Hero | Air temperature (`.num-display`, 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("24 h high 74° · low 41°", so the two agree), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain; "calm after gusts to 43 mph earlier" when the 24 h peak gust is ≥ 25 mph) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
 | Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table; a "Loading the 48-hour strip…" status while tier 2 loads and a short note in its place when there is nothing to draw. Below it the forecast periods as an icon row (api.weather.gov only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
-| Media | Latest camera frame of the default direction (16:9, at most 360 px tall on desktop; opens the photo dialog), or the wind rose without a camera | photo schedule, latest listings (1) |
-| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph; "Gusts to 43 mph in the last 24 h" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, 24 h without the ppt summary; % of normal this year; seven daily bars, `rainBars`, or no graphic after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has SWP sensors), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page that morphs into the page heading, which takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, `/derived/hourly` SWP (2) |
+| Media | Latest camera frame of the default direction (opens the photo dialog; its caption bottom right, clear of the camera's own label), or the wind rose without a camera (a fixed 20 rem card) | photo schedule, latest listings (1) |
+| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Gusts to 43 mph · 24 h" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, 24 h without the ppt summary; % of normal this year; seven daily bars, `rainBars`, or no graphic after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has SWP sensors), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page that morphs into the page heading, which takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, `/derived/hourly` SWP (2) |
 | Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens About's readings sheet (`target: 'about-readings'`, the row's `data-sheet`; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
@@ -248,19 +250,27 @@ and the stage reached).
   away. Chips wrap; on phones the popover docks at the bottom like a small sheet.
 - **Station:** from the header's picker; there is no station control on the page. With no station, or for an
   SWP tool at a station without SWP sensors (`chartState` `'not-here'`), the card names why ("Crow Agency has no
-  soil water potential sensors, so this tool does not apply there.") with a button that opens the picker.
+  soil water potential sensors, so this tool does not apply there.") with a button that opens the picker,
+  and the option chips are hidden (`showsOptions`).
 - **Reference ET** is also the observed `etr` variable (one id, one page): its page adds an **All years** chip
-  (`view=history`, the variable page's history of the derived ETr) and ⋯ → Previous / Next in the variable
+  under the chart, as the variable page's range chips are, apart from the option chips (`view=history`, the
+  variable page's history of the derived ETr; `partials/ag/history-chip.html`) and ⋯ → Previous / Next in the variable
   list (plus the swipe). Annual comparison (`v=annual`) still renders for old links, but is not listed.
 - **Navigation:** a list row is a real link; a plain click opens the tool with `pushState` (`chartPatch` →
   `variablePatch`: the tool's options reset, chart view) and focuses its heading.
 - **Notes** (the NDAWN cutoff switch, the projection's sources, partial coverage, …) fold into one ⓘ
-  toggletip on a short row at the chart card's top right, just under the option chips, so they never push
-  the chart down (`partials/ag/status.html`; the button names the count, "Notes about this chart (2)").
-- **GDD on phones:** the legend uses short names (Daily · Cumulative · Range · Forecast · Normals) so it fits
-  one row without a pager; the stage lines' labels sit at the right end of each line on the chart surface,
-  clear of the daily bars.
-- **Charts:** 540 px tall; on phones `min(60dvh, 420px)`. On touch they follow "Charts on touch" above.
+  toggletip in the chart card's top-right corner, over the chart's empty top margin (the chart moves down
+  16 px to clear it), so they never add a row (`partials/ag/status.html`; the button names the count,
+  "Notes about this chart (2)").
+- **Legends** (`core/charts/agLegend.ts`): a plain legend that wraps onto more rows (the plot rises to make
+  room), never a pager. Sentence-case names ("No stress", "Wind chill"; titles "Index used", "Livestock risk
+  (adult)"); on compact screens short names (GDD: Daily · Cumulative · Range · Forecast · Normals; Feels like:
+  Air temperature; Reference ET: Cumulative) and no title. Series keep their names (fidelity matches them).
+- **GDD stage lines:** labelled in a gutter right of the plot (the cumulative axis moves past it), never on
+  the bars; where the longest label would take over a quarter of the chart (phones, tablets) the lines go
+  unlabelled and the tooltip, table and stats card name the stage (`stageGutter`).
+- **Charts:** 540 px tall; on compact screens (≤ 640 px wide or ≤ 560 px tall, so a landscape phone too)
+  `min(60dvh, 420px)`. On touch they follow "Charts on touch" above.
   Every Ag number, the `.ag-chart-card` and its `data-testid`s are unchanged (fidelity `ag` / `ag-api`).
 
 Screenshots (phase B, in the session scratchpad `rd-charts/`): `<390|1440>-<light|dark|high-contrast>-<list|var|var1y|vartable|varall|varmenu|vardates|gdd|gddcrop|etr|swpcrow|compare>.png`.
@@ -282,7 +292,7 @@ every width, flat on the sheet's surface:
 
 | Row | Value (right) | Expands to (the existing control) | URL key |
 |---|---|---|---|
-| Variables | up to two names, then "+ N more"; "+ Add" | chips for the selection, "+ Add variables" (the grouped checklist with a filter), "Show uncommon variables" | `els`, `pub` |
+| Variables | up to two names, then "+ N more" | chips for the selection, "+ Add variables" (the grouped checklist with a filter), "Show uncommon variables" | `els`, `pub` |
 | Dates | "Sep 1 – Sep 30, 2026" | start/end date inputs bounded by the install date and today, the install-date notes | `dl_from`, `dl_to` |
 | Interval | Hourly · Daily · Monthly | a segmented control; Monthly adds its note | `period` |
 | Quality | Quality-controlled · Provisional (basic checks) · Unchecked | one option per line, with the level's description | `qc` (2 · 1 · 0) |

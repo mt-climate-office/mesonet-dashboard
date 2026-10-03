@@ -61,7 +61,7 @@ describe('standardOptions / elementGroups', () => {
   })
   it('groups standard and derived; SWP options only at has_swp stations', () => {
     expect(elementGroups(opts, false).map((g) => [g.label, g.options.length])).toEqual([
-      ['Standard elements', 3],
+      ['Measured variables', 3],
       ['Derived variables', 3],
     ])
     expect(elementGroups(opts, true)[1].options.map((o) => o.value)).toEqual(['feels_like', 'etr', 'cci', 'swp', 'percent_saturation'])

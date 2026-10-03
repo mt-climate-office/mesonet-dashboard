@@ -15,11 +15,22 @@
 /* Touch: the compact heights above must not undercut the kit's 40 px .nav-btn target (HOUSE-STYLE §5.5). */
 @media (hover: none) { .ag-retry { min-height: 40px; } }
 
-/* Chart card: shorter on phones so the page around it stays reachable. */
-.ag-view { display: flex; flex-direction: column; gap: 0.75rem; }
+/* Chart card: shorter on compact screens (narrow, or a landscape phone) so it fits and the page
+   around it stays reachable. */
+.ag-view { display: flex; flex-direction: column; gap: var(--gap, 12px); }
 .ag-chart { --chart-height: 540px; --chart-height-compact: min(60dvh, 420px); }
-/* Notes: one ⓘ toggletip, right-aligned on its own short row; the tip opens under it, as wide as the card. */
-.ag-notes { position: relative; display: flex; justify-content: flex-end; margin: 0 0.25rem; }
+@media (max-width: 640px), (max-height: 560px) {
+  .ag-chart .chart-canvas { height: var(--chart-height-compact); }
+}
+/* Notes: one ⓘ toggletip in the card's top-right corner, over the chart's empty top margin (the
+   chart moves down a little to clear it); the tip opens under it, as wide as the card. */
+.ag-chart-card { position: relative; }
+.ag-notes {
+  position: absolute; top: 4px; inset-inline: 4px; z-index: 1;
+  display: flex; justify-content: flex-end; pointer-events: none;
+}
+.ag-notes > * { pointer-events: auto; }
+.ag-chart-card.has-notes > :not(.ag-notes) { margin-top: 16px; }
 .ag-notes-tip { inset-inline: 0; max-width: none; }
 .ag-notes-tip:not([hidden]) { display: flex; flex-direction: column; gap: 0.4rem; }
 .ag-state {

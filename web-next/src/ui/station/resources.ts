@@ -30,7 +30,7 @@ export const photoSchedule = () => cached('photo:schedule', () => fetchSchedule(
 
 /** Today + yesterday (local) frames from the live bucket listings. */
 export const latestFrames = (s: PhotoSchedule, cam: StationCamera) =>
-  cached(`photo:latest:${cam.station}`, () => fetchLatestFrames(s, cam), 5 * MIN)
+  cached(`photo:latest:${cam.station}`, () => fetchLatestFrames(s, cam), 5 * MIN, true)
 
 /** One local month's manifest (`YYYY-MM`); the current month refreshes, past months never change. */
 export const monthFrames = (s: PhotoSchedule, cam: StationCamera, ym: string) =>

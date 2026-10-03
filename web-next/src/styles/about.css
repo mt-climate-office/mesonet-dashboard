@@ -1,43 +1,49 @@
 /* About (partials/about/*, partials/sheets/about-*.html): one column on phones; from tablet up two
    (details + map | rows + notes). The readings and sensor changes open in modal sheets, where they
-   scroll inside .about-scroll, never the page sideways. Kit tokens and the --fs-* scale only. */
+   scroll inside .about-scroll, never the page sideways. Kit tokens, the --fs-* scale and the shared
+   spacing tokens (--gap, --gap-tight, --card-pad, --card-radius) only. */
 
-.about-grid, .about-col { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.about-grid, .about-col { display: grid; gap: var(--gap, 12px); grid-template-columns: minmax(0, 1fr); align-items: start; }
 @media (min-width: 641px) and (min-height: 561px) {
-  .about-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-  .about-col { gap: 1rem; }
+  .about-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-.about-empty p, .about-message { margin: 0 0 0.75rem; font-size: var(--fs-sm); color: var(--text-secondary); }
+.about-empty p, .about-message { margin: 0 0 var(--gap, 12px); font-size: var(--fs-sm); color: var(--text-secondary); }
 .about-message { margin: 0; }
-.about-hint { margin: 0.4rem 0 0; font-size: var(--fs-xs); color: var(--text-muted); }
+
+/* List cards pad 0: their rows and blocks carry --card-pad, so a row's hover fill and hairline
+   run edge to edge without negative margins. */
+.about-details, .about-rows, .about-map { padding: 0; }
 
 /* Station details: label / value pairs, then the one-pager row. */
-.about-dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.5rem 1.25rem; margin: 0; }
+.about-dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px var(--card-pad, 16px); margin: 0; padding: var(--card-pad, 16px); }
 .about-dl-row { display: contents; }
 .about-dl dt { color: var(--text-muted); }
-.about-dl dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
-.about-id { margin-left: 0.5rem; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
+/* Values carry no-break spaces inside a coordinate or a measure (core/about/details.ts). */
+.about-dl dd { margin: 0; color: var(--text-primary); overflow-wrap: break-word; }
+.about-id { margin-left: 8px; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
 
-/* Rows (one-pager, readings, sensor changes): full-bleed lines inside a card, a hairline between. */
+/* Rows (one-pager, readings, sensor changes): full-width lines in a padless card, a hairline between. */
 .about-row {
-  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-  width: calc(100% + 2 * var(--card-pad)); margin: 0 calc(-1 * var(--card-pad));
-  min-height: 48px; padding: 0.75rem var(--card-pad);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--card-pad, 16px);
+  width: 100%; min-height: 48px; padding: var(--gap, 12px) var(--card-pad, 16px);
   background: none; border: 0; border-radius: 0; font: inherit; font-weight: 500;
   color: var(--text-primary); text-align: left; text-decoration: none; cursor: pointer;
 }
 .about-row:hover { background: var(--accent-hover); }
-.about-row + .about-row { border-top: 1px solid var(--border); }
-.about-dl + .about-row { margin-top: var(--card-pad); margin-bottom: calc(-1 * var(--card-pad)); border-top: 1px solid var(--border); }
+.about-row + .about-row, .about-dl + .about-row { border-top: 1px solid var(--border); }
 .about-row-meta { font-weight: 400; color: var(--text-muted); white-space: nowrap; }
-.about-rows { padding-block: 0; }
-.about-rows .about-row:first-of-type { border-radius: var(--card-radius) var(--card-radius) 0 0; }
-.about-rows .about-row:last-of-type { border-radius: 0 0 var(--card-radius) var(--card-radius); }
+.about-rows .about-row:first-of-type { border-radius: var(--card-radius, 16px) var(--card-radius, 16px) 0 0; }
+.about-row:last-child { border-radius: 0 0 var(--card-radius, 16px) var(--card-radius, 16px); }
+.about-rows .about-row:only-of-type { border-radius: var(--card-radius, 16px); }
 
-/* Locator map: a flat, rounded frame. */
-.about-map-frame { height: 16rem; border-radius: var(--card-radius); overflow: hidden; }
+/* Locator map: the card clips it to the card radius; on touch a hint sits under it, inside the card
+   (a mouse gets MapLibre's own Ctrl / ⌘ prompt on scroll). */
+.about-map { overflow: hidden; }
+.about-map-frame { height: 16rem; }
 @media (min-width: 641px) and (min-height: 561px) { .about-map-frame { height: 20rem; } }
+.about-hint { display: none; margin: 0; padding: var(--gap, 12px) var(--card-pad, 16px); font-size: var(--fs-xs); color: var(--text-muted); }
+@media (hover: none) { .about-hint { display: block; } }
 
 /* The sheets: only the labelled region scrolls (the sticky table head stays put). */
 .about-sheet { --sheet-w: 34rem; }
@@ -47,18 +53,18 @@
 
 /* Current readings. */
 .about-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
-.about-table + .about-table { margin-top: 1rem; }
-.about-table caption { text-align: left; padding: 0 0 0.35rem; font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); }
-.about-table thead th { position: sticky; top: 0; background: var(--bg-surface); font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--border); }
-.about-table tbody th { font-weight: 400; color: var(--text-secondary); text-align: left; padding: 0.4rem 0.5rem; overflow-wrap: anywhere; }
-.about-table td { font-family: var(--font-mono); color: var(--text-primary); text-align: right; padding: 0.4rem 0.5rem; white-space: nowrap; }
+.about-table + .about-table { margin-top: var(--card-pad, 16px); }
+.about-table caption { text-align: left; padding: 0 0 var(--gap-tight, 4px); font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); }
+.about-table thead th { position: sticky; top: 0; background: var(--bg-surface); font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); text-align: left; padding: var(--gap-tight, 4px) 8px; border-bottom: 1px solid var(--border); }
+.about-table tbody th { font-weight: 400; color: var(--text-secondary); text-align: left; padding: 8px; overflow-wrap: anywhere; }
+.about-table td { font-family: var(--font-mono); color: var(--text-primary); text-align: right; padding: 8px; white-space: nowrap; }
 .about-table tbody tr + tr { border-top: 1px solid var(--border); }
 
 /* Sensor changes. */
 .about-days, .about-changes { list-style: none; margin: 0; padding: 0; }
-.about-days > li + li { margin-top: 0.75rem; }
-.about-day { margin: 0 0 0.3rem; font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary); }
-.about-changes li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.15rem 0.5rem; padding: 0.3rem 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
+.about-days > li + li { margin-top: var(--gap, 12px); }
+.about-day { margin: 0 0 var(--gap-tight, 4px); font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary); }
+.about-changes li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--gap-tight, 4px) 8px; padding: var(--gap-tight, 4px) 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
 .about-sensor { color: var(--text-primary); }
 .about-measures { flex-basis: 100%; font-size: var(--fs-xs); color: var(--text-secondary); }
 
@@ -66,6 +72,6 @@
 .about-notes .dash-card-title { font-size: var(--fs-md); color: var(--text-primary); }
 .about-notes-list { margin: 0; font-size: var(--fs-sm); }
 .about-notes-list dt { font-weight: 600; color: var(--text-primary); }
-.about-notes-list dd { margin: 0.15rem 0 0.75rem; color: var(--text-secondary); line-height: 1.5; max-width: 65ch; }
-.about-subtitle { margin: 0.25rem 0 0.4rem; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
-.about-api { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+.about-notes-list dd { margin: var(--gap-tight, 4px) 0 var(--gap, 12px); color: var(--text-secondary); line-height: 1.5; max-width: 65ch; }
+.about-subtitle { margin: var(--gap-tight, 4px) 0 8px; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
+.about-api { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-tight, 4px) var(--card-pad, 16px); }

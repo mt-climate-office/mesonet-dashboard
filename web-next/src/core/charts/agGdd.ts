@@ -13,7 +13,8 @@ import { fmtNum, fmtWall, wallMs } from './format'
 import { bandSeries, labelledLines } from './overlays'
 import { barSeries, lineSeries, points } from './series'
 import { paint } from './theme'
-import { axisTooltip, legend, tipText } from './tooltip'
+import { agLegend, liftForLegend } from './agLegend'
+import { axisTooltip, tipText } from './tooltip'
 import type { ChartBuilder, ChartTable } from './types'
 
 export interface GddModel {
@@ -37,12 +38,27 @@ export const GDD_NAMES = {
   normals: 'Projected (normals median)',
 } as const
 
-/** Legend names on phones, short enough for one row without paging (the series keep their full names). */
+/** Legend names on phones, short enough for one row (the series keep their full names). */
 const SHORT: Record<string, string> = {
   [GDD_NAMES.cumulative]: 'Cumulative',
   [GDD_NAMES.band]: 'Range',
   [GDD_NAMES.forecast]: 'Forecast',
   [GDD_NAMES.normals]: 'Normals',
+}
+
+/** Stage label font size (px) in the gutter right of the plot. */
+const STAGE_FONT = 10
+
+/**
+ * Width (px) of a gutter right of the plot for the stage labels, so they
+ * never sit on the daily bars; 0 when the longest label would take more than
+ * a quarter of the chart (phones, tablets): the lines then go unlabelled and
+ * the tooltip, table and stats card name the stage.
+ */
+export function stageGutter(lines: { label: string }[], width: number): number {
+  if (lines.length === 0) return 0
+  const w = Math.ceil(Math.max(...lines.map((l) => l.label.length)) * STAGE_FONT * 0.5) + 12
+  return w <= width / 4 ? w : 0
 }
 
 const fmtF = (f: number) => (Number.isFinite(f) ? `${f}` : '∞')
@@ -136,28 +152,28 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
     yAxisIndex: 1,
   })
   const lines = stageLines(m.stageMode === 'table' ? (m.stages ?? []) : [], y2max)
-  if (lines.length > 0) cumulative.markLine = labelledLines(paint(ctx.theme, GDD_STAGE_LINE), lines, ctx)
+  const gutter = stageGutter(lines, ctx.width)
+  if (lines.length > 0) cumulative.markLine = labelledLines(paint(ctx.theme, GDD_STAGE_LINE), lines, ctx, { labels: gutter > 0, fontSize: STAGE_FONT })
   const proj =
     m.projection && m.projection.date.length > 0
       ? projectionSeries(m, m.projection, { line: c.cumulative, band: withAlpha(c.cumulative, c.bandAlpha) })
       : []
   const barName = gddBarName(m.cutoffsF)
-  const lg = legend(ctx, {
-    data: [
-      barName,
-      GDD_NAMES.cumulative,
-      ...proj.flatMap((s): (string | { name: string; icon: string })[] =>
-        s.name === GDD_NAMES.q25 ? [] : s.name === GDD_NAMES.band ? [{ name: GDD_NAMES.band, icon: 'rect' }] : [String(s.name)],
-      ),
-    ],
-  }).legend
+  const lg = agLegend(ctx, [
+    { name: barName, short: 'Daily' },
+    { name: GDD_NAMES.cumulative, short: SHORT[GDD_NAMES.cumulative] },
+    ...proj.flatMap((s) =>
+      s.name === GDD_NAMES.q25 ? [] : [{ name: String(s.name), short: SHORT[String(s.name)], icon: s.name === GDD_NAMES.band ? 'rect' : undefined }],
+    ),
+  ])
+  const [y1, y2] = dualAxis('Daily GDD (°F)', 'Cumulative GDD (°F)', { rightMax: y2max })
   return {
     useUTC: true,
-    grid: grid(ctx, { right: 64 }),
+    ...liftForLegend(grid(ctx, { right: 64 + gutter }), timeZoom(ctx), lg.extra),
     xAxis: timeAxis(),
-    yAxis: dualAxis('Daily GDD (°F)', 'Cumulative GDD (°F)', { rightMax: y2max }),
-    dataZoom: timeZoom(ctx),
-    legend: ctx.compact ? { ...lg, itemGap: 8, formatter: (n: string) => (n === barName ? 'Daily' : (SHORT[n] ?? n)) } : lg,
+    // The cumulative axis moves right of the stage-label gutter.
+    yAxis: [y1, gutter > 0 ? { ...y2, offset: gutter } : y2],
+    legend: lg.legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, 'daily'), (name, y, note) => {
       if (name === barName) return tipText('Daily GDD', y.toFixed(1))
       if (name === GDD_NAMES.band) return note ? tipText('Projected range', note) : null
