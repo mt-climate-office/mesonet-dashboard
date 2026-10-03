@@ -32,7 +32,7 @@
               <span>+ Add variables</span><span class="ctl-count" x-text="countText()"></span>
             </button>
             <div class="ctl-multiselect-panel" role="group" :id="ids.panel"
-                 :aria-labelledby="ids.button" x-show="open" @keydown.escape.prevent.stop="close()">
+                 :aria-labelledby="ids.button" x-show="open" @keydown.escape.prevent.stop="escape()">
               <label class="ctl-label" :for="ids.filter">Filter</label>
               <input type="search" class="ctl-input" :id="ids.filter" x-model="query" autocomplete="off">
               <p class="ctl-note" x-show="elements?.status === 'loading'">Loading variables…</p>
