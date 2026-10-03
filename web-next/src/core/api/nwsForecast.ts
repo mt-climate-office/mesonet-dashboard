@@ -41,7 +41,12 @@ interface ForecastResponse {
 
 const NWS = 'https://api.weather.gov'
 
+/** True for an https://api.weather.gov/ URL: the only NWS host fetched or shown (the CSP allows no other). */
+export const isNwsUrl = (url: unknown): url is string => typeof url === 'string' && url.startsWith(`${NWS}/`)
+
+/** GET GeoJSON from api.weather.gov; any other URL (one a response pointed to) throws before fetching. */
 async function getGeoJson<T>(url: string): Promise<T> {
+  if (!isNwsUrl(url)) throw new Error(`NWS URL is not on api.weather.gov: ${url}`)
   const r = await fetch(url, { headers: { Accept: 'application/geo+json' } })
   if (!r.ok) throw new HttpError(r.status, url, await r.text().catch(() => ''))
   return (await r.json()) as T
@@ -49,8 +54,9 @@ async function getGeoJson<T>(url: string): Promise<T> {
 
 /**
  * Forecast periods for a point (decimal degrees). Two steps: `/points` finds
- * the forecast URL, then that URL is fetched. Throws `HttpError` on non-2xx
- * (a 404 means the point is outside NWS coverage).
+ * the forecast URL, then that URL is fetched (only on api.weather.gov,
+ * `isNwsUrl`). Throws `HttpError` on non-2xx (a 404 means the point is
+ * outside NWS coverage).
  */
 export async function fetchNwsForecast(latitude: number, longitude: number): Promise<NwsForecast> {
   const points = await getGeoJson<PointsResponse>(`${NWS}/points/${latitude},${longitude}`)
@@ -118,10 +124,8 @@ export function parseNwsHourly(json: unknown): HourlyForecastPoint[] {
 
 /**
  * Fetch and parse a `forecastHourly` URL (from `NwsForecast.hourlyUrl`).
- * Only api.weather.gov URLs are fetched (the CSP allows no other host).
- * Throws `HttpError` on non-2xx.
+ * Only api.weather.gov URLs are fetched (`isNwsUrl`). Throws `HttpError` on non-2xx.
  */
 export async function fetchNwsHourly(url: string): Promise<HourlyForecastPoint[]> {
-  if (!url.startsWith(`${NWS}/`)) throw new Error(`NWS hourly URL is not on api.weather.gov: ${url}`)
   return parseNwsHourly(await getGeoJson<unknown>(url))
 }

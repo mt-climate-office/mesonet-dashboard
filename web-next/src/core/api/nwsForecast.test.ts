@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import sample from './__fixtures__/nws-hourly-tfx-97-54.json?raw'
-import { parseNwsHourly } from './nwsForecast'
+import { fetchNwsHourly, isNwsUrl, parseNwsHourly } from './nwsForecast'
 
 // Recorded 2026-10-02 from api.weather.gov/gridpoints/TFX/97,54/forecast/hourly (first 6 hours, trimmed fields).
 const SAMPLE: unknown = JSON.parse(sample)
@@ -31,5 +31,15 @@ describe('parseNwsHourly', () => {
   it('empty or malformed input gives no hours', () => {
     expect(parseNwsHourly(null)).toEqual([])
     expect(parseNwsHourly({})).toEqual([])
+  })
+})
+
+describe('isNwsUrl', () => {
+  it('accepts only https://api.weather.gov/ URLs; the fetches refuse any other before the network', async () => {
+    expect(isNwsUrl('https://api.weather.gov/gridpoints/TFX/97,54/forecast/hourly')).toBe(true)
+    expect(isNwsUrl('https://api.weather.gov.evil.com/x')).toBe(false)
+    expect(isNwsUrl('http://api.weather.gov/x')).toBe(false)
+    expect(isNwsUrl(undefined)).toBe(false)
+    await expect(fetchNwsHourly('https://example.com/hourly')).rejects.toThrow(/not on api\.weather\.gov/)
   })
 })

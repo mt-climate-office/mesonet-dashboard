@@ -6,7 +6,7 @@
  * and hourly forecasts. "Now" on the strip is the newest observation's
  * wall-clock time.
  */
-import type { ForecastPeriod, HourlyForecastPoint, NwsForecast } from '../api'
+import { isNwsUrl, type ForecastPeriod, type HourlyForecastPoint, type NwsForecast } from '../api'
 import type { HeroStripModel, StripPeriod } from '../charts/heroStrip'
 import { parseWallClock } from '../sensorEvents'
 import { feelsLikeF, readConditions } from './conditions'
@@ -41,7 +41,6 @@ export interface HeroView {
 
 const H24 = 24 * 3_600_000
 const deg = (v: number) => `${Math.round(v)}°`
-const ICON_HOST = /^https:\/\/api\.weather\.gov\//
 
 /** A period's temperature in °F (NWS sends F for US points; C converts). */
 const periodF = (p: ForecastPeriod) => (p.temperatureUnit === 'C' ? (p.temperature * 9) / 5 + 32 : p.temperature)
@@ -62,7 +61,7 @@ function stripPeriods(periods: readonly ForecastPeriod[], now: number): StripPer
     if (s === null || e === null || !Number.isFinite(p.temperature)) return []
     const t = (s + e) / 2
     if (t <= now || t > now + H24) return []
-    return [{ t, label: `${p.name} ${Math.round(periodF(p))}°`, icon: ICON_HOST.test(p.icon) ? p.icon : null, short: p.shortForecast }]
+    return [{ t, label: `${p.name} ${Math.round(periodF(p))}°`, icon: isNwsUrl(p.icon) ? p.icon : null, short: p.shortForecast }]
   })
 }
 
