@@ -8,6 +8,56 @@ What web-next deliberately does differently, in three parts:
 
 Each entry gives the old behaviour, the new one, and why. Add an entry in the same PR as the change.
 
+## Redesign: three places, chart first (2026-10)
+
+The redesign (REDESIGN.md) narrows the station view to three places. These entries supersede the
+section, navbar, picker, Ag-cards and Download-layout parts of the P0/P1 entries below; data, request
+code and CSV bytes are unchanged.
+
+### Three places: Now, Charts, About
+- **P1:** five sections, Now · Charts · Ag · Download · About, in a segmented row under the station header
+  (tablet up) or a five-item tab bar (phones).
+- **New:** **Now** (`#now`) · **Charts** (`#charts`) · **About** (`#about`) (core/router.ts). Ag tools are
+  entries in the Charts list's "Ag tools" group, opened at `#charts&v=<tool>`: `v` is one namespace, an Ag
+  tool id (core/params/ag `AG_TOOL_IDS`) or an element family. Download is a modal sheet, open while
+  `dl=1` (from the list's "Download data" entry for now; from each chart's ⋯ menu in phase B). The Ag tool
+  cards page and the Ag and Download sections are gone. The sections sit in the header from tablet up; phones
+  keep a three-item tab bar. Section and variable changes push history; the rest replaces.
+- **`etr` is one id:** it was both the observed Reference ET variable page and the Ag Reference ET tool; it is
+  now the Ag tool (it keeps every Ag number and the hourly/daily toggle). The list's Reference ET row opens it.
+- **Annual comparison:** no longer in the list; an old `var=annual` link opens the `annv` variable's
+  All-years view (`view=history`; air temperature without `annv`). `v=annual` still renders the old tool.
+- **Old links:** `#ag&var=<tool>` → `#charts&v=<tool>` with every Ag key; `#ag` with Ag keys but no `var`
+  (or an unknown one) → GDD, as before; a bare `#ag` → the Charts list scrolled to its Ag tools group;
+  `#download` / `#downloader` → `#charts&dl=1` with every `dl_*` / `els` / `period` / `qc` / `pub` key
+  (`#downloader`'s `from`/`to` renamed first); `#latest` → Compare, unchanged. `var` left the schema; the
+  boot redirect removes it, and any other unknown key round-trips.
+- **Why:** user decision (REDESIGN.md "User decisions" 1–2): P1 had three mini-apps of its own.
+
+### Header: one row and one ⋯ menu; no station meta line
+- **P1:** logo · brand · station switcher · Share · theme · Help, a station header (name and "network · county
+  · elevation") above every section, then the section row.
+- **New:** logo · brand (desktop only, ≥ 1060 px) · the station button ("Bozeman ▾") · the sections (tablet
+  up) · one ⋯ menu with Share this view, Theme (the 3-state cycle, its state shown: "Dark"), Help and Send
+  feedback. The menu is a WAI-ARIA menu button (focus moves in, arrows, Esc returns focus). The meta line is
+  gone from the shell (About has the details; the Now hero gets them in phase B). The tab bar is a solid
+  surface, no longer glass.
+- **Why:** REDESIGN.md "Shell": controls before content, outlines everywhere.
+
+### Station picker: search first, the map on demand
+- **P1:** search, a "Near me" section with its own button, recents, then the network chips and the map, always shown.
+- **New:** the search field holds a "Near me" chip (the same one-time geolocation); its results show under the
+  field once pressed. Recents follow, then "Browse on the map", which reveals the network chips and the map
+  (MapLibre starts on the first reveal). Drawer / sheet, focus, `inert` and Esc rules are unchanged.
+- **Why:** REDESIGN.md "Station picker": most visits search or pick a recent station.
+
+### Flat surfaces
+- **P1:** `.dash-card` had a 1 px border and a 12 px radius.
+- **New:** a flat surface with a 16 px radius and a soft two-layer shadow tinted by the kit `--scrim`; no border,
+  except in high contrast, which keeps the border (a shadow does not show on black). Phase A changes the
+  primitive only; sections adopt the new chips and numerals in phase B.
+- **Why:** REDESIGN.md "Visual language".
+
 ## UX refactor (P0 prototype, 2026-10)
 
 The user-approved refactor (overview first, mobile first; DESIGN.md) changes the

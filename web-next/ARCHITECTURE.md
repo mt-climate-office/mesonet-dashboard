@@ -36,7 +36,7 @@ src/
   stores/   the four shared pieces of app state (Alpine.store)
   ui/       thin Alpine components (Alpine.data) + their CSS;
             ui/layout/ holds the framework-free primitives (drawer, sheet,
-            section nav, transitions, card, skeleton, type scale)
+            menu, section nav, transitions, card + chips, skeleton, type scale)
   types/    globals from the CDN (window.MCO, maplibregl) and $store typing
   main.ts   URL fix-ups → register stores → register components → Alpine.start()
 partials/   HTML, one file per section/card, inlined into index.html at build
@@ -87,12 +87,12 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `core/url-schema.ts`, parsed, defaults filled in. Change it only with
   `set(patch)`; writes batch into one `replaceState` per tick, keep the hash,
   omit defaults and keep unknown keys. `section` comes from the hash
-  (core/router.ts: now · charts · ag · download · about; legacy
-  `#latest`/`#downloader` map). `go(section, patch?, drillDown?)` changes
-  section with `pushState` (Back works); `drillDown` pushes inside a section
-  too (an Ag tool opened from its card; a Charts variable or sub-view). The
-  section nav applies `sectionNavPatch` (Charts inside Charts → the list,
-  Ag inside Ag → the tool cards; leaving Charts drops `v`). `hrefFor(section, patch?)` gives the
+  (core/router.ts: now · charts · about; old `#latest`, `#ag`, `#download`,
+  `#downloader` are rewritten at boot by `legacyRedirect`, see "Routing").
+  `go(section, patch?, drillDown?)` changes section with `pushState` (Back
+  works); `drillDown` pushes inside a section too (a Charts variable or Ag
+  tool, a sub-view). The section nav applies `sectionNavPatch` (Charts inside
+  Charts → the list; leaving Charts drops `v`). `hrefFor(section, patch?)` gives the
   real href for a link. In-page anchors (the skip link's `#main`) keep the section.
   Back/forward re-read both. Navigate from UI through `ui/shell/navigate.ts`
   (view transition + scroll + focus + announcement): an in-app `<a href>` calls
@@ -116,6 +116,24 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   the catalog id and remembers every confirmed station (core/stations/recent.ts).
   With no `?s=`, main.ts puts the remembered station in the URL before the
   stores start; with none, the station picker opens.
+
+### Routing
+
+Three sections, `SECTIONS` in `core/router.ts`: **now** (default), **charts**, **about**. Inside Charts,
+`v` is one namespace (`core/variables` `chartsMode`): an Ag tool id (`core/params/ag` `AG_TOOL_IDS`,
+`isAgTool`) opens that tool, any other value opens that element family's variable page, none shows the list;
+`cmp=1` is Compare. `dl=1` opens the Download sheet over whatever Charts shows. History: section and variable
+(or Ag tool) changes push (`navigate(…, { drillDown: true })`); everything else, opening a sheet included,
+replaces. `main.ts` runs `migrateLegacySearch` then `legacyRedirect` before any store reads the URL:
+`#latest` → `#charts&cmp=1`; `#ag&var=<tool>` → `#charts&v=<tool>` (Ag keys kept; no `var` but Ag keys →
+GDD); `var=annual` → `v=<annv's family>&view=history`; a bare `#ag` → `#charts` plus an `anchor`
+(`revealWhenReady` scrolls the list's Ag tools group into view); `#download` / `#downloader` → `#charts&dl=1`.
+Every other key is kept byte for byte.
+
+Router helpers for components: `$store.url.go(section, patch, drillDown)` (or, from a link,
+`follow(event, section, { patch, drillDown, target })` in `ui/shell/navigate.ts`), `$store.url.hrefFor(section,
+patch)` for the real href, `CHARTS_LIST_PATCH` for "back to the list", `chartsMode(state)` for what Charts
+shows, `isAgTool(v)` for the namespace.
 
 Per-station fetches shared by sections (latest obs, ppt summary, NWS, photos, one-pagers, station
 config) are one function each in `ui/station/resources.ts`; a section's own fetches sit beside it
@@ -166,15 +184,34 @@ Component `ui/<section>/<card>.ts` exporting a factory that returns
 `main.ts` with one `Alpine.data('<name>', factory)` line. Fetch through
 `$store.data.cached`; put any logic in `core/`.
 
-**Add a section.** (1) An entry in `SECTIONS` (`core/router.ts`) + its
-router test. (2) A link in both navs in `partials/shell.html` (the
-`.dash-sections` row and the `.dash-tabbar` with an icon; same
-`data-section`). (3) A `<section id="section-<id>" class="tab-panel">` in
+**Add a section.** Rarely: the redesign settled on three. (1) An entry in
+`SECTIONS` (`core/router.ts`) + its router test. (2) A link in both navs in
+`partials/shell.html` (the header's `.dash-sections` and the `.dash-tabbar`
+with an icon; same `data-section`; the tab bar's grid has one column per
+item). (3) A `<section id="section-<id>" class="tab-panel">` in
 `.dash-section-host` that includes `partials/<id>/index.html`. (4) Wrap that
 partial's root in `<template x-if="$store.url.section === '<id>'">` so it
 mounts, and fetches, only while open; components undo in `destroy()` whatever
 they add outside themselves (listeners, maps, charts). Its URL keys are
-prefixed `<id>_` in the schema.
+prefixed `<id>_` in the schema. Most new places are a Charts entry instead
+(a `v` value, or a sheet).
+
+**Add a header menu item.** A `role="menuitem"` button (or link) with
+`class="dash-menu-item"`, an `aria-hidden` icon and its label inside
+`#header-menu` (`partials/shell.html`); its `@click` calls a method you add to
+`navMeta` (`ui/shell/navMeta.ts`). Add `data-keep-open` if the menu should stay
+open after it (like Theme). A new ⋯ menu elsewhere is the same markup with its
+own `x-data="menu"` wrapper (DESIGN.md "Components").
+
+**Add a sheet.** `partials/sheets/<id>.html`: a scrim `<div class="mco-scrim
+dash-scrim dash-sheet-scrim" id="sheet-<id>-scrim" hidden>` and a `<section
+id="sheet-<id>" class="dash-sheet dash-sheet--modal" role="dialog"
+aria-modal="true" aria-labelledby=… x-data="sheet({ id: '<id>' })" hidden>`
+with the head (handle, title, ×) and a body whose content sits in `<template
+x-if="isOpen">`; include it at the end of `partials/shell.html`. Open it with
+`openSheet('<id>', opener)` and close it with `closeSheet('<id>')`
+(`ui/shell/sheet.ts`). Pass `urlKey` (a boolean schema key, like `dl`) only
+if the URL should hold the open state.
 
 **Add a Now tile.** (1) In `core/overview/tiles.ts`, push a `Tile` in
 `tiles()` when the station reports the value (read it in
@@ -196,8 +233,10 @@ if its column name is not "<name> [unit]"; (2) its group and position in
 `GROUPED` (`core/variables/catalog.ts`), and `SUMMED` if it is a total
 (bars, a total stat, a cumulative history); (3) a color in `core/palette`
 (`variableStyle`) or it takes a preview color; (4) a line in
-`core/variables/catalog.test.ts`. The list, variable page, history and
-Compare need no other change.
+`core/variables/catalog.test.ts`; (5) its plain name, unit and precision in
+`LABELS` (`core/variables/labels.ts`; its test fails for an `ELEM_MAP` id
+without one). The `v=` id must not be an Ag tool id (`core/params/ag`). The
+list, variable page, history and Compare need no other change.
 
 **Add a layout primitive.** Framework-free first: CSS on kit tokens in
 `ui/layout/<name>.css` and, if it has behaviour, a vanilla
@@ -248,9 +287,10 @@ ring only (no per-selector focus rules); ≥ 40 px touch targets under
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
-`npm run verify` runs axe on its scenarios (Now, the photo dialog, the picker on a first visit and opened with a station,
-the Charts list, a variable page in each view, Compare, Ag tools + 4 Ag views, Download (step 1 and step 3
-on phones), About, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
+`npm run verify` runs axe on its scenarios (Now, the header ⋯ menu, the photo dialog, the picker on a first visit and
+opened with a station, the Charts list, the legacy `#ag` landing, a variable page in each view, Compare, 4 Ag
+tools, the Download sheet (step 1 on phones, after Run), About, Help) × 1440/390 px × 3 themes
+(`scripts/verify/axe.mjs`).
 
 ## Testing
 
