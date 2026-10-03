@@ -230,18 +230,16 @@ the others at the end of `partials/shell.html`. Open it with
 (`ui/shell/sheet.ts`). Pass `urlKey` (a boolean schema key, like `dl`) only
 if the URL should hold the open state.
 
-**Add a Now tile.** (1) In `core/overview/tiles.ts`, push a `Tile` in
-`tiles()` when the station reports the value (read it in
-`core/overview/conditions.ts` if it is a new `/latest` column), with its
-`vars` (display variables; the tile opens the first one's Charts page) and a `SeriesKey` for the
-48 h sparkline (a tile with its own graphic overrides it in `tileView`, `nowPage.ts`, as Rain does with
-`rainBars`: seven daily bars, none after a dry week); add the element code to `SPARK_ELEMENTS` (or
-`OPTIONAL_SPARK_ELEMENTS`) and its column to `keyFor` in `series.ts`. (2) A
-test in `core/overview/overview.test.ts`. (3) If it should hide when it means
-nothing, a rule in `nowTiles` (`core/overview/relevance.ts`); its plain name,
-unit and precision come from `LABELS` for its `v=` id, its number from
-`reading()` and any sub-line from `sub()` in `core/overview/nowPage.ts` (+ a line in
-`nowPage.test.ts`). The partial renders every tile from `buildNowPage`, so no markup is needed.
+**Add a Now tile.** (1) In `core/overview/tiles.ts`, a `TILES` entry (its id, the Charts `v=` id it
+opens, a `SeriesKey` for the 48 h sparkline) and its line in `reportedTiles` (when the station reports
+it; read it in `core/overview/conditions.ts` if it is a new `/latest` column); add the element code to
+`SPARK_ELEMENTS` (or `OPTIONAL_SPARK_ELEMENTS`) and its column to `keyFor` in `series.ts` (a tile with
+its own graphic overrides the line in `tileView`, `nowPage.ts`, as Rain does with `rainBars`: seven
+daily bars, none after a dry week). (2) A test in `core/overview/overview.test.ts`. (3) If it should
+hide when it means nothing, a rule in `nowTiles` (`core/overview/relevance.ts`). `nowPage.ts` is the
+only formatter: the name, unit and precision (sparkline sentence included) come from `LABELS` for its
+`v=` id, its number from `reading()` and any sub-line from `sub()` (+ a line in `nowPage.test.ts`). The
+partial renders every tile from `buildNowPage`, so no markup is needed.
 
 **Add a variable (Charts).** A variable is a display name from the
 station's `/elements` (`latestVarsFromElements`: `description_short` before

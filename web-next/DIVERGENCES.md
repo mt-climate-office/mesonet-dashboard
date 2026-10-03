@@ -108,6 +108,11 @@ below, which stay for the record and name what replaced them.
   the chance of precipitation, are on the NWS page. Without NWS coverage the strip shows the observed day only.
 - **Why:** DESIGN.md "Now": one picture of yesterday into tomorrow instead of a second card of text.
 
+### Now: the hero's high and low are the last 24 hours
+- **P1 (and the Overview plan):** "High 63° · Low 40°" since local midnight (today's hourly means plus the current reading).
+- **New:** "24 h high 74° · low 41°" over the strip's observed half: the hourly readings in (now − 24 h, now] plus the current one. The normal ("Normal 65° / 37°") stays today's calendar day in Denver.
+- **Why:** just after midnight a since-midnight high/low covered one hour ("High 49° · Low 48°") beside a strip showing 74° and 41°; the two now always agree.
+
 ### Now: desktop columns
 - **P1 / phase B:** hero + photo | tiles + rows, the photo 16:8 across the wide column (about 400 px tall at
   1440 px), leaving the right column half empty.
@@ -312,8 +317,8 @@ layout parts of older entries below; data behaviour is unchanged.
 - **Why:** plan "Ag": tools first, controls out of the way on phones, no scroll trap.
 
 ### Now overview data
-- **New (no legacy equivalent):** today's high/low comes from today's hourly means plus the current
-  reading, against the gridMET 1991–2020 **median** `tmmx`/`tmmn` for the date; year-to-date
+- **New (no legacy equivalent):** the hero's high/low (since the redesign, the last 24 h: "Now: the hero's high and low") is set
+  against the gridMET 1991–2020 **median** `tmmx`/`tmmn` for the date; year-to-date
   precipitation is compared with the sum of the daily **mean** `pr` normals from Jan 1 (a sum of medians
   would not be a normal total). Stations without `/derived/ppt/` (AgriMet) show since-midnight and 24 h
   from the hourly request. The sparkline request adds `bp` (pressure), and `snow_depth` / `vpd_atmo` when

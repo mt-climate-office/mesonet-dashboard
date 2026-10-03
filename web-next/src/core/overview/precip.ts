@@ -3,7 +3,8 @@
  * HydroMet stations have the `/derived/ppt/` summary (all four); others fall
  * back to the hourly request (since midnight and 24 h only). Inches.
  */
-import type { PptSummaryRow } from '../api'
+import type { ObservationRow, PptSummaryRow } from '../api'
+import { hourlyPrecip } from './series'
 
 export interface PrecipSummary {
   sinceMidnight: number | null
@@ -31,4 +32,9 @@ export function precipSummary(
     }
   }
   return { sinceMidnight: hourly?.sinceMidnight ?? null, last24h: hourly?.last24h ?? null, last7d: null, ytd: null }
+}
+
+/** The Now page's summary, computed once per page: the `/derived/ppt/` row, else the hourly sums for `today`. */
+export function nowPrecip(input: { ppt: PptSummaryRow | undefined; hourly: readonly ObservationRow[] | undefined; today: string }): PrecipSummary {
+  return precipSummary(input.ppt, input.hourly ? hourlyPrecip(input.hourly, input.today) : null)
 }

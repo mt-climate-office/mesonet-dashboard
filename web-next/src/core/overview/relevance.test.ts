@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ObservationRow } from '../api'
-import { dewPointF, nowTiles, pressureChange3h, pressureTrend, shallowestSwpBar, soilState, sunUp, type NowTilesInput } from './relevance'
+import { dewPointF, nowTiles, pressureChange3h, pressureTrend, shallowestSwpBar, soilState, sunUp } from './relevance'
+import type { OverviewInput } from './tiles'
 
 const LATEST = {
   station: 'acebozem',
@@ -16,7 +17,7 @@ const LATEST = {
 }
 const PPT = { station: 'x', 'Year to Date Precipitation [in]': 13.119, '7-day Precipitation [in]': 0, '24-hour Precipitation [in]': 0, 'Precipitation Since Midnight [in]': 0 }
 const PR = [{ type: 'daily', variable: 'pr', month: 1, day: 1, q25: null, q75: null, median: 0, mean: 15 }]
-const BASE: NowTilesInput = { latest: LATEST, hourly: undefined, ppt: PPT, normals: { pr: PR }, today: '2026-10-01', nowMs: Date.UTC(2026, 9, 1, 20) }
+const BASE: OverviewInput = { latest: LATEST, hourly: undefined, ppt: PPT, normals: { pr: PR }, today: '2026-10-01', nowMs: Date.UTC(2026, 9, 1, 20) }
 
 describe('sunUp', () => {
   it.each([
@@ -83,24 +84,22 @@ describe('soil state (SWP against field capacity and wilting point)', () => {
 })
 
 describe('nowTiles', () => {
-  it('daytime: sunlight shown, no pressure tile, Rain tile with YTD % of normal, dew point under humidity', () => {
+  it('daytime: sunlight shown, no pressure tile, Rain even in a dry week; each with its Charts id', () => {
     const t = nowTiles(BASE)
-    expect(t.map((x) => x.id)).toEqual(['wind', 'precip', 'rh', 'solar', 'soil'])
-    expect(t[1]).toMatchObject({ label: 'Rain · 7 days', value: '0.00', unit: 'in', detail: ['87% of normal this year'] })
-    expect(t[2].detail).toEqual(['Dew point 49°'])
-    expect(t[4].state).toBeUndefined()
+    expect(t.map((x) => [x.id, x.v])).toEqual([['wind', 'wind_spd'], ['precip', 'ppt'], ['rh', 'rh'], ['solar', 'sol_rad'], ['soil', 'soil_vwc']])
   })
   it('night: no sunlight tile', () => {
     expect(nowTiles({ ...BASE, latest: { ...LATEST, 'Solar Radiation [W/m²]': 0 } }).map((x) => x.id)).not.toContain('solar')
   })
-  it('without the ppt summary: 24 h total from the hourly rows, no YTD line', () => {
+  it('Rain from the hourly rows without the ppt summary; none with no source', () => {
     const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 10:00:00-06:00', 'Precipitation [in]': 0.12 }]
-    const rain = nowTiles({ ...BASE, ppt: undefined, hourly }).find((x) => x.id === 'precip')
-    expect(rain).toMatchObject({ label: 'Rain · 24 hours', value: '0.12', detail: [] })
+    expect(nowTiles({ ...BASE, ppt: undefined, hourly }).map((x) => x.id)).toContain('precip')
+    expect(nowTiles({ ...BASE, ppt: undefined }).map((x) => x.id)).not.toContain('precip')
   })
-  it('soil state from SWP; snow keeps its rule', () => {
-    expect(nowTiles({ ...BASE, swpBar: 20 }).find((x) => x.id === 'soil')?.state).toBe('Dry')
+  it('snow keeps its rule; VPD where reported', () => {
+    expect(nowTiles(BASE).map((x) => x.id)).not.toContain('snow')
     expect(nowTiles({ ...BASE, latest: { ...LATEST, 'Snow Depth [in]': 2 } }).map((x) => x.id)).toContain('snow')
+    expect(nowTiles({ ...BASE, latest: { ...LATEST, 'VPD [mbar]': 4.1 } }).map((x) => x.id)).toContain('vpd')
   })
   it('empty until /latest arrives', () => {
     expect(nowTiles({ ...BASE, latest: undefined })).toEqual([])

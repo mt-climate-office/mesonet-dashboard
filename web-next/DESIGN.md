@@ -123,7 +123,7 @@ with named areas, so the DOM, reading and Tab order stays hero, photo, tiles, ro
 
 | Slot | Content | Data (tier) |
 |---|---|---|
-| Hero | Air temperature (`.num-display`, 5 rem phones / 7 rem desktop); on the right today's high/low, the gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
+| Hero | Air temperature (`.num-display`, 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("24 h high 74° · low 41°", so the two agree), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
 | Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table. Below it the forecast periods as an icon row (api.weather.gov only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
 | Media | Latest camera frame of the default direction (16:9, at most 360 px tall on desktop; opens the photo dialog), or the wind rose without a camera | photo schedule, latest listings (1) |
@@ -142,7 +142,7 @@ targets 44 px; nothing scrolls sideways at 390 px. Focus stays in the modal (the
 focus returns to the tile.
 
 **Loading.** Tier 1 (`/latest`, the ppt summary, the NWS periods, the photo schedule) starts together when Now
-mounts and renders the hero and tiles. Tier 2 (one 72 h hourly request for the strip, sparklines, high/low and
+mounts and renders the hero and tiles. Tier 2 (one 72 h hourly request for the strip, sparklines, the 24 h high/low and
 pressure trend; the normals CSVs; the NWS hourly forecast from the periods' `forecastHourly` URL, `nwsh:<url>`,
 30 min; SWP for stations with SWP sensors, `nowSwpQuery`) starts once `/latest` is in and fills the strip,
 sparklines and chip. The Rain tile's bars come from one small daily request (`rainDailyQuery`: `ppt`, the 7 days

@@ -43,9 +43,19 @@ describe('buildHero', () => {
   it('temperature, high/low, summary and freshness', () => {
     const h = buildHero(BASE)
     expect(h.temp).toBe('57°')
-    expect(h.highLow).toBe('High 61° · Low 40°')
+    expect(h.highLow).toBe('24 h high 63° · low 40°')
     expect(h.summary).toBe('Mostly clear tonight, breezy ESE wind, no rain in 2 days.')
     expect(h.freshness).toEqual({ updated: 'Updated 5 min ago', stale: false, provisional: true })
+  })
+  it('high/low is the strip observed 24 h (it crosses midnight); normal is today in Denver', () => {
+    // 00:30 MDT on Oct 1: the last 24 h are almost all Sep 30 (40–63 °F).
+    const latest = { ...LATEST, datetime: '2026-10-01 00:30:00-06:00', 'Air Temperature [°F]': 41 }
+    const normals = { tmmx: [{ type: 'daily', variable: 'tmmx', month: 10, day: 1, q25: null, q75: null, median: 66.83 }], tmmn: [{ type: 'daily', variable: 'tmmn', month: 10, day: 1, q25: null, q75: null, median: 38.39 }] }
+    const h = buildHero({ ...BASE, latest, hourly: HOURLY.slice(0, 49), normals })
+    expect(h.highLow).toBe('24 h high 63° · low 40°')
+    expect(Math.max(...(h.strip!.observed.v as number[]))).toBe(63)
+    expect(h.normal).toBe('Normal 67° / 38°')
+    expect(buildHero({ ...BASE, hourly: undefined }).highLow).toBeNull()
   })
   it('strip: observed (now − 24 h, now] ending at /latest, forecast (now, now + 24 h], periods by midpoint', () => {
     const s = buildHero(BASE).strip!

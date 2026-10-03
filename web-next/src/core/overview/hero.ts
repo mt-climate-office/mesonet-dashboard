@@ -1,18 +1,19 @@
 /**
- * Everything the Now hero shows, from one call: the temperature, today's
- * high/low and normal, the one-line summary, the 48 h strip model and the
- * freshness line. Inputs are the overview's data (`/latest`, 72 h hourly
- * rows, `/derived/ppt/`, normals) plus the NWS period and hourly forecasts.
- * "Now" on the strip is the newest observation's wall-clock time.
+ * Everything the Now hero shows, from one call: the temperature, the high and
+ * low of the strip's observed 24 h, today's normal, the one-line summary, the
+ * 48 h strip model and the freshness line. Inputs are the overview's data
+ * (`/latest`, 72 h hourly rows, `/derived/ppt/`, normals) plus the NWS period
+ * and hourly forecasts. "Now" on the strip is the newest observation's
+ * wall-clock time.
  */
 import type { ForecastPeriod, HourlyForecastPoint, NwsForecast } from '../api'
 import type { HeroStripModel, StripPeriod } from '../charts/heroStrip'
 import { parseWallClock } from '../sensorEvents'
-import { readConditions } from './conditions'
-import { precipSummary } from './precip'
-import { hourlyPrecip } from './series'
+import { feelsLikeF, readConditions } from './conditions'
+import { normalMedianOn } from './normals'
+import { nowPrecip, type PrecipSummary } from './precip'
 import { daysSinceRain, summarize } from './summary'
-import { buildOverview, type Freshness, type OverviewInput } from './tiles'
+import { freshness, type Freshness, type OverviewInput } from './tiles'
 
 export interface HeroInput extends OverviewInput {
   /** NWS period forecast (`fetchNwsForecast`), or undefined while loading / on failure. */
@@ -27,9 +28,9 @@ export interface HeroView {
   /** "Feels like 49°" and "Wind chill"/"Heat index" (null when it is the air temperature). */
   feels: string | null
   feelsKind: string | null
-  /** "High 63° · Low 40°" today, or null before the hourly rows. */
+  /** "24 h high 74° · low 41°": the strip's observed 24 h, so the two agree; null before the hourly rows. */
   highLow: string | null
-  /** "Normal 67° / 38°", or null without normals. */
+  /** "Normal 67° / 38°" for today's Denver date, or null without normals. */
   normal: string | null
   /** One sentence ("Clear tonight, light SSE wind, no rain in 5 days."), "" when nothing is known. */
   summary: string
@@ -39,6 +40,7 @@ export interface HeroView {
 }
 
 const H24 = 24 * 3_600_000
+const deg = (v: number) => `${Math.round(v)}°`
 const ICON_HOST = /^https:\/\/api\.weather\.gov\//
 
 /** A period's temperature in °F (NWS sends F for US points; C converts). */
@@ -77,26 +79,36 @@ function observed(input: HeroInput, now: number, airF: number | null): HeroStrip
   return { t, v: t.map((x) => pts.get(x) ?? null) }
 }
 
-/** The hero view; all null and "" until `/latest` arrives (no summary or strip without its stamp). */
-export function buildHero(input: HeroInput): HeroView {
-  const o = buildOverview(input)
-  const view: HeroView = {
-    temp: o.hero?.temp ?? null,
-    feels: o.hero?.feels ?? null,
-    feelsKind: o.hero?.feelsKind ?? null,
-    highLow: o.hero?.highLow ?? null,
-    normal: o.hero?.normal ?? null,
-    summary: '',
-    strip: null,
-    freshness: o.freshness,
-  }
-  if (!input.latest) return view
+/** "24 h high 74° · low 41°" over the observed points, or null without one. */
+function highLow(v: readonly (number | null)[]): string | null {
+  const xs = v.filter((x): x is number => x !== null)
+  return xs.length ? `24 h high ${deg(Math.max(...xs))} · low ${deg(Math.min(...xs))}` : null
+}
+
+/**
+ * The hero view; all null and "" until `/latest` arrives (no high/low,
+ * summary or strip without its stamp). `p` is the page's one precipitation
+ * summary (nowPage.ts passes it).
+ */
+export function buildHero(input: HeroInput, p: PrecipSummary = nowPrecip(input)): HeroView {
+  const empty: HeroView = { temp: null, feels: null, feelsKind: null, highLow: null, normal: null, summary: '', strip: null, freshness: null }
+  if (!input.latest) return empty
   const c = readConditions(input.latest)
+  const fl = feelsLikeF(c.airF, c.rh, c.windMph)
+  const nHi = input.normals.tmmx ? normalMedianOn(input.normals.tmmx, input.today) : null
+  const nLo = input.normals.tmmn ? normalMedianOn(input.normals.tmmn, input.today) : null
+  const view: HeroView = {
+    ...empty,
+    temp: c.airF === null ? null : deg(c.airF),
+    feels: fl ? `Feels like ${deg(fl.valueF)}` : null,
+    feelsKind: fl?.regime === 'wind_chill' ? 'Wind chill' : fl?.regime === 'heat_index' ? 'Heat index' : null,
+    normal: c.airF !== null && nHi !== null && nLo !== null ? `Normal ${deg(nHi)} / ${deg(nLo)}` : null,
+    freshness: freshness(c, input.nowMs),
+  }
   const now = parseWallClock(c.stamp)
   if (now === null) return view
 
   const periods = input.forecast?.periods ?? []
-  const p = precipSummary(input.ppt, input.hourly ? hourlyPrecip(input.hourly, input.today) : null)
   const summary = summarize({
     shortForecast: currentPeriod(periods, now)?.shortForecast ?? null,
     windMph: c.windMph,
@@ -113,5 +125,5 @@ export function buildHero(input: HeroInput): HeroView {
       ? { observed: obs, forecast: { t: fc.map((h) => h.t), v: fc.map((h) => h.tempF) }, now: { t: now, v: c.airF }, periods: stripPeriods(periods, now) }
       : null
 
-  return { ...view, summary, strip }
+  return { ...view, highLow: input.hourly && c.airF !== null ? highLow(obs.v) : null, summary, strip }
 }

@@ -1,18 +1,15 @@
 /**
- * Which readings the Now page shows, and how: the tiles from `buildOverview`
- * filtered and reshaped by pure rules (sunlight only by day, precipitation
- * folded into one Rain tile, pressure as a 3 h trend instead of a tile, snow
- * by its existing rule, dew point under humidity, a Dry/Wet soil state from
- * soil water potential when the caller has it).
+ * Pure rules for what the Now page shows: the tiles (sunlight only by day),
+ * pressure as a 3 h trend instead of a tile, the dew point under humidity and
+ * a Dry/Wet soil state from soil water potential. Snow keeps its own rule
+ * (snow.ts). nowPage.ts formats the result.
  */
 import type { ObservationRow } from '../api'
 import { parseWallClock } from '../sensorEvents'
 import { SWP_FIELD_CAPACITY, SWP_WILTING_POINT } from '../ag/view/labels'
 import { readConditions } from './conditions'
-import { ytdNormal } from './normals'
-import { precipSummary } from './precip'
-import { hourlyPrecip } from './series'
-import { buildOverview, type OverviewInput, type Tile } from './tiles'
+import { nowPrecip, type PrecipSummary } from './precip'
+import { reportedTiles, type OverviewInput, type Tile } from './tiles'
 
 /**
  * Below this (W/m²) the sun is down. Pyranometers read 0–2 W/m² at night;
@@ -93,45 +90,15 @@ export function shallowestSwpBar(row: Record<string, unknown> | undefined): numb
   return best ? best[1] : null
 }
 
-export interface NowTilesInput extends OverviewInput {
-  /** Shallowest-depth soil water potential (bar), when the caller fetched it; else no soil state. */
-  swpBar?: number | null
-}
-
-const deg = (v: number) => `${Math.round(v)}°`
-
-/** The Rain tile: 7 d total (24 h without the ppt summary) and the YTD share of normal. */
-function rainTile(t: Tile, input: OverviewInput): Tile {
-  const p = precipSummary(input.ppt, input.hourly ? hourlyPrecip(input.hourly, input.today) : null)
-  const normal = input.normals.pr ? ytdNormal(input.normals.pr, input.today) : null
-  const week = p.last7d !== null
-  const v = week ? p.last7d : p.last24h
-  const ytd = p.ytd !== null && normal ? `${Math.round((p.ytd / normal) * 100)}% of normal this year` : null
-  return { ...t, label: week ? 'Rain · 7 days' : 'Rain · 24 hours', value: v === null ? '—' : v.toFixed(2), detail: ytd ? [ytd] : [] }
-}
-
 /**
- * The Now tiles, in `buildOverview` order: no sunlight tile at night
- * (`sunUp`), no pressure tile (use `pressureChange3h` + `pressureTrend`),
- * precipitation as the Rain tile (shown whenever there is a source, even
- * with a dry week, for the YTD line), humidity with the dew point, soil with
- * `state` when `swpBar` gives one. Snow keeps `hasSnow`.
+ * The Now tiles, in page order: what the station reports (`reportedTiles`;
+ * Rain whenever there is a source, even in a dry week, for its YTD line),
+ * minus Sunlight at night (`sunUp`). Pressure is never a tile (its 3 h trend
+ * is text). `p` is the page's one precipitation summary.
  */
-export function nowTiles(input: NowTilesInput): Tile[] {
-  const tiles = buildOverview(input).tiles
-  if (!input.latest) return tiles
+export function nowTiles(input: OverviewInput, p: PrecipSummary = nowPrecip(input)): Tile[] {
+  if (!input.latest) return []
   const c = readConditions(input.latest)
-  const out: Tile[] = []
-  for (const t of tiles) {
-    if (t.id === 'pressure' || (t.id === 'solar' && !sunUp(c.solar))) continue
-    if (t.id === 'precip') out.push(rainTile(t, input))
-    else if (t.id === 'rh') {
-      const dp = dewPointF(c.airF, c.rh)
-      out.push(dp === null ? t : { ...t, detail: [...t.detail, `Dew point ${deg(dp)}`] })
-    } else if (t.id === 'soil') {
-      const state = soilState(input.swpBar)
-      out.push(state ? { ...t, state } : t)
-    } else out.push(t)
-  }
-  return out
+  return reportedTiles(c, input.hourly, p).filter((t) => t.id !== 'solar' || sunUp(c.solar))
 }
+

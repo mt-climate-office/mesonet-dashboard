@@ -64,6 +64,12 @@ describe('buildNowPage tiles', () => {
     expect(rain(daily([0, 0, 0, 0, 0, 0, 0]))).toMatchObject({ spark: null, sparkLabel: '' })
     expect(rain(undefined).spark).toBeNull()
   })
+  it('sparkline sentences in the plain unit and display precision (mb, not mbar)', () => {
+    const hourly: ObservationRow[] = [3, 4.12].map((v, i) => ({ station: 'x', datetime: `2026-10-01 1${i}:00:00-06:00`, 'VPD [mbar]': v, 'Relative Humidity [%]': 40 + i * 10 }))
+    const p = buildNowPage({ ...BASE, latest: { ...LATEST, 'VPD [mbar]': 4.1 }, hourly })
+    expect(p.tiles.find((t) => t.id === 'vpd')?.sparkLabel).toBe('Last 48 hours: from 3.0 to 4.1 mb.')
+    expect(p.tiles.find((t) => t.id === 'rh')?.sparkLabel).toBe('Last 48 hours: from 40 to 50%.')
+  })
   it('the Dry/Wet chip from SWP', () => {
     expect(buildNowPage({ ...BASE, swpBar: 20 }).tiles.find((t) => t.id === 'soil')?.chip).toBe('Dry')
     expect(buildNowPage({ ...BASE, swpBar: 0.1 }).tiles.find((t) => t.id === 'soil')?.chip).toBe('Wet')

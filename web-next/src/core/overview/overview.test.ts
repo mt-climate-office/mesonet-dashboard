@@ -4,18 +4,18 @@ import { parseCsv } from '../csv'
 import type { NormalRow } from '../normals'
 import { denverToday } from '../today'
 import {
-  buildOverview,
   feelsLikeF,
+  freshness,
   hasSnow,
   hourlyPrecip,
   isStale,
   normalMedianOn,
   precipSummary,
   readConditions,
+  reportedTiles,
   sparkQuery,
   sparkSeries,
   stampEpochMs,
-  todayHighLow,
   updatedText,
   ytdNormal,
 } from './index'
@@ -112,15 +112,11 @@ describe('series', () => {
     expect(s.wind).toBeUndefined()
     expect(sparkSeries([])).toEqual({})
   })
-  it('today high/low from the hourly rows of that local date', () => {
-    expect(todayHighLow(HOURLY, '2026-09-30')).toEqual({ hi: 63, lo: 40 })
-    expect(todayHighLow(HOURLY, '2026-10-05')).toBeNull()
-  })
-  it('today is the Denver day: 23:30 MDT keeps the whole day, 00:30 MDT starts a new one', () => {
+  it('rain since midnight follows the Denver day: 23:30 MDT keeps the day, 00:30 MDT starts a new one', () => {
     const late = denverToday(Date.parse('2026-10-01T05:30:00Z')) // Sep 30, 23:30 MDT
     const early = denverToday(Date.parse('2026-10-01T06:30:00Z')) // Oct 1, 00:30 MDT
-    expect(todayHighLow(HOURLY, late)).toEqual({ hi: 63, lo: 40 })
-    expect(todayHighLow(HOURLY.slice(0, 49), early)).toEqual({ hi: 40, lo: 40 })
+    expect(hourlyPrecip(HOURLY, late)?.sinceMidnight).toBeCloseTo(0.2, 9)
+    expect(hourlyPrecip(HOURLY.slice(0, 49), early)?.sinceMidnight).toBe(0)
   })
   it('hourly precipitation sums', () => {
     const p = hourlyPrecip(HOURLY, '2026-10-01')!
@@ -172,51 +168,21 @@ describe('hasSnow', () => {
   })
 })
 
-describe('buildOverview', () => {
-  const base = { hourly: undefined, ppt: undefined, normals: {}, today: '2026-10-01', nowMs: Date.UTC(2026, 9, 2, 4, 0) }
-  it('empty until /latest arrives', () => {
-    expect(buildOverview({ ...base, latest: undefined })).toEqual({ freshness: null, hero: null, tiles: [] })
+describe('freshness and reportedTiles', () => {
+  const nowMs = Date.UTC(2026, 9, 2, 4, 0)
+  const none = precipSummary(undefined, null)
+  it('freshness: updated, stale after 2 h, provisional', () => {
+    expect(freshness(readConditions(LATEST_BOZ), nowMs)).toEqual({ updated: 'Updated 5 min ago', stale: false, provisional: true })
+    expect(freshness(readConditions(LATEST_KEOGH), Date.UTC(2026, 9, 2, 17, 0))).toMatchObject({ stale: true, provisional: false, updated: 'Updated 3 h ago' })
   })
-  it('tier 1 only: header, hero and tiles without sparklines (no ppt source → no precip tile)', () => {
-    const o = buildOverview({ ...base, latest: LATEST_BOZ })
-    expect(o.freshness).toEqual({ updated: 'Updated 5 min ago', stale: false, provisional: true })
-    expect(o.hero).toMatchObject({ temp: '57°', feels: 'Feels like 57°', feelsKind: null, highLow: null, normal: null, spark: null })
-    // Snow depth 0.018 in is bare ground: no snow tile.
-    expect(o.tiles.map((t) => t.id)).toEqual(['wind', 'rh', 'solar', 'pressure', 'soil'])
-    const wind = o.tiles[0]
-    expect(wind).toMatchObject({ value: '13', unit: 'mph', detail: ['Gust 19 mph', 'From ESE 112°'], windDeg: 111.6, vars: ['Wind Speed'] })
-    expect(o.tiles.find((t) => t.id === 'soil')?.soil?.[0]).toEqual({ depth: '2 in', temp: '59°', vwc: '8.7%', bar: 17.3 })
+  it('the tiles a station reports, in page order (no ppt source: no Rain; bare-ground snow: no snow)', () => {
+    expect(reportedTiles(readConditions(LATEST_BOZ), undefined, none).map((t) => t.id)).toEqual(['wind', 'rh', 'solar', 'soil'])
+    expect(reportedTiles(readConditions(LATEST_KEOGH), undefined, none).map((t) => t.id)).toEqual(['wind', 'rh', 'soil', 'vpd'])
+    expect(reportedTiles(readConditions(LATEST_BOZ), undefined, { ...none, ytd: 13 }).map((t) => t.id)).toContain('precip')
   })
-  it('tier 2: sparklines, today high/low and normals', () => {
-    const tmmx = rows2(66.83)
-    const tmmn = rows2(38.39)
-    const o = buildOverview({ ...base, latest: LATEST_BOZ, hourly: HOURLY, normals: { tmmx, tmmn } })
-    expect(o.hero?.highLow).toBe('High 63° · Low 40°')
-    expect(o.hero?.normal).toBe('Normal 67° / 38°')
-    expect(o.hero?.spark?.d).toMatch(/^M/)
-    expect(o.hero?.sparkLabel).toBe('Last 48 hours: from 40 to 63 °F.')
-    expect(o.tiles.find((t) => t.id === 'precip')?.spark?.kind).toBe('bars')
-  })
-  it('YTD vs normal on the precipitation tile', () => {
-    const pr: NormalRow[] = [{ type: 'daily', variable: 'pr', month: 1, day: 1, q25: null, q75: null, median: 0, mean: 15 }]
-    const ppt = { station: 'x', 'Year to Date Precipitation [in]': 13.119, '7-day Precipitation [in]': 0.05, '24-hour Precipitation [in]': 0, 'Precipitation Since Midnight [in]': 0 }
-    const t = buildOverview({ ...base, latest: LATEST_BOZ, ppt, normals: { pr } }).tiles.find((x) => x.id === 'precip')!
-    expect(t.value).toBe('0.00')
-    expect(t.detail).toEqual(['24 h 0.00 in · 7 d 0.05 in', 'Year to date 13.12 in · 87% of normal'])
-  })
-  it('snow depth tile: shown with snow now or in the 72 h rows', () => {
-    const snowNow = { ...LATEST_BOZ, 'Snow Depth [in]': 3.2 }
-    expect(buildOverview({ ...base, latest: snowNow }).tiles.find((t) => t.id === 'snow')).toMatchObject({ value: '3.2', unit: 'in' })
+  it('snow depth: shown with snow now or in the 72 h rows', () => {
+    expect(reportedTiles(readConditions({ ...LATEST_BOZ, 'Snow Depth [in]': 3.2 }), undefined, none).map((t) => t.id)).toContain('snow')
     const melted = HOURLY.map((r, i) => ({ ...r, 'Snow Depth [in]': i < 10 ? 1.4 : 0 }))
-    expect(buildOverview({ ...base, latest: LATEST_BOZ, hourly: melted }).tiles.map((t) => t.id)).toContain('snow')
-  })
-  it('AgriMet: VPD tile, no pressure, stale after 2 h', () => {
-    const o = buildOverview({ ...base, latest: LATEST_KEOGH, nowMs: Date.UTC(2026, 9, 2, 17, 0) })
-    expect(o.tiles.map((t) => t.id)).toEqual(['wind', 'rh', 'soil', 'vpd'])
-    expect(o.freshness).toMatchObject({ stale: true, provisional: false, updated: 'Updated 3 h ago' })
+    expect(reportedTiles(readConditions(LATEST_BOZ), melted, none).map((t) => t.id)).toContain('snow')
   })
 })
-
-function rows2(median: number): NormalRow[] {
-  return [{ type: 'daily', variable: 'x', month: 10, day: 1, q25: null, q75: null, median }]
-}
