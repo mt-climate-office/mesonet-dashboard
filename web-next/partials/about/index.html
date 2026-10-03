@@ -1,21 +1,36 @@
-<!-- About (P0): the station's metadata, every current reading (the former Current Conditions
-     table with the HydroMet precipitation summary) and the locator map, reusing the Latest card
-     panes (ui/latest/cards/*). P1 adds the one-pager, sensor-change history and data notes. -->
+<!-- About (x-data="aboutView", ui/about/aboutView.ts): details that stay reachable but not front and
+     center. Station details + one-pager, the locator map, every current reading (Now's "All readings"
+     link lands on #about-readings), sensor-change history and data notes, each a .dash-card.
+     Mounted only while the section is open. -->
 <template x-if="$store.url.section === 'about'">
-<div class="about-grid" data-testid="about">
-  <section class="dash-card about-card" aria-labelledby="about-meta-title">
-    <h3 class="dash-card-title" id="about-meta-title">Station details</h3>
-    <!-- @include partials/latest/cards/metadata.html -->
-  </section>
-  <section class="dash-card about-card" aria-labelledby="about-current-title">
-    <h3 class="dash-card-title" id="about-current-title">All current readings</h3>
-    <!-- @include partials/latest/cards/current.html -->
-  </section>
-  <section class="dash-card about-card about-map" aria-labelledby="about-map-title">
-    <h3 class="dash-card-title" id="about-map-title">Location</h3>
-    <div class="about-map-frame" data-testid="about-map"
-         x-data="stationMap({ stations: () => $store.station.list, selected: () => $store.station.id,
-                  onSelect: (id) => $store.station.select(id), label: 'Locator map of Montana Mesonet stations' })"></div>
-  </section>
+<div class="about" x-data="aboutView" data-testid="about">
+  <template x-if="state === 'none' || state === 'missing'">
+    <div class="dash-card about-empty" data-testid="about-empty">
+      <h3 class="dash-card-title" x-text="state === 'none' ? 'No station selected' : 'Station not found'"></h3>
+      <p>Pick a station to see its details, current readings and sensor history.</p>
+      <button type="button" class="nav-btn" data-picker-toggle aria-controls="station-picker" aria-expanded="false" @click="pick($event)">Choose a station</button>
+    </div>
+  </template>
+  <template x-if="state === 'loading'">
+    <div class="dash-card" aria-busy="true">
+      <p class="sr-only" role="status">Loading station details…</p>
+      <span class="dash-skel dash-skel--table" aria-hidden="true"></span>
+    </div>
+  </template>
+  <template x-if="state === 'ready'">
+    <div class="about-grid">
+      <!-- @include partials/about/details.html -->
+      <section class="dash-card about-map" aria-labelledby="about-map-title">
+        <h3 class="dash-card-title" id="about-map-title">Location</h3>
+        <div class="about-map-frame" data-testid="about-map"
+             x-data="locatorMap({ stations: () => $store.station.list, selected: () => $store.station.id,
+                      onSelect: (id) => $store.station.select(id) })"></div>
+        <p class="about-hint">Use two fingers, or Ctrl / ⌘ and scroll, to move the map.</p>
+      </section>
+      <!-- @include partials/about/readings.html -->
+      <!-- @include partials/about/history.html -->
+      <!-- @include partials/about/notes.html -->
+    </div>
+  </template>
 </div>
 </template>

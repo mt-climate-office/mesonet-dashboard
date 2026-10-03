@@ -21,7 +21,7 @@ import { rangeSlider } from './ui/controls/rangeSlider'
 import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
 import { downloader } from './ui/downloader/downloader'
-import { downloaderMap, pickerMap, stationMap } from './ui/map/presets'
+import { downloaderMap, locatorMap, pickerMap, stationMap } from './ui/map/presets'
 import { bottomCard } from './ui/latest/cards/bottomCard'
 import { currentCard } from './ui/latest/cards/currentCard'
 import { forecastCard } from './ui/latest/cards/forecastCard'
@@ -30,6 +30,10 @@ import { photoCard } from './ui/latest/cards/photoCard'
 import { topCard } from './ui/latest/cards/topCard'
 import { windRoseCard } from './ui/latest/cards/windRoseCard'
 import { nowView } from './ui/now/nowView'
+import { aboutView } from './ui/about/aboutView'
+import { aboutDetails } from './ui/about/details'
+import { aboutHistory } from './ui/about/history'
+import { aboutReadings } from './ui/about/readings'
 import { stationPicker } from './ui/picker/stationPicker'
 import { globalNotices } from './ui/shell/globalNotices'
 import { helpDialog } from './ui/shell/helpDialog'
@@ -130,6 +134,7 @@ Alpine.data('rangeSlider', rangeSlider)
 Alpine.data('stationMap', stationMap)
 Alpine.data('downloaderMap', downloaderMap)
 Alpine.data('pickerMap', pickerMap)
+Alpine.data('locatorMap', locatorMap)
 
 // Charts (W1): the one ECharts host; ECharts itself loads lazily on the first
 // render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".
@@ -137,6 +142,12 @@ Alpine.data('chart', chart)
 
 // Now (ui/now): the overview section.
 Alpine.data('nowView', nowView)
+
+// About (ui/about): the section wrapper and its cards (details, current readings, sensor changes).
+Alpine.data('aboutView', aboutView)
+Alpine.data('aboutDetails', aboutDetails)
+Alpine.data('aboutReadings', aboutReadings)
+Alpine.data('aboutHistory', aboutHistory)
 
 // Data Downloader (W2): the Download section's one component (ui/downloader/downloader.ts);
 // x-data="downloader" in partials/downloader/index.html.
@@ -147,7 +158,7 @@ Alpine.data('latestLayout', latestLayout)
 Alpine.data('latestSidebar', latestSidebar)
 Alpine.data('latestTimeseries', latestTimeseries)
 // Latest cards (W2; partials/latest/cards/*): top and bottom card switchers and their panes,
-// also reused by Now (photo, wind rose, forecast) and About (metadata, current readings).
+// also reused by Now (photo, wind rose, forecast).
 Alpine.data('topCard', topCard)
 Alpine.data('windRoseCard', windRoseCard)
 Alpine.data('forecastCard', forecastCard)
