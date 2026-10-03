@@ -11,7 +11,9 @@
   display: flex; flex-direction: column;
   min-height: calc(100dvh - var(--chrome-h, 52px));
 }
-.dash-content > main { flex: 1; min-width: 0; }
+/* main fills the screen under the header, so the footer starts below the fold and a section that
+   grows as its data loads never moves it on screen (no load shift). */
+.dash-content > main { flex: 1; min-width: 0; min-height: calc(100dvh - var(--chrome-h, 52px)); }
 /* A link that focuses <main> (navigate `target: 'main'`) scrolls it below the sticky header, not under it. */
 #main { scroll-margin-top: var(--chrome-h, 52px); }
 
