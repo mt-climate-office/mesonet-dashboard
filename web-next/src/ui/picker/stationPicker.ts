@@ -60,6 +60,8 @@ export function stationPicker() {
     mapShown: false,
     /** The map mounts on the first reveal and then stays (MapLibre is costly to rebuild). */
     mapMounted: false,
+    /** The search's result list is open (the phone sheet gives it the whole sheet). */
+    searchOpen: false,
     near: { status: 'idle', rows: [] } as Near,
     geoSupported: typeof navigator !== 'undefined' && 'geolocation' in navigator,
 
@@ -115,9 +117,9 @@ export function stationPicker() {
     get modal(): boolean {
       return this.mode !== 'inline'
     },
-    /** The panel's presentation class; `map-open` lets the sheet give the map the room left. */
+    /** The panel's presentation class; `map-open` / `search-open` let the sheet give the map or the results the room left. */
     panelClass(): string {
-      return `${this.mode === 'sheet' ? 'dash-sheet' : 'dash-drawer'}${this.mapShown ? ' map-open' : ''}`
+      return `${this.mode === 'sheet' ? 'dash-sheet' : 'dash-drawer'}${this.mapShown ? ' map-open' : ''}${this.searchOpen ? ' search-open' : ''}`
     },
 
     toggle(opener: HTMLElement | null): void {
@@ -146,6 +148,11 @@ export function stationPicker() {
     items(): ComboboxItem[] {
       const st = Alpine.store('station')
       return stationItems(st.list, Alpine.store('url').state.nets, st.id)
+    },
+    /** The search's result list opened or closed. On a phone the sheet goes full and the list fills it. */
+    searchList(open: boolean): void {
+      this.searchOpen = open
+      if (open && this.mode === 'sheet') ctl?.setState?.('full')
     },
     searchPlaceholder(): string {
       const c = Alpine.store('station').catalog

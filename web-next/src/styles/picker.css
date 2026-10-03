@@ -66,6 +66,13 @@
 .picker-browse-toggle[aria-expanded="true"] .picker-browse-caret { transform: rotate(180deg); }
 .picker-map-region { display: flex; flex-direction: column; gap: calc(2 * var(--gap-tight)); min-height: 0; }
 
+/* Phone sheet with search results open (stationPicker goes full): the list fills the sheet under the
+   field and scrolls on its own; recents, Near me and the map step aside until it closes. */
+.dash-sheet.search-open[data-state="full"] { height: calc(100dvh - var(--chrome-h, 52px) - var(--tabbar-h, 0px) - 0.5rem); }
+.dash-sheet.search-open .picker-group { display: none; }
+.dash-sheet.search-open .picker-search { flex: 1 1 auto; min-height: 0; }
+.dash-sheet.search-open .ctl-combobox-popup { position: static; flex: 1 1 auto; min-height: 0; max-height: none; }
+
 /* Montana is wide: a 4:3 frame in the drawer (map.css keeps it ≥ 240 px tall). */
 .picker-map { aspect-ratio: 4 / 3; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
 
