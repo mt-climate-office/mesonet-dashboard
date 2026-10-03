@@ -51,6 +51,8 @@ const datesSheet = async (page) => {
   await chartMenu('var-menu-button')(page)
   await page.getByTestId('var-menu-dates').click()
   await page.waitForFunction(() => !!document.querySelector('[data-testid="custom-dates"]'))
+  // The slide starts two frames after opening: wait until the panel is fully opaque, then for it to settle.
+  await page.waitForFunction(() => { const s = document.getElementById('sheet-dates'); return !s.classList.contains('enter') && getComputedStyle(s).opacity === '1' }, null, { timeout: 10000 })
   await animationsDone(page)
 }
 /** An About row's sheet, opened, once its content (`filled`) is in and the slide has ended. */
