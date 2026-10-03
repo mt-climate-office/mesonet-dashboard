@@ -15,3 +15,6 @@ export const LEGACY_DASHBOARD_URL = 'https://mesonet.climate.umt.edu/dash'
 
 export const FEEDBACK_URL =
   'https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN'
+
+/** GoatCounter endpoint for privacy-friendly page counts (core/analytics.ts). */
+export const GOATCOUNTER_URL = 'https://mt-climate-office.goatcounter.com/count'

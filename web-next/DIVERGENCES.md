@@ -897,6 +897,11 @@ and the preview on small screens. It wraps to two lines at 375px.
 - **Markdown:** a small built-in subset (`core/markdown.ts`): paragraphs, bold, italic, `[links](…)` and `<https://…>` autolinks. Raw HTML in the message shows as text. Only `http(s):` and `mailto:` targets become links (new tab, `rel="noopener noreferrer"`). react-markdown also rendered lists, headings and code, but outage messages have never used them.
 - **Why:** no Mantine or react-markdown. The message is remote content rendered with `x-html`, so it has to be escaped.
 
+### Page counts (GoatCounter)
+- **Legacy / web/:** no analytics in web/.
+- **New:** one GoatCounter beacon (`navigator.sendBeacon` to `mt-climate-office.goatcounter.com/count`) per section view, carrying only the path plus section (`/mesonet-dashboard/next/#charts`) and the section label. The station, query string and referrer are never sent, and there are no cookies or third-party script. It is skipped under Do Not Track or Global Privacy Control and on local hosts (dev, verify). The CSP `connect-src` allows that one host. The code is `core/analytics.ts` and `ui/shell/analytics.ts`.
+- **Why:** user decision (2026-10-02): privacy-friendly counts instead of no analytics or GA4.
+
 ### Legacy `?state=` links and `#satellite`
 - **web/:** a Mantine notification, open until closed, with a link to the previous dashboard.
 - **New:** a dismissible banner at the top of `<main>` carries the sentence and the link, and a plain-text kit toast (2800 ms) points to it. `state` is removed and the other params stay byte-for-byte (`core/legacyLinks.ts#withoutLegacyState`). `#satellite` becomes `#latest`, both on load and on later hash changes.
