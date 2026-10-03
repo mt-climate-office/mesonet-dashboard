@@ -2,7 +2,7 @@
  * Barrel for the Charts variable models:
  *  - catalog: stationVariables, variableGroups, variableId, variableIdForElement, findVariable, neighbors,
  *             chartsMode, LIST_AG_TOOLS
- *  - labels:  LABELS, plainName, formatReading, compassWord (plain names, units, precision)
+ *  - labels:  LABELS, plainName, formatValue, formatReading, compassWord (plain names, units, precision)
  *  - summary: variableRows (list values + sparklines), listRequest, primaryColumn
  *  - range:   RANGE_PRESETS, presetPatch, activePreset, rangeView
  *  - stats:   panelStats (min/max/mean or total)

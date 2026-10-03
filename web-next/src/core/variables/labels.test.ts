@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ELEM_MAP } from '../params'
 import { AG_TOOL_IDS } from '../params/ag'
-import { LABELS, compassWord, formatReading, plainName } from './labels'
+import { LABELS, compassWord, formatReading, formatValue, plainName } from './labels'
 
 describe('LABELS', () => {
   it('covers every element family and every Ag tool', () => {
@@ -44,6 +44,16 @@ describe('formatReading', () => {
   })
   it('an unknown id shows the number alone', () => {
     expect(formatReading('lfwt_0100', 3.14159)).toBe('3.14')
+  })
+})
+
+describe('formatValue', () => {
+  it('the number at the display precision, no unit', () => {
+    expect(formatValue('soil_vwc', 8.36)).toBe('8')
+    expect(formatValue('ppt', 0.049)).toBe('0.05')
+    expect(formatValue('gdd', 2412.4)).toBe('2,412')
+    expect(formatValue('air_temp', -0.3)).toBe('0')
+    expect(formatValue('rh', null)).toBe('—')
   })
 })
 
