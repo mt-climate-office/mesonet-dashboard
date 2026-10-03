@@ -60,6 +60,10 @@ export function initSheet(o: SheetOptions): Sheet {
 
   // Drag on the handle only, so the body keeps its own scrolling.
   let drag: { y0: number; t0: number; h: number; moved: boolean } | null = null
+  // A touch drag that ends above the sheet's top makes the browser click whatever is under the
+  // finger there: the scrim. That click is the end of the drag, not a request to close.
+  const SCRIM_GUARD_MS = 300
+  let handleUpAt = -Infinity
   const onDown = (e: PointerEvent) => {
     drag = { y0: e.clientY, t0: performance.now(), h: panel.offsetHeight, moved: false }
     handle.setPointerCapture(e.pointerId)
@@ -76,6 +80,7 @@ export function initSheet(o: SheetOptions): Sheet {
     if (!drag) return
     const { y0, t0, h, moved } = drag
     drag = null
+    handleUpAt = performance.now()
     const dy = e.clientY - y0
     const v = dy / Math.max(1, performance.now() - t0) // px/ms
     panel.style.transition = ''
@@ -97,7 +102,9 @@ export function initSheet(o: SheetOptions): Sheet {
   const onEnd = (e: TransitionEvent) => {
     if (e.target === panel && e.propertyName === 'max-height') publish()
   }
-  const onScrim = () => api.close()
+  const onScrim = () => {
+    if (performance.now() - handleUpAt > SCRIM_GUARD_MS) api.close()
+  }
   handle.addEventListener('pointerdown', onDown)
   handle.addEventListener('pointermove', onMove)
   handle.addEventListener('pointerup', onUp)
