@@ -5,13 +5,16 @@
  * `nowWallMs` (Denver wall clock), never from the system clock.
  */
 import type { ObservationRow } from '../api'
-import { compassWord } from '../variables/labels'
+import { compassWord, formatReading } from '../variables/labels'
 import type { PrecipSummary } from './precip'
 
 /** Smallest amount (in) counted as rain; the gauges resolve 0.01 in. */
 export const RAIN_MIN_IN = 0.01
 /** Dry spells longer than this read "no rain in over a week". */
 export const DRY_CAP_DAYS = 7
+
+/** A calm reading after a 24 h peak gust at least this strong (mph) says so. */
+export const NOTABLE_GUST_MPH = 25
 
 export type WindClass = 'calm' | 'light' | 'breezy' | 'windy'
 
@@ -102,6 +105,8 @@ export interface SummaryInput {
   windMph: number | null
   /** Direction the wind blows from, degrees. */
   windDeg: number | null
+  /** 24 h peak gust, mph (`peakGust`). */
+  peakGustMph?: number | null
   /** Rain since local midnight, in. */
   rainTodayIn: number | null
   /** From `daysSinceRain`. */
@@ -119,9 +124,12 @@ export function isEvening(nowWallMs: number): boolean {
 /** One sentence from the parts that are known; "" when none are. */
 export function summarize(input: SummaryInput): string {
   const sky = skyPhrase(input.shortForecast)
+  const wind = input.windMph === null ? null : windPhrase(input.windMph, input.windDeg)
+  const gust = input.peakGustMph ?? null
   const parts = [
     sky && (isEvening(input.nowWallMs) ? `${sky} tonight` : sky),
-    input.windMph === null ? null : windPhrase(input.windMph, input.windDeg),
+    // A calm reading after a windy day says so: "calm after gusts to 43 mph earlier".
+    wind === 'calm' && gust !== null && gust >= NOTABLE_GUST_MPH ? `calm after gusts to ${formatReading('windgust', gust)} earlier` : wind,
     rainPhrase(input.rainTodayIn, input.daysSinceRain),
   ].filter((x): x is string => !!x)
   if (!parts.length) return ''
