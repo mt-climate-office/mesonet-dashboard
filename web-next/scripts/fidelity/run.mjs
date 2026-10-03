@@ -138,10 +138,15 @@ async function mapCheck(map, station, required) {
   return { status: bad ? 'WARN' : 'PASS', note: bad ? 'station list/selection differs from /stations' : undefined, rows: rows.length, catalog: ids.length, missing: missing.slice(0, 20), extra, current, canvas: map.canvas }
 }
 
+/** web/ wording → web-next's plain name in Ag notes: DOCUMENTED (DIVERGENCES "Charts: plain names in tooltips and tables"). */
+const DOCUMENTED_WORDING = [[/^Percent saturation /, 'Soil saturation ']]
+
 function messageCheck(ca, cb) {
   const norm = (l) => (l ?? []).map((m) => m.replace(/\s+/g, ' ').trim()).filter(Boolean)
-  const d = setDiff(norm(ca?.messages), norm(cb?.messages))
-  return { status: d.onlyA.length || d.onlyB.length ? 'WARN' : 'PASS', ...d }
+  let renamed = false
+  const a = norm(ca?.messages).map((m) => DOCUMENTED_WORDING.reduce((s, [re, to]) => (re.test(s) ? ((renamed = true), s.replace(re, to)) : s), m))
+  const d = setDiff(a, norm(cb?.messages))
+  return { status: d.onlyA.length || d.onlyB.length ? 'WARN' : renamed ? 'DOCUMENTED' : 'PASS', ...d }
 }
 
 async function runLatest(browser) {
@@ -190,7 +195,16 @@ async function runLatest(browser) {
         const roseTitle = figs.includes('windrose') && ca.figures.find((f) => f.role === 'windrose')?.title
         if (roseTitle) {
           const text = (cb.cards?.top?.titles ?? []).join(' ')
-          cmp.cards.windTitle = text.includes(roseTitle) ? { status: 'PASS' } : { status: 'WARN', note: `title "${roseTitle}" not in web-next card`, lines: { onlyA: [roseTitle], onlyB: [] } }
+          // web-next words it plainly ("Wind, Sep 17 – Sep 19"): the same dates are DOCUMENTED.
+          const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+          const md = (d) => `${MON[Number(d.slice(5, 7)) - 1]} ${Number(d.slice(8, 10))}`
+          const span = /(\d{4}-\d\d-\d\d) to (\d{4}-\d\d-\d\d)/.exec(roseTitle)
+          const sameDates = span && text.includes(md(span[1])) && text.includes(md(span[2]))
+          cmp.cards.windTitle = text.includes(roseTitle)
+            ? { status: 'PASS' }
+            : sameDates
+              ? { status: 'DOCUMENTED', note: `plain wording of "${roseTitle}": DIVERGENCES "Charts: plain names in tooltips and tables"` }
+              : { status: 'WARN', note: `title "${roseTitle}" not in web-next card`, lines: { onlyA: [roseTitle], onlyB: [] } }
         }
         cmp.map = await mapCheck(cb.map, st, sc.id === 'info-map')
         cmp.network = network(ca, cb)
@@ -253,8 +267,8 @@ async function runDownloader(browser) {
       const cb = await capture('downloader', st, sc.id, 'B', () => captureDownloader(browser, B, st, sc, range, dir))
       if (!ca || !cb) continue
       const cmp = { csv: compareCsv(ca, cb), figures: figurePairs(ca, cb), palette: paletteCheck(cb.figures ?? [], cb.palette), network: network(ca, cb) }
-      cmp.map = await mapCheck(cb.map, st, true)
-      cmp.status = cmp.csv.status === 'ERROR' ? 'ERROR' : worst(cmp.csv.status, cmp.figures.map((f) => f.status), cmp.palette.status, cmp.map.status, cmp.network.newInB.length ? 'WARN' : 'PASS')
+      // web-next's Download sheet has no map (the header picks the station), so no map check.
+      cmp.status = cmp.csv.status === 'ERROR' ? 'ERROR' : worst(cmp.csv.status, cmp.figures.map((f) => f.status), cmp.palette.status, cmp.network.newInB.length ? 'WARN' : 'PASS')
       if (cmp.csv.status === 'ERROR') cmp.error = cmp.csv.error
       const item = { station: st, scenario: sc.id, status: cmp.status, summary: summarize(cmp), comparison: cmp, urls: [ca.url, cb.url], shots: [ca.shot, cb.shot] }
       run.items.push(item)

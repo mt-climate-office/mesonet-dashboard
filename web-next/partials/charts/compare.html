@@ -1,12 +1,15 @@
-<!-- Compare (cmp=1; legacy #latest links land here): the stacked station plot, one panel per variable
-     (x-data="compare", ui/charts/compare.ts) and its options (x-data="compareControls",
-     ui/charts/compareControls.ts) in a disclosure: beside the plot on desktop, above it on phones. -->
+<!-- Compare (cmp=1; legacy #latest links land here; "Compare variables" in the list): back · title,
+     the stacked station plot, one panel per variable (x-data="compare", ui/charts/compare.ts) and its
+     options (x-data="compareControls", ui/charts/compareControls.ts) in a disclosure: beside the plot
+     on desktop, above it on phones. Flat surfaces, as the chart pages. -->
 <div class="cmp" data-testid="compare">
-  <div class="dash-section-head">
-    <a class="dash-link var-back" :href="listHref()" @click="toList($event)">‹ All variables</a>
-    <h2 class="dash-section-title" id="charts-compare-title" tabindex="-1" data-vt-target>Compare</h2>
-    <p class="dash-section-note">Several variables stacked on one time axis.</p>
+  <div class="chart-head">
+    <a class="dash-icon-btn var-back" :href="listHref()" @click="toList($event)" aria-label="All variables" data-testid="cmp-back">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </a>
+    <h2 class="chart-title" id="charts-compare-title" tabindex="-1" data-vt-target>Compare variables</h2>
   </div>
+  <p class="chart-sub">Several variables stacked on one time axis.</p>
 
   <div class="cmp-layout">
     <details class="dash-card cmp-options" x-data="compareControls" data-testid="compare-options">
@@ -63,7 +66,7 @@
       </div>
     </details>
 
-    <section class="cmp-plot" aria-label="Station timeseries" x-data="compare" data-testid="latest-timeseries">
+    <section class="dash-card cmp-plot" aria-label="Station timeseries" x-data="compare" data-testid="latest-timeseries">
       <div class="cmp-status" x-show="status().kind !== 'ready'" data-testid="timeseries-status">
         <template x-if="status().kind === 'loading'">
           <div><p class="sr-only" role="status">Loading station data…</p><span class="dash-skel dash-skel--chart" aria-hidden="true"></span></div>

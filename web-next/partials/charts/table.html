@@ -1,0 +1,27 @@
+<!-- A chart shown as a table (tbl=1): the body of x-data="chartTable({ table: () => … })"
+     (ui/charts/chartTable.ts), which the including page puts on the wrapper. A real <table> in a
+     focusable, labelled scroll region (it scrolls sideways inside itself, never the page),
+     newest rows first, Newer / Older. -->
+<template x-if="!table">
+  <span class="dash-skel dash-skel--table" aria-hidden="true"></span>
+</template>
+<template x-if="table">
+  <div>
+    <div class="var-table-scroll" tabindex="0" role="region" :aria-label="table.caption" data-no-swipe>
+      <table class="var-table-grid">
+        <caption class="sr-only" x-text="table.caption + ', newest first'"></caption>
+        <thead><tr><template x-for="c in table.columns" :key="c"><th scope="col" x-text="c"></th></template></tr></thead>
+        <tbody>
+          <template x-for="(r, i) in view.rows" :key="i">
+            <tr><template x-for="(cell, j) in r" :key="j"><td x-text="cell"></td></template></tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+    <div class="var-pager">
+      <button type="button" class="nav-btn" :disabled="view.page <= 1" @click="page = view.page - 1">Newer</button>
+      <span role="status" x-text="view.summary"></span>
+      <button type="button" class="nav-btn" :disabled="view.page >= view.pages" @click="page = view.page + 1">Older</button>
+    </div>
+  </div>
+</template>

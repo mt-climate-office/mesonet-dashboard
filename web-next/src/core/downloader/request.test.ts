@@ -97,11 +97,13 @@ describe('orderColumns', () => {
 
 describe('elementLabel', () => {
   it('converts metric depths/heights like legacy dist_swap', () => {
-    expect(elementLabel('Soil VWC @ -10 cm')).toBe('Soil VWC @ 4 in')
-    expect(elementLabel('Soil VWC @ -100 cm')).toBe('Soil VWC @ 40 in')
-    expect(elementLabel('Air Temperature @ 2 m')).toBe('Air Temperature @ 6.6 ft')
-    expect(elementLabel('Wind Speed @ 10 m')).toBe('Wind Speed @ 33 ft')
-    expect(elementLabel('Air Temperature @ 8 ft')).toBe('Air Temperature @ 8 ft')
+    expect(elementLabel('Soil VWC @ -10 cm')).toBe('Soil moisture at 4 in')
+    expect(elementLabel('Soil VWC @ -100 cm')).toBe('Soil moisture at 40 in')
+    expect(elementLabel('Air Temperature @ 2 m')).toBe('Air temperature at 6.6 ft')
+    expect(elementLabel('Wind Speed @ 10 m')).toBe('Wind at 33 ft')
+    expect(elementLabel('Air Temperature @ 8 ft')).toBe('Air temperature at 8 ft')
+    expect(elementLabel('Precipitation')).toBe('Rain')
+    expect(elementLabel('Battery Voltage')).toBe('Battery Voltage')
   })
 })
 

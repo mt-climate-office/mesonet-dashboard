@@ -5,3 +5,8 @@
 @media (max-width: 640px) {
   .chart-canvas { height: var(--chart-height-compact, 320px); }
 }
+
+/* kit-override: ECharts creates its tooltip element empty and keeps it in the DOM; the kit's
+   .mco-tooltip border and backdrop blur showed it as a faint empty outline under some charts on
+   phones. An empty tooltip (never shown yet) takes no box at all; ECharts fills it before showing. */
+.chart .mco-tooltip:empty { display: none !important; }

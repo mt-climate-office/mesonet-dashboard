@@ -6,6 +6,8 @@
  */
 import type { CciClass, FeelsLikeRegime, LocalDate, LocalDateTime, Nullable } from '../contract'
 import { cToF, kPaToBar, mmToIn, msToMph } from '../compute'
+import { elementLabel } from '../../downloader/labels'
+import { axisTitle, cumulativeTitle, plainUnit } from '../../variables/labels'
 
 export type Period = 'daily' | 'hourly'
 
@@ -33,11 +35,11 @@ export const CCI_CLASSES: CciClass[] = [
 
 /** Soil profile heatmap labels and units (display units; SWP drawn on log10 bar). */
 export const PROFILE_META: Record<SoilProfileVar, { label: string; units: string; mid?: number }> = {
-  soil_vwc: { label: 'Soil VWC [%]', units: '%' },
-  soil_temp: { label: 'Soil Temperature [°F]', units: '°F', mid: 32 },
-  soil_blk_ec: { label: 'Soil Electrical Conductivity [mS/cm]', units: 'mS/cm' },
-  swp: { label: 'Soil Water Potential [bar]', units: 'bar' },
-  percent_saturation: { label: 'Percent Saturation [%]', units: '%' },
+  soil_vwc: { label: axisTitle('soil_vwc', 'Soil moisture'), units: '%' },
+  soil_temp: { label: axisTitle('soil_temp', 'Soil temperature'), units: '°F', mid: 32 },
+  soil_blk_ec: { label: axisTitle('soil_ec_blk', 'Soil salinity (EC)'), units: 'mS/cm' },
+  swp: { label: axisTitle('swp', 'Soil water potential'), units: 'bar' },
+  percent_saturation: { label: axisTitle('percent_saturation', 'Soil saturation'), units: '%' },
 }
 
 /**
@@ -76,11 +78,16 @@ export function parseLabel(header: string | null | undefined): { name: string; u
   return { name: m?.[1] ?? header, unit: m?.[2] ?? null }
 }
 
-/** Legacy y label: `Precipitation [in]` → "Annual Cumulative Precipitation [in]". */
+/**
+ * Annual comparison y label in plain words (core/downloader `elementLabel`,
+ * `plainUnit`): "Average Air Temperature @ 2 m [°F]" → "Air temperature at
+ * 6.6 ft (°F)"; cumulative "Total Precipitation [in]" → "Cumulative rain (in)".
+ */
 export function annualAxisLabel(header: string | null | undefined, cumulative: boolean): string {
   const { name, unit } = parseLabel(header)
-  const base = unit ? `${name} [${unit}]` : name
-  return cumulative ? `Annual Cumulative ${base}` : base
+  const plain = name ? elementLabel(name) : ''
+  const base = unit ? `${plain} (${plainUnit(unit)})` : plain
+  return cumulative ? cumulativeTitle(base) : base
 }
 
 /** "V1 (Emergence)", or "2 – Two leaves" when the stage id and name differ. */

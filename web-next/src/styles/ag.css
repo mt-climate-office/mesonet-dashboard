@@ -1,67 +1,33 @@
-/* Ag section (partials/ag/*): the tool cards, the open tool's Options
-   disclosure and chart card, and the chart states. Panels are .dash-card
-   (ui/layout/card.css); sizes are the --fs-* scale; kit tokens only.
-   Inputs are 16 px on touch through ui/controls/controls.css. */
+/* An Ag tool inside Charts (partials/ag/*), in the chart-page frame (charts.css): its option chips
+   and their popovers (ui/layout/popover.css), the chart card and the chart states. Panels are
+   .dash-card (ui/layout/card.css); sizes are the --fs-* scale; kit tokens only. Inputs are 16 px on
+   touch through ui/controls/controls.css. */
 
-.ag { display: flex; flex-direction: column; gap: 0.75rem; }
-.ag-landing, .ag-open { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
-.ag-heading { margin: 0; font-size: var(--fs-lg); font-weight: 600; color: var(--text-primary); }
-.ag-back { align-self: flex-start; gap: 0.2rem; } /* gap: inline-flex on touch drops the space after ‹ */
-
-/* Tool cards: one per tool, as many columns as fit. */
-.ag-tools { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
-.ag-tools > li { display: flex; min-width: 0; }
-.ag-tool { flex: 1; }
-.ag-tool-title { margin: 0 0 0.25rem; font-size: var(--fs-md); font-weight: 600; color: var(--text-primary); }
-.ag-tool-desc { margin: 0; font-size: var(--fs-sm); line-height: 1.45; color: var(--text-secondary); }
-
-/* Options disclosure: a one-line summary (ellipsis), then the controls. */
-.ag-options-summary {
-  display: flex; align-items: center; gap: 0.5rem;
-  min-height: 32px; cursor: pointer; list-style: none;
-}
-.ag-options-summary::-webkit-details-marker { display: none; }
-.ag-options-summary::before {
-  content: "\25B8" / ""; flex-shrink: 0;
-  color: var(--text-secondary); transition: transform var(--transition);
-}
-.ag-options[open] > .ag-options-summary::before { transform: rotate(90deg); }
-.ag-options[open] > .ag-options-summary { margin-bottom: 0.75rem; }
-.ag-options-label { flex-shrink: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary); }
-.ag-options-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--text-secondary); }
-@media (hover: none) { .ag-options-summary { min-height: 40px; } }
-
-/* Controls: three columns on desktop, stacked below 900 px. */
-.ag-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem 1.5rem; }
-@media (max-width: 900px) { .ag-controls { grid-template-columns: minmax(0, 1fr); } }
-.ag-col, .ag-stack { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
-.ag-row { display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap; }
-.ag-grow { flex: 1; min-width: min(100%, 12rem); }
-.ag-learn { gap: 0.35rem; min-height: 34px; }
+/* Option chips: a raised pill per option naming its value, with a caret; they wrap. */
+.ag-opts-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.ag-opts { flex-wrap: wrap; overflow: visible; }
+.ag-opt { color: var(--text-primary); }
+.ag-opt svg { color: var(--text-muted); }
+.ag-opt[aria-expanded="true"] { background: var(--accent-hover); }
 .ag-retry { min-height: 28px; font-size: var(--fs-xs); margin-left: 0.4rem; }
 .ag-retry-row { display: flex; justify-content: center; margin-top: -0.5rem; }
 .ag-reset { align-self: flex-start; font-size: var(--fs-xs); }
 /* Touch: the compact heights above must not undercut the kit's 40 px .nav-btn target (HOUSE-STYLE §5.5). */
-@media (hover: none) { .ag-learn, .ag-retry { min-height: 40px; } }
+@media (hover: none) { .ag-retry { min-height: 40px; } }
 
 /* Chart card: shorter on phones so the page around it stays reachable. */
+.ag-view { display: flex; flex-direction: column; gap: 0.75rem; }
 .ag-chart { --chart-height: 540px; --chart-height-compact: min(60dvh, 420px); }
-.ag-notes { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
-.ag-note {
-  display: flex; gap: 0.45rem; align-items: flex-start;
-  font-size: var(--fs-xs); color: var(--text-secondary);
-  background: var(--bg-raised);
-  border: 1px solid var(--border); border-radius: var(--radius-md);
-  padding: 0.4rem 0.6rem;
-}
-.ag-note > svg { flex-shrink: 0; margin-top: 0.1rem; stroke: var(--text-secondary); }
+/* Notes: one ⓘ toggletip, right-aligned on its own short row; the tip opens under it, as wide as the card. */
+.ag-notes { position: relative; display: flex; justify-content: flex-end; margin: 0 0.25rem; }
+.ag-notes-tip { inset-inline: 0; max-width: none; }
+.ag-notes-tip:not([hidden]) { display: flex; flex-direction: column; gap: 0.4rem; }
 .ag-state {
-  min-height: 12rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 12rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;
   font-size: var(--fs-sm); color: var(--text-secondary); text-align: center; padding: 1rem;
 }
 .ag-error { color: var(--text-primary); }
 .ag-error::before { content: "\26A0\FE0E  " / ""; }
-.ag-no-station-title { font-weight: 700; color: var(--text-primary); }
 
 .ag-spinner {
   width: 22px; height: 22px; border-radius: 50%;

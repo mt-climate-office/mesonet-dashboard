@@ -2,15 +2,16 @@
  * `x-data="agGddView"`: the growing degree days card (partials/ag/gdd.html).
  * Daily observations + vendored stage tables → core `gddView`; when the
  * window ends today, gridMET normals and the NWS gridpoint forecast feed
- * the projection.
+ * the projection. Also its table (tbl=1) and the stats card (so far, stage).
  */
 import Alpine from 'alpinejs'
-import type { GddModel } from '../../core/charts'
+import type { ChartTable, GddModel } from '../../core/charts'
+import { gddStats, type AgStat } from '../../core/ag/view/stats'
 import { type AgView, gate, gddView } from '../../core/ag/view/results'
 import { AG_TTL, agKeys, forecastNeedsRetry } from '../../core/ag/view/keys'
 import { projectionThrough } from '../../core/ag/view/projection'
 import { fetchDailyMet, fetchDailyNormals, fetchForecastDaily, loadGddStages, type ForecastResult } from '../../core/ag/data'
-import { denverToday } from '../../core/ag/data/parse'
+import { denverToday } from '../../core/today'
 import { component } from '../component'
 import { AG_CHARTS, LOADING, currentTab, raw, trackView, windowQuery } from './shared'
 
@@ -19,6 +20,12 @@ export function agGddView() {
   return component({
     view: LOADING as AgView<GddModel>,
     charts: AG_CHARTS,
+    tableOf(): ChartTable | null {
+      return this.view.model ? AG_CHARTS.gdd.table(this.view.model) : null
+    },
+    stats(): AgStat[] {
+      return gddStats(this.view.model)
+    },
     init() {
       stop = trackView(this, () => compute())
     },

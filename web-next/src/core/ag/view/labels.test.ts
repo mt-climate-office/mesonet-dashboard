@@ -26,9 +26,10 @@ describe('Ag display helpers', () => {
     expect(stageText(null, null)).toBe('')
   })
 
-  it('annual axis labels follow legacy', () => {
-    expect(annualAxisLabel('Total Precipitation [in]', true)).toBe('Annual Cumulative Precipitation [in]')
-    expect(annualAxisLabel('Average Air Temperature @ 2 m [°F]', false)).toBe('Air Temperature @ 2 m [°F]')
+  it('annual axis labels in plain words and units', () => {
+    expect(annualAxisLabel('Total Precipitation [in]', true)).toBe('Cumulative rain (in)')
+    expect(annualAxisLabel('Average Air Temperature @ 2 m [°F]', false)).toBe('Air temperature at 6.6 ft (°F)')
+    expect(annualAxisLabel('Average Wind Speed @ 10 m [mi/hr]', false)).toBe('Wind at 33 ft (mph)')
   })
 
   it('fromSi inverts the data layer conversions', () => {

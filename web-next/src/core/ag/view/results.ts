@@ -210,8 +210,8 @@ export function soilView(i: SoilInputs): AgView<SoilChart> {
   if (pct) {
     notes.push(
       POROSITY_SOURCE === 'api'
-        ? 'Percent saturation uses the Mesonet API’s soil porosity for each depth.'
-        : 'Percent saturation uses published mesonet-soils porosity for each depth.',
+        ? 'Soil saturation uses the Mesonet API’s soil porosity for each depth.'
+        : 'Soil saturation uses published mesonet-soils porosity for each depth.',
     )
   }
   if (swp) {

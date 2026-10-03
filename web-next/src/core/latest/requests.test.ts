@@ -12,6 +12,12 @@ describe('recordRequest', () => {
     expect(recordRequest({ station: 'x', window, agg: 'daily', vars: [] })).toBeNull()
     expect(recordRequest({ station: 'x', window: { ...window, valid: false }, agg: 'daily', vars: ['Air Temperature'] })).toBeNull()
   })
+  it('extremes: the daily min and max, without Reference ET, keyed apart from the mean', () => {
+    const r = recordRequest({ station: 'acebozem', window, agg: 'daily', vars: ['Air Temperature'], extremes: true })!
+    expect(r.key).toBe('obs:acebozem:daily:2026-09-17:2026-10-01:air_temp::minmax')
+    expect(r.query).toMatchObject({ elements: 'air_temp', hasEtr: false, aggFunc: ['min', 'max'] })
+    expect(recordRequest({ station: 'x', window, agg: 'daily', vars: ['Reference ET'], extremes: true })).toBeNull()
+  })
   it('names the metadata keys by station', () => {
     expect([elementsKey('a'), configKey('a'), normalsKey('a', 'Precipitation')]).toEqual(['elements:a', 'config:a', 'normals:a:Precipitation'])
   })

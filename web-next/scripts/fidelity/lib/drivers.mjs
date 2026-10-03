@@ -1,8 +1,8 @@
 // Scenario drivers: open one tab of web/ (kind 'web') or web-next (kind 'next') from a deep link,
 // wait for render evidence (never networkidle), and return a capture:
 //   { url, figures[], cards{}, map, media, palette, messages[], download, log, shot, loadMs, error }
-// web-next pages follow the P1 routes: Latest → Compare / Now / About (config `sc.next`),
-// #downloader → #download; Ag deep links carry `var`, so they open the tool, not the cards.
+// web-next pages follow its routes: Latest → Compare / Now / About (config `sc.next`); an Ag
+// tool is #charts&v=<tool> (web/'s `var`); the Downloader is the Download sheet, #charts&dl=1.
 import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import { appUrl, TIMEOUTS } from '../config.mjs'
@@ -63,11 +63,13 @@ async function waitQuiet(page, log, kind) {
 
 async function messages(page, kind) {
   return page.evaluate((kind) => {
-    // web/ empty states are plain Mantine Text; web-next's are ag-empty / ag-error.
-    const sel = kind === 'web' ? '.mantine-Alert-root, .mantine-Notification-root, .mantine-Text-root' : '[data-testid="ag-notes"] li, [data-testid="ag-empty"], [data-testid="ag-error"], .dl-msg, [data-testid="notices"]'
+    // web/ empty states are plain Mantine Text; web-next's are ag-empty / ag-error. web-next's Ag notes
+    // sit in a closed ⓘ toggletip (.ag-note), so they count while hidden.
+    const sel = kind === 'web' ? '.mantine-Alert-root, .mantine-Notification-root, .mantine-Text-root' : '[data-testid="ag-notes"] .ag-note, [data-testid="ag-empty"], [data-testid="ag-error"], .dl-msg, [data-testid="notices"]'
+    const note = (e) => e.classList.contains('ag-note') && e.closest('[data-testid="ag-notes"]')?.offsetParent !== null
     return [...document.querySelectorAll(sel)]
-      .filter((e) => e.offsetParent !== null)
-      .map((e) => [e, e.innerText.replace(/\s+/g, ' ').trim()])
+      .filter((e) => e.offsetParent !== null || note(e))
+      .map((e) => [e, e.textContent.replace(/\s+/g, ' ').trim()])
       .filter(([e, t]) => t && (!e.classList.contains('mantine-Text-root') || (!e.closest('.mantine-Alert-root') && /^No .*(data|selection)/i.test(t))))
       .map(([, t]) => t)
   }, kind)
@@ -113,8 +115,8 @@ const nextLatestReady = (tab) => {
     const rose = q('[data-testid="wind-rose-chart"]')
     return !!(q('[data-testid="now-empty"]') || (q('[data-testid="now-tiles"]') && !q('[data-testid="now-media"] > .dash-skel') && (!rose || rose.querySelector('canvas'))))
   }
-  // About: the readings settled, the details listed, the map drawn.
-  return !!(q('[data-testid="about-empty"]') || ((q('[data-testid="about-readings-table"]') || q('.about-message')) && q('.about-dl-row') && q('[data-testid="about-map"] canvas')))
+  // About: the details listed (the record ends once /latest is in), the map drawn.
+  return !!(q('[data-testid="about-empty"]') || ([...document.querySelectorAll('.about-dl-row')].some((r) => / – /.test(r.textContent)) && q('[data-testid="about-map"] canvas')))
 }
 
 export function captureLatest(browser, target, station, sc, outDir) {
@@ -123,6 +125,11 @@ export function captureLatest(browser, target, station, sc, outDir) {
   return withPage(browser, target, url, join(outDir, 'shots'), `${station}-${sc.id}-${target.kind}`, async (page, log, res) => {
     if (next) await page.waitForFunction(nextLatestReady, sc.next.tab, { timeout: TIMEOUTS.render, polling: 300 })
     else await page.waitForFunction(webLatestReady, null, { timeout: TIMEOUTS.render, polling: 300 })
+    // About's readings live in a sheet: open it from its row and wait for the table (or its message).
+    if (next && Object.values(sc.next.cards ?? {}).includes('[data-testid="about-readings"]')) {
+      await page.click('#about-readings')
+      await page.waitForFunction(() => document.querySelector('[data-testid="about-readings-table"] tbody tr, [data-testid="about-readings"] .about-message'), null, { timeout: TIMEOUTS.render, polling: 300 })
+    }
     await waitQuiet(page, log, target.kind)
     res.figures = await figures(page, target, 'latest')
     res.cards = await extractCards(page, next ? sc.next.cards : await tagWebCards(page))
@@ -142,12 +149,15 @@ const webAgReady = () =>
 
 const nextAgReady = () => {
   const vis = (s) => [...document.querySelectorAll(s)].some((e) => e.offsetParent !== null)
-  return vis('.ag-chart-card .chart-canvas canvas') || vis('[data-testid="ag-empty"]') || vis('[data-testid="ag-error"]') || vis('[data-testid="ag-no-station"]')
+  return vis('.ag-chart-card .chart-canvas canvas') || vis('[data-testid="ag-empty"]') || vis('[data-testid="ag-error"]') || vis('[data-testid="ag-no-station"]') || vis('[data-testid="ag-not-here"]')
 }
 
+/** web-next names the open Ag tool `v` (one namespace with the Charts variables); web/ calls it `var`. */
+const agParams = (target, { var: tool, ...rest }) => (target.kind === 'next' ? { ...rest, v: tool } : { ...rest, var: tool })
+
 export function captureAg(browser, target, station, sc, range, outDir) {
-  const params = { ...sc.params, ...(range ? { ag_from: range.start, ag_to: range.end } : {}) }
-  const url = appUrl(target, station, { tab: 'ag', params })
+  const params = agParams(target, { ...sc.params, ...(range ? { ag_from: range.start, ag_to: range.end } : {}) })
+  const url = appUrl(target, station, { tab: target.kind === 'next' ? 'charts' : 'ag', params })
   return withPage(browser, target, url, join(outDir, 'shots'), `${station}-${sc.id}-${target.kind}`, async (page, log, res) => {
     await page.waitForFunction(target.kind === 'web' ? webAgReady : nextAgReady, null, { timeout: TIMEOUTS.render, polling: 300 })
     await waitQuiet(page, log, target.kind)
@@ -167,8 +177,8 @@ async function readDownload(dl, dir, tag) {
 }
 
 export function captureDownloader(browser, target, station, sc, range, outDir) {
-  const params = { els: sc.elements, period: sc.period, qc: sc.qc, dl_from: range.start, dl_to: range.end }
-  const url = appUrl(target, station, { tab: target.kind === 'next' ? 'download' : 'downloader', params })
+  const params = { els: sc.elements, period: sc.period, qc: sc.qc, dl_from: range.start, dl_to: range.end, ...(target.kind === 'next' ? { dl: 1 } : {}) }
+  const url = appUrl(target, station, { tab: target.kind === 'next' ? 'charts' : 'downloader', params })
   const tag = `${station}-${sc.id}-${target.kind}`
   return withPage(browser, target, url, join(outDir, 'shots'), tag, async (page, log, res) => {
     let runBtn, dlBtn
@@ -178,13 +188,11 @@ export function captureDownloader(browser, target, station, sc, range, outDir) {
       await runBtn.waitFor({ timeout: TIMEOUTS.render })
       await settle(log)
     } else {
+      // One button: Preview (dl-run), then "Download CSV · N rows" (dl-download); aria-disabled while it cannot act.
       runBtn = page.locator('[data-testid="dl-run"]')
       dlBtn = page.locator('[data-testid="dl-download"]')
-      // Run waits for the station catalog and the element list (DIVERGENCES "Run waits for the station catalog").
-      await page.waitForFunction(() => {
-        const b = document.querySelector('[data-testid="dl-run"]')
-        return b && !b.disabled
-      }, null, { timeout: TIMEOUTS.render, polling: 300 })
+      // Preview waits for the station catalog and the element list (DIVERGENCES "Preview waits for the station catalog").
+      await page.waitForFunction(() => document.querySelector('[data-testid="dl-run"]')?.getAttribute('aria-disabled') === 'false', null, { timeout: TIMEOUTS.render, polling: 300 })
       await settle(log)
     }
     await runBtn.click()
@@ -193,7 +201,7 @@ export function captureDownloader(browser, target, station, sc, range, outDir) {
         (k) =>
           k === 'web'
             ? [...document.querySelectorAll('.js-plotly-plot')].some((g) => g.data?.length) || !!document.querySelector('.mantine-Alert-root')
-            : !document.querySelector('[data-testid="dl-download"]')?.disabled || [...document.querySelectorAll('.dl-msg, .dl-preview-status.is-error')].some((e) => e.offsetParent !== null),
+            : document.querySelector('[data-testid="dl-download"]')?.getAttribute('aria-disabled') === 'false' || [...document.querySelectorAll('.dl-msg, .dl-reason, .dl-preview-status.is-error')].some((e) => e.offsetParent !== null),
         target.kind,
         { timeout: TIMEOUTS.render, polling: 300 },
       )
@@ -202,6 +210,5 @@ export function captureDownloader(browser, target, station, sc, range, outDir) {
     res.figures = await figures(page, target, 'downloader')
     const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60_000 }), dlBtn.click()])
     res.download = await readDownload(dl, join(outDir, 'files'), tag)
-    if (target.kind === 'next') res.map = await extractMap(page, '[data-testid="dl-map"]')
   })
 }

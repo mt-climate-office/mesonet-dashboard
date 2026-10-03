@@ -64,9 +64,9 @@ export interface SeriesQuery {
   gridmet: boolean
 }
 
-/** The request for a series query (null: nothing to ask for). */
-export function seriesRequest(q: SeriesQuery): RecordRequest | null {
-  return recordRequest({ station: q.station, window: q.window, agg: q.agg, vars: q.vars, stationElements: stationElements(q.station) })
+/** The request for a series query (null: nothing to ask for); `extremes`: its daily min/max instead (core/latest `recordRequest`). */
+export function seriesRequest(q: SeriesQuery, extremes = false): RecordRequest | null {
+  return recordRequest({ station: q.station, window: q.window, agg: q.agg, vars: q.vars, stationElements: stationElements(q.station), extremes })
 }
 
 /**

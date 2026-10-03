@@ -46,7 +46,7 @@ describe('latestTimeseriesChart', () => {
       expect(z.xAxisIndex).toEqual([0, 1, 2])
       expect([z.startValue, z.endValue]).toEqual(view)
     }
-    expect(o.yAxis[0].name).toBe('Precipitation\n(inches/hour)')
+    expect(o.yAxis[0].name).toBe('Rain (in)')
     expect(o.yAxis[0].min).toBe(0)
   })
 
@@ -119,6 +119,14 @@ describe('latestTimeseriesChart', () => {
     expect(html).toContain('affecting the following elements:<br>Air Temperature')
   })
 
+  it('tooltip rows use the plain name and unit, never the API column', () => {
+    const o = build(model(hourRows(3, (i) => ({ 'Wind Speed [mi/hr]': 5 + i })), ['Wind Speed']))
+    const html = o.tooltip.formatter([{ seriesIndex: 0, value: [view[0], 6], axisValue: view[0], marker: '' }])
+    expect(html).toContain('Wind')
+    expect(html).toContain('6 mph')
+    expect(html).not.toContain('mi/hr')
+  })
+
   it('daily rows sit at local noon', () => {
     const rows = [1, 2, 3].map((d) => ({ station: 'x', datetime: `2026-07-0${d}`, 'Air Temperature @ 2 m [°F]': 60 })) as ObservationRow[]
     const line = dataSeries(build(model(rows, ['Air Temperature'], {}, 'daily')))[0]
@@ -134,8 +142,8 @@ describe('latestTimeseriesChart', () => {
 describe('latestTimeseriesTable', () => {
   it('a row per time step with data and a column per plotted column', () => {
     const t = latestTimeseriesTable(model(hourRows(3, met), ['Precipitation', 'Air Temperature']))
-    expect(t.columns).toEqual(['Time (MT)', 'Precipitation [in]', 'Air Temperature @ 2 m [°F]'])
-    expect(t.rows[0]).toEqual(['2026-07-01 00:00', '0', '60'])
+    expect(t.columns).toEqual(['Time (MT)', 'Rain (in)', 'Air temperature (°F)'])
+    expect(t.rows[0]).toEqual(['2026-07-01 00:00', '0.00', '60.0']) // LABELS digits.table: one precision per variable
     expect(t.rows).toHaveLength(3)
   })
   it(`caps the twin at ${TABLE_ROW_LIMIT} rows with a closing note`, () => {

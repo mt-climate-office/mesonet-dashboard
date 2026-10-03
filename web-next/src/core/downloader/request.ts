@@ -12,6 +12,7 @@ import { aggregateMonthly, DAYS_WITH_DATA_COLUMN, type Row } from '../aggregate'
 import { exclusiveEnd, fetchText, HttpError } from '../api'
 import { MISSING_DATA_COLUMN, parseCsv } from '../csv'
 import { DERIVED_ENDPOINTS, ENDPOINTS } from '../params'
+import { LABELS } from '../variables/labels'
 
 /** Union of row keys in first-seen order. */
 function mergeKeyOrder(rows: ReadonlyArray<Row>): string[] {
@@ -33,23 +34,24 @@ export type QcLevel = 0 | 1 | 2
  */
 export const DEFAULT_QC_LEVEL: QcLevel = 2
 
+/** The Quality row, cleanest first. Plain labels; the `level` sent is the value (0 raw, 1 provisional, 2 QC). */
 export const QC_LEVEL_OPTIONS: ReadonlyArray<{ value: QcLevel; label: string; description: string }> = [
-  {
-    value: 0,
-    label: 'Raw',
-    description: 'Exactly as reported by the station; no QC applied.',
-  },
-  {
-    value: 1,
-    label: 'Provisional',
-    description:
-      'Only hard range breaches removed at ingest; values the daily QC checks would reject (spikes, stuck sensors, wind-affected precipitation) are kept.',
-  },
   {
     value: 2,
     label: 'Quality-controlled',
     description:
       'Recommended. Fully cleaned by the daily QC pipeline (step, persistence, wind-affected precipitation, …). Rows the pipeline has not reached yet (usually the last day) are served provisionally and marked in the "provisional" column.',
+  },
+  {
+    value: 1,
+    label: 'Provisional (basic checks)',
+    description:
+      'Only hard range breaches removed at ingest; values the daily QC checks would reject (spikes, stuck sensors, wind-affected precipitation) are kept.',
+  },
+  {
+    value: 0,
+    label: 'Unchecked',
+    description: 'Exactly as reported by the station; no QC applied.',
   },
 ]
 
@@ -62,13 +64,13 @@ export interface DerivedOption {
 }
 
 export const DERIVED_OPTIONS: ReadonlyArray<DerivedOption> = [
-  { value: 'feels_like', label: 'Feels Like Temperature' },
-  { value: 'etr', label: 'Reference ET' },
-  { value: 'cci', label: 'Livestock Risk Index' },
+  { value: 'feels_like', label: LABELS.feels_like.name },
+  { value: 'etr', label: LABELS.etr.name },
+  { value: 'cci', label: LABELS.cci.name },
   // Legacy had these commented out of the picker but still treated them as
   // derived, so old `els=swp,…` links rely on them. Monthly = mean.
-  { value: 'swp', label: 'Soil Water Potential', requiresSwp: true },
-  { value: 'percent_saturation', label: 'Percent Saturation', requiresSwp: true },
+  { value: 'swp', label: LABELS.swp.name, requiresSwp: true },
+  { value: 'percent_saturation', label: LABELS.percent_saturation.name, requiresSwp: true },
 ]
 export const DERIVED_CODES: ReadonlySet<string> = new Set(DERIVED_OPTIONS.map((o) => o.value))
 export const SWP_CODES: ReadonlySet<string> = new Set(

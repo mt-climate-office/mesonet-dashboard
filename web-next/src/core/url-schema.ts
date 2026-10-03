@@ -10,15 +10,25 @@
  *              theme      dark | light | high-contrast (read first by the
  *                         inline anti-flash script; absent = saved/OS choice)
  *
- *   Charts     v          variable page: an element-family id (air_temp, ppt,
- *                         soil_vwc …; core/variables); absent = the list
- *              view       variable sub-view: recent | history | table
+ *   Charts     v          what Charts shows, one namespace: an Ag tool id
+ *                         (core/params/ag AG_TOOL_IDS: gdd, etr, …) opens that
+ *                         tool; any other value is an element-family id
+ *                         (air_temp, ppt, soil_vwc …; core/variables) and opens
+ *                         its variable page; absent = the list
+ *              view       variable range kind: recent (a date window) |
+ *                         history (All years); `table` is the legacy Table
+ *                         view, read as recent + tbl
+ *              tbl        1 = the page shows its chart as a table (Back or ⋯ returns)
  *              cmp        1 = the Compare (stacked) chart; `#latest` links map
  *                         here (core/router.ts). It reads the Latest keys.
+ *              dl         1 = the Download sheet is open over Charts; old
+ *                         `#download`/`#downloader` links map here
  *     (The variable page and Compare share from/to/agg/gridmet below.)
  *
  *   Latest     from, to   chart window (YYYY-MM-DD; pan/zoom writes these)
- *              agg        hourly | daily | raw
+ *              agg        hourly | daily | raw; absent = Auto (the variable page
+ *                         picks by window, core/variables/interval; Compare
+ *                         reads absent as hourly, `latestAgg`)
  *              vars       display-variable names, comma-separated (absent =
  *                         the 5 defaults; `vars=` = explicitly none)
  *              nets       map network filter
@@ -26,7 +36,8 @@
  *     (Latest keeps the un-prefixed legacy names because it is the most-shared
  *      tab and existing links must keep working.)
  *
- *   Ag Tools   var        the open tool (etr, gdd, …); absent = the tool cards
+ *   Ag Tools   (the open tool is `v` above; old links' `var` is mapped by
+ *              core/router.ts at boot)
  *              crop       GDD crop
  *              gdd_lo, gdd_hi  custom GDD cutoffs, °F (absent = the crop's)
  *              gdd_proj   GDD projection horizon: season | 30 | 60 | off
@@ -162,17 +173,19 @@ export const URL_SCHEMA = {
   // Charts
   v: str(),
   view: oneOf(CHART_VIEWS, 'recent'),
+  tbl: flag(),
   cmp: flag(),
+  dl: flag(),
   // Latest (Compare)
   from: str(),
   to: str(),
-  agg: oneOf(LATEST_AGG_OPTIONS, 'hourly'),
+  // null = Auto (the variable page) / hourly (Compare).
+  agg: oneOf(LATEST_AGG_OPTIONS, null),
   // null = the default selection (SELECTED_VARS); [] = explicitly none.
   vars: list(null),
   nets: list(NETWORK_OPTIONS),
   gridmet: bool(false),
   // Ag Tools
-  var: str(),
   crop: strOr('wheat'),
   gdd_lo: str(),
   gdd_hi: str(),
@@ -264,7 +277,12 @@ export function latestVars(state: Pick<UrlState, 'vars'>): string[] {
   return state.vars ?? [...SELECTED_VARS]
 }
 
-/** Patch for "user picked a station" (picker, Download's combobox and map). */
+/** Compare's aggregation: absent is hourly, as on the old Latest tab (the variable page reads absent as Auto). */
+export function latestAgg(state: Pick<UrlState, 'agg'>): LatestAgg {
+  return state.agg ?? 'hourly'
+}
+
+/** Patch for "user picked a station" (the station picker and its map). */
 export function selectStationPatch(id: string | null): Partial<UrlState> {
   return { s: id }
 }

@@ -1,47 +1,107 @@
 /**
- * `x-data="agTab"` on the Ag section (partials/ag/index.html): the tool
- * cards while no tool is open (`var` absent), else the open tool's chart
- * card and its heading. Opening a tool or going back to the cards pushes a
- * history entry, so Back returns. Controls live in `agControls`; each chart
- * card fetches for itself.
+ * `x-data="agTab"` on an open Ag tool inside Charts (partials/ag/index.html,
+ * mounted while `v` is an Ag tool id): the variable-page frame for a tool:
+ * back (to the list), the title, the ⋯ menu (Download data, Show as table /
+ * chart, Share this chart, About this tool), the option chips (agOptions),
+ * the chart card's state and, for Reference ET, All years (`view=history`)
+ * and Previous / Next (it is in the variable list; also a sideways swipe).
+ * Each chart card fetches for itself. The station comes from the header picker.
  */
 import Alpine from 'alpinejs'
-import { agCardsPatch, chartState, variableGroup, variablePatch } from '../../core/ag/view/tab'
-import { DERIVED_VAR_OPTIONS } from '../../core/params/ag'
+import { learnMoreUrl } from '../../core/ag/view/learnMore'
+import { chartState, hasAllYears, notHereMessage, variableGroup } from '../../core/ag/view/tab'
+import { agToolElements, fromChart } from '../../core/downloader/fromChart'
+import { POR_FALLBACK_START, installDate, todayIso } from '../../core/latest'
+import { neighbors, plainName, type Variable } from '../../core/variables'
+import { chartVariables, stationElements } from '../charts/resources'
 import { component } from '../component'
-import { follow } from '../shell/navigate'
+import { initSwipe } from '../layout/swipe'
+import { togglePicker } from '../picker/stationPicker'
+import { stepChart } from '../shell/navigate'
+import { shareView } from '../shell/share'
+import { openSheet } from '../shell/sheet'
 import { currentTab } from './shared'
 
-export function agTab() {
-  return component({
-    tools: DERIVED_VAR_OPTIONS,
+const url = () => Alpine.store('url')
+const stations = () => Alpine.store('station')
 
-    /** A tool is open; false = the tool cards. */
-    isOpen: (): boolean => currentTab().open,
-    /** 'chart' | 'loading-stations' | 'no-station'. */
-    state(): ReturnType<typeof chartState> {
-      const station = Alpine.store('station')
-      return chartState(currentTab(), Alpine.store('url').state.s, station.id, station.catalog?.status !== 'loading')
+export function agTab() {
+  let stopSwipe = () => {}
+  return component({
+    init() {
+      stopSwipe = initSwipe({ el: this.$el as HTMLElement, onStep: (s) => this.step(s) })
     },
-    /** The card for the current variable, when a chart can be drawn. */
+    destroy() {
+      stopSwipe()
+    },
+
+    /** 'chart' | 'loading-stations' | 'no-station' | 'not-here' (an SWP tool at a station without SWP sensors). */
+    state(): ReturnType<typeof chartState> {
+      const station = stations()
+      return chartState(currentTab(), url().state.s, station.id, station.catalog?.status !== 'loading')
+    },
+    /** The card for the current tool, when a chart can be drawn (not All years). */
     show(group: ReturnType<typeof variableGroup>): boolean {
-      return this.state() === 'chart' && variableGroup(currentTab().variable) === group
+      return this.state() === 'chart' && !this.history() && variableGroup(currentTab().variable) === group
     },
     title(): string {
-      const name = Alpine.store('station').current?.name
-      const label = currentTab().variableLabel
-      return this.state() === 'chart' && name ? `${label}: ${name}` : label
+      return currentTab().variableLabel
+    },
+    /** Under the title: the station, and All years when it shows. */
+    subline(): string {
+      const name = stations().current?.name ?? ''
+      return this.history() ? [name, 'All years'].filter(Boolean).join(' · ') : name
+    },
+    notHere(): string {
+      return notHereMessage(stations().current?.name ?? 'This station')
+    },
+    pickStation(e: Event): void {
+      togglePicker(e.currentTarget as HTMLElement)
     },
 
-    toolHref: (v: string): string => Alpine.store('url').hrefFor('ag', variablePatch(v)),
-    cardsHref: (): string => Alpine.store('url').hrefFor('ag', agCardsPatch()),
-    /** A card: open the tool (a variable change resets its options, as the select does), focusing its heading. */
-    openTool(e: MouseEvent, v: string): void {
-      follow(e, 'ag', { patch: variablePatch(v), drillDown: true, target: 'ag-chart-title' })
+    /* Reference ET: All years and its place in the variable list */
+    hasHistory(): boolean {
+      return hasAllYears(currentTab().variable)
     },
-    /** "All Ag tools": back to the cards (the tool's options reset too), focusing the card of the tool just left. */
-    toCards(e: MouseEvent): void {
-      follow(e, 'ag', { patch: agCardsPatch(), drillDown: true, target: `ag-tool-${currentTab().variable}` })
+    history(): boolean {
+      return this.hasHistory() && url().state.view === 'history'
+    },
+    toggleHistory(): void {
+      url().set({ view: this.history() ? 'recent' : 'history' })
+    },
+    /** Reference ET's neighbours in the variable list (the other tools are not in it). */
+    get near(): { prev: Variable | null; next: Variable | null } {
+      if (!this.hasHistory()) return { prev: null, next: null }
+      return neighbors(chartVariables(stations().id) ?? [], currentTab().variable)
+    },
+    nameOf: (v: Variable | null): string => (v ? plainName(v.id, v.name) : ''),
+    /** Previous (−1) or next (1) variable in list order (ui/shell/navigate `stepChart`). */
+    step(dir: -1 | 1): void {
+      stepChart(this.near, dir)
+    },
+
+    /* ⋯ menu */
+    tableMode(): boolean {
+      return url().state.tbl
+    },
+    toggleTable(): void {
+      url().go('charts', { tbl: !this.tableMode() }, true)
+    },
+    share: () => shareView(),
+    learnHref(): string {
+      const t = currentTab()
+      return learnMoreUrl(t.variable, t.crop)
+    },
+    /** Download data: the sheet prefilled with the tool's elements, dates and interval (core/downloader/fromChart). */
+    download(): void {
+      const t = currentTab()
+      const id = stations().id
+      if (!id) return
+      const whole = t.variable === 'annual' || this.history()
+      const start = whole ? (installDate(stations().current) ?? POR_FALLBACK_START) : t.start
+      const elements = agToolElements(t.variable, { soilVar: t.soilVar, annualVar: url().state.annv }, stationElements(id) ?? [])
+      url().set(fromChart({ elements, start, end: whole ? todayIso() : t.end, interval: whole ? 'daily' : t.period }))
+      openSheet('download')
     },
   })
 }

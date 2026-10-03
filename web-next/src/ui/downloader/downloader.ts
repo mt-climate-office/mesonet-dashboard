@@ -1,21 +1,20 @@
 /**
- * Download section: request controls, the preview chart and the CSV download
- * (`x-data="downloader"` in partials/downloader/index.html); a three-step
- * stepper on phones. Reads the URL and station stores; all request, view and
- * step logic is core/downloader.
+ * The Download sheet's form (`x-data="downloader"` in partials/downloader/index.html):
+ * summary rows that expand in place, one primary button (Preview, then
+ * Download CSV · N rows), the preview chart. Reads the URL and station stores;
+ * the logic is core/downloader (form.ts, view.ts, request.ts).
  */
 import Alpine from 'alpinejs'
-import dayjs from 'dayjs'
 import { getStationElements, type Station, type StationElement } from '../../core/api'
 import type { Resource } from '../../core/cache'
 import { downloaderPreviewChart, downloaderPreviewTable, previewHeight } from '../../core/charts'
 import { toCsv } from '../../core/csv'
+import * as form from '../../core/downloader/form'
 import { downloadFilename, fetchDownload, QC_LEVEL_OPTIONS, type DownloadQuery, type DownloadResult, type QcLevel } from '../../core/downloader/request'
-import * as stepper from '../../core/downloader/stepper'
 import * as view from '../../core/downloader/view'
+import { labelFor, type MultiselectGroup, type MultiselectOption } from '../../core/controls/multiselectModel'
 import { buildPreviewModel, type PreviewModel } from '../../core/models/downloaderPreview'
-import type { ComboboxItem } from '../../core/controls/comboboxModel'
-import type { MultiselectGroup, MultiselectOption } from '../../core/controls/multiselectModel'
+import { denverToday } from '../../core/today'
 import type { DlPeriod, UrlState } from '../../core/url-schema'
 import { component } from '../component'
 import { announce } from '../shell/live'
@@ -23,45 +22,32 @@ import { announce } from '../shell/live'
 const HOUR = 60 * 60 * 1000
 
 /**
- * The latest Run. Downloads deliberately bypass `$store.data`: every Run
- * refetches, and only this one result is held (dropped on station change).
+ * The latest preview. Downloads deliberately bypass `$store.data`: every
+ * Preview refetches, and only this one result is held.
  */
 interface Run {
   query: DownloadQuery
+  key: string
   status: 'loading' | 'success' | 'error'
   data: DownloadResult | null
   error: unknown
-}
-
-/** Scroll `box` to the top of the view (instantly under reduced motion), then focus `heading` without a second jump. */
-function reveal(box: HTMLElement | undefined, heading: HTMLElement | undefined): void {
-  box?.scrollIntoView({ block: 'start', behavior: MCO.reducedMotion() ? 'auto' : 'smooth' })
-  heading?.focus({ preventScroll: true })
 }
 
 export function downloader() {
   // Preview model memo, keyed by the result object (rows can be large).
   let modelFor: DownloadResult | null = null
   let model: PreviewModel | null = null
-  // Bumped per Run; a response from an older Run is ignored.
+  // Bumped per Preview and on a station change; a response from an older one is ignored.
   let gen = 0
-  let offViewport: (() => void) | null = null
 
   return component({
     run: null as Run | null,
-    /** Run / Download was clicked: from then on their guard messages track the inputs. */
-    triedRun: false,
-    triedDownload: false,
+    /** The open summary row (one at a time), or null. */
+    openRow: null as form.FormRow | null,
     /** The date inputs' drafts are valid (dateRange `onValidity`). */
     rangeValid: true,
-    /** Phone stepper: the visible step (index into `steps`), and whether Next was tried on it. */
-    step: 0,
-    /** Compact viewport (MCO.viewport): the stepper, and no station map (the navbar's picker has one). */
-    compact: MCO.viewport.isCompact(),
-    triedNext: false,
-    steps: stepper.STEPS,
     confirmedKey: null as string | null,
-    today: dayjs().format('YYYY-MM-DD'),
+    today: denverToday(),
     periodOptions: view.PERIOD_OPTIONS,
     qcOptions: QC_LEVEL_OPTIONS.map((o) => ({ value: String(o.value), label: o.label })),
     monthlyNote: view.MONTHLY_NOTE,
@@ -69,24 +55,13 @@ export function downloader() {
     previewTable: downloaderPreviewTable,
 
     init() {
-      offViewport = MCO.viewport.onChange(() => (this.compact = MCO.viewport.isCompact()))
-      // A result belongs to its station: drop it when the station changes (here or on another tab).
-      // The first resolution (null → deep-linked id) is not a change.
-      this.$watch('stationId', (_id: string | null, old: string | null) => {
-        if (old == null && !this.run) return
-        gen++
-        this.run = null
-        this.triedRun = this.triedDownload = false
-      })
-    },
-    destroy() {
-      offViewport?.()
+      // A station change (from the header) ignores any preview still in flight.
+      this.$watch('stationId', () => void gen++)
     },
 
     get url(): UrlState { return this.$store.url.state },
     get stationId(): string | null { return this.$store.station.id },
     get station(): Station | undefined { return this.$store.station.current },
-    get stationItems(): ComboboxItem[] { return view.stationItems(this.$store.station.list) },
     get installDate(): string | null { return view.installDateOf(this.station) },
     get hasSwp(): boolean { return this.station?.has_swp === true },
 
@@ -110,60 +85,52 @@ export function downloader() {
       return d.length ? view.droppedSwpNotice(d, this.station?.name ?? this.url.s ?? '') : ''
     },
     get qc(): QcLevel { return view.qcLevelOf(this.url.qc, this.url.rmna) },
-    get qcDescription(): string { return QC_LEVEL_OPTIONS.find((o) => o.value === this.qc)!.description },
+    get qcOption() { return QC_LEVEL_OPTIONS.find((o) => o.value === this.qc)! },
     get dates(): view.DateWindow {
       return view.dateWindow({ period: this.url.period, from: this.url.dl_from, to: this.url.dl_to, installDate: this.installDate, today: this.today })
     },
+
+    /* Summary row values */
+    get stationText(): string { return form.stationLine(this.station?.name, this.stationId ?? this.url.s) },
+    get varsText(): string { return form.variablesSummary(this.pruned.selected.map((v) => labelFor(v, this.groups))) },
+    get datesText(): string { return this.dates.error ? 'Invalid range' : form.dateRangeLabel(this.dates.start, this.dates.end) },
+    get intervalText(): string { return this.periodOptions.find((o) => o.value === this.url.period)?.label ?? this.url.period },
+    isOpen(row: form.FormRow): boolean { return this.openRow === row },
+    toggleRow(row: form.FormRow) { this.openRow = this.openRow === row ? null : row },
+
+    /* The request and the one button */
+    get blocker(): string | null {
+      return form.formBlocker({ station: this.stationId, elements: this.pruned.selected, dateError: this.dates.error, rangeValid: this.rangeValid })
+    },
+    /** The request the inputs describe, or null while they cannot run. */
+    get query(): DownloadQuery | null {
+      if (this.blocker) return null
+      const w = this.dates
+      return { station: this.stationId!, start: w.start, end: w.end, period: this.url.period, elements: this.pruned.selected, level: this.qc }
+    },
+    /** The preview belongs to the current inputs. */
+    get current(): boolean { return !!this.run && !!this.query && this.run.key === form.queryKey(this.query) },
+    get result(): DownloadResult | null { return this.current && this.run?.status === 'success' ? this.run.data : null },
     get needsConfirm(): boolean {
       return this.dates.largeHourly && this.confirmedKey !== view.confirmKey(this.stationId, this.dates, this.url.period)
     },
     largeHourlyText(): string { return view.largeHourlyText(this.dates.span, this.needsConfirm) },
-    get runLabel(): string { return this.dates.largeHourly && !this.needsConfirm ? 'Confirm large request' : 'Run Request' },
-    get loading(): boolean { return this.run?.status === 'loading' },
-    /** `?s=` is set but the catalog has not confirmed it yet: Run waits rather than saying "pick a station". */
+    /** `?s=` is set but the catalog has not confirmed it yet: Preview waits rather than saying "pick a station". */
     get resolving(): boolean { return !!this.url.s && this.$store.station.catalog?.status === 'loading' },
-    get result(): DownloadResult | null { return this.run?.status === 'success' ? this.run.data : null },
-    get hasRows(): boolean { return (this.result?.rows.length ?? 0) > 0 },
-    /** Why Run cannot start, recomputed as the inputs change (null = it can). */
-    get blocker(): string | null { return view.runBlocker(this.stationId, this.pruned.selected, this.dates.error) },
-    /** Message under Run: shown once Run/Download was tried, cleared as soon as it no longer applies. */
-    get hint(): string | null {
-      if (this.triedRun && this.blocker) return this.blocker
-      if (this.triedDownload && !this.hasRows && !this.loading) return view.RUN_FIRST_HINT
-      return null
+    get action(): form.PrimaryAction {
+      return form.primaryAction({
+        blocker: this.resolving ? null : this.blocker,
+        waiting: this.resolving,
+        loading: this.loading,
+        armed: this.dates.largeHourly && !this.needsConfirm,
+        rows: this.result?.rows.length ?? null,
+      })
     },
 
-    get stepInputs(): stepper.StepInputs {
-      return { station: this.stationId, elements: this.pruned.selected, dateError: this.dates.error, rangeValid: this.rangeValid }
-    },
-    /** Message under Next: shown once Next was tried on this step, cleared as soon as it no longer applies. */
-    get stepHint(): string | null { return this.triedNext ? stepper.stepBlocker(this.step, this.stepInputs) : null },
-    get progress(): string { return stepper.progressText(this.step) },
-    get summary(): string[] {
-      const w = this.dates
-      return view.requestSummary({ station: this.station?.name ?? this.url.s ?? '', elements: this.pruned.selected.length, period: this.url.period, start: w.start, end: w.end })
-    },
+    get loading(): boolean { return this.current && this.run?.status === 'loading' },
+    /** The fidelity driver and verify scripts find the button by these (scripts/fidelity/lib/drivers.mjs). */
+    get actionTestId(): string { return this.action.kind === 'download' ? 'dl-download' : 'dl-run' },
 
-    next() {
-      this.triedNext = true
-      const to = stepper.nextStep(this.step, this.stepInputs)
-      if (to !== this.step) this.showStep(to)
-    },
-    back() { this.showStep(stepper.prevStep(this.step)) },
-    /** Show step `i`: bring the stepper's top into view, focus the step heading, announce it. */
-    showStep(i: number) {
-      this.step = i
-      this.triedNext = false
-      announce(stepper.stepAnnouncement(i))
-      void this.$nextTick(() => reveal(this.$refs.progress, this.$refs[`step${i}`]))
-    },
-    /** Enter in a field: Next on a phone's earlier steps, otherwise Run. */
-    submit() {
-      if (MCO.viewport.isCompact() && this.step < stepper.LAST_STEP) this.next()
-      else void this.runRequest()
-    },
-
-    pickStation(id: string | null) { this.$store.url.set(view.stationPatch(id)) },
     setRangeValid(v: boolean) { this.rangeValid = v },
     /** Show the date control's own error, except where the install-specific message replaces it. */
     showRangeError(): boolean { return !(this.dates.clamped && this.dates.error) },
@@ -173,44 +140,40 @@ export function downloader() {
     setDates(r: { start: string; end: string }) { this.$store.url.set({ dl_from: r.start, dl_to: r.end }) },
     toggleUncommon(e: Event) { this.$store.url.set({ pub: (e.target as HTMLInputElement).checked }) },
 
-    async runRequest() {
-      const w = this.dates
-      this.triedRun = true
-      if (this.blocker || !this.rangeValid) return
+    /** The button (and Enter in a field): Preview or Download, whichever it shows. */
+    act() {
+      if (this.action.disabled) return
+      if (this.action.kind === 'download') this.download()
+      else void this.preview()
+    },
+
+    async preview() {
+      const query = this.query
+      if (!query) return
       if (this.needsConfirm) {
-        // First click on a > 1-year hourly range arms it; the second runs it.
-        this.confirmedKey = view.confirmKey(this.stationId, w, this.url.period)
+        // The first click on a > 1-year hourly range arms it; the second runs it.
+        this.confirmedKey = view.confirmKey(this.stationId, this.dates, this.url.period)
         return
       }
-      const query: DownloadQuery = {
-        station: this.stationId!,
-        start: w.start,
-        end: w.end,
-        period: this.url.period,
-        elements: this.pruned.selected,
-        level: this.qc,
-      }
       const mine = ++gen
-      this.run = { query, status: 'loading', data: null, error: null }
-      this.triedDownload = false
+      const key = form.queryKey(query)
+      this.run = { query, key, status: 'loading', data: null, error: null }
       announce(`Requesting ${query.period} data for ${this.station?.name ?? query.station}…`)
       try {
         const data = await fetchDownload(query)
         if (mine !== gen) return
-        this.run = { query, status: 'success', data, error: null }
+        this.run = { query, key, status: 'success', data, error: null }
         announce(view.resultAnnouncement(data.rows.length, data.columns.length))
       } catch (error) {
         if (mine !== gen) return
-        this.run = { query, status: 'error', data: null, error }
+        this.run = { query, key, status: 'error', data: null, error }
         announce('Request failed.')
       }
-      // The result can be below the fold (always on phones): bring it up and focus its heading.
-      void this.$nextTick(() => reveal(this.$refs.preview, this.$refs.previewTitle))
     },
 
+    /** Save the current result as CSV, inside the click's user gesture. */
     download() {
       const r = this.result
-      this.triedDownload = true
       if (!this.run || !r || r.rows.length === 0) return
       const q = this.run.query
       const blob = new Blob([toCsv(Alpine.raw(r.rows), r.columns)], { type: 'text/csv;charset=utf-8' })
@@ -226,7 +189,7 @@ export function downloader() {
     },
 
     /** Preview model for the chart host (null clears it). */
-    preview(): PreviewModel | null {
+    previewModel(): PreviewModel | null {
       const r = this.result
       if (!r || !this.run) return null
       const raw = Alpine.raw(r)
@@ -237,16 +200,17 @@ export function downloader() {
       return model
     },
     previewStyle(): string {
-      const m = this.preview()
+      const m = this.previewModel()
       return m ? `--chart-height:${previewHeight(m, false)}px;--chart-height-compact:${previewHeight(m, true)}px` : ''
     },
-    /** Placeholder text for the preview area, or '' when the chart shows. */
+    /** Text in the preview area, or '' when the chart shows or there is no preview for these inputs. */
     previewStatus(): string {
+      if (!this.current) return ''
       const s = this.run?.status
-      if (!s) return 'Configure the request and click Run Request to preview your data.'
       if (s === 'loading') return 'Loading data…'
       if (s === 'error') return (this.run?.error as Error | undefined)?.message ?? 'Failed to fetch data.'
-      return this.preview() ? '' : 'No data for the current selection.'
+      // No rows: the reason under the button says so.
+      return this.previewModel() || !this.result?.rows.length ? '' : 'No data for the current selection.'
     },
   })
 }

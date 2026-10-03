@@ -1,10 +1,12 @@
 /**
  * `x-data="agMetView"`: the Reference ET, feels-like and livestock risk
  * card (partials/ag/met.html). Level-2 daily or hourly observations →
- * core `metView` → the chart host.
+ * core `metView` → the chart host, its table (tbl=1) and the stats card.
  */
 import Alpine from 'alpinejs'
 import type { MetChart } from '../../core/ag/view/results'
+import { metStats, type AgStat } from '../../core/ag/view/stats'
+import type { ChartTable } from '../../core/charts'
 import { type AgView, gate, metView } from '../../core/ag/view/results'
 import { AG_TTL, agKeys } from '../../core/ag/view/keys'
 import { fetchDailyMet, fetchHourlyMet, fetchStationMeta } from '../../core/ag/data'
@@ -31,6 +33,14 @@ export function agMetView() {
     modelOf<K extends MetChart['kind']>(kind: K) {
       const m = this.view.model
       return m && m.kind === kind ? (m.model as Extract<MetChart, { kind: K }>['model']) : null
+    },
+    /** The drawn chart's table twin, for the table view. */
+    tableOf(): ChartTable | null {
+      const m = this.view.model
+      return m ? (AG_CHARTS[m.kind].table as (model: MetChart['model']) => ChartTable)(m.model) : null
+    },
+    stats(): AgStat[] {
+      return metStats(this.view.model)
     },
   })
 }

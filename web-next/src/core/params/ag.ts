@@ -13,19 +13,15 @@ export type DerivedVar =
   | 'percent_saturation'
 
 /**
- * The Ag tools, in tool-card order: the `var` value, the name (card title,
- * variable select, chart heading) and the one-line card description.
+ * Ag tool ids, in list order: in Charts, a `v=` value in this list opens that
+ * Ag tool; any other value is an observed variable family (one namespace;
+ * core/router). `etr` is both an Ag tool and an element family: the Ag tool
+ * wins. Names and one-line descriptions are in core/variables/labels (`LABELS`).
  */
-export const DERIVED_VAR_OPTIONS: { value: DerivedVar; label: string; description: string }[] = [
-  { value: 'etr', label: 'Reference ET', description: 'Daily or hourly water use of a reference grass crop (ETr), with the running total.' },
-  { value: 'gdd', label: 'Growing degree days', description: 'Heat accumulated since the start date for a crop, with growth stages and a projection.' },
-  { value: 'feels_like', label: 'Feels like', description: 'How cold or hot it feels: NWS wind chill or heat index.' },
-  { value: 'cci', label: 'Livestock risk', description: 'Comprehensive Climate Index (CCI) stress classes for adult or newborn livestock.' },
-  { value: 'soil_temp,soil_ec_blk', label: 'Soil profile', description: 'Soil moisture, temperature or conductivity at every sensor depth over time.' },
-  { value: 'swp', label: 'Soil water potential', description: 'How hard roots work for water at each depth, against field capacity and wilting point.' },
-  { value: 'percent_saturation', label: 'Percent saturation', description: 'Soil water content as a share of the pore space at each depth.' },
-  { value: 'annual', label: 'Annual comparison', description: 'This year against past years for any variable the station reports.' },
-]
+export const AG_TOOL_IDS: readonly string[] = ['etr', 'gdd', 'feels_like', 'cci', 'soil_temp,soil_ec_blk', 'swp', 'percent_saturation', 'annual'] satisfies readonly DerivedVar[]
+
+/** True when `v` is an Ag tool id (`AG_TOOL_IDS`). */
+export const isAgTool = (v: string | null | undefined): v is DerivedVar => !!v && AG_TOOL_IDS.includes(v)
 
 export const GDD_CROPS: { value: string; label: string }[] = [
   { value: 'wheat', label: 'Wheat' },

@@ -37,12 +37,12 @@ describe('historyModel', () => {
     const m = historyModel(AIR, [daily(2026, 3, 'Air Temperature [°F]', (i) => 30 + i), daily(2025, 2, 'Air Temperature [°F]', () => 20)], 2026)!
     expect(m.traces.map((t) => t.year)).toEqual([2025, 2026])
     expect(m.traces[1]).toMatchObject({ doy: [1, 2, 3], values: [30, 31, 32] })
-    expect(m).toMatchObject({ currentYear: 2026, yLabel: 'Air Temp. (°F)', column: 'Air Temperature [°F]' })
+    expect(m).toMatchObject({ currentYear: 2026, yLabel: 'Air temperature (°F)', column: 'Air Temperature [°F]' })
   })
   it('summed variables accumulate within each year', () => {
     const m = historyModel(PPT, [daily(2026, 3, 'Precipitation [in]', (i) => (i === 1 ? null : 0.5))], 2026)!
     expect(m.traces[0].values).toEqual([0.5, 0.5, 1])
-    expect(m.yLabel).toBe('Cumulative Precipitation (inches)')
+    expect(m.yLabel).toBe('Cumulative rain (in)')
   })
   it('null until a year has a value', () => {
     expect(historyModel(AIR, [], 2026)).toBeNull()

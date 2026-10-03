@@ -36,7 +36,8 @@ src/
   stores/   the four shared pieces of app state (Alpine.store)
   ui/       thin Alpine components (Alpine.data) + their CSS;
             ui/layout/ holds the framework-free primitives (drawer, sheet,
-            section nav, transitions, card, skeleton, type scale)
+            menu, popover, swipe, section nav, transitions, card + chips,
+            skeleton, type scale)
   types/    globals from the CDN (window.MCO, maplibregl) and $store typing
   main.ts   URL fix-ups → register stores → register components → Alpine.start()
 partials/   HTML, one file per section/card, inlined into index.html at build
@@ -87,19 +88,21 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `core/url-schema.ts`, parsed, defaults filled in. Change it only with
   `set(patch)`; writes batch into one `replaceState` per tick, keep the hash,
   omit defaults and keep unknown keys. `section` comes from the hash
-  (core/router.ts: now · charts · ag · download · about; legacy
-  `#latest`/`#downloader` map). `go(section, patch?, drillDown?)` changes
-  section with `pushState` (Back works); `drillDown` pushes inside a section
-  too (an Ag tool opened from its card; a Charts variable or sub-view). The
-  section nav applies `sectionNavPatch` (Charts inside Charts → the list,
-  Ag inside Ag → the tool cards; leaving Charts drops `v`). `hrefFor(section, patch?)` gives the
+  (core/router.ts: now · charts · about; old `#latest`, `#ag`, `#download`,
+  `#downloader` are rewritten at boot by `legacyRedirect`, see "Routing").
+  `go(section, patch?, drillDown?)` changes section with `pushState` (Back
+  works); `drillDown` pushes inside a section too (a Charts variable or Ag
+  tool, a sub-view). The section nav applies `sectionNavPatch` (Charts inside
+  Charts → the list; leaving Charts drops `v` and `cmp`). `hrefFor(section, patch?)` gives the
   real href for a link. In-page anchors (the skip link's `#main`) keep the section.
   Back/forward re-read both. Navigate from UI through `ui/shell/navigate.ts`
   (view transition + scroll + focus + announcement): an in-app `<a href>` calls
   `follow(event, section, opts)` on click (a plain click navigates, a modified
   or middle click follows the href); when the clicked link unmounts, pass
   `target:` (an id with `tabindex="-1"`, usually the new view's heading) so
-  focus never falls to `<body>`.
+  focus never falls to `<body>`. A target with `data-sheet="<id>"` also opens
+  that sheet with the target as opener (Now's "All readings" → About's
+  readings sheet).
 - **`$store.data`** (`stores/data.ts` → `core/cache.ts`):
   `cached(key, fetcher, {ttl, retry})` returns one reactive
   `{status: 'loading'|'success'|'error', data, error, refresh()}` per key.
@@ -117,6 +120,27 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   With no `?s=`, main.ts puts the remembered station in the URL before the
   stores start; with none, the station picker opens.
 
+### Routing
+
+Three sections, `SECTIONS` in `core/router.ts`: **now** (default), **charts**, **about**. Inside Charts,
+`v` is one namespace (`core/variables` `chartsMode`): an Ag tool id (`core/params/ag` `AG_TOOL_IDS`,
+`isAgTool`) opens that tool, any other value opens that element family's variable page, none shows the list;
+`cmp=1` is Compare. `dl=1` opens the Download sheet over whatever Charts shows. History: section and variable
+(or Ag tool) changes push (`navigate(…, { drillDown: true })`); everything else, opening a sheet included,
+replaces. `main.ts` runs `migrateLegacySearch` then `legacyRedirect` before any store reads the URL:
+`#latest` → `#charts&cmp=1`; `#ag&var=<tool>` → `#charts&v=<tool>` (Ag keys kept; no `var` but Ag keys →
+GDD); `var=annual` → `v=<annv's family>&view=history`; a bare `#ag` → `#charts` plus an `anchor`
+(`revealWhenReady` scrolls the list's Ag tools group into view); `#download` / `#downloader` → `#charts&dl=1`.
+Every other key is kept byte for byte.
+
+Router helpers for components: `$store.url.go(section, patch, drillDown)` (or, from a link,
+`follow(event, section, { patch, drillDown, target })` in `ui/shell/navigate.ts`), `$store.url.hrefFor(section,
+patch)` for the real href, `CHARTS_LIST_PATCH` for "back to the list", `chartPatch(id)` (core/variables) to
+open any Charts entry (a variable on its chart, an Ag tool through its reset `variablePatch`), `chartsMode(state)`
+for what Charts shows, `isAgTool(v)` for the namespace. On a chart page, `view=history` is All years, `tbl=1`
+shows the chart as a table (pushed, so Back returns), and `agg` absent is the Auto interval
+(core/variables/interval; Compare reads it as hourly, `latestAgg`).
+
 Per-station fetches shared by sections (latest obs, ppt summary, NWS, photos, one-pagers, station
 config) are one function each in `ui/station/resources.ts`; a section's own fetches sit beside it
 (e.g. `ui/now/resources.ts`).
@@ -124,13 +148,15 @@ config) are one function each in `ui/station/resources.ts`; a section's own fetc
 Former TanStack hooks map to `cached()` keys with these TTLs (keep them):
 stations / elements 1 h; station config, ppt summary, NWS forecast 30 min;
 observations 5 min (default); latest obs 5 min; Ag series 10 min; soil
-params, GDD stages, normals `Infinity`; photo schedule 60 min, latest frames
+params, GDD stages, normals `Infinity`; Now's 7-day daily rain (`rainDailyQuery`) 30 min; photo schedule 60 min, latest frames
 5 min, current-month manifest 5 min, past months `Infinity`; Ag gridpoint
 forecast: 1 h (5 min when degraded, `retry: false`).
 
 ### Time
 
-All user-facing stamps are Mountain Time (`MCO.formatStampMT` etc.). Chart
+All user-facing stamps are Mountain Time (`MCO.formatStampMT` etc.). "Today" is always the America/Denver
+date from `core/today.ts` (`denverToday()`, or `denverDay()` for dayjs arithmetic), never `dayjs()` or the
+browser's zone. Chart
 models carry **Denver wall-clock ms** (the API's local reading parsed as if
 UTC; `core/sensorEvents.ts#parseWallClock`); chart builders set
 `useUTC: true`. Never `new Date(string)` on a date-only string (Safari / UTC
@@ -166,38 +192,86 @@ Component `ui/<section>/<card>.ts` exporting a factory that returns
 `main.ts` with one `Alpine.data('<name>', factory)` line. Fetch through
 `$store.data.cached`; put any logic in `core/`.
 
-**Add a section.** (1) An entry in `SECTIONS` (`core/router.ts`) + its
-router test. (2) A link in both navs in `partials/shell.html` (the
-`.dash-sections` row and the `.dash-tabbar` with an icon; same
-`data-section`). (3) A `<section id="section-<id>" class="tab-panel">` in
-`.dash-section-host` that includes `partials/<id>/index.html`. (4) Wrap that
+**Add a section.** Rarely: the redesign settled on three. (1) An entry in
+`SECTIONS` (`core/router.ts`) + its router test. (2) A link in both navs in
+`partials/shell.html` (the header's `.dash-sections` and the `.dash-tabbar`
+with an icon; same `data-section`; the tab bar's grid has one column per
+item). (3) A `<section id="section-<id>" class="tab-panel" aria-label="…" x-data
+x-show="$store.url.section === '<id>'" x-cloak>` in `.dash-section-host` that
+includes `partials/<id>/index.html`. (4) Wrap that
 partial's root in `<template x-if="$store.url.section === '<id>'">` so it
 mounts, and fetches, only while open; components undo in `destroy()` whatever
 they add outside themselves (listeners, maps, charts). Its URL keys are
-prefixed `<id>_` in the schema.
+prefixed `<id>_` in the schema. Most new places are a Charts entry instead
+(a `v` value, or a sheet).
 
-**Add a Now tile.** (1) In `core/overview/tiles.ts`, push a `Tile` in
-`tiles()` when the station reports the value (read it in
-`core/overview/conditions.ts` if it is a new `/latest` column), with its
-`vars` (display variables; the tile opens the first one's Charts page) and a `SeriesKey` for the
-sparkline; add the element code to `SPARK_ELEMENTS` (or
-`OPTIONAL_SPARK_ELEMENTS`) and its column to `keyFor` in `series.ts`. (2) A
-test in `core/overview/overview.test.ts`. The partial renders every tile
-from the model, so no markup is needed unless the tile has a custom block
-(like `windDeg` or `soil`); styling hooks are `.now-tile--<id>`.
+**Add a header menu item.** A `role="menuitem"` button (or link) with
+`class="dash-menu-item"`, an `aria-hidden` icon and its label inside
+`#header-menu` (`partials/shell.html`); its `@click` calls a method you add to
+`navMeta` (`ui/shell/navMeta.ts`). Add `data-keep-open` if the menu should stay
+open after it (like Theme). A new ⋯ menu elsewhere is the same markup with its
+own `x-data="menu"` wrapper (DESIGN.md "Components"): the chart pages' ⋯ menus
+(`partials/charts/variable.html`, `partials/ag/index.html`) call their page
+component (`variablePage`, `agTab`). A chart's Download data writes
+`core/downloader/fromChart(…)` (its element codes, dates and interval as
+`els`/`dl_from`/`dl_to`/`period`), then `openSheet('download')`.
+
+**Add a sheet.** Copy `partials/sheets/dates.html` (the smallest) to
+`partials/sheets/<id>.html`: a scrim `<div class="mco-scrim dash-scrim
+dash-sheet-scrim" id="sheet-<id>-scrim" hidden>` and a `<section
+id="sheet-<id>" class="dash-sheet dash-sheet--modal" role="dialog"
+aria-modal="true" aria-labelledby="sheet-<id>-title" x-data="sheet({ id: '<id>' })"
+hidden>` holding a `.dash-panel-head` (the `.dash-sheet-handle` button, an
+`<h2 class="dash-panel-title" id="sheet-<id>-title" tabindex="-1"
+data-autofocus>` and ×) and a body whose content sits in `<template
+x-if="isOpen">`; add its `<!-- @include partials/sheets/<id>.html -->` beside
+the others at the end of `partials/shell.html`. Open it with
+`openSheet('<id>', opener)` and close it with `closeSheet('<id>')`
+(`ui/shell/sheet.ts`). Pass `urlKey` (a boolean schema key, like `dl`) only
+if the URL should hold the open state.
+
+**Add a Now tile.** (1) In `core/overview/tiles.ts`, a `TILES` entry (its id, the Charts `v=` id it
+opens, a `SeriesKey` for the 48 h sparkline) and its line in `reportedTiles` (when the station reports
+it; read it in `core/overview/conditions.ts` if it is a new `/latest` column); add the element code to
+`SPARK_ELEMENTS` (or `OPTIONAL_SPARK_ELEMENTS`) and its column to `keyFor` in `series.ts` (a tile with
+its own graphic overrides the line in `tileView`, `nowPage.ts`, as Rain does with `rainBars`: seven
+daily bars, none after a dry week). (2) A test in `core/overview/overview.test.ts`. (3) If it should
+hide when it means nothing, a rule in `nowTiles` (`core/overview/relevance.ts`). `nowPage.ts` is the
+only formatter: the name, unit and precision (sparkline sentence included) come from `LABELS` for its
+`v=` id, its number from `reading()` and any sub-line from `sub()` (+ a line in `nowPage.test.ts`). The
+partial renders every tile from `buildNowPage`, so no markup is needed.
 
 **Add a variable (Charts).** A variable is a display name from the
 station's `/elements` (`latestVarsFromElements`: `description_short` before
 "@"), so a new API element already shows under Other with its element code
-as id. To place it: (1) its element-code prefix in `ELEM_MAP` and axis title
-in `AXIS_MAPPER` (`core/params/latest.ts`; the first `ELEM_MAP` code is its
-`v=` id), and a column rule in `variableForColumn` (`core/params/columns.ts`)
+as id. To place it: (1) its element-code prefix in `ELEM_MAP`
+(`core/params/latest.ts`; the first `ELEM_MAP` code is its `v=` id; its axis
+title comes from `LABELS`, step 5), and a column rule in `variableForColumn` (`core/params/columns.ts`)
 if its column name is not "<name> [unit]"; (2) its group and position in
 `GROUPED` (`core/variables/catalog.ts`), and `SUMMED` if it is a total
 (bars, a total stat, a cumulative history); (3) a color in `core/palette`
 (`variableStyle`) or it takes a preview color; (4) a line in
-`core/variables/catalog.test.ts`. The list, variable page, history and
-Compare need no other change.
+`core/variables/catalog.test.ts`; (5) its plain name, unit and precision in
+`LABELS` (`core/variables/labels.ts`; its test fails for an `ELEM_MAP` id
+without one). The `v=` id must not be an Ag tool id (`core/params/ag`). The
+list (search included), variable page, history, the Download prefill
+(`variableElements`: every station element with that display name) and Compare
+need no other change. Totals and wind direction get no Daily low–high band
+(`hasBand`, core/variables/band.ts); normals draw by themselves only where
+`showsNormals` says (daily air temperature).
+
+**Add an Ag tool option chip.** (1) An `OptionId`, its name in `NAMES` and
+its place in each tool's list in `OPTIONS`, and its value text in
+`optionChips` (`core/ag/view/summary.ts`), with a line in `summary.test.ts`.
+(2) A block in `partials/ag/options.html` at its place in the chip order:
+`<template x-if="has('<id>')">` around a `.dash-popover` (`x-data="popover"`)
+holding the chip (`data-popover-button`, `:aria-label="label('<id>')"`,
+`data-testid="ag-opt-<id>"`) and a `role="dialog"` panel with a fixed id
+(`ag-opt-<id>-panel`) and `aria-label`, around the existing control
+(`ui/controls/README.md`). (3) Its setter in `ui/ag/agOptions.ts`, writing the
+URL key (a new key: "Add a URL key"); call `closePopover()` after it for a
+single choice. If the tool's download changes, `agToolElements`
+(`core/downloader/fromChart.ts`).
 
 **Add a layout primitive.** Framework-free first: CSS on kit tokens in
 `ui/layout/<name>.css` and, if it has behaviour, a vanilla
@@ -248,9 +322,11 @@ ring only (no per-selector focus rules); ≥ 40 px touch targets under
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
-`npm run verify` runs axe on its scenarios (Now, the photo dialog, the picker on a first visit and opened with a station,
-the Charts list, a variable page in each view, Compare, Ag tools + 4 Ag views, Download (step 1 and step 3
-on phones), About, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
+`npm run verify` runs axe on its scenarios (Now, the header ⋯ menu, the photo dialog, the picker on a first visit and
+opened with a station, the Charts list, the legacy `#ag` landing, a variable page in each view (⋯ menu, All
+years, table, the Daily band, the Custom dates sheet), Compare, 4 Ag tools (two option popovers, a ⋯ menu), the
+Download sheet (a row open, after Preview), About and its two sheets, Help) × 1440/390 px × 3 themes
+(`scripts/verify/axe.mjs`).
 
 ## Testing
 
@@ -270,7 +346,7 @@ on phones), About, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
 gzip. Measured at W1: entry (Alpine + core + shell, controls, map and chart hosts) 43 KB; tree-shaken
 ECharts, a lazy chunk loaded on the first chart render (`ui/charts/echarts.ts`), 233 KB; 268 KB in all,
 leaving ~180 KB for the sections; at the UX P0 prototype the entry is 107 KB and all JS 328 KB
-(the Now page does not need the ECharts chunk unless it shows the wind rose). The Plotly build this replaces shipped
+(since phase B the Now page loads the ECharts chunk for its 48 h strip, after its tier-1 content). The Plotly build this replaces shipped
 ~4.6 MB. Raising a budget needs a reason in the PR.
 
 ## Rules carried from web/

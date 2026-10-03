@@ -65,12 +65,6 @@
          x-data="stationMap({ stations: () => $store.demo.stations, selected: () => $store.demo.selected,
                  visible: () => $store.demo.visible, onSelect: (id) => $store.demo.select(id) })"></div>
   </section>
-  <section aria-labelledby="h-dl">
-    <h2 id="h-dl">downloaderMap (Downloader)</h2>
-    <div class="demo-map" data-testid="downloader-map"
-         x-data="downloaderMap({ stations: () => $store.demo.stations, selected: () => $store.demo.selected,
-                 visible: () => $store.demo.visible, onSelect: (id) => $store.demo.select(id) })"></div>
-  </section>
 </main>
 
   <script src="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.js"

@@ -1,6 +1,7 @@
 <!-- About (x-data="aboutView", ui/about/aboutView.ts): details that stay reachable but not front and
-     center. Station details + one-pager, the locator map, every current reading (Now's "All readings"
-     link lands on #about-readings), sensor-change history and data notes, each a .dash-card.
+     center. One column on phones; from tablet up two: details + locator map | the rows + the data notes.
+     The rows open the readings and sensor-change sheets (partials/sheets/about-*.html); #about-readings
+     is the target of Now's "All readings" link (data-sheet: navigating to it opens the sheet).
      Mounted only while the section is open. -->
 <template x-if="$store.url.section === 'about'">
 <div class="about" x-data="aboutView" data-testid="about">
@@ -19,17 +20,32 @@
   </template>
   <template x-if="state === 'ready'">
     <div class="about-grid">
-      <!-- @include partials/about/details.html -->
-      <section class="dash-card about-map" aria-labelledby="about-map-title">
-        <h3 class="dash-card-title" id="about-map-title">Location</h3>
-        <div class="about-map-frame" data-testid="about-map"
-             x-data="locatorMap({ stations: () => $store.station.list, selected: () => $store.station.id,
-                      onSelect: (id) => $store.station.select(id) })"></div>
-        <p class="about-hint">Use two fingers, or Ctrl / ⌘ and scroll, to move the map.</p>
-      </section>
-      <!-- @include partials/about/readings.html -->
-      <!-- @include partials/about/history.html -->
-      <!-- @include partials/about/notes.html -->
+      <div class="about-col">
+        <!-- @include partials/about/details.html -->
+        <section class="about-map" aria-labelledby="about-map-title">
+          <h3 class="sr-only" id="about-map-title">Location</h3>
+          <div class="about-map-frame" data-testid="about-map"
+               x-data="locatorMap({ stations: () => $store.station.list, selected: () => $store.station.id,
+                        onSelect: (id) => $store.station.select(id) })"></div>
+          <p class="about-hint">Use two fingers, or Ctrl / ⌘ and scroll, to move the map.</p>
+        </section>
+      </div>
+      <div class="about-col">
+        <section class="dash-card about-rows" aria-labelledby="about-rows-title">
+          <h3 class="sr-only" id="about-rows-title">Readings and sensors</h3>
+          <button type="button" class="about-row" id="about-readings" data-sheet="about-readings" aria-haspopup="dialog"
+                  aria-controls="sheet-about-readings" @click="open($event, 'about-readings')" data-testid="about-readings-row">
+            <span>All current readings</span>
+            <span class="about-row-meta"><template x-if="readingsMeta"><span><span class="sr-only">, </span><span x-text="readingsMeta"></span></span></template><span aria-hidden="true"> ›</span></span>
+          </button>
+          <button type="button" class="about-row" data-sheet="about-history" aria-haspopup="dialog"
+                  aria-controls="sheet-about-history" @click="open($event, 'about-history')" data-testid="about-history-row">
+            <span>Sensor changes</span>
+            <span class="about-row-meta"><template x-if="changesMeta"><span><span class="sr-only">, latest </span><span x-text="changesMeta"></span></span></template><span aria-hidden="true"> ›</span></span>
+          </button>
+        </section>
+        <!-- @include partials/about/notes.html -->
+      </div>
     </div>
   </template>
 </div>

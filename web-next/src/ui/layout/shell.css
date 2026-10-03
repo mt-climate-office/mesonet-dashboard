@@ -1,8 +1,8 @@
 /* Shell layout (partials/shell.html; DESIGN.md "Layout ladder"):
      compact  ≤ 640 px wide or ≤ 560 px tall (MCO.viewport.COMPACT_MQ): one column,
               bottom tab bar, picker = bottom sheet
-     tablet   641–1059 px: section row, picker = overlay drawer
-     desktop  ≥ 1060 px: section row, picker = in-flow drawer beside the content
+     tablet   641–1059 px: sections in the header, picker = overlay drawer
+     desktop  ≥ 1060 px: sections and the brand in the header, picker = in-flow drawer
    The station picker and the content column share one flex row (.dash-shell). */
 
 .dash-shell { flex: 1; display: flex; align-items: flex-start; min-width: 0; }
@@ -12,21 +12,38 @@
   min-height: calc(100dvh - var(--chrome-h, 52px));
 }
 .dash-content > main { flex: 1; min-width: 0; }
+/* A link that focuses <main> (navigate `target: 'main'`) scrolls it below the sticky header, not under it. */
+#main { scroll-margin-top: var(--chrome-h, 52px); }
 
-/* Navbar: the station switcher takes the free width and truncates; nothing wraps. */
-.mco-navbar { flex-wrap: nowrap; } /* kit-override: one row at every width (the kit wraps; DESIGN.md "Navbar") */
+/* Header: one row at every width. Logo · brand (desktop) · station button · … · sections · ⋯ */
+.mco-navbar { flex-wrap: nowrap; } /* kit-override: one row at every width (the kit wraps; DESIGN.md "Header") */
 .mco-navbar > .controls { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
-.dash-switcher {
-  flex-shrink: 1; min-width: 0; max-width: min(100%, 22rem); /* kit-override: .nav-btn never shrinks */
-  font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary);
+.mco-navbar > .nav-meta { gap: 0.75rem; }
+/* The brand is desktop-only: below 1060 px the station button needs the room. Visually hidden,
+   as the kit does at 750 px, so the <h1> stays in the accessibility tree. */
+@media (max-width: 1059px) {
+  /* kit-override: the kit sheds the brand at 750 px */
+  .mco-navbar > .brand {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+  .mco-navbar > .nav-divider { display: none; }
 }
-.dash-switcher-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.dash-switcher-caret { flex-shrink: 0; opacity: 0.8; }
 
-/* Station header above the sections. */
-.dash-station { padding: 1rem max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left)); }
-.dash-station-name { font-size: var(--fs-xl); font-weight: 600; line-height: 1.15; color: var(--text-primary); }
-.dash-station-meta { margin-top: 0.2rem; font-size: var(--fs-sm); color: var(--text-muted); }
+/* Station button: the name, large and plain, with a caret; truncates, never wraps. */
+.dash-switcher {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  flex-shrink: 1; min-width: 0; max-width: min(100%, 24rem); min-height: 40px;
+  padding: 0.3rem 0.6rem 0.3rem 0.7rem;
+  border: 0; border-radius: 999px;
+  background: none; color: var(--text-primary);
+  font: inherit; font-size: var(--fs-md); font-weight: 600;
+  cursor: pointer; transition: var(--transition);
+}
+.dash-switcher:hover, .dash-switcher[aria-expanded="true"] { background: var(--accent-hover); }
+.dash-switcher-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.dash-switcher-caret { flex-shrink: 0; stroke: var(--text-muted); }
+@media (min-width: 641px) { .dash-switcher { font-size: var(--fs-lg); } }
 
 /* The region that view transitions cross-fade (ui/layout/transition.css). */
 .dash-section-host { view-transition-name: dash-section; min-width: 0; }
@@ -36,12 +53,5 @@
 .dash-section-note { margin-top: 0.15rem; font-size: var(--fs-sm); color: var(--text-muted); }
 
 @media (max-width: 640px), (max-height: 560px) {
-  .dash-station { padding-top: 0.75rem; }
-  /* The navbar switcher already shows the name: keep the heading for screen readers only (.sr-only). */
-  .dash-station-name {
-    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
-  }
-  .dash-station-meta { font-size: var(--fs-xs); }
   .tab-panel { padding-top: 0.75rem; }
 }

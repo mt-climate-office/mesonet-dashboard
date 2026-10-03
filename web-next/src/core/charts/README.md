@@ -14,6 +14,7 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 | `variable.ts` | `variableChart`/`variableTable`/`variableTableAll` (`VariableModel`: a one-panel `LatestTimeseriesModel`; the plot fills the host height) |
 | `windRose.ts` | `windRoseChart`/`windRoseTable` (`WindRoseModel` from `core/models/windRose`), `windRoseTitle`, `binName` |
 | `downloaderPreview.ts` | `downloaderPreviewChart`/`downloaderPreviewTable` (`PreviewModel` from `core/models/downloaderPreview`), `previewHeight(m, compact)` |
+| `heroStrip.ts` | `heroStripChart`/`heroStripTable` (`HeroStripModel` from `core/overview/hero.ts`): the Now 48 h strip, observed → NWS hourly forecast, no zoom |
 | `theme.ts` | `readChartTheme(name, getVar)` (kit tokens → `ChartTheme`), `echartsTheme(t)`, `paint(t, role)` (palette role → color) |
 
 ## Shared helpers (internal to this folder)

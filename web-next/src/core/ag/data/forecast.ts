@@ -14,7 +14,8 @@
  * back to normals.
  */
 import type { ForecastDaily, LocalDate, Nullable } from '../contract'
-import { denverLocal, denverToday } from './parse'
+import { denverToday } from '../../today'
+import { denverLocal } from './parse'
 
 export const NWS_BASE = 'https://api.weather.gov'
 export const FORECAST_MAX_DAYS = 7

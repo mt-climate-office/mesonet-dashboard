@@ -6,7 +6,7 @@ import { parseWallClock } from '../sensorEvents'
 import type { TimeseriesPanel } from '../models/timeseries'
 import { rangeView } from './range'
 import { panelStats } from './stats'
-import { listRequest, primaryColumn, variableRows } from './summary'
+import { currentReading, listRequest, primaryColumn, variableRows } from './summary'
 
 const ELEMENTS = [
   ['air_temp_0200', 'Air Temperature @ 2 m'],
@@ -48,18 +48,27 @@ describe('listRequest', () => {
 describe('variableRows', () => {
   const rows = variableRows(VARS, LATEST, HOURLY)
   const byId = Object.fromEntries(rows.map((r) => [r.id, r]))
+  it('names rows plainly (core/variables/labels)', () => {
+    expect(byId.air_temp.name).toBe('Air temperature')
+    expect(byId.soil_vwc.name).toBe('Soil moisture')
+    expect(byId.ppt.name).toBe('Rain')
+  })
   it('takes current values from /latest, with the depth for soil', () => {
     expect(byId.air_temp).toMatchObject({ value: '57 °F', note: '' })
-    expect(byId.soil_vwc).toMatchObject({ value: '8.65 %', note: 'at 2 in' })
+    expect(byId.soil_vwc).toMatchObject({ value: '9%', note: 'at 2 in' })
   })
   it('summed variables show the last 24 h total and bars', () => {
-    expect(byId.ppt).toMatchObject({ value: '0.3 in', note: 'last 24 h' })
+    expect(byId.ppt).toMatchObject({ value: '0.30 in', note: 'last 24 h' })
     expect(byId.ppt.spark?.kind).toBe('bars')
-    expect(byId.ppt.sparkLabel).toBe('Last 48 hours: 0.3 in in total.')
+    expect(byId.ppt.sparkLabel).toBe('Last 48 hours: 0.30 in in total.')
   })
   it('draws a 48 h line and describes its range', () => {
     expect(byId.air_temp.spark?.kind).toBe('line')
     expect(byId.air_temp.sparkLabel).toBe('Last 48 hours: from 40 °F to 63 °F.')
+  })
+  it('Rain draws no sparkline when the 48 h are dry (as the Now Rain tile)', () => {
+    const dry = HOURLY.map((r) => ({ ...r, 'Precipitation [in]': 0 }))
+    expect(variableRows(VARS, LATEST, dry).find((r) => r.id === 'ppt')).toMatchObject({ value: '0.00 in', spark: null, sparkLabel: '' })
   })
   it('shows "—" and no sparkline without values, and works before the hourly rows load', () => {
     expect(byId.bp).toMatchObject({ value: '—', spark: null, sparkLabel: '' })
@@ -77,8 +86,19 @@ describe('24 h totals', () => {
     const panel = {
       series: [{ name: 'Precipitation [in]', type: 'bar', depth: null, values: rows.map((r) => r['Precipitation [in]'] as number), hoverLabel: '' }],
     } as unknown as TimeseriesPanel
-    const [page] = panelStats(panel, x, rangeView('24h', '2026-10-01', '2026-10-02', x[x.length - 1]), true)
-    expect(list.value).toBe('0.1 in')
+    const [page] = panelStats(panel, x, rangeView('24h', '2026-10-01', '2026-10-02', x[x.length - 1]), true, 'ppt')
+    expect(list.value).toBe('0.10 in')
     expect(page.items).toEqual([{ label: 'Total', value: list.value }])
+  })
+})
+
+describe('currentReading', () => {
+  const v = (id: string) => VARS.find((x) => x.id === id)!
+  it('the /latest reading in plain units at the shallowest depth; none for totals or without a reading', () => {
+    expect(currentReading(v('air_temp'), LATEST)).toBe('57 °F')
+    expect(currentReading(v('soil_vwc'), LATEST)).toBe('9% at 2 in')
+    expect(currentReading(v('ppt'), LATEST)).toBeNull()
+    expect(currentReading(v('bp'), LATEST)).toBeNull()
+    expect(currentReading(v('air_temp'), undefined)).toBeNull()
   })
 })

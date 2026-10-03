@@ -1,13 +1,13 @@
-<!-- Now: the current-conditions overview (x-data="nowView", ui/now/nowView.ts; model
-     core/overview). Freshness line, the air-temperature hero, the tile grid (each a link to its
-     variable in Charts), the latest photo (wind rose without a camera), the NWS forecast strip and
-     the "All readings" link. Skeletons hold every slot's size while tier 1 / tier 2 load.
-     Mounted only while the section is open. -->
+<!-- Now (x-data="nowView", ui/now/nowView.ts; model core/overview buildNowPage): the hero (temperature,
+     high/low against normal, the summary, freshness, the 48 h strip with forecast icons), the latest
+     photo (the wind rose without a camera), the relevant tiles (each a link to its variable in Charts)
+     and two rows to About. Phones: one column; desktop: hero + photo | tiles + rows. Skeletons hold
+     every slot's size while tier 1 / tier 2 load. Mounted only while the section is open. -->
 <template x-if="$store.url.section === 'now'">
 <div class="now" x-data="nowView" data-testid="now">
   <template x-if="state === 'none'">
     <div class="dash-card now-empty" data-testid="now-empty">
-      <h3 class="dash-card-title">No station selected</h3>
+      <h2 class="dash-card-title">No station selected</h2>
       <p>Pick a station to see its current conditions, recent trends and forecast.</p>
       <button type="button" class="nav-btn now-empty-btn" data-picker-toggle aria-controls="station-picker" aria-expanded="false" @click="pick($event)">Choose a station</button>
     </div>
@@ -15,155 +15,148 @@
 
   <template x-if="state === 'error'">
     <div class="dash-card now-empty" role="status">
-      <h3 class="dash-card-title">Current conditions are unavailable</h3>
-      <p>This station has no recent observations, or the Mesonet API did not answer. Its history is still in Charts and Download.</p>
+      <h2 class="dash-card-title">Current conditions are unavailable</h2>
+      <p>This station has no recent observations, or the Mesonet API did not answer. Its history is still in Charts.</p>
     </div>
   </template>
 
   <template x-if="state === 'loading'">
     <div class="now-grid" aria-busy="true" data-testid="now-loading">
       <p class="sr-only" role="status">Loading current conditions…</p>
-      <div class="dash-card now-hero" aria-hidden="true">
-        <span class="dash-skel dash-skel--line" style="width: 40%"></span>
-        <span class="dash-skel dash-skel--value"></span>
-        <span class="dash-skel dash-skel--line" style="width: 60%"></span>
-        <span class="dash-skel dash-skel--spark"></span>
+      <div class="now-col" aria-hidden="true">
+        <div class="dash-card now-hero">
+          <span class="dash-skel now-skel-temp"></span>
+          <span class="dash-skel dash-skel--line" style="width: 80%"></span>
+          <span class="dash-skel dash-skel--line" style="width: 40%"></span>
+          <span class="dash-skel now-strip"></span>
+        </div>
+        <div class="dash-card now-media"><span class="dash-skel dash-skel--media"></span></div>
       </div>
-      <div class="dash-card now-media" aria-hidden="true"><span class="dash-skel dash-skel--media"></span></div>
-      <ul class="now-tiles" aria-hidden="true">
-        <template x-for="i in 6" :key="i">
-          <li class="dash-card now-tile"><span class="dash-skel dash-skel--line" style="width: 50%"></span><span class="dash-skel dash-skel--value"></span><span class="dash-skel dash-skel--spark"></span></li>
-        </template>
-      </ul>
+      <div class="now-col" aria-hidden="true">
+        <ul class="now-tiles">
+          <template x-for="i in 4" :key="i">
+            <li class="dash-card now-tile"><span class="dash-skel dash-skel--line" style="width: 50%"></span><span class="dash-skel dash-skel--value"></span><span class="dash-skel dash-skel--spark"></span></li>
+          </template>
+        </ul>
+      </div>
     </div>
   </template>
 
   <template x-if="state === 'ready'">
     <div class="now-grid">
-      <p class="now-fresh" x-show="o.freshness" data-testid="now-freshness">
-        <span class="now-updated" x-text="o.freshness?.updated"></span>
-        <template x-if="o.freshness?.provisional">
-          <span class="dash-toggletip" x-data="toggletip" data-testid="now-provisional">
-            <button type="button" class="nav-btn mco-btn-info dash-toggletip-btn" aria-label="Provisional data" aria-controls="now-provisional-tip" aria-expanded="false"><span aria-hidden="true">i</span></button>
-            <span class="dash-toggletip-tip" id="now-provisional-tip" hidden><strong>Provisional data.</strong> Readings since the last daily quality-control run (about 8 AM) have had only basic range checks (QC level 1). They are replaced by fully checked level 2 values after the next run, so they may change.</span>
-          </span>
-        </template>
-        <template x-if="o.freshness?.stale">
-          <span class="dash-badge dash-badge--warn" role="status" data-testid="now-stale">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.5" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
-            No report for over 2 hours
-          </span>
-        </template>
-      </p>
-
-      <template x-if="o.hero">
-        <a class="dash-card now-hero" :href="href(['Air Temperature'])" @click="open($event, ['Air Temperature'])" data-testid="now-hero">
-          <span class="now-label">Air temperature</span>
-          <span class="now-hero-value"><span x-text="o.hero.temp"></span><span class="now-unit">F</span></span>
-          <span class="now-hero-feels" x-show="o.hero.feels">
-            <span x-text="o.hero.feels"></span><template x-if="o.hero.feelsKind"><span class="now-dim" x-text="' · ' + o.hero.feelsKind"></span></template>
-          </span>
-          <span class="now-hero-range">
-            <span x-text="o.hero.highLow" x-show="o.hero.highLow"></span>
-            <span class="now-dim" x-text="o.hero.normal" x-show="o.hero.normal"></span>
-            <span class="dash-skel dash-skel--line" style="width: 70%" x-show="sparkLoading" aria-hidden="true"></span>
-          </span>
-          <span class="dash-spark now-hero-spark" aria-hidden="true">
-            <template x-if="o.hero.spark"><svg :view-box.camel="o.hero.spark.viewBox" preserveAspectRatio="none" focusable="false"><path :d="o.hero.spark.d" vector-effect="non-scaling-stroke"/></svg></template>
-            <template x-if="!o.hero.spark && sparkLoading"><span class="dash-skel dash-skel--spark"></span></template>
-          </span>
-          <span class="sr-only" x-text="o.hero.sparkLabel"></span>
-          <span class="now-more" aria-hidden="true">Charts ›</span>
-        </a>
-      </template>
-
-      <div class="dash-card now-media" data-testid="now-media">
-        <template x-if="media === 'pending'"><span class="dash-skel dash-skel--media" aria-hidden="true"></span></template>
-        <template x-if="media === 'photo'">
-          <div class="now-photo" x-data="photoCard" data-testid="now-photo">
-            <template x-if="tileState === 'loading'"><span class="dash-skel dash-skel--media" aria-hidden="true"></span></template>
-            <template x-if="tileState === 'message'"><p class="now-photo-msg" x-text="tileMessage()"></p></template>
-            <template x-if="tileState === 'ready'">
-              <button type="button" class="now-photo-frame" @click="enlarge()" aria-haspopup="dialog"
-                      :aria-label="'Enlarge the latest ' + tile.label + ' photo, with other directions, days and times'"
-                      data-testid="now-photo-open">
-                <img :src="tile.active.webpUrl" :alt="tile.alt" loading="lazy" data-testid="now-photo-image">
-                <span class="now-photo-cap"><span x-text="tile.label"></span><span x-text="tile.stamp" x-show="tile.stamp"></span></span>
-              </button>
+      <div class="now-col">
+        <section class="dash-card now-hero" aria-labelledby="now-hero-title" data-testid="now-hero">
+          <h2 class="sr-only" id="now-hero-title">Current conditions</h2>
+          <div class="now-hero-top">
+            <p class="now-temp num-display" data-testid="now-temp">
+              <span x-text="page.hero.temp ?? '—'"></span><span class="now-temp-unit" x-show="page.hero.temp">F</span>
+            </p>
+            <p class="now-hilo">
+              <span x-show="page.hero.highLow" x-text="page.hero.highLow"></span>
+              <template x-if="tier2 && !page.hero.highLow"><span class="dash-skel dash-skel--line now-hilo-skel" aria-hidden="true"></span></template>
+              <span class="now-dim" x-show="page.hero.normal" x-text="page.hero.normal"></span>
+              <span x-show="page.hero.feels"><span x-text="page.hero.feels"></span><span class="now-dim" x-show="page.hero.feelsKind" x-text="' · ' + page.hero.feelsKind"></span></span>
+            </p>
+          </div>
+          <p class="now-summary" x-show="page.hero.summary" x-text="page.hero.summary" data-testid="now-summary"></p>
+          <p class="now-fresh" x-show="page.hero.freshness" data-testid="now-freshness">
+            <span class="now-updated" x-text="page.hero.freshness?.updated"></span>
+            <template x-if="page.hero.freshness?.provisional">
+              <span class="dash-toggletip" x-data="toggletip" data-testid="now-provisional">
+                <span aria-hidden="true">·</span>
+                <button type="button" class="now-prov-btn dash-toggletip-btn" aria-controls="now-provisional-tip" aria-expanded="false">Provisional</button>
+                <span class="dash-toggletip-tip" id="now-provisional-tip" hidden><strong>Provisional data.</strong> Readings since the last daily quality-control run (about 8 AM) have had only basic range checks (QC level 1). They are replaced by fully checked level 2 values after the next run, so they may change.</span>
+              </span>
             </template>
-            <!-- @include partials/now/photo-dialog.html -->
-          </div>
-        </template>
-        <template x-if="media === 'wind'">
-          <div class="now-rose">
-            <!-- @include partials/now/wind-rose.html -->
-          </div>
-        </template>
-      </div>
-
-      <ul class="now-tiles" data-testid="now-tiles">
-        <template x-for="t in o.tiles" :key="t.id">
-          <li class="now-tile-item">
-            <a class="dash-card now-tile" :class="'now-tile--' + t.id" :href="href(t.vars)" @click="open($event, t.vars)" :data-testid="'tile-' + t.id">
-              <span class="now-label" x-text="t.label"></span>
-              <span class="now-value"><span x-text="t.value"></span> <span class="now-unit" x-text="t.unit"></span>
-                <template x-if="t.windDeg !== undefined">
-                  <svg class="now-compass" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <circle cx="12" cy="12" r="10" fill="none" stroke-width="1.5"/>
-                    <!-- Arrow points where the wind blows TO (from + 180°). -->
-                    <path :transform="'rotate(' + (t.windDeg + 180) + ' 12 12)'" d="M12 4l4 9h-3v7h-2v-7H8z"/>
-                  </svg>
-                </template>
+            <template x-if="page.hero.freshness?.stale">
+              <span class="dash-badge dash-badge--warn" role="status" data-testid="now-stale">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="2.5" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>
+                No report for over 2 hours
               </span>
-              <template x-for="line in t.detail" :key="line"><span class="now-detail" x-text="line"></span></template>
-              <template x-if="t.soil">
-                <table class="now-soil">
-                  <caption class="sr-only">Soil profile: temperature and water content by depth</caption>
-                  <thead><tr><th scope="col">Depth</th><th scope="col">Temp</th><th scope="col">VWC</th></tr></thead>
-                  <tbody>
-                    <template x-for="r in t.soil" :key="r.depth">
-                      <tr><th scope="row" x-text="r.depth"></th><td x-text="r.temp"></td><td><span class="now-soil-bar" :style="'--w:' + r.bar + '%'" aria-hidden="true"></span><span x-text="r.vwc"></span></td></tr>
-                    </template>
-                  </tbody>
-                </table>
-              </template>
-              <span class="dash-spark" aria-hidden="true">
-                <template x-if="t.spark"><svg :view-box.camel="t.spark.viewBox" preserveAspectRatio="none" focusable="false" :class="'is-' + t.spark.kind"><path :d="t.spark.d" vector-effect="non-scaling-stroke"/></svg></template>
-                <template x-if="!t.spark && sparkLoading"><span class="dash-skel dash-skel--spark"></span></template>
-              </span>
-              <span class="sr-only" x-text="t.sparkLabel"></span>
-            </a>
-          </li>
-        </template>
-      </ul>
+            </template>
+          </p>
 
-      <section class="dash-card now-forecast" aria-label="Forecast" x-data="forecastCard" data-testid="now-forecast">
-        <div class="dash-card-head">
-          <h3 class="dash-card-title" x-text="state === 'ready' ? heading() : 'NWS forecast'"></h3>
-          <a class="dash-link" :href="detailUrl()" target="_blank" rel="noopener noreferrer">Full forecast<span class="sr-only"> (opens in a new tab)</span></a>
-        </div>
-        <template x-if="state === 'loading'">
-          <div class="now-periods" aria-hidden="true"><template x-for="i in 4" :key="i"><span class="dash-skel dash-skel--period"></span></template></div>
-        </template>
-        <template x-if="state === 'error'">
-          <p class="now-dim">The NWS forecast is unavailable right now. <button type="button" class="nav-btn now-retry" @click="retry()">Retry</button></p>
-        </template>
-        <template x-if="state === 'ready'">
-          <ul class="now-periods" tabindex="0" aria-label="Forecast periods, scrolls sideways">
-            <template x-for="p in rows" :key="p.key">
-              <li class="now-period" :class="p.isDaytime ? 'is-day' : 'is-night'">
-                <span class="now-period-name" x-text="p.name"></span>
-                <template x-if="p.icon"><img :src="p.icon" :alt="p.alt" width="44" height="44" loading="lazy"></template>
-                <span class="now-period-temp" x-text="p.temp"></span>
-                <span class="now-period-short" x-text="p.short"></span>
-                <template x-if="p.precip"><span class="now-period-pop"><span class="sr-only">Chance of precipitation </span><span x-text="p.precip"></span></span></template>
-              </li>
+          <div class="now-strip" data-testid="now-strip">
+            <template x-if="tier2"><div><p class="sr-only" role="status">Loading the 48-hour strip…</p><span class="dash-skel now-strip-skel" aria-hidden="true"></span></div></template>
+            <template x-if="!tier2 && page.hero.strip">
+              <div class="chart now-strip-chart" x-data="chart(stripChart())"></div>
+            </template>
+            <template x-if="!tier2 && !page.hero.strip">
+              <p class="now-strip-empty" role="status" data-testid="now-strip-empty">No hourly temperatures or forecast to draw for the last and next 24 hours.</p>
+            </template>
+          </div>
+          <ul class="now-icons" x-show="page.icons.length" aria-label="Forecast periods" data-testid="now-icons">
+            <template x-for="p in page.icons" :key="p.t">
+              <li><img :src="p.icon" :alt="p.short" width="32" height="32" loading="lazy"><span x-text="p.label"></span></li>
             </template>
           </ul>
-        </template>
-      </section>
+          <div class="now-strip-foot">
+            <span class="now-legend" aria-hidden="true"><i></i>Observed</span>
+            <span class="now-legend" aria-hidden="true"><i class="is-forecast"></i>NWS forecast</span>
+            <a class="dash-link now-forecast-link" :href="forecastUrl" target="_blank" rel="noopener noreferrer" data-testid="now-full-forecast">Full forecast<span class="sr-only"> (NWS, opens in a new tab)</span></a>
+          </div>
+        </section>
 
-      <a class="now-all" :href="$store.url.hrefFor('about')" @click="toAbout($event)" data-testid="now-all-readings">All readings and station details ›</a>
+        <div class="dash-card now-media" :class="media === 'wind' && 'is-rose'" data-testid="now-media">
+          <template x-if="media === 'pending'"><span class="dash-skel dash-skel--media" aria-hidden="true"></span></template>
+          <template x-if="media === 'photo'">
+            <div class="now-photo" x-data="photoCard" data-testid="now-photo">
+              <template x-if="tileState === 'loading'"><span class="dash-skel dash-skel--media" aria-hidden="true"></span></template>
+              <template x-if="tileState === 'message'"><p class="now-photo-msg" x-text="tileMessage()"></p></template>
+              <template x-if="tileState === 'ready'">
+                <button type="button" class="now-photo-frame" @click="enlarge()" aria-haspopup="dialog"
+                        :aria-label="'Enlarge the latest ' + tile.label + ' photo, with other directions, days and times'"
+                        data-testid="now-photo-open">
+                  <img :src="tile.active.webpUrl" :alt="tile.alt" loading="lazy" data-testid="now-photo-image">
+                  <span class="now-photo-cap"><span x-text="tile.label"></span><span x-text="tile.stamp" x-show="tile.stamp"></span></span>
+                </button>
+              </template>
+              <!-- @include partials/now/photo-dialog.html -->
+            </div>
+          </template>
+          <template x-if="media === 'wind'">
+            <div class="now-rose">
+              <!-- @include partials/now/wind-rose.html -->
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div class="now-col">
+        <h2 class="sr-only">Readings</h2>
+        <ul class="now-tiles" data-testid="now-tiles">
+          <template x-for="t in page.tiles" :key="t.id">
+            <li class="now-tile-item">
+              <a class="dash-card now-tile" :href="href(t.v)" @click="open($event, t.v)" :data-testid="'tile-' + t.id">
+                <span class="now-tile-head">
+                  <span x-text="t.name"></span>
+                  <template x-if="t.chip"><span class="dash-badge" x-text="t.chip" data-testid="now-soil-chip"></span></template>
+                </span>
+                <span class="now-tile-value"><span class="num-display" x-text="t.value"></span><span class="now-unit" x-text="t.unit"></span></span>
+                <span class="now-tile-sub" x-text="t.sub"></span>
+                <span class="dash-spark" aria-hidden="true">
+                  <template x-if="t.spark"><svg :view-box.camel="t.spark.viewBox" preserveAspectRatio="none" focusable="false" :class="'is-' + t.spark.kind"><path :d="t.spark.d" vector-effect="non-scaling-stroke"/></svg></template>
+                  <template x-if="!t.spark && tier2"><span class="dash-skel dash-skel--spark"></span></template>
+                </span>
+                <span class="sr-only" x-text="t.sparkLabel"></span>
+              </a>
+            </li>
+          </template>
+        </ul>
+
+        <div class="dash-card now-rows">
+          <a class="now-row" :href="$store.url.hrefFor('about')" @click="toAbout($event, 'about-readings')" data-testid="now-all-readings">
+            <span class="now-row-name">All readings</span>
+            <span class="now-row-meta" x-text="page.readingsMeta"></span>
+            <span class="now-row-chev" aria-hidden="true">›</span>
+          </a>
+          <a class="now-row" :href="$store.url.hrefFor('about')" @click="toAbout($event, 'main')" data-testid="now-station-details">
+            <span class="now-row-name">Station details</span>
+            <span class="now-row-meta" x-text="page.stationMeta"></span>
+            <span class="now-row-chev" aria-hidden="true">›</span>
+          </a>
+        </div>
+      </div>
     </div>
   </template>
 </div>

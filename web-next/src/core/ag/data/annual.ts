@@ -18,6 +18,7 @@
  */
 import type { LocalDate, Nullable, QcLevel } from '../contract'
 import { DEFAULT_AG_LEVEL, fetchRows } from './observations'
+import { denverToday } from '../../today'
 import { addDays, denverLocal, parseApiDatetime, parseHeader, toBool, toNum, toSi } from './parse'
 import type { RawRow } from './parse'
 
@@ -104,7 +105,7 @@ export async function getAnnualDaily(
 ): Promise<AnnualDaily> {
   const agg = opts.agg ?? (element === 'ppt' ? 'sum' : 'avg')
   const level = opts.level ?? DEFAULT_AG_LEVEL
-  const today = opts.today ?? denverLocal(Date.now()).date
+  const today = opts.today ?? denverToday()
   const sorted = [...new Set(years)].sort((a, b) => a - b)
   const out = await pool(sorted, opts.concurrency ?? 3, async (year) => {
     if (`${year}-01-01` > today) return parseAnnualYear([], year)

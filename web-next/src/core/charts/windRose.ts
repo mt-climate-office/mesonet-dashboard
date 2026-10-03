@@ -6,13 +6,18 @@
 import type { EChartsOption } from 'echarts'
 import type { WindRoseModel } from '../models/windRose'
 import { binColors } from '../palette'
+import { dateRangeText } from '../ag/view/summary'
 import { escapeHtml } from './format'
 import { tooltipBase } from './tooltip'
 import type { ChartBuilder, ChartTable } from './types'
 
-/** Legacy title "Wind Data from {start} to {end}" (local dates), or null without dates. */
-export const windRoseTitle = (m: WindRoseModel): string | null =>
-  m.span ? `Wind Data from ${m.span[0]} to ${m.span[1]}` : null
+/** "Wind, Sep 19 – Oct 2" over the data's local dates (with the years when they differ), or null without dates. */
+export function windRoseTitle(m: WindRoseModel): string | null {
+  if (!m.span) return null
+  const [a, b] = m.span
+  const range = dateRangeText(a, b)
+  return `Wind, ${a.slice(0, 4) === b.slice(0, 4) ? range.replace(/, \d{4}$/, '') : range}`
+}
 
 /** Legend / tooltip name of a bin: "4 – 6 mph". */
 export const binName = (label: string): string => `${label} mph`

@@ -67,44 +67,6 @@ export const COLOR_MAPPER: Record<string, string | null> = {
   Precipitation: null,
 }
 
-/** Y-axis titles, verbatim from legacy params.axis_mapper. */
-export const AXIS_MAPPER: Record<string, string> = {
-  Precipitation: 'Precipitation<br>(inches)',
-  'Soil VWC': 'Soil VWC.<br>(%)',
-  'Bulk EC': 'Soil Bulk<br>EC (mS cm<sup>-1</sup>)',
-  'Air Temperature': 'Air Temp.<br>(°F)',
-  'Relative Humidity': 'Relative Hum.<br>(%)',
-  'Solar Radiation': 'Solar Rad.<br>(W/m<sup>2</sup>)',
-  'Wind Speed': 'Wind Spd.<br>(mph)',
-  'Soil Temperature': 'Soil Temp.<br>(°F)',
-  'Atmospheric Pressure': 'Atmos. Pres. (mbar)',
-  'Reference ET': 'Reference ET<br>(inches)',
-  'Snow Depth': 'Snow Depth<br>(in.)',
-  'Gust Speed': 'Gust Speed<br>(mi/hr)',
-  'Max Precip Rate': 'Max Precip Rate<br>(in/hr)',
-  VPD: 'VPD (mbar)',
-  'Well Water Level': 'Well Depth<br>(in.)',
-  'Well Water Temperature': 'Well Temperature<br>(°F)',
-  'Well EC': 'Well EC<br>(mS cm<sup>-1</sup>)',
-  'Wind Direction': 'Wind Direction<br>(deg)',
-}
-
-/**
- * Y-axis title for a Latest panel. Precipitation / Reference ET get a
- * per-period unit (legacy plot_site): daily "(inches/day)", hourly
- * "(inches/hour)"; raw keeps Precipitation "(inches)" but ETr is
- * "(inches/hour)" (raw ETr comes from /derived/hourly). Unknown variables
- * fall back to the variable name.
- */
-export function latestAxisTitle(v: string, period: 'hourly' | 'daily' | 'raw'): string {
-  const title = AXIS_MAPPER[v] ?? v
-  if (v !== 'Precipitation' && v !== 'Reference ET') return title
-  if (period === 'daily') return title.replace('(inches)', '(inches/day)')
-  if (period === 'hourly') return title.replace('(inches)', '(inches/hour)')
-  if (v === 'Reference ET') return title.replace('(inches)', '(inches/hour)')
-  return title
-}
-
 /**
  * Element codes never offered on the Latest tab. `ppt_corrected`
  * ("Precipitation (fill-corrected)") is a mesonet2-only element; the default

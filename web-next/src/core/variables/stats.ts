@@ -1,12 +1,15 @@
 /**
- * The variable page's stats row: min / max / mean of each plotted column over
- * the visible window, or the total for summed variables (precipitation,
+ * The variable page's stats card: low / high / average of each plotted column
+ * over the visible window, or the total for summed variables (precipitation,
  * reference ET). Input is one core/models/timeseries panel (display units).
+ * With a daily low–high band (band.ts), Low and High are the true extremes
+ * from the band, not the extremes of the daily means.
  */
 import type { TimeseriesPanel } from '../models/timeseries'
+import { LABELS, formatReading } from './labels'
 
 export interface StatItem {
-  label: 'Min' | 'Max' | 'Mean' | 'Total'
+  label: 'Low' | 'High' | 'Average' | 'Total'
   /** Formatted with the unit ("41.2 °F"), or "—" with no values. */
   value: string
 }
@@ -28,30 +31,37 @@ export function fmtStat(v: number): string {
 
 /**
  * One row per series of `panel`, over the points with `view[0] <= x < view[1]`
- * (`x` aligned with the series values, wall-clock ms).
+ * (`x` aligned with the series values, wall-clock ms). With the variable's
+ * `id`, values use its plain unit and table precision (core/variables/labels).
  */
-export function panelStats(panel: TimeseriesPanel, x: readonly number[], view: readonly [number, number], sum: boolean): StatRow[] {
+export function panelStats(panel: TimeseriesPanel, x: readonly number[], view: readonly [number, number], sum: boolean, id?: string): StatRow[] {
   const single = panel.series.length === 1
   return panel.series.map((s) => {
-    const vals: number[] = []
-    s.values.forEach((v, i) => {
-      if (v !== null && Number.isFinite(v) && x[i] >= view[0] && x[i] < view[1]) vals.push(v)
-    })
+    const within = (ys: readonly (number | null)[]) => {
+      const out: number[] = []
+      ys.forEach((v, i) => {
+        if (v !== null && Number.isFinite(v) && x[i] >= view[0] && x[i] < view[1]) out.push(v)
+      })
+      return out
+    }
+    const vals = within(s.values)
     const unit = unitOf(s.name)
-    const fmt = (v: number | null) => (v === null ? '—' : `${fmtStat(v)}${unit ? ` ${unit}` : ''}`)
+    const plain = id !== undefined && id in LABELS
+    const fmt = (v: number | null) => (v === null ? '—' : plain ? formatReading(id, v, 'table') : `${fmtStat(v)}${unit ? ` ${unit}` : ''}`)
     const label = single ? '' : (s.depth ?? s.name.replace(/\s*\[[^\]]*\]\s*$/, ''))
     if (sum) return { label, items: [{ label: 'Total', value: fmt(vals.length ? vals.reduce((a, b) => a + b, 0) : null) }] }
-    // A loop, not Math.min(...vals): a long raw window would overflow the argument list.
-    const n = vals.length
-    const min = n ? vals.reduce((a, b) => (b < a ? b : a)) : null
-    const max = n ? vals.reduce((a, b) => (b > a ? b : a)) : null
-    const mean = n ? vals.reduce((a, b) => a + b, 0) / n : null
+    // A reduce, not Math.min(...vals): a long raw window would overflow the argument list.
+    const lows = s.band ? within(s.band.lo) : vals
+    const highs = s.band ? within(s.band.hi) : vals
+    const min = lows.length ? lows.reduce((a, b) => (b < a ? b : a)) : null
+    const max = highs.length ? highs.reduce((a, b) => (b > a ? b : a)) : null
+    const mean = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null
     return {
       label,
       items: [
-        { label: 'Min', value: fmt(min) },
-        { label: 'Max', value: fmt(max) },
-        { label: 'Mean', value: fmt(mean) },
+        { label: 'Low', value: fmt(min) },
+        { label: 'High', value: fmt(max) },
+        { label: 'Average', value: fmt(mean) },
       ],
     }
   })

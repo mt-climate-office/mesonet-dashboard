@@ -1,9 +1,36 @@
 /* Station picker content (partials/picker.html); the drawer / sheet frame is
-   ui/layout/{drawer,sheet}.css. Kit tokens only. */
+   ui/layout/{drawer,sheet}.css. Search first: a rounded field with a search icon, the clear
+   button and the "Near me" chip inside it. Then recents, then "Browse on the map", which
+   reveals the network chips and the map. Kit tokens only. */
 
-.picker-search .ctl-input { font-size: var(--fs-md); min-height: 44px; }
+/* Search field: icon · input · × · Near me. The input spans the field; the buttons sit on it. */
+.picker-search { --clear-w: 32px; --near-w: 6.4rem; }
+.picker-search .ctl-combobox-field { align-items: center; }
+.picker-search .ctl-input {
+  min-height: 44px; font-size: var(--fs-md);
+  padding-left: 2.4rem; padding-right: calc(var(--clear-w) + var(--near-w) + 0.5rem);
+  border-radius: 999px;
+}
+.picker-search-icon { position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%); stroke: var(--text-muted); pointer-events: none; }
+.picker-search .ctl-clear { right: calc(var(--near-w) + 0.25rem); border-radius: 999px; }
+.picker-near {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  height: 34px; padding: 0 0.7rem;
+  border: 0; border-radius: 999px;
+  background: var(--accent-hover); color: var(--accent-line);
+  font: inherit; font-size: var(--fs-sm); font-weight: 600; white-space: nowrap;
+  cursor: pointer;
+}
+.picker-near svg { stroke: currentColor; }
+.picker-near:disabled { opacity: 0.6; cursor: progress; }
+@media (hover: none) {
+  .picker-search { --clear-w: 42px; --near-w: 6.8rem; }
+  .picker-search .ctl-input { min-height: 48px; }
+  .picker-near { height: 40px; }
+}
+
 .picker-group { display: flex; flex-direction: column; gap: 0.5rem; }
-.picker-group-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .picker-group-title { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 .picker-note { font-size: var(--fs-sm); color: var(--text-muted); }
 
@@ -19,10 +46,27 @@
 .picker-row:hover { background: var(--accent-hover); }
 .picker-row[aria-current="true"] { box-shadow: inset 3px 0 0 var(--accent-line); font-weight: 600; }
 .picker-row-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.picker-row-meta { flex-shrink: 0; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
+.picker-row-meta { flex-shrink: 0; font-size: var(--fs-xs); color: var(--text-muted); }
+
+/* "Browse on the map": a full-width row; the caret turns while open (aria-expanded). */
+.picker-browse-toggle {
+  display: flex; align-items: center; gap: 0.6rem;
+  width: 100%; min-height: 44px; padding: 0.4rem 0.6rem;
+  border: 0; border-radius: var(--radius-md);
+  background: none; color: var(--accent-line);
+  font: inherit; font-size: var(--fs-sm); font-weight: 600; text-align: left;
+  cursor: pointer;
+}
+.picker-browse-toggle:hover { background: var(--accent-hover); }
+.picker-browse-toggle svg { flex-shrink: 0; stroke: currentColor; }
+.picker-browse-toggle > span { flex: 1; }
+.picker-browse-caret { transition: transform var(--transition); }
+.picker-browse-toggle[aria-expanded="true"] .picker-browse-caret { transform: rotate(180deg); }
+.picker-map-region { display: flex; flex-direction: column; gap: 0.6rem; min-height: 0; }
 
 .picker-map { height: 18rem; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
 /* In the drawer the map takes whatever height is left (at least 18rem; the body scrolls past that). */
-.dash-drawer .picker-group:last-child { flex: 1 0 auto; }
+.dash-drawer .picker-browse { flex: 1 0 auto; }
+.dash-drawer .picker-map-region { flex: 1 0 auto; }
 .dash-drawer .picker-map { flex: 1 0 18rem; height: auto; }
 .dash-sheet .picker-map { height: min(46dvh, 22rem); }

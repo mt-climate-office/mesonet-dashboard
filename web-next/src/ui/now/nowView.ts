@@ -1,48 +1,76 @@
 /**
- * `x-data="nowView"` on the Now section (partials/now/index.html): the
- * current-conditions overview. Tier 1 (`/latest`, `/derived/ppt/`, NWS,
- * photo schedule) is requested in parallel on mount; tier 2 (the hourly
- * sparkline rows and normals) once `/latest` is in. The model is
- * core/overview `buildOverview`, computed once per change in an effect (the
- * partial reads `o` many times). Each tile links to its first variable's
- * page in Charts (`v=`), morphing into the page heading.
+ * `x-data="nowView"` on the Now section (partials/now/index.html). Tier 1
+ * (`/latest`, the ppt summary, the NWS periods, the photo schedule) starts in
+ * parallel on mount and renders the hero and tiles; tier 2 (the 72 h hourly
+ * rows, normals, the NWS hourly forecast, SWP, 7 daily rain totals) fills the strip, sparklines,
+ * high/low and the soil chip. The model is core/overview `buildNowPage`,
+ * computed once per change in an effect (the partial reads `page` many times).
  */
 import Alpine from 'alpinejs'
 import type { Station } from '../../core/api'
-import { buildOverview, type Overview } from '../../core/overview'
+import { forecastDetailUrl } from '../../core/cards'
+import { heroStripChart, heroStripTable, type HeroStripModel } from '../../core/charts'
+import { buildNowPage, latestSwpBar, type NowPage } from '../../core/overview'
 import { hasCamera } from '../../core/photos'
-import { variableId } from '../../core/variables'
-import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../station/resources'
+import { stationHasSwp } from '../../core/stations'
+import { denverToday } from '../../core/today'
+import type { ChartBindings } from '../charts/chart'
 import { component } from '../component'
 import { togglePicker } from '../picker/stationPicker'
 import { follow } from '../shell/navigate'
-import { normals, sparkRows } from './resources'
+import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../station/resources'
+import { normals, nwsHourly, rainDaily, sparkRows, swpRows } from './resources'
 
-const EMPTY: Overview = { freshness: null, hero: null, tiles: [] }
 type State = 'none' | 'loading' | 'error' | 'ready'
+interface View {
+  page: NowPage | null
+  state: State
+  /** Tier 2 still loading: the strip, sparklines and high/low show skeletons. */
+  tier2: boolean
+  forecastUrl: string
+}
+
+const raw = <T>(x: T): T => (x ? Alpine.raw(x) : x)
+const loading = (r: { status: string; data?: unknown } | null) => !!r && r.status === 'loading' && !r.data
 
 /** Everything the partial binds, from the stores and the cache (reactive reads). */
-function compute(nowMs: number): { o: Overview; state: State; sparkLoading: boolean } {
+function compute(nowMs: number): View {
   const st = Alpine.store('station')
   const s: Station | undefined = st.current
+  const none = { page: null, tier2: false, forecastUrl: '' }
   if (!s) {
     const waiting = !!Alpine.store('url').state.s && st.catalog?.status !== 'success'
-    return { o: EMPTY, state: waiting ? 'loading' : 'none', sparkLoading: false }
+    return { ...none, state: waiting ? 'loading' : 'none' }
   }
-  const today = MCO.todayMT()
+  const today = denverToday()
   // Tier 1, in parallel: reading a resource starts its request (the cache dedupes).
   const latestRes = latestObs(s.station)
   const ppt = s.sub_network === 'HydroMet' ? pptSummary(s.station).data?.[0] : undefined
-  nwsForecast(s.latitude, s.longitude)
+  const fc = nwsForecast(s.latitude, s.longitude)
   photoSchedule()
   const latest = latestRes.data?.[0] as Record<string, unknown> | undefined
-  if (!latest) return { o: EMPTY, state: latestRes.status === 'loading' ? 'loading' : 'error', sparkLoading: false }
+  if (!latest) return { ...none, state: latestRes.status === 'loading' ? 'loading' : 'error' }
   // Tier 2 waits for /latest: it picks the elements and keeps tier 1 first on the wire.
   const spark = sparkRows(s.station, today, latest)
   const nm = { tmmx: normals(s.station, 'tmmx').data, tmmn: normals(s.station, 'tmmn').data, pr: normals(s.station, 'pr').data }
-  const hourly = spark.data ? Alpine.raw(spark.data) : undefined
-  const o = buildOverview({ latest: Alpine.raw(latest), hourly, ppt: ppt ? Alpine.raw(ppt) : undefined, normals: nm, today, nowMs })
-  return { o, state: 'ready', sparkLoading: spark.status === 'loading' && !spark.data }
+  const hourlyUrl = fc.data?.hourlyUrl
+  const fcHourly = hourlyUrl ? nwsHourly(hourlyUrl) : null
+  const swp = stationHasSwp(s) ? swpRows(s.station, today) : null
+  const rain = rainDaily(s.station, today)
+  const page = buildNowPage({
+    latest: raw(latest),
+    hourly: raw(spark.data),
+    ppt: raw(ppt),
+    normals: nm,
+    today,
+    nowMs,
+    forecast: raw(fc.data),
+    forecastHourly: raw(fcHourly?.data),
+    swpBar: latestSwpBar(raw(swp?.data)),
+    rainDaily: raw(rain.data),
+    station: s,
+  })
+  return { page, state: 'ready', tier2: loading(spark) || loading(fc) || loading(fcHourly) || loading(rain), forecastUrl: forecastDetailUrl(s.latitude, s.longitude) }
 }
 
 export function nowView() {
@@ -51,9 +79,10 @@ export function nowView() {
   return component({
     /** Re-read every minute so "Updated N min ago" (and the 5 min refetch) stay current. */
     nowMs: Date.now(),
-    o: EMPTY,
+    page: null as NowPage | null,
     state: 'loading' as State,
-    sparkLoading: true,
+    tier2: true,
+    forecastUrl: '',
 
     init() {
       effect = Alpine.effect(() => Object.assign(this, compute(this.nowMs)))
@@ -71,17 +100,26 @@ export function nowView() {
       return hasCamera(sched.data, Alpine.store('station').id) ? 'photo' : 'wind'
     },
 
-    href(vars: string[]): string {
-      return Alpine.store('url').hrefFor('charts', { v: variableId(vars[0]), view: 'recent', cmp: false })
+    /** Bindings for the strip's nested `x-data="chart(stripChart())"`. */
+    stripChart(): ChartBindings<HeroStripModel> {
+      return {
+        builder: heroStripChart,
+        table: heroStripTable,
+        label: 'Air temperature, the last 24 hours observed and the next 24 hours forecast',
+        model: () => this.page?.hero.strip,
+      }
+    },
+
+    href(v: string): string {
+      return Alpine.store('url').hrefFor('charts', { v, view: 'recent', cmp: false })
     },
     /** A tile: push its variable page; the tile morphs into the page heading, which takes focus. */
-    open(e: MouseEvent, vars: string[]): void {
-      const patch = { v: variableId(vars[0]), view: 'recent', cmp: false } as const
-      follow(e, 'charts', { patch, morph: e.currentTarget as HTMLElement, target: 'var-title' })
+    open(e: MouseEvent, v: string): void {
+      follow(e, 'charts', { patch: { v, view: 'recent', cmp: false }, morph: e.currentTarget as HTMLElement, target: 'var-title' })
     },
-    /** "All readings" → About's readings table, through the same pushState + transition as the section nav. */
-    toAbout(e: MouseEvent): void {
-      follow(e, 'about', { target: 'about-readings' })
+    /** A row to About, through the same pushState + transition as the section nav; `target` takes focus. */
+    toAbout(e: MouseEvent, target?: string): void {
+      follow(e, 'about', target ? { target } : {})
     },
 
     pick(e: Event): void {

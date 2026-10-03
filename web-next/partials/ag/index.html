@@ -1,56 +1,97 @@
-<!-- Ag section (x-data="agTab", ui/ag/agTab.ts). No tool open (`var` absent): one card per
-     tool. A tool open: "All Ag tools", its heading, the Options disclosure, the chart card.
-     Mounted only while the section is open, so nothing fetches from another section (the
-     cache keeps the data). -->
-<template x-if="$store.url.section === 'ag'">
-  <div class="ag" x-data="agTab">
-    <template x-if="!isOpen()">
-      <div class="ag-landing" data-testid="ag-tools">
-        <h2 class="ag-heading">Ag tools</h2>
-        <ul class="ag-tools">
-          <template x-for="t in tools" :key="t.value">
-            <li>
-              <a class="dash-card ag-tool" :id="'ag-tool-' + t.value" :href="toolHref(t.value)"
-                 @click="openTool($event, t.value)" :data-testid="'ag-tool-' + t.value">
-                <h3 class="ag-tool-title" x-text="t.label"></h3>
-                <p class="ag-tool-desc" x-text="t.description"></p>
-              </a>
-            </li>
-          </template>
-        </ul>
+<!-- An Ag tool inside Charts (x-data="agTab", ui/ag/agTab.ts), shown while `v` is an Ag tool id
+     (core/variables chartsMode 'ag'; partials/charts/index.html), in the variable page's frame: back ·
+     title · ⋯ menu; the station; the option chips (partials/ag/options.html; Reference ET adds All
+     years); the chart card (or its table with tbl=1) and, where meaningful, a stats card. Without a
+     station, or for an SWP tool at a station without SWP sensors, the card says why and opens the
+     header's station picker. -->
+<div class="ag chart-page" x-data="agTab" data-testid="ag-tool">
+  <div class="chart-head">
+    <a class="dash-icon-btn ag-back" :href="listHref()" @click="toList($event)" aria-label="All charts" data-testid="ag-back">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </a>
+    <h2 class="chart-title" id="ag-chart-title" tabindex="-1" data-vt-target x-text="title()"></h2>
+    <div class="dash-menu" x-data="menu" data-testid="ag-menu">
+      <button type="button" class="dash-icon-btn" data-menu-button aria-expanded="false" aria-label="More for this chart" data-testid="ag-menu-button">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+      </button>
+      <div class="dash-menu-panel" id="ag-menu" role="menu" aria-label="More for this chart" hidden>
+        <button type="button" class="dash-menu-item" role="menuitem" aria-haspopup="dialog" @click="download()" data-testid="ag-menu-download">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg>
+          Download data
+        </button>
+        <button type="button" class="dash-menu-item" role="menuitem" @click="toggleTable()" data-testid="ag-menu-table">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M3 5h18v14H3zM3 10h18M3 15h18M9 5v14"/></svg>
+          <span x-text="tableMode() ? 'Show as chart' : 'Show as table'"></span>
+        </button>
+        <button type="button" class="dash-menu-item" role="menuitem" @click="share()" data-testid="ag-menu-share">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
+          Share this chart
+        </button>
+        <a class="dash-menu-item" role="menuitem" :href="learnHref()" target="_blank" rel="noopener noreferrer" data-testid="ag-learn-more">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+          About this tool<span class="sr-only"> (opens in a new tab)</span>
+        </a>
+        <template x-if="near.prev || near.next"><hr class="dash-menu-sep"></template>
+        <template x-if="near.prev">
+          <button type="button" class="dash-menu-item" role="menuitem" @click="step(-1)" data-testid="var-prev">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+            <span x-text="'Previous: ' + nameOf(near.prev)"></span>
+          </button>
+        </template>
+        <template x-if="near.next">
+          <button type="button" class="dash-menu-item" role="menuitem" @click="step(1)" data-testid="var-next">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+            <span x-text="'Next: ' + nameOf(near.next)"></span>
+          </button>
+        </template>
       </div>
-    </template>
+    </div>
+  </div>
+  <p class="chart-sub" x-show="subline()" x-text="subline()"></p>
 
-    <template x-if="isOpen()">
-      <div class="ag-open">
-        <a class="dash-link ag-back" :href="cardsHref()" @click="toCards($event)" data-testid="ag-back">
-          <span aria-hidden="true">‹ </span>All Ag tools</a>
-        <h2 class="ag-heading" id="ag-chart-title" tabindex="-1" x-text="title()"></h2>
-        <!-- @include partials/ag/controls.html -->
-        <section class="dash-card ag-chart-card" aria-labelledby="ag-chart-title">
-          <template x-if="state() === 'loading-stations'">
-            <p class="ag-state">Loading stations…</p>
-          </template>
-          <template x-if="state() === 'no-station'">
-            <div class="ag-state ag-no-station" data-testid="ag-no-station">
-              <p class="ag-no-station-title">Select Station</p>
-              <p>To get started, select a station from the dropdown.</p>
-            </div>
-          </template>
-          <template x-if="show('met')">
-            <!-- @include partials/ag/met.html -->
-          </template>
-          <template x-if="show('gdd')">
-            <!-- @include partials/ag/gdd.html -->
-          </template>
-          <template x-if="show('soil')">
-            <!-- @include partials/ag/soil.html -->
-          </template>
-          <template x-if="show('annual')">
-            <!-- @include partials/ag/annual.html -->
-          </template>
-        </section>
-      </div>
+  <div class="ag-opts-row">
+    <template x-if="!history()">
+      <!-- @include partials/ag/options.html -->
+    </template>
+    <template x-if="hasHistory()">
+      <button type="button" class="dash-chip" :aria-pressed="history()" @click="toggleHistory()" data-testid="range-all">All years</button>
     </template>
   </div>
-</template>
+
+  <template x-if="state() !== 'chart'">
+    <section class="dash-card ag-chart-card chart-card" aria-labelledby="ag-chart-title">
+      <template x-if="state() === 'loading-stations'">
+        <p class="ag-state">Loading stations…</p>
+      </template>
+      <template x-if="state() === 'no-station'">
+        <div class="ag-state ag-no-station" data-testid="ag-no-station">
+          <p>Pick a station to see this tool.</p>
+          <button type="button" class="nav-btn" @click="pickStation($event)">Choose a station</button>
+        </div>
+      </template>
+      <template x-if="state() === 'not-here'">
+        <div class="ag-state ag-no-station" data-testid="ag-not-here">
+          <p x-text="notHere()"></p>
+          <button type="button" class="nav-btn" @click="pickStation($event)">Choose another station</button>
+        </div>
+      </template>
+    </section>
+  </template>
+  <template x-if="show('met')">
+    <!-- @include partials/ag/met.html -->
+  </template>
+  <template x-if="show('gdd')">
+    <!-- @include partials/ag/gdd.html -->
+  </template>
+  <template x-if="show('soil')">
+    <!-- @include partials/ag/soil.html -->
+  </template>
+  <template x-if="show('annual')">
+    <!-- @include partials/ag/annual.html -->
+  </template>
+  <template x-if="state() === 'chart' && history()">
+    <section class="dash-card chart-card" aria-label="All years">
+      <!-- @include partials/charts/history.html -->
+    </section>
+  </template>
+</div>

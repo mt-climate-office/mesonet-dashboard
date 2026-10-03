@@ -6,12 +6,11 @@
  * (precipitation, reference ET) show the running total within each year.
  */
 import type { AnnualModel } from '../charts/agAnnual'
-import { plainLabel } from '../charts/format'
 import { groupByYear } from '../ag/compute/annual'
 import type { ObservationRow } from '../api'
 import { recordRequest, type RecordRequest } from '../latest/requests'
-import { AXIS_MAPPER } from '../params'
 import type { Variable } from './catalog'
+import { axisTitle, cumulativeTitle } from './labels'
 import { primaryColumn } from './summary'
 
 type ElementRow = { element: string; description_short: string }
@@ -58,6 +57,6 @@ export function historyModel(v: Variable, years: readonly (readonly ObservationR
   if (!column || ![...byDate.values()].some((x) => x !== null)) return null
   const dates = [...byDate.keys()]
   const traces = groupByYear(dates, dates.map((d) => byDate.get(d) ?? null), { cumulative: v.sum })
-  const axis = plainLabel(AXIS_MAPPER[v.name] ?? v.name).replace(/\n/g, ' ')
-  return { traces, yLabel: v.sum ? `Cumulative ${axis}` : axis, currentYear, column }
+  const axis = axisTitle(v.id, v.name)
+  return { traces, yLabel: v.sum ? cumulativeTitle(axis) : axis, currentYear, column }
 }

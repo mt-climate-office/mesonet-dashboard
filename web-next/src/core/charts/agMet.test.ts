@@ -26,8 +26,8 @@ describe('etrChart', () => {
     expect(last[1]).toBeCloseTo(total, 8)
     expect(o.useUTC).toBe(true)
     expect(ax(o).map((a) => a.name)).toEqual([ETR_AXIS, ETR_CUM_AXIS])
-    expect(ETR_AXIS.replace('\n', ' ')).toBe('Reference ET (a=0.23) [in]')
-    expect(ETR_CUM_AXIS.replace('\n', ' ')).toBe('Cumulative Reference ET (a=0.23) [in]')
+    expect(ETR_AXIS).toBe('Reference ET (in)')
+    expect(ETR_CUM_AXIS).toBe('Cumulative reference ET (in)')
   })
 
   it('colors are the ETR role for each theme', () => {
@@ -46,7 +46,7 @@ describe('etrChart', () => {
     ])
     expect(html).toContain('Jul 1, 2025 14:00')
     const t = etrTable({ series: s, period: 'hourly' })
-    expect(t.columns).toEqual(['Time (MT)', 'Reference ET [in]', 'Cumulative [in]'])
+    expect(t.columns).toEqual(['Time (MT)', 'Reference ET (in)', 'Cumulative reference ET (in)'])
     expect(t.rows).toHaveLength(s.time.length)
     expect(t.rows[0][0]).toBe('2025-07-01 00:00')
   })
@@ -72,7 +72,7 @@ describe('feelsLikeChart', () => {
   })
   it('table', () => {
     const t = feelsLikeTable({ series: s, period: 'daily' })
-    expect(t.columns).toEqual(['Date', 'Feels like [°F]', 'Index used'])
+    expect(t.columns).toEqual(['Date', 'Feels like (°F)', 'Index used'])
     expect(t.rows).toHaveLength(s.time.length)
   })
 })
@@ -93,7 +93,7 @@ describe('cciChart', () => {
   it('table', () => {
     const s = cciDaily(winter, 'adult')
     const t = cciTable({ series: s, period: 'daily' })
-    expect(t.columns).toEqual(['Date', 'CCI [°F]', 'Risk class'])
+    expect(t.columns).toEqual(['Date', 'Livestock risk (°F)', 'Risk class'])
     expect(t.rows[0]).toHaveLength(3)
   })
 })

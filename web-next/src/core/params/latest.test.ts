@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  AXIS_MAPPER,
   COLOR_MAPPER,
   ELEM_MAP,
-  latestAxisTitle,
   latestElementCodes,
   latestVarsFromElements,
 } from './latest'
@@ -64,20 +62,9 @@ describe('latestElementCodes', () => {
   })
 })
 
-describe('latestAxisTitle', () => {
-  it('matches legacy per-period units', () => {
-    expect(latestAxisTitle('Precipitation', 'daily')).toBe('Precipitation<br>(inches/day)')
-    expect(latestAxisTitle('Reference ET', 'hourly')).toBe('Reference ET<br>(inches/hour)')
-    expect(latestAxisTitle('Precipitation', 'raw')).toBe('Precipitation<br>(inches)')
-    expect(latestAxisTitle('Reference ET', 'raw')).toBe('Reference ET<br>(inches/hour)')
-    expect(latestAxisTitle('Soil VWC', 'raw')).toBe('Soil VWC.<br>(%)')
-    expect(latestAxisTitle('New Thing', 'daily')).toBe('New Thing')
-  })
-  it('covers every ELEM_MAP variable in AXIS_MAPPER and COLOR_MAPPER', () => {
-    for (const v of Object.keys(ELEM_MAP)) {
-      expect(AXIS_MAPPER[v], v).toBeDefined()
-      if (v !== 'Reference ET') expect(v in COLOR_MAPPER, v).toBe(true)
-    }
+describe('COLOR_MAPPER', () => {
+  it('covers every ELEM_MAP variable', () => {
+    for (const v of Object.keys(ELEM_MAP)) if (v !== 'Reference ET') expect(v in COLOR_MAPPER, v).toBe(true)
   })
 })
 

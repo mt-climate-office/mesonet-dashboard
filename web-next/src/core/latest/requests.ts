@@ -25,7 +25,9 @@ export interface RecordRequest {
 /**
  * The observation request for the plot: QC level 2 (core/api default),
  * `rm_na=false` so gaps stay null, public elements, inclusive `end` (core/api
- * sends end + 1 day). Null when there is nothing to ask for.
+ * sends end + 1 day). Null when there is nothing to ask for. `extremes`
+ * (daily only) asks for each day's minimum and maximum instead of the mean,
+ * without Reference ET (a total has no band).
  */
 export function recordRequest(i: {
   station: string
@@ -33,13 +35,18 @@ export function recordRequest(i: {
   agg: LatestAgg
   vars: readonly string[]
   stationElements?: readonly ElementRow[]
+  extremes?: boolean
 }): RecordRequest | null {
   if (!i.window.valid || i.vars.length === 0) return null
-  const { elements, hasEtr } = requestElements(i.vars, i.stationElements)
+  const req = requestElements(i.vars, i.stationElements)
+  const { elements } = req
+  const hasEtr = req.hasEtr && !i.extremes
   if (!elements && !hasEtr) return null
+  const ext = i.extremes && i.agg === 'daily'
   return {
-    key: `obs:${i.station}:${i.agg}:${i.window.start}:${i.window.end}:${elements}:${hasEtr ? 'etr' : ''}`,
+    key: `obs:${i.station}:${i.agg}:${i.window.start}:${i.window.end}:${elements}:${hasEtr ? 'etr' : ''}${ext ? ':minmax' : ''}`,
     query: {
+      ...(ext ? { aggFunc: ['min', 'max'] as const } : {}),
       station: i.station,
       start: i.window.start,
       end: i.window.end,

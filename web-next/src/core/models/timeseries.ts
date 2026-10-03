@@ -9,12 +9,13 @@
  * labels read in Mountain Time with no time-zone library.
  */
 import dayjs from 'dayjs'
+import { denverDay } from '../today'
 import type { ObservationRow } from '../api'
 import { insertGaps } from '../gaps'
 import { mergeNormals, type StationNormals } from '../normals'
 import {
+  ELEM_MAP,
   depthLabelFromColumn,
-  latestAxisTitle,
   latestElementCodes,
   latestVariableForColumn,
   latestVarsFromElements,
@@ -27,6 +28,7 @@ import {
   type SubplotKind,
 } from '../sensorEvents'
 import type { LatestAgg } from '../url-schema'
+import { axisTitle } from '../variables/labels'
 
 /** Default window: the last 14 days (legacy). */
 export const DEFAULT_WINDOW_DAYS = 14
@@ -71,7 +73,7 @@ export interface WindowPlan {
  * The chart window from `?from`/`?to` (null = default 14 days ending today,
  * local). `today` is injectable for tests.
  */
-export function chartWindow(from: string | null, to: string | null, today = dayjs()): WindowPlan {
+export function chartWindow(from: string | null, to: string | null, today = denverDay()): WindowPlan {
   const start = from ?? today.subtract(DEFAULT_WINDOW_DAYS, 'day').format('YYYY-MM-DD')
   const end = to ?? today.format('YYYY-MM-DD')
   return { start, end, valid: isIsoDate(start) && isIsoDate(end) && start <= end }
@@ -141,6 +143,8 @@ export interface TimeseriesSeries {
   values: (number | null)[]
   /** Legacy hover label ("Precipitation Total", the variable, or the column). */
   hoverLabel: string
+  /** Daily views of the variable page: each day's true low and high, aligned with `values` (core/variables/band). */
+  band?: { lo: (number | null)[]; hi: (number | null)[] }
 }
 
 export type NormalsOverlay =
@@ -160,7 +164,7 @@ export interface SensorSpan {
 export interface TimeseriesPanel {
   /** Display variable, e.g. "Air Temperature". Palette key. */
   variable: string
-  /** Legacy axis title (may carry `<br>` / `<sup>` markup from params). */
+  /** Plain y-axis title, "Air temperature (°F)" (core/variables/labels `axisTitle`). */
   axisTitle: string
   isSoil: boolean
   /** Variable selected but no column had a value: draw the panel with a note. */
@@ -199,7 +203,7 @@ const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFin
 
 /** Build the panel model; null when there are no rows or no variables. */
 export function buildTimeseriesModel(input: TimeseriesInput): TimeseriesModel | null {
-  const { rows, vars, period } = input
+  const { rows, vars } = input
   if (rows.length === 0 || vars.length === 0) return null
   // Null rows wherever the API skipped an observation, so lines break there.
   const gapped = insertGaps([...rows])
@@ -221,7 +225,7 @@ export function buildTimeseriesModel(input: TimeseriesInput): TimeseriesModel | 
   const xRange: [number, number] | null = days.length ? [dayMs(days[0], -1), dayMs(days[days.length - 1], 1)] : null
 
   const panels = vars.map((v) =>
-    buildPanel(v, columnsByVar.get(v) ?? [], gapped, rows, period, input),
+    buildPanel(v, columnsByVar.get(v) ?? [], gapped, rows, input),
   )
   return { x, xRange, panels }
 }
@@ -231,7 +235,6 @@ function buildPanel(
   cols: string[],
   gapped: ObservationRow[],
   rawRows: readonly ObservationRow[],
-  period: LatestAgg,
   input: TimeseriesInput,
 ): TimeseriesPanel {
   const isSoil = SOIL_VARS.has(variable)
@@ -287,7 +290,7 @@ function buildPanel(
 
   return {
     variable,
-    axisTitle: latestAxisTitle(variable, period),
+    axisTitle: axisTitle(ELEM_MAP[variable]?.[0] ?? '', variable),
     isSoil,
     noData,
     yRange,

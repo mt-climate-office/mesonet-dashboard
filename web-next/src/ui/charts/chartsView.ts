@@ -1,7 +1,7 @@
 /**
  * `x-data="chartsView"` on the Charts section (partials/charts/index.html):
  * which view the URL asks for (core/variables `chartsMode`: list, variable
- * page or Compare) and the "All variables" link back to the list, which
+ * page, Ag tool or Compare) and the "All variables" link back to the list, which
  * pushes history like every drill-down.
  */
 import Alpine from 'alpinejs'
@@ -12,7 +12,7 @@ import { follow } from '../shell/navigate'
 
 export function chartsView() {
   return component({
-    get mode(): 'list' | 'variable' | 'compare' {
+    get mode(): ReturnType<typeof chartsMode> {
       return chartsMode(Alpine.store('url').state)
     },
     listHref(): string {

@@ -9,7 +9,9 @@ import type { EChartsOption, GraphicComponentOption, SeriesOption, XAXisComponen
 import type { TimeseriesModel, TimeseriesPanel, TimeseriesSeries } from '../models/timeseries'
 import { panelNoDataText } from '../models/timeseries'
 import { ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, variableStyle } from '../palette'
+import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
+import { formatValue, plainName, plainUnit } from '../variables/labels'
 import { niceCeil, timeAxis, timeZoom, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtWall, isoWall, plainLabel } from './format'
 import { bandSeries, sensorEventSeries } from './overlays'
@@ -42,7 +44,7 @@ const DASHES = [undefined, 'dashed', 'dotted'] as const
 const isBar = (p: TimeseriesPanel) => p.variable === 'Precipitation' || p.variable === 'Reference ET'
 
 /** Line/bar color of one column (palette roles only). */
-function seriesColor(ctx: ChartContext, p: TimeseriesPanel, s: TimeseriesSeries, panelIndex: number): string {
+export function seriesColor(ctx: ChartContext, p: TimeseriesPanel, s: TimeseriesSeries, panelIndex: number): string {
   const theme = ctx.theme.name
   if (p.variable === 'Precipitation') return PRECIP[theme].bar
   if (p.variable === 'Reference ET') return ETR[theme].bar
@@ -56,6 +58,17 @@ const columnKey = (variable: string, col: string) =>
 
 /** Units of a column ("[°F]" → "°F"), or ''. */
 const unitOf = (col: string) => /\[([^\]]+)\]\s*$/.exec(col)?.[1] ?? ''
+
+/**
+ * A series' plain label and unit for tooltips and tables (never the API column): one-sensor panels
+ * use the variable's plain name ("Wind"); depths and sensor heights their key ("2 in"), and `full`
+ * adds the plain name for a table header ("Soil moisture at 2 in"). Series names stay the API's.
+ */
+function plainSeries(p: TimeseriesPanel, s: TimeseriesSeries): { label: string; full: string; unit: string } {
+  const name = plainName(ELEM_MAP[p.variable]?.[0] ?? '', p.variable)
+  const key = s.depth ?? (p.legend ? columnKey(p.variable, s.name) : null)
+  return { label: key ?? name, full: key ? `${name} at ${key}` : name, unit: plainUnit(unitOf(s.name)) }
+}
 
 /** Tooltip/table number: 3 decimals under 0.1 (precip, ETr), else 2; trailing zeros dropped. */
 export function fmtValue(v: number): string {
@@ -130,17 +143,16 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
     const keys: KeyEntry[] = []
     p.series.forEach((s, j) => {
       const color = seriesColor(ctx, p, s, i)
-      const unit = unitOf(s.name)
+      const { label, unit } = plainSeries(p, s)
       if (isBar(p)) {
         // barMinWidth: raw 5–15 min bars over a week are narrower than a pixel and would vanish.
-        push({ ...barSeries(s.name, pts(s.values), color, i), ...axes, barMinWidth: 1, id: `p${i}:${s.name}` }, { panel: i, label: s.hoverLabel, unit })
+        push({ ...barSeries(s.name, pts(s.values), color, i), ...axes, barMinWidth: 1, id: `p${i}:${s.name}` }, { panel: i, label, unit })
         return
       }
       const dash = p.legend ? DASHES[j % DASHES.length] : variableStyle(p.variable, ctx.theme.name)?.dash
       push({ ...lineSeries(s.name, pts(s.values), { color, dash, width: 1.5, yAxisIndex: i, id: `p${i}:${s.name}` }), xAxisIndex: i }, {
         panel: i,
-        // The unit follows the value, so the column's "[°F]" is dropped from the label.
-        label: s.depth ?? (p.legend ? columnKey(p.variable, s.name) : s.hoverLabel.replace(/\s*\[[^\]]*\]\s*$/, '')),
+        label,
         unit,
       })
       if (s.depth) keys.push({ label: s.depth, color })
@@ -250,7 +262,7 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
       const y = p.value[1]
       if (typeof y !== 'number' || !Number.isFinite(y)) continue
       const note = typeof p.value[2] === 'string' ? p.value[2] : undefined
-      const text = note ? tipText(meta.label, note) : tipText(meta.label, `${fmtValue(y)}${meta.unit ? ` ${meta.unit}` : ''}`)
+      const text = note ? tipText(meta.label, note) : tipText(meta.label, `${fmtValue(y)}${meta.unit === '%' || meta.unit === '°' ? meta.unit : meta.unit ? ` ${meta.unit}` : ''}`)
       const panelRows = rows.get(meta.panel) ?? []
       panelRows.push(`<div>${typeof p.marker === 'string' ? p.marker : ''}${text}</div>`)
       rows.set(meta.panel, panelRows)
@@ -296,17 +308,29 @@ export const TABLE_ROW_LIMIT = 500
 
 /**
  * The sr-only twin: one row per time step with any value (the first `limit`,
- * then a one-cell note row), one column per plotted column.
+ * then a one-cell note row), one column per plotted column (plus its daily
+ * low and high where the variable page attached a band).
  */
 export function latestTimeseriesTable(m: LatestTimeseriesModel, limit = TABLE_ROW_LIMIT): ChartTable {
   const period = m.period === 'daily' ? 'daily' : 'hourly'
-  const cols = m.ts.panels.flatMap((p) => p.series)
+  const cols = m.ts.panels.flatMap((p) => {
+    // Table precision per variable (core/variables/labels `digits.table`): "56.0" beside "70.4", never "56".
+    const id = ELEM_MAP[p.variable]?.[0] ?? ''
+    return p.series.flatMap((s) => {
+      const { full, unit } = plainSeries(p, s)
+      const name = unit ? `${full} (${unit})` : full
+      return [
+        { id, name, values: s.values },
+        ...(s.band ? [{ id, name: `Low: ${name}`, values: s.band.lo }, { id, name: `High: ${name}`, values: s.band.hi }] : []),
+      ]
+    })
+  })
   const rows: string[][] = []
   let total = 0
   m.ts.x.forEach((x, j) => {
     if (!Number.isFinite(x) || cols.every((c) => c.values[j] == null)) return
     if (++total > limit) return
-    rows.push([isoWall(x, period), ...cols.map((c) => (c.values[j] == null ? MISSING : fmtValue(c.values[j]!)))])
+    rows.push([isoWall(x, period), ...cols.map((c) => (c.values[j] == null ? MISSING : formatValue(c.id, c.values[j], 'table')))])
   })
   if (total > limit) {
     rows.push([`Showing first ${limit} of ${total} rows; use the Data Downloader for the full record.`])

@@ -1,11 +1,12 @@
 /**
  * `x-data="aboutDetails"` (partials/about/details.html): the station's
- * details (core/about `stationDetails`; the period of record ends at the
+ * details (core/about `stationDetails`; the record ends "today", or at the
  * newest `/latest` report) and its one-pager link when one is listed.
  */
 import Alpine from 'alpinejs'
 import { stationDetails, type DetailRow } from '../../core/about'
 import { findOnePager } from '../../core/cards'
+import { todayIso } from '../../core/latest/sidebar'
 import { component } from '../component'
 import { latestObs, onePagers } from '../station/resources'
 
@@ -14,7 +15,7 @@ export function aboutDetails() {
     get rows(): DetailRow[] {
       const s = Alpine.store('station').current
       if (!s) return []
-      return stationDetails(s, latestObs(s.station).data?.[0]?.datetime)
+      return stationDetails(s, latestObs(s.station).data?.[0]?.datetime, todayIso())
     },
 
     get onePager(): string | null {

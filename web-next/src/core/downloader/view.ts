@@ -1,12 +1,12 @@
 /**
  * Data Downloader view logic (what web/ DownloaderTab.tsx computed inline):
- * picker options, selection pruning, QC level, the date window, Run/Download
- * guards and announcement text. ui/downloader/downloader.ts calls these.
+ * picker options, selection pruning, QC level, the date window and
+ * announcement text. ui/downloader/downloader.ts calls these; the form's
+ * rows and button are in form.ts.
  */
 import type { Station, StationElement } from '../api'
-import type { ComboboxItem } from '../controls/comboboxModel'
 import type { MultiselectGroup, MultiselectOption } from '../controls/multiselectModel'
-import { selectStationPatch, type DlPeriod, type UrlState } from '../url-schema'
+import type { DlPeriod } from '../url-schema'
 import { elementLabel } from './labels'
 import {
   clampStart,
@@ -22,29 +22,15 @@ import {
   SWP_CODES,
 } from './request'
 
+/** The Interval row, finest first. Legacy offered no raw (5-min) download; neither does this. */
 export const PERIOD_OPTIONS: ReadonlyArray<{ value: DlPeriod; label: string }> = [
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'daily', label: 'Daily' },
   { value: 'hourly', label: 'Hourly' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'monthly', label: 'Monthly' },
 ]
 
 export const MONTHLY_NOTE =
   'Monthly values are computed from daily data: precipitation and Reference ET are summed, other variables averaged. "Days With Data" shows how many days each month includes. Totals are left blank for any month missing a day (including months only partly inside the date range).'
-
-export const RUN_FIRST_HINT = "Please 'Run Request' before attempting to download."
-export const PICK_FIRST_HINT = 'Please select a station and at least one variable first!'
-
-/** Combobox rows: every station by name, labelled "{name} ({network})"; NWSLI id searchable. */
-export function stationItems(stations: readonly Station[]): ComboboxItem[] {
-  return stations
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((s) => ({
-      id: s.station,
-      label: `${s.name} (${s.sub_network})`,
-      keywords: s.nwsli_id ? [s.nwsli_id] : [],
-    }))
-}
 
 /** Station install date as YYYY-MM-DD, or null. */
 export function installDateOf(s: Station | undefined): string | null {
@@ -96,7 +82,9 @@ export function pruneSelection(
 
 /** Notice for SWP-only codes removed at a non-SWP station. */
 export function droppedSwpNotice(dropped: readonly string[], stationName: string): string {
-  const names = dropped.map((c) => DERIVED_OPTIONS.find((o) => o.value === c)?.label ?? c).join(' and ')
+  const label = (c: string) => DERIVED_OPTIONS.find((o) => o.value === c)?.label ?? c
+  // Sentence case: names after the first start lower case ("Soil water potential and soil saturation").
+  const names = dropped.map((c, i) => (i ? label(c).charAt(0).toLowerCase() + label(c).slice(1) : label(c))).join(' and ')
   const many = dropped.length > 1
   return `${names} ${many ? 'are' : 'is'} not available at ${stationName} (no soil water potential parameters), so ${many ? 'they were' : 'it was'} removed from the request.`
 }
@@ -129,7 +117,7 @@ export interface DateWindow {
 /**
  * The request window. Daily/monthly start defaults to the install date (a
  * year back if unknown); hourly to the last 30 days, or the install date if
- * later. End defaults to `today` (YYYY-MM-DD, browser local, as web/).
+ * later. End defaults to `today` (YYYY-MM-DD, Denver, core/today; web/ used the browser's zone).
  */
 export function dateWindow(o: {
   period: DlPeriod
@@ -156,14 +144,8 @@ export function dateWindow(o: {
 export function largeHourlyText(span: number, needsConfirm: boolean): string {
   const n = (v: number) => v.toLocaleString('en-US')
   return `This hourly request spans ${n(span)} days (about ${n(span * 24)} rows per variable) and may be slow. ${
-    needsConfirm ? 'Run Request will ask you to confirm; or shorten the range.' : 'Click "Confirm large request" to fetch it.'
+    needsConfirm ? 'Preview will ask you to confirm; or shorten the range.' : 'Click "Confirm large request" to fetch it.'
   }`
-}
-
-/** Why Run cannot start (shown as an alert), or null. */
-export function runBlocker(station: string | null, elements: readonly string[], dateError: string | null): string | null {
-  if (!station || elements.length === 0) return PICK_FIRST_HINT
-  return dateError
 }
 
 /** Same station/window/period → a confirmed large hourly request stays confirmed. */
@@ -176,14 +158,3 @@ export function resultAnnouncement(rows: number, columns: number): string {
   return `Request finished: ${rows.toLocaleString('en-US')} ${rows === 1 ? 'row' : 'rows'}, ${columns} columns. Download CSV is ready.`
 }
 
-/** Recap above Run, as parts the view joins with " · ": ["Bozeman", "2 variables", "Daily", "2026-09-01 to 2026-09-30"]. */
-export function requestSummary(o: { station: string; elements: number; period: DlPeriod; start: string; end: string }): string[] {
-  const period = PERIOD_OPTIONS.find((p) => p.value === o.period)?.label ?? o.period
-  const vars = `${o.elements} ${o.elements === 1 ? 'variable' : 'variables'}`
-  return [o.station, vars, period, `${o.start} to ${o.end}`]
-}
-
-/** URL patch for a Downloader station pick: the station, and the start back to the install date (legacy). */
-export function stationPatch(id: string | null): Partial<UrlState> {
-  return { ...selectStationPatch(id), dl_from: null }
-}

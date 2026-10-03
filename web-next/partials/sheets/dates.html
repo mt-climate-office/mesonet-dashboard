@@ -1,0 +1,37 @@
+<!-- Custom dates sheet (x-data="sheet", ui/shell/sheet.ts): a variable page's ⋯ → Custom dates….
+     The date range control over the chart window (x-data="customDates", ui/charts/customDates.ts);
+     a valid range applies at once, Done (or ×, Esc, the scrim) closes and focus returns to ⋯.
+     The form mounts only while open. Its scrim is #sheet-dates-scrim. -->
+<div class="mco-scrim dash-scrim dash-sheet-scrim" id="sheet-dates-scrim" hidden></div>
+<section id="sheet-dates" class="dash-sheet dash-sheet--modal dates-sheet" role="dialog" aria-modal="true"
+         aria-labelledby="sheet-dates-title" x-data="sheet({ id: 'dates' })" data-testid="sheet-dates" hidden>
+  <div class="dash-panel-head">
+    <button type="button" class="dash-sheet-handle" aria-controls="sheet-dates" aria-label="Show more of the dates form">
+      <span class="dash-sheet-grab" aria-hidden="true"></span>
+    </button>
+    <h2 class="dash-panel-title" id="sheet-dates-title" tabindex="-1" data-autofocus>Custom dates</h2>
+    <button type="button" class="modal-close" aria-label="Close custom dates" @click="close()">×</button>
+  </div>
+  <div class="dash-panel-body">
+    <template x-if="isOpen">
+      <div class="dates-form" x-data="customDates">
+        <fieldset class="ctl-fieldset" data-testid="custom-dates"
+                  x-data="dateRange({ value: () => dates(), onChange: (r) => setDates(r), min: () => minDate(), max: () => maxDate(), label: 'Chart dates' })">
+          <legend class="ctl-legend" x-text="label"></legend>
+          <div class="ctl-row">
+            <div class="ctl-field">
+              <label class="ctl-label" :for="ids.start">Start</label>
+              <input type="date" class="ctl-input" :id="ids.start" :min="min()" :max="max()" :value="start" :aria-invalid="invalid('start')" :aria-describedby="describedBy()" @change="setStart($event)">
+            </div>
+            <div class="ctl-field">
+              <label class="ctl-label" :for="ids.end">End</label>
+              <input type="date" class="ctl-input" :id="ids.end" :min="min()" :max="max()" :value="end" :aria-invalid="invalid('end')" :aria-describedby="describedBy()" @change="setEnd($event)">
+            </div>
+          </div>
+          <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
+        </fieldset>
+        <button type="button" class="nav-btn dates-done" @click="done()" data-testid="custom-dates-done">Done</button>
+      </div>
+    </template>
+  </div>
+</section>

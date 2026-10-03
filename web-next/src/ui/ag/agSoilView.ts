@@ -11,6 +11,7 @@ import { POROSITY_SOURCE, fetchPorosityRows } from '../../core/ag/view/porosityS
 import { SWP_SOURCE, fetchSwpApiRows } from '../../core/ag/view/swpSource'
 import { SOIL_PROFILE } from '../../core/ag/view/tab'
 import { fetchSoilSeries, loadSoilParams, soilParamsFor } from '../../core/ag/data'
+import type { ChartTable } from '../../core/charts'
 import { component } from '../component'
 import { AG_CHARTS, LOADING, currentTab, raw, trackView, windowQuery } from './shared'
 
@@ -33,6 +34,11 @@ export function agSoilView() {
     modelOf<K extends SoilChart['kind']>(kind: K) {
       const m = this.view.model
       return m && m.kind === kind ? (m.model as Extract<SoilChart, { kind: K }>['model']) : null
+    },
+    /** The drawn chart's table twin, for the table view. */
+    tableOf(): ChartTable | null {
+      const m = this.view.model
+      return m ? (AG_CHARTS[m.kind].table as (model: SoilChart['model']) => ChartTable)(m.model) : null
     },
   })
 }

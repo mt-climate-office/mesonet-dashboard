@@ -1,6 +1,7 @@
-<!-- Charts: the variable list (default), one variable's page (`v=`) or Compare (`cmp=1`), chosen by
-     core/variables `chartsMode` (x-data="chartsView", ui/charts/chartsView.ts). Mounted only while
-     the section is open; each view mounts only while shown, so it fetches only then. -->
+<!-- Charts: the variable list (default), one variable's page (`v=` a family), an Ag tool (`v=` an
+     Ag tool id) or Compare (`cmp=1`), chosen by core/variables `chartsMode` (x-data="chartsView",
+     ui/charts/chartsView.ts). Mounted only while the section is open; each view mounts only while
+     shown, so it fetches only then. The Download sheet (?dl=1) opens over any of them. -->
 <template x-if="$store.url.section === 'charts'">
 <div class="charts" x-data="chartsView" data-testid="charts">
   <template x-if="mode === 'list'">
@@ -8,6 +9,9 @@
   </template>
   <template x-if="mode === 'variable'">
     <!-- @include partials/charts/variable.html -->
+  </template>
+  <template x-if="mode === 'ag'">
+    <!-- @include partials/ag/index.html -->
   </template>
   <template x-if="mode === 'compare'">
     <!-- @include partials/charts/compare.html -->

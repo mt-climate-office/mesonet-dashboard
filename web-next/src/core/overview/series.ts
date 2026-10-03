@@ -1,7 +1,7 @@
 /**
  * The Now overview's one hourly request (72 h, QC level 2) turned into what
- * the tiles need: per-variable 48 h series for the sparklines, today's air
- * temperature high/low, and precipitation sums for stations without the
+ * the tiles need: per-variable 48 h series for the sparklines and
+ * precipitation sums for stations without the
  * `/derived/ppt/` summary. Times are Denver wall-clock ms (core/sensorEvents).
  */
 import type { ObservationRow } from '../api'
@@ -91,15 +91,6 @@ export function sparkSeries(rows: readonly ObservationRow[]): Partial<Record<Ser
     if (v.some((x) => x !== null)) out[key] = { t, v }
   }
   return out
-}
-
-/** Today's (local date `today`, YYYY-MM-DD) hourly air temperature max/min, or null. */
-export function todayHighLow(rows: readonly ObservationRow[], today: string): { hi: number; lo: number } | null {
-  const temps = timed(rows)
-    .filter((r) => r.date === today)
-    .map((r) => num(r.row['Air Temperature [°F]']))
-    .filter((v): v is number => v !== null)
-  return temps.length ? { hi: Math.max(...temps), lo: Math.min(...temps) } : null
 }
 
 /** Hourly precipitation sums: since local midnight of `today`, and the last 24 rows' hours. Null without ppt. */

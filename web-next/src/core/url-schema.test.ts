@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  latestAgg,
   latestVars,
   migrateLegacySearch,
   readUrlState,
@@ -13,17 +14,18 @@ describe('readUrlState / writeUrlSearch', () => {
   it('fills defaults for absent keys', () => {
     const s = readUrlState('')
     expect(s.s).toBeNull()
-    expect(s.agg).toBe('hourly')
+    expect(s.agg).toBeNull()
     expect(s.vars).toBeNull()
     expect(s.nets).toEqual(['HydroMet', 'AgriMet', 'Cooperator'])
-    expect(s.var).toBeNull()
+    expect(s.v).toBeNull()
+    expect(s.dl).toBe(false)
     expect(s.qc).toBeNull()
     expect(s.pct).toBe(true)
   })
 
   it('rejects values outside an enum and keeps `vars=` as an explicit empty list', () => {
     const s = readUrlState('?agg=weekly&vars=&qc=7&theme=sepia')
-    expect(s.agg).toBe('hourly')
+    expect(s.agg).toBeNull()
     expect(s.vars).toEqual([])
     expect(s.qc).toBeNull()
     expect(s.theme).toBeNull()
@@ -43,11 +45,22 @@ describe('readUrlState / writeUrlSearch', () => {
     expect(writeUrlSearch({ ...readUrlState(''), vars: [] })).toBe('?vars=')
   })
 
-  it('Ag var: absent (the tool cards) reads null; any tool is written, gdd included', () => {
+  it('v holds element families and Ag tools alike; any value is written, gdd included', () => {
     const d = readUrlState('')
-    expect(d.var).toBeNull()
-    expect(writeUrlSearch({ ...d, var: 'gdd' })).toBe('?var=gdd')
-    expect(writeUrlSearch({ ...d, var: null }, '?var=etr')).toBe('')
+    expect(writeUrlSearch({ ...d, v: 'gdd' })).toBe('?v=gdd')
+    expect(writeUrlSearch({ ...d, v: 'soil_temp,soil_ec_blk' })).toBe('?v=soil_temp,soil_ec_blk')
+    expect(writeUrlSearch({ ...d, v: null }, '?v=etr')).toBe('')
+  })
+
+  it('dl: 1 opens the Download sheet; closed is absent', () => {
+    expect(readUrlState('?dl=1').dl).toBe(true)
+    expect(readUrlState('?dl=0').dl).toBe(false)
+    expect(writeUrlSearch({ ...readUrlState(''), dl: true })).toBe('?dl=1')
+    expect(writeUrlSearch({ ...readUrlState(''), dl: false }, '?dl=1')).toBe('')
+  })
+
+  it('an old `var` key is no longer in the schema, so it is kept as-is', () => {
+    expect(writeUrlSearch(readUrlState('?var=etr'), '?var=etr')).toBe('?var=etr')
   })
 
   it('keeps non-schema keys and round-trips', () => {
@@ -182,5 +195,19 @@ describe('v / view (Charts → variable page)', () => {
     expect(readUrlState('?view=nope').view).toBe('recent')
     expect(writeUrlSearch({ ...readUrlState('?s=a'), v: 'ppt', view: 'recent' })).toBe('?s=a&v=ppt')
     expect(writeUrlSearch({ ...readUrlState('?s=a'), v: 'ppt', view: 'table' })).toBe('?s=a&v=ppt&view=table')
+  })
+  it('tbl is a flag (table in place of the chart); absent = off', () => {
+    expect(readUrlState('?tbl=1').tbl).toBe(true)
+    expect(readUrlState('').tbl).toBe(false)
+    expect(writeUrlSearch({ ...readUrlState('?s=a'), tbl: true })).toBe('?s=a&tbl=1')
+  })
+})
+
+describe('agg (interval)', () => {
+  it('absent is Auto (null), written only when explicit; Compare reads absent as hourly', () => {
+    expect(writeUrlSearch({ ...readUrlState('?s=a'), agg: 'hourly' })).toBe('?s=a&agg=hourly')
+    expect(writeUrlSearch({ ...readUrlState('?s=a&agg=daily'), agg: null })).toBe('?s=a')
+    expect(latestAgg({ agg: null })).toBe('hourly')
+    expect(latestAgg({ agg: 'raw' })).toBe('raw')
   })
 })

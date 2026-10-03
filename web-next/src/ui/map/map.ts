@@ -21,8 +21,6 @@ export interface MapHostOptions {
    * load and each theme switch), above the boundaries; `theme` is current.
    */
   layers: (map: MapLibre.Map, theme: Theme) => void
-  /** Stronger county lines (Downloader, as in legacy). */
-  emphasiseCounties?: boolean
   /**
    * One finger (touch) and a plain wheel scroll the page; two fingers or
    * Ctrl/⌘ + wheel move the map. For small maps in a scrolling page.
@@ -69,7 +67,7 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   // Every style load (first, then each setStyle) starts from a bare basemap.
   map.on('style.load', () => {
     retried = false
-    addBoundaries(map, opts.emphasiseCounties === true)
+    addBoundaries(map)
     opts.layers(map, MCO.getTheme())
   })
 
@@ -112,14 +110,13 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
 }
 
 /** Kit stack (HOUSE-STYLE §7): hillshade under the labels, then counties, tribal lands, state line. */
-function addBoundaries(map: MapLibre.Map, emphasiseCounties: boolean): void {
+function addBoundaries(map: MapLibre.Map): void {
   // CARTO draws its own dashed counties from z9; ours are the only treatment.
   if (map.getLayer('boundary_county')) map.setLayoutProperty('boundary_county', 'visibility', 'none')
   MCO.map.addHillshade(map)
   const p = MCO.map.overlayPaints()
-  const counties = emphasiseCounties ? { ...p.countiesLine, 'line-width': 1, 'line-opacity': 0.85 } : p.countiesLine
   map.addSource('counties', { type: 'geojson', data: `${GEO}mt_counties_simple.geojson` })
-  map.addLayer({ id: 'counties-line', type: 'line', source: 'counties', paint: counties })
+  map.addLayer({ id: 'counties-line', type: 'line', source: 'counties', paint: p.countiesLine })
   map.addSource('tribal', { type: 'geojson', data: `${GEO}mt_reservations_simple.geojson` })
   map.addLayer({ id: 'tribal-fill', type: 'fill', source: 'tribal', paint: p.tribalFill })
   map.addLayer({ id: 'tribal-line', type: 'line', source: 'tribal', paint: p.tribalLine })

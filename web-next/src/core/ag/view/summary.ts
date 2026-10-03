@@ -1,10 +1,12 @@
 /**
- * The one-line summary on the Ag "Options" disclosure (partials/ag/options.html),
- * e.g. "Wheat · 32–70 °F · to Oct 31". It names the options that shape the
- * chart, so a collapsed disclosure still says what is drawn. Pure.
+ * The option chips above an Ag tool's chart (partials/ag/options.html): which
+ * options the open tool has, in order, and each one's summary text, e.g.
+ * `Wheat` · `32–70 °F` · `Since Oct 2, 2025` · `Projected to Oct 31`. A chip
+ * names its option's current value, so the row says what is drawn. Pure.
  */
 import type { LocalDate } from '../contract'
 import { GDD_CUTOFFS_F } from '../compute/gdd'
+import { intervalWord } from '../../variables/interval'
 import type { AgTab } from './tab'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -20,10 +22,10 @@ export function dateRangeText(start: LocalDate, end: LocalDate): string {
 }
 
 const PROJECTION_TEXT: Record<AgTab['gddProj'], string> = {
-  season: 'to Oct 31',
-  '30': '+30 days',
-  '60': '+60 days',
-  off: 'no projection',
+  season: 'Projected to Oct 31',
+  '30': 'Projected +30 days',
+  '60': 'Projected +60 days',
+  off: 'No projection',
 }
 
 /** "32–70 °F", or "from 44 °F" without an upper cutoff; custom cutoffs win over the crop's. */
@@ -34,26 +36,64 @@ function cutoffText(t: Pick<AgTab, 'crop' | 'cut'>): string {
   return Number.isFinite(hi) ? `${lo}–${hi} °F` : `from ${lo} °F`
 }
 
+/** An option of the open tool: `id` picks its control (partials/ag/options.html), `name` labels it. */
+export type OptionId = 'crop' | 'cutoffs' | 'dates' | 'projection' | 'interval' | 'livestock' | 'soil' | 'annual'
+export interface OptionChip {
+  id: OptionId
+  /** What the option is ("Crop"): the chip's accessible name starts with it and its popover is titled by it. */
+  name: string
+  /** Its current value ("Wheat"). */
+  text: string
+}
+
+const NAMES: Record<OptionId, string> = {
+  crop: 'Crop',
+  cutoffs: 'Temperature cutoffs',
+  dates: 'Dates',
+  projection: 'Projection',
+  interval: 'Interval',
+  livestock: 'Livestock',
+  soil: 'Soil variable',
+  annual: 'Comparison variable',
+}
+
+/** Which options each tool has, in chip order. */
+const OPTIONS: Record<AgTab['variable'], readonly OptionId[]> = {
+  gdd: ['crop', 'cutoffs', 'dates', 'projection'],
+  etr: ['interval', 'dates'],
+  feels_like: ['interval', 'dates'],
+  swp: ['interval', 'dates'],
+  percent_saturation: ['interval', 'dates'],
+  cci: ['interval', 'livestock', 'dates'],
+  'soil_temp,soil_ec_blk': ['soil', 'dates'],
+  annual: ['annual'],
+}
+
 /**
- * Summary for the open tool. `annualLabel` is the Annual comparison
- * variable's display name (null while the station's elements load).
+ * The chips for the open tool. `annualLabel` is the Annual comparison
+ * variable's display name (null while the station's elements load); `today`
+ * makes a window that ends today read "Since Oct 2, 2025".
  */
-export function optionsSummary(t: AgTab, annualLabel: string | null): string {
-  const dates = dateRangeText(t.start, t.end)
-  const period = t.period === 'hourly' ? 'Hourly' : 'Daily'
-  switch (t.variable) {
-    case 'gdd':
-      return [t.cropLabel, cutoffText(t), PROJECTION_TEXT[t.gddProj]].join(' · ')
-    case 'cci':
-      return [period, t.livestock === 'newborn' ? 'Newborn' : 'Adult', dates].join(' · ')
-    case 'soil_temp,soil_ec_blk':
-      return [t.soilOptions.find((o) => o.value === t.soilVar)?.label ?? t.soilVar, dates].join(' · ')
-    case 'annual':
-      return annualLabel ?? 'Choose a variable'
-    case 'etr':
-    case 'feels_like':
-    case 'swp':
-    case 'percent_saturation':
-      return [period, dates].join(' · ')
+export function optionChips(t: AgTab, annualLabel: string | null, today: LocalDate): OptionChip[] {
+  const text = (id: OptionId): string => {
+    switch (id) {
+      case 'crop':
+        return t.cropLabel
+      case 'cutoffs':
+        return cutoffText(t)
+      case 'dates':
+        return t.end === today ? `Since ${monthDay(t.start)}, ${t.start.slice(0, 4)}` : dateRangeText(t.start, t.end)
+      case 'projection':
+        return PROJECTION_TEXT[t.gddProj]
+      case 'interval':
+        return intervalWord(t.period)
+      case 'livestock':
+        return t.livestock === 'newborn' ? 'Newborn' : 'Adult'
+      case 'soil':
+        return t.soilOptions.find((o) => o.value === t.soilVar)?.label ?? t.soilVar
+      case 'annual':
+        return annualLabel ?? 'Choose a variable'
+    }
   }
+  return OPTIONS[t.variable].map((id) => ({ id, name: NAMES[id], text: text(id) }))
 }

@@ -48,15 +48,17 @@ falls short.
   and focus-return itself.
 - **Proposed:** `MCO.focusScope({ panel, background, onEscape }) → { activate({modal, opener, focus}), deactivate({restoreFocus}), setModal, destroy }`.
 
-### Bottom tab bar and section row — new
+### Bottom tab bar and header segmented nav — new
 - **Here:** `.dash-tabbar` / `.dash-tab` (compact) and `.dash-sections` / `.dash-section-link`
-  (tablet/desktop), `initSectionNav({ root, onNavigate })` (`ui/layout/sectionNav.{ts,css}`).
+  (the header's segmented control, tablet/desktop), `initSectionNav({ root, onNavigate })`
+  (`ui/layout/sectionNav.{ts,css}`). Three items since the redesign (Now · Charts · About); the tab bar is a
+  solid `--bg-surface` with a top border.
 - **Why:** the kit's chrome is the top navbar only. A phone app with several sections needs a bottom bar
   (56 px targets, safe-area padding, `--z-chrome`), and the links must stay real `<a href>` (new tab, copy,
   no-JS) while a plain click goes through the app's router and view transition.
 - **Also:** current = `aria-current="page"`. The kit styles toggles by `[aria-pressed]` only, so app.css
-  already mirrors that for `a.nav-btn[aria-current]` (W1). Not colour alone: the tab bar adds an indicator
-  line and a bolder label.
+  already mirrors that for `a.nav-btn[aria-current]` (W1). Not colour alone: the current tab has a pill
+  behind its icon and a bold label; the current segment is a raised pill, bold.
 - **Proposed:** `.mco-tabbar` / `.mco-tab`, `.mco-section-nav` / `.mco-section-link`, kit styling for
   `.nav-btn[aria-current="page"]`, and `MCO.initSectionNav({ root, onNavigate }) → { setCurrent, destroy }`.
 
@@ -68,7 +70,11 @@ falls short.
   with the kit documenting `--chrome-h`, `--tabbar-h`, `--sheet-h` as the shared names.
 
 ### In-flow card — new
-- **Here:** `.dash-card`, `.dash-card-head`, `.dash-card-title`, `--card-pad` (`ui/layout/card.css`).
+- **Here:** `.dash-card`, `.dash-card-title`, `--card-pad`, `--card-radius` (16 px),
+  `--card-shadow` (`ui/layout/card.css`). Since the redesign: flat, no border (high contrast keeps one).
+- **Shadow:** the kit's `--shadow` is one 24 px floating shadow; a card needs a lighter one. A value cannot be
+  scaled in CSS, so `--card-shadow` is two short layers tinted with `color-mix()` of the kit `--scrim`, which
+  already follows the theme.
 - **Why:** `.mco-panel` is glass, absolutely positioned, for floating over maps; page content needs a flat
   surface. web-next had three (`.latest-card`, `.ag-card`, `.dl-card`). The card is `position: relative` so
   `.sr-only` descendants (absolute) cannot escape and widen the page (seen with the forecast strip).
@@ -81,6 +87,46 @@ falls short.
 - **Behaviour:** token shimmer (`--bg-raised` + `--border-glass` sweep), static under reduced motion, always
   `aria-hidden` (the slot carries `role="status"` text).
 - **Proposed:** `.mco-skel` with the same modifiers.
+
+### Menu button — new
+- **Here:** `.dash-menu` / `.dash-icon-btn` / `.dash-menu-panel` / `.dash-menu-item` / `.dash-menu-state` /
+  `.dash-menu-sep` (`ui/layout/menu.css`), `initMenu({ button, panel, onChange })` (`ui/layout/menu.ts`);
+  Alpine wrapper `x-data="menu"` (`ui/shell/menu.ts`). The header ⋯ menu; phase B's chart ⋯ menus.
+- **Why:** the kit has no menu. HOUSE-STYLE names `--z-flyout` for dropdowns but no component.
+- **Behaviour:** WAI-ARIA menu button: `aria-haspopup="menu"`, `aria-expanded`, `aria-controls`; Enter/Space/
+  ArrowDown open on the first item, ArrowUp on the last; arrows, Home/End move (roving focus, items
+  `tabindex=-1`); Esc closes and returns focus; Tab, focus leaving or a press outside close it. An item
+  closes the menu (focus to the button) before its own handler runs, so a dialog it opens returns focus to
+  the button; `data-keep-open` keeps it open (a cycling Theme item).
+- **Proposed:** `.mco-menu` family and `MCO.initMenu({ button, panel, onChange }) → { open(focus), close({focusButton}), isOpen, destroy }`.
+
+### Popover — new
+- **Here:** `.dash-popover` / `.dash-popover-panel` (`ui/layout/popover.css`), `initPopover({ button, panel,
+  onChange })` (`ui/layout/popover.ts`); Alpine wrapper `x-data="popover"` (`ui/shell/popover.ts`). The Ag tools'
+  option chips, each holding a form control.
+- **Why:** the kit has no non-modal flyout for controls; a menu (`role="menu"`) is wrong for form fields.
+- **Behaviour:** the button gets `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`; the panel is a
+  labelled `role="dialog"` at `--z-flyout`, under the button (docked at the bottom on compact). Opening focuses
+  its first control; Esc closes and returns focus to the button; a press outside or focus leaving closes it.
+- **Proposed:** `.mco-popover` and `MCO.initPopover({ button, panel, onChange }) → { open(), close({focusButton}), isOpen, destroy }`.
+
+### Modal sheet — new (a variant of the bottom sheet)
+- **Here:** `.dash-sheet.dash-sheet--modal` + `.dash-sheet-scrim` (`ui/layout/sheet.css`), the same
+  `initSheet`, wrapped by `x-data="sheet({ id, urlKey })"` with `openSheet(id, opener)` / `closeSheet(id)`
+  (`ui/shell/sheet.ts`). The Download sheet.
+- **Why:** a task sheet (a form) must cover the chrome, unlike the picker sheet, which sits on the tab bar.
+- **Tiers:** the panel at `--z-flyout` and its scrim at `--z-chrome-top` (later in the DOM than the navbar,
+  so it covers it). No new numbers; the kit could name a `--z-modal` tier for it.
+- **Layout:** a bottom sheet on compact screens; a centred panel (`--sheet-w`, default 40 rem) from 641 px.
+- **Proposed:** `.mco-sheet--modal` and a `--z-modal` tier between `--z-chrome-top` and `--z-flyout`.
+
+### Pill chips — new
+- **Here:** `.dash-chip` (range: a raised pill; pressed = `--text-primary` fill, `--bg-deep` text) and
+  `.dash-chip--quiet` (interval: pressed = `--accent-hover` fill, `--accent-line` text) (`ui/layout/card.css`).
+  State is `aria-pressed` only.
+- **Why:** `.seg-btn` is a fused, bordered group; the redesign wants separate pills with a high-contrast
+  active state. `.ctl-chip` (filters) keeps its check mark.
+- **Proposed:** `.mco-chip` (+ `--quiet`), styled by `[aria-pressed]` as `.nav-btn` is.
 
 ### Status badge — new
 - **Here:** `.dash-badge`, `.dash-badge--warn` (`ui/layout/card.css`): "No report for over 2 hours".
@@ -121,6 +167,14 @@ falls short.
 - **Why:** the kit sets sizes per component (0.55–1.05 rem, nine distinct values in this app alone).
 - **Proposed:** kit `--fs-*` tokens (theme-independent, one `:root` block), used by the kit's own components over time.
 
+### Display numerals — new (mco-web-style#36)
+- **Here:** `.num-display` (`ui/layout/card.css`): Outfit (`--font-ui`), `font-variant-numeric: tabular-nums`,
+  `letter-spacing: -0.02em`. For readings at display size (≥ 1.75 rem: the Now hero, tiles).
+- **Why:** Space Mono at hero sizes reads as code (DESIGN.md "Redesign 2026-10", decision 4). Space Mono stays for tables, ids,
+  timestamps and axes. Filed as https://github.com/mt-climate-office/mco-web-style/issues/36; until the kit
+  ships a token or class, this is the one app utility. Swap it for the kit's when the pin moves.
+- **Proposed:** a kit `--font-display-num` (or `.mco-num-display`) with the same three properties.
+
 ### Breakpoints — gap
 - **Here:** the desktop edge `(min-width: 1060px)` is written in JS (`ui/picker/stationPicker.ts`) and CSS.
 - **Why:** the kit's ladder has 1060 only as "tighten chrome", and `MCO.viewport` knows only compact/touch.
@@ -138,6 +192,9 @@ falls short.
 | `.dash-scrim` adds `backdrop-filter: blur(2px)` to `.mco-scrim` | Explorer's look. | Optional `.mco-scrim--blur`. |
 | `.dash-toggletip-btn.mco-btn-info { width/height: 1.5rem }` under `(hover: hover)` (`ui/layout/toggletip.css`) | An ⓘ inline next to text; the kit's is a 34 px navbar button. Touch keeps 40 px. | An inline `.mco-btn-info--sm`. |
 | `.dash-link` and `.dash-section-link` get `min-height: 40px` under `(hover: none)` | HOUSE-STYLE §5.5 for standalone links (not prose). | A kit `.mco-link` for standalone links. |
+| `.mco-navbar > .brand` visually hidden below 1060 px (`ui/layout/shell.css`) | The brand is desktop-only so the station button and sections fit one row; the kit sheds it at 750 px. | Let the app choose the brand's breakpoint (a custom property or modifier). |
+| `.chart .mco-tooltip:empty { display: none !important }` (`ui/charts/chart.css`) | ECharts creates its tooltip element empty and keeps it; the kit's border and `backdrop-filter` showed it as a faint outline under charts on phones even at `opacity: 0`. | `.mco-tooltip:empty { display: none }` in the kit. |
+| `.dash-sheet--modal { z-index: var(--z-flyout) }`, `.dash-sheet-scrim { z-index: var(--z-chrome-top) }` | A modal sheet covers the chrome; `.mco-scrim` sits under it. | A `--z-modal` tier (see "Modal sheet"). |
 
 ## Notes for kit consumers (not kit changes)
 - **Skip link + hash routing:** the kit skip link (`href="#main"`) changes the hash. A hash router must

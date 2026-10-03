@@ -14,6 +14,7 @@ import { AUX, barSeries, lineSeries, markerSeries, points } from './series'
 import { paint } from './theme'
 import { axisTooltip, legend, tipText } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
+import { axisTitle, cumulativeTitle } from '../variables/labels'
 
 /* ------------------------------------------------------------------ ETr */
 
@@ -22,8 +23,10 @@ export interface EtrModel {
   period: Period
 }
 
-export const ETR_AXIS = 'Reference ET\n(a=0.23) [in]'
-export const ETR_CUM_AXIS = 'Cumulative Reference ET\n(a=0.23) [in]'
+export const ETR_AXIS = axisTitle('etr', 'Reference ET')
+export const ETR_CUM_AXIS = cumulativeTitle(ETR_AXIS)
+/** The CCI is a temperature-equivalent index, so its axis carries °F. */
+const CCI_AXIS = `${axisTitle('cci', 'Livestock risk')} (°F)`
 
 function etrValues(m: EtrModel) {
   const xs = m.series.time.map(wallMs)
@@ -57,7 +60,7 @@ export function etrTable(m: EtrModel): ChartTable {
   const { xs, inches, cumulative } = etrValues(m)
   return {
     caption: 'Reference ET (a=0.23), inches',
-    columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', 'Reference ET [in]', 'Cumulative [in]'],
+    columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', ETR_AXIS, ETR_CUM_AXIS],
     rows: xs.map((x, i) => [isoWall(x, m.period), fmtNum(inches[i], 3), fmtNum(cumulative[i], 3)]),
   }
 }
@@ -121,14 +124,14 @@ export const feelsLikeChart: ChartBuilder<FeelsLikeModel> = (m, ctx) =>
     label: (k) => FEELS_LIKE_LABELS[k],
     style: (k) => FEELS_LIKE[ctx.theme.name][k],
     period: m.period,
-    yName: 'Feels Like Temperature\n[°F]',
+    yName: axisTitle('feels_like', 'Feels like'),
     legendTitle: 'Index Used',
   })
 
 export function feelsLikeTable(m: FeelsLikeModel): ChartTable {
   return {
     caption: 'Feels-like temperature, °F, and the index used',
-    columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', 'Feels like [°F]', 'Index used'],
+    columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', axisTitle('feels_like', 'Feels like'), 'Index used'],
     rows: m.series.time.map((t, i) => [
       isoWall(wallMs(t), m.period),
       fmtNum(cToF(m.series.valueC[i]), 1),
@@ -157,14 +160,14 @@ export const cciChart: ChartBuilder<CciModel> = (m, ctx) =>
     label: (k) => k,
     style: (k) => ({ color: cciColor(k, ctx.theme.name) }),
     period: m.period,
-    yName: 'Livestock Risk Index [°F]',
+    yName: CCI_AXIS,
     legendTitle: cciLegendTitle(m.series.livestock),
   })
 
 export function cciTable(m: CciModel): ChartTable {
   return {
     caption: `Comprehensive Climate Index, °F, ${m.series.livestock} livestock risk class`,
-    columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', 'CCI [°F]', 'Risk class'],
+    columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', CCI_AXIS, 'Risk class'],
     rows: m.series.time.map((t, i) => [
       isoWall(wallMs(t), m.period),
       fmtNum(cToF(m.series.valueC[i]), 1),

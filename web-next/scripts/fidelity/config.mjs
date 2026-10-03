@@ -22,21 +22,13 @@ export const QC_LEVEL = Number(process.env.FIDELITY_LEVEL ?? 2)
  * A = the current React app (web/, Plotly + Mantine), B = web-next (ECharts + Alpine).
  * `dir`/`port` let run.mjs start a Vite dev server when the URL is not answering.
  */
+const WEB_BASE = process.env.WEB_URL ?? 'http://localhost:5188/mesonet-dashboard/'
+const NEXT_BASE = process.env.NEXT_URL ?? 'http://localhost:5189/mesonet-dashboard/next/'
+
+/* The port a server is started on is the one in its URL, so WEB_URL / NEXT_URL pick free ports. */
 export const TARGETS = {
-  web: {
-    kind: 'web',
-    label: 'web/ (React, Plotly)',
-    base: process.env.WEB_URL ?? 'http://localhost:5188/mesonet-dashboard/',
-    dir: WEB_DIR,
-    port: 5188,
-  },
-  next: {
-    kind: 'next',
-    label: 'web-next (Alpine, ECharts)',
-    base: process.env.NEXT_URL ?? 'http://localhost:5189/mesonet-dashboard/next/',
-    dir: WEB_NEXT_DIR,
-    port: 5189,
-  },
+  web: { kind: 'web', label: 'web/ (React, Plotly)', base: WEB_BASE, dir: WEB_DIR, port: Number(new URL(WEB_BASE).port) },
+  next: { kind: 'next', label: 'web-next (Alpine, ECharts)', base: NEXT_BASE, dir: WEB_NEXT_DIR, port: Number(new URL(NEXT_BASE).port) },
 }
 
 /** Deep link for `target`: ?s=…&params… #tab ('latest' = no hash, web/'s default tab). Arrays join with commas (kept literal, as the apps write them). */
@@ -86,7 +78,7 @@ export const LATEST_SCENARIOS = [
   },
   { id: 'raw', label: 'Raw', params: { agg: 'raw' } },
   { id: 'card-wind', label: 'Top card: Wind Rose', params: { card: 'wind' }, next: now({ media: 'wind', figures: ['windrose'], cards: { top: '[data-testid="now-media"]' } }) },
-  { id: 'card-forecast', label: 'Top card: Weather Forecast', params: { card: 'forecast' }, next: now({ cards: { top: '[data-testid="now-forecast"]' }, relabeled: true }) },
+  { id: 'card-forecast', label: 'Top card: Weather Forecast', params: { card: 'forecast' }, next: now({ cards: { top: '[data-testid="now-icons"]' }, relabeled: true }) },
   { id: 'card-photo', label: 'Top card: Latest Photo', params: { card: 'photo' }, next: now({ media: 'photo', cards: { top: '[data-testid="now-media"]' } }) },
   { id: 'info-map', label: 'Bottom card: Locator Map', params: { info: 'map' }, next: about({ cards: { bottom: '[data-testid="about-map"]' }, map: '[data-testid="about-map"]' }) },
   { id: 'info-metadata', label: 'Bottom card: Station Metadata', params: { info: 'metadata' }, next: about({ cards: { bottom: '[data-testid="about-details"]' }, relabeled: true }) },

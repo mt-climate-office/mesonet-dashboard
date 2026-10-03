@@ -1,0 +1,23 @@
+<!-- All years (view=history; x-data="variableHistory", ui/charts/variableHistory.ts): one line per
+     year on a day-of-year axis, filled in as each year's request lands; or, in table mode (the
+     including page's tableMode(), tbl=1), its table. Included by the variable page and the
+     Reference ET tool page. -->
+<div class="var-history" x-data="variableHistory" data-testid="variable-history">
+  <p class="dash-section-note">Daily values, one line per year<span x-show="variable?.sum">, as a running total within each year</span>. <span x-text="progress"></span></p>
+  <template x-if="!tableMode()">
+    <div class="var-canvas">
+      <div class="var-status" x-show="!model()">
+        <p class="sr-only" role="status" x-text="loading() ? 'Loading history…' : 'No history for this variable.'"></p>
+        <template x-if="loading()"><span class="dash-skel dash-skel--chart var-skel" aria-hidden="true"></span></template>
+        <template x-if="!loading()"><p class="charts-empty">No daily history for this variable.</p></template>
+      </div>
+      <div class="chart var-chart" :aria-hidden="!model()" data-testid="history-chart"
+           x-data="chart({ builder: annualChart, table: annualTable, label: label(), model: () => model() })"></div>
+    </div>
+  </template>
+  <template x-if="tableMode()">
+    <div class="var-table" x-data="chartTable({ table: () => (model() ? annualTable(model()) : null) })" data-testid="variable-table">
+      <!-- @include partials/charts/table.html -->
+    </div>
+  </template>
+</div>

@@ -18,6 +18,18 @@ export interface RecordQuery {
   publicOnly?: boolean
   /** API QC tier: 0 raw, 1 provisional, 2 quality-controlled (default). */
   level?: 0 | 1 | 2
+  /**
+   * Daily only: one column per element per function instead of the daily mean
+   * ("Minimum Air Temperature @ 2 m [°F]", "Maximum …"); the API pairs each
+   * `agg_func` entry with the `elements` entry at the same position.
+   */
+  aggFunc?: readonly ('min' | 'max')[]
+}
+
+/** `elements` and `agg_func` for `aggFunc` over comma-separated `elements` (each code once per function). */
+export function aggFuncQuery(elements: string, funcs: readonly string[]): { elements: string; agg_func: string } {
+  const codes = elements.split(',').filter(Boolean)
+  return { elements: funcs.flatMap(() => codes).join(','), agg_func: funcs.flatMap((f) => codes.map(() => f)).join(',') }
 }
 
 export const fmtDate = (d: Date | string): string =>
@@ -59,6 +71,7 @@ export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]
   const baseQuery = {
     ...(q.period === 'raw' ? noNaInfo : { ...noNaInfo, na_info }),
     public: q.publicOnly ?? true,
+    ...(q.aggFunc?.length && q.elements ? aggFuncQuery(q.elements, q.aggFunc) : {}),
   }
 
   const observations =
