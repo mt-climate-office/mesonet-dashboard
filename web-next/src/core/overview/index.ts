@@ -2,7 +2,7 @@
  * Barrel for the Now overview models:
  *  - tiles:      TILES, reportedTiles (the tiles a station reports), freshness
  *  - conditions: readConditions, feelsLikeF (NWS)
- *  - series:     sparkSeries, hourlyPrecip, SPARK_ELEMENTS
+ *  - series:     sparkSeries, hourlyPrecip, peakGust, SPARK_ELEMENTS
  *  - precip:     precipSummary, nowPrecip (once per Now page)
  *  - normals:    normalMedianOn, ytdNormal
  *  - stamp:      stampEpochMs, updatedText, isStale

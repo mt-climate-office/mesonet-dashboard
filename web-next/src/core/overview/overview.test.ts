@@ -17,6 +17,7 @@ import {
   sparkSeries,
   stampEpochMs,
   updatedText,
+  peakGust,
   ytdNormal,
 } from './index'
 
@@ -124,9 +125,22 @@ describe('series', () => {
     expect(p.last24h).toBeCloseTo(0.1, 9)
     expect(hourlyPrecip(HOURLY, '2026-09-30')?.sinceMidnight).toBeCloseTo(0.2, 9)
   })
+  it('peakGust: hourly maxima over the 24 h before now, with /latest; null without gust rows', () => {
+    const now = Date.UTC(2026, 9, 3, 8)
+    const rows = ['2026-10-02 06:00', '2026-10-02 07:00', '2026-10-02 22:00', '2026-10-03 08:00', '2026-10-03 09:00'].map((d, i) => ({
+      station: 'x',
+      datetime: `${d}:00-06:00`,
+      'Gust Speed [mi/hr]': [60, 30, 43.24, 2, 99][i],
+    }))
+    expect(peakGust(rows, 1, now)).toBe(43.24) // yesterday's 06:00 and 07:00 hours end before the window; 09:00 is after now
+    expect(peakGust(rows, 50, now)).toBe(50)
+    expect(peakGust(rows, null, now, 48)).toBe(60)
+    expect(peakGust([{ station: 'x', datetime: '2026-10-03 07:00:00-06:00', 'Gust Speed [mi/hr]': null }], 12, now)).toBeNull()
+    expect(peakGust(undefined, 12, now)).toBeNull()
+  })
   it('sparkQuery: two days back, level 2, optional elements the station reports', () => {
     const q = sparkQuery('acebozem', '2026-10-01', LATEST_BOZ)
-    expect(q.query).toEqual({ station: 'acebozem', start: '2026-09-29', period: 'hourly', elements: 'air_temp,rh,wind_spd,ppt,sol_rad,soil_vwc,bp,snow_depth', level: 2 })
+    expect(q.query).toEqual({ station: 'acebozem', start: '2026-09-29', period: 'hourly', elements: 'air_temp,rh,wind_spd,ppt,sol_rad,soil_vwc,bp,windgust,snow_depth', level: 2 })
     expect(q.key).toContain('acebozem:hourly:2026-09-29')
     expect(sparkQuery('arskeogh', '2026-03-01', LATEST_KEOGH).query.elements).toMatch(/,vpd_atmo$/)
     expect(sparkQuery('arskeogh', '2026-03-01', LATEST_KEOGH).query.start).toBe('2026-02-27')
