@@ -360,7 +360,7 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
   x-if="isOpen">` mounts only while open and unmounts after the close slide (at once under reduced motion). Each sheet has a sibling scrim `#<id>-scrim`.
 - **Pill chips** (`card.css`) — `<button class="dash-chip" aria-pressed>`: a raised pill; pressed is filled
   with high contrast (`--text-primary` fill, `--bg-deep` text) for the active range. `.dash-chip--quiet` for
-  the interval row: pressed is the accent tint with `--accent-line` text. `aria-pressed` alone drives the style.
+  the interval row: pressed is the accent tint with `--accent-line` text (at least 5.1:1 in every theme: 5.1 light on `--bg-deep`, 5.8 dark, 10.6 high contrast; axe checks it on `variable` and `variable-daily`). `aria-pressed` alone drives the style.
 - **Display numerals** (`card.css`) — `.num-display`: Outfit, `tabular-nums`, −0.02 em tracking, for readings
   at ≥ 1.75 rem (hero, tiles). Space Mono stays for tables, ids, timestamps and axes (mco-web-style#36).
 - **Plain labels** (`core/variables/labels.ts`, not a layout primitive but used by every surface) — `LABELS[v]`
