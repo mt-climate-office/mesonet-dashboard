@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readUrlState } from '../url-schema'
-import { PREFILL_RESET, agToolElements, fromChart, variableElements } from './fromChart'
+import { PREFILL_RESET, agToolElements, fromChart, prefillsFromChart, variableElements } from './fromChart'
 
 const els = [
   { element: 'air_temp_0200', description_short: 'Air Temperature @ 2 m' },
@@ -55,5 +55,24 @@ describe('agToolElements', () => {
     expect(agToolElements('soil_temp,soil_ec_blk', { ...o, soilVar: 'swp' }, els)).toEqual(['swp'])
     expect(agToolElements('annual', o, els)).toEqual(['ppt'])
     expect(agToolElements('annual', { ...o, annualVar: null }, els)).toEqual([])
+  })
+})
+
+describe('prefillsFromChart', () => {
+  const at = (q: string) => readUrlState(q)
+  it('prefills a URL-opened sheet over a variable page or an Ag tool', () => {
+    expect(prefillsFromChart(at('?s=acebozem&v=air_temp&dl=1'))).toBe(true)
+    expect(prefillsFromChart(at('?s=acebozem&v=gdd&dl=1'))).toBe(true)
+  })
+  it('not when the sheet is closed, or over the list or Compare', () => {
+    expect(prefillsFromChart(at('?s=acebozem&v=air_temp'))).toBe(false)
+    expect(prefillsFromChart(at('?s=acebozem&dl=1'))).toBe(false)
+    expect(prefillsFromChart(at('?s=acebozem&v=air_temp&cmp=1&dl=1'))).toBe(false)
+  })
+  it('keeps whatever an old link (or an earlier prefill) carries', () => {
+    expect(prefillsFromChart(at('?v=air_temp&dl=1&els=ppt'))).toBe(false)
+    expect(prefillsFromChart(at('?v=air_temp&dl=1&dl_from=2024-01-01'))).toBe(false)
+    expect(prefillsFromChart(at('?v=air_temp&dl=1&dl_to=2024-01-31'))).toBe(false)
+    expect(prefillsFromChart(at('?v=air_temp&dl=1&period=hourly'))).toBe(false)
   })
 })
