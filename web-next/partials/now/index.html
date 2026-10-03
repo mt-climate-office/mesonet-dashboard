@@ -85,7 +85,7 @@
               <p class="now-strip-empty" role="status" data-testid="now-strip-empty">No hourly temperatures or forecast to draw for the last and next 24 hours.</p>
             </template>
           </div>
-          <ul class="now-icons" x-show="page.icons.length" aria-label="Forecast periods" data-testid="now-icons">
+          <ul class="now-icons" x-show="page.icons.length || tier2" aria-label="Forecast periods" data-testid="now-icons">
             <template x-for="p in page.icons" :key="p.t">
               <li><img :src="p.icon" :alt="p.short" width="32" height="32" loading="lazy"><span x-text="p.label"></span></li>
             </template>
