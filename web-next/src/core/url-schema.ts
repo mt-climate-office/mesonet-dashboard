@@ -10,8 +10,12 @@
  *              theme      dark | light | high-contrast (read first by the
  *                         inline anti-flash script; absent = saved/OS choice)
  *
- *   Charts     cmp        1 = the Compare (stacked) chart; `#latest` links map
+ *   Charts     v          variable page: an element-family id (air_temp, ppt,
+ *                         soil_vwc …; core/variables); absent = the list
+ *              view       variable sub-view: recent | history | table
+ *              cmp        1 = the Compare (stacked) chart; `#latest` links map
  *                         here (core/router.ts). It reads the Latest keys.
+ *     (The variable page and Compare share from/to/agg/gridmet below.)
  *
  *   Latest     from, to   chart window (YYYY-MM-DD; pan/zoom writes these)
  *              agg        hourly | daily | raw
@@ -60,6 +64,9 @@ export type Theme = (typeof THEMES)[number]
 
 export const LATEST_AGG_OPTIONS = ['hourly', 'daily', 'raw'] as const
 export type LatestAgg = (typeof LATEST_AGG_OPTIONS)[number]
+
+export const CHART_VIEWS = ['recent', 'history', 'table'] as const
+export type ChartView = (typeof CHART_VIEWS)[number]
 
 export const NETWORK_OPTIONS = ['HydroMet', 'AgriMet', 'Cooperator'] as const
 
@@ -164,6 +171,8 @@ export const URL_SCHEMA = {
   s: str(),
   theme: oneOf(THEMES, null),
   // Charts
+  v: str(),
+  view: oneOf(CHART_VIEWS, 'recent'),
   cmp: flag(),
   // Latest (Compare)
   from: str(),

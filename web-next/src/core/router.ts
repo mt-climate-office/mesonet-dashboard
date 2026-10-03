@@ -47,11 +47,12 @@ export function sectionForHash(hash: string, current: Section): Section {
 export const sectionLabel = (s: Section): string => SECTIONS.find((x) => x.id === s)?.label ?? s
 
 /**
- * History operation for a navigation: a section change adds an entry (Back
- * returns to the previous section); a change inside one section replaces it.
+ * History operation for a navigation: a section change or a drill-down inside
+ * a section (Charts variable or sub-view) adds an entry, so Back returns;
+ * any other change inside one section replaces it.
  */
-export function historyMode(from: Section, to: Section): 'push' | 'replace' {
-  return from === to ? 'replace' : 'push'
+export function historyMode(from: Section, to: Section, drillDown = false): 'push' | 'replace' {
+  return from === to && !drillDown ? 'replace' : 'push'
 }
 
 /** Keys that only the old Latest tab read; a hash-less link carrying one meant Latest. */

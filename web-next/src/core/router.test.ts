@@ -44,6 +44,10 @@ describe('historyMode', () => {
     expect(historyMode('now', 'charts')).toBe('push')
     expect(historyMode('charts', 'charts')).toBe('replace')
   })
+  it('pushes a drill-down inside a section (Charts variable or sub-view)', () => {
+    expect(historyMode('charts', 'charts', true)).toBe('push')
+    expect(historyMode('now', 'charts', true)).toBe('push')
+  })
 })
 
 describe('legacyRedirect', () => {

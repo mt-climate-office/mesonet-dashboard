@@ -18,8 +18,8 @@ export interface UrlStore {
   set(patch: Partial<UrlState>): void
   /** URL (`?…#section`) for `section` with `patch` applied: real hrefs for section links. */
   hrefFor(section: Section, patch?: Partial<UrlState>): string
-  /** Go to `section` (with an optional patch): pushState for a section change, else replaceState. */
-  go(section: Section, patch?: Partial<UrlState>): void
+  /** Go to `section` (with an optional patch): pushState for a section change or a `drillDown`, else replaceState. */
+  go(section: Section, patch?: Partial<UrlState>, drillDown?: boolean): void
   init(): void
 }
 
@@ -69,11 +69,11 @@ export function createUrlStore(): UrlStore {
       return `${path()}${writeUrlSearch({ ...this.state, ...patch }, location.search, keys)}#${section}`
     },
 
-    go(section, patch = {}) {
+    go(section, patch = {}, drillDown = false) {
       const next = this.hrefFor(section, patch)
       Object.assign(this.state, patch)
       for (const k of Object.keys(patch)) touched.add(k)
-      if (historyMode(this.section, section) === 'push') history.pushState(null, '', next)
+      if (historyMode(this.section, section, drillDown) === 'push') history.pushState(null, '', next)
       else history.replaceState(history.state, '', next)
       this.section = section
     },

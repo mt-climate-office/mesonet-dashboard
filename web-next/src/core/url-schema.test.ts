@@ -175,3 +175,13 @@ describe('cmp (Charts → Compare)', () => {
     expect(writeUrlSearch({ ...readUrlState('?s=a'), cmp: true })).toBe('?s=a&cmp=1')
   })
 })
+
+describe('v / view (Charts → variable page)', () => {
+  it('reads the variable id and sub-view; recent is the default and stays out of the URL', () => {
+    expect(readUrlState('').v).toBeNull()
+    expect(readUrlState('?v=air_temp&view=history')).toMatchObject({ v: 'air_temp', view: 'history' })
+    expect(readUrlState('?view=nope').view).toBe('recent')
+    expect(writeUrlSearch({ ...readUrlState('?s=a'), v: 'ppt', view: 'recent' })).toBe('?s=a&v=ppt')
+    expect(writeUrlSearch({ ...readUrlState('?s=a'), v: 'ppt', view: 'table' })).toBe('?s=a&v=ppt&view=table')
+  })
+})
