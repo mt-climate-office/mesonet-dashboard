@@ -53,7 +53,7 @@ for (const [name, query, evidence] of [
   ['legacy-ag', '?s=acebozem#ag', { filled: ['[data-testid="charts-ag-tools"] ul'] }],
   ['ag-gdd', '?s=acebozem&v=gdd#charts', { charts: 1 }],
   ['download', '?s=acebozem&dl=1#charts', { filled: ['[data-testid="dl-step-elements"]'] }],
-  ['about', '?s=acebozem#about', { filled: ['[data-testid="about-readings-table"] tbody'] }],
+  ['about', '?s=acebozem#about', { filled: ['[data-testid="about-details"] .about-dl', '[data-testid="about-map"] tbody'] }],
 ]) {
   const { page, close, rendered } = await open(env, query, { viewport: PHONE })
   await rendered(evidence)

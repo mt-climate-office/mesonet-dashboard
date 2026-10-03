@@ -4,7 +4,8 @@
  * the Theme item, the picker's combobox and closing on a pick, the Now Provisional
  * toggletip and photo dialog, the Charts drill-down and Back, views mounting only while
  * open (no cross-view requests), legacy links (#ag, #downloader), the Download sheet
- * (focus, Esc, inert, dl key) and its phone stepper, the picker drawer and sheet (focus,
+ * (focus, Esc, inert, dl key) and its phone stepper, About's readings and sensor-change
+ * sheets (focus in and back, Now's "All readings" opening the readings sheet), the picker drawer and sheet (focus,
  * Esc, inert), the tab bar and history, the variable page's view switch and chips, focus
  * after Charts drill-downs (variables and Ag tools), the Ag Options disclosure, chart
  * table twins, map sr-table selection, reduced motion.
@@ -541,6 +542,63 @@ for (const vp of VIEWPORTS) {
   const s2 = await state()
   check(`${label}: Esc closes it, clears dl, unmounts the form, focus returns to the link`,
     !s2.shown && s2.dl === null && !s2.form && s2.focus === 'charts-download-link' && !s2.inert.some(Boolean), JSON.stringify(s2))
+  const p = await problems()
+  check(`${label}: console + CSP clean`, p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── About sheets (1440 centred, 390 bottom): a row opens its sheet, focus in, Esc / × close, focus back;
+      Now's "All readings" (navigate target #about-readings) opens the readings sheet ── */
+for (const vp of VIEWPORTS) {
+  const label = `About sheets (${vp.name})`
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=dark#about', { viewport: vp })
+  await rendered({ filled: ['[data-testid="about-details"] .about-dl'] })
+  const state = (id) => page.evaluate((id) => {
+    const s = document.getElementById(`sheet-${id}`)
+    return {
+      shown: !s.hidden && s.getClientRects().length > 0,
+      inside: s.contains(document.activeElement),
+      focus: document.activeElement?.dataset.testid ?? document.activeElement?.id,
+      inert: [...document.querySelectorAll('.mco-navbar, .dash-shell, .dash-tabbar')].map((e) => e.inert),
+      region: !!s.querySelector('.about-scroll[role="region"][tabindex="0"]'),
+    }
+  }, id)
+  const shut = (id) => page.waitForFunction((id) => document.getElementById(`sheet-${id}`).hidden, id, { timeout: 5000 }).catch(() => {})
+  await page.getByTestId('about-readings-row').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => document.querySelector('[data-testid="about-readings-table"] tbody')?.children.length > 0, null, { timeout: 10000 }).catch(() => {})
+  await animationsDone(page)
+  const r1 = await state('about-readings')
+  check(`${label}: Enter on "All current readings" opens its sheet, focus inside, page inert, the table in a focusable region`,
+    r1.shown && r1.inside && r1.inert.every(Boolean) && r1.region, JSON.stringify(r1))
+  await page.keyboard.press('Escape')
+  await shut('about-readings')
+  const r2 = await state('about-readings')
+  check(`${label}: Esc closes it, focus returns to the row`, !r2.shown && r2.focus === 'about-readings-row' && !r2.inert.some(Boolean), JSON.stringify(r2))
+  await page.getByTestId('about-history-row').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => document.querySelector('[data-testid="about-history"] .about-days')?.children.length > 0, null, { timeout: 10000 }).catch(() => {})
+  await animationsDone(page)
+  const h1 = await state('about-history')
+  check(`${label}: Enter on "Sensor changes" opens its sheet, focus inside`, h1.shown && h1.inside && h1.region, JSON.stringify(h1))
+  await page.getByTestId('sheet-about-history-close').click()
+  await shut('about-history')
+  const h2 = await state('about-history')
+  check(`${label}: × closes it, focus returns to the row`, !h2.shown && h2.focus === 'about-history-row', JSON.stringify(h2))
+  // Now's "All readings" link: About with the readings sheet open; closing it leaves focus on the row.
+  await page.locator(vp.touch ? '.dash-tabbar a[data-section="now"]' : 'a.dash-section-link[data-section="now"]').click()
+  await page.waitForFunction(() => location.hash === '#now' && document.querySelector('[data-testid="now-all-readings"]'), null, { timeout: 10000 }).catch(() => {})
+  await page.getByTestId('now-all-readings').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => !document.getElementById('sheet-about-readings').hidden, null, { timeout: 10000 }).catch(() => {})
+  await animationsDone(page)
+  const n1 = await state('about-readings')
+  const hash = await page.evaluate(() => location.hash)
+  check(`${label}: Now's "All readings" lands on About with the readings sheet open, focus inside`, hash === '#about' && n1.shown && n1.inside, JSON.stringify({ hash, ...n1 }))
+  await page.keyboard.press('Escape')
+  await shut('about-readings')
+  const n2 = await state('about-readings')
+  check(`${label}: closing it leaves focus on the readings row`, !n2.shown && n2.focus === 'about-readings-row', JSON.stringify(n2))
   const p = await problems()
   check(`${label}: console + CSP clean`, p.length === 0, p.slice(0, 4).join(' | '))
   await close()
