@@ -66,6 +66,9 @@ describe('readings', () => {
 
   it('puts units on values at table precision, leaving text alone', () => {
     expect(readingValue('Air Temperature [°F]', '56.984')).toBe('57.0 °F')
+    // One precision per variable (LABELS digits.table): a whole number keeps its decimal, never "56" beside "70.4".
+    expect(readingValue('Air Temperature [°F]', '56')).toBe('56.0 °F')
+    expect(readingValue('Bulk EC @ 2 in [mS/cm]', '0.01')).toBe('0.010 mS/cm')
     expect(readingValue('Relative Humidity [%]', '60.38')).toBe('60.4%')
     expect(readingValue('Atmospheric Pressure [mbar]', '848.93')).toBe('848.9 mb')
     expect(readingValue('Feels like [°F]', '41.23 (wind chill)')).toBe('41.2 °F (wind chill)')

@@ -143,7 +143,7 @@ describe('latestTimeseriesTable', () => {
   it('a row per time step with data and a column per plotted column', () => {
     const t = latestTimeseriesTable(model(hourRows(3, met), ['Precipitation', 'Air Temperature']))
     expect(t.columns).toEqual(['Time (MT)', 'Rain (in)', 'Air temperature (°F)'])
-    expect(t.rows[0]).toEqual(['2026-07-01 00:00', '0', '60'])
+    expect(t.rows[0]).toEqual(['2026-07-01 00:00', '0.00', '60.0']) // LABELS digits.table: one precision per variable
     expect(t.rows).toHaveLength(3)
   })
   it(`caps the twin at ${TABLE_ROW_LIMIT} rows with a closing note`, () => {

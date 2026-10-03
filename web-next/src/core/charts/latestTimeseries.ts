@@ -11,7 +11,7 @@ import { panelNoDataText } from '../models/timeseries'
 import { ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, variableStyle } from '../palette'
 import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
-import { plainName, plainUnit } from '../variables/labels'
+import { formatValue, plainName, plainUnit } from '../variables/labels'
 import { niceCeil, timeAxis, timeZoom, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtWall, isoWall, plainLabel } from './format'
 import { bandSeries, sensorEventSeries } from './overlays'
@@ -313,22 +313,24 @@ export const TABLE_ROW_LIMIT = 500
  */
 export function latestTimeseriesTable(m: LatestTimeseriesModel, limit = TABLE_ROW_LIMIT): ChartTable {
   const period = m.period === 'daily' ? 'daily' : 'hourly'
-  const cols = m.ts.panels.flatMap((p) =>
-    p.series.flatMap((s) => {
+  const cols = m.ts.panels.flatMap((p) => {
+    // Table precision per variable (core/variables/labels `digits.table`): "56.0" beside "70.4", never "56".
+    const id = ELEM_MAP[p.variable]?.[0] ?? ''
+    return p.series.flatMap((s) => {
       const { full, unit } = plainSeries(p, s)
       const name = unit ? `${full} (${unit})` : full
       return [
-        { name, values: s.values },
-        ...(s.band ? [{ name: `Low: ${name}`, values: s.band.lo }, { name: `High: ${name}`, values: s.band.hi }] : []),
+        { id, name, values: s.values },
+        ...(s.band ? [{ id, name: `Low: ${name}`, values: s.band.lo }, { id, name: `High: ${name}`, values: s.band.hi }] : []),
       ]
-    }),
-  )
+    })
+  })
   const rows: string[][] = []
   let total = 0
   m.ts.x.forEach((x, j) => {
     if (!Number.isFinite(x) || cols.every((c) => c.values[j] == null)) return
     if (++total > limit) return
-    rows.push([isoWall(x, period), ...cols.map((c) => (c.values[j] == null ? MISSING : fmtValue(c.values[j]!)))])
+    rows.push([isoWall(x, period), ...cols.map((c) => (c.values[j] == null ? MISSING : formatValue(c.id, c.values[j], 'table')))])
   })
   if (total > limit) {
     rows.push([`Showing first ${limit} of ${total} rows; use the Data Downloader for the full record.`])
