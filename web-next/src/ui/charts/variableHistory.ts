@@ -43,7 +43,8 @@ export function variableHistory() {
       const installed = installDate(st.current)
       const out: { year: number; rows: ObservationRow[] | null; loading: boolean }[] = []
       for (const year of historyYears(installed, today)) {
-        const res = recordResource(historyRequest(st.id, year, v, stationElements(st.id) ?? [], today, installed))
+        // All years is history: not re-read on the freshness tick, even for the current year.
+        const res = recordResource(historyRequest(st.id, year, v, stationElements(st.id) ?? [], today, installed), { live: false })
         const loading = res?.status === 'loading'
         out.push({ year, rows: res?.data ? (Alpine.raw(res.data) as ObservationRow[]) : null, loading })
         if (loading) break

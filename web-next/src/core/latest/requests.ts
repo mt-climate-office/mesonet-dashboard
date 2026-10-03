@@ -4,6 +4,7 @@
  */
 import type { RecordQuery } from '../api'
 import { requestElements, type WindowPlan } from '../models/timeseries'
+import { denverToday } from '../today'
 import type { LatestAgg } from '../url-schema'
 
 type ElementRow = { element: string; description_short: string }
@@ -58,3 +59,6 @@ export function recordRequest(i: {
     },
   }
 }
+
+/** The window reaches today (Denver; open-ended counts): its data still grows, so the read is live (core/cache). */
+export const endsToday = (r: RecordRequest, today: string = denverToday()): boolean => typeof r.query.end !== 'string' || r.query.end >= today

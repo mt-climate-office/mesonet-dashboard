@@ -472,8 +472,14 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 
 ### Fetch cache
 - **Same as web/:** in-flight requests are shared; network errors and 5xx retry twice, 4xx never (TanStack `retry` in `web/src/lib/queryClient.ts`).
-- **New:** an errored request stays errored until something calls `refresh()` (for example a Retry button); TanStack refetched on remount.
-- **Why:** Alpine re-evaluates templates freely; an automatic refetch on read could loop on a failing request.
+- **New:** a failed request is retried only after its TTL (or on `refresh()`, for example a Retry button); TanStack refetched on remount. A failed refetch keeps the last data on screen.
+- **Why:** Alpine re-evaluates templates freely; an automatic refetch on every read could loop on a failing request.
+
+### Auto-refresh
+- **Legacy Dash (`app/`):** no auto-refresh; data changed only on a callback (its one `dcc.Interval` saves the share link).
+- **web/:** `/latest` and the photo listings refetched every 5 min while the tab was visible (TanStack `refetchInterval`); everything else refetched only when remounted past its 5 min `staleTime`, and `refetchOnWindowFocus` was off.
+- **New:** one freshness tick (ARCHITECTURE "Data freshness"): every 5 min while visible, on return to the tab and on a bfcache restore, `/latest`, Now's recent requests (72 h hourly, 7-day rain, ppt summary, NWS forecasts, SWP), the Charts list's 48 h rows and chart windows reaching today refetch once past their TTL, keeping the old data on screen; dates roll over at Denver midnight. Photos, normals and history are not refreshed by it.
+- **Why:** a tab left open overnight, or restored by a phone browser, kept showing the evening's last reading the next morning.
 
 ### Outage notice color
 - **web/:** mapped `outage.json`'s Bootstrap color to a Mantine color.

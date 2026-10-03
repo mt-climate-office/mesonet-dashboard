@@ -8,7 +8,7 @@ import Alpine from 'alpinejs'
 import { getStationElements, getStationRecord, type ObservationRow, type StationConfig, type StationElement } from '../../core/api'
 import type { Resource } from '../../core/cache'
 import type { LatestTimeseriesModel } from '../../core/charts'
-import { TTL, axisExtent, elementsKey, installDate, normalsKey, recordRequest, todayIso, windowRange, type RecordRequest } from '../../core/latest'
+import { TTL, axisExtent, elementsKey, endsToday, installDate, normalsKey, recordRequest, todayIso, windowRange, type RecordRequest } from '../../core/latest'
 import { NORMALS_VARS, buildTimeseriesModel, type WindowPlan } from '../../core/models/timeseries'
 import { fetchNormals, type StationNormals } from '../../core/normals'
 import { explodeInstruments, type ConfigRow, type RawInstrument } from '../../core/sensorEvents'
@@ -35,9 +35,13 @@ export function chartVariables(id: string | null): Variable[] | undefined {
   return els ? stationVariables(els) : undefined
 }
 
-/** One observation request (core/latest `recordRequest` shape) through the cache. */
-export function recordResource(req: RecordRequest | null): Resource<ObservationRow[]> | null {
-  return req ? data().cached(req.key, () => getStationRecord(req.query)) : null
+/**
+ * One observation request (core/latest `recordRequest` shape) through the cache.
+ * A window that reaches today is live (re-read on the freshness tick) unless
+ * `live: false`; `slot` keeps its rows across the midnight key change.
+ */
+export function recordResource(req: RecordRequest | null, opts: { live?: boolean; slot?: string } = {}): Resource<ObservationRow[]> | null {
+  return req ? data().cached(req.key, () => getStationRecord(req.query), { live: opts.live ?? endsToday(req), slot: opts.slot }) : null
 }
 
 /** The station's sensor-change config (hatched spans), or undefined while it loads. */

@@ -77,7 +77,7 @@ export function nowView() {
   let timer = 0
   let effect: ReturnType<typeof Alpine.effect> | null = null
   return component({
-    /** Re-read every minute so "Updated N min ago" (and the 5 min refetch) stay current. */
+    /** Bumped every minute while visible so "Updated N min ago" stays current; the freshness tick (live reads) also recomputes. */
     nowMs: Date.now(),
     page: null as NowPage | null,
     state: 'loading' as State,
@@ -85,8 +85,12 @@ export function nowView() {
     forecastUrl: '',
 
     init() {
-      effect = Alpine.effect(() => Object.assign(this, compute(this.nowMs)))
-      timer = window.setInterval(() => (this.nowMs = Date.now()), 60_000)
+      effect = Alpine.effect(() => {
+        void this.nowMs // re-run each minute
+        // Date.now(), not nowMs: a freshness tick on return to the tab must not use the minute before it.
+        Object.assign(this, compute(Date.now()))
+      })
+      timer = window.setInterval(() => document.hidden || (this.nowMs = Date.now()), 60_000)
     },
     destroy() {
       clearInterval(timer)
