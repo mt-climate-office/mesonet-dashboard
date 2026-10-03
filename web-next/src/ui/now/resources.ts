@@ -3,13 +3,14 @@
  * latest obs, ppt summary, NWS periods, photos), all tier 2: callers ask
  * only once `/latest` (or, for the hourly forecast, the NWS periods) is in.
  * The 72 h hourly rows (sparklines, strip, pressure trend), the normals
- * CSVs, the NWS hourly forecast and the soil water potential for the chip.
+ * CSVs, the NWS hourly forecast, the soil water potential for the chip and
+ * the 7 daily precipitation totals for the Rain tile.
  */
 import Alpine from 'alpinejs'
 import { fetchCsv, fetchNwsHourly, getStationRecord, type HourlyForecastPoint, type ObservationRow } from '../../core/api'
 import type { Resource } from '../../core/cache'
 import { fetchDailyNormals, type NormalRow } from '../../core/normals'
-import { nowSwpQuery, sparkQuery } from '../../core/overview'
+import { nowSwpQuery, rainDailyQuery, sparkQuery } from '../../core/overview'
 
 const MIN = 60_000
 
@@ -31,4 +32,10 @@ export const nwsHourly = (url: string): Resource<HourlyForecastPoint[]> =>
 export function swpRows(station: string, today: string): Resource<ObservationRow[]> {
   const q = nowSwpQuery(station, today)
   return Alpine.store('data').cached(q.key, () => fetchCsv<ObservationRow>(q.request.path, q.request.query), { ttl: 30 * MIN })
+}
+
+/** The last 7 days' daily precipitation for the Rain tile's bars (core/overview `rainDailyQuery`). */
+export function rainDaily(station: string, today: string): Resource<ObservationRow[]> {
+  const q = rainDailyQuery(station, today)
+  return Alpine.store('data').cached(q.key, () => getStationRecord(q.query), { ttl: 30 * MIN })
 }

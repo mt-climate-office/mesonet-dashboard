@@ -5,7 +5,7 @@
  * icons, and the meta lines of the "All readings" and "Station details" rows.
  * Also the one extra request behind the soil Dry/Wet chip. Pure.
  */
-import { derivedSwpRequest, type Station } from '../api'
+import { derivedSwpRequest, type ObservationRow, type Station } from '../api'
 import { metersToFeet } from '../about/details'
 import type { StripPeriod } from '../charts/heroStrip'
 import type { Sparkline } from '../charts/sparkline'
@@ -16,6 +16,7 @@ import { readConditions, type Conditions } from './conditions'
 import { buildHero, type HeroInput, type HeroView } from './hero'
 import { precipSummary } from './precip'
 import { nowTiles, pressureChange3h, pressureTrend, shallowestSwpBar, type SoilState } from './relevance'
+import { rainBars } from './rainBars'
 import { hourlyPrecip } from './series'
 import { hasSnow } from './snow'
 import type { Tile, TileId } from './tiles'
@@ -23,6 +24,8 @@ import type { Tile, TileId } from './tiles'
 export interface NowPageInput extends HeroInput {
   /** Shallowest soil water potential (bar, `latestSwpBar`), when fetched; else no Dry/Wet chip. */
   swpBar?: number | null
+  /** Daily precipitation for the last 7 days (`rainDailyQuery`), or undefined until loaded: the Rain tile's bars. */
+  rainDaily?: readonly ObservationRow[]
   /** The station row, for the "Station details" meta. */
   station: Pick<Station, 'sub_network' | 'elevation'>
 }
@@ -80,6 +83,8 @@ function sub(t: Tile, c: Conditions, window: string): string {
 function tileView(t: Tile, c: Conditions, input: NowPageInput): NowTileView {
   const v = variableId(t.vars[0])
   const r = t.id === 'precip' ? rain(input) : { value: reading(t.id, c), window: '' }
+  // Rain draws 7 daily bars, or nothing in a dry week (rainBars), not the 48 h hourly line.
+  const g = t.id === 'precip' ? (rainBars(input.rainDaily, input.today) ?? { spark: null, sparkLabel: '' }) : t
   return {
     id: t.id,
     v,
@@ -88,8 +93,8 @@ function tileView(t: Tile, c: Conditions, input: NowPageInput): NowTileView {
     unit: LABELS[v]?.unit ?? t.unit,
     sub: sub(t, c, r.window),
     chip: t.state ?? null,
-    spark: t.spark,
-    sparkLabel: t.sparkLabel,
+    spark: g.spark,
+    sparkLabel: g.sparkLabel,
   }
 }
 

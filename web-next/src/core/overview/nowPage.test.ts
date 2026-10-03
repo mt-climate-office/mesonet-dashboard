@@ -56,6 +56,14 @@ describe('buildNowPage tiles', () => {
     const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 10:00:00-06:00', 'Precipitation [in]': 0.12 }]
     expect(buildNowPage({ ...BASE, ppt: undefined, hourly }).tiles.find((t) => t.id === 'precip')).toMatchObject({ value: '0.12', sub: 'Last 24 hours' })
   })
+  it('rain: 7 daily bars when it rained this week, nothing in a dry week or before the rows load', () => {
+    const daily = (vals: number[]): ObservationRow[] => vals.map((v, i) => ({ station: 'x', datetime: ['2026-09-25', '2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01'][i], 'Precipitation [in]': v }))
+    const rain = (rainDaily?: ObservationRow[]) => buildNowPage({ ...BASE, rainDaily }).tiles.find((t) => t.id === 'precip')!
+    expect(rain(daily([0, 0, 0.3, 0, 0, 0, 0])).spark).toMatchObject({ kind: 'bars', points: 7 })
+    expect(rain(daily([0, 0, 0.3, 0, 0, 0, 0])).spark?.bars).toHaveLength(1)
+    expect(rain(daily([0, 0, 0, 0, 0, 0, 0]))).toMatchObject({ spark: null, sparkLabel: '' })
+    expect(rain(undefined).spark).toBeNull()
+  })
   it('the Dry/Wet chip from SWP', () => {
     expect(buildNowPage({ ...BASE, swpBar: 20 }).tiles.find((t) => t.id === 'soil')?.chip).toBe('Dry')
     expect(buildNowPage({ ...BASE, swpBar: 0.1 }).tiles.find((t) => t.id === 'soil')?.chip).toBe('Wet')

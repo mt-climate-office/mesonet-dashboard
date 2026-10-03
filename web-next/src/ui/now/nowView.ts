@@ -2,7 +2,7 @@
  * `x-data="nowView"` on the Now section (partials/now/index.html). Tier 1
  * (`/latest`, the ppt summary, the NWS periods, the photo schedule) starts in
  * parallel on mount and renders the hero and tiles; tier 2 (the 72 h hourly
- * rows, normals, the NWS hourly forecast, SWP) fills the strip, sparklines,
+ * rows, normals, the NWS hourly forecast, SWP, 7 daily rain totals) fills the strip, sparklines,
  * high/low and the soil chip. The model is core/overview `buildNowPage`,
  * computed once per change in an effect (the partial reads `page` many times).
  */
@@ -18,7 +18,7 @@ import { component } from '../component'
 import { togglePicker } from '../picker/stationPicker'
 import { follow } from '../shell/navigate'
 import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../station/resources'
-import { normals, nwsHourly, sparkRows, swpRows } from './resources'
+import { normals, nwsHourly, rainDaily, sparkRows, swpRows } from './resources'
 
 type State = 'none' | 'loading' | 'error' | 'ready'
 interface View {
@@ -55,6 +55,7 @@ function compute(nowMs: number): View {
   const hourlyUrl = fc.data?.hourlyUrl
   const fcHourly = hourlyUrl ? nwsHourly(hourlyUrl) : null
   const swp = stationHasSwp(s) ? swpRows(s.station, today) : null
+  const rain = rainDaily(s.station, today)
   const page = buildNowPage({
     latest: raw(latest),
     hourly: raw(spark.data),
@@ -65,9 +66,10 @@ function compute(nowMs: number): View {
     forecast: raw(fc.data),
     forecastHourly: raw(fcHourly?.data),
     swpBar: latestSwpBar(raw(swp?.data)),
+    rainDaily: raw(rain.data),
     station: s,
   })
-  return { page, state: 'ready', tier2: loading(spark) || loading(fc) || loading(fcHourly), forecastUrl: forecastDetailUrl(s.latitude, s.longitude) }
+  return { page, state: 'ready', tier2: loading(spark) || loading(fc) || loading(fcHourly) || loading(rain), forecastUrl: forecastDetailUrl(s.latitude, s.longitude) }
 }
 
 export function nowView() {
