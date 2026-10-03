@@ -85,11 +85,12 @@ URL ──► $store.url.state ──► component getters ──► core fetche
 - **`$store.url`** (`stores/url.ts`): `state` holds every key in
   `core/url-schema.ts`, parsed, defaults filled in. Change it only with
   `set(patch)`; writes batch into one `replaceState` per tick, keep the hash,
-  omit defaults (Ag `var` stays once set) and keep unknown keys. `section`
-  comes from the hash (core/router.ts: now · charts · ag · download · about;
-  legacy `#latest`/`#downloader` map). `go(section, patch?)` changes section
-  with `pushState` (Back works); `hrefFor(section, patch?)` gives the real
-  href for a link. In-page anchors (the skip link's `#main`) keep the section.
+  omit defaults and keep unknown keys. `section` comes from the hash
+  (core/router.ts: now · charts · ag · download · about; legacy
+  `#latest`/`#downloader` map). `go(section, patch?, drillDown?)` changes
+  section with `pushState` (Back works); `drillDown` pushes inside a section
+  too (an Ag tool opened from its card). `hrefFor(section, patch?)` gives the
+  real href for a link. In-page anchors (the skip link's `#main`) keep the section.
   Back/forward re-read both. Navigate from UI through `ui/shell/navigate.ts`
   (view transition + scroll + announcement).
 - **`$store.data`** (`stores/data.ts` → `core/cache.ts`):
@@ -225,7 +226,7 @@ ring only (no per-selector focus rules); ≥ 40 px touch targets under
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
-`npm run verify` runs axe on 10 scenarios (Now, the picker, Compare, Ag,
+`npm run verify` runs axe on 11 scenarios (Now, the picker, Compare, Ag tools + 4 Ag views,
 Download, Help) × 1440/390 px × 3 themes (`scripts/verify/axe.mjs`).
 
 ## Testing

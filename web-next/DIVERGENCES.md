@@ -25,7 +25,8 @@ layout parts of older entries below; data behaviour is unchanged.
   `migrateLegacySearch` first); `#ag` unchanged; `#satellite` → Now with the existing notice. `card`/`info`
   are still read by Compare's cards and ignored elsewhere.
 - **P0 placeholders:** Charts shows the existing Latest view (as "Compare"); About shows the metadata,
-  current-readings table and locator map; Ag and Download are the existing views. P1 rebuilds them.
+  current-readings table and locator map; Download is the existing view. P1 rebuilds them (Ag: see
+  "Ag: tool cards" below).
 - **Why:** users land on current conditions; history, tools and tables stay one tap away (plan Context).
 
 ### A bare `?s=` opens Now; no `?s=` reopens the last station
@@ -56,6 +57,25 @@ layout parts of older entries below; data behaviour is unchanged.
 - **Still legacy:** the About section's current-readings table (`core/cards/currentConditions.ts`) keeps
   its Real Feel row until P1, so the fidelity rows stay comparable. Decision pending: drop or rename it.
 - **Why:** user decision (2026-10-02): the NWS method everywhere.
+
+### Ag: tool cards, an Options disclosure, phone-sized charts (P1)
+- **Legacy / web/:** Ag Tools opened on Growing Degree Days with a three-column controls card above the
+  chart; the variable select was the only way to change tools; `var` stayed in the URL once set.
+- **New:** `#ag` without `var` shows one card per tool (Reference ET, Growing degree days, Feels like,
+  Livestock risk, Soil profile, Soil water potential, Percent saturation, Annual comparison), each with a
+  one-line description. A card opens that tool (`var=…`, the same reset as changing the variable select) with
+  `pushState`, so Back returns to the cards; "All Ag tools" does the same. The controls sit in an "Options"
+  disclosure above the chart, open on desktop and collapsed on phones (open there too while no station is
+  chosen), whose summary line names the options (`core/ag/view/summary.ts`, e.g. "Wheat · 32–70 °F · to
+  Oct 31"). Tool names are sentence case and shorter ("Feels like", "Soil profile", "Livestock risk";
+  legacy "Feels Like Temperature", "Soil Profile Plot", "Livestock Risk Index"), so the chart heading reads
+  "Feels like: Bozeman". On phones a chart is `min(60dvh, 420px)` tall, and on touch screens the `inside`
+  dataZoom is off so a swipe over a chart scrolls the page (zoom with the dates, or the slider on wider
+  screens).
+- **Old links:** every Ag key is unchanged. `#ag` with an Ag key but no `var` (e.g. `?crop=corn#ag`, which
+  web/ wrote when only the crop changed) gets `var=gdd`, its old default, at boot (core/router.ts
+  `legacyRedirect`); only a bare `#ag` opens the cards. `var=gdd` is now written like any other tool.
+- **Why:** plan "Ag": tools first, controls out of the way on phones, no scroll trap.
 
 ### Now overview data
 - **New (no legacy equivalent):** today's high/low comes from today's hourly means plus the current
@@ -126,7 +146,8 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 - **Why:** the hash is navigation, so links are the native control; it keeps the shell to one tiny component.
 
 ### URL writing
-- **Same as web/:** key names, defaults, legacy-key migration, `/<station>` path links, commas kept literal and spaces as `+`; Ag `var` stays in the URL at its default once it has been set or was in the link (nuqs `clearOnDefault: false`).
+- **Same as web/:** key names, defaults, legacy-key migration, `/<station>` path links, commas kept literal and spaces as `+`.
+- **Changed (UX refactor P1):** Ag `var` has no default: absent means the Ag tool cards, and any tool (GDD included) is written. web/ kept `var` at its default once set (nuqs `clearOnDefault: false`); see "Ag: tool cards" above.
 - **New:** every write is one batched `replaceState` per tick that keeps the hash. A value outside a key's allowed set (for example `agg=weekly`) is dropped from the URL on the first write instead of lingering.
 - **Why:** one URL owner (`stores/url.ts`), HOUSE-STYLE §4.
 
@@ -1110,7 +1131,7 @@ The Ag tab UI (`partials/ag/*`, `ui/ag/*`, logic in `core/ag/view/tab.ts`, `resu
 - **Why:** kit-first controls with a keyboard and screen-reader twin for every gesture; one label vocabulary across the three tabs.
 
 ### Chart card
-- **New:** the card heading names the variable and the station ("Growing Degree Days: Bozeman"). Notes are a list above the chart; the chart host is mounted only once a view is ready, so loading shows a spinner, and empty / error states show their text in place of the chart (same texts as web/). Each settled view is announced in the page's polite live region ("Growing Degree Days chart updated for Bozeman.", or the empty / error text).
+- **New:** the heading names the tool and the station ("Growing degree days: Bozeman"). Notes are a list above the chart; the chart host is mounted only once a view is ready, so loading shows a spinner, and empty / error states show their text in place of the chart (same texts as web/). Each settled view is announced in the page's polite live region ("Growing Degree Days chart updated for Bozeman.", or the empty / error text).
 - **Why:** HOUSE-STYLE §5 (canvas changes need a live region).
 
 ### Fetching
