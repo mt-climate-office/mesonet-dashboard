@@ -1,8 +1,8 @@
 /**
  * The one ECharts host. `ChartHost` owns everything stateful about a chart:
  * lazy ECharts load, init, kit theme (re-read on `mco-theme-change`), resize,
- * reduced motion, zoom in wall-clock ms both ways, the `.sr-only` table twin,
- * dispose. Components use the `chart` Alpine wrapper (usage: core/charts/README.md).
+ * reduced motion, touch mode (tap tooltips, hidden on a tap outside), zoom in
+ * wall-clock ms both ways, the `.sr-only` table twin, dispose. Components use the `chart` Alpine wrapper (usage: core/charts/README.md).
  */
 import Alpine from 'alpinejs'
 import type { ECharts } from 'echarts'
@@ -47,6 +47,7 @@ const currentTheme = (): ChartTheme['name'] => {
 const reducedMotion = () =>
   typeof MCO !== 'undefined' ? MCO.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches
 const isCompact = () => (typeof MCO !== 'undefined' ? MCO.viewport.isCompact() : matchMedia('(max-width: 640px)').matches)
+const isTouch = () => matchMedia('(hover: none) and (pointer: coarse)').matches
 
 /** One chart in `el`: a canvas div plus the sr-only table twin. */
 export class ChartHost<M> {
@@ -84,6 +85,7 @@ export class ChartHost<M> {
     twin.append(this.tableEl)
     el.append(this.canvas, twin)
     window.addEventListener(THEME_EVENT, this.onTheme)
+    document.addEventListener('pointerdown', this.onPointerDown, { passive: true })
     this.ro = new ResizeObserver(() => this.onResize())
     this.ro.observe(this.canvas)
     document.fonts?.ready.then(() => this.draw(true))
@@ -153,6 +155,7 @@ export class ChartHost<M> {
     this.disposed = true
     clearTimeout(this.zoomTimer)
     window.removeEventListener(THEME_EVENT, this.onTheme)
+    document.removeEventListener('pointerdown', this.onPointerDown)
     this.ro.disconnect()
     this.chart?.dispose()
     this.chart = null
@@ -164,7 +167,7 @@ export class ChartHost<M> {
   }
 
   private ctx(): ChartContext {
-    return { theme: this.theme, width: this.canvas.clientWidth || 800, compact: isCompact() }
+    return { theme: this.theme, width: this.canvas.clientWidth || 800, compact: isCompact(), touch: isTouch() }
   }
 
   /** What a redraw keeps: legend toggles always, the zoom window only for same-data redraws. */
@@ -252,6 +255,11 @@ export class ChartHost<M> {
     this.chart.resize()
     // Builders lay out some pieces in px (color bars, legend titles): rebuild when the width moves.
     if (Math.abs(this.canvas.clientWidth - this.width) > 1) this.draw(true)
+  }
+
+  /** A tap-triggered tooltip (touch) stays up until a tap lands outside this chart. */
+  private onPointerDown = (e: PointerEvent): void => {
+    if (this.chart && !this.el.contains(e.target as Node)) this.chart.dispatchAction({ type: 'hideTip' })
   }
 
   private onZoomEvent = (): void => {

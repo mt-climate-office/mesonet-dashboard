@@ -98,14 +98,17 @@ export function grid(ctx: ChartContext, opts: { right?: number; bottom?: number;
 
 /**
  * x-axis zoom: shift+wheel or pinch inside the plot, plus a slider on wide
- * screens. Drag-to-pan is off on compact (touch) screens so the page scrolls.
- * The date controls are the keyboard twin.
+ * screens. Drag-to-pan is off on compact screens. On touch the inside zoom is
+ * `disabled`: it still holds the visible window (the host zooms through it),
+ * but takes no gestures, so a swipe over the chart scrolls the page. The date
+ * controls and range presets are the keyboard and touch twin.
  */
 export function timeZoom(ctx: ChartContext): DataZoomComponentOption[] {
   const inside: DataZoomComponentOption = {
     type: 'inside',
     xAxisIndex: 0,
     filterMode: 'none',
+    disabled: ctx.touch,
     zoomOnMouseWheel: 'shift',
     moveOnMouseWheel: false,
     moveOnMouseMove: !ctx.compact,

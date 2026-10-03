@@ -265,6 +265,9 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
     return `<div class="tooltip-name">${escapeHtml(fmtWall(x, tipPeriod))}</div>${parts.join('')}`
   }
 
+  // Compact touch pins the tooltip under the tapped panel (the stack is taller than the screen).
+  const underPanel = (y: number) => topOf(Math.min(n - 1, Math.max(0, Math.floor((y - LAYOUT.top) / (h + LAYOUT.gap))))) + h
+
   const zoom = timeZoom(ctx).map((z) => ({
     ...z,
     xAxisIndex: xIdx,
@@ -280,7 +283,7 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
     yAxis,
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
     dataZoom: zoom,
-    tooltip: { ...tooltipBase(ctx), trigger: 'axis', axisPointer: { type: 'line' }, formatter: formatter as never },
+    tooltip: { ...tooltipBase(ctx, n > 1 ? underPanel : undefined), trigger: 'axis', axisPointer: { type: 'line' }, formatter: formatter as never },
     graphic,
     series,
   } satisfies EChartsOption
@@ -290,21 +293,21 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
 export const TABLE_ROW_LIMIT = 500
 
 /**
- * The sr-only twin: one row per time step with any value (the first
- * TABLE_ROW_LIMIT, then a one-cell note row), one column per plotted column.
+ * The sr-only twin: one row per time step with any value (the first `limit`,
+ * then a one-cell note row), one column per plotted column.
  */
-export function latestTimeseriesTable(m: LatestTimeseriesModel): ChartTable {
+export function latestTimeseriesTable(m: LatestTimeseriesModel, limit = TABLE_ROW_LIMIT): ChartTable {
   const period = m.period === 'daily' ? 'daily' : 'hourly'
   const cols = m.ts.panels.flatMap((p) => p.series)
   const rows: string[][] = []
   let total = 0
   m.ts.x.forEach((x, j) => {
     if (!Number.isFinite(x) || cols.every((c) => c.values[j] == null)) return
-    if (++total > TABLE_ROW_LIMIT) return
+    if (++total > limit) return
     rows.push([isoWall(x, period), ...cols.map((c) => (c.values[j] == null ? MISSING : fmtValue(c.values[j]!)))])
   })
-  if (total > TABLE_ROW_LIMIT) {
-    rows.push([`Showing first ${TABLE_ROW_LIMIT} of ${total} rows; use the Data Downloader for the full record.`])
+  if (total > limit) {
+    rows.push([`Showing first ${limit} of ${total} rows; use the Data Downloader for the full record.`])
   }
   return {
     caption: `Station observations (${m.period}): ${m.ts.panels.map((p) => p.variable).join(', ')}`,

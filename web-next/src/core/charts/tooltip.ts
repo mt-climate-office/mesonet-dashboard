@@ -22,14 +22,32 @@ export type TipRow = (seriesName: string, y: number, note: string | undefined) =
 
 const isAux = (p: TipParam) => String(p.seriesId ?? '').startsWith(AUX)
 
-/** Shared tooltip chrome: kit class, token colors, kept inside the chart. */
-export function tooltipBase(ctx: ChartContext): TooltipComponentOption {
+/**
+ * Where a pinned tooltip's top edge goes (px from the chart's top), given the
+ * tapped point's y and the chart height. Default: just under the chart.
+ */
+export type PinTop = (y: number, height: number) => number
+
+/**
+ * Shared tooltip chrome: kit class, token colors, kept inside the chart.
+ * Touch (`ctx.touch`): a tap shows it, so a swipe never does and the page
+ * scrolls; the chart host hides it on a tap outside the chart. Compact touch:
+ * compact text, full width, pinned under the chart (`pinTop`) so it never
+ * covers the data.
+ */
+export function tooltipBase(ctx: ChartContext, pinTop: PinTop = (_y, h) => h): TooltipComponentOption {
+  // ECharts paints the hovered series' color as the border; the kit border wins here.
+  const css = `opacity:1;border-color:${ctx.theme.tooltipBorder};white-space:normal;`
+  // Not `.visible`: ECharts creates the element empty, and the kit hides .mco-tooltip until visible.
+  const base: TooltipComponentOption = { className: 'mco-tooltip', confine: true, extraCssText: `${css}max-width:20rem;` }
+  if (!ctx.touch) return base
+  if (!ctx.compact) return { ...base, triggerOn: 'click' }
   return {
-    // Not `.visible`: ECharts creates the element empty, and the kit hides .mco-tooltip until visible.
-    className: 'mco-tooltip',
-    confine: true,
-    // ECharts paints the hovered series' color as the border; the kit border wins here.
-    extraCssText: `opacity:1;border-color:${ctx.theme.tooltipBorder};white-space:normal;max-width:20rem;`,
+    ...base,
+    triggerOn: 'click',
+    confine: false,
+    extraCssText: `${css}box-sizing:border-box;width:${ctx.width}px;max-width:none;font-size:12px;line-height:1.35;`,
+    position: (point: number[], _params: unknown, _dom: unknown, _rect: unknown, size: { viewSize: number[] }) => [0, pinTop(point[1], size.viewSize[1]) + 4],
   }
 }
 
