@@ -44,7 +44,7 @@ FIDELITY_DEBUG=1 node scripts/fidelity/run.mjs …   # print each wait step
 |---|---|---|---|
 | `latest` | web/ Latest Data | web-next Compare / Now / About | Every station × the old scenario set (hourly default, daily, daily + gridMET, raw, the sensor-change window for `sensor-change` stations, and each top/bottom card). Since the P1 routes web-next shows the plot on Compare (`#charts`, `cmp=1`), the photo, forecast and wind rose on Now (the wind rose only at stations without a camera) and the map, details and readings on About (`config.mjs` `sc.next`). Timeseries and wind-rose traces (values by timestamp, panel titles), sensor-change spans, "not available" notes; card tables (Current Conditions, Metadata, Precipitation Summary) as label/value rows, card text, image sources, select options; the locator map's station list vs `/stations`; web-next palette roles; non-2xx requests and console errors |
 | `ag` | web/ Ag Tools | web-next | Every station × every variable: ETr daily/hourly, GDD wheat/corn and the default window with the projection, feels-like, CCI adult/newborn, SWP and percent saturation (has_swp stations), soil profile VWC/temperature/EC, annual (first element and precipitation). Traces, panels, SWP reference lines, notes/messages, palette |
-| `downloader` | web/ Downloader | web-next | daily / hourly / monthly / derived-only requests: the downloaded CSV (byte-identical, else filename, columns, row count, values by datetime), the preview chart traces, the map's station list, palette |
+| `downloader` | web/ Downloader | web-next | daily / hourly / monthly / derived-only requests: the downloaded CSV (byte-identical, else filename, columns, row count, values by datetime), the preview chart traces, palette (web-next's Download sheet has no map) |
 | `ag-api` | mesonet2 `/derived` (no `premade`, `keep=true`, `alpha=0.23`, level 2) | web-next Ag | ETr, GDD wheat/corn, feels-like, CCI, SWP, percent saturation: each derived output column is matched to the closest trace (raw or cumulative, depth-aware cm → in) |
 
 Statuses: **PASS** everything web-next draws matches web/ within tolerance (`abs 0.0011`, `rel 2e-4`;
@@ -86,7 +86,7 @@ web-next and web/ do), filed upstream as mt-climate-office/mesonet-db-rds#201.
   (and whether they loaded), select options. web/'s cards are found by their Mantine switcher
   label; web-next's by the `data-testid` of the card that replaced it (`now-media`, `now-icons` (the forecast periods under the hero strip),
   `about-details`, `about-readings`, `about-map`). Table header rows are skipped.
-- **Maps:** web-next's map hosts (`about-map`, `dl-map`) via their sr-only station table. Map tiles
+- **Maps:** web-next's map host (`about-map`) via its sr-only station table. Map tiles
   MapLibre cancels (`net::ERR_ABORTED` as the view changes) are not request failures.
 - **Colors** are not compared between the apps (the house palette is intentional,
   `DIVERGENCES.md` "House style"). Instead every web-next data series color must be one of the

@@ -7,16 +7,11 @@ import {
   elementGroups,
   installDateOf,
   largeHourlyText,
-  PICK_FIRST_HINT,
   pruneSelection,
   qcLevelOf,
-  requestSummary,
   resultAnnouncement,
-  runBlocker,
   shiftDate,
   standardOptions,
-  stationItems,
-  stationPatch,
 } from './view'
 
 const st = (station: string, name: string, extra: Partial<Station> = {}): Station => ({
@@ -43,16 +38,6 @@ const el = (element: string, description_short: string): StationElement => ({
   base_units: '',
   us_units: '',
   sort_order: 0,
-})
-
-describe('stationItems', () => {
-  it('sorts by name, labels with the network and makes the NWSLI searchable', () => {
-    const items = stationItems([st('lololowr', 'Lolo Lower'), st('acebozem', 'Bozeman', { nwsli_id: 'BZMM8', sub_network: 'AgriMet' })])
-    expect(items).toEqual([
-      { id: 'acebozem', label: 'Bozeman (AgriMet)', keywords: ['BZMM8'] },
-      { id: 'lololowr', label: 'Lolo Lower (HydroMet)', keywords: [] },
-    ])
-  })
 })
 
 describe('installDateOf', () => {
@@ -146,7 +131,7 @@ describe('dateWindow', () => {
     const w = dateWindow({ period: 'hourly', from: '2024-01-01', to: '2025-12-31', installDate: '2017-06-01', today })
     expect(w).toMatchObject({ span: 731, largeHourly: true })
     expect(largeHourlyText(w.span, true)).toBe(
-      'This hourly request spans 731 days (about 17,544 rows per variable) and may be slow. Run Request will ask you to confirm; or shorten the range.',
+      'This hourly request spans 731 days (about 17,544 rows per variable) and may be slow. Preview will ask you to confirm; or shorten the range.',
     )
     expect(largeHourlyText(w.span, false)).toMatch(/Click "Confirm large request" to fetch it\.$/)
     expect(confirmKey('acebozem', w, 'hourly')).toBe('acebozem|2024-01-01|2025-12-31|hourly')
@@ -160,24 +145,9 @@ describe('shiftDate', () => {
   })
 })
 
-describe('guards and text', () => {
-  it('runBlocker', () => {
-    expect(runBlocker(null, ['x'], null)).toBe(PICK_FIRST_HINT)
-    expect(runBlocker('s', [], null)).toBe(PICK_FIRST_HINT)
-    expect(runBlocker('s', ['x'], 'bad')).toBe('bad')
-    expect(runBlocker('s', ['x'], null)).toBeNull()
-  })
+describe('announcement', () => {
   it('resultAnnouncement', () => {
     expect(resultAnnouncement(0, 3)).toBe('Request finished: no data for this selection.')
     expect(resultAnnouncement(1234, 6)).toBe('Request finished: 1,234 rows, 6 columns. Download CSV is ready.')
-  })
-  it('requestSummary recaps the request in parts', () => {
-    expect(requestSummary({ station: 'Bozeman', elements: 2, period: 'daily', start: '2026-09-01', end: '2026-09-30' }))
-      .toEqual(['Bozeman', '2 variables', 'Daily', '2026-09-01 to 2026-09-30'])
-    expect(requestSummary({ station: 'Bozeman', elements: 1, period: 'hourly', start: '2026-09-24', end: '2026-09-30' }))
-      .toEqual(['Bozeman', '1 variable', 'Hourly', '2026-09-24 to 2026-09-30'])
-  })
-  it('stationPatch sets the station and resets the start date', () => {
-    expect(stationPatch('acebozem')).toEqual({ s: 'acebozem', dl_from: null })
   })
 })

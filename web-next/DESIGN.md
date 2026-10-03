@@ -179,28 +179,43 @@ high-contrast.
 The Download sheet (`partials/sheets/download.html`) is open while `dl=1`: from the Charts list's "Download
 data" entry (`openSheet('download', opener)`), from an old `#download` / `#downloader` link, or any URL with
 `dl=1`. Closing (×, Esc, the scrim, a drag down on phones) clears `dl` and returns focus to the opener (to
-`<main>` when the URL opened it). It is a bottom sheet on phones and a centred panel (68 rem) from 641 px.
-Inside, unchanged: three step cards (`.dash-card`, `partials/downloader/index.html`) and the preview below them:
+`<main>` when the URL opened it). It is a bottom sheet on phones and a centred panel (34 rem) from 641 px;
+its body scrolls on its own. Every value comes from the URL's existing keys, so whatever opened it (a chart's
+⋯ menu writing `els`, `dl_from`, `dl_to`, `period`), the form shows that.
 
-| Step | Contents |
-|---|---|
-| 1 Elements | station combobox, variables multiselect, "Show uncommon variables", the station map (not on compact) |
-| 2 Dates & period | time aggregation, dates (install date … today), quality control |
-| 3 Run | recap ("Bozeman · 2 variables · Daily · 2026-09-01 to 2026-09-30"), Run, Download CSV, warnings |
+Inside is one short form (`partials/downloader/index.html`, logic in `core/downloader/form.ts`), one column at
+every width, flat on the sheet's surface:
 
-- **Desktop and tablet:** a two-column grid, Elements beside Dates & period over Run; the preview spans
-  both columns. No stepper.
-- **Compact:** no station map in Elements (the header's station picker has one; MapLibre is not started),
-  and a stepper. Only `.dl-step.is-current` shows (the Run step and the preview share step 3),
-  under "Step 2 of 3" and a three-segment bar, with Back / Next below. Next stays enabled; when the step
-  would block Run (no station or element; invalid dates, from the date control's `onValidity`) it stays put
-  and shows why. A step change scrolls the progress line into view, focuses the step heading and announces
-  "Step 2 of 3: Dates & period". Enter in a field is Next until step 3, then Run. The step is view state
-  (not in the URL); the logic is `core/downloader/stepper.ts`.
-- **After Run** (every width): the preview scrolls to the top of the view (instantly under reduced
-  motion), its heading takes focus, and the live region gives the row count.
-- **Touch:** inputs 16 px (controls.css), variable rows 44 px; on phones the variable list grows with the
-  page instead of scrolling inside its panel.
+| Row | Value (right) | Expands to (the existing control) | URL key |
+|---|---|---|---|
+| Variables | up to two names, then "+ N more"; "+ Add" | chips for the selection, "+ Add variables" (the grouped checklist with a filter), "Show uncommon variables" | `els`, `pub` |
+| Dates | "Sep 1 – Sep 30, 2026" | start/end date inputs bounded by the install date and today, the install-date notes | `dl_from`, `dl_to` |
+| Interval | Hourly · Daily · Monthly | a segmented control; Monthly adds its note | `period` |
+| Quality | Quality-controlled · Provisional (basic checks) · Unchecked | one option per line, with the level's description | `qc` (2 · 1 · 0) |
+| Station | "Bozeman (acebozem)" | not a button: the header's station picker changes it | `s` |
+
+- **Rows:** a label on the left, the value on the right (ellipsized), a chevron. Each is a button in an `<h3>`
+  (`aria-expanded`, `aria-controls` its `role="region"` panel). Tapping one expands it in place and closes
+  any other (`openRow`, view state, not in the URL). All start closed.
+- **One button** under the rows, full width (`.dl-btn-primary`), with one line under it saying why it cannot
+  act (`aria-describedby`): "Pick a station in the header first.", "Pick at least one variable.", the date
+  error, "Fix the dates.", or "No data for this selection. …". It reads **Preview** until the current inputs
+  have a result, then **Download CSV · N rows**; changing any input makes it Preview again. A large hourly
+  range (> 1 year) arms "Confirm large request" first. It is never natively `disabled` but `aria-disabled`
+  (clicks do nothing), so it keeps focus as its label changes; `data-testid` follows its job (`dl-run`, then
+  `dl-download`).
+- **Why two clicks, not one:** the CSV is saved by clicking a blob link, which browsers tie to a user
+  gesture. The fetch can take longer than the gesture lasts (about 5 s in Chrome), and Safari and Chrome's
+  repeated-download guard block or prompt for downloads started without one. Saving on the second click keeps
+  every download inside a click, and the row count is known before the user commits.
+- **After Preview:** the preview chart (the existing one) appears under the button; the live region says
+  "Request finished: N rows, M columns. Download CSV is ready."; focus stays on the button.
+- **Notices** under the rows, always visible: SWP variables dropped at a non-SWP station, variables that
+  failed to load (Retry), the large-hourly warning.
+- **Below:** the BLM funding line (legacy DL-020), a quiet centred caption.
+- **Touch:** rows and the button are ≥ 48 px; inputs 16 px (controls.css); checklist rows 44 px; the
+  checklist grows with the sheet body instead of scrolling inside its panel. Fits 390 × 844 with no sideways
+  scroll.
 
 ## About
 
@@ -299,8 +314,9 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
 
 - Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `header-menu`, `photo-dialog`, `about`,
   `picker`, `picker-open` (both with the map revealed), `charts-list`, `variable` + `-history` + `-table`, `compare`,
-  `legacy-ag`, four Ag tools, `download-step1` (390), `downloader`, `help-dialog`) × 3 themes × 1440/390.
-  `keyboard.mjs` walks the header and its ⋯ menu (Help, Theme), the picker, the Download sheet, tab bar,
+  `legacy-ag`, four Ag tools, `download-variables`, `download-dates`, `downloader` (after Preview), `help-dialog`)
+  × 3 themes × 1440/390.
+  `keyboard.mjs` walks the header and its ⋯ menu (Help, Theme), the picker, the Download sheet and its form, tab bar,
   photo dialog, variable page, Ag Options and the legacy links; `layout.mjs` checks touch swipes over charts,
   sideways scroll at 390, the fold, the one-row header, the solid tab bar, the sheet's fit and reduced motion.
 - Charts: the Table view is a real `<table>` (caption, scoped headers) in a focusable, labelled scroll region;

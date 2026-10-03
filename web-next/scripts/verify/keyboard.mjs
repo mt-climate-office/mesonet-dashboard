@@ -5,13 +5,13 @@
  * toggletip, tile → variable heading, "All readings" → About's readings and the photo
  * dialog, the Charts drill-down and Back, views mounting only while
  * open (no cross-view requests), legacy links (#ag, #downloader), the Download sheet
- * (focus, Esc, inert, dl key) and its phone stepper, the picker drawer and sheet (focus,
+ * (focus, Esc, inert, dl key), its form (rows, reason, Preview → Download CSV), the picker drawer and sheet (focus,
  * Esc, inert), the tab bar and history, the variable page's view switch and chips, focus
  * after Charts drill-downs (variables and Ag tools), the Ag Options disclosure, chart
  * table twins, map sr-table selection, reduced motion.
  * Run via `npm run verify`.
  */
-import { DL_QUERY, VIEWPORTS, VISIBLE_SCOPES, animationsDone, check, finish, open, runDownload, start } from './lib.mjs'
+import { DL_QUERY, VIEWPORTS, VISIBLE_SCOPES, animationsDone, check, dlReady, finish, open, runDownload, start } from './lib.mjs'
 
 const env = await start()
 
@@ -295,48 +295,80 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&v=gdd#charts', 1]]) {
   await close()
 }
 
-/* ── Download stepper (390 px): Next validates, focus + announcement follow ─ */
+/* ── Download form (390 touch): rows expand one at a time, the button says why it cannot run ── */
 {
-  const { page, close } = await open(env, '?s=acebozem&dl=1#charts', { viewport: VIEWPORTS[1] })
-  const progress = () => page.getByTestId('dl-progress').innerText()
-  const shown = () => page.evaluate(() => [...document.querySelectorAll('.dl-step')].filter((e) => e.offsetParent !== null).map((e) => e.dataset.testid))
-  await page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
-  check('stepper: Step 1 of 3, only Elements shown', (await progress()).includes('Step 1 of 3') && JSON.stringify(await shown()) === '["dl-step-elements"]', JSON.stringify(await shown()))
-  await page.getByTestId('dl-next').click()
-  // Wait for the hint rather than a fixed delay (a 200 ms sleep was flaky under load).
-  await page.getByTestId('dl-step-hint').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
-  check('stepper: Next without elements stays and says why', (await progress()).includes('Step 1 of 3') && (await page.getByTestId('dl-step-hint').isVisible()))
+  const { page, problems, close } = await open(env, '?s=acebozem&dl=1#charts', { viewport: VIEWPORTS[1] })
+  await dlReady(page)
+  const rows = () => page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.dl-row-btn')].map((b) => [b.id, b.getAttribute('aria-expanded')])))
+  const station = await page.getByTestId('dl-station').innerText()
+  check('download form: four rows, all closed, the station a fixed line "Bozeman (acebozem)"',
+    JSON.stringify(Object.values(await rows())) === '["false","false","false","false"]' && /Bozeman \(acebozem\)/.test(station), JSON.stringify([await rows(), station]))
+  const run = page.getByTestId('dl-run')
+  check('download form: no variables → the button is aria-disabled with a one-line reason',
+    (await run.getAttribute('aria-disabled')) === 'true' && (await page.getByTestId('dl-hint').innerText()) === 'Pick at least one variable.' &&
+      (await run.getAttribute('aria-describedby')) === 'dl-reason', await page.getByTestId('dl-hint').innerText())
+  await page.locator('#dl-row-vars-btn').click()
+  const r1 = await rows()
+  await page.locator('#dl-row-dates-btn').focus()
+  await page.keyboard.press('Enter')
+  const r2 = await rows()
+  const datesShown = await page.getByTestId('dl-dates').waitFor({ state: 'visible', timeout: 5000 }).then(() => true, () => false)
+  const varsHidden = await page.locator('#dl-row-vars-panel').waitFor({ state: 'hidden', timeout: 5000 }).then(() => true, () => false)
+  check('download form: a row expands in place; opening another closes it (Enter works)',
+    r1['dl-row-vars-btn'] === 'true' && r2['dl-row-vars-btn'] === 'false' && r2['dl-row-dates-btn'] === 'true' && datesShown && varsHidden, JSON.stringify([r1, r2, datesShown, varsHidden]))
+  await page.locator('#dl-row-vars-btn').click()
+  await page.getByTestId('dl-elements').locator('.ctl-disclosure').click()
+  await page.getByTestId('dl-elements').locator('.ctl-check:not(.ctl-check-all)').first().click()
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-run"]')?.getAttribute('aria-disabled') === 'false', null, { timeout: 5000 }).catch(() => {})
+  check('download form: picking a variable enables Preview and clears the reason',
+    (await run.getAttribute('aria-disabled')) === 'false' && !(await page.getByTestId('dl-hint').isVisible()) && !!(await urlParam(page, 'els')))
+  await page.getByTestId('dl-elements').locator('.ctl-multiselect-panel input[type="search"]').focus()
+  await page.keyboard.press('Escape')
+  check('download form: Esc in the checklist closes the checklist, not the sheet',
+    !(await page.evaluate(() => document.getElementById('sheet-download').hidden)) && (await page.evaluate(() => document.activeElement?.classList.contains('ctl-disclosure'))))
+  const p = await problems()
+  check('download form: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
+/* ── Download run (390 touch): Preview → "Download CSV · N rows" on the same focused button, announced; Esc returns focus ── */
 {
   const { page, problems, close } = await open(env, DL_QUERY, { viewport: VIEWPORTS[1] })
-  const focused = () => page.evaluate(() => document.activeElement?.id)
   const live = () => page.evaluate(() => [...document.querySelectorAll('[aria-live]')].map((e) => e.textContent).join(' '))
-  await page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
-  await page.getByTestId('dl-next').focus()
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-run"]')?.getAttribute('aria-disabled') === 'false', null, { timeout: 30000 })
+  await page.getByTestId('dl-run').focus()
   await page.keyboard.press('Enter')
-  await page.waitForTimeout(300)
-  check('stepper: Enter on Next → step 2, focus on its heading, announced',
-    (await focused()) === 'dl-step-1' && (await live()).includes('Step 2 of 3: Dates & period'), `${await focused()} | ${await live()}`)
-  await page.getByTestId('dl-next').click()
-  await page.waitForTimeout(300)
-  check('stepper: step 3 shows Run and the preview', (await focused()) === 'dl-step-2' && (await page.getByTestId('dl-run').isVisible()) && (await page.getByTestId('dl-preview').isVisible()))
-  await page.getByTestId('dl-run').click()
-  await page.waitForFunction(() => !document.querySelector('[data-testid="dl-download"]')?.disabled, null, { timeout: 30000 })
-  await page.waitForTimeout(300)
-  check('stepper: after Run, focus on the result heading and the row count announced',
-    (await focused()) === 'dl-preview-title' && /Request finished: [\d,]+ rows/.test(await live()), `${await focused()} | ${await live()}`)
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-download"]')?.getAttribute('aria-disabled') === 'false', null, { timeout: 30000 })
+  const label = await page.getByTestId('dl-download').innerText()
+  check('download run: Enter on Preview → "Download CSV · N rows", focus kept on the button, the row count announced',
+    /^Download CSV · [\d,]+ rows$/.test(label.trim()) && (await page.evaluate(() => document.activeElement?.dataset.testid)) === 'dl-download' &&
+      /Request finished: [\d,]+ rows/.test(await live()), `${label} | ${await live()}`)
+  const chart = await page.getByTestId('dl-preview').locator('.chart-canvas canvas').waitFor({ state: 'visible', timeout: 15000 }).then(() => true, () => false)
+  check('download run: the preview chart shows', chart)
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 10000 }), page.keyboard.press('Enter')])
+  check('download run: Enter on Download CSV saves the CSV', dl.suggestedFilename() === 'acebozem_daily_20260901_to_20260930.csv', dl.suggestedFilename())
+  await page.locator('#dl-row-interval-btn').click()
+  await page.getByTestId('dl-period').locator('input[value="monthly"]').click()
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-run"]')?.textContent.trim() === 'Preview', null, { timeout: 5000 }).catch(() => {})
+  const hidden = await page.getByTestId('dl-preview').waitFor({ state: 'hidden', timeout: 5000 }).then(() => true, () => false)
+  const back = { label: (await page.locator('.dl-btn-primary').innerText()).trim(), preview: !hidden, period: await urlParam(page, 'period') }
+  check('download run: changing an input turns the button back into Preview',
+    back.label === 'Preview' && !back.preview && back.period === 'monthly', JSON.stringify(back))
+  await page.keyboard.press('Escape')
+  await page.waitForFunction(() => document.getElementById('sheet-download').hidden, null, { timeout: 5000 }).catch(() => {})
+  check('download run: Esc closes the sheet, clears dl, focus returns to <main> (the URL opened it)',
+    (await urlParam(page, 'dl')) === null && (await page.evaluate(() => document.activeElement?.id)) === 'main')
   const p = await problems()
-  check('stepper: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  check('download run: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
 /* ── Map sr-only table: keyboard selection ──────────────────────────────── */
-// On the Downloader map: selecting on Latest resets its cards (and so the map) by design.
+// On the picker's map (a first visit opens the picker): a pick sets ?s=.
 {
-  const { page, problems, close } = await open(env, '?theme=dark#downloader')
-  const table = page.getByTestId('dl-map').locator('.sr-only table')
-  await page.waitForFunction(() => document.querySelectorAll('[data-testid="dl-map"] .sr-only tbody button').length > 10, null, { timeout: 30000 })
+  const { page, problems, close } = await open(env, '?theme=dark')
+  await page.getByTestId('picker-browse').click()
+  const table = page.getByTestId('picker-map').locator('.sr-only table')
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="picker-map"] .sr-only tbody button').length > 10, null, { timeout: 30000 })
   const shape = await table.evaluate((t) => ({
     caption: t.caption?.textContent?.trim() ?? '',
     cols: [...t.querySelectorAll('thead th')].every((th) => th.scope === 'col'),
@@ -352,9 +384,9 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&v=gdd#charts', 1]]) {
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('s') === 'acebozem', null, { timeout: 10000 }).catch(() => {})
   check('map sr table: ArrowDown + Enter selects acebozem', (await urlParam(page, 's')) === 'acebozem')
-  await page.waitForFunction(() => document.querySelector('[data-testid="dl-map"] .sr-only button[aria-current="true"]')?.dataset.id === 'acebozem', null, { timeout: 10000 }).catch(() => {})
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-map"] .sr-only button[aria-current="true"]')?.dataset.id === 'acebozem', null, { timeout: 10000 }).catch(() => {})
   check('map sr table: aria-current marks the selection',
-    await page.evaluate(() => document.querySelector('[data-testid="dl-map"] .sr-only button[aria-current="true"]')?.dataset.id === 'acebozem'))
+    await page.evaluate(() => document.querySelector('[data-testid="picker-map"] .sr-only button[aria-current="true"]')?.dataset.id === 'acebozem'))
   const p = await problems()
   check('map sr table: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()

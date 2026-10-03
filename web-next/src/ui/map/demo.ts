@@ -4,7 +4,7 @@
 import Alpine from 'alpinejs'
 import { getStations, type Station } from '../../core/api'
 import { THEME_EVENT, isTheme, type Theme } from '../../core/theme'
-import { downloaderMap, stationMap } from './presets'
+import { stationMap } from './presets'
 import './map.css'
 
 const params = new URLSearchParams(location.search)
@@ -49,7 +49,6 @@ const demo = {
 Alpine.store('demo', demo)
 
 Alpine.data('stationMap', stationMap)
-Alpine.data('downloaderMap', downloaderMap)
 
 // Write through the reactive proxy so the page updates.
 const live = Alpine.store('demo') as unknown as typeof demo

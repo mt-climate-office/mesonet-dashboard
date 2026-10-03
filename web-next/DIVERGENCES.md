@@ -90,6 +90,32 @@ code and CSV bytes are unchanged.
   elevation) links to About.
 - **Why:** a station pressure of ~850 mb means little on its own; its 3 h change is what forecasts use.
 
+### Download: one short form, Preview then "Download CSV · N rows"
+- **P1:** three step cards (a phone stepper with Back/Next; two columns elsewhere) with a station combobox
+  and a station map, a recap, then Run Request and a separate Download CSV button.
+- **New:** one column of summary rows (Variables · Dates · Interval · Quality; label left, value right) that
+  expand in place one at a time to the existing controls, and a fixed "Station: Bozeman (acebozem)" line: the
+  header's picker changes the station, so the sheet has no station combobox or map (the `downloaderMap`
+  preset is gone). One primary button reads **Preview** until the current inputs have a result, then
+  **Download CSV · N rows**; any input change turns it back into Preview. It is `aria-disabled` (never
+  natively disabled, so focus stays on it) with one line saying why ("Pick at least one variable.", the date
+  error, …), which replaces web/'s "Please select a station and at least one variable first!" and "Please
+  'Run Request' before attempting to download." (DL-015, DL-016). Plain labels: Interval Hourly / Daily /
+  Monthly (finest first); Quality "Quality-controlled", "Provisional (basic checks)", "Unchecked" for
+  levels 2 / 1 / 0 (was "Quality-controlled", "Provisional", "Raw"). The funding line (DL-020) is a quiet
+  caption under the form, not an accent bar. After Preview, focus stays on the button (no scroll to the
+  preview); the row-count announcement is unchanged. A station change from the header no longer resets the
+  start date (`dl_from`); the date window still clamps to the new station's install date.
+- **Why two steps, not one "Download CSV" that fetches and saves:** the save is a click on a blob link,
+  which browsers tie to a user gesture. A fetch can outlast the gesture (about 5 s in Chrome), and Safari and
+  Chrome's repeated-download guard block or prompt for downloads started without one. Saving on the second
+  click keeps every download inside a click, and shows the row count before it.
+- **Not offered:** a 5-min (raw) interval. Legacy had none (DL-008), the `period` key has no such value, and
+  the request code is unchanged.
+- **Unchanged:** the request code, the CSV bytes (fidelity: byte-identical to web/), every `dl_*` / `els` /
+  `period` / `qc` / `pub` key, the `dl-run` / `dl-download` test ids the fidelity driver clicks.
+- **Why:** REDESIGN.md "Download sheet": a short form opened from a chart, prefilled from its keys.
+
 ## UX refactor (P0 prototype, 2026-10)
 
 The user-approved refactor (overview first, mobile first; DESIGN.md) changes the
@@ -181,7 +207,7 @@ layout parts of older entries below; data behaviour is unchanged.
   the station reports them, to the plan's six elements so every tile has a sparkline. Data older than 2 h
   shows a stale warning; the provisional ⓘ note follows `/latest`'s `provisional` flag.
 
-### Download: a stepper on phones, step cards elsewhere (P1)
+### Download: a stepper on phones, step cards elsewhere (P1; superseded by "Download: one short form")
 - **Legacy / web/:** one form column (station, variables, QC, aggregation, dates, Run / Download CSV) with
   the map under it, beside the preview; ≤ 900 px it all stacked, so on a phone the result landed
   off-screen after Run.
@@ -1245,7 +1271,7 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
   The control shows its own bound/order error; when an old link's start was
   clamped past the end, the install-specific message is shown under it too.
   Browser form validation is off so Run always reports the problem inline.
-- **Run waits for the station catalog.** Run is disabled while a `?s=` station
+- **Preview waits for the station catalog.** Preview is disabled while a `?s=` station
   is still being confirmed, so an early click no longer says "Please select a
   station…" for a station that is set.
 - **Messages** are kit-styled inline notes (⚠ + text, accent edge), not
@@ -1254,10 +1280,10 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
   instead of legacy's enabled button that answered "Please 'Run Request'
   before attempting to download." The state is visible on the button, so
   the message is never needed.
-- **Station label (DL-001)** is "Station" with the placeholder "Pick a
-  station" (legacy "Select Station" / "Select a Mesonet Station from the Map
-  or Dropdown..."), the same wording as Ag Tools. The map below is the
-  pointer alternative.
+- **Station (DL-001, DL-018, DL-019)** is a fixed line, "Station: Bozeman
+  (acebozem)"; the header's station picker (search, Near me, its map)
+  changes it. The sheet has no station combobox or map (redesign entry
+  "Download: one short form").
 - **Preview chart (DL-017).** ECharts small multiples, one grid per column,
   linked x zoom and axis pointer, the column name as each panel's title above
   the plot (not a rotated y title). Lines use the palette's preview cycle
@@ -1267,9 +1293,9 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
 - **Live region (new).** Run announces "Requesting … data for {station}…" and
   then "Request finished: N rows, M columns. Download CSV is ready." (or no
   data / failed).
-- **Funding footer (DL-020)** keeps its text, bold weight, 40 px height and
-  in-flow placement, but is filled with the kit `--accent` / `--text-on-accent`
-  tokens instead of `#129dff` on black (tokens only; legible in all themes).
+- **Funding footer (DL-020)** keeps its text and in-flow placement, as a
+  quiet centred caption under the form (`--text-secondary`) instead of a bold
+  `#129dff` bar.
 - **Run always refetches.** Download requests bypass `$store.data` (the one
   exception to the shared cache): the component keeps only the latest result,
   drops it when the station changes, and ignores a response from an older Run.

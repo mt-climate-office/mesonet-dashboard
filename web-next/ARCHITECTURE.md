@@ -291,7 +291,7 @@ focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
 `npm run verify` runs axe on its scenarios (Now, the header ⋯ menu, the photo dialog, the picker on a first visit and
 opened with a station, the Charts list, the legacy `#ag` landing, a variable page in each view, Compare, 4 Ag
-tools, the Download sheet (step 1 on phones, after Run), About, Help) × 1440/390 px × 3 themes
+tools, the Download sheet (a row open, after Preview), About, Help) × 1440/390 px × 3 themes
 (`scripts/verify/axe.mjs`).
 
 ## Testing
