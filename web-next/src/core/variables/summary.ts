@@ -12,6 +12,7 @@ import { recordRequest, type RecordRequest } from '../latest/requests'
 import { depthLabelFromColumn, latestVariableForColumn } from '../params'
 import { parseWallClock } from '../sensorEvents'
 import type { Variable } from './catalog'
+import { last24h } from './range'
 import { fmtStat } from './stats'
 
 type ElementRow = { element: string; description_short: string }
@@ -70,7 +71,8 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
         : `Last 48 hours: from ${fmt(vals.reduce((a, b) => Math.min(a, b)), unit)} to ${fmt(vals.reduce((a, b) => Math.max(a, b)), unit)}.`
 
     if (v.sum) {
-      const day = col ? timed.filter((x) => x.t > end - 24 * HOUR).map((x) => num(x.r[col])).filter((x): x is number => x !== null) : []
+      const [from, to] = last24h(end)
+      const day = col ? timed.filter((x) => x.t >= from && x.t < to).map((x) => num(x.r[col])).filter((x): x is number => x !== null) : []
       return { id: v.id, name: v.name, value: day.length ? fmt(day.reduce((a, b) => a + b, 0), unit) : '—', note: day.length ? 'last 24 h' : '', spark, sparkLabel }
     }
     // The current reading: /latest first (fresher), else the newest hourly value.
