@@ -142,6 +142,7 @@
 .cmp-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; padding: 2px; }
 /* Date fields and the normals switch: a 44 px target on touch (HOUSE-STYLE §5.5). */
 @media (hover: none) { .cmp .ctl-input, .cmp .ctl-check { min-height: 44px; } }
+.cmp-skel { height: 32rem; border-radius: var(--card-radius); }
 .cmp-plot { min-height: 20rem; padding: calc(2 * var(--gap-tight)); }
 /* Empty / loading: over the (cleared) chart, which stays sized so ECharts initialises at a real size. */
 .cmp-status { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; padding: var(--card-pad); background: var(--bg-surface); border-radius: var(--card-radius); }

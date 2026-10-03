@@ -110,7 +110,8 @@ export function compare() {
       return this.record()?.status === 'loading'
     },
     heightStyle(): string {
-      const px = latestTimeseriesHeight(this.model()?.ts.panels.length ?? 1, this.compact)
+      // The selected panels' height from the start (the model brings no more panels), so the plot never grows as it loads.
+      const px = latestTimeseriesHeight(this.vars()?.length ?? 1, this.compact)
       return `--chart-height: ${px}px; --chart-height-compact: ${px}px`
     },
     /** Live-region text once a new view has data; '' while loading. */
