@@ -1,39 +1,54 @@
-/* The downloader (partials/downloader/index.html) in the Download sheet. Desktop/tablet: the form
-   in two columns (Elements | Dates & period over Run) with the preview full
-   width below. Compact: a stepper, one .dl-step.is-current at a time with the
-   progress line and Back/Next. Plus inline messages, the primary button and
-   the BLM funding footer. Kit tokens and the --fs-* scale only. */
+/* The Download sheet's form (partials/downloader/index.html): flat summary rows (label left,
+   value right) that expand in place, the primary button and its one-line reason, notices,
+   the preview and the BLM funding line. One column at every width; the sheet body scrolls.
+   Kit tokens and the --fs-* scale only. */
 
-/* The sheet is wide enough for the two columns (ui/layout/sheet.css reads --sheet-w). */
-.dl-sheet { --sheet-w: 68rem; }
-.dl-tab { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
+/* A short form: a narrow centred panel from tablet up (ui/layout/sheet.css reads --sheet-w). */
+.dl-sheet { --sheet-w: 34rem; }
+.dl-tab { display: flex; flex-direction: column; gap: 1rem; width: 100%; min-width: 0; }
+.dl-form { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
 
-.dl-form {
-  display: grid; gap: 0.75rem; align-items: start;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  grid-template-areas: "elements dates" "elements run";
-  grid-template-rows: auto 1fr;
+/* ── Summary rows ──────────────────────────────────────────────────────── */
+.dl-rows { display: flex; flex-direction: column; }
+.dl-row { border-bottom: 1px solid var(--border); }
+.dl-row-head { margin: 0; font: inherit; }
+.dl-row-btn, .dl-row-static {
+  display: flex; align-items: center; gap: 0.75rem;
+  width: 100%; min-height: 48px; padding: 0.75rem 0.25rem;
+  font: inherit; font-size: var(--fs-md); text-align: left;
+  color: var(--text-primary); background: none; border: 0;
 }
-.dl-step-elements { grid-area: elements; }
-.dl-step-dates { grid-area: dates; }
-.dl-step-run { grid-area: run; }
-.dl-step { display: flex; flex-direction: column; gap: 1rem; }
-/* The card's gap spaces its title. Titles take focus (tabindex=-1) on step change and after Run. */
-.dl-step-title, .dl-preview .dash-card-title { margin: 0; }
-/* Scrolled to the top of the view: clear the sticky navbar. */
-.dl-progress, .dl-preview { scroll-margin-top: calc(var(--chrome-h, 52px) + 0.5rem); }
+.dl-row-btn { cursor: pointer; border-radius: var(--radius-md); }
+.dl-row-btn:hover { background: var(--accent-hover); }
+.dl-row-label { flex: none; color: var(--text-secondary); }
+/* The value takes the rest and ellipsizes; "+ Add" never wraps away from it. */
+.dl-row-value { display: flex; justify-content: flex-end; align-items: baseline; gap: 0.5rem; flex: 1; min-width: 0; font-weight: 500; }
+.dl-row-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dl-row-add { flex: none; font-weight: 400; color: var(--text-secondary); }
+.dl-row-chevron { flex: none; stroke: var(--text-secondary); transition: transform var(--transition); }
+.dl-row-btn[aria-expanded="true"] .dl-row-chevron { transform: rotate(180deg); }
+/* Same columns as a button row, minus the chevron's space. */
+.dl-row-static { padding-right: calc(0.25rem + 16px + 0.75rem); }
 
-.dl-field { display: flex; flex-direction: column; gap: 0.4rem; }
-.dl-field > .ctl-note { margin-top: -0.1rem; }
-.dl-form .seg-btns { width: 100%; }
-.dl-form .seg-btn { flex: 1; justify-content: center; }
+.dl-row-panel { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.25rem 0.25rem 1rem; }
+.dl-row-panel .seg-btns { width: 100%; }
+.dl-row-panel .seg-btn { flex: 1; justify-content: center; }
+/* Quality labels are long: one option per line. */
+.dl-seg-stack .seg-btns { flex-direction: column; gap: 0.35rem; }
+/* kit-override: stacked segments are separate buttons: own border, all corners rounded, no overlap. */
+.dl-seg-stack .seg-btn, .dl-seg-stack .seg-btn:first-of-type {
+  justify-content: flex-start; margin: 0;
+  border: 1px solid var(--ctrl-border); border-radius: var(--radius-md);
+}
+.dl-row-panel .ctl-row > .ctl-field { flex: 1 1 9rem; }
+.dl-row-panel .ctl-multiselect { align-items: stretch; }
+.dl-row-panel .ctl-multiselect .ctl-disclosure { align-self: flex-start; }
+.dl-row-panel .ctl-multiselect-panel > .ctl-input { max-width: none; }
+.dl-row-panel .ctl-multiselect .ctl-fieldset { grid-template-columns: minmax(0, 1fr); }
 .dl-switch { align-self: flex-start; }
-/* Recap above Run: parts wrap between, never inside (a date never breaks at its hyphens). */
-.dl-summary { font-size: var(--fs-sm); color: var(--text-secondary); }
-.dl-summary > span { white-space: nowrap; }
-.dl-summary > span + span::before { content: " · " / ""; white-space: pre; }
 
-/* Notices and errors: ⚠ + text, so the meaning never rests on color. */
+/* ── Notices, the button, its reason ───────────────────────────────────── */
+/* ⚠ + text, so the meaning never rests on color. */
 .dl-msg {
   padding: 0.45rem 0.6rem;
   font-size: var(--fs-sm); line-height: 1.45;
@@ -47,65 +62,34 @@
 .dl-msg-action { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .dl-msg-action > span { flex: 1; }
 
-.dl-actions { display: flex; gap: 0.5rem; }
-.dl-actions .nav-btn { flex: 1; justify-content: center; }
-/* kit-override: the kit has no primary button; Run and Next use the pressed segment's
-   fill (--accent with --text-on-accent, border --accent-line for 3:1). */
-.nav-btn.dl-btn-primary { background: var(--accent); border-color: var(--accent-line); color: var(--text-on-accent); }
+/* kit-override: the kit has no primary button; this uses the pressed segment's fill
+   (--accent with --text-on-accent, border --accent-line for 3:1). */
+.nav-btn.dl-btn-primary {
+  justify-content: center; gap: 0.5rem;
+  width: 100%; min-height: 48px; margin-top: 0.25rem;
+  font-size: var(--fs-md); font-weight: 600;
+  background: var(--accent); border-color: var(--accent-line); color: var(--text-on-accent);
+}
+.nav-btn.dl-btn-primary svg { stroke: currentColor; }
 .nav-btn.dl-btn-primary:hover { background: var(--accent); color: var(--text-on-accent); filter: brightness(1.1); }
-.nav-btn.dl-btn-primary[disabled]:hover { filter: none; }
+/* aria-disabled, never `disabled`: the button keeps focus while it changes (core/downloader/form.ts). */
+.nav-btn.dl-btn-primary[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; filter: none; }
+.nav-btn.dl-btn-primary[aria-busy="true"] { cursor: progress; }
+.dl-reason { margin-top: -0.25rem; font-size: var(--fs-sm); color: var(--text-secondary); text-align: center; }
 
-.dl-map { height: 320px; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
-
-/* The placeholder's min-height roughly holds a chart's space, so Run barely shifts the page. */
-.dl-preview { gap: 0.5rem; }
+/* ── Preview ───────────────────────────────────────────────────────────── */
+.dl-preview { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.dl-preview-title { margin: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
 .dl-preview-status {
   display: flex; align-items: center; justify-content: center;
-  min-height: 26rem; padding: 1rem;
+  min-height: 6rem; padding: 1rem;
   text-align: center; font-size: var(--fs-sm); color: var(--text-secondary);
 }
 .dl-preview-status.is-error { color: var(--text-primary); }
 .dl-preview-status.is-error::before { content: "\26A0\FE0E  " / ""; white-space: pre; }
 
-/* kit-override: the element list runs to ~40 rows; scroll it inside the panel so Run stays near. */
-.dl-form .ctl-multiselect-panel { max-height: 28rem; overflow-y: auto; }
-
-/* Funder attribution (legacy fixed footer); in page flow so it never covers
-   the controls. Brand fill, as legacy's blue bar. */
-.dl-funding {
-  display: flex; align-items: center;
-  min-height: 40px; padding: 0.4rem 0.75rem;
-  background: var(--accent); color: var(--text-on-accent);
-  border-radius: var(--radius-md);
-  font-size: var(--fs-sm); font-weight: 800;
-}
-
-/* The stepper chrome exists only on compact. */
-.dl-progress, .dl-stepnav { display: none; }
-
-/* ── Compact: the stepper ──────────────────────────────────────────────── */
-@media (max-width: 640px), (max-height: 560px) {
-  .dl-form { display: flex; flex-direction: column; align-items: stretch; }
-  .dl-step:not(.is-current) { display: none; }
-
-  .dl-progress {
-    display: flex; flex-direction: column; gap: 0.35rem;
-    font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary);
-  }
-  .dl-progress-bar { display: flex; gap: 0.25rem; }
-  .dl-progress-bar > span { flex: 1; height: 4px; border-radius: 2px; background: var(--border); }
-  .dl-progress-bar > span.is-done { background: var(--accent); }
-  .dl-stepnav { display: flex; flex-direction: column; gap: 0.5rem; }
-  .dl-stepnav .dl-actions { justify-content: flex-end; }
-  .dl-stepnav .nav-btn { flex: 0 1 50%; }
-
-  .dl-preview-status { min-height: 10rem; }
-  /* The page scrolls; a second scroll box inside it would trap the thumb. */
-  .dl-form .ctl-multiselect-panel { max-height: none; overflow-y: visible; }
-  .dl-form .ctl-multiselect { align-items: stretch; }
-  .dl-form .ctl-multiselect-panel > .ctl-input { max-width: none; }
-  .dl-form .ctl-multiselect .ctl-fieldset { grid-template-columns: minmax(0, 1fr); }
-}
+/* Funder attribution (legacy DL-020), as a quiet line under the form. */
+.dl-funding { font-size: var(--fs-xs); color: var(--text-secondary); text-align: center; }
 
 /* Element checklists by thumb: 44 px rows (WCAG 2.5.5), above the 40 px control minimum. */
 @media (max-width: 640px), (max-height: 560px), (hover: none) {

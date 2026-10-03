@@ -57,19 +57,27 @@ export const LABELS: Readonly<Record<string, PlainLabel>> = {
 export const plainName = (id: string, fallback: string): string => LABELS[id]?.name ?? fallback
 
 /**
+ * `value` at `id`'s precision for `where`, without the unit (for a value set
+ * apart from its unit, as on the Now tiles): "54", "0.05", "2,412"; '—' for
+ * null or non-finite. Unknown ids show up to 2 decimals.
+ */
+export function formatValue(id: string, value: number | null | undefined, where: keyof PlainLabel['digits'] = 'display'): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—'
+  const digits = LABELS[id]?.digits[where]
+  const n = value.toLocaleString('en-US', digits === undefined ? { maximumFractionDigits: 2 } : { minimumFractionDigits: digits, maximumFractionDigits: digits })
+  // Avoid "-0" after rounding a small negative.
+  return /^-0(\.0+)?$/.test(n) ? n.slice(1) : n
+}
+
+/**
  * `value` in `id`'s unit at its precision for `where`: "54 °F", "8 %",
  * "0.05 in"; '—' for null or non-finite. Thousands are grouped ("2,412 GDD").
  * Unknown ids show the number at up to 2 decimals with no unit.
  */
 export function formatReading(id: string, value: number | null | undefined, where: keyof PlainLabel['digits'] = 'display'): string {
-  if (value === null || value === undefined || !Number.isFinite(value)) return '—'
-  const label = LABELS[id]
-  const digits = label?.digits[where]
-  const n = value.toLocaleString('en-US', digits === undefined ? { maximumFractionDigits: 2 } : { minimumFractionDigits: digits, maximumFractionDigits: digits })
-  // Avoid "-0" after rounding a small negative.
-  const text = /^-0(\.0+)?$/.test(n) ? n.slice(1) : n
-  const unit = label?.unit ?? ''
-  return unit ? `${text}${unit === '%' || unit === '°' ? '' : ' '}${unit}` : text
+  const text = formatValue(id, value, where)
+  const unit = LABELS[id]?.unit ?? ''
+  return text === '—' || !unit ? text : `${text}${unit === '%' || unit === '°' ? '' : ' '}${unit}`
 }
 
 /** 16-point compass word for a direction in degrees ("SSE"); any real angle; '—' for null. */

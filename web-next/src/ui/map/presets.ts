@@ -2,7 +2,6 @@
  * The station maps (thin wrappers over ui/map/map.ts + stationLayer):
  *   stationMap    — Latest card: select a station, fly to it.
  *   locatorMap    — About: as stationMap, small; the page keeps one-finger and wheel scrolling.
- *   downloaderMap — Downloader: counties emphasised, click selects, no re-centre (legacy).
  *   pickerMap     — station picker: the whole state stays in view, click selects.
  *
  * Markup: an empty element with a height; the component builds the map,
@@ -38,7 +37,6 @@ export interface StationMapOptions {
 
 interface Preset {
   label: string
-  emphasiseCounties: boolean
   /** Centre on the selected station when it changes. */
   fly: boolean
   /** Map gestures need two fingers or Ctrl/⌘ (ui/map/map.ts `cooperativeGestures`). */
@@ -71,7 +69,6 @@ function mapView(opts: StationMapOptions, preset: Preset) {
 
       host = createMap(canvas, {
         label: opts.label ?? preset.label,
-        emphasiseCounties: preset.emphasiseCounties,
         cooperativeGestures: preset.cooperative,
         layers: (map, theme) => {
           const markers = layer?.add(map, theme)
@@ -117,16 +114,12 @@ function mapView(opts: StationMapOptions, preset: Preset) {
 
 /** Latest-card station map: selecting a station flies to it. */
 export const stationMap = (opts: StationMapOptions) =>
-  mapView(opts, { label: 'Map of Montana Mesonet stations', emphasiseCounties: false, fly: true })
+  mapView(opts, { label: 'Map of Montana Mesonet stations', fly: true })
 
 /** About locator map: as stationMap, but the page scrolls over it (cooperative gestures). */
 export const locatorMap = (opts: StationMapOptions) =>
-  mapView({ legendCollapsed: true, ...opts }, { label: 'Locator map of Montana Mesonet stations', emphasiseCounties: false, fly: true, cooperative: true })
-
-/** Downloader station map: county lines emphasised; selection does not move the map. */
-export const downloaderMap = (opts: StationMapOptions) =>
-  mapView(opts, { label: 'Map of Montana Mesonet stations to download', emphasiseCounties: true, fly: false })
+  mapView({ legendCollapsed: true, ...opts }, { label: 'Locator map of Montana Mesonet stations', fly: true, cooperative: true })
 
 /** Station-picker map: picking a station does not move the map (the whole network stays in view). */
 export const pickerMap = (opts: StationMapOptions) =>
-  mapView(opts, { label: 'Map of Montana Mesonet stations', emphasiseCounties: false, fly: false })
+  mapView(opts, { label: 'Map of Montana Mesonet stations', fly: false })

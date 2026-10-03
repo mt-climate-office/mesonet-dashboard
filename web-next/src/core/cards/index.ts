@@ -2,7 +2,7 @@
  * Public surface of core/cards: pure view models for the station cards on
  * Now and About (carried over from the old Latest tab).
  *  - windRose:          the Now wind rose request (14 d hourly)
- *  - forecast:          NWS periods → forecast rows (Now)
+ *  - forecast:          the NWS forecast page link (Now)
  *  - photo:             camera day/source/direction/frame selection (Now)
  *  - currentConditions: About's current readings + precipitation summary rows
  *  - onePagers:         station one-pager links (About)

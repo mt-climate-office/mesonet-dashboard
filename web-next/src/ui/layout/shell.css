@@ -12,6 +12,8 @@
   min-height: calc(100dvh - var(--chrome-h, 52px));
 }
 .dash-content > main { flex: 1; min-width: 0; }
+/* A link that focuses <main> (navigate `target: 'main'`) scrolls it below the sticky header, not under it. */
+#main { scroll-margin-top: var(--chrome-h, 52px); }
 
 /* Header: one row at every width. Logo · brand (desktop) · station button · … · sections · ⋯ */
 .mco-navbar { flex-wrap: nowrap; } /* kit-override: one row at every width (the kit wraps; DESIGN.md "Header") */

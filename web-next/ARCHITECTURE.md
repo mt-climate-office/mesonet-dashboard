@@ -219,9 +219,11 @@ if the URL should hold the open state.
 `vars` (display variables; the tile opens the first one's Charts page) and a `SeriesKey` for the
 sparkline; add the element code to `SPARK_ELEMENTS` (or
 `OPTIONAL_SPARK_ELEMENTS`) and its column to `keyFor` in `series.ts`. (2) A
-test in `core/overview/overview.test.ts`. The partial renders every tile
-from the model, so no markup is needed unless the tile has a custom block
-(like `windDeg` or `soil`); styling hooks are `.now-tile--<id>`.
+test in `core/overview/overview.test.ts`. (3) If it should hide when it means
+nothing, a rule in `nowTiles` (`core/overview/relevance.ts`); its plain name,
+unit and precision come from `LABELS` for its `v=` id, its number from
+`reading()` and any sub-line from `sub()` in `core/overview/nowPage.ts` (+ a line in
+`nowPage.test.ts`). The partial renders every tile from `buildNowPage`, so no markup is needed.
 
 **Add a variable (Charts).** A variable is a display name from the
 station's `/elements` (`latestVarsFromElements`: `description_short` before
@@ -289,7 +291,7 @@ focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
 `npm run verify` runs axe on its scenarios (Now, the header ⋯ menu, the photo dialog, the picker on a first visit and
 opened with a station, the Charts list, the legacy `#ag` landing, a variable page in each view, Compare, 4 Ag
-tools, the Download sheet (step 1 on phones, after Run), About, Help) × 1440/390 px × 3 themes
+tools, the Download sheet (a row open, after Preview), About, Help) × 1440/390 px × 3 themes
 (`scripts/verify/axe.mjs`).
 
 ## Testing
@@ -310,7 +312,7 @@ tools, the Download sheet (step 1 on phones, after Run), About, Help) × 1440/39
 gzip. Measured at W1: entry (Alpine + core + shell, controls, map and chart hosts) 43 KB; tree-shaken
 ECharts, a lazy chunk loaded on the first chart render (`ui/charts/echarts.ts`), 233 KB; 268 KB in all,
 leaving ~180 KB for the sections; at the UX P0 prototype the entry is 107 KB and all JS 328 KB
-(the Now page does not need the ECharts chunk unless it shows the wind rose). The Plotly build this replaces shipped
+(since phase B the Now page loads the ECharts chunk for its 48 h strip, after its tier-1 content). The Plotly build this replaces shipped
 ~4.6 MB. Raising a budget needs a reason in the PR.
 
 ## Rules carried from web/

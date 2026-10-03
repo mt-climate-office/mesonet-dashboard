@@ -282,7 +282,7 @@ export function latestAgg(state: Pick<UrlState, 'agg'>): LatestAgg {
   return state.agg ?? 'hourly'
 }
 
-/** Patch for "user picked a station" (picker, Download's combobox and map). */
+/** Patch for "user picked a station" (the station picker and its map). */
 export function selectStationPatch(id: string | null): Partial<UrlState> {
   return { s: id }
 }

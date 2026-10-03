@@ -4,7 +4,7 @@
  * console error or CSP violation. Run via `npm run verify` (needs dist/).
  */
 import { AxeBuilder } from '@axe-core/playwright'
-import { DL_QUERY, THEMES, VIEWPORTS, animationsDone, check, finish, open, runDownload, start } from './lib.mjs'
+import { DL_QUERY, THEMES, VIEWPORTS, animationsDone, check, dlReady, finish, open, runDownload, start } from './lib.mjs'
 
 /** Help, opened from the header ⋯ menu over a rendered Compare chart: the dialog's own contrast and names. */
 const openHelp = async (page) => {
@@ -53,13 +53,22 @@ const datesSheet = async (page) => {
   await page.waitForFunction(() => !!document.querySelector('[data-testid="custom-dates"]'))
   await animationsDone(page)
 }
-/** The Download sheet on phones, step 1 (Elements) once the station and its elements are in. */
-const dlReady = (page) => page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
+/** The Download sheet with its Variables row expanded and the checklist open (no variables yet: the button's reason shows). */
+const dlVariables = async (page) => {
+  await page.locator('#dl-row-vars-btn').click()
+  await page.getByTestId('dl-elements').locator('.ctl-disclosure').click()
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="dl-elements"] .ctl-check').length > 3, null, { timeout: 30000 })
+}
+/** The Download sheet with its Dates row expanded. */
+const dlDates = async (page) => {
+  await page.locator('#dl-row-dates-btn').click()
+  await page.getByTestId('dl-dates').waitFor({ state: 'visible' })
+}
 
 // `before` runs once the page loads, `after` once the evidence is in; `only` limits the viewports.
 const SCENARIOS = [
   // The Now overview (default section), with the header ⋯ menu open, and a first visit (no station: the picker is open).
-  { name: 'now', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]', '[data-testid="now-hero"] .dash-spark svg'] } },
+  { name: 'now', query: '?s=acebozem', evidence: { charts: 1, filled: ['[data-testid="now-tiles"]', '[data-testid="tile-wind"] .dash-spark svg'] } },
   { name: 'header-menu', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openMenu },
   // About: details, locator map, all current readings, sensor changes, data notes.
   { name: 'about', query: '?s=acebozem#about', evidence: { filled: ['[data-testid="about-readings-table"] tbody', '[data-testid="about-history"] .about-days', '[data-testid="about-map"] tbody'] } },
@@ -84,8 +93,9 @@ const SCENARIOS = [
   { name: 'ag-soil-profile', query: '?s=acebozem&v=soil_temp,soil_ec_blk#charts', evidence: { charts: 1 } },
   { name: 'ag-etr', query: '?s=acebozem&v=etr#charts', evidence: { charts: 1 } },
   { name: 'ag-annual', query: '?s=acebozem&v=annual#charts', evidence: { charts: 1 } },
-  // The Download sheet (dl=1): step 1 on phones, and a finished request with its preview.
-  { name: 'download-step1', query: '?s=acebozem&dl=1#charts', only: ['390'], before: dlReady, evidence: {} },
+  // The Download sheet (dl=1): the Variables row open with its checklist, the Dates row open, and a preview.
+  { name: 'download-variables', query: '?s=acebozem&dl=1#charts', before: dlReady, evidence: {}, after: dlVariables },
+  { name: 'download-dates', query: DL_QUERY, before: dlReady, evidence: {}, after: dlDates },
   { name: 'downloader', query: DL_QUERY, before: runDownload, evidence: { charts: 1 } },
   { name: 'photo-dialog', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPhoto },
   { name: 'help-dialog', query: '?s=acebozem#latest', evidence: { charts: 1 }, after: openHelp },

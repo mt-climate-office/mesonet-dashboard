@@ -1,48 +1,75 @@
-/* Now overview (partials/now/index.html). Phones: one column, hero first, tiles
-   two-up. Tablet: hero beside the media slot, tiles three-up. Desktop: tiles
-   four-up. Values in Space Mono on the type scale; every slot keeps its size
-   while loading (skeletons). Kit tokens only. */
+/* Now (partials/now/index.html; REDESIGN.md "Now"). Phones and tablets: one column, hero → photo →
+   tiles (2-up) → rows. Desktop (≥ 1060 px): hero + photo | tiles + rows. Readings in .num-display
+   (Outfit, tabular); every slot keeps its size while loading (skeletons). Kit tokens only. */
 
-.now-grid {
-  display: grid; gap: 0.75rem;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "fresh" "hero" "tiles" "media" "forecast" "all";
-}
-.now-fresh { grid-area: fresh; }
-.now-hero { grid-area: hero; }
-.now-media { grid-area: media; }
-.now-tiles { grid-area: tiles; }
-.now-forecast { grid-area: forecast; }
-.now-all { grid-area: all; }
-
-@media (min-width: 641px) and (min-height: 561px) {
-  .now-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: "fresh fresh" "hero media" "tiles tiles" "forecast forecast" "all all";
-  }
-}
+.now-grid { display: grid; gap: 0.875rem; grid-template-columns: minmax(0, 1fr); }
+.now-col { display: grid; gap: 0.875rem; align-content: start; min-width: 0; }
 @media (min-width: 1060px) and (min-height: 561px) {
-  .now-grid { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  .now-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
 }
 
-/* Freshness line; positioned so the Provisional toggletip can span it. */
-.now-fresh { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; font-size: var(--fs-sm); color: var(--text-muted); }
-
-/* Shared tile text. */
-.now-label { display: block; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
-.now-value { display: flex; align-items: baseline; gap: 0.3rem; margin: 0.3rem 0 0.15rem; font-family: var(--font-mono); font-size: var(--fs-xl); line-height: 1.1; color: var(--text-primary); }
-.now-unit { font-family: var(--font-ui); font-size: var(--fs-sm); font-weight: 500; color: var(--text-secondary); }
-.now-detail { display: block; font-size: var(--fs-xs); color: var(--text-secondary); line-height: 1.45; }
 .now-dim { color: var(--text-muted); }
 
-/* Hero. */
-.dash-card.now-hero { display: flex; flex-direction: column; gap: 0.2rem; position: relative; }
-.now-hero-value { font-family: var(--font-mono); font-size: var(--fs-2xl); line-height: 1.05; color: var(--text-primary); margin-top: 0.2rem; }
-.now-hero-value .now-unit { font-size: var(--fs-lg); margin-left: 0.1rem; }
-.now-hero-feels { font-size: var(--fs-md); color: var(--text-secondary); }
-.now-hero-range { display: flex; flex-wrap: wrap; gap: 0.15rem 0.75rem; min-height: 1.4rem; font-size: var(--fs-sm); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-.now-hero-spark { flex: 1 1 44px; min-height: 44px; margin-top: 0.5rem; }
-.now-more { position: absolute; top: var(--card-pad); right: var(--card-pad); font-size: var(--fs-xs); color: var(--accent-line); }
+/* Hero: the temperature left, high/low and normal right; summary, freshness, then the strip. */
+.dash-card.now-hero { --card-pad: 1.125rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.now-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+.now-temp { margin: 0; font-size: 5rem; font-weight: 300; line-height: 0.95; letter-spacing: -0.04em; color: var(--text-primary); }
+.now-temp-unit { font-size: 0.4em; font-weight: 400; vertical-align: 0.95em; margin-left: 0.05em; letter-spacing: 0; color: var(--text-secondary); }
+.now-hilo { display: grid; justify-items: end; gap: 0.1rem; margin: 0.25rem 0 0; text-align: right; font-size: var(--fs-sm); line-height: 1.45; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.now-hilo-skel { width: 8rem; }
+.now-skel-temp { width: 9rem; height: 4.75rem; margin-bottom: 0.4rem; }
+.now-summary { margin: 0.4rem 0 0; font-size: 1.125rem; line-height: 1.35; color: var(--text-primary); text-wrap: pretty; }
+/* Positioned so the Provisional note can use the row's width. */
+.now-fresh { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.4rem; margin: 0; font-size: var(--fs-sm); color: var(--text-muted); }
+.now-fresh .dash-toggletip { align-items: center; gap: 0.4rem; }
+.now-prov-btn {
+  padding: 0.25rem 0; border: 0; background: none; cursor: pointer;
+  font: inherit; color: var(--text-muted);
+  text-decoration: underline dotted; text-underline-offset: 3px;
+}
+.now-prov-btn:hover { color: var(--text-primary); }
+@media (hover: none) { .now-prov-btn { min-height: 40px; min-width: 40px; } }
+
+/* The 48 h strip: a fixed-height chart host (the skeleton holds the same box), icons and a legend. */
+.now-strip { position: relative; display: block; height: 9.5rem; margin: 0.25rem -0.375rem 0; }
+.now-strip-skel { position: absolute; inset: 0.25rem 0.375rem; border-radius: var(--radius-md); }
+.now-strip-chart { --chart-height: 9.5rem; --chart-height-compact: 9.5rem; }
+.now-icons { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin: 0; padding: 0; list-style: none; font-size: var(--fs-xs); color: var(--text-secondary); }
+.now-icons li { display: inline-flex; align-items: center; gap: 0.4rem; }
+.now-icons img { width: 32px; height: 32px; border-radius: var(--radius-sm); }
+.now-strip-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; font-size: var(--fs-xs); color: var(--text-muted); }
+/* Line samples: the strip tells observed from forecast by solid vs dashed, so the legend does too. */
+.now-legend i { display: inline-block; width: 1.1rem; margin-right: 0.4rem; vertical-align: middle; border-top: 2px solid currentColor; }
+.now-legend i.is-forecast { border-top-style: dashed; }
+.now-forecast-link { margin-left: auto; }
+
+/* Photo (16:9) or the wind rose. */
+.dash-card.now-media { --card-pad: 0; overflow: hidden; display: flex; aspect-ratio: 16 / 9; }
+.dash-card.now-media.is-rose { aspect-ratio: auto; min-height: 20rem; }
+.now-media .dash-skel--media { min-height: 0; border-radius: 0; }
+.now-photo, .now-rose { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.now-photo-frame { position: relative; flex: 1; display: block; padding: 0; border: 0; background: var(--bg-raised); cursor: zoom-in; }
+.now-photo-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.now-photo-cap {
+  position: absolute; left: 0.625rem; bottom: 0.625rem;
+  display: inline-flex; gap: 0.5rem;
+  padding: 0.2rem 0.625rem; border-radius: 999px;
+  background: var(--glass); color: var(--text-primary);
+  font-size: var(--fs-xs);
+}
+.now-photo-msg { margin: auto; padding: 1rem; font-size: var(--fs-sm); color: var(--text-muted); text-align: center; }
+.now-rose .lc-pane { padding: 0.5rem; }
+.now-rose .lc-rose-chart { --chart-height: 17rem; --chart-height-compact: 17rem; }
+
+/* Tiles: flat surfaces, two-up; label, value, a sub-line and a sparkline. */
+.now-tiles { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.now-tile-item { display: flex; min-width: 0; }
+.dash-card.now-tile { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; min-height: 8.75rem; padding: 0.875rem 0.875rem 0.625rem; }
+.now-tile-head { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; min-height: 1.4rem; font-size: var(--fs-sm); font-weight: 500; color: var(--text-muted); }
+.now-tile-value { display: flex; align-items: baseline; gap: 0.2rem; font-size: 1.9rem; line-height: 1.1; color: var(--text-primary); }
+.now-unit { font-family: var(--font-ui); font-size: var(--fs-sm); color: var(--text-muted); letter-spacing: 0; }
+.now-tile-sub { min-height: 1.3em; font-size: var(--fs-sm); color: var(--text-secondary); line-height: 1.3; }
+.now-tile .dash-spark { margin-top: auto; padding-top: 0.375rem; height: calc(28px + 0.375rem); }
 
 /* Sparklines: decorative SVG (the sr-only sentence beside it carries the range). */
 .dash-spark { display: block; height: 28px; margin-top: 0.5rem; color: var(--accent-line); }
@@ -50,76 +77,24 @@
 .dash-spark path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .dash-spark svg.is-bars path { fill: currentColor; stroke: none; }
 
-/* Tiles. */
-.now-tiles { list-style: none; display: grid; grid-auto-flow: row dense; gap: 0.75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.now-tile-item { display: flex; min-width: 0; }
-.dash-card.now-tile { flex: 1; display: flex; flex-direction: column; min-height: 9rem; }
-.now-tile .dash-spark { margin-top: auto; padding-top: 0.5rem; height: calc(28px + 0.5rem); }
-/* The soil profile needs two columns at every width. */
-.now-tile-item:has(.now-tile--soil) { grid-column: span 2; }
-@media (min-width: 641px) and (min-height: 561px) {
-  .now-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* Rows to About: name, meta, chevron. */
+.dash-card.now-rows { --card-pad: 0; overflow: hidden; }
+.now-row {
+  display: flex; align-items: center; gap: 0.75rem; min-height: 3.25rem; padding: 0.75rem 1rem;
+  color: var(--text-primary); text-decoration: none; font-weight: 500;
 }
-@media (min-width: 1060px) and (min-height: 561px) {
-  .now-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-
-.now-compass { align-self: center; margin-left: 0.25rem; color: var(--accent-line); }
-.now-compass circle { stroke: var(--ctrl-border); }
-.now-compass path { fill: currentColor; }
-
-/* Soil mini profile: depth, temperature, VWC with a bar on a 0–50 % scale. */
-.now-soil { width: 100%; margin-top: 0.4rem; border-collapse: collapse; font-size: var(--fs-xs); }
-.now-soil th, .now-soil td { padding: 0.15rem 0.25rem; text-align: left; font-weight: 400; }
-.now-soil thead th { color: var(--text-muted); font-weight: 600; }
-.now-soil tbody th { color: var(--text-secondary); white-space: nowrap; }
-.now-soil td { font-family: var(--font-mono); color: var(--text-primary); white-space: nowrap; }
-.now-soil-bar { display: inline-block; vertical-align: middle; width: 3.5rem; height: 6px; margin-right: 0.4rem; border-radius: 3px; border: 1px solid var(--ctrl-border); background: linear-gradient(90deg, var(--accent-line) var(--w, 0%), transparent var(--w, 0%)); }
-
-/* Media slot: latest photo (or the wind rose). Fixed height so nothing shifts. */
-.now-media { --card-pad: 0; overflow: hidden; display: flex; min-height: 14rem; }
-.now-photo, .now-rose { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.now-photo-frame { position: relative; flex: 1; display: block; padding: 0; border: 0; background: var(--bg-raised); cursor: zoom-in; min-height: 14rem; }
-.now-photo-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.now-photo-cap {
-  position: absolute; left: 0.5rem; bottom: 0.5rem;
-  display: inline-flex; gap: 0.5rem;
-  padding: 0.15rem 0.5rem; border-radius: var(--radius-sm);
-  background: var(--glass); color: var(--text-primary);
-  font-size: var(--fs-xs); font-family: var(--font-mono);
-}
-.now-photo-msg { margin: auto; padding: 1rem; font-size: var(--fs-sm); color: var(--text-muted); text-align: center; }
-.now-rose .lc-pane { padding: 0.5rem; }
-.now-rose .lc-rose-chart { --chart-height: 15rem; --chart-height-compact: 15rem; }
-
-/* Forecast strip: horizontal scroll with snap points (vertical swipes still scroll the page). */
-.now-periods {
-  position: relative; display: flex; gap: 0.5rem;
-  overflow-x: auto; overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory; scroll-padding-inline: 0.25rem;
-  list-style: none; padding: 0.1rem 0.1rem 0.4rem;
-}
-.now-period {
-  flex: 0 0 6.5rem; scroll-snap-align: start;
-  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
-  padding: 0.5rem 0.35rem; text-align: center;
-  border: 1px solid var(--border); border-radius: var(--radius-md);
-}
-.now-period.is-night { background: var(--bg-deep); }
-.now-period img { width: 44px; height: 44px; border-radius: var(--radius-sm); }
-.now-period-name { font-size: var(--fs-xs); font-weight: 600; color: var(--text-primary); line-height: 1.2; }
-.now-period-temp { font-family: var(--font-mono); font-size: var(--fs-md); font-weight: 700; color: var(--text-primary); }
-.now-period-short { font-size: var(--fs-xs); color: var(--text-secondary); line-height: 1.3; }
-.now-period-pop { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-secondary); }
-.now-retry { display: inline-flex; margin-left: 0.5rem; }
-
-.now-all {
-  justify-self: start; display: inline-flex; align-items: center; min-height: 44px;
-  color: var(--accent-line); font-size: var(--fs-sm); font-weight: 600;
-  text-decoration: underline; text-underline-offset: 2px;
-}
+.now-row + .now-row { border-top: 1px solid var(--border); }
+.now-row:hover { background: var(--accent-hover); }
+.now-row-meta { flex: 1; min-width: 0; text-align: right; font-size: var(--fs-sm); font-weight: 400; color: var(--text-muted); }
+.now-row-chev { color: var(--text-muted); }
 
 /* No station / no data. */
 .now-empty { max-width: 34rem; }
 .now-empty p { font-size: var(--fs-sm); color: var(--text-secondary); line-height: 1.5; }
 .now-empty-btn { margin-top: 0.85rem; }
+
+@media (min-width: 1060px) and (min-height: 561px) {
+  .now-temp { font-size: 7rem; }
+  .dash-card.now-media:not(.is-rose) { aspect-ratio: 16 / 8; }
+  .now-strip, .now-strip-chart { height: 11rem; --chart-height: 11rem; }
+}
