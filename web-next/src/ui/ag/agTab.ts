@@ -12,12 +12,12 @@ import { learnMoreUrl } from '../../core/ag/view/learnMore'
 import { chartState, hasAllYears, notHereMessage, variableGroup } from '../../core/ag/view/tab'
 import { agToolElements, fromChart } from '../../core/downloader/fromChart'
 import { POR_FALLBACK_START, installDate, todayIso } from '../../core/latest'
-import { LABELS, chartPatch, neighbors, plainName, type Variable } from '../../core/variables'
+import { LABELS, neighbors, plainName, type Variable } from '../../core/variables'
 import { chartVariables, stationElements } from '../charts/resources'
 import { component } from '../component'
 import { initSwipe } from '../layout/swipe'
 import { togglePicker } from '../picker/stationPicker'
-import { navigate } from '../shell/navigate'
+import { stepChart } from '../shell/navigate'
 import { shareView } from '../shell/share'
 import { openSheet } from '../shell/sheet'
 import { currentTab } from './shared'
@@ -76,9 +76,9 @@ export function agTab() {
       return neighbors(chartVariables(stations().id) ?? [], currentTab().variable)
     },
     nameOf: (v: Variable | null): string => (v ? plainName(v.id, v.name) : ''),
+    /** Previous (−1) or next (1) variable in list order (ui/shell/navigate `stepChart`). */
     step(dir: -1 | 1): void {
-      const to = dir < 0 ? this.near.prev : this.near.next
-      if (to) void navigate('charts', { patch: chartPatch(to.id), drillDown: true, target: 'var-title' })
+      stepChart(this.near, dir)
     },
 
     /* ⋯ menu */

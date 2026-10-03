@@ -1,7 +1,7 @@
 /**
  * Barrel for the Charts variable models:
  *  - catalog: stationVariables, variableGroups, variableId, variableIdForElement, findVariable, neighbors,
- *             chartsMode, chartPatch, matchesQuery, showsNormals, LIST_AG_TOOLS
+ *             chartsMode, chartPatch, chartHeading, matchesQuery, showsNormals, LIST_AG_TOOLS
  *  - labels:  LABELS, plainName, formatValue, formatReading, compassWord (plain names, units, precision)
  *  - summary: variableRows (list values + sparklines), listRequest, primaryColumn, currentReading
  *  - range:   RANGE_PRESETS, RANGE_CHIPS, presetPatch, activePreset, pageRange, rangeChipPatch,

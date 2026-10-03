@@ -40,6 +40,11 @@ export function chartPatch(id: string): Partial<UrlState> {
   return isAgTool(id) ? variablePatch(id) : { v: id, view: 'recent', tbl: false, cmp: false }
 }
 
+/** Id of the heading a Charts entry's page focuses on arrival: an Ag tool's (Reference ET too) or a variable page's. */
+export function chartHeading(id: string): 'ag-chart-title' | 'var-title' {
+  return isAgTool(id) ? 'ag-chart-title' : 'var-title'
+}
+
 /**
  * True when every word of `query` (any case) appears in one of `texts`; an
  * empty query matches everything. The Charts list's search field.

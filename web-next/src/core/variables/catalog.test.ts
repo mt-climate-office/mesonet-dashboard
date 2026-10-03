@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chartPatch, chartsMode, showsNormals, findVariable, matchesQuery, neighbors, stationVariables, variableGroups, variableId, variableIdForElement, LIST_AG_TOOLS } from './catalog'
+import { chartHeading, chartPatch, chartsMode, showsNormals, findVariable, matchesQuery, neighbors, stationVariables, variableGroups, variableId, variableIdForElement, LIST_AG_TOOLS } from './catalog'
 
 // acebozem's /elements (2026-10-01), one row per element family plus a new, unmapped element.
 const ELEMENTS = [
@@ -80,6 +80,14 @@ describe('chartsMode', () => {
 describe('LIST_AG_TOOLS', () => {
   it('lists every Ag tool but Annual comparison and Reference ET (listed under Rain and evaporation), in tool order', () => {
     expect(LIST_AG_TOOLS).toEqual(['gdd', 'feels_like', 'cci', 'soil_temp,soil_ec_blk', 'swp', 'percent_saturation'])
+  })
+})
+
+describe('chartHeading', () => {
+  it('focuses the Ag heading for an Ag tool (Reference ET included), else the variable heading', () => {
+    expect(chartHeading('etr')).toBe('ag-chart-title')
+    expect(chartHeading('gdd')).toBe('ag-chart-title')
+    expect(chartHeading('air_temp')).toBe('var-title')
   })
 })
 

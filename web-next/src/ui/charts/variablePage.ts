@@ -13,7 +13,6 @@ import { POR_FALLBACK_START, dataSettled, installDate, plotStatus, todayIso, vie
 import { chartWindow } from '../../core/models/timeseries'
 import {
   RANGE_CHIPS,
-  chartPatch,
   currentReading,
   effectiveAgg,
   findVariable,
@@ -39,7 +38,7 @@ import type { LatestAgg } from '../../core/url-schema'
 import { component } from '../component'
 import { initSwipe } from '../layout/swipe'
 import { announce } from '../shell/live'
-import { navigate } from '../shell/navigate'
+import { stepChart } from '../shell/navigate'
 import { shareView } from '../shell/share'
 import { openSheet } from '../shell/sheet'
 import { latestObs } from '../station/resources'
@@ -131,10 +130,9 @@ export function variablePage() {
     toggleTable(): void {
       url().go('charts', { tbl: !this.tableMode(), view: this.all() ? 'history' : 'recent' }, true)
     },
-    /** Previous (−1) or next (1) variable in list order; its page's heading takes focus. */
+    /** Previous (−1) or next (1) variable in list order (ui/shell/navigate `stepChart`). */
     step(dir: -1 | 1): void {
-      const to = dir < 0 ? this.near.prev : this.near.next
-      if (to) void navigate('charts', { patch: chartPatch(to.id), drillDown: true, target: 'var-title' })
+      stepChart(this.near, dir)
     },
     openDates(): void {
       openSheet('dates')

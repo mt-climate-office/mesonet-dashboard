@@ -8,8 +8,7 @@
  * hourly request (core/variables `listRequest`).
  */
 import Alpine from 'alpinejs'
-import { LABELS, LIST_AG_TOOLS, chartPatch, listRequest, matchesQuery, variableGroups, variableRows, type VariableRow } from '../../core/variables'
-import { isAgTool } from '../../core/params/ag'
+import { LABELS, LIST_AG_TOOLS, chartHeading, chartPatch, listRequest, matchesQuery, variableGroups, variableRows, type VariableRow } from '../../core/variables'
 import { latestObs } from '../station/resources'
 import { component } from '../component'
 import { follow } from '../shell/navigate'
@@ -72,7 +71,7 @@ export function variableList() {
     /** A row: push its page; the row's name morphs into the page heading, which takes focus. */
     open(e: MouseEvent, id: string): void {
       const morph = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('[data-vt-source]')
-      follow(e, 'charts', { patch: chartPatch(id), drillDown: true, morph, target: isAgTool(id) ? 'ag-chart-title' : 'var-title' })
+      follow(e, 'charts', { patch: chartPatch(id), drillDown: true, morph, target: chartHeading(id) })
     },
     compareHref(): string {
       return Alpine.store('url').hrefFor('charts', { v: null, cmp: true })

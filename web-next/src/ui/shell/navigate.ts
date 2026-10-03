@@ -3,11 +3,13 @@
  * change or a drill-down) inside a view transition, then scrolls, moves focus
  * and announces a new section. `follow` is the one click handler for an
  * in-app `<a href>`: a plain left click navigates, anything else (new tab,
- * middle click) follows the real href.
+ * middle click) follows the real href. `stepChart` is ⋯ → Previous / Next
+ * (and the swipe) on the chart pages.
  */
 import Alpine from 'alpinejs'
 import { SECTIONS, sectionLabel, type Section } from '../../core/router'
 import type { UrlState } from '../../core/url-schema'
+import { chartHeading, chartPatch, type Variable } from '../../core/variables'
 import { withTransition } from '../layout/transition'
 import { announce } from './live'
 import { openSheet } from './sheet'
@@ -84,4 +86,10 @@ export function follow(e: MouseEvent, section: Section, opts: NavigateOptions = 
   if (!plainClick(e)) return
   e.preventDefault()
   void navigate(section, opts)
+}
+
+/** Open the previous (−1) or next (1) Charts entry of `near` (pushed); its page's heading takes focus. */
+export function stepChart(near: { prev: Variable | null; next: Variable | null }, dir: -1 | 1): void {
+  const to = dir < 0 ? near.prev : near.next
+  if (to) void navigate('charts', { patch: chartPatch(to.id), drillDown: true, target: chartHeading(to.id) })
 }
