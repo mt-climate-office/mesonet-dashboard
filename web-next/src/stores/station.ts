@@ -58,7 +58,9 @@ export function createStationStore(): StationStore {
         if (!id) return
         const storage = browserStorage()
         rememberStation(storage, id)
-        this.recent = readRecent(storage)
+        // After this flush: Alpine drops a re-trigger of a job that already ran in the current
+        // flush, so a write from inside it would leave the picker's Recent list stale.
+        queueMicrotask(() => (this.recent = readRecent(storage)))
       })
     },
 

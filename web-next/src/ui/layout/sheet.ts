@@ -156,6 +156,8 @@ export function initSheet(o: SheetOptions): Sheet {
     },
     destroy() {
       clearTimeout(leaving)
+      // Destroyed mid-slide: the classes would hold the next presentation off screen.
+      panel.classList.remove('enter', 'leaving')
       scope.destroy()
       handle.removeEventListener('pointerdown', onDown)
       handle.removeEventListener('pointermove', onMove)

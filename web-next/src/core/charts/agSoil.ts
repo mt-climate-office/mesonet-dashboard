@@ -14,7 +14,8 @@ import { MISSING, escapeHtml, fmtNum, fmtWall, isoWall, wallMs, type Period } fr
 import { colorBar, frozenSeries } from './heatmap'
 import { hBandSeries } from './overlays'
 import { lineSeries, points } from './series'
-import { axisTooltip, legend, tipText, tooltipBase } from './tooltip'
+import { agLegend, liftForLegend } from './agLegend'
+import { axisTooltip, tipText, tooltipBase } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
 import { axisTitle } from '../variables/labels'
 
@@ -97,7 +98,7 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
     emphasis: { itemStyle: { borderColor: ctx.theme.text, borderWidth: 1 } },
   }
   const g = grid(ctx, { right: cb.gridRight, bottom: ctx.compact ? cb.gridBottom : cells.length ? 92 : 68 })
-  const lg = legend(ctx, { data: [FROZEN_NAME] })
+  const lg = agLegend(ctx, [{ name: FROZEN_NAME }])
   return {
     grid: g,
     xAxis: { type: 'category', data: xMs, axisLabel: { formatter: categoryLabel(m.period), hideOverlap: true }, axisTick: { alignWithLabel: true } },
@@ -174,8 +175,7 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
   const bar = toBar(m.series)
   const flat = bar.flat().filter((v): v is number => v != null && v > 0)
   const [min, max] = logExtent(Math.min(...flat), Math.max(...flat), [SWP_FIELD_CAPACITY, SWP_WILTING_POINT])
-  const names = m.series.depthsCm.map(depthLabel)
-  const lg = legend(ctx, { data: names })
+  const lg = agLegend(ctx, m.series.depthsCm.map((cm) => ({ name: depthLabel(cm) })))
   const bands =
     xs.length > 0
       ? [
@@ -195,10 +195,9 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
       : []
   return {
     useUTC: true,
-    grid: grid(ctx),
+    ...liftForLegend(grid(ctx), timeZoom(ctx), lg.extra),
     xAxis: timeAxis(),
     yAxis: logAxis(axisTitle('swp', 'Soil water potential'), min, max, { inverse: true, prefix: '-' }),
-    dataZoom: timeZoom(ctx),
     legend: lg.legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y) => tipText(name, `-${y.toFixed(2)} bar`)),
     series: [...bands, ...depthLines(ctx, xs, m.series.depthsCm, bar)],
@@ -220,13 +219,13 @@ export interface PercentSaturationModel {
 
 export const percentSaturationChart: ChartBuilder<PercentSaturationModel> = (m, ctx) => {
   const xs = m.series.time.map(wallMs)
+  const lg = agLegend(ctx, m.series.depthsCm.map((cm) => ({ name: depthLabel(cm) })))
   return {
     useUTC: true,
-    grid: grid(ctx),
+    ...liftForLegend(grid(ctx), timeZoom(ctx), lg.extra),
     xAxis: timeAxis(),
     yAxis: valueAxis(axisTitle('percent_saturation', 'Soil saturation'), { min: 0, max: 100 }),
-    dataZoom: timeZoom(ctx),
-    legend: legend(ctx).legend,
+    legend: lg.legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y) => tipText(name, `${y.toFixed(1)} %`)),
     series: depthLines(ctx, xs, m.series.depthsCm, m.series.pct),
   } satisfies EChartsOption

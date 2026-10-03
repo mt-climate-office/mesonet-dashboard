@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chartHeading, chartPatch, chartsMode, showsNormals, findVariable, matchesQuery, neighbors, stationVariables, variableGroups, variableId, variableIdForElement, LIST_AG_TOOLS } from './catalog'
+import { chartHeading, chartPatch, chartsMode, showsNormals, findVariable, matchesQuery, neighbors, plainVariableOptions, stationVariables, variableGroups, variableId, variableIdForElement, LIST_AG_TOOLS } from './catalog'
 
 // acebozem's /elements (2026-10-01), one row per element family plus a new, unmapped element.
 const ELEMENTS = [
@@ -48,6 +48,11 @@ describe('stationVariables', () => {
     expect(variableId('Soil VWC')).toBe('soil_vwc')
     expect(variableId('Brand New Thing')).toBe('brand_new_thing')
     expect(findVariable(vars, null)).toBeUndefined()
+  })
+  it('Compare chips: plain names, sorted by them; the value stays the display variable', () => {
+    const opts = plainVariableOptions(['Soil VWC', 'Gust Speed', 'Atmospheric Pressure', 'Bulk EC', 'Longwave In'], ELEMENTS)
+    expect(opts.map((o) => o.label)).toEqual(['Longwave In', 'Pressure', 'Soil moisture', 'Soil salinity (EC)', 'Wind gusts'])
+    expect(opts.find((o) => o.label === 'Pressure')?.value).toBe('Atmospheric Pressure')
   })
   it('flags summed and normals variables', () => {
     expect(findVariable(vars, 'ppt')).toMatchObject({ sum: true, normals: true, group: 'Rain and evaporation' })

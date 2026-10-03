@@ -11,8 +11,8 @@ import type { SparkSeries } from '../charts/sparkline'
 /** Sparkline keys, one per tile that has one. */
 export type SeriesKey = 'air' | 'rh' | 'wind' | 'ppt' | 'solar' | 'pressure' | 'soil' | 'snow' | 'vpd'
 
-/** Element codes for the request: the base set, plus the optional ones the station reports now. */
-export const SPARK_ELEMENTS = ['air_temp', 'rh', 'wind_spd', 'ppt', 'sol_rad', 'soil_vwc', 'bp'] as const
+/** Element codes for the request: the base set, plus the optional ones the station reports now. Hourly `windgust` is the hour's maximum (the API default for gusts). */
+export const SPARK_ELEMENTS = ['air_temp', 'rh', 'wind_spd', 'ppt', 'sol_rad', 'soil_vwc', 'bp', 'windgust'] as const
 /** [element code, `/latest` column prefix that shows the station reports it]. */
 export const OPTIONAL_SPARK_ELEMENTS = [
   ['snow_depth', 'Snow Depth'],
@@ -103,4 +103,17 @@ export function hourlyPrecip(rows: readonly ObservationRow[], today: string): { 
     sinceMidnight: sum(all.filter((r) => r.date === today)),
     last24h: sum(all.filter((r) => r.t > end - 24 * HOUR)),
   }
+}
+
+/**
+ * Peak gust (mph) in the `hours` before `nowMs` (wall-clock ms): the hourly
+ * maxima of the hours that overlap that window, and `latest` (`/latest`'s gust).
+ * Null when no hourly row there has a gust (not loaded yet, or no gust sensor).
+ */
+export function peakGust(rows: readonly ObservationRow[] | undefined, latest: number | null, nowMs: number, hours = 24): number | null {
+  const gusts = timed(rows ?? [])
+    .filter((r) => r.t > nowMs - (hours + 1) * HOUR && r.t <= nowMs)
+    .flatMap((r) => Object.keys(r.row).filter((c) => c.startsWith('Gust Speed')).map((c) => num(r.row[c])))
+    .filter((v): v is number => v !== null)
+  return gusts.length ? Math.max(...gusts, latest ?? -Infinity) : null
 }

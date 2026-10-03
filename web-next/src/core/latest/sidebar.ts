@@ -37,7 +37,8 @@ export function netsValue(next: readonly string[], options: readonly string[]): 
 
 /**
  * Combobox items: stations passing the network filter, grouped by network
- * (groups and names alphabetical). Typing also matches the NWSLI id and county.
+ * (groups and names alphabetical). Typing also matches the NWSLI id and county;
+ * while typing, the combobox ranks matches across networks (core/controls/comboboxModel).
  */
 export function stationItems(list: readonly Station[], nets: readonly string[], selected: string | null): ComboboxItem[] {
   return list

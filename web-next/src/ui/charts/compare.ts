@@ -16,7 +16,8 @@ import { elementsResource, recordResource, seriesModel, seriesRequest, stationEl
 
 const url = () => Alpine.store('url')
 const stations = () => Alpine.store('station')
-const compactQuery = matchMedia('(max-width: 640px)')
+// The shell's compact query (narrow, or short as a landscape phone), as the chart host and CSS use.
+const compactQuery = matchMedia(typeof MCO !== 'undefined' ? MCO.viewport.COMPACT_MQ : '(max-width: 640px), (max-height: 560px)')
 
 export function compare() {
   const build = seriesModel()

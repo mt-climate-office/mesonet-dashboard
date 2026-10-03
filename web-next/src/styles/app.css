@@ -26,7 +26,11 @@ a.nav-btn { text-decoration: none; }
   color: var(--text-primary);
 }
 
-.tab-panel { padding: 1rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left)); }
+/* The spacing scale is in ui/layout/card.css. Content stops at ~75 rem, centred (wide screens). */
+.tab-panel {
+  width: 100%; max-width: 75rem; margin-inline: auto;
+  padding: var(--gutter) max(var(--gutter), env(safe-area-inset-right)) var(--gutter) max(var(--gutter), env(safe-area-inset-left));
+}
 
 .tab-placeholder {
   max-width: 40rem;
@@ -37,12 +41,12 @@ a.nav-btn { text-decoration: none; }
   border-radius: var(--radius-lg);
   color: var(--text-secondary);
 }
-.tab-placeholder h2 { font-size: 1rem; color: var(--text-primary); margin-bottom: 0.25rem; }
+.tab-placeholder h2 { font-size: var(--fs-md); color: var(--text-primary); margin-bottom: 0.25rem; }
 
 .app-footer {
   padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
   border-top: 1px solid var(--border);
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   color: var(--text-muted);
   text-align: center;
 }
@@ -55,13 +59,13 @@ a.nav-btn { text-decoration: none; }
 .notice-stack {
   display: grid;
   gap: 0.5rem;
-  padding: 0.75rem max(1rem, env(safe-area-inset-right)) 0 max(1rem, env(safe-area-inset-left));
+  padding: var(--gutter) max(var(--gutter), env(safe-area-inset-right)) 0 max(var(--gutter), env(safe-area-inset-left));
 }
 .notice-banner {
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
-  max-width: 60rem;
+  max-width: calc(75rem - 2 * var(--gutter));
   margin: 0 auto;
   width: 100%;
   padding: 0.55rem 0.6rem 0.55rem 0.85rem;
@@ -69,7 +73,7 @@ a.nav-btn { text-decoration: none; }
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent-line);
   border-radius: var(--radius-md);
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
   color: var(--text-secondary);
   line-height: 1.5;
 }
@@ -83,7 +87,7 @@ a.nav-btn { text-decoration: none; }
   align-items: center;
   gap: 0.4rem;
   margin-bottom: 0.3rem;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;

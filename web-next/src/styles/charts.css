@@ -1,42 +1,47 @@
 /* Charts (partials/charts/*, partials/ag/*): the list, the chart-page frame shared by a variable
    and an Ag tool (back · title · ⋯; the subline; the chart card; range, interval and option chips;
-   the stats card), and Compare. Flat surfaces (.dash-card). Phones: one column; the variable chart
-   is min(60dvh, 420px) tall and Compare's panels ~1/3 of a screen each. Desktop: Compare's options
-   beside its plot. Kit tokens and the type scale only. */
+   the stats card), and Compare. Flat surfaces (.dash-card). Compact (the shell's query: narrow, or
+   short as a landscape phone): one column; the variable chart is min(60dvh, 420px) tall (50dvh
+   when short) and Compare's panels ~1/3 of a screen each. Desktop: Compare's options beside its
+   plot. Kit tokens and the type scale only; spacing on the app scale (--gap, --gap-tight,
+   --card-pad from ui/layout/card.css); list rows and stats pad 12 px (3 × --gap-tight). */
 
 /* Shared */
 .charts-empty { padding: 2rem 1rem; text-align: center; font-size: var(--fs-sm); color: var(--text-secondary); }
 .charts-empty-title { font-weight: 700; color: var(--text-primary); }
 
 /* List: a search field, then one card per group, one link row per entry (name over sub | value | sparkline). */
-.charts-ready { display: flex; flex-direction: column; gap: 0.75rem; }
+.charts-ready { display: flex; flex-direction: column; gap: var(--gap); }
 .charts-search {
   display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.5rem 1rem; border-radius: 999px;
+  min-height: 44px; padding: 0 var(--card-pad); border-radius: 999px;
   background: var(--bg-surface); box-shadow: var(--card-shadow); color: var(--text-muted);
 }
 [data-theme="high-contrast"] .charts-search { border: 1px solid var(--border); box-shadow: none; }
 .charts-search input {
-  flex: 1; min-width: 0; min-height: 28px; padding: 0;
+  flex: 1; min-width: 0; min-height: 40px; padding: 0;
   border: 0; background: transparent;
   font: inherit; font-size: var(--fs-md); color: var(--text-primary);
 }
-.charts-groups { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); }
+/* Desktop: two balanced columns of cards (CSS columns, so a short card never leaves a hole beside a tall one). */
+.charts-groups { display: flex; flex-direction: column; gap: var(--gap); }
 @media (min-width: 1060px) and (min-height: 561px) {
-  .charts-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .charts-groups { display: block; columns: 2; column-gap: var(--gap); }
+  .charts-groups > .charts-group { break-inside: avoid; margin-bottom: var(--gap); }
 }
-.charts-group { padding: 0.25rem 0.5rem; }
-.charts-group-title { margin: 0.6rem 0.5rem 0.2rem; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+/* Rows run edge to edge: the card has no padding, each row carries --card-pad. */
+.charts-group { display: flow-root; padding: 0; }
+.charts-group-title { margin: var(--gap) var(--card-pad) var(--gap-tight); font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 .charts-rows { list-style: none; }
 .charts-rows li + li { border-top: 1px solid var(--border); }
 .charts-row {
-  display: grid; align-items: center; gap: 0.25rem 0.75rem;
+  display: grid; align-items: center; gap: var(--gap-tight) var(--gap);
   grid-template-columns: minmax(0, 1fr) auto minmax(4rem, 5.5rem);
-  min-height: 48px; padding: 0.5rem;
+  min-height: 48px; padding: calc(3 * var(--gap-tight)) var(--card-pad);
   color: inherit; text-decoration: none;
-  border-radius: var(--radius-md);
   transition: background var(--transition);
 }
+.charts-rows li:last-child .charts-row { border-radius: 0 0 var(--card-radius) var(--card-radius); }
 .charts-row:hover { background: var(--accent-hover); }
 .charts-row-name { font-size: var(--fs-md); font-weight: 500; color: var(--text-primary); }
 .charts-row-sub { display: block; font-size: var(--fs-sm); font-weight: 400; color: var(--text-muted); }
@@ -45,49 +50,70 @@
 /* Ag tools and More: name over a one-line description, no value or sparkline. */
 .charts-row--tool { grid-template-columns: minmax(0, 1fr); }
 /* A bare legacy #ag link scrolls the Ag tools group under the sticky header. */
-.charts-group { scroll-margin-top: calc(var(--chrome-h, 52px) + 0.75rem); }
-.charts-skel-row { height: 2rem; margin: 0.5rem 0; }
+.charts-group { scroll-margin-top: calc(var(--chrome-h, 52px) + var(--gap)); }
+/* Loading: the search pill and two group cards of row-sized lines, about the list's final height. */
+.charts-skel-search { height: 44px; border-radius: 999px; }
+.charts-group .charts-skel-title { width: 6rem; height: 0.75rem; margin: var(--gap) var(--card-pad) var(--gap-tight); }
+.charts-group .charts-skel-row { height: 28px; margin: calc(3 * var(--gap-tight)) var(--card-pad); }
+.charts-group .charts-skel-row + .charts-skel-row { margin-top: calc(6 * var(--gap-tight) + 1px); }
 .charts-nomatch { font-size: var(--fs-sm); color: var(--text-secondary); }
 
-/* Chart page frame (variable page and Ag tools). touch-action: the page scrolls vertically; a
-   sideways swipe is ours (ui/layout/swipe.ts). */
-.chart-page, .chart-body { display: flex; flex-direction: column; gap: 0.75rem; }
+/* Chart page frame (variable page, Ag tools, Compare): a column at --gap, the subline tight under
+   the title. touch-action: the page scrolls vertically; a sideways swipe is ours (ui/layout/swipe.ts).
+   Margins rather than flex gap, so the subline can sit closer; templates (x-if, x-for) take no space. */
+.chart-page, .chart-body, .cmp { display: flex; flex-direction: column; }
+.chart-page > :not(template) ~ *, .chart-body > * + *, .cmp > * + * { margin-top: var(--gap); }
+.chart-head + .chart-sub { margin-top: var(--gap-tight); }
 .chart-page { touch-action: pan-y pinch-zoom; }
-.chart-head { display: flex; align-items: center; gap: 0.25rem; margin-left: -0.5rem; }
+.chart-head { display: flex; align-items: center; gap: var(--gap-tight); margin-left: -0.5rem; }
 .chart-title { flex: 1; min-width: 0; margin: 0; font-size: var(--fs-xl); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; color: var(--text-primary); text-wrap: balance; }
 .chart-head .dash-icon-btn svg { fill: none; }
 .chart-head .dash-menu .dash-icon-btn svg { fill: currentColor; }
-.chart-sub { margin: -0.5rem 0 0; font-size: var(--fs-sm); color: var(--text-secondary); }
-.chart-card { padding: 0.5rem 0.25rem 0.25rem; }
-.chart-card.var-table { padding: 0.5rem; }
+.chart-sub { margin: 0; font-size: var(--fs-sm); color: var(--text-secondary); }
+/* The plot keeps a thin frame; ECharts lays out its own axis margins. */
+.chart-card { padding: calc(2 * var(--gap-tight)); }
 
 /* Range chips: one scrolling row; the interval row is quieter and wraps. */
 .chart-chips { display: flex; align-items: center; gap: 0.4rem; overflow-x: auto; padding: 2px; scrollbar-width: none; }
-.chart-interval { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.35rem; }
+.chart-interval { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-tight) 0.35rem; }
 .chart-interval-label { margin-right: 0.35rem; font-size: var(--fs-sm); color: var(--text-muted); }
 .chart-interval .dash-chip { padding-inline: 0.65rem; }
-@media (max-width: 640px) { .chart-chips .dash-chip { padding-inline: 0.75rem; } }
+/* A chip not offered here stays focusable (aria-disabled); the note beside the row says why. */
+.chart-interval .dash-chip[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+.chart-interval .dash-chip[aria-disabled="true"]:hover { background: none; color: var(--text-secondary); }
+.chart-interval-note { flex-basis: 100%; font-size: var(--fs-xs); color: var(--text-muted); }
+@media (max-width: 640px), (max-height: 560px) { .chart-chips .dash-chip { padding-inline: 0.75rem; } }
 /* "1 y" is narrower than a 40 px touch target (HOUSE-STYLE §5.5). */
 @media (hover: none) { .chart-chips .dash-chip { min-width: 44px; } }
 
 /* Stats card: label over value. */
-.chart-stats { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem 1rem; }
-/* One line per sensor at every width: equal columns up to 7 rem, shrinking on phones (a depth label
-   plus Low, High and Average fit 390 px without wrapping under each other). */
-.chart-stat-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 7rem); gap: 0.35rem 1rem; }
-.chart-stat { display: flex; flex-direction: column; min-width: 0; }
+.chart-stats { flex-direction: column; gap: 0.5rem; padding: calc(3 * var(--gap-tight)) var(--card-pad); }
+/* One line per sensor at every width. Wider screens: the rows share columns (subgrid; empty
+   tracks take no room), each as wide as its longest entry ("Kernel / Watery Ripe"), at least
+   7 rem, 2 rem apart. Compact: equal columns up to 7 rem, shrinking (a depth label plus Low,
+   High and Average fit 390 px). */
+.chart-stats { display: grid; grid-template-columns: repeat(8, auto); justify-content: start; }
+.chart-stats > * { grid-column: 1 / -1; }
+.chart-stat-row { display: grid; grid-template-columns: subgrid; }
+.chart-stat { display: flex; flex-direction: column; min-width: 7rem; padding-right: 2rem; }
+@media (max-width: 640px), (max-height: 560px) {
+  .chart-stats { display: flex; }
+  .chart-stat-row { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 7rem); gap: 0.35rem 1rem; }
+  .chart-stat { min-width: 0; padding-right: 0; }
+}
 .chart-stat dt { font-size: var(--fs-xs); color: var(--text-muted); }
 .chart-stat dd { font-size: var(--fs-lg); font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums; }
 .chart-stat-depth dd { font-size: var(--fs-sm); color: var(--text-secondary); }
 
-/* The chart, its loading/empty overlay and All years. */
-.var-history > .dash-section-note { padding: 0 0.5rem 0.25rem; }
-.var-canvas { position: relative; }
+/* The chart, its loading/empty overlay and All years. The skeleton and the chart share one height. */
+.var-history > .dash-section-note { padding: 0 0.5rem var(--gap-tight); }
+.var-canvas { position: relative; --var-h: 420px; --var-h-compact: min(60dvh, 420px); }
+@media (max-height: 560px) { .var-canvas { --var-h-compact: min(50dvh, 420px); } }
 .var-status { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; background: var(--bg-surface); }
 .var-status > * { width: 100%; }
-.var-chart { --chart-height: 420px; --chart-height-compact: min(60dvh, 420px); }
-.var-skel { --chart-height: 420px; }
-@media (max-width: 640px) { .var-skel { --chart-height: min(60dvh, 420px); } }
+.var-chart { --chart-height: var(--var-h); --chart-height-compact: var(--var-h-compact); }
+.var-skel { --chart-height: var(--var-h); }
+@media (max-width: 640px), (max-height: 560px) { .var-skel { --chart-height: var(--var-h-compact); } }
 
 /* A chart as a table (partials/charts/table.html): scrolls sideways inside its box, never the page. */
 .var-table-scroll { overflow-x: auto; max-width: 100%; }
@@ -96,26 +122,28 @@
 .var-table-grid th:first-child, .var-table-grid td:first-child { text-align: left; }
 .var-table-grid thead th { font-weight: 600; color: var(--text-secondary); }
 .var-table-grid td { font-family: var(--font-mono); color: var(--text-primary); }
-.var-pager { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.5rem; font-size: var(--fs-sm); color: var(--text-secondary); }
+.var-pager { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); padding: calc(2 * var(--gap-tight)); font-size: var(--fs-sm); color: var(--text-secondary); }
 
 /* The Custom dates sheet: a small panel. */
 .dates-sheet { --sheet-w: 28rem; }
-.dates-form { display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem; padding-bottom: 0.5rem; }
+.dates-form { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gap); padding-bottom: 0.5rem; }
 
 /* Compare: options (a disclosure) beside the plot on desktop, above it otherwise. */
-.cmp { display: flex; flex-direction: column; gap: 0.75rem; }
-.cmp-layout { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.cmp-layout { display: grid; gap: var(--gap); grid-template-columns: minmax(0, 1fr); align-items: start; }
 @media (min-width: 1060px) and (min-height: 561px) {
   .cmp-layout { grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr); }
 }
 .cmp-summary { min-height: 40px; display: flex; align-items: center; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); cursor: pointer; }
-.cmp-group { display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.75rem; margin-top: 0.75rem; border-top: 1px solid var(--border); }
+.cmp-group { display: flex; flex-direction: column; align-items: flex-start; gap: calc(2 * var(--gap-tight)); padding-top: var(--gap); margin-top: var(--gap); border-top: 1px solid var(--border); }
+.cmp-group > * { max-width: 100%; }
 .cmp-group .ctl-note { margin: 0; }
-.cmp-por { align-self: flex-start; }
-/* The variable chips scroll past ~200 px (legacy 200 px scroll area, LDC-011). */
-.cmp-vars { max-height: 12.5rem; overflow-y: auto; padding: 1px; }
-.cmp-plot { min-height: 20rem; padding: 0.5rem 0.25rem 0.25rem; }
+.cmp-legend { font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
+/* Interval and variable chips wrap; every variable shows (no inner scroll box to cut a row). */
+.cmp-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; padding: 2px; }
+/* Date fields and the normals switch: a 44 px target on touch (HOUSE-STYLE §5.5). */
+@media (hover: none) { .cmp .ctl-input, .cmp .ctl-check { min-height: 44px; } }
+.cmp-plot { min-height: 20rem; padding: calc(2 * var(--gap-tight)); }
 /* Empty / loading: over the (cleared) chart, which stays sized so ECharts initialises at a real size. */
-.cmp-status { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; padding: 1rem; background: var(--bg-surface); border-radius: var(--card-radius); }
+.cmp-status { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; padding: var(--card-pad); background: var(--bg-surface); border-radius: var(--card-radius); }
 .cmp-status > div { width: 100%; }
-.cmp-refreshing { position: absolute; top: 0.4rem; right: 0.75rem; z-index: 1; font-size: var(--fs-xs); color: var(--text-muted); }
+.cmp-refreshing { position: absolute; top: 0.4rem; right: var(--gap); z-index: 1; font-size: var(--fs-xs); color: var(--text-muted); }

@@ -8,9 +8,11 @@
 .picker-search .ctl-combobox-field { align-items: center; }
 .picker-search .ctl-input {
   min-height: 44px; font-size: var(--fs-md);
-  padding-left: 2.4rem; padding-right: calc(var(--clear-w) + var(--near-w) + 0.5rem);
+  padding-left: 2.4rem; padding-right: calc(var(--near-w) + 0.5rem);
   border-radius: 999px;
 }
+/* Room for the × only while there is text (it shows then), so the placeholder is never cut. */
+.picker-search .ctl-input:not(:placeholder-shown) { padding-right: calc(var(--clear-w) + var(--near-w) + 0.5rem); }
 .picker-search-icon { position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%); stroke: var(--text-muted); pointer-events: none; }
 .picker-search .ctl-clear { right: calc(var(--near-w) + 0.25rem); border-radius: 999px; }
 .picker-near {
@@ -30,7 +32,7 @@
   .picker-near { height: 40px; }
 }
 
-.picker-group { display: flex; flex-direction: column; gap: 0.5rem; }
+.picker-group { display: flex; flex-direction: column; gap: calc(2 * var(--gap-tight)); }
 .picker-group-title { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 .picker-note { font-size: var(--fs-sm); color: var(--text-muted); }
 
@@ -62,11 +64,22 @@
 .picker-browse-toggle > span { flex: 1; }
 .picker-browse-caret { transition: transform var(--transition); }
 .picker-browse-toggle[aria-expanded="true"] .picker-browse-caret { transform: rotate(180deg); }
-.picker-map-region { display: flex; flex-direction: column; gap: 0.6rem; min-height: 0; }
+.picker-map-region { display: flex; flex-direction: column; gap: calc(2 * var(--gap-tight)); min-height: 0; }
 
-.picker-map { height: 18rem; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
-/* In the drawer the map takes whatever height is left (at least 18rem; the body scrolls past that). */
-.dash-drawer .picker-browse { flex: 1 0 auto; }
-.dash-drawer .picker-map-region { flex: 1 0 auto; }
-.dash-drawer .picker-map { flex: 1 0 18rem; height: auto; }
-.dash-sheet .picker-map { height: min(46dvh, 22rem); }
+/* Montana is wide: a 4:3 frame in the drawer (map.css keeps it ≥ 240 px tall). */
+.picker-map { aspect-ratio: 4 / 3; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
+
+/* Phone sheet with the map open (stationPicker goes full): a fixed height, the recents and Near me
+   step aside, and the map takes the space left under the search and the networks. */
+.dash-sheet.map-open[data-state="full"] { height: calc(100dvh - var(--chrome-h, 52px) - var(--tabbar-h, 0px) - 0.5rem); }
+.dash-sheet.map-open :is([data-testid="recent-list"], [data-testid="near-results"]) { display: none; }
+.dash-sheet.map-open .picker-browse,
+.dash-sheet.map-open .picker-map-region { flex: 1 1 auto; min-height: 0; }
+.dash-sheet .picker-map { aspect-ratio: auto; height: 18rem; }
+.dash-sheet.map-open .picker-map { flex: 1 1 auto; height: auto; min-height: 10rem; }
+/* Landscape phone: the map is the whole sheet body (closing the sheet brings the search back). */
+@media (max-height: 560px) {
+  .dash-sheet.map-open :is(.picker-search, .picker-browse-toggle, [data-testid="picker-networks"]) { display: none; }
+  .dash-sheet.map-open .dash-panel-body { padding: 0 0 var(--gap-tight); }
+  .dash-sheet.map-open .picker-map { border: 0; border-radius: 0; }
+}

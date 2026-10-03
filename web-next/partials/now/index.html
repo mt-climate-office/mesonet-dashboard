@@ -85,7 +85,7 @@
               <p class="now-strip-empty" role="status" data-testid="now-strip-empty">No hourly temperatures or forecast to draw for the last and next 24 hours.</p>
             </template>
           </div>
-          <ul class="now-icons" x-show="page.icons.length" aria-label="Forecast periods" data-testid="now-icons">
+          <ul class="now-icons" x-show="page.icons.length || tier2" aria-label="Forecast periods" data-testid="now-icons">
             <template x-for="p in page.icons" :key="p.t">
               <li><img :src="p.icon" :alt="p.short" width="32" height="32" loading="lazy"><span x-text="p.label"></span></li>
             </template>
@@ -132,7 +132,7 @@
                   <span x-text="t.name"></span>
                   <template x-if="t.chip"><span class="dash-badge" x-text="t.chip" data-testid="now-soil-chip"></span></template>
                 </span>
-                <span class="now-tile-value"><span class="num-display" x-text="t.value"></span><span class="now-unit" x-text="t.unit"></span></span>
+                <span class="now-tile-value"><span class="num-display" x-text="t.value"></span><span class="now-unit" x-text="t.unit"></span><span class="now-unit" x-text="t.note" x-show="t.note"></span></span>
                 <span class="now-tile-sub" x-text="t.sub"></span>
                 <span class="dash-spark" aria-hidden="true">
                   <template x-if="t.spark"><svg :view-box.camel="t.spark.viewBox" preserveAspectRatio="none" focusable="false" :class="'is-' + t.spark.kind"><path :d="t.spark.d" vector-effect="non-scaling-stroke"/></svg></template>

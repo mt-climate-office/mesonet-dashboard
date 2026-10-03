@@ -27,7 +27,14 @@ const DESKTOP_MQ = '(min-width: 1060px)'
 export const togglePicker = (opener: HTMLElement | null): void => void window.dispatchEvent(new CustomEvent(EVENT, { detail: { opener } }))
 
 type Mode = 'sheet' | 'inline' | 'overlay'
-type Ctl = { open(o?: { opener?: HTMLElement | null; focus?: boolean }): void; close(o?: { restoreFocus?: boolean }): void; readonly isOpen: boolean; destroy(): void }
+type Ctl = {
+  open(o?: { opener?: HTMLElement | null; focus?: boolean }): void
+  close(o?: { restoreFocus?: boolean }): void
+  readonly isOpen: boolean
+  destroy(): void
+  /** Sheet only: peek / full. */
+  setState?(s: 'peek' | 'full'): void
+}
 type Near = { status: 'idle' | 'locating' | 'ready' | 'denied' | 'error'; rows: { station: string; name: string; dist: string }[] }
 
 const modeNow = (): Mode => (MCO.viewport.isCompact() ? 'sheet' : matchMedia(DESKTOP_MQ).matches ? 'inline' : 'overlay')
@@ -37,13 +44,15 @@ const toggles = () => [...document.querySelectorAll<HTMLElement>('[data-picker-t
 export function stationPicker() {
   let ctl: Ctl | null = null
   const cleanups: (() => void)[] = []
-  // True while the picker opens by itself (first visit, bad station link): not a preference to save.
+  // True while the picker opens or closes by itself (first visit, bad station link, a viewport
+  // rebuild): not a preference to save.
   let auto = false
-  const autoOpen = () => {
+  const quietly = (f: () => void) => {
     auto = true
-    ctl?.open({ focus: false })
+    f()
     auto = false
   }
+  const autoOpen = () => quietly(() => ctl?.open({ focus: false }))
   return component({
     open: false,
     mode: 'inline' as Mode,
@@ -73,13 +82,15 @@ export function stationPicker() {
 
     /** (Re)create the presentation for the current viewport and apply the start rule. */
     build(viewportChange: boolean): void {
-      ctl?.close({ restoreFocus: false })
+      quietly(() => ctl?.close({ restoreFocus: false }))
       ctl?.destroy()
       const panel = this.$el as HTMLElement
       const scrim = document.getElementById('picker-scrim')
       this.mode = modeNow()
       const onChange = (open: boolean) => {
         this.open = open
+        // The phone sheet reopens on search and recents, not on the map that filled it.
+        if (!open && this.mode === 'sheet') this.mapShown = false
         if (this.mode === 'inline' && !auto) saveDrawerOpen(browserStorage(), open)
       }
       if (this.mode === 'sheet') {
@@ -93,22 +104,26 @@ export function stationPicker() {
       }
       const hasStation = !!Alpine.store('url').state.s
       const start = pickerStartsOpen(hasStation, this.mode === 'inline', readDrawerOpen(browserStorage()))
-      // On load nothing animates or steals focus; after a resize the panel may animate.
-      if (start) {
-        if (!viewportChange) panel.classList.add('no-anim')
-        autoOpen()
-        requestAnimationFrame(() => panel.classList.remove('no-anim'))
-      }
+      // On load nothing animates (the first frame is the final layout) or steals focus; after a
+      // resize the panel may animate. Back on desktop, the saved drawer state returns.
+      if (!viewportChange) panel.classList.add('no-anim')
+      if (start) autoOpen()
+      requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.remove('no-anim')))
       this.open = ctl.isOpen
     },
 
     get modal(): boolean {
       return this.mode !== 'inline'
     },
+    /** The panel's presentation class; `map-open` lets the sheet give the map the room left. */
+    panelClass(): string {
+      return `${this.mode === 'sheet' ? 'dash-sheet' : 'dash-drawer'}${this.mapShown ? ' map-open' : ''}`
+    },
 
     toggle(opener: HTMLElement | null): void {
-      if (ctl?.isOpen) ctl.close()
-      else ctl?.open({ opener })
+      if (ctl?.isOpen) return ctl.close()
+      ctl?.open({ opener })
+      if (this.mapShown) ctl?.setState?.('full')
     },
     close(): void {
       ctl?.close()
@@ -119,8 +134,7 @@ export function stationPicker() {
      * drawer saves 'closed'). Focus goes to <main>, the new station's content;
      * the opener may be gone (the Now empty state's button).
      */
-    choose(id: string | null): void {
-      if (!id) return
+    choose(id: string): void {
       const st = Alpine.store('station')
       st.select(id)
       announce(`${st.byId(id)?.name ?? id} selected`)
@@ -135,13 +149,17 @@ export function stationPicker() {
     },
     searchPlaceholder(): string {
       const c = Alpine.store('station').catalog
-      return c?.status === 'error' ? 'Failed to load stations' : c?.data ? 'Search by name or ID' : 'Loading stations…'
+      return c?.status === 'error' ? 'Failed to load stations' : c?.data ? 'Name or ID' : 'Loading stations…'
     },
 
     /* Browse on the map */
     toggleMap(): void {
       this.mapShown = !this.mapShown
-      if (this.mapShown) this.mapMounted = true
+      if (!this.mapShown) return
+      this.mapMounted = true
+      // On a phone the map needs the room: the sheet goes full and the map scrolls into view.
+      ctl?.setState?.('full')
+      void this.$nextTick(() => document.getElementById('picker-map-region')?.scrollIntoView({ block: 'nearest' }))
     },
 
     /* Networks (ui/controls/chips over ?nets=) */

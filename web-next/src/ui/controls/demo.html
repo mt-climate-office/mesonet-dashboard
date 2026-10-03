@@ -79,9 +79,9 @@
                autocomplete="off" spellcheck="false" aria-autocomplete="list"
                :id="ids.input" :placeholder="placeholder" :aria-expanded="open"
                :aria-controls="ids.listbox" :aria-activedescendant="activeId()"
-               :value="inputText()" @input="onInput($event)"
+               :value="query" @input="onInput($event)"
                @keydown="onKeydown($event)" @click="toggle()">
-        <button type="button" class="ctl-clear" x-show="hasValue()"
+        <button type="button" class="ctl-clear" x-show="hasText()"
                 :aria-label="'Clear ' + label" @click="clear()">&times;</button>
       </div>
       <div class="ctl-combobox-popup" x-show="open">
@@ -127,7 +127,7 @@
         </template>
       </ul>
       <div class="ctl-multiselect-panel" role="group" :id="ids.panel"
-           :aria-labelledby="ids.button" x-show="open" @keydown.escape="close()">
+           :aria-labelledby="ids.button" x-show="open" @keydown.escape.prevent.stop="escape()">
         <label class="ctl-label" :for="ids.filter">Filter</label>
         <input type="search" class="ctl-input" :id="ids.filter" x-model="query" autocomplete="off">
         <template x-for="group in visibleGroups" :key="group.id">

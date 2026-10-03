@@ -118,6 +118,10 @@ export function variablePage() {
     intervals(): IntervalChip[] {
       return intervalChips(url().state.agg, this.days(), this.all())
     },
+    /** Why an interval chip is not offered here ('' when every one is), shown beside the row. */
+    intervalNote(): string {
+      return this.intervals().find((c) => c.disabled)?.reason ?? ''
+    },
     /** "57 °F now · Last 14 days". */
     subline(): string {
       const v = this.variable

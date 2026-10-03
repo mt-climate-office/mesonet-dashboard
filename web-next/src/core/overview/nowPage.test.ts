@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ObservationRow } from '../api'
 import { buildNowPage, latestSwpBar, nowSwpQuery, stationMeta, type NowPageInput } from './nowPage'
+import { CALM_MPH } from './summary'
 
 const LATEST = {
   station: 'acebozem',
@@ -51,6 +52,22 @@ describe('buildNowPage tiles', () => {
     expect(tile('wind')).toMatchObject({ value: '7', unit: 'mph', sub: 'SSE · gusts 12' })
     expect(tile('rh').sub).toBe('Dew point 49°')
     expect(tile('precip')).toMatchObject({ value: '0.05', unit: 'in', sub: 'Last 7 days · 87% of normal this year' })
+  })
+  it('wind with gust rows: "now · SSE" beside the value, the 24 h peak gust below; "Calm" under 1 mph', () => {
+    const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 02:00:00-06:00', 'Gust Speed [mi/hr]': 43.24 }]
+    const wind = (w: number) => buildNowPage({ ...BASE, latest: { ...LATEST, 'Wind Speed [mi/h]': w }, hourly }).tiles.find((t) => t.id === 'wind')
+    expect(wind(1.2)).toMatchObject({ value: '1', unit: 'mph', note: 'now · SSE', sub: 'Gusts to 43 mph · 24 h' })
+    expect(wind(0.4)).toMatchObject({ value: 'Calm', unit: '', note: '', sub: 'Gusts to 43 mph · 24 h' })
+  })
+  it('one calm threshold (CALM_MPH, Beaufort 0): the tile and the summary agree on either side of it', () => {
+    const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 02:00:00-06:00', 'Gust Speed [mi/hr]': 9 }]
+    const page = (w: number) => buildNowPage({ ...BASE, latest: { ...LATEST, 'Wind Speed [mi/h]': w }, hourly })
+    const below = page(CALM_MPH - 0.01)
+    expect(below.tiles.find((t) => t.id === 'wind')?.value).toBe('Calm')
+    expect(below.hero.summary).toMatch(/\bcalm\b/i)
+    const at = page(CALM_MPH)
+    expect(at.tiles.find((t) => t.id === 'wind')?.value).toBe('1')
+    expect(at.hero.summary).toMatch(/light SSE wind/i)
   })
   it('rain without the ppt summary: the last 24 h from the hourly rows', () => {
     const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 10:00:00-06:00', 'Precipitation [in]': 0.12 }]

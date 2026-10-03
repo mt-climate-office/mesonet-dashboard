@@ -1,0 +1,7 @@
+<!-- Reference ET's All years switch (agTab hasHistory / toggleHistory): under the chart, as the
+     variable page's range chips are, apart from the option chips above it (this chart's own options). -->
+<template x-if="hasHistory()">
+  <div class="chart-chips" role="group" aria-label="Range" data-testid="ag-history-chips">
+    <button type="button" class="dash-chip" :aria-pressed="history()" @click="toggleHistory()" data-testid="range-all">All years</button>
+  </div>
+</template>

@@ -169,27 +169,28 @@ export function sensorEventSeries(ctx: ChartContext, spans: EventSpan[]): Custom
 
 /**
  * Labelled horizontal markLines at `y` values (GDD growth stages on the
- * cumulative axis). Labels sit at the line's right end, above it, on the
- * chart surface, clear of the daily bars that fill the left of the plot.
+ * cumulative axis). Labels sit just past the line's right end, outside the
+ * plot (the builder leaves a gutter there), so they never cover the data;
+ * with `labels: false` the lines go unlabelled (the tooltip names them).
  */
 export function labelledLines(
   color: string,
   lines: { y: number; label: string }[],
   ctx: ChartContext,
+  opts: { labels?: boolean; fontSize?: number } = {},
 ): MarkLineComponentOption {
   return {
     silent: true,
     symbol: 'none',
     lineStyle: { color, type: 'dashed', width: 1 },
     label: {
-      show: true,
-      position: 'insideEndTop',
+      show: opts.labels ?? true,
+      position: 'end',
+      distance: 6,
       formatter: '{b}',
       color: ctx.theme.textMuted,
       fontFamily: ctx.theme.fontUi,
-      fontSize: ctx.compact ? 9 : 10,
-      backgroundColor: ctx.theme.surface,
-      padding: [1, 3],
+      fontSize: opts.fontSize ?? 10,
     },
     data: lines.map((l) => ({ yAxis: l.y, name: l.label })),
   }

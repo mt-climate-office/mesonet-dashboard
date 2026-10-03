@@ -6,6 +6,7 @@
  */
 import Alpine from 'alpinejs'
 import type { ECharts } from 'echarts'
+import { fitAxisNames } from '../../core/charts/axes'
 import { echartsTheme, readChartTheme } from '../../core/charts/theme'
 import type { ChartBuilder, ChartContext, ChartTable, ChartTheme } from '../../core/charts/types'
 import { type Range, type ViewState, carryState, categoryMs, fromAxisRange, sameRange, toAxisRange } from '../../core/charts/zoom'
@@ -200,7 +201,8 @@ export class ChartHost<M> {
       this.renderTable(null)
       return
     }
-    const option = carryState(this.opts.builder(this.model, this.ctx()), state)
+    // A short canvas (landscape phone) drops y-axis titles that would not fit their plot.
+    const option = fitAxisNames(carryState(this.opts.builder(this.model, this.ctx()), state), this.canvas.clientHeight)
     const reduced = reducedMotion()
     // Animate the first draw only; theme/resize redraws should not replay the entrance.
     option.animation = !reduced && !keepZoom

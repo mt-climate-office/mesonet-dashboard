@@ -4,7 +4,9 @@
  * only once `/latest` (or, for the hourly forecast, the NWS periods) is in.
  * The 72 h hourly rows (sparklines, strip, pressure trend), the normals
  * CSVs, the NWS hourly forecast, the soil water potential for the chip and
- * the 7 daily precipitation totals for the Rain tile.
+ * the 7 daily precipitation totals for the Rain tile. All but the normals are
+ * live (re-read on the freshness tick); those keyed by today's date keep a
+ * slot, so the midnight rollover shows the last rows while the new ones load.
  */
 import Alpine from 'alpinejs'
 import { fetchCsv, fetchNwsHourly, getStationRecord, type HourlyForecastPoint, type ObservationRow } from '../../core/api'
@@ -17,7 +19,7 @@ const MIN = 60_000
 /** Hourly rows for every sparkline and the strip (core/overview `sparkQuery`). */
 export function sparkRows(station: string, today: string, latest: Record<string, unknown>): Resource<ObservationRow[]> {
   const q = sparkQuery(station, today, latest)
-  return Alpine.store('data').cached(q.key, () => getStationRecord(q.query), { ttl: 5 * MIN })
+  return Alpine.store('data').cached(q.key, () => getStationRecord(q.query), { ttl: 5 * MIN, live: true, slot: `spark:${station}` })
 }
 
 /** One gridMET normals CSV (`tmmx`, `tmmn`, `pr`); never stale. */
@@ -26,16 +28,16 @@ export const normals = (station: string, code: 'tmmx' | 'tmmn' | 'pr'): Resource
 
 /** NWS hourly forecast from the point's `forecastHourly` URL. */
 export const nwsHourly = (url: string): Resource<HourlyForecastPoint[]> =>
-  Alpine.store('data').cached(`nwsh:${url}`, () => fetchNwsHourly(url), { ttl: 30 * MIN })
+  Alpine.store('data').cached(`nwsh:${url}`, () => fetchNwsHourly(url), { ttl: 30 * MIN, live: true })
 
 /** Recent hourly soil water potential (core/overview `nowSwpQuery`); only for stations with SWP sensors. */
 export function swpRows(station: string, today: string): Resource<ObservationRow[]> {
   const q = nowSwpQuery(station, today)
-  return Alpine.store('data').cached(q.key, () => fetchCsv<ObservationRow>(q.request.path, q.request.query), { ttl: 30 * MIN })
+  return Alpine.store('data').cached(q.key, () => fetchCsv<ObservationRow>(q.request.path, q.request.query), { ttl: 30 * MIN, live: true, slot: `swp:${station}` })
 }
 
 /** The last 7 days' daily precipitation for the Rain tile's bars (core/overview `rainDailyQuery`). */
 export function rainDaily(station: string, today: string): Resource<ObservationRow[]> {
   const q = rainDailyQuery(station, today)
-  return Alpine.store('data').cached(q.key, () => getStationRecord(q.query), { ttl: 30 * MIN })
+  return Alpine.store('data').cached(q.key, () => getStationRecord(q.query), { ttl: 30 * MIN, live: true, slot: `rain:${station}` })
 }

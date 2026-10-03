@@ -18,7 +18,7 @@
 //       </template>
 //     </ul>
 //     <div class="ctl-multiselect-panel" role="group" :id="ids.panel"
-//          :aria-labelledby="ids.button" x-show="open" @keydown.escape="close()">
+//          :aria-labelledby="ids.button" x-show="open" @keydown.escape.prevent.stop="escape()">
 //       <label class="ctl-label" :for="ids.filter">Filter</label>
 //       <input type="search" class="ctl-input" :id="ids.filter" x-model="query" autocomplete="off">
 //       <template x-for="group in visibleGroups" :key="group.id">
@@ -91,11 +91,19 @@ export function multiselect(opts: MultiselectOptions) {
     },
 
     toggle(): void {
-      this.open = !this.open
+      if (this.open) this.close()
+      else this.open = true
     },
+    /** Closes the checklist with an empty filter and returns focus to the disclosure button. */
     close(): void {
       this.open = false
+      this.query = ''
       document.getElementById(this.ids.button)?.focus()
+    },
+    /** Esc: the first press clears the filter text (focus stays), the next closes. */
+    escape(): void {
+      if (this.query) this.query = ''
+      else this.close()
     },
     toggleValue(value: string): void {
       opts.onChange(toggleIn(opts.value(), value, optionValues(opts.groups())))

@@ -23,7 +23,8 @@ Each entry gives the old behaviour, the new one, and why. Add an entry in the sa
   - Now: [the 48 h strip](#now-the-forecast-card-becomes-the-heros-48-h-strip),
     [desktop columns](#now-desktop-columns),
     [tiles only where they mean something](#now-tiles-only-where-they-mean-something),
-    [pressure as a trend](#now-pressure-as-a-trend-in-the-all-readings-row);
+    [pressure as a trend](#now-pressure-as-a-trend-in-the-all-readings-row),
+    [wind with the 24 h peak gust](#now-wind-with-the-24-h-peak-gust);
   - [About: details, map, two rows that open sheets](#about-details-map-two-rows-that-open-sheets);
   - [Download: one short form](#download-one-short-form-preview-then-download-csv--n-rows);
   - Charts: [one chart frame](#charts-one-chart-frame-range-chips-an-interval-row-a--menu),
@@ -74,7 +75,11 @@ below, which stay for the record and name what replaced them.
 - **New:** the search field holds a "Near me" chip (the same one-time geolocation); its results show under the
   field once pressed. Recents follow, then "Browse on the map", which reveals the network chips and the map
   (MapLibre starts on the first reveal). Drawer / sheet, focus, `inert` and Esc rules are unchanged.
-- **Why:** DESIGN.md "Redesign 2026-10": most visits search or pick a recent station.
+  The field starts empty (P1 showed the station name in it) and ranks matches across networks while typing
+  (P1 grouped them by network); Esc clears the text, then closes the list, then the picker. On a phone,
+  the map opens the sheet full and fills it (two fingers move it).
+- **Why:** DESIGN.md "Redesign 2026-10": most visits search or pick a recent station. The prefilled name
+  had to be deleted before every search, and grouping put a prefix match under a network of weaker ones.
 
 ### Flat surfaces
 - **P1:** `.dash-card` had a 1 px border and a 12 px radius.
@@ -144,6 +149,16 @@ below, which stay for the record and name what replaced them.
   depth ("Snow none" when the station measures it and there is none). A "Station details" row (network and
   elevation) links to About.
 - **Why:** a station pressure of ~850 mb means little on its own; its 3 h change is what forecasts use.
+
+### Now: wind with the 24 h peak gust
+- **P1:** the latest 5-minute wind speed and gust ("1 mph", "SE · gusts 2").
+- **New:** the Wind tile reads "1 mph now · SE" ("Calm" under 1 mph) over "Gusts to 43 mph · 24 h":
+  the max of the hourly gusts (`windgust` joins the 72 h hourly request; the API's hourly gust is already the
+  hour's maximum) and `/latest`'s gust (`peakGust`, core/overview/series.ts). Without gust rows the old
+  "SE · gusts 2" line stays. The hero summary says "calm after gusts to 43 mph earlier" when that peak is
+  ≥ 25 mph. The summary and the tile share one calm threshold, under 1 mph (Beaufort 0; `CALM_MPH`). The sparkline is unchanged.
+- **Why:** at Dog Gun Lake E (acedoggu) the wind died off near 7:45 AM after a night of 40+ mph gusts, and
+  the tile said only "1 mph".
 
 ### Download: one short form, Preview then "Download CSV · N rows"
 - **P1:** three step cards (a phone stepper with Back/Next; two columns elsewhere) with a station combobox
@@ -472,8 +487,14 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 
 ### Fetch cache
 - **Same as web/:** in-flight requests are shared; network errors and 5xx retry twice, 4xx never (TanStack `retry` in `web/src/lib/queryClient.ts`).
-- **New:** an errored request stays errored until something calls `refresh()` (for example a Retry button); TanStack refetched on remount.
-- **Why:** Alpine re-evaluates templates freely; an automatic refetch on read could loop on a failing request.
+- **New:** a failed request is retried only after its TTL (or on `refresh()`, for example a Retry button); TanStack refetched on remount. A failed refetch keeps the last data on screen.
+- **Why:** Alpine re-evaluates templates freely; an automatic refetch on every read could loop on a failing request.
+
+### Auto-refresh
+- **Legacy Dash (`app/`):** no auto-refresh; data changed only on a callback (its one `dcc.Interval` saves the share link).
+- **web/:** `/latest` and the photo listings refetched every 5 min while the tab was visible (TanStack `refetchInterval`); everything else refetched only when remounted past its 5 min `staleTime`, and `refetchOnWindowFocus` was off.
+- **New:** one freshness tick (ARCHITECTURE "Data freshness"): every 5 min while visible, on return to the tab and on a bfcache restore, `/latest`, Now's recent requests (72 h hourly, 7-day rain, ppt summary, NWS forecasts, SWP), the Charts list's 48 h rows and chart windows reaching today refetch once past their TTL, keeping the old data on screen; dates roll over at Denver midnight. Photos, normals and history are not refreshed by it.
+- **Why:** a tab left open overnight, or restored by a phone browser, kept showing the evening's last reading the next morning.
 
 ### Outage notice color
 - **web/:** mapped `outage.json`'s Bootstrap color to a Mantine color.
@@ -1398,7 +1419,7 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
 `core/aggregate.ts` and `core/csv.ts`.
 
 - **Variables picker.** A grouped checkbox panel (`multiselect`: filter box,
-  "Standard elements" / "Derived variables", per-group Select all, removable
+  "Measured variables" (the API's standard elements) / "Derived variables", per-group Select all, removable
   chips) replaces the Mantine dropdown. Ticking options writes `els` in option
   order; a URL's own order is kept until the user edits it.
 - **"Show uncommon variables"** is a native checkbox with `role="switch"`.

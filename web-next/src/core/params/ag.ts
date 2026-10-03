@@ -39,9 +39,9 @@ export const GDD_CROPS: { value: string; label: string }[] = [
 // disagreed with what the API computes and was removed in Wave 3.
 
 export const SOIL_VAR_OPTIONS: { value: string; label: string }[] = [
-  { value: 'soil_blk_ec', label: 'Electrical Conductivity' },
-  { value: 'soil_vwc', label: 'Volumetric Water Content' },
-  { value: 'soil_temp', label: 'Temperature' },
-  { value: 'swp', label: 'Soil Water Potential' },
-  { value: 'percent_saturation', label: 'Percent Saturation' },
+  { value: 'soil_blk_ec', label: 'Soil salinity (EC)' },
+  { value: 'soil_vwc', label: 'Soil moisture' },
+  { value: 'soil_temp', label: 'Soil temperature' },
+  { value: 'swp', label: 'Soil water potential' },
+  { value: 'percent_saturation', label: 'Soil saturation' },
 ]

@@ -3,7 +3,7 @@ import type { DailyNormals, GddSeries } from '../ag/contract'
 import { gdd, projectGdd } from '../ag/compute'
 import { dailyMet, stageTable } from '../ag/__tests__/adapters'
 import { GDD, GDD_STAGE_LINE, THEMES } from '../palette'
-import { GDD_NAMES, gddAxisMax, gddBarName, gddChart, gddTable, stageLines } from './agGdd'
+import { GDD_NAMES, gddAxisMax, gddBarName, gddChart, gddTable, stageGutter, stageLines } from './agGdd'
 import { testCtx } from './testing'
 import { paint } from './theme'
 
@@ -26,17 +26,37 @@ function withProjection() {
 }
 
 describe('gddChart on phones', () => {
-  it('short legend names (series keep theirs) and stage labels at the right end, on the surface', () => {
+  it('short legend names in a wrapping legend (series keep theirs); stage lines unlabelled', () => {
     const { s, p } = withProjection()
     const o = gddChart({ series: s, cutoffsF: [41, 86], stageMode: 'table', stages: stageTable('hemp').stages, projection: p }, testCtx('light', 390, true))
-    const lg = o.legend as { data: (string | { name: string })[]; formatter: (n: string) => string }
+    const lg = o.legend as { type: string; data: (string | { name: string })[]; formatter: (n: string) => string }
     const names = lg.data.map((d) => (typeof d === 'string' ? d : d.name))
+    expect(lg.type).toBe('plain')
     expect(names.map(lg.formatter)).toEqual(['Daily', 'Cumulative', 'Range', 'Forecast', 'Normals'])
     expect(series(o).map((x) => x.name)).toContain(GDD_NAMES.cumulative)
-    const label = (series(o)[1].markLine as unknown as { label: { position: string; backgroundColor: string } }).label
-    expect(label.position).toBe('insideEndTop')
-    expect(label.backgroundColor).toBe(testCtx('light').theme.surface)
-    expect((gddChart({ series: s, cutoffsF: [41, 86], stageMode: 'table' }, testCtx('light')).legend as { formatter?: unknown }).formatter).toBeUndefined()
+    const ml = series(o)[1].markLine as unknown as { label: { show: boolean }; data: unknown[] }
+    expect(ml.data.length).toBeGreaterThan(0)
+    expect(ml.label.show).toBe(false)
+    expect((o.grid as { right: number }).right).toBe(64)
+  })
+})
+
+describe('gddChart stage labels', () => {
+  it('sit in a gutter right of the plot, never on the bars; the cumulative axis moves past it', () => {
+    const s = gdd(met, { crop: 'wheat', stages: stageTable('wheat') })
+    const o = gddChart({ series: s, cutoffsF: [32, 70], stageMode: 'table', stages: stageTable('wheat').stages }, testCtx('light', 1400))
+    const ml = series(o)[1].markLine as unknown as { label: { show: boolean; position: string }; data: { name: string }[] }
+    expect(ml.label).toMatchObject({ show: true, position: 'end' })
+    const gutter = stageGutter(ml.data.map((d) => ({ label: d.name })), 1400)
+    expect(gutter).toBeGreaterThan(0)
+    expect((o.grid as { right: number }).right).toBe(64 + gutter)
+    expect((o.yAxis as { offset?: number }[])[1].offset).toBe(gutter)
+  })
+  it('stageGutter: 0 with no lines or when the longest label takes over a quarter of the chart', () => {
+    expect(stageGutter([], 1400)).toBe(0)
+    const long = [{ label: '11 – Headed (Head Extension Begins)' }]
+    expect(stageGutter(long, 1400)).toBeGreaterThan(150)
+    expect(stageGutter(long, 720)).toBe(0)
   })
 })
 

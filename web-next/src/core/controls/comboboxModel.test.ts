@@ -1,7 +1,7 @@
 // Tests for the combobox's pure filter, ranking, grouping and key stepping.
 
 import { describe, expect, it } from 'vitest'
-import { filterItems, matchRank, resultSummary, stepIndex, type ComboboxItem } from './comboboxModel'
+import { escapeAction, filterItems, matchRank, resultSummary, stepIndex, type ComboboxItem } from './comboboxModel'
 
 const items: ComboboxItem[] = [
   { id: 'aceabsar', label: 'Absarokee', group: 'HydroMet', keywords: ['ABSM8'] },
@@ -30,7 +30,7 @@ describe('matchRank', () => {
 
 describe('filterItems', () => {
   it('is case-insensitive and trims the query', () => {
-    expect(filterItems(items, '  BOZEMAN ').flat.map((i) => i.id)).toEqual(['acebozem', 'agrbozem'])
+    expect(filterItems(items, '  BOZEMAN ').flat.map((i) => i.id)).toEqual(['agrbozem', 'acebozem'])
   })
 
   it('points best at the top-ranked match even in a later group', () => {
@@ -43,11 +43,17 @@ describe('filterItems', () => {
     expect(filterItems(items, 'bozm8').flat.map((i) => i.id)).toEqual(['agrbozem'])
   })
 
-  it('keeps group first-appearance order and sorts by rank within a group', () => {
+  it('ranks matches across groups in one ungrouped list while typing', () => {
     const r = filterItems(items, 'moz')
-    expect(r.groups.map((g) => g.name)).toEqual(['HydroMet', 'Cooperator'])
-    // HydroMet: "West Mozem" (label substring, 3) — the only HydroMet match.
-    expect(r.flat.map((i) => i.id)).toEqual(['acemozem', 'coopmoz'])
+    // "Mozart Ranch" (label prefix, 1) before "West Mozem" (label substring, 3), though its group is later.
+    expect(r.flat.map((i) => i.id)).toEqual(['coopmoz', 'acemozem'])
+    expect(r.groups.map((g) => g.name)).toEqual([null])
+    expect(r.best).toBe(0)
+  })
+
+  it('breaks rank ties by group order', () => {
+    const r = filterItems(items, 'bo')
+    expect(r.flat.map((i) => i.id)).toEqual(['acebozem', 'agrbozem'])
   })
 
   it('returns all items in group order for an empty query', () => {
@@ -99,5 +105,14 @@ describe('resultSummary', () => {
     expect(resultSummary(1, 1)).toBe('1 result')
     expect(resultSummary(4, 4)).toBe('4 results')
     expect(resultSummary(200, 512)).toBe('Showing 200 of 512 results; type to narrow')
+  })
+})
+
+describe('escapeAction', () => {
+  it('clears text first, then closes the list, then passes to the dialog', () => {
+    expect(escapeAction('bo', true)).toBe('clear')
+    expect(escapeAction('bo', false)).toBe('clear')
+    expect(escapeAction('', true)).toBe('close')
+    expect(escapeAction('', false)).toBe('pass')
   })
 })

@@ -18,7 +18,7 @@ npm test           # vitest, Node only
 npm run typecheck && npm run lint
 npm run build && npm run size   # size = bundle budget gate
 npm run verify     # build + Playwright: kit-consumer checks, axe matrix, keyboard walks,
-                   # phone layout + touch + motion (layout.mjs)
+                   # phone layout + touch + motion (layout.mjs), refetch on return (freshness.mjs)
                    # (scripts/verify/, API data from its fixtures/; to re-record:
                    #  rm -r scripts/verify/fixtures && VERIFY_RECORD=1 npm run verify)
 ```
@@ -104,12 +104,15 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   that sheet with the target as opener (Now's "All readings" → About's
   readings sheet).
 - **`$store.data`** (`stores/data.ts` → `core/cache.ts`):
-  `cached(key, fetcher, {ttl, retry})` returns one reactive
+  `cached(key, fetcher, {ttl, retry, live, slot})` returns one reactive
   `{status: 'loading'|'success'|'error', data, error, refresh()}` per key.
   In-flight requests are shared; stale entries refetch in the background on
-  the next read; network/5xx retry twice, 4xx never; a response from an older
-  fetch never overwrites a newer one; errors stay until `refresh()`. **The key
-  must encode every input of the fetcher** (e.g. `obs:acebozem:hourly:2026-09-17:2026-10-01:air_temp`).
+  the next read; network/5xx/429 retry twice, other 4xx never; a response from an older
+  fetch never overwrites a newer one; a failed fetch keeps the last data
+  (status stays 'success', `error` set) and is retried only after its TTL or
+  on `refresh()`. **The key must encode every input of the fetcher** (e.g.
+  `obs:acebozem:hourly:2026-09-17:2026-10-01:air_temp`). `live` and `slot`:
+  "Data freshness" below.
 - **`$store.theme`** (`stores/theme.ts`): `current`, `label`, `cycle()`
   (dark → light → high-contrast), `set(t)`. Each change calls `MCO.setTheme`
   and fires one `window` event `mco-theme-change` (`detail.theme`).
@@ -151,6 +154,26 @@ observations 5 min (default); latest obs 5 min; Ag series 10 min; soil
 params, GDD stages, normals `Infinity`; Now's 7-day daily rain (`rainDailyQuery`) 30 min; photo schedule 60 min, latest frames
 5 min, current-month manifest 5 min, past months `Infinity`; Ag gridpoint
 forecast: 1 h (5 min when degraded, `retry: false`).
+
+### Data freshness
+
+The cache only refetches when something reads a key past its TTL, so a tab left open (or restored by a
+phone browser) needs a reason to re-read. That reason is one reactive number, `$store.data.tick`
+(`core/freshness.ts` `createTicker`, wired to the page in `stores/data.ts`): it advances every 5 min
+while the page is visible (the interval stops while hidden), on `visibilitychange` to visible when the
+last tick is ≥ 1 min old, and on `pageshow` from the bfcache. A `cached(…, { live: true })` read
+depends on it, so every getter or effect that made one re-runs on each tick: past its TTL the entry
+refetches in the background (the old data stays on screen), and requests built from `denverToday()`
+in the same getter pick up a new date after midnight. A new key with a `slot` starts from the slot's
+last data, so that midnight key change shows no skeleton.
+
+Live: `/latest`, the ppt summary, the NWS forecast and hourly forecast, the latest photo listings (`ui/station/resources.ts`);
+Now's 72 h hourly rows, 7-day rain and SWP (`ui/now/resources.ts`, slotted); and `recordResource`
+windows that reach today (`core/latest` `endsToday`: the Charts list's 48 h rows, slotted; the
+variable page; Compare). Not live: normals, stations/elements/config, past photo days, the wind rose, Ag, and
+All years (`live: false`). Now's "Updated N min ago" uses the current time on each recompute; if
+refetches fail, its "No report for over 2 hours" warning still comes from the last row's stamp.
+To make a new time-sensitive fetch live, pass `live: true` (and a `slot` if its key carries today).
 
 ### Time
 

@@ -1,8 +1,9 @@
 <!-- Variable page (x-data="variablePage", ui/charts/variablePage.ts; DESIGN.md "Charts"):
      back (to the list) · title (the shared-element target a tapped tile or list row morphs into) · ⋯
      menu (Download data, Show as table / chart, Custom dates…, Share this chart, Previous / Next);
-     "value now · range"; the chart, or its table with tbl=1 (All years: partials/charts/history.html);
-     range chips; the Interval row; the stats card. A sideways swipe on touch walks the list. -->
+     "value now · range"; the chart (All years: partials/charts/history.html);
+     range chips; the Interval row (a chip not offered says why beside it); the stats card; with
+     tbl=1 the table after them. A sideways swipe on touch walks the list. -->
 <div class="var-page chart-page" x-data="variablePage" data-testid="variable-page">
   <template x-if="state === 'loading'">
     <div aria-busy="true"><p class="sr-only" role="status">Loading…</p><span class="dash-skel dash-skel--line" style="width: 40%" aria-hidden="true"></span></div>
@@ -78,11 +79,6 @@
           </div>
         </section>
       </template>
-      <template x-if="!all() && tableMode()">
-        <section class="dash-card chart-card var-table" aria-label="Table" x-data="chartTable({ table: () => table() })" data-testid="variable-table">
-          <!-- @include partials/charts/table.html -->
-        </section>
-      </template>
       <template x-if="all()">
         <section class="dash-card chart-card" aria-label="All years">
           <!-- @include partials/charts/history.html -->
@@ -97,9 +93,11 @@
       <div class="chart-interval" role="group" aria-labelledby="var-interval-label" data-no-swipe data-testid="interval-chips">
         <span class="chart-interval-label" id="var-interval-label">Interval</span>
         <template x-for="c in intervals()" :key="c.id">
-          <button type="button" class="dash-chip dash-chip--quiet" :aria-pressed="c.pressed" :disabled="c.disabled" :title="c.reason || null"
+          <button type="button" class="dash-chip dash-chip--quiet" :aria-pressed="c.pressed" :aria-disabled="c.disabled ? 'true' : null"
+                  :aria-describedby="c.disabled ? 'var-interval-note' : null"
                   @click="setInterval(c)" :data-testid="'interval-' + c.id" x-text="c.label"></button>
         </template>
+        <p class="chart-interval-note" id="var-interval-note" x-show="intervalNote()" x-text="intervalNote()"></p>
       </div>
 
       <template x-if="!all()">
@@ -113,6 +111,12 @@
               </template>
             </dl>
           </template>
+        </section>
+      </template>
+      <!-- The table comes after the chips and stats, so they stay near the top of a long table. -->
+      <template x-if="!all() && tableMode()">
+        <section class="dash-card chart-card var-table" aria-label="Table" x-data="chartTable({ table: () => table() })" data-testid="variable-table">
+          <!-- @include partials/charts/table.html -->
         </section>
       </template>
     </div>

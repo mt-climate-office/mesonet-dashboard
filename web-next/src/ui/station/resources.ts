@@ -21,15 +21,16 @@ import {
 } from '../../core/photos'
 
 const MIN = 60_000
-const cached = <T>(key: string, fn: () => Promise<T>, ttl: number): Resource<T> =>
-  Alpine.store('data').cached(key, fn, { ttl })
+/** `live`: time-sensitive, re-read on the freshness tick (stores/data.ts). */
+const cached = <T>(key: string, fn: () => Promise<T>, ttl: number, live = false): Resource<T> =>
+  Alpine.store('data').cached(key, fn, { ttl, live })
 
 /** data2 camera registry. */
 export const photoSchedule = () => cached('photo:schedule', () => fetchSchedule(), 60 * MIN)
 
 /** Today + yesterday (local) frames from the live bucket listings. */
 export const latestFrames = (s: PhotoSchedule, cam: StationCamera) =>
-  cached(`photo:latest:${cam.station}`, () => fetchLatestFrames(s, cam), 5 * MIN)
+  cached(`photo:latest:${cam.station}`, () => fetchLatestFrames(s, cam), 5 * MIN, true)
 
 /** One local month's manifest (`YYYY-MM`); the current month refreshes, past months never change. */
 export const monthFrames = (s: PhotoSchedule, cam: StationCamera, ym: string) =>
@@ -44,13 +45,13 @@ export const confirmedDay = (s: PhotoSchedule, cam: StationCamera, day: string, 
   cached(`photo:confirm:${cam.station}:${day}:${derived}`, () => confirmDerived(s, cam, frames, { strict: true }), Infinity)
 
 /** Newest observation row(s) for Current Conditions. */
-export const latestObs = (station: string) => cached(`latest:${station}`, () => getStationLatest(station), 5 * MIN)
+export const latestObs = (station: string) => cached(`latest:${station}`, () => getStationLatest(station), 5 * MIN, true)
 
 /** HydroMet precipitation summary (`/derived/ppt/`). */
-export const pptSummary = (station: string) => cached(`ppt:${station}`, () => getPptSummary(station), 30 * MIN)
+export const pptSummary = (station: string) => cached(`ppt:${station}`, () => getPptSummary(station), 30 * MIN, true)
 
 /** NWS text forecast for a point. */
-export const nwsForecast = (lat: number, lon: number) => cached(`nws:${lat},${lon}`, () => fetchNwsForecast(lat, lon), 30 * MIN)
+export const nwsForecast = (lat: number, lon: number) => cached(`nws:${lat},${lon}`, () => fetchNwsForecast(lat, lon), 30 * MIN, true)
 
 /** Station one-pager links (expiring URLs: short TTL, memory only). */
 export const onePagers = () => cached('one-pagers', fetchOnePagers, ONE_PAGERS_STALE_MS)

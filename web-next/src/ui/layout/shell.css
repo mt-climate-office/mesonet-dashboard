@@ -11,7 +11,9 @@
   display: flex; flex-direction: column;
   min-height: calc(100dvh - var(--chrome-h, 52px));
 }
-.dash-content > main { flex: 1; min-width: 0; }
+/* main fills the screen under the header, so the footer starts below the fold and a section that
+   grows as its data loads never moves it on screen (no load shift). */
+.dash-content > main { flex: 1; min-width: 0; min-height: calc(100dvh - var(--chrome-h, 52px)); }
 /* A link that focuses <main> (navigate `target: 'main'`) scrolls it below the sticky header, not under it. */
 #main { scroll-margin-top: var(--chrome-h, 52px); }
 
@@ -48,10 +50,7 @@
 /* The region that view transitions cross-fade (ui/layout/transition.css). */
 .dash-section-host { view-transition-name: dash-section; min-width: 0; }
 
-.dash-section-head { margin-bottom: 0.75rem; }
+.dash-section-head { margin-bottom: var(--gap); }
 .dash-section-title { font-size: var(--fs-lg); font-weight: 600; color: var(--text-primary); }
-.dash-section-note { margin-top: 0.15rem; font-size: var(--fs-sm); color: var(--text-muted); }
+.dash-section-note { margin-top: var(--gap-tight); font-size: var(--fs-sm); color: var(--text-muted); }
 
-@media (max-width: 640px), (max-height: 560px) {
-  .tab-panel { padding-top: 0.75rem; }
-}

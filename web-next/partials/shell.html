@@ -68,7 +68,8 @@
 <div class="dash-shell">
   <!-- @include partials/picker.html -->
 
-  <div class="dash-content">
+  <!-- Cloaked until Alpine runs, so it first paints beside the picker in its final place (no load shift). -->
+  <div class="dash-content" x-data x-cloak>
     <main id="main" tabindex="-1">
       <!-- Dismissible notices (legacy ?state= links, #satellite): ui/shell/globalNotices.ts. -->
       <section class="notice-stack" aria-label="Notices" x-data="globalNotices" x-show="notices.length" x-cloak data-testid="notices">

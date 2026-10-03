@@ -30,36 +30,29 @@
           </div>
           <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
         </fieldset>
-        <button type="button" class="nav-btn cmp-por" data-testid="por-button" :disabled="porDisabled()" @click="togglePor()" x-text="porLabel()"></button>
+        <button type="button" class="dash-chip" data-testid="por-button" :aria-pressed="showingPor()" :disabled="porDisabled()" @click="togglePor()">Whole record</button>
       </div>
 
       <div class="cmp-group">
-        <fieldset class="ctl-seg" data-testid="agg-select"
-                  x-data="segmented({ options: () => aggOptions, value: () => agg(), onChange: (v) => setAgg(v), label: 'Time aggregation' })">
-          <legend class="ctl-legend" x-text="label"></legend>
-          <div class="seg-btns">
-            <template x-for="opt in options()" :key="opt.value">
-              <label class="nav-btn seg-btn">
-                <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)" :disabled="opt.disabled ?? false" @change="select(opt.value)">
-                <span x-text="opt.label"></span>
-              </label>
-            </template>
-          </div>
-        </fieldset>
-        <p class="ctl-note">Hourly and daily averages load faster. Avoid periods longer than 1 year for daily, 3 months for hourly, or 2 weeks for raw data.</p>
+        <span class="cmp-legend" id="cmp-interval-label">Interval</span>
+        <div class="cmp-chips" role="group" aria-labelledby="cmp-interval-label" data-testid="agg-select">
+          <template x-for="opt in aggOptions" :key="opt.value">
+            <button type="button" class="dash-chip dash-chip--quiet" :aria-pressed="agg() === opt.value" @click="setAgg(opt.value)" :data-testid="'cmp-agg-' + opt.value" x-text="opt.label"></button>
+          </template>
+        </div>
+        <p class="ctl-note">Hourly and daily averages load faster. Avoid more than 1 year of daily, 3 months of hourly or 2 weeks of 5-minute data.</p>
         <label class="ctl-check" data-testid="gridmet-switch">
           <input type="checkbox" role="switch" aria-describedby="cmp-gridmet-help" :checked="gridmet()" :disabled="gridmetDisabled()" @change="setGridmet($event)">
-          <span>Show gridMET Normals</span>
+          <span>Show normals</span>
         </label>
-        <p class="ctl-note" id="cmp-gridmet-help">Shows 1991-2020 gridMET climate normals. Only available on daily data.</p>
+        <p class="ctl-note" id="cmp-gridmet-help">1991–2020 gridMET climate normals, on daily data only.</p>
       </div>
 
-      <div class="cmp-group">
-        <div class="ctl-chips cmp-vars" role="group" :aria-labelledby="ids.label" data-testid="variable-chips"
-             x-data="chips({ options: () => varOptions(), value: () => varValue(), onChange: (v) => setVars(v), label: 'Variables' })">
-          <span class="ctl-legend" :id="ids.label" x-text="label"></span>
+      <div class="cmp-group" x-data="chips({ options: () => varOptions(), value: () => varValue(), onChange: (v) => setVars(v), label: 'Variables' })">
+        <span class="cmp-legend" :id="ids.label" x-text="label"></span>
+        <div class="cmp-chips" role="group" :aria-labelledby="ids.label" data-testid="variable-chips">
           <template x-for="opt in options()" :key="opt.value">
-            <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)" @click="toggle(opt.value)" x-text="opt.label"></button>
+            <button type="button" class="dash-chip" :aria-pressed="isOn(opt.value)" @click="toggle(opt.value)" x-text="opt.label"></button>
           </template>
         </div>
         <a class="dash-link" href="https://climate.umt.edu/mesonet/variables/" target="_blank" rel="noopener noreferrer">About these variables<span class="sr-only"> (opens in a new tab)</span></a>

@@ -7,7 +7,7 @@
  */
 import type { AnnualModel } from '../charts/agAnnual'
 import { groupByYear } from '../ag/compute/annual'
-import type { ObservationRow } from '../api'
+import { HttpError, type ObservationRow } from '../api'
 import { recordRequest, type RecordRequest } from '../latest/requests'
 import type { Variable } from './catalog'
 import { axisTitle, cumulativeTitle } from './labels'
@@ -33,6 +33,20 @@ export function historyRequest(station: string, year: number, v: Variable, eleme
   const start = installed && installed > jan1 ? installed : jan1
   const end = String(year) === today.slice(0, 4) ? today : `${year}-12-31`
   return recordRequest({ station, window: { start, end, valid: start <= end }, agg: 'daily', vars: [v.name], stationElements: elements })
+}
+
+/**
+ * One year's rows from `fetch` (the `historyRequest` query). The API answers a year without
+ * data (often the install year) with 404 "No data available": that is an empty year, not a
+ * failure, so the chart and its progress line carry on. Other errors propagate.
+ */
+export async function historyRows(fetch: () => Promise<ObservationRow[]>): Promise<ObservationRow[]> {
+  try {
+    return await fetch()
+  } catch (err) {
+    if (err instanceof HttpError && err.status === 404) return []
+    throw err
+  }
 }
 
 /**

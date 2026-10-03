@@ -23,7 +23,7 @@ autocomplete.
 **API**
 
 ```ts
-combobox({ items: () => Item[], value: () => string | null, onSelect(id | null), label, placeholder?, limit? })
+combobox({ items: () => Item[], value: () => string | null, onSelect(id), label, placeholder?, limit? })
 Item = { id, label, group?, keywords?: string[] }
 ```
 
@@ -31,8 +31,9 @@ Item = { id, label, group?, keywords?: string[] }
 
 - Typing filters case-insensitively on the label, the id and `keywords`. Put the NWSLI id in
   `keywords`.
-- The best match is highlighted.
-- Items group under `group`, in the order each group first appears.
+- The field holds only the typed text (it starts empty; the selection shows elsewhere).
+- With no text, items group under `group`, in the order each group first appears. While
+  typing, one ungrouped list, best match first; it is highlighted.
 - At most 200 options render, with a "Showing 200 of N" note.
 
 **Keyboard**
@@ -40,7 +41,8 @@ Item = { id, label, group?, keywords?: string[] }
 - Down/Up opens the list and moves through it.
 - Home/End jump to the first or last option once you are navigating.
 - Enter selects.
-- Escape closes the list and reverts the text. The ✕ button clears the value.
+- Escape clears the text, then closes the list, then lets an enclosing dialog close.
+- The ✕ button shows whenever there is text; it clears it, keeps focus and shows the full list.
 
 **Screen readers.** A polite status reads the result count.
 
@@ -73,7 +75,7 @@ Group = { id, label, options: { value, label }[] }
 - A disclosure button shows the label and the selected count, and opens a panel.
 - The panel has a filter box and one fieldset per group, each with a "Select all" checkbox. That
   checkbox shows a mixed state and applies to the group's visible options.
-- Escape closes the panel and returns focus to the button.
+- Escape clears the filter text first; the next Escape closes the panel (clearing the filter) and returns focus to the button.
 - The selection shows as removable chips. Removing one moves focus to the next chip.
 - Output is always in option order, not click order.
 

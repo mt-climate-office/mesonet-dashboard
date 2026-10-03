@@ -2,27 +2,66 @@
  * Axis, grid and zoom helpers. Chrome colors and fonts come from the ECharts
  * theme (theme.ts); these set structure only: types, names, ticks, ranges.
  */
-import type { DataZoomComponentOption, GridComponentOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
+import type { DataZoomComponentOption, EChartsOption, GridComponentOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { ChartContext } from './types'
 
-/** Tick label templates per time level; read in UTC = Denver wall clock (useUTC). */
-const TIME_LABELS = {
-  year: '{yyyy}',
-  month: '{MMM}',
-  day: '{MMM} {d}',
-  hour: '{HH}:{mm}',
-  minute: '{HH}:{mm}',
-  second: '{HH}:{mm}:{ss}',
+/**
+ * `option` without the y-axis titles longer than their plot on a canvas `height` px tall (a
+ * short chart: a landscape phone), so a rotated title is never clipped; the unit stays in the
+ * page header and tooltip. Text is estimated at 0.6 em a character (its font size, else 12 px).
+ * A grid sized in px uses its height; any other, the canvas less its px margins.
+ */
+export function fitAxisNames(option: EChartsOption, height: number): EChartsOption {
+  if (!option.yAxis || !(height > 0)) return option
+  const grids = (Array.isArray(option.grid) ? option.grid : option.grid ? [option.grid] : []) as GridComponentOption[]
+  const px = (v: unknown) => (typeof v === 'number' ? v : 0)
+  const plotH = (i: number) => {
+    const g = grids[i] ?? grids[0] ?? {}
+    return typeof g.height === 'number' ? g.height : height - px(g.top) - px(g.bottom)
+  }
+  const fit = (a: YAXisComponentOption): YAXisComponentOption => {
+    if (typeof a.name !== 'string' || !a.name) return a
+    const size = Number((a.nameTextStyle as { fontSize?: number } | undefined)?.fontSize) || 12
+    const longest = Math.max(...a.name.split('\n').map((l) => l.length))
+    return longest * size * 0.6 > plotH((a as { gridIndex?: number }).gridIndex ?? 0) ? { ...a, name: '' } : a
+  }
+  return { ...option, yAxis: Array.isArray(option.yAxis) ? option.yAxis.map(fit) : fit(option.yAxis) }
 }
 
-/** Time x axis over Denver wall-clock ms. Pair with `useUTC: true` on the option. */
-export function timeAxis(opts: { min?: number; max?: number } = {}): XAXisComponentOption {
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/**
+ * A time-axis tick label for Denver wall-clock ms (read as UTC), 12-hour as on Now: "6 AM",
+ * "Noon", "6:30 AM" inside a day; "Sep 29" at midnight; a month start is "Oct", or "Oct 1"
+ * when `finer` ticks share the axis (ECharts' tick level > 0), so a month never sits bare
+ * beside day labels; Jan 1 is the year.
+ */
+export function timeTickLabel(ms: number, finer: boolean): string {
+  const d = new Date(ms)
+  const h = d.getUTCHours()
+  const m = d.getUTCMinutes()
+  if (h || m) {
+    if (h === 12 && !m) return 'Noon'
+    return `${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''} ${h < 12 ? 'AM' : 'PM'}`
+  }
+  const day = `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`
+  if (d.getUTCDate() !== 1) return day
+  if (d.getUTCMonth() === 0) return String(d.getUTCFullYear())
+  return finer ? day : MONTHS[d.getUTCMonth()]
+}
+
+/**
+ * Time x axis over Denver wall-clock ms (pair with `useUTC: true` on the option), labelled by
+ * `timeTickLabel`. `compact`: fewer ticks, so phone axes do not crowd.
+ */
+export function timeAxis(opts: { min?: number; max?: number; compact?: boolean } = {}): XAXisComponentOption {
   return {
     type: 'time',
     min: opts.min,
     max: opts.max,
+    splitNumber: opts.compact ? 3 : 5,
     splitLine: { show: false },
-    axisLabel: { hideOverlap: true, formatter: TIME_LABELS },
+    axisLabel: { hideOverlap: true, formatter: (v: number, _i: number, extra?: { level?: number }) => timeTickLabel(v, (extra?.level ?? 0) > 0) },
   }
 }
 

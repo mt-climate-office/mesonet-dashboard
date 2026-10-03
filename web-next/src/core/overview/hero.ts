@@ -12,6 +12,7 @@ import { parseWallClock } from '../sensorEvents'
 import { feelsLikeF, readConditions } from './conditions'
 import { normalMedianOn } from './normals'
 import { nowPrecip, type PrecipSummary } from './precip'
+import { peakGust } from './series'
 import { daysSinceRain, summarize } from './summary'
 import { freshness, type Freshness, type OverviewInput } from './tiles'
 
@@ -112,6 +113,7 @@ export function buildHero(input: HeroInput, p: PrecipSummary = nowPrecip(input))
     shortForecast: currentPeriod(periods, now)?.shortForecast ?? null,
     windMph: c.windMph,
     windDeg: c.windDeg,
+    peakGustMph: peakGust(input.hourly, c.gustMph, now),
     rainTodayIn: p.sinceMidnight,
     daysSinceRain: daysSinceRain(p, input.hourly, input.today),
     nowWallMs: now,

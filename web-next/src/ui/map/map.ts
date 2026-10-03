@@ -26,6 +26,8 @@ export interface MapHostOptions {
    * Ctrl/⌘ + wheel move the map. For small maps in a scrolling page.
    */
   cooperativeGestures?: boolean
+  /** Fit Montana again whenever the frame resizes, until the user moves the map (a frame that grows on reveal). */
+  refit?: boolean
 }
 
 export interface MapHost {
@@ -59,6 +61,17 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   MCO.map.addFitControl(map)
   const floor = MCO.map.installZoomFloor(map)
   map.once('load', () => floor.refresh())
+  // MapLibre opens the compact attribution when its text first arrives; on small maps it covers the
+  // data. Collapse it in the same event (its own listener ran first), so it never paints open; ⓘ opens it.
+  const collapseAttribution = () => {
+    const attribution = el.querySelector('.maplibregl-compact')
+    if (!attribution) return
+    attribution.classList.remove('maplibregl-compact-show')
+    map.off('styledata', collapseAttribution)
+    map.off('sourcedata', collapseAttribution)
+  }
+  map.on('styledata', collapseAttribution)
+  map.on('sourcedata', collapseAttribution)
 
   // One automatic basemap retry per failure (see the 'error' handler below).
   let retried = false
@@ -91,7 +104,17 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   })
 
   // The map sits in cards whose size changes without a window resize.
-  const resize = new ResizeObserver(() => map.resize())
+  let userMoved = false
+  map.on('movestart', (e: { originalEvent?: Event }) => {
+    if (e.originalEvent) userMoved = true
+  })
+  const resize = new ResizeObserver(() => {
+    map.resize()
+    if (opts.refit && !userMoved) {
+      floor.refresh()
+      map.fitBounds(MCO.map.MT_FIT_BOUNDS, { ...MCO.map.FIT_OPTS, animate: false })
+    }
+  })
   resize.observe(el)
 
   return {

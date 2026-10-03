@@ -1,40 +1,39 @@
 /* The Download sheet's form (partials/downloader/index.html): flat summary rows (label left,
    value right) that expand in place, the primary button and its one-line reason, notices,
    the preview and the BLM funding line. One column at every width; the sheet body scrolls.
-   Kit tokens and the --fs-* scale only. */
+   Kit tokens, the --fs-* scale and the shared spacing tokens (--gap, --gap-tight, --card-pad) only. */
 
 /* A short form: a narrow centred panel from tablet up (ui/layout/sheet.css reads --sheet-w). */
 .dl-sheet { --sheet-w: 34rem; }
-.dl-tab { display: flex; flex-direction: column; gap: 1rem; width: 100%; min-width: 0; }
-.dl-form { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+.dl-tab { display: flex; flex-direction: column; gap: var(--card-pad, 16px); width: 100%; min-width: 0; }
+.dl-form { display: flex; flex-direction: column; gap: var(--gap, 12px); min-width: 0; }
 
 /* ── Summary rows ──────────────────────────────────────────────────────── */
 .dl-rows { display: flex; flex-direction: column; }
 .dl-row { border-bottom: 1px solid var(--border); }
 .dl-row-head { margin: 0; font: inherit; }
 .dl-row-btn, .dl-row-static {
-  display: flex; align-items: center; gap: 0.75rem;
-  width: 100%; min-height: 48px; padding: 0.75rem 0.25rem;
+  display: flex; align-items: center; gap: var(--gap, 12px);
+  width: 100%; min-height: 48px; padding: var(--gap, 12px) var(--gap-tight, 4px);
   font: inherit; font-size: var(--fs-md); text-align: left;
   color: var(--text-primary); background: none; border: 0;
 }
 .dl-row-btn { cursor: pointer; border-radius: var(--radius-md); }
 .dl-row-btn:hover { background: var(--accent-hover); }
 .dl-row-label { flex: none; color: var(--text-secondary); }
-/* The value takes the rest and ellipsizes; "+ Add" never wraps away from it. */
-.dl-row-value { display: flex; justify-content: flex-end; align-items: baseline; gap: 0.5rem; flex: 1; min-width: 0; font-weight: 500; }
+/* The value takes the rest and ellipsizes. */
+.dl-row-value { display: flex; justify-content: flex-end; align-items: baseline; flex: 1; min-width: 0; font-weight: 500; }
 .dl-row-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dl-row-add { flex: none; font-weight: 400; color: var(--text-secondary); }
 .dl-row-chevron { flex: none; stroke: var(--text-secondary); transition: transform var(--transition); }
 .dl-row-btn[aria-expanded="true"] .dl-row-chevron { transform: rotate(180deg); }
 /* Same columns as a button row, minus the chevron's space. */
-.dl-row-static { padding-right: calc(0.25rem + 16px + 0.75rem); }
+.dl-row-static { padding-right: calc(var(--gap-tight, 4px) + 16px + var(--gap, 12px)); }
 
-.dl-row-panel { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.25rem 0.25rem 1rem; }
+.dl-row-panel { display: flex; flex-direction: column; gap: var(--gap, 12px); padding: var(--gap-tight, 4px) var(--gap-tight, 4px) var(--card-pad, 16px); }
 .dl-row-panel .seg-btns { width: 100%; }
 .dl-row-panel .seg-btn { flex: 1; justify-content: center; }
 /* Quality labels are long: one option per line. */
-.dl-seg-stack .seg-btns { flex-direction: column; gap: 0.35rem; }
+.dl-seg-stack .seg-btns { flex-direction: column; gap: var(--gap-tight, 4px); }
 /* kit-override: stacked segments are separate buttons: own border, all corners rounded, no overlap. */
 .dl-seg-stack .seg-btn, .dl-seg-stack .seg-btn:first-of-type {
   justify-content: flex-start; margin: 0;
@@ -50,7 +49,7 @@
 /* ── Notices, the button, its reason ───────────────────────────────────── */
 /* ⚠ + text, so the meaning never rests on color. */
 .dl-msg {
-  padding: 0.45rem 0.6rem;
+  padding: 8px var(--gap, 12px);
   font-size: var(--fs-sm); line-height: 1.45;
   color: var(--text-primary);
   background: var(--bg-surface);
@@ -59,14 +58,14 @@
   border-radius: var(--radius-md);
 }
 .dl-msg::before { content: "\26A0\FE0E  " / ""; }
-.dl-msg-action { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.dl-msg-action { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .dl-msg-action > span { flex: 1; }
 
 /* kit-override: the kit has no primary button; this uses the pressed segment's fill
    (--accent with --text-on-accent, border --accent-line for 3:1). */
 .nav-btn.dl-btn-primary {
-  justify-content: center; gap: 0.5rem;
-  width: 100%; min-height: 48px; margin-top: 0.25rem;
+  justify-content: center; gap: 8px;
+  width: 100%; min-height: 48px; margin-top: var(--gap-tight, 4px);
   font-size: var(--fs-md); font-weight: 600;
   background: var(--accent); border-color: var(--accent-line); color: var(--text-on-accent);
 }
@@ -75,14 +74,14 @@
 /* aria-disabled, never `disabled`: the button keeps focus while it changes (core/downloader/form.ts). */
 .nav-btn.dl-btn-primary[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; filter: none; }
 .nav-btn.dl-btn-primary[aria-busy="true"] { cursor: progress; }
-.dl-reason { margin-top: -0.25rem; font-size: var(--fs-sm); color: var(--text-secondary); text-align: center; }
+.dl-reason { font-size: var(--fs-sm); color: var(--text-secondary); text-align: center; }
 
 /* ── Preview ───────────────────────────────────────────────────────────── */
-.dl-preview { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.dl-preview { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .dl-preview-title { margin: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
 .dl-preview-status {
   display: flex; align-items: center; justify-content: center;
-  min-height: 6rem; padding: 1rem;
+  min-height: 6rem; padding: var(--card-pad, 16px);
   text-align: center; font-size: var(--fs-sm); color: var(--text-secondary);
 }
 .dl-preview-status.is-error { color: var(--text-primary); }
