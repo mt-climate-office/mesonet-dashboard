@@ -38,7 +38,7 @@ export function variableList() {
       const vars = chartVariables(id)
       if (!id || !vars) return []
       const latest = latestObs(id).data?.[0] as Record<string, unknown> | undefined
-      const hourly = recordResource(listRequest(id, vars, stationElements(id) ?? []))?.data
+      const hourly = recordResource(listRequest(id, vars, stationElements(id) ?? []), { slot: `list:${id}` })?.data
       const rows = variableRows(vars, latest ? Alpine.raw(latest) : undefined, hourly ? Alpine.raw(hourly) : undefined)
       return variableGroups(vars).map((g) => ({ group: g.group, rows: g.items.map((v) => rows.find((r) => r.id === v.id)!) }))
     },
@@ -59,7 +59,7 @@ export function variableList() {
     get sparkLoading(): boolean {
       const id = Alpine.store('station').id
       const vars = chartVariables(id)
-      return !!id && !!vars && recordResource(listRequest(id, vars, stationElements(id) ?? []))?.status === 'loading'
+      return !!id && !!vars && recordResource(listRequest(id, vars, stationElements(id) ?? []), { slot: `list:${id}` })?.status === 'loading'
     },
     retry(): void {
       elementsResource(Alpine.store('station').id)?.refresh()
