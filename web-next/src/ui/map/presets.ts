@@ -12,6 +12,7 @@
  * The keyboard twin (combobox elsewhere, or the sr-only table) calls `onSelect` too.
  */
 import Alpine from 'alpinejs'
+import type * as MapLibre from 'maplibre-gl'
 import type { Station } from '../../core/api'
 import { legendRows, selectionAnnouncement, stationRows, visibleStations } from '../../core/map'
 import { component } from '../component'
@@ -41,6 +42,8 @@ interface Preset {
   fly: boolean
   /** Map gestures need two fingers or Ctrl/⌘ (ui/map/map.ts `cooperativeGestures`). */
   cooperative?: boolean
+  /** Fit padding (ui/map/map.ts `fitPadding`). */
+  fitPadding?: MapLibre.PaddingOptions
 }
 
 const toSet = (v: ReadonlySet<string> | readonly string[] | null | undefined): ReadonlySet<string> | null =>
@@ -71,6 +74,7 @@ function mapView(opts: StationMapOptions, preset: Preset) {
         label: opts.label ?? preset.label,
         cooperativeGestures: preset.cooperative,
         refit: !preset.fly,
+        fitPadding: preset.fitPadding,
         layers: (map, theme) => {
           const markers = layer?.add(map, theme)
           if (markers) legend.render(legendRows(markers, theme, cssVar))
@@ -123,7 +127,16 @@ export const locatorMap = (opts: StationMapOptions) =>
 
 /**
  * Station-picker map: picking a station does not move the map (the whole network stays in view).
- * On touch, two fingers move it, so one finger still scrolls the sheet or drawer.
+ * On touch, two fingers move it, so one finger still scrolls the sheet or drawer. The frame is
+ * small (303 × 240 in the drawer), so Montana fits below the collapsed legend (top-left) and left
+ * of the zoom controls (top-right; 40 px buttons on touch, map.css) instead of under them.
  */
-export const pickerMap = (opts: StationMapOptions) =>
-  mapView(opts, { label: 'Map of Montana Mesonet stations', fly: false, cooperative: matchMedia('(hover: none)').matches })
+export const pickerMap = (opts: StationMapOptions) => {
+  const touch = matchMedia('(hover: none)').matches
+  return mapView(opts, {
+    label: 'Map of Montana Mesonet stations',
+    fly: false,
+    cooperative: touch,
+    fitPadding: { top: 56, right: touch ? 56 : 48, bottom: 16, left: 12 },
+  })
+}
