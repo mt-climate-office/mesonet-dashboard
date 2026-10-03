@@ -10,6 +10,8 @@ import { denverToday } from '../../core/ag/data/parse'
 import * as C from '../../core/charts'
 import { getStationElements } from '../../core/api'
 import { AG_TTL, agKeys } from '../../core/ag/view/keys'
+import { withoutInsideZoom } from '../../core/ag/view/touchZoom'
+import type { ChartBuilder } from '../../core/charts/types'
 import { announce } from '../shell/live'
 
 /** The Ag selection for the current URL and station. */
@@ -29,16 +31,24 @@ export const elementsResource = (station: string) =>
 /** Resource data without the reactive proxy (compute reads every element). */
 export const raw = <T>(v: T): T => (v == null ? v : Alpine.raw(v))
 
+/** On touch screens (`hover: none`) the chart drops its `inside` zoom, so a swipe scrolls the page. */
+const touchSafe =
+  <M>(builder: ChartBuilder<M>): ChartBuilder<M> =>
+  (model, ctx) => {
+    const option = builder(model, ctx)
+    return matchMedia('(hover: none)').matches ? withoutInsideZoom(option) : option
+  }
+
 /** Host bindings per chart kind: `x-data="chart({ ...charts.etr, model: () => … })"`. */
 export const AG_CHARTS = {
-  etr: { builder: C.etrChart, table: C.etrTable, label: 'Reference ET chart' },
-  feels_like: { builder: C.feelsLikeChart, table: C.feelsLikeTable, label: 'Feels-like temperature chart' },
-  cci: { builder: C.cciChart, table: C.cciTable, label: 'Livestock risk index chart' },
-  gdd: { builder: C.gddChart, table: C.gddTable, label: 'Growing degree days chart' },
-  profile: { builder: C.soilProfileChart, table: C.soilProfileTable, label: 'Soil profile heatmap' },
-  swp: { builder: C.swpChart, table: C.swpTable, label: 'Soil water potential chart' },
-  percent_saturation: { builder: C.percentSaturationChart, table: C.percentSaturationTable, label: 'Percent soil saturation chart' },
-  annual: { builder: C.annualChart, table: C.annualTable, label: 'Annual comparison chart' },
+  etr: { builder: touchSafe(C.etrChart), table: C.etrTable, label: 'Reference ET chart' },
+  feels_like: { builder: touchSafe(C.feelsLikeChart), table: C.feelsLikeTable, label: 'Feels like chart' },
+  cci: { builder: touchSafe(C.cciChart), table: C.cciTable, label: 'Livestock risk index chart' },
+  gdd: { builder: touchSafe(C.gddChart), table: C.gddTable, label: 'Growing degree days chart' },
+  profile: { builder: touchSafe(C.soilProfileChart), table: C.soilProfileTable, label: 'Soil profile heatmap' },
+  swp: { builder: touchSafe(C.swpChart), table: C.swpTable, label: 'Soil water potential chart' },
+  percent_saturation: { builder: touchSafe(C.percentSaturationChart), table: C.percentSaturationTable, label: 'Percent soil saturation chart' },
+  annual: { builder: touchSafe(C.annualChart), table: C.annualTable, label: 'Annual comparison chart' },
 }
 
 export const LOADING: AgView<never> = { status: 'loading', message: null, notes: [], model: null }
