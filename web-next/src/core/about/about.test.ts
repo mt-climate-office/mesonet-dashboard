@@ -26,8 +26,8 @@ describe('details', () => {
     expect(formatDay('2020-10-30')).toBe('Oct 30, 2020')
     expect(formatDay('2026-10-01 13:15:00-06:00')).toBe('Oct 1, 2026')
     expect(formatDay('None')).toBeNull()
-    expect(formatCoordinates(45.66, -111.07)).toBe('45.66° N, 111.07° W')
-    expect(formatElevation(1495.09)).toBe('4,905 ft (1,495 m)')
+    expect(formatCoordinates(45.66, -111.07)).toBe('45.66°\u00a0N, 111.07°\u00a0W')
+    expect(formatElevation(1495.09)).toBe('4,905\u00a0ft (1,495\u00a0m)')
     expect(formatElevation(Number.NaN)).toBe('—')
     expect(metersToFeet(1000)).toBe(3281)
   })
@@ -43,11 +43,11 @@ describe('details', () => {
     expect(stationDetails(bozeman, '2026-10-01 13:15:00-06:00', '2026-10-02')).toEqual([
       { label: 'Station', value: 'Bozeman', id: 'acebozem' },
       { label: 'Network', value: 'HydroMet' },
-      { label: 'Location', value: 'Gallatin County · 45.66° N, 111.07° W' },
-      { label: 'Elevation', value: '4,905 ft (1,495 m)' },
+      { label: 'Location', value: 'Gallatin County · 45.66°\u00a0N, 111.07°\u00a0W' },
+      { label: 'Elevation', value: '4,905\u00a0ft (1,495\u00a0m)' },
       { label: 'Record', value: 'Oct 30, 2020 – Oct 1, 2026' },
     ])
-    expect(formatLocation({ ...bozeman, county: '' })).toBe('45.66° N, 111.07° W')
+    expect(formatLocation({ ...bozeman, county: '' })).toBe('45.66°\u00a0N, 111.07°\u00a0W')
   })
 })
 

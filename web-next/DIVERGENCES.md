@@ -1415,7 +1415,7 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
 `core/aggregate.ts` and `core/csv.ts`.
 
 - **Variables picker.** A grouped checkbox panel (`multiselect`: filter box,
-  "Standard elements" / "Derived variables", per-group Select all, removable
+  "Measured variables" (the API's standard elements) / "Derived variables", per-group Select all, removable
   chips) replaces the Mantine dropdown. Ticking options writes `els` in option
   order; a URL's own order is kept until the user edits it.
 - **"Show uncommon variables"** is a native checkbox with `role="switch"`.

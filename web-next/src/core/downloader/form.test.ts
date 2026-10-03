@@ -3,6 +3,7 @@ import {
   BAD_DATES,
   dateRangeLabel,
   formBlocker,
+  formWaiting,
   NO_ROWS,
   NO_STATION,
   NO_VARIABLES,
@@ -38,6 +39,14 @@ describe('formBlocker', () => {
     expect(formBlocker({ ...ok, elements: [] })).toBe(NO_VARIABLES)
     expect(formBlocker({ ...ok, dateError: 'Start is after end.', rangeValid: false })).toBe('Start is after end.')
     expect(formBlocker({ ...ok, rangeValid: false })).toBe(BAD_DATES)
+  })
+})
+
+describe('formWaiting', () => {
+  it('waits for the catalog or a pending chart prefill, else not', () => {
+    expect(formWaiting({ catalogLoading: false, prefillPending: false })).toBe(false)
+    expect(formWaiting({ catalogLoading: true, prefillPending: false })).toBe(true)
+    expect(formWaiting({ catalogLoading: false, prefillPending: true })).toBe(true)
   })
 })
 

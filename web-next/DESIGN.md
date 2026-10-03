@@ -284,7 +284,7 @@ every width, flat on the sheet's surface:
 
 | Row | Value (right) | Expands to (the existing control) | URL key |
 |---|---|---|---|
-| Variables | up to two names, then "+ N more"; "+ Add" | chips for the selection, "+ Add variables" (the grouped checklist with a filter), "Show uncommon variables" | `els`, `pub` |
+| Variables | up to two names, then "+ N more" | chips for the selection, "+ Add variables" (the grouped checklist with a filter), "Show uncommon variables" | `els`, `pub` |
 | Dates | "Sep 1 – Sep 30, 2026" | start/end date inputs bounded by the install date and today, the install-date notes | `dl_from`, `dl_to` |
 | Interval | Hourly · Daily · Monthly | a segmented control; Monthly adds its note | `period` |
 | Quality | Quality-controlled · Provisional (basic checks) · Unchecked | one option per line, with the level's description | `qc` (2 · 1 · 0) |
