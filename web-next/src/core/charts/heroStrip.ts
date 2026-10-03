@@ -4,13 +4,15 @@
  * NWS hourly forecast (dashed), a "now" rule and dot, and the observed high
  * (above its point) and low (below), kept inside the grid by padding the y
  * range. The forecast periods are the icon row under the chart, not labels in
- * it. No zoom; tooltip on hover or tap. Model from core/overview/hero.ts; °F,
+ * it. No zoom (style: the slider adds nothing to 48 h); the now dot is its one
+ * last-point marker; tooltip on hover or tap. Model from core/overview/hero.ts; °F,
  * Denver wall-clock ms.
  */
 import type { EChartsOption, ScatterSeriesOption } from 'echarts'
 import { HERO_STRIP, variableStyle, withAlpha } from '../palette'
 import { fmtNum, fmtWall, isoWall, MISSING } from './format'
-import { AUX, lineSeries, points } from './series'
+import { AUX, lineSeries } from './series'
+import { points, stepMs } from './style'
 import { paint } from './theme'
 import { axisTooltip, tipText } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
@@ -109,7 +111,7 @@ function labels(id: string, ctx: ChartContext, color: string, span: [number, num
 export const heroStripChart: ChartBuilder<HeroStripModel> = (m, ctx) => {
   const color = variableStyle('Air Temperature', ctx.theme.name)!.color
   const rule = paint(ctx.theme, HERO_STRIP.nowRule)
-  const observed = lineSeries('Observed', points(m.observed.t, m.observed.v), { color })
+  const observed = lineSeries('Observed', points(m.observed.t, m.observed.v, stepMs('hourly')), { color })
   // The forecast starts at the now point so the two lines meet.
   const fcX = m.now.v === null ? m.forecast.t : [m.now.t, ...m.forecast.t]
   const fcY = m.now.v === null ? m.forecast.v : [m.now.v, ...m.forecast.v]
@@ -141,7 +143,7 @@ export const heroStripChart: ChartBuilder<HeroStripModel> = (m, ctx) => {
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, 'hourly'), (name, y) => tipText(name, `${Math.round(y)} °F`)),
     series: [
       { ...observed, areaStyle: { color: withAlpha(color, HERO_STRIP.areaAlpha), origin: 'start' } },
-      lineSeries('Forecast', points(fcX, fcY), { color, dash: 'dashed' }),
+      lineSeries('Forecast', points(fcX, fcY, stepMs('hourly')), { color, dash: 'dashed' }),
       {
         type: 'scatter',
         id: `${AUX}now`,

@@ -1,8 +1,9 @@
 /**
- * Axis, grid and zoom helpers. Chrome colors and fonts come from the ECharts
+ * Axis and grid helpers. Chrome colors and fonts come from the ECharts
  * theme (theme.ts); these set structure only: types, names, ticks, ranges.
+ * The zoom and the y-axis rule are in style.ts.
  */
-import type { DataZoomComponentOption, EChartsOption, GridComponentOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
+import type { EChartsOption, GridComponentOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { ChartContext } from './types'
 
 /**
@@ -126,33 +127,12 @@ export function logExtent(lo: number, hi: number, include: number[] = []): [numb
   return [10 ** Math.floor(Math.log10(Math.min(...vals))), 10 ** Math.ceil(Math.log10(Math.max(...vals)))]
 }
 
-/** Grid margins; room on the right for y2 or a color bar, at the bottom for legend + zoom slider. */
-export function grid(ctx: ChartContext, opts: { right?: number; bottom?: number; top?: number } = {}): GridComponentOption {
+/** Grid margins: room on the left for the y axis, on the right for y2 or a color bar, `bottom` (style `bottomLayout`) for the x labels, slider and legend. */
+export function grid(ctx: ChartContext, opts: { right?: number; bottom: number; top?: number }): GridComponentOption {
   return {
     left: ctx.compact ? 52 : 64,
     right: opts.right ?? 24,
     top: opts.top ?? 24,
-    bottom: opts.bottom ?? (ctx.compact ? 56 : 84),
+    bottom: opts.bottom,
   }
-}
-
-/**
- * x-axis zoom: shift+wheel or pinch inside the plot, plus a slider on wide
- * screens. Drag-to-pan is off on compact screens. On touch the inside zoom is
- * `disabled`: it still holds the visible window (the host zooms through it),
- * but takes no gestures, so a swipe over the chart scrolls the page. The date
- * controls and range presets are the keyboard and touch twin.
- */
-export function timeZoom(ctx: ChartContext): DataZoomComponentOption[] {
-  const inside: DataZoomComponentOption = {
-    type: 'inside',
-    xAxisIndex: 0,
-    filterMode: 'none',
-    disabled: ctx.touch,
-    zoomOnMouseWheel: 'shift',
-    moveOnMouseWheel: false,
-    moveOnMouseMove: !ctx.compact,
-  }
-  if (ctx.compact) return [inside]
-  return [inside, { type: 'slider', xAxisIndex: 0, filterMode: 'none', height: 18, bottom: 36, labelFormatter: '' }]
 }

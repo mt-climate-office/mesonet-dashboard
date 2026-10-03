@@ -6,8 +6,9 @@
  */
 import type { CustomSeriesOption, LineSeriesOption, MarkLineComponentOption } from 'echarts'
 import type { Nullable } from '../ag/contract'
-import { NORMALS, SENSOR_EVENT, SWP_BANDS, withAlpha } from '../palette'
-import { AUX, lineSeries, points } from './series'
+import { SENSOR_EVENT, SWP_BANDS, withAlpha } from '../palette'
+import { AUX } from './series'
+import { points } from './style'
 import { paint } from './theme'
 import type { ChartContext } from './types'
 
@@ -24,9 +25,10 @@ export function hatchDecal(color: string) {
 }
 
 /**
- * Shaded band between `lo` and `hi` as two stacked line series: an invisible
- * base at `lo` (id `aux:`, named `baseName`) and the fill of height hi − lo
- * named `name`. Each fill point carries the "lo–hi" text as its tooltip note.
+ * The one band style (the daily low–high, gridMET normals, the GDD projection range): two stacked
+ * line series, an invisible base at `lo` (id `aux:`, named `baseName`) and a fill of height
+ * hi − lo named `name`, no outline, gaps broken at `step` (style `points`), drawn under its mean
+ * line. Each fill point carries the "lo–hi" text as its tooltip note.
  */
 export function bandSeries(
   name: string,
@@ -34,47 +36,23 @@ export function bandSeries(
   xs: number[],
   lo: Nullable[],
   hi: Nullable[],
-  opts: { color: string; yAxisIndex?: number; digits?: number; stack: string },
+  opts: { color: string; yAxisIndex?: number; digits?: number; stack: string; step: number },
 ): LineSeriesOption[] {
   const d = opts.digits ?? 0
   const width = xs.map((_, i) => (lo[i] != null && hi[i] != null ? hi[i]! - lo[i]! : null))
   const notes = xs.map((_, i) => (lo[i] != null && hi[i] != null ? `${lo[i]!.toFixed(d)}–${hi[i]!.toFixed(d)}` : ''))
-  const common = { type: 'line' as const, stack: opts.stack, yAxisIndex: opts.yAxisIndex ?? 0, showSymbol: false, symbol: 'none', connectNulls: false, silent: true }
+  const common = { type: 'line' as const, stack: opts.stack, yAxisIndex: opts.yAxisIndex ?? 0, smooth: false, showSymbol: false, symbol: 'none', connectNulls: false, silent: true, z: 1 }
   return [
-    { ...common, id: `${AUX}${opts.stack}-base`, name: baseName, data: points(xs, lo), lineStyle: { opacity: 0 } },
+    { ...common, id: `${AUX}${opts.stack}-base`, name: baseName, data: points(xs, lo, opts.step), lineStyle: { opacity: 0 } },
     {
       ...common,
       id: `${opts.stack}-band`,
       name,
-      data: points(xs, width, notes),
+      data: points(xs, width, opts.step, notes),
       lineStyle: { opacity: 0 },
       areaStyle: { color: opts.color, opacity: 1 },
       color: opts.color,
     },
-  ]
-}
-
-/** Climate normals overlay: q25–q75 band plus a dashed median line (palette NORMALS). */
-export function normalsSeries(
-  ctx: ChartContext,
-  xs: number[],
-  n: { q25: Nullable[]; median: Nullable[]; q75: Nullable[] },
-  opts: { yAxisIndex?: number; digits?: number; label?: string } = {},
-): LineSeriesOption[] {
-  const label = opts.label ?? 'Normal'
-  return [
-    ...bandSeries(`${label} (25th–75th pct.)`, `${label} 25th percentile`, xs, n.q25, n.q75, {
-      color: paint(ctx.theme, NORMALS.band),
-      yAxisIndex: opts.yAxisIndex,
-      digits: opts.digits,
-      stack: 'normals',
-    }),
-    lineSeries(`${label} (median)`, points(xs, n.median), {
-      color: paint(ctx.theme, NORMALS.line),
-      width: 1.5,
-      dash: NORMALS.dash,
-      yAxisIndex: opts.yAxisIndex,
-    }),
   ]
 }
 

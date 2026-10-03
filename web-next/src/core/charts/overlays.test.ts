@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SWP_BANDS } from '../palette'
-import { bandSeries, hBandSeries, hatchDecal, labelledLines, normalsSeries, sensorEventSeries } from './overlays'
+import { bandSeries, hBandSeries, hatchDecal, labelledLines, sensorEventSeries } from './overlays'
 import { testCtx } from './testing'
 import { paint } from './theme'
 
@@ -9,16 +9,13 @@ const H = 3_600_000
 describe('overlays', () => {
   const ctx = testCtx('dark')
   it('band: invisible aux base + stacked fill whose notes give lo–hi', () => {
-    const [base, fill] = bandSeries('Band', 'Base', [0, 1], [1, 2], [3, 5], { color: '#000000', stack: 's' })
+    const [base, fill] = bandSeries('Band', 'Base', [0, 1, 5], [1, 2, 2], [3, 5, 4], { color: '#000000', stack: 's', step: 1 })
     expect(base.id).toMatch(/^aux:/)
     expect(base.stack).toBe(fill.stack)
-    expect(fill.data).toEqual([[0, 2, '1–3'], [1, 3, '2–5']])
-  })
-  it('normals use NORMALS band/line roles', () => {
-    const s = normalsSeries(ctx, [0, 1], { q25: [1, 1], median: [2, 2], q75: [3, 3] })
-    expect(s).toHaveLength(3)
-    expect((s[1].areaStyle as { color: string }).color).toBe('rgba(132,148,171,0.18)')
-    expect(s[2].lineStyle).toMatchObject({ type: 'dashed', color: '#8494ab' })
+    // A gap (5 > 1.5 steps) breaks both edges at the same x; the band sits under its line (z 1).
+    expect(fill.data).toEqual([[0, 2, '1–3'], [1, 3, '2–5'], [3, null], [5, 2, '2–4']])
+    expect((base.data as unknown[]).length).toBe(4)
+    expect([base.z, fill.z, fill.smooth, fill.areaStyle?.opacity]).toEqual([1, 1, false, 1])
   })
   it('hBandSeries: markArea per band with corner labels and dashed markLines', () => {
     const s = hBandSeries(ctx, [0, 10], [{ from: 0.1, to: 0.33, label: 'FC', labelAt: 'insideTopLeft' }], [{ y: 0.33 }])

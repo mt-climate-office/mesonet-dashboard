@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dualAxis, fitAxisNames, logAxis, logExtent, niceCeil, valueAxis, timeAxis, timeTickLabel, timeZoom } from './axes'
-import { testCtx } from './testing'
+import { dualAxis, fitAxisNames, logAxis, logExtent, niceCeil, valueAxis, timeAxis, timeTickLabel } from './axes'
 
 describe('axes', () => {
   it('time axis: 12-hour labels read in UTC (= Denver wall clock), fewer ticks on compact', () => {
@@ -48,17 +47,5 @@ describe('axes', () => {
     expect([0, 0.7, 1, 1.3, 5100, 9001].map(niceCeil)).toEqual([1, 0.8, 1, 1.5, 6000, 10000])
     expect(logExtent(0.4, 30, [0.33, 15])).toEqual([0.1, 100])
     expect(logExtent(NaN, NaN)).toEqual([0.1, 100])
-  })
-  it('zoom: inside always, slider only on wide screens, no drag-pan on compact', () => {
-    expect(timeZoom(testCtx('dark', 900, false)).map((z) => z.type)).toEqual(['inside', 'slider'])
-    const [inside] = timeZoom(testCtx('dark', 390, true))
-    expect(timeZoom(testCtx('dark', 390, true))).toHaveLength(1)
-    expect(inside).toMatchObject({ moveOnMouseMove: false, zoomOnMouseWheel: 'shift', disabled: false })
-  })
-  it('zoom on touch: the inside zoom keeps the window but takes no gestures (swipes scroll the page)', () => {
-    const [inside, slider] = timeZoom(testCtx('dark', 900, false, true))
-    expect(inside).toMatchObject({ type: 'inside', disabled: true })
-    expect(slider).toMatchObject({ type: 'slider' })
-    expect(timeZoom(testCtx('dark', 390, true, true))).toEqual([expect.objectContaining({ type: 'inside', disabled: true })])
   })
 })

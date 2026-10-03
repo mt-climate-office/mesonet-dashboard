@@ -8,7 +8,8 @@ import type { AnnualTrace } from '../ag/compute'
 import { ANNUAL_CURRENT, yearColors } from '../palette'
 import { grid, valueAxis } from './axes'
 import { MISSING, fmtNum } from './format'
-import { lineSeries, points } from './series'
+import { lineSeries } from './series'
+import { LINE_WIDTH, bottomLayout, extentOf, points, stepMs, yAxisRange } from './style'
 import { paint } from './theme'
 import { axisTooltip, legend, tipText } from './tooltip'
 import type { ChartBuilder, ChartTable } from './types'
@@ -18,7 +19,12 @@ export interface AnnualModel {
   /** y title, e.g. annualAxisLabel(header, cumulative). */
   yLabel: string
   currentYear: number
+  /** The display variable ("Air Temperature"), for the y-axis rule (style `yBounds`); a cumulative total is zero-based. */
+  variable?: string
 }
+
+/** The scroll legend's row under the plot (px). */
+const LEGEND_ROW_PX = 26
 
 const sortedTraces = (m: AnnualModel) => [...m.traces].sort((a, b) => a.year - b.year)
 
@@ -41,11 +47,13 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
   const series = traces.map((t) => {
     const isCurrent = t.year === m.currentYear
     const color = isCurrent ? current : colors[prior.indexOf(t)]
-    const s = lineSeries(String(t.year), points(t.doy, t.values, t.date.map(monthDay)), { color, width: isCurrent ? ANNUAL_CURRENT.width : 1.4 })
+    // One line width; the current year is the design's one highlight (ANNUAL_CURRENT).
+    const s = lineSeries(String(t.year), points(t.doy, t.values, stepMs('doy'), t.date.map(monthDay)), { color, width: isCurrent ? ANNUAL_CURRENT.width : LINE_WIDTH })
     return isCurrent ? { ...s, z: 3 } : s
   })
   return {
-    grid: grid(ctx, { bottom: ctx.compact ? 52 : 56 }),
+    // No zoom: a calendar year is the whole axis. The legend sits under the month labels.
+    grid: grid(ctx, { bottom: bottomLayout(false, LEGEND_ROW_PX).grid }),
     // Month ticks at the 1st (non-leap DOY); the tooltip gives each year's exact date.
     xAxis: {
       type: 'value',
@@ -60,7 +68,7 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
         fontFamily: ctx.theme.fontUi,
       },
     },
-    yAxis: valueAxis(m.yLabel),
+    yAxis: { ...valueAxis(m.yLabel), ...yAxisRange(m.variable ?? '', ...extentOf(...traces.map((t) => t.values))) },
     legend: legend(ctx).legend,
     tooltip: axisTooltip(ctx, doyHeader, (name, y, date) => tipText(date ? `${name} (${date})` : name, y.toFixed(2))),
     series,

@@ -5,10 +5,10 @@ import { profileValues } from '../ag/view/derive'
 import { SWP_FIELD_CAPACITY, SWP_WILTING_POINT, depthLabel } from '../ag/view/labels'
 import { FROZEN, HEATMAP, THEMES, depthColor } from '../palette'
 import { FROZEN_NAME, percentSaturationChart, percentSaturationTable, soilProfileChart, soilProfileTable, swpChart, swpTable, type SoilProfileModel } from './agSoil'
-import { testCtx } from './testing'
+import { drawn, shownY, testCtx } from './testing'
 
 type S = { type: string; name: string; id?: string; data: unknown[]; color: string; markArea?: { data: [{ yAxis: number; name: string; label: { position: string } }, { yAxis: number }][] }; markLine?: { data: { yAxis: number }[] } }
-const series = (o: { series?: unknown }) => o.series as S[]
+const series = (o: { series?: unknown }) => drawn<S>(o)
 const texts = (o: { graphic?: unknown }) =>
   ((o.graphic ?? []) as { type: string; style?: { text?: string } }[]).filter((g) => g.type === 'text').map((g) => g.style!.text)
 
@@ -19,7 +19,7 @@ describe('swpChart', () => {
   const s = swp(soil, params)
   it('inverse log axis with "-" ticks covering FC and WP; bands + dashed lines + corner labels; one line per depth', () => {
     const o = swpChart({ series: s, period: 'daily' }, testCtx())
-    const y = o.yAxis as { type: string; inverse: boolean; min: number; max: number; axisLabel: { formatter: (v: number) => string } }
+    const [y] = shownY<{ type: string; inverse: boolean; min: number; max: number; axisLabel: { formatter: (v: number) => string } }>(o)
     expect(y).toMatchObject({ type: 'log', inverse: true })
     expect(y.min).toBeLessThanOrEqual(SWP_FIELD_CAPACITY)
     expect(y.max).toBeGreaterThanOrEqual(SWP_WILTING_POINT)
@@ -54,7 +54,7 @@ describe('percentSaturationChart', () => {
   it('linear 0–100 axis, one line per depth, table', () => {
     const p = percentSaturation(soil, params)
     const o = percentSaturationChart({ series: p, period: 'daily' }, testCtx())
-    expect(o.yAxis).toMatchObject({ type: 'value', min: 0, max: 100 })
+    expect(shownY(o)[0]).toMatchObject({ type: 'value', min: 0, max: 100, interval: 25 })
     expect(series(o).map((l) => l.name)).toEqual(p.depthsCm.map(depthLabel))
     expect(percentSaturationTable({ series: p, period: 'daily' }).rows).toHaveLength(p.time.length)
   })
@@ -74,7 +74,7 @@ describe('soilProfileChart', () => {
     const [heat, frozen] = series(o)
     expect(heat.type).toBe('heatmap')
     expect(heat.data).toEqual([[1, 0, 20], [0, 1, 30], [1, 1, 31]])
-    expect(o.yAxis).toMatchObject({ type: 'category', data: ['2 in', '4 in'], inverse: true })
+    expect(shownY(o)[0]).toMatchObject({ type: 'category', data: ['2 in', '4 in'], inverse: true })
     // Category data are wall-clock ms (local noon for daily rows) so the host zooms in ms.
     const x = o.xAxis as { type: string; data: number[]; axisLabel: { formatter: (v: number) => string } }
     expect(x).toMatchObject({ type: 'category', data: [Date.UTC(2026, 0, 1, 12), Date.UTC(2026, 0, 2, 12)] })
@@ -122,5 +122,20 @@ describe('soilProfileChart', () => {
     expect(t.columns).toEqual(['Date', ...pv.depthsCm.map(depthLabel)])
     expect(t.rows).toHaveLength(winter.time.length)
     expect(t.rows.flat()).toContain('frozen')
+  })
+})
+
+describe('Ag soil charts: the house chart style (style.ts)', () => {
+  it('SWP: the slider traces the shallowest depth, wet up (−log10 bar), as the inverted axis draws it', () => {
+    const s = swp(soil, params)
+    const o = swpChart({ series: s, period: 'daily' }, testCtx())
+    const trace = (o.series as S[])[0]
+    expect(trace.id).toBe('aux:zoom-trace')
+    const top = s.depthsCm.indexOf(Math.min(...s.depthsCm))
+    const line = series(o).find((l) => l.name === depthLabel(s.depthsCm[top]))!
+    const pts = (d: unknown[]) => d as [number, number | null][]
+    const p = pts(line.data).find((q) => q[1] != null && q[1] > 0)!
+    // (The trace's first point is the null at the track's start, at the same x.)
+    expect(pts(trace.data).findLast((q) => q[0] === p[0])![1]).toBeCloseTo(-Math.log10(p[1]!), 9)
   })
 })

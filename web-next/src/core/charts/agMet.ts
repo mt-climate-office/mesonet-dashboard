@@ -8,9 +8,10 @@ import type { CciSeries, EtoSeries, FeelsLikeRegime, FeelsLikeSeries } from '../
 import { cToF, cumulativeSum, mmToIn } from '../ag/compute'
 import { CCI_CLASSES, FEELS_LIKE_LABELS } from '../ag/view/labels'
 import { ETR, FEELS_LIKE, INDEX_LINE, cciColor } from '../palette'
-import { dualAxis, grid, timeAxis, timeZoom, valueAxis } from './axes'
+import { dualAxis, valueAxis } from './axes'
 import { fmtNum, fmtWall, isoWall, wallMs, type Period } from './format'
-import { AUX, barSeries, lineSeries, markerSeries, points } from './series'
+import { AUX, barSeries, lineSeries, markerSeries } from './series'
+import { LEGEND_PX, REF_WIDTH, extentOf, plotExtent, points, stepMs, timeFrame, yAxisRange } from './style'
 import { paint } from './theme'
 import { agLegend, liftForLegend, sentenceCase } from './agLegend'
 import { axisTooltip, tipText } from './tooltip'
@@ -35,27 +36,31 @@ function etrValues(m: EtrModel) {
   return { xs, inches, cumulative: cumulativeSum(inches) }
 }
 
-/** Daily/hourly reference ET in inches (bars, y1) + cumulative inches (line, y2). */
+/** Daily/hourly reference ET in inches (bars, y1) + cumulative inches (line, y2); the slider traces the cumulative. */
 export const etrChart: ChartBuilder<EtrModel> = (m, ctx) => {
   const { xs, inches, cumulative } = etrValues(m)
   const c = ETR[ctx.theme.name]
+  const step = stepMs(m.period)
   const name = plainName('etr', 'Reference ET')
   const lg = agLegend(ctx, [
     { name: 'ETr', text: name },
     { name: 'Cumulative ETr', text: cumulativeTitle(name), short: 'Cumulative' },
   ])
+  const cum = points(xs, cumulative, step)
+  const f = timeFrame(ctx, { extent: plotExtent(xs, step, true), trace: cum, yAxisIndex: 2, legendPx: LEGEND_PX, right: 64 })
   return {
     useUTC: true,
-    ...liftForLegend(grid(ctx, { right: 64 }), timeZoom(ctx), lg.extra),
-    xAxis: timeAxis(),
-    yAxis: dualAxis(ETR_AXIS, ETR_CUM_AXIS),
+    ...liftForLegend(f.grid, f.dataZoom, lg.extra),
+    xAxis: f.xAxis,
+    yAxis: [...dualAxis(ETR_AXIS, ETR_CUM_AXIS), ...(f.trace ? [f.trace.yAxis] : [])],
     legend: lg.legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y) =>
       tipText(name === 'ETr' ? 'Reference ET' : 'Cumulative', `${y.toFixed(3)} in`),
     ),
     series: [
-      barSeries('ETr', points(xs, inches), c.bar),
-      lineSeries('Cumulative ETr', points(xs, cumulative), { color: c.cumulative, yAxisIndex: 1 }),
+      ...(f.trace ? [f.trace.series] : []),
+      barSeries('ETr', points(xs, inches, step), c.bar),
+      lineSeries('Cumulative ETr', cum, { color: c.cumulative, yAxisIndex: 1 }),
     ],
   } satisfies EChartsOption
 }
@@ -95,22 +100,28 @@ function indexChart<K extends string>(
     return [markerSeries(o.label(k), ix.map((i) => [o.xs[i], o.yF[i]] as [number, number]), { ...o.style(k), size })]
   })
   const present = o.order.filter((k) => markers.some((s) => s.name === o.label(k)))
+  const step = stepMs(o.period)
+  const line = points(o.xs, o.yF, step)
+  const f = timeFrame(ctx, { extent: plotExtent(o.xs, step, false), trace: line, yAxisIndex: 1, legendPx: LEGEND_PX })
   const textOf = new Map(present.map((k) => [o.label(k), sentenceCase(o.label(k))]))
   const lg = agLegend(
     ctx,
     present.map((k) => ({ name: o.label(k), text: textOf.get(o.label(k)), short: o.short?.(k) })),
     { title: o.legendTitle },
   )
+  // A temperature-equivalent index: a free axis (style yBounds), as air temperature.
+  const y = { ...valueAxis(o.yName), ...yAxisRange('Air Temperature', ...extentOf(o.yF)) }
   return {
     useUTC: true,
-    ...liftForLegend(grid(ctx), timeZoom(ctx), lg.extra),
-    xAxis: timeAxis(),
-    yAxis: valueAxis(o.yName),
+    ...liftForLegend(f.grid, f.dataZoom, lg.extra),
+    xAxis: f.xAxis,
+    yAxis: f.trace ? [y, f.trace.yAxis] : y,
     legend: lg.legend,
     graphic: lg.graphic,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, o.period), (name, y) => tipText(textOf.get(name) ?? name, `${y.toFixed(1)} °F`)),
     series: [
-      lineSeries('Index', points(o.xs, o.yF), { color: paint(ctx.theme, INDEX_LINE), width: 1, id: `${AUX}index-line` }),
+      ...(f.trace ? [f.trace.series] : []),
+      lineSeries('Index', line, { color: paint(ctx.theme, INDEX_LINE), width: REF_WIDTH, id: `${AUX}index-line` }),
       ...markers,
     ],
   }
