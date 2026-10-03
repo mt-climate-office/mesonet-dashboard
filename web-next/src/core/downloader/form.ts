@@ -47,6 +47,17 @@ export function formBlocker(i: { station: string | null; elements: readonly stri
   return i.dateError ?? (i.rangeValid ? null : BAD_DATES)
 }
 
+/**
+ * The form is not ready to say why it cannot run: `?s=` is set but the catalog
+ * has not confirmed it, or the chart behind the sheet is about to prefill it
+ * (core/downloader/fromChart `prefillsFromChart`) once the station's elements
+ * load. Preview then waits, disabled with no reason line, so the sheet does not
+ * show "Pick at least one variable." for a moment and jump.
+ */
+export function formWaiting(i: { catalogLoading: boolean; prefillPending: boolean }): boolean {
+  return i.catalogLoading || i.prefillPending
+}
+
 /** A request's identity: a result belongs to the form while their keys match. */
 export const queryKey = (q: DownloadQuery): string => [q.station, q.start, q.end, q.period, q.level, q.elements.join(',')].join('|')
 
