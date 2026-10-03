@@ -290,7 +290,8 @@ export function extractCards(page, sel) {
         tables: [...el.querySelectorAll('table')]
           .filter((t) => !hidden(t))
           // Header rows name the columns (About's "Reading | Value"); they are not label/value rows.
-          .map((t) => [...t.querySelectorAll('tr')].filter((tr) => !tr.closest('thead')).map((tr) => [...tr.children].map((c) => visibleText(c).join(' ')))),
+          // A cell with data-col (About's plain-label readings) is keyed by its API column, as web/ labels it.
+          .map((t) => [...t.querySelectorAll('tr')].filter((tr) => !tr.closest('thead')).map((tr) => [...tr.children].map((c) => c.dataset.col ?? visibleText(c).join(' ')))),
         // A lazy image that has not loaded yet is not broken: only a finished load with no pixels is.
         images: [...el.querySelectorAll('img')].filter((i) => !hidden(i)).map((i) => ({ src: i.currentSrc || i.src, ok: !(i.complete && i.naturalWidth === 0), loaded: i.complete && i.naturalWidth > 0 })),
         links: [...el.querySelectorAll('a[href]')].filter((a) => !hidden(a)).map((a) => a.href),

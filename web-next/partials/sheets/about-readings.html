@@ -1,0 +1,51 @@
+<!-- All current readings (x-data="sheet", ui/shell/sheet.ts; content x-data="aboutReadings",
+     ui/about/readings.ts): every reading from /latest with plain labels, then the HydroMet rain totals.
+     Opened by About's row #about-readings (data-sheet), which Now's "All readings" link targets.
+     The tables scroll inside a named, focusable region (WCAG 2.1.1); each row header keeps its API
+     column in data-col for the fidelity harness. Content mounts only while open. -->
+<div class="mco-scrim dash-scrim dash-sheet-scrim" id="sheet-about-readings-scrim" hidden></div>
+<section id="sheet-about-readings" class="dash-sheet dash-sheet--modal about-sheet" role="dialog" aria-modal="true"
+         aria-labelledby="sheet-about-readings-title" x-data="sheet({ id: 'about-readings' })" data-testid="sheet-about-readings" hidden>
+  <div class="dash-panel-head">
+    <button type="button" class="dash-sheet-handle" aria-controls="sheet-about-readings" aria-label="Show more of the readings">
+      <span class="dash-sheet-grab" aria-hidden="true"></span>
+    </button>
+    <h2 class="dash-panel-title" id="sheet-about-readings-title" tabindex="-1" data-autofocus>All current readings</h2>
+    <button type="button" class="modal-close" aria-label="Close readings" @click="close()" data-testid="sheet-about-readings-close">×</button>
+  </div>
+  <div class="dash-panel-body">
+    <template x-if="isOpen">
+      <div class="about-sheet-content" x-data="aboutReadings" data-testid="about-readings">
+        <template x-if="state === 'loading'">
+          <div aria-busy="true"><p class="sr-only" role="status">Loading current readings…</p><span class="dash-skel dash-skel--table" aria-hidden="true"></span></div>
+        </template>
+        <template x-if="state === 'error'"><p class="about-message">Current readings are unavailable: the Mesonet API did not answer.</p></template>
+        <template x-if="state === 'empty'"><p class="about-message">No recent observations.</p></template>
+        <template x-if="state === 'ready'">
+          <div class="about-scroll" role="region" aria-label="All current readings (scrollable)" tabindex="0">
+            <table class="about-table" data-testid="about-readings-table">
+              <caption>Latest observation</caption>
+              <thead><tr><th scope="col">Reading</th><th scope="col">Value</th></tr></thead>
+              <tbody>
+                <template x-for="r in rows" :key="r.col">
+                  <tr><th scope="row" :data-col="r.col" x-text="r.label"></th><td x-text="r.value"></td></tr>
+                </template>
+              </tbody>
+            </table>
+            <template x-if="pptRows.length">
+              <table class="about-table" data-testid="about-ppt-table">
+                <caption>Rain totals</caption>
+                <thead><tr><th scope="col">Period</th><th scope="col">Total</th></tr></thead>
+                <tbody>
+                  <template x-for="r in pptRows" :key="r.col">
+                    <tr><th scope="row" :data-col="r.col" x-text="r.label"></th><td x-text="r.value"></td></tr>
+                  </template>
+                </tbody>
+              </table>
+            </template>
+          </div>
+        </template>
+      </div>
+    </template>
+  </div>
+</section>

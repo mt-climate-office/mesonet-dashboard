@@ -9,6 +9,8 @@ import { parseWallClock } from '../sensorEvents'
 export interface DetailRow {
   label: string
   value: string
+  /** A station id shown in mono after the value. */
+  id?: string
 }
 
 /** "YYYY-MM-DD…" (API local) → "Oct 30, 2020"; null for blanks and "None". */
@@ -33,27 +35,31 @@ export function formatElevation(m: number): string {
 }
 
 /**
- * Install date to the newest report ("Oct 30, 2020 – Oct 1, 2026"); "Since
- * Oct 30, 2020" until `/latest` answers; "—" without an install date.
+ * Install date to the newest report: "Oct 30, 2020 – today" when it reported
+ * on `today` (YYYY-MM-DD), else "Oct 30, 2020 – Oct 1, 2026"; "Since Oct 30,
+ * 2020" until `/latest` answers; "—" without an install date.
  */
-export function periodOfRecord(installed: string | null, latestStamp: string | null | undefined): string {
+export function periodOfRecord(installed: string | null, latestStamp: string | null | undefined, today: string): string {
   const from = formatDay(installed)
   if (!from) return MISSING
   const to = formatDay(latestStamp)
-  return to ? `${from} – ${to}` : `Since ${from}`
+  if (!to) return `Since ${from}`
+  return `${from} – ${latestStamp?.slice(0, 10) === today ? 'today' : to}`
 }
 
-/** Rows in display order; County and NWS ID only when the catalog has them. */
-export function stationDetails(s: Station, latestStamp: string | null | undefined): DetailRow[] {
+/** "Gallatin County · 45.66° N, 111.07° W" (coordinates alone without a county). */
+export function formatLocation(s: Station): string {
+  const coords = formatCoordinates(s.latitude, s.longitude)
+  return s.county ? `${s.county} County · ${coords}` : coords
+}
+
+/** Rows in display order: Station (name, id in mono), Network, Location, Elevation, Record. */
+export function stationDetails(s: Station, latestStamp: string | null | undefined, today: string): DetailRow[] {
   return [
-    { label: 'Name', value: s.name },
-    { label: 'Station ID', value: s.station },
+    { label: 'Station', value: s.name, id: s.station },
     { label: 'Network', value: s.sub_network || MISSING },
-    ...(s.nwsli_id ? [{ label: 'NWS ID', value: s.nwsli_id }] : []),
-    ...(s.county ? [{ label: 'County', value: s.county }] : []),
-    { label: 'Coordinates', value: formatCoordinates(s.latitude, s.longitude) },
+    { label: 'Location', value: formatLocation(s) },
     { label: 'Elevation', value: formatElevation(s.elevation) },
-    { label: 'Installed', value: formatDay(s.date_installed) ?? MISSING },
-    { label: 'Period of record', value: periodOfRecord(s.date_installed, latestStamp) },
+    { label: 'Record', value: periodOfRecord(s.date_installed, latestStamp, today) },
   ]
 }

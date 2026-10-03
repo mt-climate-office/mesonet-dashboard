@@ -1,0 +1,45 @@
+<!-- Sensor changes (x-data="sheet", ui/shell/sheet.ts; content x-data="aboutHistory",
+     ui/about/history.ts): installs and removals by day, newest first, in a named, focusable scroll
+     region. Opened by About's "Sensor changes" row. Content mounts only while open. -->
+<div class="mco-scrim dash-scrim dash-sheet-scrim" id="sheet-about-history-scrim" hidden></div>
+<section id="sheet-about-history" class="dash-sheet dash-sheet--modal about-sheet" role="dialog" aria-modal="true"
+         aria-labelledby="sheet-about-history-title" x-data="sheet({ id: 'about-history' })" data-testid="sheet-about-history" hidden>
+  <div class="dash-panel-head">
+    <button type="button" class="dash-sheet-handle" aria-controls="sheet-about-history" aria-label="Show more of the sensor changes">
+      <span class="dash-sheet-grab" aria-hidden="true"></span>
+    </button>
+    <h2 class="dash-panel-title" id="sheet-about-history-title" tabindex="-1" data-autofocus>Sensor changes</h2>
+    <button type="button" class="modal-close" aria-label="Close sensor changes" @click="close()" data-testid="sheet-about-history-close">×</button>
+  </div>
+  <div class="dash-panel-body">
+    <template x-if="isOpen">
+      <div class="about-sheet-content" x-data="aboutHistory" data-testid="about-history">
+        <template x-if="state === 'loading'">
+          <div aria-busy="true"><p class="sr-only" role="status">Loading sensor history…</p><span class="dash-skel dash-skel--table" aria-hidden="true"></span></div>
+        </template>
+        <template x-if="state === 'error'"><p class="about-message">Sensor history is unavailable: the Mesonet API did not answer.</p></template>
+        <template x-if="state === 'empty'"><p class="about-message">No sensor changes on record.</p></template>
+        <template x-if="state === 'ready'">
+          <div class="about-scroll" role="region" aria-label="Sensor changes (scrollable)" tabindex="0">
+            <ol class="about-days">
+              <template x-for="d in days" :key="d.date">
+                <li>
+                  <h3 class="about-day"><time :datetime="d.date" x-text="d.label"></time></h3>
+                  <ul class="about-changes">
+                    <template x-for="c in d.changes" :key="c.kind + c.sensor + c.measures">
+                      <li>
+                        <span class="dash-badge" x-text="c.kind === 'installed' ? 'Installed' : 'Removed'"></span>
+                        <span class="about-sensor" x-text="c.sensor"></span>
+                        <template x-if="c.measures"><span class="about-measures" x-text="c.measures"></span></template>
+                      </li>
+                    </template>
+                  </ul>
+                </li>
+              </template>
+            </ol>
+          </div>
+        </template>
+      </div>
+    </template>
+  </div>
+</section>

@@ -53,6 +53,14 @@ const datesSheet = async (page) => {
   await page.waitForFunction(() => !!document.querySelector('[data-testid="custom-dates"]'))
   await animationsDone(page)
 }
+/** An About row's sheet, opened, once its content (`filled`) is in and the slide has ended. */
+const aboutSheet = (row, filled) => async (page) => {
+  await page.getByTestId(row).click()
+  await page.waitForFunction((sel) => document.querySelector(sel)?.children.length > 0, filled, { timeout: 30000 })
+  // The slide starts two frames after opening: wait until the panel is fully opaque, then for it to settle.
+  await page.waitForFunction(() => [...document.querySelectorAll('.about-sheet:not([hidden])')].every((s) => !s.classList.contains('enter') && getComputedStyle(s).opacity === '1'), null, { timeout: 10000 })
+  await animationsDone(page)
+}
 /** The Download sheet with its Variables row expanded and the checklist open (no variables yet: the button's reason shows). */
 const dlVariables = async (page) => {
   await page.locator('#dl-row-vars-btn').click()
@@ -65,13 +73,17 @@ const dlDates = async (page) => {
   await page.getByTestId('dl-dates').waitFor({ state: 'visible' })
 }
 
+const ABOUT = { filled: ['[data-testid="about-details"] .about-dl', '[data-testid="about-map"] tbody'] }
+
 // `before` runs once the page loads, `after` once the evidence is in; `only` limits the viewports.
 const SCENARIOS = [
   // The Now overview (default section), with the header ⋯ menu open, and a first visit (no station: the picker is open).
   { name: 'now', query: '?s=acebozem', evidence: { charts: 1, filled: ['[data-testid="now-tiles"]', '[data-testid="tile-wind"] .dash-spark svg'] } },
   { name: 'header-menu', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openMenu },
-  // About: details, locator map, all current readings, sensor changes, data notes.
-  { name: 'about', query: '?s=acebozem#about', evidence: { filled: ['[data-testid="about-readings-table"] tbody', '[data-testid="about-history"] .about-days', '[data-testid="about-map"] tbody'] } },
+  // About: details, locator map, the two rows, data notes; then each row's sheet.
+  { name: 'about', query: '?s=acebozem#about', evidence: ABOUT },
+  { name: 'about-readings', query: '?s=acebozem#about', evidence: ABOUT, after: aboutSheet('about-readings-row', '[data-testid="about-readings-table"] tbody') },
+  { name: 'about-history', query: '?s=acebozem#about', evidence: ABOUT, after: aboutSheet('about-history-row', '[data-testid="about-history"] .about-days') },
   { name: 'picker', query: '', evidence: {}, after: browseMap },
   { name: 'picker-open', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPicker },
   // Charts: the variable list (with the Ag tools group), a variable page, and Compare (a legacy #latest link lands there).

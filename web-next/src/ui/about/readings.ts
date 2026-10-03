@@ -1,15 +1,19 @@
 /**
- * `x-data="aboutReadings"` (partials/about/readings.html): every current
- * reading from `/latest`, plus the precipitation summary from `/derived/ppt/`
- * for HydroMet stations only (it 422s for AgriMet). Rows:
- * core/cards/currentConditions. Now's "All readings" link scrolls here.
+ * `x-data="aboutReadings"` (partials/sheets/about-readings.html): every
+ * current reading from `/latest` with plain labels (core/about `readingRows`),
+ * plus the precipitation summary from `/derived/ppt/` for HydroMet stations
+ * only (it 422s for AgriMet). `currentReadings(id)` also gives About's row its count.
  */
 import Alpine from 'alpinejs'
-import { currentConditionsRows, pptSummaryRows } from '../../core/cards'
+import { pptRows, readingRows, type Reading } from '../../core/about'
 import { component } from '../component'
 import { latestObs, pptSummary } from '../station/resources'
 
-type Row = readonly [string, string]
+/** Station `id`'s current readings, Observed first; [] until `/latest` answers. */
+export function currentReadings(id: string | null): Reading[] {
+  const first = id ? latestObs(id).data?.[0] : undefined
+  return first ? readingRows(first as Record<string, unknown>) : []
+}
 
 export function aboutReadings() {
   return component({
@@ -22,16 +26,14 @@ export function aboutReadings() {
       return this.rows.length ? 'ready' : 'empty'
     },
 
-    get rows(): Row[] {
-      const id = Alpine.store('station').id
-      const first = id ? latestObs(id).data?.[0] : undefined
-      return first ? currentConditionsRows(first as Record<string, unknown>) : []
+    get rows(): Reading[] {
+      return currentReadings(Alpine.store('station').id)
     },
 
-    get pptRows(): Row[] {
+    get pptRows(): Reading[] {
       const s = Alpine.store('station').current
       if (s?.sub_network !== 'HydroMet') return []
-      return pptSummaryRows(pptSummary(s.station).data?.[0])
+      return pptRows(pptSummary(s.station).data?.[0])
     },
   })
 }

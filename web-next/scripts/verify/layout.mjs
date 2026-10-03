@@ -83,7 +83,7 @@ for (const [name, query, evidence] of [
   ['ag-gdd', '?s=acebozem&v=gdd#charts', { charts: 1 }],
   ['ag-etr-history', '?s=acebozem&v=etr&view=history#charts', { charts: 1 }],
   ['download', DL_QUERY, { filled: ['[data-testid="dl-station"]'] }],
-  ['about', '?s=acebozem#about', { filled: ['[data-testid="about-readings-table"] tbody'] }],
+  ['about', '?s=acebozem#about', { filled: ['[data-testid="about-details"] .about-dl', '[data-testid="about-map"] tbody'] }],
 ]) {
   const { page, close, rendered } = await open(env, query, { viewport: PHONE })
   await rendered(evidence)

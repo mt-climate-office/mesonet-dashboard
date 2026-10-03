@@ -59,6 +59,20 @@ code and CSV bytes are unchanged.
   primitive only; sections adopt the new chips and numerals in phase B.
 - **Why:** REDESIGN.md "Visual language".
 
+### About: details, map, two rows that open sheets
+- **P1:** About was five cards: details (nine rows: name, id, network, NWS ID, county, coordinates, elevation,
+  installed, period of record), the map, the readings table with API labels ("Soil VWC @ 4 in [%]", values as
+  the API sends them), the sensor-change list, and the notes. Now's "All readings" link scrolled to the table.
+- **New:** a details card with five rows (Station with its id in mono, Network, Location "Gallatin County ·
+  45.66° N, 111.07° W", Elevation, Record "Oct 30, 2020 – today") and a one-pager row; the map in a flat,
+  rounded frame; rows "All current readings · 26" and "Sensor changes · Aug 22, 2025", each opening a modal
+  sheet; the notes. The readings use plain labels ("Soil moisture at 4 in", core/about `readingRows`) with the
+  unit on the value at table precision ("13.4%", "57.0 °F"); the rain totals read "Last 7 days", "Year to
+  date". The NWS ID row is gone (the station picker still accepts an NWSLI in `?s=`). Now's "All readings"
+  opens the readings sheet over About; closing it leaves focus on the row.
+- **Why:** REDESIGN.md "About": flat surfaces, plain labels, and a sheet is easier than a long in-place table
+  on phones.
+
 ### Now: the forecast card becomes the hero's 48 h strip
 - **P1:** an NWS forecast card: the next 8 text periods (name, icon, temperature, short forecast, chance of
   precipitation) in a horizontal scroll-snap strip, with a "{place} · NWS forecast" heading and a Retry button.
