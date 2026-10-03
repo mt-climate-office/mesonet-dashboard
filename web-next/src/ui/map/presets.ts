@@ -70,6 +70,7 @@ function mapView(opts: StationMapOptions, preset: Preset) {
       host = createMap(canvas, {
         label: opts.label ?? preset.label,
         cooperativeGestures: preset.cooperative,
+        refit: !preset.fly,
         layers: (map, theme) => {
           const markers = layer?.add(map, theme)
           if (markers) legend.render(legendRows(markers, theme, cssVar))
