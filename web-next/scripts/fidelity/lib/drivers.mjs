@@ -113,8 +113,8 @@ const nextLatestReady = (tab) => {
     const rose = q('[data-testid="wind-rose-chart"]')
     return !!(q('[data-testid="now-empty"]') || (q('[data-testid="now-tiles"]') && !q('[data-testid="now-media"] > .dash-skel') && (!rose || rose.querySelector('canvas'))))
   }
-  // About: the readings settled, the details listed, the map drawn.
-  return !!(q('[data-testid="about-empty"]') || ((q('[data-testid="about-readings-table"]') || q('.about-message')) && q('.about-dl-row') && q('[data-testid="about-map"] canvas')))
+  // About: the details listed (the record ends once /latest is in), the map drawn.
+  return !!(q('[data-testid="about-empty"]') || ([...document.querySelectorAll('.about-dl-row')].some((r) => / – /.test(r.textContent)) && q('[data-testid="about-map"] canvas')))
 }
 
 export function captureLatest(browser, target, station, sc, outDir) {
@@ -123,6 +123,11 @@ export function captureLatest(browser, target, station, sc, outDir) {
   return withPage(browser, target, url, join(outDir, 'shots'), `${station}-${sc.id}-${target.kind}`, async (page, log, res) => {
     if (next) await page.waitForFunction(nextLatestReady, sc.next.tab, { timeout: TIMEOUTS.render, polling: 300 })
     else await page.waitForFunction(webLatestReady, null, { timeout: TIMEOUTS.render, polling: 300 })
+    // About's readings live in a sheet: open it from its row and wait for the table (or its message).
+    if (next && Object.values(sc.next.cards ?? {}).includes('[data-testid="about-readings"]')) {
+      await page.click('#about-readings')
+      await page.waitForFunction(() => document.querySelector('[data-testid="about-readings-table"] tbody tr, [data-testid="about-readings"] .about-message'), null, { timeout: TIMEOUTS.render, polling: 300 })
+    }
     await waitQuiet(page, log, target.kind)
     res.figures = await figures(page, target, 'latest')
     res.cards = await extractCards(page, next ? sc.next.cards : await tagWebCards(page))
