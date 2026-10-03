@@ -17,6 +17,10 @@ describe('overlays', () => {
     expect((base.data as unknown[]).length).toBe(4)
     expect([base.z, fill.z, fill.smooth, fill.areaStyle?.opacity]).toEqual([1, 1, false, 1])
   })
+  it('band: stacks with stackStrategy "all", so a low edge below zero still carries the fill', () => {
+    const [base, fill] = bandSeries('Band', 'Base', [0, 1], [-15, -5], [10, 20], { color: '#000000', stack: 's', step: 1 })
+    expect([base.stackStrategy, fill.stackStrategy]).toEqual(['all', 'all'])
+  })
   it('hBandSeries: markArea per band with corner labels and dashed markLines', () => {
     const s = hBandSeries(ctx, [0, 10], [{ from: 0.1, to: 0.33, label: 'FC', labelAt: 'insideTopLeft' }], [{ y: 0.33 }])
     expect(s.id).toBe('aux:bands')

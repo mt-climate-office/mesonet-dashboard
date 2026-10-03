@@ -41,7 +41,9 @@ export function bandSeries(
   const d = opts.digits ?? 0
   const width = xs.map((_, i) => (lo[i] != null && hi[i] != null ? hi[i]! - lo[i]! : null))
   const notes = xs.map((_, i) => (lo[i] != null && hi[i] != null ? `${lo[i]!.toFixed(d)}–${hi[i]!.toFixed(d)}` : ''))
-  const common = { type: 'line' as const, stack: opts.stack, yAxisIndex: opts.yAxisIndex ?? 0, smooth: false, showSymbol: false, symbol: 'none', connectNulls: false, silent: true, z: 1 }
+  // stackStrategy 'all': ECharts' default ('samesign') stacks negatives apart, so a band whose low
+  // edge is below zero would sit on 0 instead of on its base.
+  const common = { type: 'line' as const, stack: opts.stack, stackStrategy: 'all' as const, yAxisIndex: opts.yAxisIndex ?? 0, smooth: false, showSymbol: false, symbol: 'none', connectNulls: false, silent: true, z: 1 }
   return [
     { ...common, id: `${AUX}${opts.stack}-base`, name: baseName, data: points(xs, lo, opts.step), lineStyle: { opacity: 0 } },
     {
