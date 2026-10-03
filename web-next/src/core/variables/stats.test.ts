@@ -2,30 +2,40 @@ import { describe, expect, it } from 'vitest'
 import type { TimeseriesPanel } from '../models/timeseries'
 import { fmtStat, panelStats } from './stats'
 
-const panel = (series: { name: string; depth?: string; values: (number | null)[] }[]): TimeseriesPanel => ({
+type S = { name: string; depth?: string; values: (number | null)[]; band?: { lo: (number | null)[]; hi: (number | null)[] } }
+const panel = (series: S[]): TimeseriesPanel => ({
   variable: 'X',
   axisTitle: 'X',
   isSoil: false,
   noData: false,
   yRange: null,
   legend: false,
-  series: series.map((s) => ({ name: s.name, type: 'line', depth: s.depth ?? null, values: s.values, hoverLabel: s.name })),
+  series: series.map((s) => ({ name: s.name, type: 'line', depth: s.depth ?? null, values: s.values, hoverLabel: s.name, band: s.band })),
   normals: null,
   sensorSpans: [],
 })
 
 describe('panelStats', () => {
   const x = [0, 10, 20, 30]
-  it('min / max / mean over the view, with the unit', () => {
+  it('low / high / average over the view, with the unit', () => {
     const [row] = panelStats(panel([{ name: 'Air Temperature [°F]', values: [40, 50, null, 99] }]), x, [0, 30], false)
     expect(row).toEqual({
       label: '',
       items: [
-        { label: 'Min', value: '40 °F' },
-        { label: 'Max', value: '50 °F' },
-        { label: 'Mean', value: '45 °F' },
+        { label: 'Low', value: '40 °F' },
+        { label: 'High', value: '50 °F' },
+        { label: 'Average', value: '45 °F' },
       ],
     })
+  })
+  it('with a daily band, Low and High are the true extremes; Average stays the mean of the means', () => {
+    const band = { lo: [30, 41, null, 1], hi: [55, 62, null, 120] }
+    const [row] = panelStats(panel([{ name: 'Air Temperature [°F]', values: [40, 50, null, 99], band }]), x, [0, 30], false)
+    expect(row.items).toEqual([
+      { label: 'Low', value: '30 °F' },
+      { label: 'High', value: '62 °F' },
+      { label: 'Average', value: '45 °F' },
+    ])
   })
   it('a total for summed variables', () => {
     const [row] = panelStats(panel([{ name: 'Precipitation [in]', values: [0.1, 0.25, 0, 1] }]), x, [0, 25], true)

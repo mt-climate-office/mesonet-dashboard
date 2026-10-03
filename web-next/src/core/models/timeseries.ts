@@ -141,6 +141,8 @@ export interface TimeseriesSeries {
   values: (number | null)[]
   /** Legacy hover label ("Precipitation Total", the variable, or the column). */
   hoverLabel: string
+  /** Daily views of the variable page: each day's true low and high, aligned with `values` (core/variables/band). */
+  band?: { lo: (number | null)[]; hi: (number | null)[] }
 }
 
 export type NormalsOverlay =

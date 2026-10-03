@@ -293,6 +293,13 @@ export const NORMALS = {
   dash: 'dashed' as const,
 }
 
+/**
+ * The variable page's Daily interval: the daily low–high band behind the mean line, in the line's own
+ * color at this alpha (`withAlpha`). A fill, not a mark: the mean line, the tooltip and the table carry
+ * the values, so it needs no 3:1 against the surface (WCAG 1.4.11 applies to the line).
+ */
+export const DAILY_RANGE = { alpha: 0.22, label: 'Daily low–high' } as const
+
 /** Sensor-change overlay: hatched grey area with a text label. */
 export const SENSOR_EVENT = {
   fill: { token: '--text-dim', alpha: 0.25 } as TokenRef,

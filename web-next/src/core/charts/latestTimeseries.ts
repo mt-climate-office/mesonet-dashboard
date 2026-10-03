@@ -42,7 +42,7 @@ const DASHES = [undefined, 'dashed', 'dotted'] as const
 const isBar = (p: TimeseriesPanel) => p.variable === 'Precipitation' || p.variable === 'Reference ET'
 
 /** Line/bar color of one column (palette roles only). */
-function seriesColor(ctx: ChartContext, p: TimeseriesPanel, s: TimeseriesSeries, panelIndex: number): string {
+export function seriesColor(ctx: ChartContext, p: TimeseriesPanel, s: TimeseriesSeries, panelIndex: number): string {
   const theme = ctx.theme.name
   if (p.variable === 'Precipitation') return PRECIP[theme].bar
   if (p.variable === 'Reference ET') return ETR[theme].bar
@@ -296,11 +296,17 @@ export const TABLE_ROW_LIMIT = 500
 
 /**
  * The sr-only twin: one row per time step with any value (the first `limit`,
- * then a one-cell note row), one column per plotted column.
+ * then a one-cell note row), one column per plotted column (plus its daily
+ * low and high where the variable page attached a band).
  */
 export function latestTimeseriesTable(m: LatestTimeseriesModel, limit = TABLE_ROW_LIMIT): ChartTable {
   const period = m.period === 'daily' ? 'daily' : 'hourly'
-  const cols = m.ts.panels.flatMap((p) => p.series)
+  const cols = m.ts.panels.flatMap((p) =>
+    p.series.flatMap((s) => [
+      { name: s.name, values: s.values },
+      ...(s.band ? [{ name: `Low: ${s.name}`, values: s.band.lo }, { name: `High: ${s.name}`, values: s.band.hi }] : []),
+    ]),
+  )
   const rows: string[][] = []
   let total = 0
   m.ts.x.forEach((x, j) => {

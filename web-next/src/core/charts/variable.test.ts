@@ -46,6 +46,22 @@ describe('variableChart', () => {
     expect(html).toContain('61 °F')
     expect(html).not.toContain('tooltip-sub')
   })
+  it('daily with a band: a low–high fill behind the line, named in the tooltip and tabled', () => {
+    const m = model(24)
+    const s = m.ts.panels[0].series[0]
+    const banded: VariableModel = { ...m, period: 'daily', ts: { ...m.ts, panels: [{ ...m.ts.panels[0], series: [{ ...s, band: { lo: s.values.map((v) => v! - 5), hi: s.values.map((v) => v! + 5) } }] }] } }
+    const o = variableChart(banded, testCtx('light')) as unknown as { series: { id: string; z?: number }[]; tooltip: { formatter: (p: unknown) => string } }
+    expect(o.series.map((x) => x.id)).toEqual([expect.stringContaining('Air Temperature'), 'aux:daily-range-base', 'daily-range-band'])
+    expect(o.series[2].z).toBe(1)
+    const html = o.tooltip.formatter([
+      { seriesIndex: 0, value: [view[0], 61], axisValue: view[0], marker: '' },
+      { seriesIndex: 2, seriesId: 'daily-range-band', value: [view[0], 10, '55.0–65.0'], axisValue: view[0] },
+    ])
+    expect(html).toContain('Low–high')
+    expect(html).toContain('55.0–65.0 °F')
+    expect(variableTable(banded).columns).toEqual(['Date', 'Air Temperature @ 2 m [°F]', 'Low: Air Temperature @ 2 m [°F]', 'High: Air Temperature @ 2 m [°F]'])
+    expect((variableChart(model(), testCtx('light')) as unknown as { series: unknown[] }).series).toHaveLength(1)
+  })
   it('the sr-only twin stops at 500 rows; the Table view gets them all', () => {
     expect(variableTable(model(600)).rows).toHaveLength(501)
     expect(variableTableAll(model(600)).rows).toHaveLength(600)

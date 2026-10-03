@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { exclusiveEnd, fmtDate, getStationRecord } from './record'
+import { aggFuncQuery, exclusiveEnd, fmtDate, getStationRecord } from './record'
 import { mergeOn } from './http'
 import type { ObservationRow } from './types'
 
@@ -82,5 +82,23 @@ describe('getStationRecord QC level', () => {
       level: 1,
     })
     expect(new URL(urls[0], 'http://x').searchParams.get('level')).toBe('1')
+  })
+})
+
+describe('aggFunc (daily extremes)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('pairs each function with each element code', () => {
+    expect(aggFuncQuery('soil_vwc,soil_temp', ['min', 'max'])).toEqual({ elements: 'soil_vwc,soil_temp,soil_vwc,soil_temp', agg_func: 'min,min,max,max' })
+  })
+  it('is sent on the daily observations request', async () => {
+    const urls: string[] = []
+    vi.stubGlobal('fetch', async (url: string) => {
+      urls.push(url)
+      return new Response('station,datetime\n', { status: 200 })
+    })
+    await getStationRecord({ station: 'acebozem', start: '2026-09-01', end: '2026-09-02', period: 'daily', elements: 'air_temp', aggFunc: ['min', 'max'] })
+    const q = new URL(urls[0], 'http://x').searchParams
+    expect([q.get('elements'), q.get('agg_func')]).toEqual(['air_temp,air_temp', 'min,max'])
   })
 })

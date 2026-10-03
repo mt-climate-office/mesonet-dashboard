@@ -9,7 +9,7 @@ import Alpine from 'alpinejs'
 import { latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, type LatestTimeseriesModel } from '../../core/charts'
 import { dataSettled, datesPatch, installDate, plotStatus, todayIso, viewAnnouncement, windowRange, zoomWindow, type PlotStatus } from '../../core/latest'
 import { availableVars, chartWindow, emptyState, type TimeseriesEmpty } from '../../core/models/timeseries'
-import { latestVars } from '../../core/url-schema'
+import { latestAgg, latestVars } from '../../core/url-schema'
 import { component } from '../component'
 import { announce } from '../shell/live'
 import { elementsResource, recordResource, seriesModel, seriesRequest, stationElements, type SeriesQuery } from './resources'
@@ -74,7 +74,7 @@ export function compare() {
       const vars = this.vars()
       if (!id || !vars || this.empty()) return null
       const s = url().state
-      return { station: id, window: this.window(), agg: s.agg, vars, gridmet: s.gridmet }
+      return { station: id, window: this.window(), agg: latestAgg(s), vars, gridmet: s.gridmet }
     },
     record() {
       const q = this.query()

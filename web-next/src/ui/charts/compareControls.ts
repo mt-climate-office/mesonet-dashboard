@@ -7,7 +7,7 @@
 import Alpine from 'alpinejs'
 import { datesPatch, installDate, periodOfRecordPatch, showingPeriodOfRecord, todayIso, variableOptions, varsValue } from '../../core/latest'
 import { availableVars, chartWindow, isIsoDate } from '../../core/models/timeseries'
-import { latestVars, type LatestAgg } from '../../core/url-schema'
+import { latestAgg, latestVars, type LatestAgg } from '../../core/url-schema'
 import { component } from '../component'
 import { stationElements } from './resources'
 
@@ -46,7 +46,7 @@ export function compareControls() {
     },
     showingPor(): boolean {
       const d = this.dates()
-      return showingPeriodOfRecord(url().state.agg, d.start, d.end, this.installed())
+      return showingPeriodOfRecord(latestAgg(url().state), d.start, d.end, this.installed())
     },
     porLabel(): string {
       return this.showingPor() ? 'Display Latest 2 Weeks' : 'Display Period of Record'
@@ -60,7 +60,7 @@ export function compareControls() {
 
     /* Aggregation + normals */
     agg(): LatestAgg {
-      return url().state.agg
+      return latestAgg(url().state)
     },
     setAgg(v: string): void {
       url().set({ agg: v as LatestAgg })
@@ -69,7 +69,7 @@ export function compareControls() {
       return url().state.gridmet
     },
     gridmetDisabled(): boolean {
-      return url().state.agg !== 'daily'
+      return latestAgg(url().state) !== 'daily'
     },
     setGridmet(e: Event): void {
       url().set({ gridmet: (e.target as HTMLInputElement).checked })

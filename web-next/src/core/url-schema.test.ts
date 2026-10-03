@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  latestAgg,
   latestVars,
   migrateLegacySearch,
   readUrlState,
@@ -13,7 +14,7 @@ describe('readUrlState / writeUrlSearch', () => {
   it('fills defaults for absent keys', () => {
     const s = readUrlState('')
     expect(s.s).toBeNull()
-    expect(s.agg).toBe('hourly')
+    expect(s.agg).toBeNull()
     expect(s.vars).toBeNull()
     expect(s.nets).toEqual(['HydroMet', 'AgriMet', 'Cooperator'])
     expect(s.v).toBeNull()
@@ -24,7 +25,7 @@ describe('readUrlState / writeUrlSearch', () => {
 
   it('rejects values outside an enum and keeps `vars=` as an explicit empty list', () => {
     const s = readUrlState('?agg=weekly&vars=&qc=7&theme=sepia')
-    expect(s.agg).toBe('hourly')
+    expect(s.agg).toBeNull()
     expect(s.vars).toEqual([])
     expect(s.qc).toBeNull()
     expect(s.theme).toBeNull()
@@ -194,5 +195,19 @@ describe('v / view (Charts → variable page)', () => {
     expect(readUrlState('?view=nope').view).toBe('recent')
     expect(writeUrlSearch({ ...readUrlState('?s=a'), v: 'ppt', view: 'recent' })).toBe('?s=a&v=ppt')
     expect(writeUrlSearch({ ...readUrlState('?s=a'), v: 'ppt', view: 'table' })).toBe('?s=a&v=ppt&view=table')
+  })
+  it('tbl is a flag (table in place of the chart); absent = off', () => {
+    expect(readUrlState('?tbl=1').tbl).toBe(true)
+    expect(readUrlState('').tbl).toBe(false)
+    expect(writeUrlSearch({ ...readUrlState('?s=a'), tbl: true })).toBe('?s=a&tbl=1')
+  })
+})
+
+describe('agg (interval)', () => {
+  it('absent is Auto (null), written only when explicit; Compare reads absent as hourly', () => {
+    expect(writeUrlSearch({ ...readUrlState('?s=a'), agg: 'hourly' })).toBe('?s=a&agg=hourly')
+    expect(writeUrlSearch({ ...readUrlState('?s=a&agg=daily'), agg: null })).toBe('?s=a')
+    expect(latestAgg({ agg: null })).toBe('hourly')
+    expect(latestAgg({ agg: 'raw' })).toBe('raw')
   })
 })
