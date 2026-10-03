@@ -16,10 +16,19 @@
       <p>This station's variables could not be loaded. <button type="button" class="nav-btn" @click="retry()">Retry</button></p>
     </div>
   </template>
+  <!-- About the list's final height (a search pill, then group cards of row-sized lines), so it does not jump as it fills. -->
   <template x-if="state === 'loading'">
-    <div class="dash-card charts-group" aria-busy="true">
+    <div class="charts-ready" aria-busy="true">
       <p class="sr-only" role="status">Loading variables…</p>
-      <template x-for="i in 5" :key="i"><span class="dash-skel dash-skel--line charts-skel-row" aria-hidden="true"></span></template>
+      <span class="dash-skel charts-skel-search" aria-hidden="true"></span>
+      <div class="charts-groups" aria-hidden="true">
+        <template x-for="(n, g) in [8, 3, 3, 6]" :key="g">
+          <div class="dash-card charts-group">
+            <span class="dash-skel charts-skel-title"></span>
+            <template x-for="i in n" :key="i"><span class="dash-skel dash-skel--line charts-skel-row"></span></template>
+          </div>
+        </template>
+      </div>
     </div>
   </template>
 
