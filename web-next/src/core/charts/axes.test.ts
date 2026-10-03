@@ -30,6 +30,9 @@ describe('axes', () => {
     expect((fitAxisNames(opt, 420).yAxis as { name: string }[])[0].name).toBe(name)
     const panels = { grid: [{ top: 30, height: 160 }], yAxis: { ...valueAxis('Air temperature (°F)'), nameTextStyle: { fontSize: 10 } } }
     expect((fitAxisNames(panels, 900).yAxis as { name: string }).name).toBe('Air temperature (°F)')
+    // A horizontal panel title (the Download preview) runs along the plot: never dropped.
+    const titled = { grid: [{ top: 34, height: 80 }], yAxis: [{ type: 'value' as const, name: 'Air Temperature @ 2 m [°F]', nameLocation: 'end' as const }] }
+    expect((fitAxisNames(titled, 900).yAxis as { name: string }[])[0].name).toBe('Air Temperature @ 2 m [°F]')
   })
   it('dual axis: both from 0, y2 on the right, aligned, no split lines', () => {
     const [l, r] = dualAxis('A', 'B', { rightMax: 50 }) as Record<string, unknown>[]
