@@ -3,7 +3,7 @@
  * tile list, built from the tier-1 data (`/latest`, `/derived/ppt/`) and the
  * tier-2 data (72 h hourly, normals) when they arrive. Display strings are
  * formatted here so the partial only binds text. A tile is shown only when
- * the station reports its value.
+ * the station reports its value; snow depth only when there is snow (snow.ts).
  */
 import type { ObservationRow, PptSummaryRow } from '../api'
 import { sparkline, type Sparkline, type SparkSeries } from '../charts/sparkline'
@@ -13,6 +13,7 @@ import { feelsLikeF, readConditions, type Conditions, type SoilDepth } from './c
 import { normalMedianOn, ytdNormal } from './normals'
 import { precipSummary } from './precip'
 import { hourlyPrecip, sparkSeries, todayHighLow, type SeriesKey } from './series'
+import { hasSnow } from './snow'
 import { isStale, updatedText } from './stamp'
 
 export interface OverviewInput {
@@ -166,7 +167,7 @@ function tiles(c: Conditions, input: OverviewInput, series: Partial<Record<Serie
     const top = c.soil[0]
     add({ id: 'soil', label: `Soil moisture · ${top.depthIn} in`, value: top.vwc === null ? '—' : fx(top.vwc, 1), unit: '%', detail: [], vars: ['Soil VWC', 'Soil Temperature'], soil: soilRows(c.soil) }, 'soil')
   }
-  if (c.snowIn !== null) add({ id: 'snow', label: 'Snow depth', value: fx(c.snowIn, 1), unit: 'in', detail: [], vars: ['Snow Depth'] }, 'snow')
+  if (c.snowIn !== null && hasSnow(c.snowIn, input.hourly)) add({ id: 'snow', label: 'Snow depth', value: fx(c.snowIn, 1), unit: 'in', detail: [], vars: ['Snow Depth'] }, 'snow')
   if (c.vpdMb !== null) add({ id: 'vpd', label: 'Vapor pressure deficit', value: fx(c.vpdMb, 1), unit: 'mbar', detail: [], vars: ['VPD'] }, 'vpd')
   return out
 }

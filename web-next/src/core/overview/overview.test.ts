@@ -5,6 +5,7 @@ import type { NormalRow } from '../normals'
 import {
   buildOverview,
   feelsLikeF,
+  hasSnow,
   hourlyPrecip,
   isStale,
   normalMedianOn,
@@ -149,6 +150,21 @@ describe('precip & normals', () => {
   })
 })
 
+describe('hasSnow', () => {
+  const rows = (depths: (number | null)[]): ObservationRow[] =>
+    depths.map((d, i) => ({ station: 'x', datetime: `2026-10-01 ${String(i).padStart(2, '0')}:00:00-06:00`, 'Snow Depth [in]': d }))
+  it('latest depth ≥ 0.5 in', () => {
+    expect(hasSnow(0.5, undefined)).toBe(true)
+    expect(hasSnow(0.49, undefined)).toBe(false)
+    expect(hasSnow(null, undefined)).toBe(false)
+  })
+  it('any hourly reading ≥ 0.5 in; sensor noise on bare ground is not snow', () => {
+    expect(hasSnow(0, rows([0, 2.1, 0.8, 0]))).toBe(true)
+    expect(hasSnow(0.02, rows([0.1, -0.3, null, 0.4]))).toBe(false)
+    expect(hasSnow(0, [])).toBe(false)
+  })
+})
+
 describe('buildOverview', () => {
   const base = { hourly: undefined, ppt: undefined, normals: {}, today: '2026-10-01', nowMs: Date.UTC(2026, 9, 2, 4, 0) }
   it('empty until /latest arrives', () => {
@@ -158,7 +174,8 @@ describe('buildOverview', () => {
     const o = buildOverview({ ...base, latest: LATEST_BOZ })
     expect(o.freshness).toEqual({ updated: 'Updated 5 min ago', stale: false, provisional: true })
     expect(o.hero).toMatchObject({ temp: '57°', feels: 'Feels like 57°', feelsKind: null, highLow: null, normal: null, spark: null })
-    expect(o.tiles.map((t) => t.id)).toEqual(['wind', 'rh', 'solar', 'pressure', 'soil', 'snow'])
+    // Snow depth 0.018 in is bare ground: no snow tile.
+    expect(o.tiles.map((t) => t.id)).toEqual(['wind', 'rh', 'solar', 'pressure', 'soil'])
     const wind = o.tiles[0]
     expect(wind).toMatchObject({ value: '13', unit: 'mph', detail: ['Gust 19 mph', 'From ESE 112°'], windDeg: 111.6, vars: ['Wind Speed'] })
     expect(o.tiles.find((t) => t.id === 'soil')?.soil?.[0]).toEqual({ depth: '2 in', temp: '59°', vwc: '8.7%', bar: 17.3 })
@@ -179,6 +196,12 @@ describe('buildOverview', () => {
     const t = buildOverview({ ...base, latest: LATEST_BOZ, ppt, normals: { pr } }).tiles.find((x) => x.id === 'precip')!
     expect(t.value).toBe('0.00')
     expect(t.detail).toEqual(['24 h 0.00 in · 7 d 0.05 in', 'Year to date 13.12 in · 87% of normal'])
+  })
+  it('snow depth tile: shown with snow now or in the 72 h rows', () => {
+    const snowNow = { ...LATEST_BOZ, 'Snow Depth [in]': 3.2 }
+    expect(buildOverview({ ...base, latest: snowNow }).tiles.find((t) => t.id === 'snow')).toMatchObject({ value: '3.2', unit: 'in' })
+    const melted = HOURLY.map((r, i) => ({ ...r, 'Snow Depth [in]': i < 10 ? 1.4 : 0 }))
+    expect(buildOverview({ ...base, latest: LATEST_BOZ, hourly: melted }).tiles.map((t) => t.id)).toContain('snow')
   })
   it('AgriMet: VPD tile, no pressure, stale after 2 h', () => {
     const o = buildOverview({ ...base, latest: LATEST_KEOGH, nowMs: Date.UTC(2026, 9, 2, 17, 0) })

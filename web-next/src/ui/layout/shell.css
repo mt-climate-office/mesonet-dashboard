@@ -37,7 +37,11 @@
 
 @media (max-width: 640px), (max-height: 560px) {
   .dash-station { padding-top: 0.75rem; }
-  .dash-station-name { font-size: var(--fs-lg); }
+  /* The navbar switcher already shows the name: keep the heading for screen readers only (.sr-only). */
+  .dash-station-name {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
   .dash-station-meta { font-size: var(--fs-xs); }
   .tab-panel { padding-top: 0.75rem; }
 }

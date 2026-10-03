@@ -83,8 +83,19 @@ falls short.
 - **Proposed:** `.mco-skel` with the same modifiers.
 
 ### Status badge — new
-- **Here:** `.dash-badge`, `.dash-badge--warn` (`ui/layout/card.css`): "Provisional", "No report for over 2 hours".
+- **Here:** `.dash-badge`, `.dash-badge--warn` (`ui/layout/card.css`): "No report for over 2 hours".
 - **Proposed:** `.mco-badge` (+ `--warn`): text + border, the warning variant heavier and with an icon, never colour alone.
+
+### Toggletip — new
+- **Here:** `.dash-toggletip` + `.dash-toggletip-btn` (on `.nav-btn.mco-btn-info`) + `.dash-toggletip-tip`
+  (`ui/layout/toggletip.css`), `initToggletip({ button, tip })` (`ui/layout/toggletip.ts`). The Now
+  "Provisional data" note.
+- **Why:** the kit's `.mco-tooltip` is pointer-following and `aria-hidden`, so it cannot carry an explanation
+  that touch and screen-reader users need. `.mco-btn-info` is sized for the navbar (34 px), so inline next to
+  text it is overridden to 24 px on hover devices (touch keeps 40 px).
+- **Behaviour:** click/tap toggles; `aria-expanded` + `aria-controls`; the note follows the button in the DOM;
+  Esc or a pointer press outside closes it. The note hangs from the nearest positioned ancestor.
+- **Proposed:** `.mco-toggletip` and `MCO.initToggletip({ button, tip })`, plus an inline size for `.mco-btn-info`.
 
 ### Sparkline — new (optional for the kit)
 - **Here:** pure geometry `core/charts/sparkline.ts` → `<svg viewBox preserveAspectRatio="none"><path vector-effect="non-scaling-stroke">`,
@@ -125,6 +136,7 @@ falls short.
 | `.mco-toast { bottom: calc(var(--tabbar-h) + var(--sheet-h) + 1rem) }` on compact (`ui/layout/sectionNav.css`) | The toast must clear the tab bar and an open sheet; explorer has the same override for `--sheet-h`. | Kit toast `bottom: calc(1.5rem + var(--tabbar-h, 0px) + var(--sheet-h, 0px))` by default. |
 | `.ctl-input { font-size: 1rem }` under `(hover: none)` (`ui/controls/controls.css`) | iOS Safari zooms into any focused field under 16 px. | Kit base rule for form fields on touch, or an `.mco-input`. |
 | `.dash-scrim` adds `backdrop-filter: blur(2px)` to `.mco-scrim` | Explorer's look. | Optional `.mco-scrim--blur`. |
+| `.dash-toggletip-btn.mco-btn-info { width/height: 1.5rem }` under `(hover: hover)` (`ui/layout/toggletip.css`) | An ⓘ inline next to text; the kit's is a 34 px navbar button. Touch keeps 40 px. | An inline `.mco-btn-info--sm`. |
 | `.dash-link` and `.dash-section-link` get `min-height: 40px` under `(hover: none)` | HOUSE-STYLE §5.5 for standalone links (not prose). | A kit `.mco-link` for standalone links. |
 
 ## Notes for kit consumers (not kit changes)

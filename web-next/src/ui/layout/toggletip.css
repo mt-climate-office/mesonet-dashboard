@@ -1,0 +1,21 @@
+/* Toggletip (ui/layout/toggletip.ts; kit candidate `.mco-toggletip`, KIT-NOTES.md).
+   Markup: <span class="dash-toggletip"> <button class="nav-btn mco-btn-info dash-toggletip-btn">
+   + <span class="dash-toggletip-tip" hidden>. The note hangs from the nearest positioned
+   ancestor (the caller's row), so it can use the row's width. Kit tokens only. */
+
+.dash-toggletip { display: inline-flex; }
+
+/* kit-override: .mco-btn-info is a 34 px navbar button; inline next to text it is 24 px.
+   Touch keeps the kit's 40 px target (HOUSE-STYLE §5). */
+@media (hover: hover) {
+  .dash-toggletip-btn.mco-btn-info { width: 1.5rem; height: 1.5rem; font-size: var(--fs-xs); }
+}
+
+.dash-toggletip-tip {
+  position: absolute; inset-inline-start: 0; top: calc(100% + 0.375rem); z-index: var(--z-flyout);
+  max-width: min(24rem, 100%); padding: 0.5rem 0.75rem;
+  background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  font-size: var(--fs-sm); line-height: 1.45; color: var(--text-secondary);
+}
+.dash-toggletip-tip strong { color: var(--text-primary); }

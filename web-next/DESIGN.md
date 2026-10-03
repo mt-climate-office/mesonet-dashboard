@@ -21,6 +21,8 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
 ```
 
 - **Entry:** `?s=` opens that station; otherwise the last one; otherwise the picker (first visit).
+- **Picking** a station closes the picker at every size (the desktop drawer saves "closed") and moves focus
+  to `<main>`, the new station's content.
 - **History:** a section change is `pushState`, so Back returns to the previous section; changes inside a
   section (dates, toggles) replace the entry. Section links are real `<a href>`s: they open in a new tab
   and work before the JS runs.
@@ -50,13 +52,16 @@ covers content) and the toast.
 **Navbar:** logo · brand · **station switcher** (pin icon + "Bozeman ▾", truncates, opens the picker) · Share ·
 theme · Help. One row at every width. Feedback lives in Help and the footer.
 
+**Station header:** the station name (`--fs-xl` heading) over "network · county · elevation". On compact the
+switcher already shows the name, so the heading is `.sr-only` there and only the meta line shows.
+
 ## Now
 
 | Slot | Content | Data (tier) |
 |---|---|---|
-| Freshness | "Updated 7 min ago", **Provisional** badge, **No report for over 2 hours** warning | `/latest` (1) |
+| Freshness | "Updated 7 min ago", an ⓘ toggletip when the data are provisional (QC level 2, not yet through the daily QC pass), **No report for over 2 hours** warning | `/latest` (1) |
 | Hero | Air temperature; NWS feels-like with "Wind chill"/"Heat index"; today's high/low; gridMET normal high/low; 48 h sparkline | `/latest` (1); hourly + `tmmx`/`tmmn` (2) |
-| Tiles | Wind (speed, gust, compass glyph pointing where it blows), Precipitation (today, 24 h, 7 d, YTD vs normal), Humidity, Solar, Pressure, Soil (depth profile: temp + VWC bar), Snow depth (if reported), VPD (AgriMet); each a link to its variable, with a 48 h sparkline | `/latest`, `/derived/ppt/` (1); hourly + `pr` (2) |
+| Tiles | Wind (speed, gust, compass glyph pointing where it blows), Precipitation (today, 24 h, 7 d, YTD vs normal), Humidity, Solar, Pressure, Soil (depth profile: temp + VWC bar), Snow depth (only with snow: ≥ 0.5 in now or in any hour of the last 72 h), VPD (AgriMet); each a link to its variable, with a 48 h sparkline | `/latest`, `/derived/ppt/` (1); hourly + `pr` (2) |
 | Media | Latest camera frame (opens the photo dialog), or the wind rose without a camera | photo schedule (1) |
 | Forecast | NWS periods in a horizontal strip with scroll snap | NWS (1) |
 | All readings | link to About | — |
@@ -88,6 +93,9 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 - **Skeletons** (`skeleton.css`) — `.dash-skel` + `--line`, `--value`, `--spark`, `--media`, `--period`,
   `--chart`, `--table`; token shimmer, static under reduced motion, `aria-hidden`.
 - **Badge** (`card.css`) — `.dash-badge`, `.dash-badge--warn` (heavier border + icon; never colour alone).
+- **Toggletip** (`toggletip.ts`/`.css`) — an ⓘ button (`.mco-btn-info`, 24 px; the kit's 40 px on touch) that
+  shows a short note below it on click or tap: `aria-expanded` + `aria-controls`, the note right after the
+  button in the DOM; Esc or a press outside closes it. The Alpine wrapper is `ui/shell/toggletip.ts`.
 - **Sparkline** (`core/charts/sparkline.ts` → SVG, `.dash-spark`) — a line (or bars for precipitation) in
   `--accent-line`; decorative (`aria-hidden`) with an `.sr-only` sentence giving the 48 h range. SVG, not
   ECharts: eight per page, no library wait, and a swipe over one always scrolls the page.
@@ -110,7 +118,7 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 | `--fs-xs` | 0.75 | labels, captions, badges, tab-bar labels |
 | `--fs-sm` | 0.875 | card text, secondary lines, section links |
 | `--fs-md` | 1 | body, **inputs on touch** (≥ 16 px stops iOS zoom) |
-| `--fs-lg` | 1.25 | station name on phones, section titles |
+| `--fs-lg` | 1.25 | section titles |
 | `--fs-xl` | 1.75 | tile values, station name |
 | `--fs-2xl` | 2.5 | the hero value |
 
@@ -120,6 +128,6 @@ New CSS uses only these. Older per-tab CSS (latest/ag/downloader) moves onto the
 
 - Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `picker`) × 3 themes × 1440/390.
 - Touch targets ≥ 40 px under `(hover: none)`; the tab bar is 56 px.
-- Status is text: "Provisional", "No report for over 2 hours", "Feels like 41° · Wind chill".
+- Status is text: "No report for over 2 hours", "Feels like 41° · Wind chill"; the ⓘ button is named "Provisional data".
 - The picker is `role="dialog" aria-modal="true"` only when it is modal (sheet, overlay drawer); the inline
   drawer is a plain landmark beside the content.
