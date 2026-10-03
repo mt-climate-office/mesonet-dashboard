@@ -1,7 +1,7 @@
 /**
  * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, one-row navbar
  * tab order + focus ring, station combobox, the picker closing on a pick, Help dialog,
- * theme toggle, Latest sidebar collapse, tabs
+ * theme toggle, the Now Provisional toggletip, Latest sidebar collapse, tabs
  * mounting only while open (no cross-tab requests), chart table twins, map
  * sr-table selection, reduced motion. Run via `npm run verify`.
  */
@@ -136,6 +136,30 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
     picked.drawer === false && picked.saved === 'closed' && picked.focus === 'main', JSON.stringify(picked))
   const p = await problems()
   check('picker: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Now: the Provisional toggletip ─────────────────────────────────────── */
+{
+  const { page, problems, close } = await open(env, '?s=acebozem&theme=dark#now')
+  const btn = page.getByTestId('now-provisional').getByRole('button')
+  await btn.waitFor({ timeout: 10000 })
+  const state = () => page.evaluate(() => ({
+    expanded: document.querySelector('[data-testid="now-provisional"] button')?.getAttribute('aria-expanded'),
+    shown: !document.getElementById('now-provisional-tip')?.hidden,
+  }))
+  await btn.focus()
+  await page.keyboard.press('Enter')
+  const s1 = await state()
+  await page.keyboard.press('Escape')
+  const s2 = await state()
+  await btn.click()
+  await page.locator('.now-updated').click()
+  const s3 = await state()
+  check('Provisional toggletip: Enter opens (aria-expanded), Esc and a click outside close',
+    s1.expanded === 'true' && s1.shown && s2.expanded === 'false' && !s2.shown && s3.expanded === 'false' && !s3.shown, JSON.stringify([s1, s2, s3]))
+  const p = await problems()
+  check('Provisional toggletip: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 

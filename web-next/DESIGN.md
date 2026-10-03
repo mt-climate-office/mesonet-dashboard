@@ -59,7 +59,7 @@ switcher already shows the name, so the heading is `.sr-only` there and only the
 
 | Slot | Content | Data (tier) |
 |---|---|---|
-| Freshness | "Updated 7 min ago", **Provisional** badge, **No report for over 2 hours** warning | `/latest` (1) |
+| Freshness | "Updated 7 min ago", an ⓘ toggletip when the data are provisional (QC level 2, not yet through the daily QC pass), **No report for over 2 hours** warning | `/latest` (1) |
 | Hero | Air temperature; NWS feels-like with "Wind chill"/"Heat index"; today's high/low; gridMET normal high/low; 48 h sparkline | `/latest` (1); hourly + `tmmx`/`tmmn` (2) |
 | Tiles | Wind (speed, gust, compass glyph pointing where it blows), Precipitation (today, 24 h, 7 d, YTD vs normal), Humidity, Solar, Pressure, Soil (depth profile: temp + VWC bar), Snow depth (only with snow: ≥ 0.5 in now or in any hour of the last 72 h), VPD (AgriMet); each a link to its variable, with a 48 h sparkline | `/latest`, `/derived/ppt/` (1); hourly + `pr` (2) |
 | Media | Latest camera frame (opens the photo dialog), or the wind rose without a camera | photo schedule (1) |
@@ -93,6 +93,9 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 - **Skeletons** (`skeleton.css`) — `.dash-skel` + `--line`, `--value`, `--spark`, `--media`, `--period`,
   `--chart`, `--table`; token shimmer, static under reduced motion, `aria-hidden`.
 - **Badge** (`card.css`) — `.dash-badge`, `.dash-badge--warn` (heavier border + icon; never colour alone).
+- **Toggletip** (`toggletip.ts`/`.css`) — an ⓘ button (`.mco-btn-info`, 24 px; the kit's 40 px on touch) that
+  shows a short note below it on click or tap: `aria-expanded` + `aria-controls`, the note right after the
+  button in the DOM; Esc or a press outside closes it. The Alpine wrapper is `ui/shell/toggletip.ts`.
 - **Sparkline** (`core/charts/sparkline.ts` → SVG, `.dash-spark`) — a line (or bars for precipitation) in
   `--accent-line`; decorative (`aria-hidden`) with an `.sr-only` sentence giving the 48 h range. SVG, not
   ECharts: eight per page, no library wait, and a swipe over one always scrolls the page.
@@ -125,6 +128,6 @@ New CSS uses only these. Older per-tab CSS (latest/ag/downloader) moves onto the
 
 - Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `picker`) × 3 themes × 1440/390.
 - Touch targets ≥ 40 px under `(hover: none)`; the tab bar is 56 px.
-- Status is text: "Provisional", "No report for over 2 hours", "Feels like 41° · Wind chill".
+- Status is text: "No report for over 2 hours", "Feels like 41° · Wind chill"; the ⓘ button is named "Provisional data".
 - The picker is `role="dialog" aria-modal="true"` only when it is modal (sheet, overlay drawer); the inline
   drawer is a plain landmark beside the content.

@@ -32,6 +32,7 @@ import { windRoseCard } from './ui/latest/cards/windRoseCard'
 import { nowView } from './ui/now/nowView'
 import { stationPicker } from './ui/picker/stationPicker'
 import { globalNotices } from './ui/shell/globalNotices'
+import { toggletip } from './ui/shell/toggletip'
 import { helpDialog } from './ui/shell/helpDialog'
 import { navMeta } from './ui/shell/navMeta'
 import { outageNotice } from './ui/shell/outageNotice'
@@ -46,6 +47,7 @@ import './ui/layout/sectionNav.css'
 import './ui/layout/drawer.css'
 import './ui/layout/sheet.css'
 import './ui/layout/transition.css'
+import './ui/layout/toggletip.css'
 import './ui/controls/controls.css'
 import './ui/map/map.css'
 import './ui/charts/chart.css'
@@ -107,7 +109,7 @@ Alpine.store('station', createStationStore())
 /* 3. Components (one line each; x-data="<name>" in the partials). -------- */
 
 // Shell (ui/shell/*): navbar meta, station switcher + header, section navs,
-// notices, Help and outage dialogs; the station picker (ui/picker).
+// notices, Help and outage dialogs, toggletips; the station picker (ui/picker).
 Alpine.data('navMeta', navMeta)
 Alpine.data('stationHeader', stationHeader)
 Alpine.data('sections', sections)
@@ -115,6 +117,7 @@ Alpine.data('stationPicker', stationPicker)
 Alpine.data('helpDialog', helpDialog)
 Alpine.data('outageNotice', outageNotice)
 Alpine.data('globalNotices', globalNotices)
+Alpine.data('toggletip', toggletip)
 
 // Form controls (ui/controls/README.md): x-data="combobox({ … })" etc.
 Alpine.data('combobox', combobox)
