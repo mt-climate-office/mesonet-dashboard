@@ -111,8 +111,7 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   and fires one `window` event `mco-theme-change` (`detail.theme`).
 - **`$store.station`** (`stores/station.ts`): `catalog` (a Resource), `list`,
   `id` (the `?s=` value once confirmed against the catalog; null while
-  loading), `current` (its row), `byId(id)`, `select(id)` (sets `s` and resets
-  the Latest cards), `recent` (last 5). It rewrites NWSLI / mis-cased `?s=` to
+  loading), `current` (its row), `byId(id)`, `select(id)` (sets `s`), `recent` (last 5). It rewrites NWSLI / mis-cased `?s=` to
   the catalog id and remembers every confirmed station (core/stations/recent.ts).
   With no `?s=`, main.ts puts the remembered station in the URL before the
   stores start; with none, the station picker opens.

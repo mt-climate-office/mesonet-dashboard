@@ -31,7 +31,7 @@ export interface StationStore {
   /** Catalog row of `id`, or undefined. */
   readonly current: Station | undefined
   byId(id: string | null): Station | undefined
-  /** User picked a station: set `s` and reset the Latest cards to auto. */
+  /** User picked a station: set `s` (core/url-schema `selectStationPatch`). */
   select(id: string | null): void
   /** Recently opened station ids, newest first (max 5; updated as stations are confirmed). */
   recent: string[]

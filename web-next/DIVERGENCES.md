@@ -23,7 +23,7 @@ layout parts of older entries below; data behaviour is unchanged.
 - **Old links keep working:** `#latest` → `#charts` + `cmp=1` (Compare, keeping `from/to/agg/vars/gridmet`);
   a hash-less link with one of those keys does the same; `#downloader` → `#download` (keys renamed by
   `migrateLegacySearch` first); `#ag` unchanged; `#satellite` → Now with the existing notice. `card`/`info`
-  are ignored (kept so old links round-trip).
+  are no longer schema keys; like any unknown key they stay in the URL, so old links round-trip.
 - **Sections (P1):** each section's own entries follow: About ("About replaces …"), Ag ("Ag: tool cards"),
   Download ("Download: a stepper …") and Charts ("UX refactor: Charts").
 - **Why:** users land on current conditions; history, tools and tables stay one tap away (plan Context).
@@ -138,7 +138,7 @@ Data requests are unchanged
   `from/to/agg/vars/gridmet`) keeps the dates, period of record, aggregation, normals and variable chips in
   an "Options" disclosure (open beside the plot on desktop, closed above it on phones). The station comes
   from the station picker; the photo, forecast and wind rose are on Now, the map, metadata and current
-  readings on About. `card`/`info` are read by nothing now and kept only so old links round-trip. The
+  readings on About. `card`/`info` are no longer read (dropped from the schema; kept as unknown keys so old links round-trip). The
   `mco-dashboard-sidebar` key is no longer written.
 - **Why:** one station picker for the whole view; the cards moved to the sections that own them.
 
@@ -1099,7 +1099,7 @@ Top card (Wind Rose / Weather Forecast / Latest Photo) and bottom card (Locator 
 ### No Wind Rose flash before the photo
 - **web/:** with no `?card=`, the top card drew the Wind Rose (and requested its data) while the camera schedule loaded, then switched to Latest Photo for camera stations.
 - **New:** the auto choice shows "Loading…" until the schedule answers, then the Photo or the Wind Rose. An explicit `?card=` renders at once.
-- **Why:** one less request and no content swap for camera stations; the final card is the same (`core/cards/cardDefaults.ts`).
+- **Why:** one less request and no content swap for camera stations; the final card was the same. (Superseded: the card switchers are gone; Now shows the photo, or the wind rose without a camera.)
 
 ### Wind rose
 - **web/:** Plotly barpolar, Plasma_r bins, title in Courier New over the polar plot, hover "{bin} mph / {dir}: {count}", legend names without units.
@@ -1124,7 +1124,7 @@ Top card (Wind Rose / Weather Forecast / Latest Photo) and bottom card (Locator 
 ### Tables
 - **web/:** Mantine tables, odd rows `rgb(220,220,220)` (legacy TABLE_STYLING).
 - **New:** odd rows `--bg-raised`; row labels are `<th scope="row">`; values in Space Mono. Rows, order and values are unchanged from web/ (LDB-003 to LDB-009); the Precipitation Summary is still HydroMet only.
-- **Station Metadata vs legacy (LDB-003):** the legacy rows in legacy order, then two web/ extras, County and NWSLI ID (`core/cards/metadata.ts`). A blank catalog value shows "—" instead of an empty cell.
+- **Station Metadata vs legacy (LDB-003):** the legacy rows in legacy order, then two web/ extras, County and NWSLI ID. (Superseded by About's station details, `core/about/details.ts`.) A blank catalog value shows "—" instead of an empty cell.
 - **Why:** house tokens in all three themes; the extra rows are the ids people search by.
 
 ### Station one-pager link (OP-001)
