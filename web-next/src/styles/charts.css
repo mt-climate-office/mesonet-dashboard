@@ -146,4 +146,6 @@
 /* Empty / loading: over the (cleared) chart, which stays sized so ECharts initialises at a real size. */
 .cmp-status { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; padding: var(--card-pad); background: var(--bg-surface); border-radius: var(--card-radius); }
 .cmp-status > div { width: 100%; }
+/* The error state centred in the plot's place (partials/load-error.html). */
+:is(.var-status, .cmp-status) .dash-load-error { align-items: center; padding: var(--card-pad); text-align: center; }
 .cmp-refreshing { position: absolute; top: 0.4rem; right: var(--gap); z-index: 1; font-size: var(--fs-xs); color: var(--text-muted); }

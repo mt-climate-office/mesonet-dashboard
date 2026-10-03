@@ -43,6 +43,9 @@ export const AG_CHARTS = {
 
 export const LOADING: AgView<never> = { status: 'loading', message: null, notes: [], model: null }
 
+/** A view's error text for the shared error state; '' unless it failed. */
+export const agLoadError = (v: AgView<unknown>): string => (v.status === 'error' ? (v.message ?? '') : '')
+
 /**
  * Recompute `host.view` whenever `compute`'s inputs change, and announce each
  * settled view politely. Returns the cleanup for `destroy()`.

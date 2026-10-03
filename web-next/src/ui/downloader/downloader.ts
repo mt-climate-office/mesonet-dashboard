@@ -15,6 +15,7 @@ import { downloadFilename, fetchDownload, QC_LEVEL_OPTIONS, type DownloadQuery, 
 import * as view from '../../core/downloader/view'
 import { labelFor, type MultiselectGroup, type MultiselectOption } from '../../core/controls/multiselectModel'
 import { buildPreviewModel, type PreviewModel } from '../../core/models/downloaderPreview'
+import { loadErrorText } from '../../core/loadError'
 import { denverToday } from '../../core/today'
 import type { DlPeriod, UrlState } from '../../core/url-schema'
 import { elementsResource } from '../charts/resources'
@@ -78,7 +79,14 @@ export function downloader() {
       const d = this.elements?.data
       return d ? view.standardOptions(d) : null
     },
-    get groups(): MultiselectGroup[] { return this.stationId ? view.elementGroups(this.standard ?? [], this.hasSwp) : [] },
+    /** The variable names have loaded: until then the selection shows a skeleton, never raw element ids. */
+    get labelsReady(): boolean { return !!this.standard },
+    get groups(): MultiselectGroup[] { return this.stationId && this.standard ? view.elementGroups(this.standard, this.hasSwp) : [] },
+    /** The error state's text (partials/load-error.html); '' unless the element list failed. */
+    loadError(): string {
+      const els = this.elements
+      return els?.status === 'error' ? loadErrorText("This station's variables", els.error) : ''
+    },
     get pruned(): { selected: string[]; droppedSwp: string[] } {
       return view.pruneSelection(this.url.els, { stationKnown: !!this.station, hasSwp: this.hasSwp, standard: this.standard })
     },
@@ -215,7 +223,7 @@ export function downloader() {
       if (!this.current) return ''
       const s = this.run?.status
       if (s === 'loading') return 'Loading data…'
-      if (s === 'error') return (this.run?.error as Error | undefined)?.message ?? 'Failed to fetch data.'
+      if (s === 'error') return loadErrorText('The preview', this.run?.error)
       // No rows: the reason under the button says so.
       return this.previewModel() || !this.result?.rows.length ? '' : 'No data for the current selection.'
     },

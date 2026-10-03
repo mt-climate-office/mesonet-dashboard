@@ -12,7 +12,10 @@
           <button type="button" class="dl-row-btn" id="dl-row-vars-btn" aria-controls="dl-row-vars-panel"
                   :aria-expanded="isOpen('vars')" @click="toggleRow('vars')">
             <span class="dl-row-label">Variables</span>
-            <span class="dl-row-value"><span class="dl-row-text" x-text="varsText"></span></span>
+            <span class="dl-row-value">
+              <span class="dl-row-text" x-show="labelsReady || !pruned.selected.length" x-text="varsText"></span>
+              <span class="dash-skel dash-skel--line dl-row-skel" x-show="!labelsReady && pruned.selected.length && elements?.status !== 'error'" aria-hidden="true"></span>
+            </span>
             <svg class="dl-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
           </button>
         </h3>
@@ -20,7 +23,7 @@
           <div class="ctl-multiselect" x-show="stationId" x-data="multiselect({ groups: () => groups,
                value: () => pruned.selected, onChange: (v) => setElements(v), label: 'Variables' })"
                data-testid="dl-elements">
-            <ul x-ref="chips" class="ctl-chip-list" :aria-label="'Selected ' + label" x-show="selected().length > 0">
+            <ul x-ref="chips" class="ctl-chip-list" :aria-label="'Selected ' + label" x-show="labelsReady && selected().length > 0">
               <template x-for="v in selected()" :key="v">
                 <li><button type="button" class="nav-btn ctl-chip" :aria-label="'Remove ' + labelOf(v)"
                             @click="remove(v, $event)"><span x-text="labelOf(v)"></span>
@@ -35,7 +38,7 @@
                  :aria-labelledby="ids.button" x-show="open" @keydown.escape.prevent.stop="escape()">
               <label class="ctl-label" :for="ids.filter">Filter</label>
               <input type="search" class="ctl-input" :id="ids.filter" x-model="query" autocomplete="off">
-              <p class="ctl-note" x-show="elements?.status === 'loading'">Loading variables…</p>
+              <p class="ctl-note" x-show="!labelsReady && elements?.status !== 'error'">Loading variables…</p>
               <template x-for="group in visibleGroups" :key="group.id">
                 <fieldset class="ctl-fieldset">
                   <legend class="ctl-legend" x-text="group.label"></legend>
@@ -50,7 +53,7 @@
                   </template>
                 </fieldset>
               </template>
-              <p class="ctl-note" x-show="visibleGroups.length === 0">No matches</p>
+              <p class="ctl-note" x-show="labelsReady && visibleGroups.length === 0">No matches</p>
             </div>
           </div>
           <label class="ctl-check dl-switch">
@@ -163,10 +166,9 @@
     </div>
 
     <p class="dl-msg" x-show="droppedNotice" x-text="droppedNotice" data-testid="dl-dropped-swp"></p>
-    <p class="dl-msg dl-msg-action" role="alert" x-show="elements?.status === 'error'" data-testid="dl-elements-error">
-      <span>Variables could not be loaded.</span>
-      <button type="button" class="nav-btn" @click="elements?.refresh()">Retry</button>
-    </p>
+    <template x-if="elements?.status === 'error'">
+      <div data-testid="dl-elements-error"><!-- @include partials/load-error.html --></div>
+    </template>
     <p class="dl-msg" x-show="dates.largeHourly && !current" x-text="largeHourlyText()" data-testid="dl-large-hourly"></p>
 
     <!-- One button: Preview fetches; with a result for these inputs it saves the CSV (data-testid dl-run, then dl-download). -->

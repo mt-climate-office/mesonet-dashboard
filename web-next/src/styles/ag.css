@@ -9,11 +9,7 @@
 .ag-opt { color: var(--text-primary); }
 .ag-opt svg { color: var(--text-muted); }
 .ag-opt[aria-expanded="true"] { background: var(--accent-hover); }
-.ag-retry { min-height: 28px; font-size: var(--fs-xs); margin-left: 0.4rem; }
-.ag-retry-row { display: flex; justify-content: center; margin-top: -0.5rem; }
 .ag-reset { align-self: flex-start; font-size: var(--fs-xs); }
-/* Touch: the compact heights above must not undercut the kit's 40 px .nav-btn target (HOUSE-STYLE §5.5). */
-@media (hover: none) { .ag-retry { min-height: 40px; } }
 
 /* Chart card: shorter on compact screens (narrow, or a landscape phone) so it fits and the page
    around it stays reachable. */
@@ -37,8 +33,7 @@
   min-height: 12rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;
   font-size: var(--fs-sm); color: var(--text-secondary); text-align: center; padding: 1rem;
 }
-.ag-error { color: var(--text-primary); }
-.ag-error::before { content: "\26A0\FE0E  " / ""; }
+.ag-state .dash-load-error { align-items: center; }
 
 .ag-spinner {
   width: 22px; height: 22px; border-radius: 50%;

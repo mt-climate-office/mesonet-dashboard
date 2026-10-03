@@ -13,13 +13,17 @@ import { SOIL_PROFILE } from '../../core/ag/view/tab'
 import { fetchSoilSeries, loadSoilParams, soilParamsFor } from '../../core/ag/data'
 import type { ChartTable } from '../../core/charts'
 import { component } from '../component'
-import { AG_CHARTS, LOADING, currentTab, raw, trackView, windowQuery } from './shared'
+import { AG_CHARTS, LOADING, agLoadError, currentTab, raw, trackView, windowQuery } from './shared'
 
 export function agSoilView() {
   let stop = () => {}
   return component({
     view: LOADING as AgView<SoilChart>,
     charts: AG_CHARTS,
+    /** The error state's text (partials/ag/status.html → partials/load-error.html). */
+    loadError(): string {
+      return agLoadError(this.view)
+    },
     init() {
       stop = trackView(this, () => compute())
     },

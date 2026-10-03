@@ -9,10 +9,11 @@ import Alpine from 'alpinejs'
 import { latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, type LatestTimeseriesModel } from '../../core/charts'
 import { dataSettled, datesPatch, installDate, plotStatus, todayIso, viewAnnouncement, windowRange, zoomWindow, type PlotStatus } from '../../core/latest'
 import { availableVars, chartWindow, emptyState, type TimeseriesEmpty } from '../../core/models/timeseries'
+import { loadErrorText } from '../../core/loadError'
 import { latestAgg, latestVars } from '../../core/url-schema'
 import { component } from '../component'
 import { announce } from '../shell/live'
-import { elementsResource, recordResource, seriesModel, seriesRequest, stationElements, type SeriesQuery } from './resources'
+import { elementsResource, recordResource, seriesModel, seriesRequest, stationElements, variablesError, type SeriesQuery } from './resources'
 
 const url = () => Alpine.store('url')
 const stations = () => Alpine.store('station')
@@ -41,7 +42,7 @@ export function compare() {
       this.$watch('announceKey', (key: string) => {
         if (key) announce(key)
       })
-      // Details go to the console; the user sees the legacy no-data message.
+      // Details go to the console; the user sees the error state (partials/load-error.html).
       this.$watch('recordError', (err: unknown) => {
         if (err) console.error('Compare request failed:', err)
       })
@@ -89,8 +90,16 @@ export function compare() {
       const q = this.query()
       return q ? build(q) : null
     },
+    /** The error state's text: the station's variables' failure, else the record's; '' when none failed. */
+    loadError(): string {
+      const failed = variablesError(stations().id)
+      if (failed) return failed
+      const res = this.record()
+      return res?.status === 'error' ? loadErrorText('These charts', res.error) : ''
+    },
     status(): PlotStatus {
       return plotStatus({
+        failed: !!variablesError(stations().id),
         empty: this.empty(),
         waiting: !stations().id || this.vars() === null,
         record: this.record()?.status ?? null,

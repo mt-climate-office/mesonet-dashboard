@@ -8,6 +8,12 @@
   <template x-if="state === 'loading'">
     <div aria-busy="true"><p class="sr-only" role="status">Loading…</p><span class="dash-skel dash-skel--line" style="width: 40%" aria-hidden="true"></span></div>
   </template>
+  <template x-if="state === 'error'">
+    <div>
+      <a class="dash-link var-back" :href="listHref()" @click="toList($event)">‹ All variables</a>
+      <div class="dash-card"><!-- @include partials/load-error.html --></div>
+    </div>
+  </template>
   <template x-if="state === 'unknown'">
     <div>
       <a class="dash-link var-back" :href="listHref()" @click="toList($event)">‹ All variables</a>
@@ -72,6 +78,9 @@
               </template>
               <template x-if="status().kind === 'empty'">
                 <p class="charts-empty" role="status" x-text="status().title"></p>
+              </template>
+              <template x-if="status().kind === 'error'">
+                <!-- @include partials/load-error.html -->
               </template>
             </div>
             <div class="chart var-chart" :aria-hidden="status().kind !== 'ready'" data-testid="variable-chart"

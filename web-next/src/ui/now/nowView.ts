@@ -13,6 +13,7 @@ import { heroStripChart, heroStripTable, type HeroStripModel } from '../../core/
 import { buildNowPage, latestSwpBar, type NowPage } from '../../core/overview'
 import { hasCamera } from '../../core/photos'
 import { stationHasSwp } from '../../core/stations'
+import { loadErrorText } from '../../core/loadError'
 import { denverToday } from '../../core/today'
 import type { ChartBindings } from '../charts/chart'
 import { component } from '../component'
@@ -21,10 +22,12 @@ import { follow } from '../shell/navigate'
 import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../station/resources'
 import { normals, nwsHourly, rainDaily, sparkRows, swpRows } from './resources'
 
-type State = 'none' | 'loading' | 'error' | 'ready'
+type State = 'none' | 'loading' | 'error' | 'empty' | 'ready'
 interface View {
   page: NowPage | null
   state: State
+  /** The error state's text: tier 1 failed (state 'error'), or the 72 h rows behind the strip did; '' when none failed. */
+  error: string
   /** Tier 2 still loading: the strip, sparklines and high/low show skeletons. */
   tier2: boolean
   forecastUrl: string
@@ -37,8 +40,9 @@ const loading = (r: { status: string; data?: unknown } | null) => !!r && r.statu
 function compute(nowMs: number): View {
   const st = Alpine.store('station')
   const s: Station | undefined = st.current
-  const none = { page: null, tier2: false, forecastUrl: '' }
+  const none = { page: null, tier2: false, forecastUrl: '', error: '' }
   if (!s) {
+    if (st.catalog?.status === 'error') return { ...none, state: 'error', error: loadErrorText('The station list', st.catalog.error) }
     const waiting = !!Alpine.store('url').state.s && st.catalog?.status !== 'success'
     return { ...none, state: waiting ? 'loading' : 'none' }
   }
@@ -49,7 +53,10 @@ function compute(nowMs: number): View {
   const fc = nwsForecast(s.latitude, s.longitude)
   photoSchedule()
   const latest = latestRes.data?.[0] as Record<string, unknown> | undefined
-  if (!latest) return { ...none, state: latestRes.status === 'loading' ? 'loading' : 'error' }
+  if (!latest) {
+    if (latestRes.status === 'error') return { ...none, state: 'error', error: loadErrorText('Current conditions', latestRes.error) }
+    return { ...none, state: latestRes.status === 'loading' ? 'loading' : 'empty' }
+  }
   // Tier 2 waits for /latest: it picks the elements and keeps tier 1 first on the wire.
   const spark = sparkRows(s.station, today, latest)
   const nm = { tmmx: normals(s.station, 'tmmx').data, tmmn: normals(s.station, 'tmmn').data, pr: normals(s.station, 'pr').data }
@@ -70,7 +77,8 @@ function compute(nowMs: number): View {
     rainDaily: raw(rain.data),
     station: s,
   })
-  return { page, state: 'ready', tier2: loading(spark) || loading(fc) || loading(fcHourly) || loading(rain), forecastUrl: forecastDetailUrl(s.latitude, s.longitude) }
+  const error = spark.status === 'error' ? loadErrorText('The last 72 hours', spark.error) : ''
+  return { page, state: 'ready', error, tier2: loading(spark) || loading(fc) || loading(fcHourly) || loading(rain), forecastUrl: forecastDetailUrl(s.latitude, s.longitude) }
 }
 
 export function nowView() {
@@ -83,6 +91,7 @@ export function nowView() {
     state: 'loading' as State,
     tier2: true,
     forecastUrl: '',
+    error: '',
 
     init() {
       effect = Alpine.effect(() => {
@@ -95,6 +104,11 @@ export function nowView() {
     destroy() {
       clearInterval(timer)
       if (effect) Alpine.release(effect)
+    },
+
+    /** The error state's text (partials/load-error.html). */
+    loadError(): string {
+      return this.error
     },
 
     /** Photo when the station has a camera, else the wind rose; 'pending' while the schedule loads. */

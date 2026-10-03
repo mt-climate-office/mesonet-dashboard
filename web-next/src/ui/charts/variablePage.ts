@@ -36,6 +36,7 @@ import {
   type StatRow,
   type Variable,
 } from '../../core/variables'
+import { loadErrorText } from '../../core/loadError'
 import type { LatestAgg } from '../../core/url-schema'
 import { component } from '../component'
 import { initSwipe } from '../layout/swipe'
@@ -44,7 +45,7 @@ import { stepChart } from '../shell/navigate'
 import { shareView } from '../shell/share'
 import { openSheet } from '../shell/sheet'
 import { latestObs } from '../station/resources'
-import { chartVariables, elementsResource, recordResource, seriesModel, seriesRequest, stationElements, type SeriesQuery } from './resources'
+import { chartVariables, elementsResource, recordResource, seriesModel, seriesRequest, stationElements, variablesError, type SeriesQuery } from './resources'
 
 const url = () => Alpine.store('url')
 const stations = () => Alpine.store('station')
@@ -77,11 +78,19 @@ export function variablePage() {
     get variable(): Variable | undefined {
       return findVariable(chartVariables(stations().id) ?? [], url().state.v)
     },
-    /** 'loading' until the element list is in; 'unknown' for an id this station lacks. */
-    get state(): 'loading' | 'unknown' | 'ready' {
+    /** 'loading' until the element list is in; 'error' if it (or the station list) failed; 'unknown' for an id this station lacks. */
+    get state(): 'loading' | 'error' | 'unknown' | 'ready' {
       if (this.variable) return 'ready'
-      const els = elementsResource(stations().id)
-      return els?.data || els?.status === 'error' ? 'unknown' : 'loading'
+      if (variablesError(stations().id)) return 'error'
+      return elementsResource(stations().id)?.data ? 'unknown' : 'loading'
+    },
+    /** The error state's text (partials/load-error.html): the station's variables' failure, else the chart's; '' when none failed. */
+    loadError(): string {
+      const failed = variablesError(stations().id)
+      if (failed) return failed
+      const q = this.query()
+      const rec = q ? recordResource(seriesRequest(q)) : null
+      return rec?.status === 'error' ? loadErrorText('This chart', rec.error) : ''
     },
     get near(): { prev: Variable | null; next: Variable | null } {
       const v = this.variable

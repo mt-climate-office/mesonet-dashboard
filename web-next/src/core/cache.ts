@@ -131,7 +131,12 @@ export function createCache(deps: CacheDeps = {}) {
     for (const k of [...entries.keys()]) if (k.startsWith(prefix)) entries.delete(k)
   }
 
-  return { cached, invalidate }
+  /** Refetch every entry that failed with nothing to show (status 'error'): the Retry of every error state (partials/load-error.html). */
+  function retryFailed(): void {
+    for (const e of entries.values()) if (e.res.status === 'error' && !e.inFlight) e.res.refresh()
+  }
+
+  return { cached, invalidate, retryFailed }
 }
 
 export type Cache = ReturnType<typeof createCache>

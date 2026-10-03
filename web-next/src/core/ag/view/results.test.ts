@@ -4,7 +4,8 @@ import type { AnnualDaily } from '../data'
 import { parseCsvRaw } from '../data/parse'
 import { dailyMet, fixtureText, hourlyMet, soilSeries, stageTable, stationMeta } from '../__tests__/adapters'
 import { parseGddCutoffs } from './gddCutoffs'
-import { ELEMENTS_ERROR, annualView, annualYears, elementsGate, gate, gddView, metView, soilView, viewAnnouncement, type Loaded } from './results'
+import { HttpError } from '../../api/http'
+import { annualView, annualYears, elementsGate, gate, gddView, metView, soilView, viewAnnouncement, type Loaded } from './results'
 
 const met = dailyMet('acebozem', 'season2025')
 const meta = stationMeta('acebozem')
@@ -14,7 +15,7 @@ const loading: Loaded<never> = { status: 'loading', data: undefined, error: null
 describe('gate', () => {
   it('loading wins until every resource has data; an error without data shows its message', () => {
     expect(gate([ok(1), loading])?.status).toBe('loading')
-    expect(gate([ok(1), { status: 'error', data: undefined, error: new Error('HTTP 500') }])).toMatchObject({ status: 'error', message: 'HTTP 500' })
+    expect(gate([ok(1), { status: 'error', data: undefined, error: new HttpError(500, 'u', '') }])).toMatchObject({ status: 'error', message: 'This chart could not be loaded: the server had a problem.' })
     expect(gate([ok(1), null, { status: 'loading', data: 2, error: null }])).toBeNull()
   })
 })
@@ -127,6 +128,6 @@ it('announcements', () => {
 
 it('elementsGate: loading, failed (with its own message), loaded', () => {
   expect(elementsGate(loading)?.status).toBe('loading')
-  expect(elementsGate({ status: 'error', data: undefined, error: new Error('x') })).toMatchObject({ status: 'error', message: ELEMENTS_ERROR })
+  expect(elementsGate({ status: 'error', data: undefined, error: new Error('x') })).toMatchObject({ status: 'error', message: "This station's variables could not be loaded: the server could not be reached." })
   expect(elementsGate(ok([]))).toBeNull()
 })

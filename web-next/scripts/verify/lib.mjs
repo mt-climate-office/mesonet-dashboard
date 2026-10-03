@@ -175,9 +175,10 @@ export async function start() {
 /**
  * New context + page at `base + query` with fixtures routed, clock pinned and
  * diagnostics collected in `errors` (console errors, page errors, CSP violations).
- * `reducedMotion` emulates prefers-reduced-motion.
+ * `reducedMotion` emulates prefers-reduced-motion; `setup(ctx)` runs before the page loads
+ * (e.g. a `ctx.route` that fakes a failure: it takes precedence over the fixtures).
  */
-export async function open(env, query, { viewport = VIEWPORTS[0], reducedMotion = 'no-preference' } = {}) {
+export async function open(env, query, { viewport = VIEWPORTS[0], reducedMotion = 'no-preference', setup } = {}) {
   const ctx = await env.browser.newContext({
     viewport: { width: viewport.width, height: viewport.height },
     reducedMotion,
@@ -189,6 +190,7 @@ export async function open(env, query, { viewport = VIEWPORTS[0], reducedMotion 
   const state = { pending: 0, lastDone: 0 }
   await ctx.route('**/*', (route) => handle(route, state))
   await ctx.clock.setSystemTime(new Date(NOW))
+  if (setup) await setup(ctx)
   await ctx.addInitScript(() => {
     // Recorded explicitly (with directive and URL) rather than parsed out of console text.
     window.__csp = []

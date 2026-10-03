@@ -13,13 +13,17 @@ import { projectionThrough } from '../../core/ag/view/projection'
 import { fetchDailyMet, fetchDailyNormals, fetchForecastDaily, loadGddStages, type ForecastResult } from '../../core/ag/data'
 import { denverToday } from '../../core/today'
 import { component } from '../component'
-import { AG_CHARTS, LOADING, currentTab, raw, trackView, windowQuery } from './shared'
+import { AG_CHARTS, LOADING, agLoadError, currentTab, raw, trackView, windowQuery } from './shared'
 
 export function agGddView() {
   let stop = () => {}
   return component({
     view: LOADING as AgView<GddModel>,
     charts: AG_CHARTS,
+    /** The error state's text (partials/ag/status.html → partials/load-error.html). */
+    loadError(): string {
+      return agLoadError(this.view)
+    },
     tableOf(): ChartTable | null {
       return this.view.model ? AG_CHARTS.gdd.table(this.view.model) : null
     },

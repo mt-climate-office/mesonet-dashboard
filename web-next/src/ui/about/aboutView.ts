@@ -7,6 +7,7 @@
  */
 import Alpine from 'alpinejs'
 import { apiLinks, type ApiLink } from '../../core/about'
+import { loadErrorText } from '../../core/loadError'
 import { component } from '../component'
 import { togglePicker } from '../picker/stationPicker'
 import { closeSheet, openSheet } from '../shell/sheet'
@@ -17,11 +18,17 @@ const SHEETS = ['about-readings', 'about-history'] as const
 
 export function aboutView() {
   return component({
-    get state(): 'none' | 'loading' | 'missing' | 'ready' {
+    get state(): 'none' | 'loading' | 'error' | 'missing' | 'ready' {
       const st = Alpine.store('station')
       if (st.current) return 'ready'
       if (!Alpine.store('url').state.s) return 'none'
-      return st.catalog?.status === 'loading' ? 'loading' : 'missing'
+      const status = st.catalog?.status
+      return status === 'loading' ? 'loading' : status === 'error' ? 'error' : 'missing'
+    },
+    /** The error state's text (partials/load-error.html); '' unless the station list failed. */
+    loadError(): string {
+      const c = Alpine.store('station').catalog
+      return c?.status === 'error' ? loadErrorText('The station list', c.error) : ''
     },
 
     get links(): ApiLink[] {

@@ -17,7 +17,7 @@
         <template x-if="state === 'loading'">
           <div aria-busy="true"><p class="sr-only" role="status">Loading sensor history…</p><span class="dash-skel dash-skel--table" aria-hidden="true"></span></div>
         </template>
-        <template x-if="state === 'error'"><p class="about-message">Sensor history is unavailable: the Mesonet API did not answer.</p></template>
+        <template x-if="state === 'error'"><!-- @include partials/load-error.html --></template>
         <template x-if="state === 'empty'"><p class="about-message">No sensor changes on record.</p></template>
         <template x-if="state === 'ready'">
           <div class="about-scroll" role="region" aria-label="Sensor changes (scrollable)" tabindex="0">

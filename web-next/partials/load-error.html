@@ -1,0 +1,7 @@
+<!-- The one error state for every resource-driven view (ARCHITECTURE.md "Errors"), in place of its
+     skeleton: inside a component with `loadError()` (core/loadError `loadErrorText`: what failed and
+     why). Retry refetches every request that failed ($store.data.retryFailed, each entry's refresh()). -->
+<div class="dash-load-error" role="alert" data-testid="load-error">
+  <p x-text="loadError()"></p>
+  <button type="button" class="nav-btn" @click="$store.data.retryFailed()" data-testid="load-retry">Retry</button>
+</div>

@@ -70,6 +70,9 @@
             <p x-show="status().hint" x-text="status().hint"></p>
           </div>
         </template>
+        <template x-if="status().kind === 'error'">
+          <!-- @include partials/load-error.html -->
+        </template>
       </div>
       <p class="cmp-refreshing" x-show="status().kind === 'ready' && loading()" aria-hidden="true">Updating…</p>
       <div class="chart cmp-chart" :aria-hidden="status().kind !== 'ready'" :style="heightStyle()"
