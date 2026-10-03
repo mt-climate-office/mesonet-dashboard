@@ -11,6 +11,7 @@ import type { NormalRow } from '../normals'
 import { degToCompass } from '../params'
 import { feelsLikeF, readConditions, type Conditions, type SoilDepth } from './conditions'
 import { normalMedianOn, ytdNormal } from './normals'
+import type { SoilState } from './relevance'
 import { precipSummary } from './precip'
 import { hourlyPrecip, sparkSeries, todayHighLow, type SeriesKey } from './series'
 import { hasSnow } from './snow'
@@ -66,6 +67,8 @@ export interface Tile {
   windDeg?: number
   /** Soil: the depth profile. */
   soil?: SoilRowView[]
+  /** Soil on Now: "Dry"/"Wet" from soil water potential (relevance.ts `soilState`), when known. */
+  state?: SoilState
 }
 
 export interface SoilRowView {

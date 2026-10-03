@@ -8,6 +8,7 @@
  *  - stamp:      stampEpochMs, updatedText, isStale
  *  - snow:       hasSnow (when the snow depth tile shows)
  *  - summary:    summarize (the hero's one-line summary) and its phrase rules
+ *  - relevance:  nowTiles (the tiles Now shows), pressure trend, dew point, soil state
  */
 export * from './tiles'
 export * from './conditions'
@@ -17,3 +18,4 @@ export * from './normals'
 export * from './stamp'
 export * from './snow'
 export * from './summary'
+export * from './relevance'

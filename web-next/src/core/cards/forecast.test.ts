@@ -41,7 +41,7 @@ describe('forecastRows', () => {
 
 describe('heading + link', () => {
   it('prefers the NWS place name', () => {
-    expect(forecastHeading({ location: 'Bozeman, MT', periods: [] }, 'Bozeman Ag')).toBe('Bozeman, MT · NWS forecast')
+    expect(forecastHeading({ location: 'Bozeman, MT', periods: [], hourlyUrl: null }, 'Bozeman Ag')).toBe('Bozeman, MT · NWS forecast')
     expect(forecastHeading(undefined, 'Bozeman Ag')).toBe('Bozeman Ag · NWS forecast')
   })
   it('builds the MapClick URL', () => {
