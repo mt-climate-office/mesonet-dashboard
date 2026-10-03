@@ -44,6 +44,11 @@
 }
 .dash-switcher:hover, .dash-switcher[aria-expanded="true"] { background: var(--accent-hover); }
 .dash-switcher-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* Empty while a linked station loads (stationHeader): a name-sized block in the .dash-skel colour. */
+.dash-switcher-name:empty {
+  width: 6.5em; height: 1em; border-radius: var(--radius-sm);
+  background: var(--bg-raised);
+}
 .dash-switcher-caret { flex-shrink: 0; stroke: var(--text-muted); }
 @media (min-width: 641px) { .dash-switcher { font-size: var(--fs-lg); } }
 
