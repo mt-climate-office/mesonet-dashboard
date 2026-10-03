@@ -52,7 +52,14 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
 
 - **Entry:** `?s=` opens that station; otherwise the last one; otherwise the picker (first visit).
 - **Picking** a station closes the picker at every size (the desktop drawer saves "closed") and moves focus
-  to `<main>`, the new station's content.
+  to `<main>`, the new station's content. Recent updates at once.
+- **Search** starts empty (the header names the station; Recent marks it). With text, matches rank across
+  networks (a name or id prefix first); with none, the full list groups by network. × shows whenever there is
+  text: it clears it, keeps focus and shows the full list. Esc clears the text, then closes the list, then
+  closes the picker.
+- **Browse on the map** on a phone opens the sheet full; recents and Near me step aside and the map takes the
+  rest of the sheet (in landscape, the whole sheet); two fingers move it. Closing the sheet resets it to the
+  search. In the drawer the map is a 4:3 frame.
 - **History:** a section change or a drill-down (a Charts variable, Ag tool or sub-view) is `pushState`,
   so Back returns; other changes inside a section (dates, toggles, opening the Download sheet) replace the
   entry. Section links are real `<a href>`s: they open in a new tab and work before the JS runs.
@@ -66,7 +73,22 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
 ## Visual language
 
 - **Surfaces:** `.dash-card` is flat: `--bg-surface`, radius 16 px, a soft shadow lighter than `--shadow`, no
-  border (high contrast keeps one for separation). `.mco-panel` (glass) stays for panels over maps.
+  border (high contrast keeps one for separation; dark adds a `--border-glass` hairline, since a shadow barely
+  reads there). `.mco-panel` (glass) stays for panels over maps.
+- **Spacing** (`ui/layout/card.css`, one scale on a 4 px base; compact = `MCO.viewport.COMPACT_MQ`). Use these,
+  with a fallback where a file may load first (`var(--gap, 16px)`), never one-off values:
+
+  | Token | Value | Use |
+  |---|---|---|
+  | `--gap-tight` | 4 px | title ↔ subline, icon ↔ label |
+  | `--gap` | 12 px compact, 16 px otherwise | between surfaces: cards, chip rows, tiles, list groups |
+  | `--gutter` | 16 px | page side and top padding (`.tab-panel`, notices), panel side padding |
+  | `--card-pad` | 14 px compact, 16 px otherwise | inside a `.dash-card`; list cards pad 0 with rows at `12px var(--card-pad)` |
+  | `--card-radius` | 16 px | in-flow cards |
+  | `--panel-radius` | the kit `--radius-lg` (12 px) | floating panels: sheets, popovers, menus |
+
+  Inner pieces use the kit `--radius-md` (8 px), pills 999 px. Type uses only the `--fs-*` scale ("Type scale").
+- **Width:** section content stops at 75 rem, centred (it matters from about 1280 px).
 - **Chips:** range and interval chips are pills; the active range is filled with high contrast
   (`--text-primary` fill, `--bg-deep` text), the interval row is quieter (an accent-hover fill). `aria-pressed`
   alone drives both.
@@ -350,7 +372,7 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 
 - **`.dash-card`** — the one in-flow surface, flat: `--bg-surface`, radius `--card-radius` (16 px),
   `--card-shadow` (two short layers tinted by the kit `--scrim`, lighter than `--shadow`), no border except in
-  high contrast; `--card-pad` (1 rem; 0.875 rem compact), `.dash-card-title` (sm, 600, `--text-secondary`).
+  high contrast (dark: a hairline); `--card-pad` (16 px; 14 px compact; "Visual language"), `.dash-card-title` (sm, 600, `--text-secondary`).
   A card may be an `<a>` (tiles): hover fill, kit focus ring. `.mco-panel` stays for glass over maps.
 - **Menu** (`menu.ts`/`.css`; Alpine `x-data="menu"`) — the ⋯ menu button. Markup:
   `<div class="dash-menu" x-data="menu">` holding `<button class="dash-icon-btn" data-menu-button
