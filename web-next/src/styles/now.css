@@ -1,11 +1,25 @@
-/* Now (partials/now/index.html; REDESIGN.md "Now"). Phones and tablets: one column, hero → photo →
-   tiles (2-up) → rows. Desktop (≥ 1060 px): hero + photo | tiles + rows. Readings in .num-display
-   (Outfit, tabular); every slot keeps its size while loading (skeletons). Kit tokens only. */
+/* Now (partials/now/index.html; DESIGN.md "Now"). Phones and tablets: one column, hero → photo →
+   tiles (2-up) → rows, in DOM order. Desktop (≥ 1060 px): hero + tiles (4-up) | photo + rows, the
+   pairing that keeps the columns closest in height. Readings in .num-display (Outfit, tabular);
+   every slot keeps its size while loading (skeletons). Kit tokens only. */
 
 .now-grid { display: grid; gap: 0.875rem; grid-template-columns: minmax(0, 1fr); }
 .now-col { display: grid; gap: 0.875rem; align-content: start; min-width: 0; }
 @media (min-width: 1060px) and (min-height: 561px) {
-  .now-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+  /* The columns dissolve so the four slots place on one grid without reordering the DOM. The
+     middle row is flexible: a spanning hero or rows card grows it, never the photo's or tiles' row,
+     so nothing leaves a gap inside a column. */
+  .now-grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: "hero media" "hero rows" "tiles rows";
+    gap: 1rem; align-items: start;
+  }
+  .now-col { display: contents; }
+  .now-hero { grid-area: hero; }
+  .now-media { grid-area: media; }
+  .now-tiles { grid-area: tiles; }
+  .now-rows { grid-area: rows; }
 }
 
 .now-dim { color: var(--text-muted); }
@@ -95,6 +109,8 @@
 
 @media (min-width: 1060px) and (min-height: 561px) {
   .now-temp { font-size: 7rem; }
-  .dash-card.now-media:not(.is-rose) { aspect-ratio: 16 / 8; }
+  .dash-card.now-media:not(.is-rose) { max-height: 360px; }
+  /* Under the wide hero the tiles go 4-up (3-up when the picker drawer narrows the column). */
+  .now-tiles { grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
   .now-strip, .now-strip-chart { height: 11rem; --chart-height: 11rem; }
 }
