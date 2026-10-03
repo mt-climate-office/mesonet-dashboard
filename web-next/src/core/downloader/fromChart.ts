@@ -8,6 +8,7 @@
 import type { DerivedVar } from '../params/ag'
 import { LATEST_EXCLUDED_ELEMENTS, latestVarName } from '../params'
 import type { LatestAgg, UrlState } from '../url-schema'
+import { chartsMode } from '../variables/catalog'
 import { DERIVED_CODES } from './request'
 
 type ElementRow = { element: string; description_short: string }
@@ -28,6 +29,17 @@ export interface ChartDownload {
  * it: the user is done with them, and they never outlive the sheet.
  */
 export const PREFILL_RESET: Pick<UrlState, 'els' | 'dl_from' | 'dl_to' | 'period'> = { els: [], dl_from: null, dl_to: null, period: 'daily' }
+
+/**
+ * Whether the Download sheet, opened by the URL (`dl=1`), takes its prefill
+ * from the chart behind it: Charts shows a variable or an Ag tool (`v`, not
+ * Compare) and the URL carries none of the prefill keys. An old `#downloader`
+ * link that carries its own `els`, dates or interval keeps exactly those.
+ */
+export function prefillsFromChart(state: Pick<UrlState, 'dl' | 'v' | 'cmp' | 'els' | 'dl_from' | 'dl_to' | 'period'>): boolean {
+  const carries = state.els.length > 0 || state.dl_from !== null || state.dl_to !== null || state.period !== PREFILL_RESET.period
+  return state.dl && !carries && chartsMode(state) !== 'list' && chartsMode(state) !== 'compare'
+}
 
 /** The Downloader keys for a chart (see the header). */
 export function fromChart(c: ChartDownload): Pick<UrlState, 'els' | 'dl_from' | 'dl_to' | 'period'> {

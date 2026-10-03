@@ -22,7 +22,7 @@ export type VariableModel = LatestTimeseriesModel
 const BAND_ID = 'daily-range'
 
 export const variableChart: ChartBuilder<VariableModel> = (m, ctx) => {
-  const option = latestTimeseriesChart(m, ctx)
+  const option = latestTimeseriesChart({ ...m, extent: m.view }, ctx)
   const [g] = option.grid as { left: number; right: number }[]
   const panel = m.ts.panels[0]
   const s = panel?.series.length === 1 ? panel.series[0] : undefined

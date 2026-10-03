@@ -195,6 +195,7 @@ falls short.
 | `.mco-navbar > .brand` visually hidden below 1060 px (`ui/layout/shell.css`) | The brand is desktop-only so the station button and sections fit one row; the kit sheds it at 750 px. | Let the app choose the brand's breakpoint (a custom property or modifier). |
 | `.chart .mco-tooltip:empty { display: none !important }` (`ui/charts/chart.css`) | ECharts creates its tooltip element empty and keeps it; the kit's border and `backdrop-filter` showed it as a faint outline under charts on phones even at `opacity: 0`. | `.mco-tooltip:empty { display: none }` in the kit. |
 | `.dash-sheet--modal { z-index: var(--z-flyout) }`, `.dash-sheet-scrim { z-index: var(--z-chrome-top) }` | A modal sheet covers the chrome; `.mco-scrim` sits under it. | A `--z-modal` tier (see "Modal sheet"). |
+| `:is(h1, h2, h3)[tabindex="-1"]:focus { outline: none }` (`styles/app.css`) | Headings are focus targets, not controls (a sheet's title on open, a drill-down's heading). Chrome counts script focus after a key press as `:focus-visible`, so the universal ring drew a large box round them. | The same rule beside `:focus-visible` in the kit (with `main:focus`), so consumers need no exception. |
 
 ## Notes for kit consumers (not kit changes)
 - **Skip link + hash routing:** the kit skip link (`href="#main"`) changes the hash. A hash router must
