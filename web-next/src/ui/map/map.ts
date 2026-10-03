@@ -28,6 +28,8 @@ export interface MapHostOptions {
   cooperativeGestures?: boolean
   /** Fit Montana again whenever the frame resizes, until the user moves the map (a frame that grows on reveal). */
   refit?: boolean
+  /** Padding (px) when fitting Montana, for overlays on the frame (default the kit's 24 all round). */
+  fitPadding?: MapLibre.PaddingOptions
 }
 
 export interface MapHost {
@@ -42,12 +44,13 @@ export interface MapHost {
 export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   el.setAttribute('role', 'application')
   el.setAttribute('aria-label', opts.label)
+  const fitOpts: MapLibre.FitBoundsOptions = { ...MCO.map.FIT_OPTS, ...(opts.fitPadding ? { padding: opts.fitPadding } : {}) }
 
   const map = new maplibregl.Map({
     container: el,
     style: MCO.map.cartoStyleUrl(),
     bounds: MCO.map.MT_FIT_BOUNDS,
-    fitBoundsOptions: MCO.map.FIT_OPTS,
+    fitBoundsOptions: fitOpts,
     attributionControl: { compact: true },
     // Rotation is off in house maps (no compass, HOUSE-STYLE §7).
     dragRotate: false,
@@ -58,8 +61,8 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   map.touchZoomRotate.disableRotation()
   map.keyboard.disableRotation()
   MCO.map.addNavigation(map)
-  MCO.map.addFitControl(map)
-  const floor = MCO.map.installZoomFloor(map)
+  MCO.map.addFitControl(map, { fitOpts })
+  const floor = MCO.map.installZoomFloor(map, { fitOpts })
   map.once('load', () => floor.refresh())
   // MapLibre opens the compact attribution when its text first arrives; on small maps it covers the
   // data. Collapse it in the same event (its own listener ran first), so it never paints open; ⓘ opens it.
@@ -112,7 +115,7 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
     map.resize()
     if (opts.refit && !userMoved) {
       floor.refresh()
-      map.fitBounds(MCO.map.MT_FIT_BOUNDS, { ...MCO.map.FIT_OPTS, animate: false })
+      map.fitBounds(MCO.map.MT_FIT_BOUNDS, { ...fitOpts, animate: false })
     }
   })
   resize.observe(el)
