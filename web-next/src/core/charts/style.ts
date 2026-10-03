@@ -96,31 +96,56 @@ export function axisFamily(variable: string): AxisFamily {
   return variable in FIXED ? 'fixed' : variable in ZERO ? 'zero' : 'free'
 }
 
-/** The smallest of 1, 2, 5 × 10ᵏ at or above `raw` (> 0): a tick step. */
+/** Variables on a free axis that are never negative: their axis stops at 0 when the data does (no "−10 %"). */
+const NON_NEGATIVE = new Set(['Soil VWC', 'Bulk EC', 'Atmospheric Pressure', 'VPD', 'Well Water Level', 'Well EC'])
+
+/** The smallest of 1, 2, 2.5, 5 × 10ᵏ at or above `raw` (> 0): a tick step. */
 export function niceStep(raw: number): number {
   if (!(raw > 0)) return 1
   const p = 10 ** Math.floor(Math.log10(raw))
-  for (const m of [1, 2, 5]) if (m * p >= raw * (1 - 1e-9)) return m * p
+  for (const m of [1, 2, 2.5, 5]) if (m * p >= raw * (1 - 1e-9)) return m * p
   return 10 * p
 }
 
-/** At most this many tick steps from the axis min to its max. */
+/** An axis has 4 to 7 tick steps from its min to its max. */
+export const MIN_STEPS = 4
 export const MAX_STEPS = 7
 /** Room kept between the data and the axis ends, as a share of the data's span. */
-export const Y_PAD = 0.05
+export const Y_PAD = 0.02
 
-/** [min, max] rounded out to the finest nice step that needs no more than `MAX_STEPS` steps. */
+/**
+ * [lo, hi] rounded out to whole nice steps: of the steps that give 4–7 intervals, the one with the
+ * least padding (the tighter axis; on a tie, the finer step). Never a coarse jump: −21–106 is
+ * −20–120 by 20, not −50–150 by 50.
+ */
 function roundOut(lo: number, hi: number): { min: number; max: number; interval: number } {
-  let step = niceStep((hi - lo) / MAX_STEPS)
-  const n = (s: number) => Math.ceil(hi / s - 1e-9) - Math.floor(lo / s + 1e-9)
-  while (n(step) > MAX_STEPS) step = niceStep(step * 1.01)
-  return { min: round(Math.floor(lo / step + 1e-9) * step), max: round(Math.ceil(hi / step - 1e-9) * step), interval: step }
+  const fit = (step: number) => {
+    const min = Math.floor(lo / step + 1e-9) * step
+    const max = Math.ceil(hi / step - 1e-9) * step
+    return { min: round(min), max: round(max), interval: step, n: Math.round((max - min) / step) }
+  }
+  let best: ReturnType<typeof fit> | null = null
+  let fallback: ReturnType<typeof fit> | null = null
+  for (let step = niceStep((hi - lo) / (MAX_STEPS + 1)); ; step = niceStep(step * 1.01)) {
+    const f = fit(step)
+    if (f.n < MIN_STEPS) {
+      fallback ??= f
+      break
+    }
+    if (f.n <= MAX_STEPS) {
+      fallback ??= f
+      if (!best || f.max - f.min < best.max - best.min - 1e-9) best = f
+    }
+  }
+  const { min, max, interval } = best ?? fallback!
+  return { min, max, interval }
 }
 
 /**
  * The y-axis bounds and tick step for a variable over data [lo, hi] (null with no data): `zero` is
- * 0 to the max plus 5 %, at least the family's minimum, rounded up to a nice step; `fixed` is its
- * scale; `free` is the span plus 5 % each side, rounded out to nice steps (never pulled to 0).
+ * 0 to the max plus 2 %, at least the family's minimum, rounded up to a nice step; `fixed` is its
+ * scale; `free` is the span plus 2 % each side, rounded out to nice steps; it stops at 0 for a
+ * never-negative variable whose data does, and is otherwise never pulled to 0.
  * Same data → same axis, whatever the range or interval.
  */
 export function yBounds(variable: string, lo: number | null, hi: number | null): { min: number; max: number; interval: number } | null {
@@ -130,7 +155,8 @@ export function yBounds(variable: string, lo: number | null, hi: number | null):
   if (variable in ZERO) return roundOut(0, Math.max(hi * (1 + Y_PAD), ZERO[variable]))
   const span = hi - lo || Math.max(Math.abs(hi) * 0.1, 1)
   const pad = span * Y_PAD
-  return roundOut(lo - pad, hi + pad)
+  const bottom = NON_NEGATIVE.has(variable) && lo >= 0 ? Math.max(0, lo - pad) : lo - pad
+  return roundOut(bottom, hi + pad)
 }
 
 /** Float noise off a tick value (0.30000000000000004 → 0.3). */

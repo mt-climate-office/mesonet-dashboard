@@ -79,6 +79,20 @@ describe('variableChart', () => {
     expect(variableTable(banded).columns).toEqual(['Date', 'Air temperature (°F)', 'Low: Air temperature (°F)', 'High: Air temperature (°F)'])
     expect(drawn(variableChart(model(), testCtx('light')))).toHaveLength(1)
   })
+  it('the y axis spans the band from its real low and high, not the stacked sums', () => {
+    const m = model(24)
+    const s = m.ts.panels[0].series[0]
+    // Lows near −15, highs near 100: the stacked fill is drawn as low + (high − low), so its sum would read 100 + … if mistaken.
+    const banded: VariableModel = { ...m, period: 'daily', ts: { ...m.ts, panels: [{ ...m.ts.panels[0], series: [{ ...s, band: { lo: s.values.map(() => -15.34), hi: s.values.map(() => 100.166) } }] }] } }
+    const [y] = (variableChart(banded, testCtx('light')) as unknown as { yAxis: { min: number; max: number; interval: number }[] }).yAxis
+    expect([y.min, y.max, y.interval]).toEqual([-20, 120, 20])
+  })
+  it('never-negative variables stop at 0: soil moisture is not drawn to −10 %', () => {
+    const rows = Array.from({ length: 24 }, (_, i) => ({ station: 'x', datetime: `2026-07-01 ${String(i).padStart(2, '0')}:00:00-06:00`, 'Soil VWC @ 2 in [%]': 0.5 + i, 'Soil VWC @ 20 in [%]': 33 })) as ObservationRow[]
+    const m: VariableModel = { ts: buildTimeseriesModel({ rows, vars: ['Soil VWC'], period: 'hourly' })!, period: 'hourly', view }
+    const [y] = (variableChart(m, testCtx('light')) as unknown as { yAxis: { min: number }[] }).yAxis
+    expect(y.min).toBe(0)
+  })
   it('the sr-only twin stops at 500 rows; the Table view gets them all', () => {
     expect(variableTable(model(600)).rows).toHaveLength(501)
     expect(variableTableAll(model(600)).rows).toHaveLength(600)

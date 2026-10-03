@@ -278,11 +278,11 @@ All years, every Ag tool, the Download preview and the Now strip.
 - **Soil depths:** shallow → deep, each in `depthColor` (a depth keeps its color whatever else is drawn),
   one line width.
 - **Y axis, by variable family** (`axisFamily`, `yBounds`): *zero* (precipitation, ETr, wind and gusts,
-  solar radiation, snow depth) runs from 0 to the max + 5 %, never under a small floor (0.05 in, 5 mph,
+  solar radiation, snow depth) runs from 0 to the max + 2 %, never under a small floor (0.05 in, 5 mph,
   100 W/m², 1 in) so a calm or dry window is not drawn as a full-height wiggle; *fixed* is relative humidity
   0–100 % and wind direction 0–360° (soil saturation 0–100 % too); *free* (temperature, pressure, soil
-  moisture and temperature, VPD …) is the data ± 5 %, never pulled to zero. Every axis is rounded out to a
-  nice step (1, 2 or 5 × 10ⁿ, at most 7 steps), over everything the panel draws (band and normals included).
+  moisture and temperature, VPD …) is the data ± 2 %, never pulled to zero, but it stops at 0 for a never-negative variable (soil moisture, EC, pressure, VPD) whose data does. Every axis is rounded out to a
+  nice step (1, 2, 2.5 or 5 × 10ⁿ): of the steps giving 4–7 intervals, the one with the least padding (−15–100 °F is −20–120 by 20), over everything the panel draws (band and normals included).
 - **X axis:** spans exactly what is plotted: the requested window on the variable page and Compare (whole
   local days; 24 h zooms to the last 24 hours), else the first to the last point, plus half a step each side
   where bars are drawn so the end bars are whole.

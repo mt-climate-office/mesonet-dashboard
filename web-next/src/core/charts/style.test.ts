@@ -74,15 +74,35 @@ describe('y-axis rule per variable family', () => {
     expect(yBounds('Wind Direction', null, null)).toEqual({ min: 0, max: 360, interval: 90 })
   })
 
-  it('free: the data plus 5 % padding each side, rounded out to whole steps (not to zero)', () => {
+  it('free: the data plus 2 % padding each side, rounded out to whole steps (not to zero)', () => {
     const b = yBounds('Air Temperature', 35, 81)!
     expect(b).toEqual({ min: 30, max: 90, interval: 10 })
-    expect(b.min).toBeLessThan(35 - 0.05 * 46 + 1e-9)
-    expect(b.max).toBeGreaterThan(81 + 0.05 * 46 - 1e-9)
+    expect(b.min).toBeLessThan(35 - 0.02 * 46 + 1e-9)
+    expect(b.max).toBeGreaterThan(81 + 0.02 * 46 - 1e-9)
     // Pressure: never pulled to 0.
-    expect(yBounds('Atmospheric Pressure', 842.1, 851.7)).toEqual({ min: 840, max: 854, interval: 2 })
+    expect(yBounds('Atmospheric Pressure', 842.1, 851.7)).toEqual({ min: 840, max: 852, interval: 2 })
     // Flat data still gets a span.
     expect(yBounds('Soil VWC', 12, 12)!.max).toBeGreaterThan(12)
+  })
+
+  it('picks the step with 4–7 intervals and the least padding, never a coarse jump', () => {
+    // acebozem, last year, daily: band lows to −15.3 °F, highs to 100.2 °F (normals inside): −20–120 by 20, not −50–150 by 50.
+    expect(yBounds('Air Temperature', -15.34, 100.166)).toEqual({ min: -20, max: 120, interval: 20 })
+    for (const [lo, hi] of [[-15.34, 100.166], [0, 95], [35, 81], [-31, 104], [842.1, 851.7], [0.3, 0.9]]) {
+      const b = yBounds('Air Temperature', lo, hi)!
+      const n = Math.round((b.max - b.min) / b.interval)
+      expect(n).toBeGreaterThanOrEqual(4)
+      expect(n).toBeLessThanOrEqual(7)
+      expect(b.min).toBeLessThanOrEqual(lo)
+      expect(b.max).toBeGreaterThanOrEqual(hi)
+    }
+  })
+
+  it('never-negative free variables stop at 0 when their data does; temperature does not', () => {
+    expect(yBounds('Soil VWC', 0.4, 33)).toEqual({ min: 0, max: 35, interval: 5 })
+    expect(yBounds('Soil VWC', 0.4, 33)!.min).toBe(0)
+    expect(yBounds('Bulk EC', 0.01, 0.4)!.min).toBe(0)
+    expect(yBounds('Air Temperature', 0.4, 33)!.min).toBeLessThan(0)
   })
 
   it('the same data gives the same axis whatever the range (no jumping)', () => {
@@ -91,7 +111,7 @@ describe('y-axis rule per variable family', () => {
   })
 
   it('niceStep and extentOf', () => {
-    expect([0.3, 1, 1.1, 2.2, 7, 12].map(niceStep)).toEqual([0.5, 1, 2, 5, 10, 20])
+    expect([0.3, 1, 1.1, 2.2, 3, 7, 12].map(niceStep)).toEqual([0.5, 1, 2, 2.5, 5, 10, 20])
     expect(extentOf([1, null, 5], undefined, [-2])).toEqual([-2, 5])
     expect(extentOf([null])).toEqual([null, null])
   })
