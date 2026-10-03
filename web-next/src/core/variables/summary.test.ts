@@ -48,6 +48,11 @@ describe('listRequest', () => {
 describe('variableRows', () => {
   const rows = variableRows(VARS, LATEST, HOURLY)
   const byId = Object.fromEntries(rows.map((r) => [r.id, r]))
+  it('names rows plainly (core/variables/labels)', () => {
+    expect(byId.air_temp.name).toBe('Air temperature')
+    expect(byId.soil_vwc.name).toBe('Soil moisture')
+    expect(byId.ppt.name).toBe('Rain')
+  })
   it('takes current values from /latest, with the depth for soil', () => {
     expect(byId.air_temp).toMatchObject({ value: '57 °F', note: '' })
     expect(byId.soil_vwc).toMatchObject({ value: '8.65 %', note: 'at 2 in' })

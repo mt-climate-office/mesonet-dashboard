@@ -37,7 +37,8 @@ describe('index.html', () => {
   it('expands every @include', () => {
     const out = expandIncludes(html, root)
     expect(out).not.toMatch(/@include/)
-    for (const s of ['now', 'charts', 'ag', 'download', 'about']) expect(out).toContain(`id="section-${s}"`)
+    for (const s of ['now', 'charts', 'about']) expect(out).toContain(`id="section-${s}"`)
+    expect(out).toContain('id="sheet-download"')
     // Each section's partial (and its nested includes) made it into the page.
     expect(out).toContain('x-data="nowView')
     expect(out).toContain('x-data="variablePage')

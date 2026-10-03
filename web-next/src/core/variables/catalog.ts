@@ -7,20 +7,27 @@
  */
 import { ELEM_MAP, LATEST_EXCLUDED_ELEMENTS, latestVarName, latestVarsFromElements } from '../params'
 import { NORMALS_VARS } from '../models/timeseries'
+import { AG_TOOL_IDS, isAgTool } from '../params/ag'
 import type { UrlState } from '../url-schema'
 
 type ElementRow = { element: string; description_short: string }
 
-export const VARIABLE_GROUPS = ['Weather', 'Precipitation & ET', 'Soil', 'Well', 'Other'] as const
+export const VARIABLE_GROUPS = ['Weather', 'Rain and evaporation', 'Soil', 'Well', 'Other'] as const
 export type VariableGroup = (typeof VARIABLE_GROUPS)[number]
 
 /** Known variables in list order, by group. Anything else (a new API element) goes to Other. */
 const GROUPED: Record<Exclude<VariableGroup, 'Other'>, readonly string[]> = {
   Weather: ['Air Temperature', 'Relative Humidity', 'VPD', 'Wind Speed', 'Gust Speed', 'Wind Direction', 'Solar Radiation', 'Atmospheric Pressure', 'Snow Depth'],
-  'Precipitation & ET': ['Precipitation', 'Max Precip Rate', 'Reference ET'],
+  'Rain and evaporation': ['Precipitation', 'Max Precip Rate', 'Reference ET'],
   Soil: ['Soil Temperature', 'Soil VWC', 'Bulk EC'],
   Well: ['Well Water Level', 'Well Water Temperature', 'Well EC'],
 }
+
+/**
+ * The Charts list's "Ag tools" group, in tool order: every Ag tool except
+ * Annual comparison, which is now any variable's All-years view.
+ */
+export const LIST_AG_TOOLS: readonly string[] = AG_TOOL_IDS.filter((id) => id !== 'annual')
 
 /** Variables summed over time: bars, a total instead of min/max/mean, a cumulative history. */
 const SUMMED = new Set(['Precipitation', 'Reference ET'])
@@ -48,6 +55,18 @@ export function variableId(name: string, elements: readonly ElementRow[] = []): 
   if (known) return known
   const e = elements.find((r) => !LATEST_EXCLUDED_ELEMENTS.has(r.element) && latestVarName(String(r.description_short ?? '')) === name)
   return e?.element ?? name.toLowerCase().replace(/[^a-z0-9]+/g, '_')
+}
+
+/**
+ * URL id of the variable an element code belongs to (`air_temp_0200` →
+ * `air_temp`, `ppt_max_rate` → `ppt_max_rate`): the ELEM_MAP id (first code)
+ * that prefixes it, the longest one winning, else the code itself (an
+ * unmapped element is its own id, as in `variableId`).
+ */
+export function variableIdForElement(code: string): string {
+  const ids = Object.values(ELEM_MAP).map((l) => l[0])
+  const fits = ids.filter((p) => code === p || code.startsWith(`${p}_`))
+  return fits.sort((a, b) => b.length - a.length)[0] ?? code
 }
 
 const rank = (v: Variable) => {
@@ -85,7 +104,12 @@ export function neighbors(vars: readonly Variable[], id: string): { prev: Variab
   return { prev: vars[i - 1] ?? null, next: vars[i + 1] ?? null }
 }
 
-/** What Charts shows for the URL: Compare (`cmp=1`), a variable page (`v=`) or the list. */
-export function chartsMode(state: Pick<UrlState, 'cmp' | 'v'>): 'compare' | 'variable' | 'list' {
-  return state.cmp ? 'compare' : state.v ? 'variable' : 'list'
+/**
+ * What Charts shows for the URL: Compare (`cmp=1`), an Ag tool (`v=` an Ag
+ * tool id, core/params/ag `isAgTool`), a variable page (any other `v=`) or the list.
+ */
+export function chartsMode(state: Pick<UrlState, 'cmp' | 'v'>): 'compare' | 'ag' | 'variable' | 'list' {
+  if (state.cmp) return 'compare'
+  if (isAgTool(state.v)) return 'ag'
+  return state.v ? 'variable' : 'list'
 }

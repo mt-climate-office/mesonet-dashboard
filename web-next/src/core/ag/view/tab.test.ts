@@ -27,20 +27,20 @@ const CROW = st('acecrowa', 'Crow Agency', false)
 const url = (q: string) => readUrlState(q)
 
 describe('resolveAgTab', () => {
-  it('defaults: the tool cards (GDD behind them), wheat, daily, last 365 days through today', () => {
+  it('defaults: no tool open (GDD behind it), wheat, daily, last 365 days through today', () => {
     const t = resolveAgTab(url(''), BOZ, TODAY)
-    expect(resolveAgTab(url('?var=etr'), BOZ, TODAY).open).toBe(true)
+    expect(resolveAgTab(url('?v=etr'), BOZ, TODAY).open).toBe(true)
     expect(t).toMatchObject({ open: false, variable: 'gdd', crop: 'wheat', period: 'daily', start: '2025-10-01', end: TODAY, soilVar: 'soil_vwc' })
     expect(t.cut.custom).toBe(false)
   })
-  it('unknown var/crop fall back; time agg only for etr/feels/cci/swp/ps', () => {
-    expect(resolveAgTab(url('?var=bogus&crop=rice'), BOZ, TODAY)).toMatchObject({ variable: 'gdd', crop: 'wheat' })
-    expect(resolveAgTab(url('?var=gdd&ag_time=hourly'), BOZ, TODAY).period).toBe('daily')
-    expect(resolveAgTab(url('?var=etr&ag_time=hourly'), BOZ, TODAY).period).toBe('hourly')
-    expect(resolveAgTab(url('?var=swp&ag_time=hourly'), BOZ, TODAY)).toMatchObject({ period: 'hourly', swpOnly: true })
+  it('a non-Ag v and an unknown crop fall back; time agg only for etr/feels/cci/swp/ps', () => {
+    expect(resolveAgTab(url('?v=air_temp&crop=rice'), BOZ, TODAY)).toMatchObject({ variable: 'gdd', crop: 'wheat' })
+    expect(resolveAgTab(url('?v=gdd&ag_time=hourly'), BOZ, TODAY).period).toBe('daily')
+    expect(resolveAgTab(url('?v=etr&ag_time=hourly'), BOZ, TODAY).period).toBe('hourly')
+    expect(resolveAgTab(url('?v=swp&ag_time=hourly'), BOZ, TODAY)).toMatchObject({ period: 'hourly', swpOnly: true })
   })
   it('SWP / saturation chips only at has_swp stations', () => {
-    const q = url('?var=soil_temp,soil_ec_blk&soilv=swp')
+    const q = url('?v=soil_temp,soil_ec_blk&soilv=swp')
     expect(resolveAgTab(q, BOZ, TODAY).soilVar).toBe('swp')
     const crow = resolveAgTab(q, CROW, TODAY)
     expect(crow.soilVar).toBe('soil_vwc')
@@ -54,7 +54,7 @@ describe('resolveAgTab', () => {
 
 describe('patches', () => {
   it('a variable change resets crop, cutoffs, time agg and soil var', () => {
-    expect(variablePatch('etr')).toEqual({ var: 'etr', crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' })
+    expect(variablePatch('etr')).toEqual({ v: 'etr', crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' })
     expect(cropPatch('corn')).toEqual({ crop: 'corn', gdd_lo: null, gdd_hi: null })
   })
   it('slider: crop cutoffs ↔ value; only a moved thumb is written; open cap = null', () => {
@@ -101,16 +101,16 @@ describe('station + annual options', () => {
 
 describe('urlFixups', () => {
   it('strips legacy cutoff pairs on GDD only', () => {
-    const q = url('?var=gdd&crop=wheat&gdd_lo=32&gdd_hi=95')
+    const q = url('?v=gdd&crop=wheat&gdd_lo=32&gdd_hi=95')
     expect(urlFixups(resolveAgTab(q, BOZ, TODAY), q, true, null)).toEqual({ gdd_lo: null, gdd_hi: null })
-    const e = url('?var=etr&gdd_lo=32&gdd_hi=95')
+    const e = url('?v=etr&gdd_lo=32&gdd_hi=95')
     expect(urlFixups(resolveAgTab(e, BOZ, TODAY), e, true, null)).toBeNull()
   })
   it('falls back to VWC once the station is known; Annual defaults to the first element', () => {
-    const q = url('?var=soil_temp,soil_ec_blk&soilv=swp')
+    const q = url('?v=soil_temp,soil_ec_blk&soilv=swp')
     expect(urlFixups(resolveAgTab(q, CROW, TODAY), q, true, null)).toEqual({ soilv: 'soil_vwc' })
     expect(urlFixups(resolveAgTab(q, undefined, TODAY), q, false, null)).toBeNull()
-    const a = url('?var=annual&annv=gone')
+    const a = url('?v=annual&annv=gone')
     expect(urlFixups(resolveAgTab(a, BOZ, TODAY), a, true, [{ value: 'air_temp' }])).toEqual({ annv: 'air_temp' })
     expect(urlFixups(resolveAgTab(a, BOZ, TODAY), a, true, [])).toBeNull()
   })
@@ -155,6 +155,6 @@ it('annualElement: waits for the list; a stale annv falls to the first option', 
 })
 
 it('date range hidden for Annual only', () => {
-  expect(resolveAgTab(url('?var=annual'), BOZ, TODAY).showDates).toBe(false)
-  expect(resolveAgTab(url('?var=etr'), BOZ, TODAY).showDates).toBe(true)
+  expect(resolveAgTab(url('?v=annual'), BOZ, TODAY).showDates).toBe(false)
+  expect(resolveAgTab(url('?v=etr'), BOZ, TODAY).showDates).toBe(true)
 })
