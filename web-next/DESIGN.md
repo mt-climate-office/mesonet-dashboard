@@ -128,8 +128,10 @@ Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png
 | `var=<tool>` | "‹ All Ag tools" link · heading "<tool>: <station>" · **Options** disclosure · chart card (notes, then the chart or its state) |
 
 - **Navigation:** a card is a real link (`?…&var=<tool>#ag`); a plain click opens it with `pushState`
-  (`navigate('ag', { drillDown: true })`) and focuses the heading. "All Ag tools" clears `var` the same way
-  and focuses the card just left. Back returns to the cards. Opening a tool applies `variablePatch` (the
+  (`navigate('ag', { drillDown: true })`) and focuses the heading. "All Ag tools", and the Ag tab inside Ag,
+  return to the cards the same way (`core/ag/view/tab.ts#agCardsPatch`: `var` and every other Ag key back to
+  its default, so the link is not read as an old GDD one); the link focuses the card just left. Back returns
+  to the cards. Opening a tool applies `variablePatch` (the
   same reset as changing the variable select inside Options).
 - **Options** (`<details class="dash-card ag-options">`): open on desktop, collapsed on phones (open there too
   while no station is chosen, since the station combobox is inside). The summary is one line, ellipsized:

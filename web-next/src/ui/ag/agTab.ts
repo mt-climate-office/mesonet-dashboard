@@ -6,7 +6,7 @@
  * card fetches for itself.
  */
 import Alpine from 'alpinejs'
-import { chartState, variableGroup, variablePatch } from '../../core/ag/view/tab'
+import { agCardsPatch, chartState, variableGroup, variablePatch } from '../../core/ag/view/tab'
 import { DERIVED_VAR_OPTIONS } from '../../core/params/ag'
 import type { UrlState } from '../../core/url-schema'
 import { component } from '../component'
@@ -38,18 +38,18 @@ export function agTab() {
     },
 
     toolHref: (v: string): string => Alpine.store('url').hrefFor('ag', variablePatch(v)),
-    cardsHref: (): string => Alpine.store('url').hrefFor('ag', { var: null }),
+    cardsHref: (): string => Alpine.store('url').hrefFor('ag', agCardsPatch()),
     /** Card click: open the tool (a variable change resets its options, as the select does), focus its heading. */
     openTool(e: MouseEvent, v: string): void {
       if (!plainClick(e)) return
       e.preventDefault()
       void this.go(variablePatch(v), 'ag-chart-title')
     },
-    /** "All Ag tools": back to the cards, focusing the card of the tool just left. */
+    /** "All Ag tools": back to the cards (the tool's options reset too), focusing the card of the tool just left. */
     toCards(e: MouseEvent): void {
       if (!plainClick(e)) return
       e.preventDefault()
-      void this.go({ var: null }, `ag-tool-${currentTab().variable}`)
+      void this.go(agCardsPatch(), `ag-tool-${currentTab().variable}`)
     },
     async go(patch: Partial<UrlState>, focusId: string): Promise<void> {
       await navigate('ag', { patch, drillDown: true })

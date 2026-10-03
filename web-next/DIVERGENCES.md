@@ -76,7 +76,8 @@ layout parts of older entries below; data behaviour is unchanged.
 - **New:** `#ag` without `var` shows one card per tool (Reference ET, Growing degree days, Feels like,
   Livestock risk, Soil profile, Soil water potential, Percent saturation, Annual comparison), each with a
   one-line description. A card opens that tool (`var=…`, the same reset as changing the variable select) with
-  `pushState`, so Back returns to the cards; "All Ag tools" does the same. The controls sit in an "Options"
+  `pushState`, so Back returns to the cards; "All Ag tools" (and the Ag tab inside Ag) does the same and
+  resets the tool's options (crop, cutoffs, dates, …), so the cards URL holds no Ag key. The controls sit in an "Options"
   disclosure above the chart, open on desktop and collapsed on phones (open there too while no station is
   chosen), whose summary line names the options (`core/ag/view/summary.ts`, e.g. "Wheat · 32–70 °F · to
   Oct 31"). Tool names are sentence case and shorter ("Feels like", "Soil profile", "Livestock risk";

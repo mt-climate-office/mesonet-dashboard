@@ -9,7 +9,7 @@ import type { ComboboxItem } from '../../controls/comboboxModel'
 import type { RangeValue } from '../../controls/rangeModel'
 import { DERIVED_VAR_OPTIONS, type DerivedVar, GDD_CROPS, SOIL_VAR_OPTIONS } from '../../params/ag'
 import { stationHasSwp } from '../../stations'
-import type { UrlState } from '../../url-schema'
+import { URL_SCHEMA, type UrlKey, type UrlState } from '../../url-schema'
 import { elementLabel } from '../../downloader/labels'
 import type { GddCrop, LocalDate } from '../contract'
 import { GDD_CUTOFFS_F } from '../compute/gdd'
@@ -102,6 +102,20 @@ export function resolveAgTab(url: AgUrl, station: Station | undefined, today: Lo
  */
 export function variablePatch(v: string): Partial<UrlState> {
   return { var: v, crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' }
+}
+
+/** Ag keys other than `var`: every option a tool reads. */
+export const AG_KEYS = ['crop', 'gdd_lo', 'gdd_hi', 'gdd_proj', 'ag_time', 'lt', 'soilv', 'annv', 'ag_from', 'ag_to'] as const satisfies readonly UrlKey[]
+
+/**
+ * Back to the tool cards: `var` and every `AG_KEYS` key at its default, so the
+ * URL keeps no Ag key (core/router `legacyRedirect` would read one without
+ * `var` as an old GDD link and reopen GDD).
+ */
+export function agCardsPatch(): Partial<UrlState> {
+  const patch: Record<string, unknown> = { var: null }
+  for (const k of AG_KEYS) patch[k] = URL_SCHEMA[k].default
+  return patch as Partial<UrlState>
 }
 
 /** A new crop starts from its own cutoffs. */

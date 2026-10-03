@@ -90,8 +90,8 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `#latest`/`#downloader` map). `go(section, patch?, drillDown?)` changes
   section with `pushState` (Back works); `drillDown` pushes inside a section
   too (an Ag tool opened from its card; a Charts variable or sub-view). The
-  section nav applies `sectionNavPatch` (Charts inside Charts → the list;
-  leaving Charts drops `v`). `hrefFor(section, patch?)` gives the
+  section nav applies `sectionNavPatch` (Charts inside Charts → the list,
+  Ag inside Ag → the tool cards; leaving Charts drops `v`). `hrefFor(section, patch?)` gives the
   real href for a link. In-page anchors (the skip link's `#main`) keep the section.
   Back/forward re-read both. Navigate from UI through `ui/shell/navigate.ts`
   (view transition + scroll + announcement).
