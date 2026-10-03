@@ -54,7 +54,8 @@ below, which stay for the record and name what replaced them.
 - **Old links:** `#ag&var=<tool>` → `#charts&v=<tool>` with every Ag key; `#ag` with Ag keys but no `var`
   (or an unknown one) → GDD, as before; a bare `#ag` → the Charts list scrolled to its Ag tools group;
   `#download` / `#downloader` → `#charts&dl=1` with every `dl_*` / `els` / `period` / `qc` / `pub` key
-  (`#downloader`'s `from`/`to` renamed first); `#latest` → Compare, unchanged. `var` left the schema; the
+  (`#downloader`'s `from`/`to` renamed first; closing the sheet then clears `dl`, `els`, `dl_from`, `dl_to`
+  and `period`, where web/ kept them while the Downloader tab stayed open); `#latest` → Compare, unchanged. `var` left the schema; the
   boot redirect removes it, and any other unknown key round-trips.
 - **Why:** user decision (DESIGN.md "Redesign 2026-10", decisions 1–2): P1 had three mini-apps of its own.
 

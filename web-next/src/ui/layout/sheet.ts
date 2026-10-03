@@ -6,8 +6,12 @@
  * (`data-state`); drag the handle up for full, down to step back to peek and
  * then close; tap or Enter/Space on the handle toggles. `.enter`/`.leaving`
  * drive the slide (220 ms; immediate under reduced motion). The open height
- * is published as `--sheet-h` on <html> so toasts can clear it.
- * CSS: ui/layout/sheet.css. Alpine wrapper: ui/picker/stationPicker.ts.
+ * is published as `--sheet-h` on <html> so toasts can clear it. `onClosed`
+ * runs once the close slide has ended (at once under reduced motion), so
+ * content can unmount after it.
+ * CSS: ui/layout/sheet.css. Alpine wrappers: ui/picker/stationPicker.ts (the
+ * station picker) and ui/shell/sheet.ts (the modal sheets: Download, Custom
+ * dates, About's two).
  */
 import { createFocusScope } from './focusScope'
 
@@ -22,6 +26,8 @@ export interface SheetOptions {
   /** Disclosure buttons; their `aria-expanded` follows the sheet. */
   toggles: () => HTMLElement[]
   onChange?: (open: boolean, state: SheetState) => void
+  /** After a close has finished sliding out (not called when reopened mid-slide). */
+  onClosed?: () => void
 }
 
 export interface Sheet {
@@ -133,6 +139,7 @@ export function initSheet(o: SheetOptions): Sheet {
       const done = () => {
         panel.hidden = true
         panel.classList.remove('leaving')
+        o.onClosed?.()
       }
       if (reduced()) done()
       else {

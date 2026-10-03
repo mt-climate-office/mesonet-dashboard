@@ -59,7 +59,7 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
 - **Old links** keep working (DIVERGENCES "Three places"): `#latest` → Compare; `#ag&var=<tool>` →
   `#charts&v=<tool>` with every Ag key; a bare `#ag` → the list at its Ag tools group; `var=annual` → that
   variable's All-years view; `#download` / `#downloader` + `dl_*` keys → `#charts&dl=1` (closing the sheet
-  clears `dl`); a bare `?s=` → Now.
+  clears `dl` and the prefill keys); a bare `?s=` → Now.
 - **One namespace:** `v` holds an element family id (`air_temp`, …) or an Ag tool id (the
   `DERIVED_VAR_OPTIONS` values). The interval is the `agg` key: absent = Auto, `raw|hourly|daily` explicit.
 
@@ -263,7 +263,8 @@ Screenshots (phase B, in the session scratchpad `rd-charts/`): `<390|1440>-<ligh
 The Download sheet (`partials/sheets/download.html`) is open while `dl=1`: from a chart's ⋯ → Download data
 (prefilled by `core/downloader/fromChart`, then `openSheet('download', opener)`), from an old `#download` / `#downloader` link, or any URL with
 `dl=1`. Closing (×, Esc, the scrim, a drag down on phones) clears `dl` and returns focus to the opener (to
-`<main>` when the URL opened it). It is a bottom sheet on phones and a centred panel (34 rem) from 641 px;
+`<main>` when the URL opened it); once it has slid away it also clears the prefill keys (`els`, `dl_from`,
+`dl_to`, `period`: `PREFILL_RESET`, core/downloader/fromChart), whether a chart or an old link wrote them. It is a bottom sheet on phones and a centred panel (34 rem) from 641 px;
 its body scrolls on its own. Every value comes from the URL's existing keys, so whatever opened it (a chart's
 ⋯ menu writing `els`, `dl_from`, `dl_to`, `period`), the form shows that.
 
@@ -355,7 +356,7 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
   page behind is `inert`, Esc / × / scrim close, focus moves in (`[data-autofocus]`, else the first control)
   and returns to the opener. Open or close from code with `openSheet(id, opener)` / `closeSheet(id)`
   (`ui/shell/sheet.ts`); with `urlKey` the URL key is the open state. Content inside `<template
-  x-if="isOpen">` mounts only while open. Each sheet has a sibling scrim `#<id>-scrim`.
+  x-if="isOpen">` mounts only while open and unmounts after the close slide (at once under reduced motion). Each sheet has a sibling scrim `#<id>-scrim`.
 - **Pill chips** (`card.css`) — `<button class="dash-chip" aria-pressed>`: a raised pill; pressed is filled
   with high contrast (`--text-primary` fill, `--bg-deep` text) for the active range. `.dash-chip--quiet` for
   the interval row: pressed is the accent tint with `--accent-line` text. `aria-pressed` alone drives the style.

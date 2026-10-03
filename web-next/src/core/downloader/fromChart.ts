@@ -22,6 +22,13 @@ export interface ChartDownload {
   interval: LatestAgg
 }
 
+/**
+ * The keys `fromChart` writes (an old `#downloader` link carries them too) at
+ * their defaults, so absent from the URL. Closing the Download sheet applies
+ * it: the user is done with them, and they never outlive the sheet.
+ */
+export const PREFILL_RESET: Pick<UrlState, 'els' | 'dl_from' | 'dl_to' | 'period'> = { els: [], dl_from: null, dl_to: null, period: 'daily' }
+
 /** The Downloader keys for a chart (see the header). */
 export function fromChart(c: ChartDownload): Pick<UrlState, 'els' | 'dl_from' | 'dl_to' | 'period'> {
   return { els: [...new Set(c.elements)], dl_from: c.start, dl_to: c.end, period: c.interval === 'daily' ? 'daily' : 'hourly' }

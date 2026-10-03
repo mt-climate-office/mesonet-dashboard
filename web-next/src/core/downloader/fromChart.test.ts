@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { agToolElements, fromChart, variableElements } from './fromChart'
+import { readUrlState } from '../url-schema'
+import { PREFILL_RESET, agToolElements, fromChart, variableElements } from './fromChart'
 
 const els = [
   { element: 'air_temp_0200', description_short: 'Air Temperature @ 2 m' },
@@ -10,6 +11,15 @@ const els = [
   { element: 'ppt', description_short: 'Precipitation' },
   { element: 'ppt_corrected', description_short: 'Precipitation' },
 ]
+
+describe('PREFILL_RESET', () => {
+  it('resets exactly the keys fromChart writes, to their URL defaults', () => {
+    const written = fromChart({ elements: ['ppt'], start: '2026-09-01', end: '2026-09-30', interval: 'hourly' })
+    expect(Object.keys(PREFILL_RESET).sort()).toEqual(Object.keys(written).sort())
+    const defaults = readUrlState('')
+    for (const [k, v] of Object.entries(PREFILL_RESET)) expect(defaults[k as keyof typeof defaults]).toEqual(v)
+  })
+})
 
 describe('fromChart', () => {
   it('writes els, the dates and the period; 5-min downloads hourly', () => {

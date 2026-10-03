@@ -6,9 +6,12 @@
  * any component with `openSheet(id, opener)` / `closeSheet(id)`. With
  * `urlKey` (the Download sheet's `dl`), the URL key is the open state: opening
  * sets it, closing clears it, and a URL that has it opens the sheet on load.
- * Content inside `<template x-if="isOpen">` mounts (and fetches) only while open.
+ * Content inside `<template x-if="isOpen">` mounts (and fetches) only while
+ * open, and stays until the close slide ends. Closing the Download sheet also
+ * resets the keys a chart prefilled (core/downloader `PREFILL_RESET`).
  */
 import Alpine from 'alpinejs'
+import { PREFILL_RESET } from '../../core/downloader/fromChart'
 import type { UrlState } from '../../core/url-schema'
 import { initSheet, type Sheet } from '../layout/sheet'
 import { component } from '../component'
@@ -23,8 +26,9 @@ export const openSheet = (id: string, opener: HTMLElement | null = null): void =
 /** Close sheet `id` (focus returns to its opener). */
 export const closeSheet = (id: string): void => void window.dispatchEvent(new CustomEvent<Detail>(EVENT, { detail: { id, open: false, opener: null } }))
 
-/** URL keys a sheet may be bound to: boolean schema keys. */
+/** URL keys a sheet may be bound to (boolean schema keys), and what closing it resets. */
 type SheetKey = 'dl'
+const RESET: Record<SheetKey, Partial<UrlState>> = { dl: PREFILL_RESET }
 
 /** The page behind a modal sheet (made inert while it is open). Live regions and the toast stay outside it. */
 const background = () => [...document.querySelectorAll('.mco-skip-link, .mco-navbar, .dash-shell, .dash-tabbar')]
@@ -49,8 +53,12 @@ export function sheet(cfg: { id: string; urlKey?: SheetKey }) {
         background,
         toggles: () => [],
         onChange: (open) => {
-          this.isOpen = open
-          if (!open) setKey(false)
+          if (open) this.isOpen = true
+          else setKey(false)
+        },
+        onClosed: () => {
+          this.isOpen = false
+          if (cfg.urlKey) url().set(RESET[cfg.urlKey])
         },
       })
       panel.hidden = true
