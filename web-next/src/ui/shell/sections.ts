@@ -11,7 +11,7 @@ import Alpine from 'alpinejs'
 import { parseSection, sectionNavPatch, type Section } from '../../core/router'
 import { initSectionNav, publishHeight, type SectionNav } from '../layout/sectionNav'
 import { component } from '../component'
-import { navigate } from './navigate'
+import { follow } from './navigate'
 
 /** Patch + history mode for a tap on `to` from the current section. */
 const navFor = (to: Section) => {
@@ -28,9 +28,9 @@ export function sections() {
       const el = this.$el as HTMLElement
       nav = initSectionNav({
         root: el,
-        onNavigate: (s) => {
+        onNavigate: (e, s) => {
           const to = parseSection(s)
-          void navigate(to, navFor(to))
+          follow(e, to, navFor(to))
         },
       })
       effect = Alpine.effect(() => nav?.setCurrent(Alpine.store('url').section))

@@ -109,6 +109,9 @@ Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png
   (`navigate(…, { drillDown: true })`), so Back walks back through them to the list or to Now; presets,
   dates and switches replace the entry. The Charts tab inside Charts returns to the list (pushed);
   leaving Charts drops `v`, so the next visit opens the list (`core/router.ts#sectionNavPatch`).
+- **Focus:** a drill-down moves focus to the new view's heading (`#charts-list-title`, `#var-title`,
+  `#charts-compare-title`; prev/next chips too), so it never falls to `<body>`; a Recent · History · Table
+  link keeps focus.
 
 ### Charts on touch
 

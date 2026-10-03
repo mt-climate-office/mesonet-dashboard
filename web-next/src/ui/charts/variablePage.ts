@@ -13,12 +13,11 @@ import { RANGE_PRESETS, activePreset, findVariable, neighbors, panelStats, prese
 import type { ChartView, LatestAgg } from '../../core/url-schema'
 import { component } from '../component'
 import { announce } from '../shell/live'
-import { navigate } from '../shell/navigate'
+import { follow } from '../shell/navigate'
 import { chartVariables, elementsResource, recordResource, seriesModel, seriesRequest, type SeriesQuery } from './resources'
 
 const url = () => Alpine.store('url')
 const stations = () => Alpine.store('station')
-const plain = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey
 
 export function variablePage() {
   const build = seriesModel()
@@ -62,10 +61,10 @@ export function variablePage() {
     href(patch: { v?: string; view?: ChartView }): string {
       return url().hrefFor('charts', { v: patch.v ?? url().state.v, view: patch.view ?? 'recent', cmp: false })
     },
+    /** A prev/next chip remounts the page body, so its heading takes focus; a view link stays where it is. */
     go(e: MouseEvent, patch: { v?: string; view?: ChartView }): void {
-      if (!plain(e)) return
-      e.preventDefault()
-      void navigate('charts', { patch: { v: patch.v ?? url().state.v, view: patch.view ?? 'recent' }, drillDown: true })
+      const next = { v: patch.v ?? url().state.v, view: patch.view ?? 'recent' }
+      follow(e, 'charts', { patch: next, drillDown: true, target: patch.v ? 'var-title' : undefined })
     },
 
     /* Range */

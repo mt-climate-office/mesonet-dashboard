@@ -15,7 +15,7 @@ import { variableId } from '../../core/variables'
 import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../station/resources'
 import { component } from '../component'
 import { togglePicker } from '../picker/stationPicker'
-import { navigate } from '../shell/navigate'
+import { follow } from '../shell/navigate'
 import { normals, sparkRows } from './resources'
 
 const EMPTY: Overview = { freshness: null, hero: null, tiles: [] }
@@ -74,17 +74,14 @@ export function nowView() {
     href(vars: string[]): string {
       return Alpine.store('url').hrefFor('charts', { v: variableId(vars[0]), view: 'recent', cmp: false })
     },
-    /** Plain click on a tile: push its variable page; the tile morphs into the page heading. */
+    /** A tile: push its variable page; the tile morphs into the page heading, which takes focus. */
     open(e: MouseEvent, vars: string[]): void {
-      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
-      e.preventDefault()
-      void navigate('charts', { patch: { v: variableId(vars[0]), view: 'recent', cmp: false }, morph: e.currentTarget as HTMLElement })
+      const patch = { v: variableId(vars[0]), view: 'recent', cmp: false } as const
+      follow(e, 'charts', { patch, morph: e.currentTarget as HTMLElement, target: 'var-title' })
     },
     /** "All readings" → About's readings table, through the same pushState + transition as the section nav. */
     toAbout(e: MouseEvent): void {
-      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
-      e.preventDefault()
-      void navigate('about', { target: 'about-readings' })
+      follow(e, 'about', { target: 'about-readings' })
     },
 
     pick(e: Event): void {

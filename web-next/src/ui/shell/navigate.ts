@@ -1,9 +1,9 @@
 /**
- * In-app navigation between sections: `$store.url.go` (pushState for a
- * section change) inside a view transition, then scroll to the top and
- * announce the section. Used by the section nav and by tile links.
- * `target` scrolls to (and focuses) an element in the new section instead
- * of the top, e.g. Now's "All readings" → `#about-readings`.
+ * In-app navigation: `navigate` runs `$store.url.go` (pushState for a section
+ * change or a drill-down) inside a view transition, then scrolls, moves focus
+ * and announces a new section. `follow` is the one click handler for an
+ * in-app `<a href>`: a plain left click navigates, anything else (new tab,
+ * middle click) follows the real href.
  */
 import Alpine from 'alpinejs'
 import { SECTIONS, sectionLabel, type Section } from '../../core/router'
@@ -13,15 +13,24 @@ import { announce } from './live'
 
 const order = (s: Section) => SECTIONS.findIndex((x) => x.id === s)
 
-/**
- * Go to `section` (optionally patching URL state); `morph` is the tapped element for a shared-element
- * transition; `drillDown` adds a history entry inside the section (an Ag tool opened from its card, a Charts variable or sub-view);
- * `target` is the id of an element to land on (it needs `tabindex="-1"`).
- */
-export async function navigate(
-  section: Section,
-  opts: { patch?: Partial<UrlState>; morph?: HTMLElement | null; drillDown?: boolean; target?: string } = {},
-): Promise<void> {
+export interface NavigateOptions {
+  /** URL state to apply with the move. */
+  patch?: Partial<UrlState>
+  /** The tapped element, for a shared-element transition into `[data-vt-target]`. */
+  morph?: HTMLElement | null
+  /** Add a history entry inside the section (an Ag tool, a Charts variable or sub-view). */
+  drillDown?: boolean
+  /**
+   * Id of the element that takes focus (it needs `tabindex="-1"` unless it is
+   * focusable), so focus never falls to <body> when the clicked link unmounts.
+   * The page scrolls to the top as usual, then to the target if that left it
+   * below the fold (Now's "All readings" → `#about-readings`).
+   */
+  target?: string
+}
+
+/** Go to `section` (see NavigateOptions). */
+export async function navigate(section: Section, opts: NavigateOptions = {}): Promise<void> {
   const url = Alpine.store('url')
   const from = url.section
   await withTransition(
@@ -31,12 +40,21 @@ export async function navigate(
     },
     { direction: order(section) < order(from) ? 'back' : 'forward', morph: opts.morph },
   )
+  // A target inside an x-for under an x-if renders one tick after the x-if.
+  if (opts.target) await Alpine.nextTick()
+  if (from !== section || opts.drillDown) window.scrollTo({ top: 0 })
   const target = opts.target ? document.getElementById(opts.target) : null
-  if (target) {
-    target.scrollIntoView({ block: 'start' })
-    target.focus({ preventScroll: true })
-  } else if (from !== section || opts.drillDown) {
-    window.scrollTo({ top: 0 })
-  }
+  if (target && target.getBoundingClientRect().bottom > window.innerHeight) target.scrollIntoView({ block: 'start' })
+  target?.focus({ preventScroll: true })
   if (from !== section) announce(sectionLabel(section))
+}
+
+/** A plain left click (no modifier key): handled in-app; anything else follows the href. */
+const plainClick = (e: MouseEvent) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey
+
+/** Click handler for an in-app link: a plain click is `navigate(section, opts)` instead of the href. */
+export function follow(e: MouseEvent, section: Section, opts: NavigateOptions = {}): void {
+  if (!plainClick(e)) return
+  e.preventDefault()
+  void navigate(section, opts)
 }

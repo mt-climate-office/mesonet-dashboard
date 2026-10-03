@@ -18,7 +18,7 @@
   <template x-for="variable in (state === 'ready' ? [variable] : [])" :key="variable.id">
     <div class="var-body">
       <div class="var-head">
-        <h2 class="dash-section-title var-title" data-vt-target x-text="variable.name" data-testid="variable-title"></h2>
+        <h2 class="dash-section-title var-title" id="var-title" tabindex="-1" data-vt-target x-text="variable.name" data-testid="variable-title"></h2>
         <nav class="var-near" aria-label="Other variables">
           <template x-if="near.prev">
             <a class="nav-btn var-chip" :href="href({ v: near.prev.id })" @click="go($event, { v: near.prev.id })" data-testid="var-prev">

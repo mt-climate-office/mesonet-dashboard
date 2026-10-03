@@ -94,7 +94,11 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   Ag inside Ag → the tool cards; leaving Charts drops `v`). `hrefFor(section, patch?)` gives the
   real href for a link. In-page anchors (the skip link's `#main`) keep the section.
   Back/forward re-read both. Navigate from UI through `ui/shell/navigate.ts`
-  (view transition + scroll + announcement).
+  (view transition + scroll + focus + announcement): an in-app `<a href>` calls
+  `follow(event, section, opts)` on click (a plain click navigates, a modified
+  or middle click follows the href); when the clicked link unmounts, pass
+  `target:` (an id with `tabindex="-1"`, usually the new view's heading) so
+  focus never falls to `<body>`.
 - **`$store.data`** (`stores/data.ts` → `core/cache.ts`):
   `cached(key, fetcher, {ttl, retry})` returns one reactive
   `{status: 'loading'|'success'|'error', data, error, refresh()}` per key.
