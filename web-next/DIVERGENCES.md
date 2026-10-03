@@ -58,6 +58,38 @@ code and CSV bytes are unchanged.
   primitive only; sections adopt the new chips and numerals in phase B.
 - **Why:** REDESIGN.md "Visual language".
 
+### Now: the forecast card becomes the hero's 48 h strip
+- **P1:** an NWS forecast card: the next 8 text periods (name, icon, temperature, short forecast, chance of
+  precipitation) in a horizontal scroll-snap strip, with a "{place} · NWS forecast" heading and a Retry button.
+- **New:** no forecast card. The hero's 48 h strip draws the last 24 h observed into the next 24 h of the NWS
+  **hourly** forecast (`forecastHourly`, one more request, `nwsh:<url>`, 30 min), labels the periods it spans
+  ("Tonight 45°"), and lists their icons under it (api.weather.gov only, alt text = the short forecast) beside a
+  "Full forecast" link to the NWS page. The current period's sky feeds the summary sentence. Beyond 24 h, and
+  the chance of precipitation, are on the NWS page. Without NWS coverage the strip shows the observed day only.
+- **Why:** REDESIGN.md "Now" 1 and 5: one picture of yesterday into tomorrow instead of a second card of text.
+
+### Now: tiles only where they mean something
+- **P1:** a tile for every reading the station reports: Wind (with a compass glyph), Precipitation today (24 h,
+  7 d and YTD lines), Humidity, Solar radiation (0 W/m² all night), Pressure, Soil (a depth profile table), Snow
+  depth (with snow), VPD; labels in API words ("Solar radiation", "mbar").
+- **New:** `nowTiles` (core/overview/relevance.ts) hides Sunlight at night (< 5 W/m²) and Pressure always;
+  precipitation is one **Rain** tile (the 7 d total, or 24 h without the ppt summary, with "% of normal this
+  year"), shown whenever there is a source, even after a dry week; humidity carries the dew point; soil
+  moisture shows the shallowest depth only, with a **Dry/Wet** badge from soil water potential (≥ 15 bar / ≤ 0.33
+  bar, the Ag SWP thresholds) for stations with SWP sensors (one `/derived/hourly` request; VWC alone gets no
+  badge, its thresholds depend on soil texture). Names, units and precision come from `core/variables/labels`
+  ("Sunlight", "mb", soil moisture as an integer). The full profile and every reading stay on About. The badge
+  is a neutral `.dash-badge` (the kit has no warm status token).
+- **Why:** REDESIGN.md "Visual language": every reading had equal weight, including empty ones.
+
+### Now: pressure as a trend in the "All readings" row
+- **P1:** a Pressure tile (847.2 mbar and a sparkline).
+- **New:** no tile. The "All readings" row's meta says "Pressure 847 mb, steady" (rising / falling when the
+  last 3 h changed by more than 1 mb, NWS practice; the word appears once the hourly rows are in) and the snow
+  depth ("Snow none" when the station measures it and there is none). A "Station details" row (network and
+  elevation) links to About.
+- **Why:** a station pressure of ~850 mb means little on its own; its 3 h change is what forecasts use.
+
 ## UX refactor (P0 prototype, 2026-10)
 
 The user-approved refactor (overview first, mobile first; DESIGN.md) changes the

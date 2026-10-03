@@ -41,8 +41,8 @@ drawer) reads `MCO.viewport` and the desktop query in JS.
 | Name | Query | Sections | Station picker | Now grid |
 |---|---|---|---|---|
 | compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) | bottom sheet (peek / full) | one column, tiles 2-up |
-| tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | hero beside photo, tiles 3-up |
-| desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero 3/5 beside photo, tiles 4-up |
+| tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | one column, tiles 2-up |
+| desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero + photo beside tiles (2-up) + rows |
 
 The brand shows only on desktop (visually hidden below 1060 px; the kit's own step is 750 px).
 
@@ -64,14 +64,18 @@ then Send feedback (a link). One row at every width.
 
 ## Now
 
+One model, `core/overview` `buildNowPage` (hero.ts + relevance.ts + nowPage.ts), bound by `partials/now/index.html`
+and `ui/now/nowView.ts`. **Phones and tablets:** one column, hero → photo → tiles (2-up) → rows. **Desktop
+(≥ 1060 px):** two columns, hero + photo | tiles + rows (1.35 : 1), as in the mockup.
+
 | Slot | Content | Data (tier) |
 |---|---|---|
-| Freshness | "Updated 7 min ago", an ⓘ toggletip when the data are provisional (served at QC level 1 until the next daily QC run, about 8 AM), **No report for over 2 hours** warning | `/latest` (1) |
-| Hero | Air temperature; NWS feels-like with "Wind chill"/"Heat index"; today's high/low; gridMET normal high/low; 48 h sparkline | `/latest` (1); hourly + `tmmx`/`tmmn` (2) |
-| Tiles | Wind (speed, gust, compass glyph pointing where it blows), Precipitation (today, 24 h, 7 d, YTD vs normal), Humidity, Solar, Pressure, Soil (depth profile: temp + VWC bar), Snow depth (only with snow: ≥ 0.5 in now or in any hour of the last 72 h), VPD (AgriMet); each a link to its variable, with a 48 h sparkline | `/latest`, `/derived/ppt/` (1); hourly + `pr` (2) |
-| Media | Latest camera frame of the default direction (opens the photo dialog), or the wind rose without a camera | photo schedule, latest listings (1) |
-| Forecast | NWS periods in a horizontal strip with scroll snap | NWS (1) |
-| All readings | link to About's readings table (`navigate('about', { target: 'about-readings' })`) | — |
+| Hero | Air temperature (`.num-display`, 5 rem phones / 7 rem desktop); on the right today's high/low, the gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
+| Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
+| Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, observed high/low and period labels; its sr-only table. Below it the NWS period icons (api.weather.gov only, alt = the short forecast), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
+| Media | Latest camera frame of the default direction (16:9; 16:8 on desktop; opens the photo dialog), or the wind rose without a camera | photo schedule, latest listings (1) |
+| Tiles | Only the relevant ones (`nowTiles`): Wind (speed; compass word · gusts), Rain (7 d total, 24 h without the ppt summary; % of normal this year), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has SWP sensors), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page that morphs into the page heading, which takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, `/derived/hourly` SWP (2) |
+| Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → About's readings (`target: 'about-readings'`); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
 `<dialog class="mco-modal">` with a **Direction** segmented control (the directions with frames that day, legacy
@@ -84,13 +88,15 @@ caption). The dialog's content mounts only while open. On phones the day and tim
 targets 44 px; nothing scrolls sideways at 390 px. Focus stays in the modal (the page is inert), Esc closes,
 focus returns to the tile.
 
-Tier 1 requests start together when Now mounts; tier 2 (one 72 h hourly request for every sparkline, the
-normals CSVs) once `/latest` is in. Every slot holds its size with a skeleton while it loads, so nothing
-shifts. Values are Space Mono on the type scale; labels are small caps in `--text-muted`.
+**Loading.** Tier 1 (`/latest`, the ppt summary, the NWS periods, the photo schedule) starts together when Now
+mounts and renders the hero and tiles. Tier 2 (one 72 h hourly request for the strip, sparklines, high/low and
+pressure trend; the normals CSVs; the NWS hourly forecast from the periods' `forecastHourly` URL, `nwsh:<url>`,
+30 min; SWP for stations with SWP sensors, `nowSwpQuery`) starts once `/latest` is in and fills the strip,
+sparklines and chip. Every slot holds its size with a skeleton (the strip a fixed 9.5 / 11 rem box), so
+nothing shifts. Labels are sentence case in `--text-muted`; readings are `.num-display`.
 
-Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png`,
-`390-dark-sheet-peek.png`, `768-light-now-acebozem.png`, `1440-dark-now-acebozem.png`,
-`1440-dark-drawer-open.png`, `390-light-now-arskeogh.png` (AgriMet, wind rose).
+Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|dark|high-contrast>-<acebozem|arskeogh>.png`
+(arskeogh: AgriMet, wind rose, VPD).
 
 ## Charts
 
@@ -254,10 +260,10 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 - **Section nav** (`sectionNav.ts`/`.css`) — the tab bar (three items on a solid `--bg-surface`, icon + label,
   ≥ 56 px, safe-area padding; the current one has a pill behind its icon and a bold label) and the header's
   segmented control (a `--bg-raised` track; the current one a raised `--bg-surface` pill, bold), `aria-current`.
-- **Skeletons** (`skeleton.css`) — `.dash-skel` + `--line`, `--value`, `--spark`, `--media`, `--period`,
+- **Skeletons** (`skeleton.css`) — `.dash-skel` + `--line`, `--value`, `--spark`, `--media`,
   `--chart`, `--table`; token shimmer, static under reduced motion, `aria-hidden`.
 - **Badge** (`card.css`) — `.dash-badge`, `.dash-badge--warn` (heavier border + icon; never colour alone).
-- **Toggletip** (`toggletip.ts`/`.css`) — an ⓘ button (`.mco-btn-info`, 24 px; the kit's 40 px on touch) that
+- **Toggletip** (`toggletip.ts`/`.css`) — an ⓘ button (`.mco-btn-info`, 24 px; the kit's 40 px on touch), or a text button (Now's "Provisional"), that
   shows a short note below it on click or tap: `aria-expanded` + `aria-controls`, the note right after the
   button in the DOM; Esc or a press outside closes it. The Alpine wrapper is `ui/shell/toggletip.ts`.
 - **Sparkline** (`core/charts/sparkline.ts` → SVG, `.dash-spark`) — a line (or bars for precipitation) in
@@ -300,6 +306,6 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
 - Charts: the Table view is a real `<table>` (caption, scoped headers) in a focusable, labelled scroll region;
   presets and view switches are radios / links with `aria-current`; stats are a `<dl>`.
 - Touch targets ≥ 40 px under `(hover: none)`; the tab bar is 56 px.
-- Status is text: "No report for over 2 hours", "Feels like 41° · Wind chill"; the ⓘ button is named "Provisional data".
+- Status is text: "No report for over 2 hours", "Feels like 41° · Wind chill"; the Provisional text button opens its note (`aria-expanded`).
 - The picker is `role="dialog" aria-modal="true"` only when it is modal (sheet, overlay drawer); the inline
   drawer is a plain landmark beside the content.
