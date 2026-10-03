@@ -29,26 +29,29 @@ export interface ComboboxResult {
 /** Default cap on rendered options; the list says when more matched. */
 export const DEFAULT_LIMIT = 200
 
-/** Match rank of `item` for an already lower-cased, trimmed query: 0 exact,
- *  1 label prefix, 2 id/keyword prefix, 3 label substring, 4 id/keyword
- *  substring, Infinity no match. An empty query ranks everything 0. */
+/** Match rank of `item` for an already lower-cased, trimmed query, best first:
+ *  0 exact label, id or keyword; 1 the label starts with the query as a whole
+ *  word ("bozeman" in "Bozeman Test"); 2 label prefix; 3 a later word of the
+ *  label starts with it ("air" in "Bozeman Airport"); 4 id/keyword prefix;
+ *  5 substring anywhere; Infinity no match. An empty query ranks everything 0. */
 export function matchRank(item: ComboboxItem, query: string): number {
   if (query === '') return 0
   const label = item.label.toLowerCase()
   const codes = [item.id, ...(item.keywords ?? [])].map((c) => c.toLowerCase())
   if (label === query || codes.includes(query)) return 0
-  if (label.startsWith(query)) return 1
-  if (codes.some((c) => c.startsWith(query))) return 2
-  if (label.includes(query)) return 3
-  if (codes.some((c) => c.includes(query))) return 4
+  if (label.startsWith(query)) return /[\p{L}\p{N}]/u.test(label.charAt(query.length)) ? 2 : 1
+  if (label.split(/[^\p{L}\p{N}]+/u).some((w) => w.startsWith(query))) return 3
+  if (codes.some((c) => c.startsWith(query))) return 4
+  if (label.includes(query) || codes.some((c) => c.includes(query))) return 5
   return Infinity
 }
 
 /** Case-insensitive substring filter over label, id and keywords. With no query,
  *  every item in its group, groups in first-appearance order. With a query, one
- *  ungrouped list, best match first (rank, then group order, then input order),
- *  so a prefix match never sits under a whole group of weaker ones. `best` points
- *  at the top-ranked match. Keeps at most `limit` items. */
+ *  ungrouped list, best match first: rank (matchRank), then the shorter label,
+ *  then alphabetical, then input order; so "bo" puts "Bozeman" above
+ *  "Bootlegger S CG SW" and never under a whole group of weaker matches. `best`
+ *  points at the top-ranked match. Keeps at most `limit` items. */
 export function filterItems(
   items: readonly ComboboxItem[],
   query: string,
@@ -62,14 +65,18 @@ export function filterItems(
   const matches = items
     .map((item, index) => ({ item, index, rank: matchRank(item, q), group: groupIndex.get(item.group) ?? 0 }))
     .filter((m) => m.rank !== Infinity)
-    .sort((a, b) => a.rank - b.rank || a.group - b.group || a.index - b.index)
+    .sort((a, b) =>
+      q === ''
+        ? a.group - b.group || a.index - b.index
+        : a.rank - b.rank ||
+          a.item.label.length - b.item.label.length ||
+          a.item.label.localeCompare(b.item.label) ||
+          a.index - b.index,
+    )
 
   const kept = matches.slice(0, Math.max(0, limit))
   const flat = kept.map((m) => m.item)
-  let best = kept.length > 0 ? 0 : -1
-  kept.forEach((m, i) => {
-    if (m.rank < kept[best].rank) best = i
-  })
+  const best = kept.length > 0 ? 0 : -1
   const groups: ComboboxGroup[] = []
   for (const item of flat) {
     const name = q === '' ? (item.group ?? null) : null

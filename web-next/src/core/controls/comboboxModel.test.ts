@@ -12,19 +12,44 @@ const items: ComboboxItem[] = [
 ]
 
 describe('matchRank', () => {
-  it('ranks exact, prefix and substring matches on label, id and keywords', () => {
-    const [absarokee, bozemanAirport, bozeman] = items
-    expect(matchRank(bozeman, 'bozeman')).toBe(0)
-    expect(matchRank(absarokee, 'absm8')).toBe(0)
-    expect(matchRank(bozemanAirport, 'bozeman')).toBe(1)
-    expect(matchRank(bozemanAirport, 'acebo')).toBe(2)
-    expect(matchRank(bozemanAirport, 'airport')).toBe(3)
-    expect(matchRank(bozeman, 'zm8')).toBe(4)
-    expect(matchRank(bozeman, 'xyz')).toBe(Infinity)
+  const [absarokee, bozemanAirport, bozeman] = items
+  it.each([
+    ['exact label', bozeman, 'bozeman', 0],
+    ['exact keyword', absarokee, 'absm8', 0],
+    ['exact id', bozeman, 'agrbozem', 0],
+    ['whole-word label prefix', bozemanAirport, 'bozeman', 1],
+    ['label prefix inside a word', bozemanAirport, 'boz', 2],
+    ['later word prefix', bozemanAirport, 'air', 3],
+    ['id prefix', bozemanAirport, 'acebo', 4],
+    ['label substring', bozemanAirport, 'irpo', 5],
+    ['keyword substring', bozeman, 'zm8', 5],
+    ['no match', bozeman, 'xyz', Infinity],
+    ['empty query', absarokee, '', 0],
+  ] as const)('%s', (_, item, q, rank) => {
+    expect(matchRank(item, q)).toBe(rank)
   })
+})
 
-  it('ranks everything 0 for an empty query', () => {
-    expect(matchRank(items[0], '')).toBe(0)
+describe('station search ranking', () => {
+  // The live catalog's "bo" neighbours (P6): Bozeman must lead, not trail the AgriMet group.
+  const stations: ComboboxItem[] = [
+    { id: 'bozmtest', label: 'Bozeman Test', group: 'AgriMet' },
+    { id: 'blmstmbt', label: 'Steamboat', group: 'AgriMet' },
+    { id: 'acebootl', label: 'Bootlegger S CG SW', group: 'HydroMet', keywords: ['LEGM8'] },
+    { id: 'acebowma', label: 'Bowmans Corner NW', group: 'HydroMet', keywords: ['BNWM8'] },
+    { id: 'acebozem', label: 'Bozeman', group: 'HydroMet', keywords: ['BZNM8', 'Gallatin'] },
+    { id: 'acebozm4', label: 'Bozeman 4th', group: 'HydroMet' },
+    { id: 'wsrboydw', label: 'Cooney Reservoir W', group: 'AgriMet' },
+    { id: 'aceborde', label: 'Big Border', group: 'HydroMet' },
+  ]
+  it.each([
+    ['bo', ['acebozem', 'acebozm4', 'bozmtest', 'acebowma', 'acebootl', 'aceborde', 'blmstmbt', 'wsrboydw']],
+    ['bozeman', ['acebozem', 'acebozm4', 'bozmtest']],
+    ['BZNM8', ['acebozem']],
+    ['test', ['bozmtest']],
+    ['border', ['aceborde']],
+  ] as const)('%s', (q, ids) => {
+    expect(filterItems(stations, q).flat.map((i) => i.id)).toEqual(ids)
   })
 })
 
@@ -45,15 +70,19 @@ describe('filterItems', () => {
 
   it('ranks matches across groups in one ungrouped list while typing', () => {
     const r = filterItems(items, 'moz')
-    // "Mozart Ranch" (label prefix, 1) before "West Mozem" (label substring, 3), though its group is later.
+    // "Mozart Ranch" (label prefix) before "West Mozem" (later word prefix), though its group is later.
     expect(r.flat.map((i) => i.id)).toEqual(['coopmoz', 'acemozem'])
     expect(r.groups.map((g) => g.name)).toEqual([null])
     expect(r.best).toBe(0)
   })
 
-  it('breaks rank ties by group order', () => {
-    const r = filterItems(items, 'bo')
-    expect(r.flat.map((i) => i.id)).toEqual(['acebozem', 'agrbozem'])
+  it('breaks rank ties by shorter label, then alphabetically, not by group', () => {
+    expect(filterItems(items, 'bo').flat.map((i) => i.id)).toEqual(['agrbozem', 'acebozem'])
+    const same = [
+      { id: 'x1', label: 'Bb', group: 'X' },
+      { id: 'x2', label: 'Ba', group: 'Y' },
+    ]
+    expect(filterItems(same, 'b').flat.map((i) => i.id)).toEqual(['x2', 'x1'])
   })
 
   it('returns all items in group order for an empty query', () => {
