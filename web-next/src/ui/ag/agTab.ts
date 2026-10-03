@@ -6,11 +6,12 @@
  * the chart card's state and, for Reference ET, All years (`view=history`)
  * and Previous / Next (it is in the variable list; also a sideways swipe).
  * Each chart card fetches for itself. The station comes from the header picker.
+ * A Download sheet opened by the URL with nothing to download is prefilled from this tool.
  */
 import Alpine from 'alpinejs'
 import { learnMoreUrl } from '../../core/ag/view/learnMore'
 import { chartState, hasAllYears, notHereMessage, variableGroup } from '../../core/ag/view/tab'
-import { agToolElements, fromChart } from '../../core/downloader/fromChart'
+import { agToolElements, fromChart, prefillsFromChart } from '../../core/downloader/fromChart'
 import { POR_FALLBACK_START, installDate, todayIso } from '../../core/latest'
 import { neighbors, plainName, type Variable } from '../../core/variables'
 import { chartVariables, stationElements } from '../charts/resources'
@@ -27,12 +28,19 @@ const stations = () => Alpine.store('station')
 
 export function agTab() {
   let stopSwipe = () => {}
+  let stopPrefill = () => {}
   return component({
     init() {
       stopSwipe = initSwipe({ el: this.$el as HTMLElement, onStep: (s) => this.step(s) })
+      // `?v=<tool>&dl=1` with no `els`: the same prefill as ⋯ → Download data, once the station's elements are in.
+      const fx = Alpine.effect(() => {
+        if (prefillsFromChart(url().state) && stationElements(stations().id)) this.prefill()
+      })
+      stopPrefill = () => Alpine.release(fx)
     },
     destroy() {
       stopSwipe()
+      stopPrefill()
     },
 
     /** 'chart' | 'loading-stations' | 'no-station' | 'not-here' (an SWP tool at a station without SWP sensors). */
@@ -94,14 +102,18 @@ export function agTab() {
     },
     /** Download data: the sheet prefilled with the tool's elements, dates and interval (core/downloader/fromChart). */
     download(): void {
+      if (this.prefill()) openSheet('download')
+    },
+    /** Write the Downloader keys for this tool; false before a station is confirmed. */
+    prefill(): boolean {
       const t = currentTab()
       const id = stations().id
-      if (!id) return
+      if (!id) return false
       const whole = t.variable === 'annual' || this.history()
       const start = whole ? (installDate(stations().current) ?? POR_FALLBACK_START) : t.start
       const elements = agToolElements(t.variable, { soilVar: t.soilVar, annualVar: url().state.annv }, stationElements(id) ?? [])
       url().set(fromChart({ elements, start, end: whole ? todayIso() : t.end, interval: whole ? 'daily' : t.period }))
-      openSheet('download')
+      return true
     },
   })
 }

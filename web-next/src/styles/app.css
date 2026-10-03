@@ -9,6 +9,10 @@
 body { min-height: 100dvh; display: flex; flex-direction: column; }
 main { flex: 1; min-width: 0; }
 main:focus { outline: none; } /* focus target for the skip link only */
+/* kit-override: headings with tabindex="-1" are focus targets, not controls (a sheet's title on open, a
+   drill-down's heading); Chrome counts script focus after a key press as :focus-visible, so the kit ring
+   drew round them. Screen readers still read the heading; keyboard targets keep the kit ring. */
+:is(h1, h2, h3)[tabindex="-1"]:focus { outline: none; }
 
 /* Navbar stays visible while the page scrolls. */
 .mco-navbar { position: sticky; top: 0; } /* kit-override: kit is relative; this app scrolls under it */

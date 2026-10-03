@@ -53,12 +53,16 @@ check('<html lang> and a non-empty <title>', /<html lang="[a-z-]+"/.test(html) &
 const body = html.slice(html.indexOf('<body>') + 6).replace(/<!--[\s\S]*?-->/g, '').trimStart()
 check('skip link is the first element in <body> and targets #main', /^<a class="mco-skip-link" href="#main">/.test(body))
 check('<main id="main" tabindex="-1"> exists', /<main id="main" tabindex="-1">/.test(html))
-// HOUSE-STYLE §5.4: no per-selector focus rules, no focus kills. The one allowed
-// exception is the skip-link target itself (family convention: mesonet-status).
-const focusRules = [...css.matchAll(/([^{}]*:focus[^{]*)\{([^}]*)\}/g)].map((m) => `${m[1].trim()}{${m[2]}}`)
-const badFocus = focusRules.filter((r) => r !== 'main:focus{outline:none}')
-check('app CSS: no per-selector :focus rules (only main:focus for the skip target)', badFocus.length === 0, badFocus.join(' | '))
-const kills = [...css.matchAll(/([^{}]*)\{[^}]*outline:\s*(none|0)\b[^}]*\}/g)].map((m) => m[1].trim()).filter((s) => s !== 'main:focus')
+// HOUSE-STYLE §5.4: no per-selector focus rules, no focus kills. The allowed
+// exceptions are focus targets that are not controls: the skip-link target itself
+// (family convention: mesonet-status) and headings with tabindex="-1" (styles/app.css).
+const TARGET = /^(main|:is\(h1,\s*h2,\s*h3\)\[tabindex="?-1"?\]):focus$/
+// The minifier may merge the two into one selector list.
+const isTarget = (sel) => sel.split(/,(?![^(]*\))/).every((p) => TARGET.test(p.trim()))
+const focusRules = [...css.matchAll(/([^{}]*:focus[^{]*)\{([^}]*)\}/g)].map((m) => [m[1].trim(), m[2].trim()])
+const badFocus = focusRules.filter(([sel, body]) => !(isTarget(sel) && /^outline:\s*none;?$/.test(body))).map(([s, b]) => `${s}{${b}}`)
+check('app CSS: no per-selector :focus rules (only the focus targets: main, headings with tabindex=-1)', badFocus.length === 0, badFocus.join(' | '))
+const kills = [...css.matchAll(/([^{}]*)\{[^}]*outline:\s*(none|0)\b[^}]*\}/g)].map((m) => m[1].trim()).filter((s) => !isTarget(s))
 check('app CSS: no outline:none / outline:0', kills.length === 0, kills.join(' | '))
 
 /* ── Runtime: storage keys, fonts, theme boot ───────────────────────────── */

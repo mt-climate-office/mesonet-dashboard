@@ -48,7 +48,7 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 .dash-sheet--modal[data-state="full"] { max-height: calc(100dvh - 1rem); }
-/* The title takes focus on open: hug its text so the focus ring does too. */
+/* The title takes focus on open (no ring: styles/app.css): it hugs its text, the × stays right. */
 .dash-sheet--modal .dash-panel-title { flex: 0 1 auto; margin-right: auto; }
 .dash-sheet--modal.enter, .dash-sheet--modal.leaving { transform: translateY(100%); }
 .dash-sheet-scrim { z-index: var(--z-chrome-top); } /* kit-override: .mco-scrim sits under the chrome */

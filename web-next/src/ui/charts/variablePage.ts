@@ -4,11 +4,13 @@
  * variableChart; the Daily interval adds the low–high band) or, with `tbl`,
  * its table; range chips over from/to (All years = `view=history`, its own
  * component), the Interval row over `agg`, and the stats card. A sideways
- * swipe on touch, or ⋯ → Previous / Next, walks the list. Logic is in core/variables.
+ * swipe on touch, or ⋯ → Previous / Next, walks the list. A Download sheet
+ * opened by the URL with nothing to download is prefilled from this chart.
+ * Logic is in core/variables.
  */
 import Alpine from 'alpinejs'
 import { variableChart, variableTable, variableTableAll, type ChartTable, type LatestTimeseriesModel } from '../../core/charts'
-import { fromChart, variableElements } from '../../core/downloader/fromChart'
+import { fromChart, prefillsFromChart, variableElements } from '../../core/downloader/fromChart'
 import { POR_FALLBACK_START, dataSettled, installDate, plotStatus, todayIso, viewAnnouncement, type PlotStatus } from '../../core/latest'
 import { chartWindow } from '../../core/models/timeseries'
 import {
@@ -52,6 +54,7 @@ export function variablePage() {
   // The banded model, kept while its inputs are the same objects (the chart host re-renders on a new one).
   let banded: { base: LatestTimeseriesModel; rows: unknown; model: LatestTimeseriesModel } | null = null
   let stopSwipe = () => {}
+  let stopPrefill = () => {}
   return component({
     variableChart,
     variableTable,
@@ -60,9 +63,15 @@ export function variablePage() {
     init() {
       this.$watch('announceKey', (key: string) => key && announce(key))
       stopSwipe = initSwipe({ el: this.$el as HTMLElement, onStep: (s) => this.step(s) })
+      // `?v=…&dl=1` with no `els`: the same prefill as ⋯ → Download data, once the station's elements are in.
+      const fx = Alpine.effect(() => {
+        if (prefillsFromChart(url().state) && stationElements(stations().id)) this.prefill()
+      })
+      stopPrefill = () => Alpine.release(fx)
     },
     destroy() {
       stopSwipe()
+      stopPrefill()
     },
 
     get variable(): Variable | undefined {
@@ -140,14 +149,18 @@ export function variablePage() {
     share: () => shareView(),
     /** Download data: the sheet prefilled with this variable, these dates and this interval (core/downloader/fromChart). */
     download(): void {
+      if (this.prefill()) openSheet('download')
+    },
+    /** Write the Downloader keys for this chart; false while the variable is unknown. */
+    prefill(): boolean {
       const v = this.variable
       const id = stations().id
-      if (!v || !id) return
+      if (!v || !id) return false
       const w = this.window()
       const all = this.all()
       const start = all ? (installDate(stations().current) ?? POR_FALLBACK_START) : w.start
       url().set(fromChart({ elements: variableElements(v.name, stationElements(id) ?? []), start, end: all ? todayIso() : w.end, interval: this.agg() }))
-      openSheet('download')
+      return true
     },
 
     /* Chart */

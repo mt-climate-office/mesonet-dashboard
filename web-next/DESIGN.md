@@ -273,7 +273,9 @@ The Download sheet (`partials/sheets/download.html`) is open while `dl=1`: from 
 `<main>` when the URL opened it); once it has slid away it also clears the prefill keys (`els`, `dl_from`,
 `dl_to`, `period`: `PREFILL_RESET`, core/downloader/fromChart), whether a chart or an old link wrote them. It is a bottom sheet on phones and a centred panel (34 rem) from 641 px;
 its body scrolls on its own. Every value comes from the URL's existing keys, so whatever opened it (a chart's
-⋯ menu writing `els`, `dl_from`, `dl_to`, `period`), the form shows that.
+⋯ menu writing `els`, `dl_from`, `dl_to`, `period`), the form shows that. A URL with `dl=1` over a variable page or Ag tool
+that carries none of those keys (`?s=acebozem&v=air_temp&dl=1#charts`) is prefilled from that chart as ⋯ would
+(`prefillsFromChart`); an old `#downloader` link keeps exactly what it carries.
 
 Inside is one short form (`partials/downloader/index.html`, logic in `core/downloader/form.ts`), one column at
 every width, flat on the sheet's surface:
