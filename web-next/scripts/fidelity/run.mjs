@@ -102,6 +102,7 @@ function summarize(c) {
   if (c.csv) bits.push(c.csv.bytes?.identical ? 'CSV byte-identical' : `CSV ${c.csv.status}: rows ${c.csv.rows?.A}/${c.csv.rows?.B}`)
   if (Array.isArray(c.columns)) bits.push(c.columns.map((x) => `${x.column}:${x.status}`).join(' '))
   if (c.network?.newInB?.length) bits.push(`${c.network.newInB.length} web-next-only errors`)
+  if (c.moved?.length) bits.push(`moved (not scored): ${c.moved.map((m) => m.part).join(', ')}`)
   return bits.join('; ')
 }
 
@@ -160,18 +161,21 @@ async function runLatest(browser) {
         const shown = !nx.media || cb.media === nx.media
         const figs = shown ? nx.figures : []
         const cards = shown ? nx.cards : {}
-        const doc = () => {
-          const issue = `documented: not on web-next #${nx.tab}${nx.media && !shown ? ` (Now shows the ${cb.media})` : ''}`
-          return { status: 'DOCUMENTED', issue, note: `${issue}; ${nx.see}`, see: nx.see }
-        }
+        // Parts web/ shows that this page does not draw (moved section, or absent by design) are
+        // listed as `moved` notes citing DIVERGENCES; they are not compared and do not lower the status.
+        const where = `not on web-next #${nx.tab}${nx.media && !shown ? ` (Now shows the ${cb.media})` : ''}`
+        const pairs = figurePairs(ca, cb)
         cmp = {
-          figures: figurePairs(ca, cb).map((f) => (figs.includes(f.role) ? f : { role: f.role, ...doc() })),
+          figures: pairs.filter((f) => figs.includes(f.role)),
           cards: {},
+          moved: [],
           palette: paletteCheck(cb.figures, cb.palette),
         }
+        const move = (part) => cmp.moved.push({ part, note: where, see: nx.see })
+        for (const f of pairs) if (!figs.includes(f.role)) move(`figure ${f.role}`)
         for (const k of ['top', 'bottom']) {
           if (!cards[k]) {
-            cmp.cards[k] = doc()
+            move(`${k} card`)
             continue
           }
           const c = compareCard(ca.cards?.[k], cb.cards?.[k])
@@ -297,7 +301,7 @@ async function rebuild() {
       started: r.started,
       finished: r.finished,
       counts: r.items.reduce((m, i) => ((m[i.status] = (m[i.status] ?? 0) + 1), m), {}),
-      items: r.items.map((i) => ({ station: i.station, scenario: i.scenario, status: i.status, summary: i.summary })),
+      items: r.items.map((i) => ({ station: i.station, scenario: i.scenario, status: i.status, summary: i.summary, moved: i.comparison?.moved })),
     })),
   }
   await writeJson(join(OUT, 'results.json'), summary)

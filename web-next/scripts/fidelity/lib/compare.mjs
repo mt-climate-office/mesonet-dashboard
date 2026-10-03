@@ -1,5 +1,6 @@
 // Comparator: web/ (A, Plotly) vs web-next (B, ECharts) figures, cards and CSVs.
-//   PASS  equal within tolerance
+//   PASS        equal within tolerance
+//   DOCUMENTED  compared content differs on purpose (a DOCUMENTED_ROWS row; run.mjs: redesigned card text)
 //   WARN  label wording, edge-only point differences (captures are seconds apart), advisory card text,
 //         off-palette colors
 //   FAIL  a trace or panel missing/extra, interior value or null differences, sensor spans, CSV rows/values
@@ -286,8 +287,8 @@ export function paletteCheck(figs, palette) {
 const kv = (card) => new Map((card?.tables ?? []).flat().filter((r) => r.length === 2).map(([k, v]) => [k.replace(/\s+/g, ' ').trim(), v.trim()]))
 
 /**
- * Rows that differ on purpose: web/ label → web-next label. Left out of the key and value diff and
- * reported under `documented`. Real Feel → Feels like: DIVERGENCES "Feels like uses the NWS method".
+ * Rows that differ on purpose: web/ label → web-next label. Left out of the key and value diff,
+ * reported under `documented`, and the card is DOCUMENTED (not PASS) when one is present. Real Feel → Feels like: DIVERGENCES "Feels like uses the NWS method".
  */
 const DOCUMENTED_ROWS = new Map([['Real Feel [°F]', 'Feels like [°F]']])
 
@@ -347,7 +348,7 @@ export function compareCard(a, b, { volatile = [/^Timestamp$/] } = {}) {
   const emptyB = !(b.lines ?? []).length && (a.lines ?? []).filter((l) => !CONTROL.has(l)).length > 0
   const soft = keys.onlyA.length || keys.onlyB.length || valueDiffs.length || lines.onlyA.length || lines.onlyB.length || imgs.onlyA.length || imgs.onlyB.length || opts.onlyA.length || opts.onlyB.length
   return {
-    status: emptyB || broken.length ? 'FAIL' : soft ? 'WARN' : 'PASS',
+    status: emptyB || broken.length ? 'FAIL' : soft ? 'WARN' : documented.length ? 'DOCUMENTED' : 'PASS',
     rows: { A: ka.size, B: kb.size },
     stale,
     keys,

@@ -61,7 +61,7 @@ export function loadStations() {
  * Where web-next shows web/'s Latest Data since the P1 routes (DESIGN.md "Information architecture"):
  * the plot is Compare (`#charts`, cmp=1); the photo, forecast and wind rose are on Now; the map,
  * metadata and current readings on About. `figures` (roles) and `cards` (web/ card → web-next host)
- * are what that page shows; anything else web/ shows is reported DOCUMENTED with `see`.
+ * are what that page shows; anything else web/ shows is listed as a `moved` note citing `see` (not scored).
  * `media`: Now shows the photo at camera stations and the wind rose elsewhere, so a card scenario
  * is compared only when Now shows its medium. `relabeled`: the card's rows were redesigned, so
  * label changes are documented too (values under a shared label still WARN).
