@@ -21,10 +21,11 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 ## Shared helpers (internal to this folder)
 
 - `format.ts`: `wallMs` (contract local time → Denver wall-clock ms, daily at noon), `fmtWall`/`isoWall`, `fmtNum`, `plainLabel` (Plotly `<br>`/`<sup>` → text), `escapeHtml`.
-- `axes.ts`: `timeAxis` (wall-clock level ticks), `valueAxis(name)`, `logAxis(name, min, max, {inverse, prefix})`, `dualAxis(left, right)` (y2 aligned, from 0), `grid`, `timeZoom` (inside + slider; no drag-pan on compact; on touch the inside zoom is `disabled`, so swipes scroll the page), `niceCeil`, `logExtent`.
-- `series.ts`: `points(xs, ys, notes?)` (breaks lines at gaps > 1.5× cadence), `lineSeries` (LTTB over `LTTB_THRESHOLD`), `barSeries`, `markerSeries`; ids starting `AUX` (`aux:`) are drawing aids, skipped by tooltips and legends.
+- `style.ts`: **the one chart style** (DESIGN.md "Chart style"); every builder uses it. `LINE_WIDTH`/`REF_WIDTH`; `stepMs(interval, xs)` and `points(xs, ys, step, notes?)` (a null midway across every step over 1.5 × the interval: gaps are breaks); `isAccumulation` (bars at every interval) and `runningTotal`; `axisFamily`/`yBounds`/`yAxisRange` (the y-axis rule per variable family); `plotExtent` (the x extent; half a step more for bars); `showsSlider`, `bottomLayout`, `timeZoom` (inside + slider; no drag-pan on compact; on touch the inside zoom is `disabled`, so swipes scroll the page), `zoomTrace` (the slider's background trace: a hidden first series on a hidden y axis), `timeFrame` (all of these for a one-grid time chart); `animates` (first draw only).
+- `axes.ts`: `timeAxis` (wall-clock level ticks), `valueAxis(name)`, `logAxis(name, min, max, {inverse, prefix})`, `dualAxis(left, right)` (y2 aligned, from 0), `grid`, `niceCeil`, `logExtent`, `fitAxisNames`.
+- `series.ts`: `lineSeries` (style width, straight, no symbols, LTTB over `LTTB_THRESHOLD`), `barSeries`, `markerSeries`; ids starting `AUX` (`aux:`) are drawing aids, skipped by tooltips, legends and the fidelity harness.
 - `tooltip.ts`: `tooltipBase(ctx, pinTop?)` (kit `.mco-tooltip`; on touch tap-triggered, on compact touch full width and pinned under the chart or at `pinTop`), `axisTooltip(ctx, header, row)`, `tipText`, `legend(ctx, {data, title})` (bottom scroll legend; optional title text).
-- `overlays.ts`: `bandSeries` (stacked q25–q75 style band), `normalsSeries`, `hBandSeries` (horizontal bands + boxed corner labels + dashed lines, e.g. SWP FC/WP), `sensorEventSeries` (hatched spans), `labelledLines` (markLines, e.g. GDD stages), `hatchDecal`.
+- `overlays.ts`: `bandSeries` (the one band style: stacked base + fill, under its line), `hBandSeries` (horizontal bands + boxed corner labels + dashed lines, e.g. SWP FC/WP), `sensorEventSeries` (hatched spans), `labelledLines` (markLines, e.g. GDD stages), `hatchDecal`.
 - `heatmap.ts`: `colorBar(ctx, scale, extent, {midpoint, ticks})` (hidden visualMap + bar drawn as graphics with min/max and the palette `midpointLabel`; vertical at the right, horizontal under the plot when `ctx.compact`), `frozenSeries` (hatched mask cells).
 - `zoom.ts` (used by the host): wall-clock ms ↔ category index (`categoryMs`, `toAxisRange`, `fromAxisRange`), `sameRange`, `carryState` (zoom + legend toggles across redraws).
 - `testing.ts`: `testCtx(theme)` for tests (kit 0.7.1 token values).
@@ -35,7 +36,8 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 - Input is a model from `core/models/` or an Ag contract series (SI). **Units convert at the edge**, inside the builder.
 - Colors come only from `core/palette` roles (`paint()` for TokenRefs) and `ctx.theme`. No hex literals in builders. Chrome (text, axes, fonts) comes from the ECharts theme, so builders rarely touch it.
 - Time axes: x is Denver wall-clock ms; set `useUTC: true`. A category x axis (heatmaps) puts each category's wall-clock ms in `xAxis.data` (format labels in `axisLabel.formatter`), so the host's zoom API stays in ms.
-- Don't set `animation`; the host turns it on for first draws unless the user prefers reduced motion.
+- Don't set `animation`; the host animates a chart's first draw only (style `animates`), never under reduced motion.
+- Draw through `style.ts`: gaps with `points(…, stepMs(interval))`, accumulations as bars, the y axis with `yAxisRange`, the zoom with `timeFrame` (or `showsSlider` + `timeZoom` + `zoomTrace` for stacked grids).
 - Every builder that draws data exports a `…Table(model): ChartTable` twin.
 - Register any new ECharts part in `ui/charts/echarts.ts`; builders import types only from `echarts`.
 
