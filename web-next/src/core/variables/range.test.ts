@@ -21,7 +21,7 @@ describe('range chips', () => {
   it('All years is view=history; a window chip leaves it and drops 5-min where it is not offered', () => {
     expect(pageRange({ view: 'history', from: null, to: null }, today)).toBe('all')
     expect(pageRange({ view: 'table', from: null, to: null }, today)).toBe('14d')
-    expect(rangeChipPatch('all', 'raw', today)).toEqual({ view: 'history' })
+    expect(rangeChipPatch('all', 'raw', today)).toEqual({ view: 'history', from: null, to: null })
     expect(rangeChipPatch('7d', 'raw', today)).toEqual({ view: 'recent', from: '2026-09-25', to: '2026-10-02' })
     expect(rangeChipPatch('30d', 'raw', today)).toMatchObject({ view: 'recent', agg: null })
     expect(rangeChipPatch('30d', 'daily', today)).not.toHaveProperty('agg')

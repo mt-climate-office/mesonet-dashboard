@@ -76,9 +76,9 @@ export function pageRange(state: Pick<UrlState, 'view' | 'from' | 'to'>, today =
   return state.view === 'history' ? 'all' : activePreset(state, today)
 }
 
-/** URL patch for a range chip: All years, or the preset's window (`windowPatch`). */
+/** URL patch for a range chip: All years (no stale window in the URL), or the preset's window (`windowPatch`). */
 export function rangeChipPatch(id: RangePreset['id'] | 'all', agg: UrlState['agg'], today = denverDay()): Partial<UrlState> {
-  if (id === 'all') return { view: 'history' }
+  if (id === 'all') return { view: 'history', from: null, to: null }
   const w = presetWindow(id, today)
   return windowPatch(w.start, w.end, agg, today)
 }
