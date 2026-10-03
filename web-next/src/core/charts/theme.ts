@@ -89,7 +89,10 @@ export function echartsTheme(t: ChartTheme): Record<string, unknown> {
       textStyle: { color: t.textMuted, fontFamily: t.fontMono },
       handleStyle: { color: t.surface, borderColor: t.textMuted },
       moveHandleStyle: { color: t.textMuted },
-      dataBackground: { lineStyle: { color: t.textMuted }, areaStyle: { color: t.grid } },
+      // The slider's trace (style `zoomTrace`): the muted line over a border-colored area, and the
+      // part inside the window in the primary text color, so the window reads in every theme.
+      dataBackground: { lineStyle: { color: t.textMuted, width: 1, opacity: 1 }, areaStyle: { color: t.grid, opacity: 0.6 } },
+      selectedDataBackground: { lineStyle: { color: t.text, width: 1, opacity: 1 }, areaStyle: { color: t.textMuted, opacity: 0.25 } },
       fillerColor: /^#[0-9a-f]{6}$/i.test(t.tooltipBorder) ? withAlpha(t.tooltipBorder, 0.15) : t.tooltipBorder,
     },
     visualMap: { textStyle: { color: t.textMuted, fontFamily: t.fontMono } },

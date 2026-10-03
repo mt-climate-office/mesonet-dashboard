@@ -8,7 +8,6 @@ const panel = (series: S[]): TimeseriesPanel => ({
   axisTitle: 'X',
   isSoil: false,
   noData: false,
-  yRange: null,
   legend: false,
   series: series.map((s) => ({ name: s.name, type: 'line', depth: s.depth ?? null, values: s.values, hoverLabel: s.name, band: s.band })),
   normals: null,

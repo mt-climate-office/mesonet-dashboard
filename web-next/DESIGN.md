@@ -254,6 +254,50 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
   panel), so it never covers the data;
 - chart height on phones: the variable chart `min(60dvh, 420px)`; Compare ~160 px per panel, about three
   per screen, and the page scrolls past the stack.
+
+### Chart style
+
+Every chart draws the same way at every range and interval. The rules live in one pure module,
+`core/charts/style.ts` (tested in `style.test.ts`), and every builder uses them: the variable page, Compare,
+All years, every Ag tool, the Download preview and the Now strip.
+
+- **Lines:** one width, `LINE_WIDTH` 1.5 px (reference lines under data, such as the normals' edges and the
+  feels-like index, `REF_WIDTH` 1 px; the current year in All years is the one highlight, `ANNUAL_CURRENT`).
+  Straight segments (no smoothing), no symbols (the Now strip's "now" dot is the one last-point marker),
+  `sampling: 'lttb'` over 2,000 points (LTTB keeps the gap nulls).
+- **Gaps are breaks:** a step longer than 1.5 × the expected interval gets a null midway, and lines never
+  connect nulls (`points(xs, ys, stepMs(interval))`). The interval is known: hourly 1 h, daily 1 day, monthly
+  31 days, day of year 1; 5-min is the station's own logging interval (the median step, 5 min, or 15 at some
+  AgriMet stations). Models carry one value per API row; only the chart inserts the nulls.
+- **Accumulations** (precipitation, reference ET) are **bars at every interval** (5-min, hourly, daily,
+  monthly): a bar is "this much fell in this step"; a line between steps would misstate it. Bars keep
+  1–18 px. All years draws a total as its running sum, a line.
+- **The daily band** (the Daily interval's low–high) is one style, `bandSeries`: the line's own color at
+  `DAILY_RANGE` alpha, no outline, under its mean line. The gridMET normals band and the GDD projection range
+  use the same series with their palette roles.
+- **Soil depths:** shallow → deep, each in `depthColor` (a depth keeps its color whatever else is drawn),
+  one line width.
+- **Y axis, by variable family** (`axisFamily`, `yBounds`): *zero* (precipitation, ETr, wind and gusts,
+  solar radiation, snow depth) runs from 0 to the max + 2 %, never under a small floor (0.05 in, 5 mph,
+  100 W/m², 1 in) so a calm or dry window is not drawn as a full-height wiggle; *fixed* is relative humidity
+  0–100 % and wind direction 0–360° (soil saturation 0–100 % too); *free* (temperature, pressure, soil
+  moisture and temperature, VPD …) is the data ± 2 %, never pulled to zero, but it stops at 0 for a never-negative variable (soil moisture, EC, pressure, VPD) whose data does. Every axis is rounded out to a
+  nice step (1, 2, 2.5 or 5 × 10ⁿ): of the steps giving 4–7 intervals, the one with the least padding (−15–100 °F is −20–120 by 20), over everything the panel draws (band and normals included).
+- **X axis:** spans exactly what is plotted: the requested window on the variable page and Compare (whole
+  local days; 24 h zooms to the last 24 hours), else the first to the last point, plus half a step each side
+  where bars are drawn so the end bars are whole.
+- **Zoom slider:** wide screens only (phones zoom with the range chips and date fields), and only where it adds
+  something: a plotted extent over 2 days and at least 30 points (`showsSlider`: not 24 h, not a short daily
+  window, never the Now strip). 18 px tall, 8 px above the canvas edge or the legend, under the x labels
+  (`bottomLayout`); it starts at the whole extent and its track is that extent. Its background trace is one
+  sensible series, a hidden first line on its own hidden y axis (`zoomTrace`): the variable's main line; on
+  Daily the mean (which the band surrounds); the shallowest soil depth; for an accumulation its running total;
+  Compare's first panel by the same rule; ETr and GDD their cumulative; feels like and livestock risk the
+  index line; SWP the shallowest depth as −log10 bar (wet up, as its axis); the soil profile its shallowest
+  row. It is drawn in the theme's tokens (`echartsTheme`: `--text-secondary` over `--border`, and
+  `--text-primary` inside the window). All years has no slider: a calendar year is the whole axis.
+- **Animation:** the first draw only (`animates`), never under reduced motion; a range, interval, data, theme or
+  resize redraw is instant (the chart host).
 ## Ag tools (inside Charts)
 
 An Ag tool is a Charts entry: `#charts&v=<tool>` (`v` is an Ag tool id, `core/params/ag` `AG_TOOL_IDS`;

@@ -15,6 +15,7 @@ import { POROSITY_SOURCE, percentSaturationFromApiPorosity } from './porositySou
 import { SWP_SOURCE, swpFromApiRows, swpFromParams } from './swpSource'
 import type { AgTab, AgVariable } from './tab'
 import { loadErrorText } from '../../loadError'
+import { latestVariableForColumn } from '../../params'
 
 export type ViewStatus = 'loading' | 'error' | 'empty' | 'ready'
 
@@ -266,7 +267,11 @@ export function annualView(
   if (pending > 0) notes.push(`Loading ${pending} of ${years.length} years…`)
   if (failed.length > 0) notes.push(`Could not load ${failed.join(', ')}.`)
   const a = loaded.length > 0 ? annualTraces(element, loaded) : null
-  if (a && a.traces.length > 0) return ready({ traces: a.traces, yLabel: a.yLabel, currentYear }, notes)
+  if (a && a.traces.length > 0) {
+    // The y-axis rule's family (charts/style): a running total starts at zero, as precipitation.
+    const variable = a.cumulative ? 'Precipitation' : (latestVariableForColumn(a.header ?? '') ?? undefined)
+    return ready({ traces: a.traces, yLabel: a.yLabel, currentYear, variable }, notes)
+  }
   if (pending > 0) return view('loading', null, notes)
   if (failed.length === years.length && years.length > 0) return view('error', errorText(results[0]?.error), notes)
   return emptyView('No data for this variable at this station.', notes)

@@ -9,11 +9,12 @@ import type { LocalDate, LocalDateTime, Nullable, PercentSaturationSeries, SwpSe
 import { kPaToBar } from '../ag/compute'
 import { PROFILE_META, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, type SoilProfileVar, depthLabel } from '../ag/view/labels'
 import { HEATMAP, SWP_BANDS, depthColor } from '../palette'
-import { grid, logAxis, logExtent, timeAxis, timeZoom, valueAxis } from './axes'
+import { grid, logAxis, logExtent, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtNum, fmtWall, isoWall, wallMs, type Period } from './format'
 import { colorBar, frozenSeries } from './heatmap'
 import { hBandSeries } from './overlays'
-import { lineSeries, points } from './series'
+import { lineSeries } from './series'
+import { LEGEND_PX, bottomLayout, plotExtent, points, showsSlider, stepMs, timeFrame, timeZoom, valued, zoomTrace, type Point } from './style'
 import { agLegend, liftForLegend } from './agLegend'
 import { axisTooltip, tipText, tooltipBase } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
@@ -83,12 +84,16 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
   const fmt = (z: number) => (isLog ? `-${Number((10 ** z).toPrecision(2))}` : z.toFixed(m.variable === 'soil_blk_ec' ? 2 : 0))
   const cells: [number, number][] = []
   keep.forEach((d, yi) => m.frozen?.[d]?.forEach((f, xi) => f && cells.push([xi, yi])))
+  // The slider (wide screens, enough cells) traces the shallowest depth, wet up for SWP as its line chart.
+  const tracePts: Point[] = m.values[keep[0]].map((v, xi) => [xi, v == null || (isLog && !(v > 0)) ? null : isLog ? -toZ(v) : v])
+  const slider = showsSlider(ctx, [0, xMs.length - 1], valued(tracePts), false)
+  const trace = slider ? zoomTrace(tracePts, null, { yAxisIndex: 1 }) : null
   const cb = colorBar(ctx, scale, [lo, hi], {
     title: meta.label,
     midpoint: scale.midpoint !== undefined ? toZ(scale.midpoint) : undefined,
     ticks: isLog ? [{ value: Math.log10(SWP_FIELD_CAPACITY), label: `FC (-${SWP_FIELD_CAPACITY})` }] : [],
     fmt,
-    seriesIndex: 0,
+    seriesIndex: trace ? 1 : 0,
     bottom: cells.length ? 24 : 4, // compact: under the frozen-soil legend
   })
   const heat: HeatmapSeriesOption = {
@@ -97,15 +102,17 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
     data,
     emphasis: { itemStyle: { borderColor: ctx.theme.text, borderWidth: 1 } },
   }
-  const g = grid(ctx, { right: cb.gridRight, bottom: ctx.compact ? cb.gridBottom : cells.length ? 92 : 68 })
+  // Hourly cells have two-line labels ("Jul 1" over "14:00").
+  const b = bottomLayout(slider, cells.length ? LEGEND_PX : 0, m.period === 'hourly' ? 42 : 30)
+  const g = grid(ctx, { right: cb.gridRight, bottom: ctx.compact ? cb.gridBottom : b.grid })
   const lg = agLegend(ctx, [{ name: FROZEN_NAME }])
   return {
     grid: g,
     xAxis: { type: 'category', data: xMs, axisLabel: { formatter: categoryLabel(m.period), hideOverlap: true }, axisTick: { alignWithLabel: true } },
-    yAxis: { type: 'category', data: y, inverse: true, name: 'Soil depth', nameLocation: 'middle', nameGap: 44, nameRotate: 90 },
+    yAxis: [{ type: 'category', data: y, inverse: true, name: 'Soil depth', nameLocation: 'middle', nameGap: 44, nameRotate: 90 }, ...(trace ? [trace.yAxis] : [])],
     visualMap: cb.visualMap,
     graphic: cb.graphic,
-    dataZoom: timeZoom(ctx).map((z) => ({ ...z, bottom: z.type === 'slider' ? (cells.length ? 36 : 12) : undefined })),
+    dataZoom: timeZoom(ctx, { extent: [0, xMs.length - 1], slider, sliderBottom: b.slider }),
     legend: cells.length ? lg.legend : { show: false },
     tooltip: {
       ...tooltipBase(ctx),
@@ -118,7 +125,7 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
         return `${head}${tipText(y[yi], `${v} ${meta.units}`)}`
       }) as never,
     },
-    series: cells.length ? [heat, frozenSeries(ctx, FROZEN_NAME, cells)] : [heat],
+    series: [...(trace ? [trace.series] : []), heat, ...(cells.length ? [frozenSeries(ctx, FROZEN_NAME, cells)] : [])],
   } satisfies EChartsOption
 }
 
@@ -142,11 +149,15 @@ export function soilProfileTable(m: SoilProfileModel): ChartTable {
 
 /* ------------------------------------------------------- depth lines */
 
-function depthLines(ctx: ChartContext, xs: number[], depthsCm: number[], values: Nullable[][]): LineSeriesOption[] {
+/** One line per depth, shallow → deep, in the depth's own color (style LINE_WIDTH, gaps at `step`). */
+function depthLines(ctx: ChartContext, xs: number[], depthsCm: number[], values: Nullable[][], step: number): LineSeriesOption[] {
   return depthsCm.map((cm, d) =>
-    lineSeries(depthLabel(cm), points(xs, values[d]), { color: depthColor(depthInches(cm), ctx.theme.name) }),
+    lineSeries(depthLabel(cm), points(xs, values[d], step), { color: depthColor(depthInches(cm), ctx.theme.name) }),
   )
 }
+
+/** The index of the shallowest depth (the slider's trace). */
+const shallowest = (depthsCm: number[]) => depthsCm.indexOf(Math.min(...depthsCm))
 
 function depthTable(caption: string, period: Period, time: string[], depthsCm: number[], values: Nullable[][], f: (v: Nullable) => string): ChartTable {
   return {
@@ -176,6 +187,11 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
   const flat = bar.flat().filter((v): v is number => v != null && v > 0)
   const [min, max] = logExtent(Math.min(...flat), Math.max(...flat), [SWP_FIELD_CAPACITY, SWP_WILTING_POINT])
   const lg = agLegend(ctx, m.series.depthsCm.map((cm) => ({ name: depthLabel(cm) })))
+  const step = stepMs(m.period)
+  // The slider traces the shallowest depth, wet up as the inverted log axis draws it.
+  const top = bar[shallowest(m.series.depthsCm)] ?? []
+  const trace = points(xs, top.map((v) => (v != null && v > 0 ? -Math.log10(v) : null)), step)
+  const f = timeFrame(ctx, { extent: plotExtent(xs, step, false), trace, yAxisIndex: 1, legendPx: LEGEND_PX })
   const bands =
     xs.length > 0
       ? [
@@ -193,14 +209,15 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
           ),
         ]
       : []
+  const y = logAxis(axisTitle('swp', 'Soil water potential'), min, max, { inverse: true, prefix: '-' })
   return {
     useUTC: true,
-    ...liftForLegend(grid(ctx), timeZoom(ctx), lg.extra),
-    xAxis: timeAxis(),
-    yAxis: logAxis(axisTitle('swp', 'Soil water potential'), min, max, { inverse: true, prefix: '-' }),
+    ...liftForLegend(f.grid, f.dataZoom, lg.extra),
+    xAxis: f.xAxis,
+    yAxis: f.trace ? [y, f.trace.yAxis] : y,
     legend: lg.legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y) => tipText(name, `-${y.toFixed(2)} bar`)),
-    series: [...bands, ...depthLines(ctx, xs, m.series.depthsCm, bar)],
+    series: [...(f.trace ? [f.trace.series] : []), ...bands, ...depthLines(ctx, xs, m.series.depthsCm, bar, step)],
   } satisfies EChartsOption
 }
 
@@ -220,14 +237,19 @@ export interface PercentSaturationModel {
 export const percentSaturationChart: ChartBuilder<PercentSaturationModel> = (m, ctx) => {
   const xs = m.series.time.map(wallMs)
   const lg = agLegend(ctx, m.series.depthsCm.map((cm) => ({ name: depthLabel(cm) })))
+  const step = stepMs(m.period)
+  const trace = points(xs, m.series.pct[shallowest(m.series.depthsCm)] ?? [], step)
+  const f = timeFrame(ctx, { extent: plotExtent(xs, step, false), trace, yAxisIndex: 1, legendPx: LEGEND_PX })
+  // A closed 0–100 % scale, as relative humidity (style FIXED).
+  const y = { ...valueAxis(axisTitle('percent_saturation', 'Soil saturation'), { min: 0, max: 100 }), interval: 25 }
   return {
     useUTC: true,
-    ...liftForLegend(grid(ctx), timeZoom(ctx), lg.extra),
-    xAxis: timeAxis(),
-    yAxis: valueAxis(axisTitle('percent_saturation', 'Soil saturation'), { min: 0, max: 100 }),
+    ...liftForLegend(f.grid, f.dataZoom, lg.extra),
+    xAxis: f.xAxis,
+    yAxis: f.trace ? [y, f.trace.yAxis] : y,
     legend: lg.legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y) => tipText(name, `${y.toFixed(1)} %`)),
-    series: depthLines(ctx, xs, m.series.depthsCm, m.series.pct),
+    series: [...(f.trace ? [f.trace.series] : []), ...depthLines(ctx, xs, m.series.depthsCm, m.series.pct, step)],
   } satisfies EChartsOption
 }
 

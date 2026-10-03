@@ -11,7 +11,6 @@
 import dayjs from 'dayjs'
 import { denverDay } from '../today'
 import type { ObservationRow } from '../api'
-import { insertGaps } from '../gaps'
 import { mergeNormals, type StationNormals } from '../normals'
 import {
   ELEM_MAP,
@@ -169,8 +168,6 @@ export interface TimeseriesPanel {
   isSoil: boolean
   /** Variable selected but no column had a value: draw the panel with a note. */
   noData: boolean
-  /** Fixed y range (Snow Depth: 0 … ≥ 1), else null for auto. */
-  yRange: [number, number] | null
   /** Show a legend: line panels with more than one column (not soil). */
   legend: boolean
   series: TimeseriesSeries[]
@@ -179,7 +176,7 @@ export interface TimeseriesPanel {
 }
 
 export interface TimeseriesModel {
-  /** Wall-clock ms per row, gap rows included (shared by every panel). */
+  /** Wall-clock ms per row (shared by every panel); the chart breaks lines at gaps (charts/style `points`). */
   x: number[]
   /** Legacy forced x range: [first day − 1, last day + 1], wall-clock ms. */
   xRange: [number, number] | null
@@ -205,27 +202,25 @@ const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFin
 export function buildTimeseriesModel(input: TimeseriesInput): TimeseriesModel | null {
   const { rows, vars } = input
   if (rows.length === 0 || vars.length === 0) return null
-  // Null rows wherever the API skipped an observation, so lines break there.
-  const gapped = insertGaps([...rows])
-  const x = gapped.map((r) => parseWallClock(r.datetime) ?? NaN)
+  const x = rows.map((r) => parseWallClock(r.datetime) ?? NaN)
 
   const columnsByVar = new Map<string, string[]>()
-  for (const col of Object.keys(gapped[0])) {
+  for (const col of Object.keys(rows[0])) {
     if (col === 'station' || col === 'datetime') continue
     const v = latestVariableForColumn(col)
     if (!v || !vars.includes(v)) continue
-    if (!gapped.some((r) => isNum((r as Record<string, unknown>)[col]))) continue
+    if (!rows.some((r) => isNum((r as Record<string, unknown>)[col]))) continue
     const list = columnsByVar.get(v) ?? []
     if (!list.includes(col)) list.push(col)
     columnsByVar.set(v, list)
   }
 
-  const days = gapped.map((r) => String(r.datetime).slice(0, 10)).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort()
+  const days = rows.map((r) => String(r.datetime).slice(0, 10)).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort()
   const dayMs = (d: string, delta: number) => Date.parse(`${d}T00:00:00Z`) + delta * 86_400_000
   const xRange: [number, number] | null = days.length ? [dayMs(days[0], -1), dayMs(days[days.length - 1], 1)] : null
 
   const panels = vars.map((v) =>
-    buildPanel(v, columnsByVar.get(v) ?? [], gapped, rows, input),
+    buildPanel(v, columnsByVar.get(v) ?? [], rows, input),
   )
   return { x, xRange, panels }
 }
@@ -233,8 +228,7 @@ export function buildTimeseriesModel(input: TimeseriesInput): TimeseriesModel | 
 function buildPanel(
   variable: string,
   cols: string[],
-  gapped: ObservationRow[],
-  rawRows: readonly ObservationRow[],
+  rows: readonly ObservationRow[],
   input: TimeseriesInput,
 ): TimeseriesPanel {
   const isSoil = SOIL_VARS.has(variable)
@@ -245,7 +239,7 @@ function buildPanel(
   const sorted = isSoil
     ? [...cols].sort((a, b) => parseInt(depthLabelFromColumn(a) ?? '0', 10) - parseInt(depthLabelFromColumn(b) ?? '0', 10))
     : cols
-  const valuesOf = (col: string) => gapped.map((r) => {
+  const valuesOf = (col: string) => rows.map((r) => {
     const v = (r as Record<string, unknown>)[col]
     return typeof v === 'number' ? v : null
   })
@@ -260,7 +254,7 @@ function buildPanel(
   let normals: NormalsOverlay | null = null
   const norms = input.normalsByVar?.[variable]
   if (norms && !noData) {
-    const merged = mergeNormals(gapped, norms)
+    const merged = mergeNormals([...rows], norms)
     if (merged.some((r) => r.mn !== null || r.mx !== null || r.avg !== null)) {
       normals = isPpt || isEtr
         ? { kind: 'markers', p25: merged.map((r) => r.mn), median: merged.map((r) => r.avg), p75: merged.map((r) => r.mx) }
@@ -276,16 +270,9 @@ function buildPanel(
       kind,
       columns: cols,
       config: input.sensorConfig,
-      rows: rawRows as ReadonlyArray<Record<string, unknown>>,
+      rows: rows as ReadonlyArray<Record<string, unknown>>,
       now: input.now,
     }).map((e) => ({ x0: e.x0, x1: e.x1, text: sensorEventText(e) }))
-  }
-
-  let yRange: [number, number] | null = null
-  if (variable === 'Snow Depth' && !noData) {
-    let hi = -Infinity
-    for (const s of series) for (const v of s.values) if (v !== null && v > hi) hi = v
-    yRange = [0, Math.max(1, hi)]
   }
 
   return {
@@ -293,7 +280,6 @@ function buildPanel(
     axisTitle: axisTitle(ELEM_MAP[variable]?.[0] ?? '', variable),
     isSoil,
     noData,
-    yRange,
     legend: !isSoil && !isPpt && !isEtr && sorted.length > 1,
     series,
     normals,

@@ -4,11 +4,11 @@ import { gdd, projectGdd } from '../ag/compute'
 import { dailyMet, stageTable } from '../ag/__tests__/adapters'
 import { GDD, GDD_STAGE_LINE, THEMES } from '../palette'
 import { GDD_NAMES, gddAxisMax, gddBarName, gddChart, gddTable, stageGutter, stageLines } from './agGdd'
-import { testCtx } from './testing'
+import { drawn, shownY, testCtx } from './testing'
 import { paint } from './theme'
 
 type S = { type: string; name: string; id?: string; data: unknown[][]; yAxisIndex?: number; color: string; markLine?: { data: { yAxis: number; name: string }[] }; lineStyle?: { type: string } }
-const series = (o: { series?: unknown }) => o.series as S[]
+const series = (o: { series?: unknown }) => drawn<S>(o)
 const met = dailyMet('acebozem', 'season2025')
 
 function withProjection() {
@@ -50,7 +50,7 @@ describe('gddChart stage labels', () => {
     const gutter = stageGutter(ml.data.map((d) => ({ label: d.name })), 1400)
     expect(gutter).toBeGreaterThan(0)
     expect((o.grid as { right: number }).right).toBe(64 + gutter)
-    expect((o.yAxis as { offset?: number }[])[1].offset).toBe(gutter)
+    expect(shownY<{ offset?: number }>(o)[1].offset).toBe(gutter)
   })
   it('stageGutter: 0 with no lines or when the longest label takes over a quarter of the chart', () => {
     expect(stageGutter([], 1400)).toBe(0)
@@ -97,7 +97,7 @@ describe('gddChart', () => {
     expect(ss[5].data[0][0]).toBe(day(fc[2]))
     expect(ss[5].data.at(-1)![0]).toBe(day('2025-11-30'))
     expect(ss[5].lineStyle!.type).toBe('dashed')
-    const y2 = (o.yAxis as { max?: number }[])[1]
+    const y2 = shownY<{ max?: number }>(o)[1]
     expect(y2.max).toBe(gddAxisMax({ series: s, cutoffsF: [32, 1], stageMode: 'table', projection: p }))
     expect(y2.max!).toBeGreaterThanOrEqual(p.cumulativeQ75.at(-1)!)
     expect((o.legend as { data: unknown[] }).data).not.toContain(GDD_NAMES.q25)

@@ -3,12 +3,12 @@ import { cciDaily, etoDaily, etoHourly, feelsLikeDaily } from '../ag/compute'
 import { dailyMet, hourlyMet, stationMeta } from '../ag/__tests__/adapters'
 import { CCI_CLASSES, ETR, FEELS_LIKE, INDEX_LINE, THEMES, cciColor } from '../palette'
 import { ETR_AXIS, ETR_CUM_AXIS, cciChart, cciLegendTitle, cciTable, etrChart, etrTable, feelsLikeChart, feelsLikeTable } from './agMet'
-import { testCtx } from './testing'
+import { drawn, shownY, testCtx } from './testing'
 import { paint } from './theme'
 
 type S = { type: string; name: string; id?: string; data: unknown[][]; yAxisIndex?: number; color: string; symbol?: string }
-const series = (o: { series?: unknown }) => o.series as S[]
-const ax = (o: { yAxis?: unknown }) => o.yAxis as Record<string, unknown>[]
+const series = (o: { series?: unknown }) => drawn<S>(o)
+const ax = (o: { yAxis?: unknown }) => shownY<Record<string, unknown>>(o)
 
 const met = dailyMet('acebozem', 'season2025')
 const eto = etoDaily(met, stationMeta('acebozem'))
@@ -98,5 +98,26 @@ describe('cciChart', () => {
     const t = cciTable({ series: s, period: 'daily' })
     expect(t.columns).toEqual(['Date', 'Livestock risk (°F)', 'Risk class'])
     expect(t.rows[0]).toHaveLength(3)
+  })
+})
+
+describe('Ag met charts: the house chart style (style.ts)', () => {
+  it('ETr: the slider traces the cumulative (never flat bars), over the bars’ whole extent', () => {
+    const o = etrChart({ series: eto, period: 'daily' }, testCtx())
+    const trace = (o.series as S[])[0]
+    const cum = series(o)[1]
+    expect(trace).toMatchObject({ id: 'aux:zoom-trace', yAxisIndex: 2 })
+    expect(trace.data.slice(1, -1)).toEqual(cum.data.map((p) => [p[0], p[1]]))
+    // Daily bars sit at noon; the axis (and the track) adds half a day each side.
+    const x = o.xAxis as { min: number; max: number }
+    expect([x.min, x.max]).toEqual([(cum.data[0][0] as number) - 43_200_000, (cum.data.at(-1)![0] as number) + 43_200_000])
+    expect([trace.data[0][0], trace.data.at(-1)![0]]).toEqual([x.min, x.max])
+  })
+  it('feels like: the index line traces the slider; no slider on phones', () => {
+    const s = feelsLikeDaily(dailyMet('acebozem', 'winter2526'))
+    expect((feelsLikeChart({ series: s, period: 'daily' }, testCtx()).series as S[])[0].id).toBe('aux:zoom-trace')
+    const phone = feelsLikeChart({ series: s, period: 'daily' }, testCtx('light', 390, true, true))
+    expect((phone.dataZoom as { type: string }[]).map((z) => z.type)).toEqual(['inside'])
+    expect(series(phone)[0].id).toBe('aux:index-line')
   })
 })

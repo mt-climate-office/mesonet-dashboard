@@ -3,7 +3,8 @@
  * shared time axis with one dataZoom. Lines per column (soil depths colored
  * by depth), bars for precipitation and reference ET, gridMET normals (band
  * or percentile markers), hatched sensor-change spans and per-panel
- * "not available" notes. Input is core/models/timeseries (display units).
+ * "not available" notes, in the house chart style (style.ts: gaps, y-axis
+ * rule, slider and its trace). Input is core/models/timeseries (display units).
  */
 import type { EChartsOption, GraphicComponentOption, SeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { TimeseriesModel, TimeseriesPanel, TimeseriesSeries } from '../models/timeseries'
@@ -12,10 +13,11 @@ import { ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, variableS
 import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
 import { formatValue, plainName, plainUnit } from '../variables/labels'
-import { niceCeil, timeAxis, timeZoom, valueAxis } from './axes'
+import { timeAxis, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtWall, isoWall, plainLabel } from './format'
 import { bandSeries, sensorEventSeries } from './overlays'
-import { AUX, barSeries, lineSeries, markerSeries, points } from './series'
+import { AUX, barSeries, lineSeries, markerSeries } from './series'
+import { REF_WIDTH, extentOf, isAccumulation, points, runningTotal, showsSlider, stepMs, timeZoom, valued, yAxisRange, zoomTrace, type Point } from './style'
 import { paint } from './theme'
 import { tipText, tooltipBase, type TipParam } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
@@ -27,8 +29,11 @@ export interface LatestTimeseriesModel {
   view: [number, number]
 }
 
-/** Layout in CSS px. Each panel has a key row (depths, columns) in the gap above it. */
-export const LAYOUT = { panel: 190, single: 340, compactPanel: 160, gap: 34, top: 30, bottom: 64, compactBottom: 30 } as const
+/**
+ * Layout in CSS px. Each panel has a key row (depths, columns) in the gap above it. Under the last
+ * panel: the x labels and the slider (style `bottomLayout(true)`: 56), or the labels alone on phones.
+ */
+export const LAYOUT = { panel: 190, single: 340, compactPanel: 160, gap: 34, top: 30, bottom: 56, compactBottom: 30 } as const
 
 const panelPx = (n: number, compact: boolean) => (n === 1 ? LAYOUT.single : compact ? LAYOUT.compactPanel : LAYOUT.panel)
 
@@ -39,7 +44,7 @@ export function latestTimeseriesHeight(n: number, compact: boolean): number {
 }
 
 const DASHES = [undefined, 'dashed', 'dotted'] as const
-const isBar = (p: TimeseriesPanel) => p.variable === 'Precipitation' || p.variable === 'Reference ET'
+const isBar = (p: TimeseriesPanel) => isAccumulation(p.variable)
 
 /** Line/bar color of one column (palette roles only). */
 export function seriesColor(ctx: ChartContext, p: TimeseriesPanel, s: TimeseriesSeries, panelIndex: number): string {
@@ -123,15 +128,17 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
   const shift = m.period === 'daily' ? 12 * 3_600_000 : 0
   const xs = m.ts.x.filter((_, j) => ok[j]).map((x) => x + shift)
   const pick = <T>(arr: readonly T[]) => arr.filter((_, j) => ok[j])
-  const pts = (ys: readonly (number | null)[]) => points(xs, pick(ys))
+  // Gaps are breaks: a step over 1.5 × the interval (5-min: the station's cadence) gets a null.
+  const step = stepMs(m.period, xs)
+  const pts = (ys: readonly (number | null)[]) => points(xs, pick(ys), step)
   const normalColor = paint(ctx.theme, NORMALS.line)
 
   const series: SeriesOption[] = []
-  /** Per series index: its panel and how the tooltip labels it (null = skip). */
-  const tipMeta: ({ panel: number; label: string; unit: string } | null)[] = []
-  const push = (s: SeriesOption, meta: (typeof tipMeta)[number]) => {
+  /** Per series id: its panel and how the tooltip labels it (absent = skip). */
+  const tipMeta = new Map<string, { panel: number; label: string; unit: string }>()
+  const push = (s: SeriesOption, meta: { panel: number; label: string; unit: string } | null) => {
     series.push(s)
-    tipMeta.push(meta)
+    if (meta) tipMeta.set(String(s.id), meta)
   }
   const graphic: GraphicComponentOption[] = []
   const global = { normals: false, markers: false, sensor: false }
@@ -148,7 +155,7 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
         return
       }
       const dash = p.legend ? DASHES[j % DASHES.length] : variableStyle(p.variable, ctx.theme.name)?.dash
-      push({ ...lineSeries(s.name, pts(s.values), { color, dash, width: 1.5, yAxisIndex: i, id: `p${i}:${s.name}` }), xAxisIndex: i }, {
+      push({ ...lineSeries(s.name, pts(s.values), { color, dash, yAxisIndex: i, id: `p${i}:${s.name}` }), xAxisIndex: i }, {
         panel: i,
         label,
         unit,
@@ -165,10 +172,11 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
         yAxisIndex: i,
         digits: 1,
         stack: `normals${i}`,
+        step,
       })
       band.forEach((s, k) => push({ ...s, xAxisIndex: i, z: 1 }, k === 1 ? { panel: i, label: 'gridMET normal', unit: '' } : null))
       for (const [edge, ys] of [['min', nm.min], ['max', nm.max]] as const) {
-        push({ ...lineSeries(`${AUX}normal-${edge}`, pts(ys), { color: normalColor, width: 1, dash: NORMALS.dash, yAxisIndex: i, id: `${AUX}p${i}-normal-${edge}` }), xAxisIndex: i, silent: true }, null)
+        push({ ...lineSeries(`${AUX}normal-${edge}`, pts(ys), { color: normalColor, width: REF_WIDTH, dash: NORMALS.dash, yAxisIndex: i, id: `${AUX}p${i}-normal-${edge}` }), xAxisIndex: i, silent: true }, null)
       }
     } else if (nm?.kind === 'markers') {
       global.markers = true
@@ -237,13 +245,16 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
     return { ...base, gridIndex: i, axisLabel: { ...(base.axisLabel as object), show: last }, axisTick: { show: last } } as XAXisComponentOption
   })
   const yAxis: YAXisComponentOption[] = panels.map((p, i) => {
-    const base = valueAxis(plainLabel(p.axisTitle), p.noData ? { min: 0, max: 1 } : p.yRange ? { min: p.yRange[0], max: niceCeil(p.yRange[1]) } : isBar(p) ? { min: 0 } : {})
+    // The variable's y-axis rule over everything the panel draws (its columns, the daily band, normals).
+    const nm = p.normals
+    const normals = nm?.kind === 'band' ? [nm.min, nm.max] : nm?.kind === 'markers' ? [nm.p25, nm.median, nm.p75] : []
+    const range = p.noData ? { min: 0, max: 1 } : yAxisRange(p.variable, ...extentOf(...p.series.flatMap((s) => [s.values, s.band?.lo, s.band?.hi]), ...normals))
     return {
-      ...base,
+      ...valueAxis(plainLabel(p.axisTitle)),
+      ...range,
       gridIndex: i,
       nameGap: ctx.compact ? 36 : 46,
       nameTextStyle: { fontSize: ctx.compact ? 10 : 11, lineHeight: ctx.compact ? 12 : 14 },
-      splitNumber: 3,
       axisLabel: { show: !p.noData, fontSize: ctx.compact ? 10 : 11 },
       splitLine: { show: !p.noData },
     } as YAXisComponentOption
@@ -251,12 +262,12 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
 
   const tipPeriod = m.period === 'daily' ? 'daily' : 'hourly'
   const formatter = (raw: TipParam | TipParam[]) => {
-    const list = (Array.isArray(raw) ? raw : [raw]) as (TipParam & { seriesIndex?: number })[]
+    const list = Array.isArray(raw) ? raw : [raw]
     if (list.length === 0) return ''
     const x = Number(list[0].axisValue ?? (Array.isArray(list[0].value) ? list[0].value[0] : NaN))
     const rows = new Map<number, string[]>()
     for (const p of list) {
-      const meta = tipMeta[p.seriesIndex ?? -1]
+      const meta = tipMeta.get(String(p.seriesId))
       if (!meta || !Array.isArray(p.value)) continue
       const y = p.value[1]
       if (typeof y !== 'number' || !Number.isFinite(y)) continue
@@ -281,25 +292,32 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
   // Compact touch pins the tooltip under the tapped panel (the stack is taller than the screen).
   const underPanel = (y: number) => topOf(Math.min(n - 1, Math.max(0, Math.floor((y - LAYOUT.top) / (h + LAYOUT.gap))))) + h
 
-  const zoom = timeZoom(ctx).map((z) => ({
-    ...z,
-    xAxisIndex: xIdx,
-    startValue: m.view[0],
-    endValue: m.view[1],
-    ...(z.type === 'slider' ? { bottom: 8 } : {}),
-  }))
+  // The slider (style `showsSlider`) spans the window and traces the first panel (`panelTrace`).
+  const trace = panels[0] ? panelTrace(panels[0], pts) : []
+  const slider = showsSlider(ctx, m.view, valued(trace)) ? zoomTrace(trace, m.view, { yAxisIndex: n }) : null
 
   return {
     useUTC: true,
     grid: panels.map((_, i) => ({ left, right, top: topOf(i), height: h })),
     xAxis,
-    yAxis,
+    yAxis: slider ? [...yAxis, slider.yAxis] : yAxis,
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
-    dataZoom: zoom,
+    dataZoom: timeZoom(ctx, { xAxisIndex: xIdx, extent: m.view, slider: !!slider }),
     tooltip: { ...tooltipBase(ctx, n > 1 ? underPanel : undefined), trigger: 'axis', axisPointer: { type: 'line' }, formatter: formatter as never },
     graphic,
-    series,
+    series: slider ? [slider.series, ...series] : series,
   } satisfies EChartsOption
+}
+
+/**
+ * A panel's slider trace: its first column (the main line; on the Daily interval the mean, which
+ * the band surrounds; the shallowest soil depth), or for an accumulation its running total, so the
+ * track is never a flat row of bars.
+ */
+export function panelTrace(p: TimeseriesPanel, pts: (ys: readonly (number | null)[]) => Point[]): Point[] {
+  const s = p.series[0]
+  if (!s) return []
+  return pts(isBar(p) ? runningTotal(s.values) : s.values)
 }
 
 /** Rows the sr-only twin keeps; a raw multi-week window would otherwise build a huge DOM. */

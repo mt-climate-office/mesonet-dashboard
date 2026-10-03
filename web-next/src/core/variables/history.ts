@@ -72,5 +72,5 @@ export function historyModel(v: Variable, years: readonly (readonly ObservationR
   const dates = [...byDate.keys()]
   const traces = groupByYear(dates, dates.map((d) => byDate.get(d) ?? null), { cumulative: v.sum })
   const axis = axisTitle(v.id, v.name)
-  return { traces, yLabel: v.sum ? cumulativeTitle(axis) : axis, currentYear, column }
+  return { traces, yLabel: v.sum ? cumulativeTitle(axis) : axis, currentYear, column, variable: v.name }
 }
