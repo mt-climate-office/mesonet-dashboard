@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SECTION, SECTIONS, historyMode, legacyRedirect, parseSection, sectionForHash, sectionLabel } from './router'
+import { DEFAULT_SECTION, SECTIONS, historyMode, legacyRedirect, parseSection, sectionForHash, sectionLabel, sectionNavPatch } from './router'
 import { migrateLegacySearch } from './url-schema'
 
 describe('parseSection', () => {
@@ -44,6 +44,10 @@ describe('historyMode', () => {
     expect(historyMode('now', 'charts')).toBe('push')
     expect(historyMode('charts', 'charts')).toBe('replace')
   })
+  it('pushes a drill-down inside one section (an Ag tool opened from its card)', () => {
+    expect(historyMode('ag', 'ag', true)).toBe('push')
+    expect(historyMode('charts', 'charts', true)).toBe('push')
+  })
 })
 
 describe('legacyRedirect', () => {
@@ -69,9 +73,29 @@ describe('legacyRedirect', () => {
     expect(search).toBe('?s=acebozem&els=air_temp&dl_from=2026-09-01&dl_to=2026-09-30')
     expect(legacyRedirect(search!, '#downloader')).toEqual({ search: search!, hash: '#download' })
   })
+  it('an old #ag link with Ag keys but no var opens GDD; a bare #ag opens the tool cards', () => {
+    const search = migrateLegacySearch('?s=a&crop=corn&from=2026-05-01', '#ag')
+    expect(legacyRedirect(search!, '#ag')).toEqual({ search: `${search}&var=gdd`, hash: '#ag' })
+    expect(legacyRedirect('?s=a', '#ag')).toBeNull()
+  })
   it('leaves current sections and #ag alone', () => {
     expect(legacyRedirect('?s=a&var=gdd', '#ag')).toBeNull()
     expect(legacyRedirect('?s=a&from=2026-01-01', '#charts')).toBeNull()
     expect(legacyRedirect('?s=a', '#download')).toBeNull()
+  })
+})
+
+describe('sectionNavPatch', () => {
+  const page = { v: 'air_temp', view: 'table' as const, cmp: false }
+  const list = { v: null, view: 'recent' as const, cmp: false }
+  it('Charts inside Charts goes back to the list (pushed); nothing new at the list', () => {
+    expect(sectionNavPatch('charts', 'charts', page)).toEqual({ patch: { v: null, view: 'recent', cmp: false }, drillDown: true })
+    expect(sectionNavPatch('charts', 'charts', { ...list, cmp: true }).drillDown).toBe(true)
+    expect(sectionNavPatch('charts', 'charts', list).drillDown).toBe(false)
+  })
+  it('leaving Charts drops the variable; other moves keep the URL', () => {
+    expect(sectionNavPatch('charts', 'now', page)).toEqual({ patch: { v: null, view: 'recent' }, drillDown: false })
+    expect(sectionNavPatch('now', 'charts', list)).toEqual({ patch: {}, drillDown: false })
+    expect(sectionNavPatch('ag', 'about', page)).toEqual({ patch: {}, drillDown: false })
   })
 })

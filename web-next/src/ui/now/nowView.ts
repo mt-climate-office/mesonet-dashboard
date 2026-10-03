@@ -4,14 +4,15 @@
  * photo schedule) is requested in parallel on mount; tier 2 (the hourly
  * sparkline rows and normals) once `/latest` is in. The model is
  * core/overview `buildOverview`, computed once per change in an effect (the
- * partial reads `o` many times). Tiles link to Charts → Compare with their
- * variables until P1 adds the variable page.
+ * partial reads `o` many times). Each tile links to its first variable's
+ * page in Charts (`v=`), morphing into the page heading.
  */
 import Alpine from 'alpinejs'
 import type { Station } from '../../core/api'
 import { buildOverview, type Overview } from '../../core/overview'
 import { hasCamera } from '../../core/photos'
-import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../latest/cards/resources'
+import { variableId } from '../../core/variables'
+import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../station/resources'
 import { component } from '../component'
 import { togglePicker } from '../picker/stationPicker'
 import { navigate } from '../shell/navigate'
@@ -71,19 +72,19 @@ export function nowView() {
     },
 
     href(vars: string[]): string {
-      return Alpine.store('url').hrefFor('charts', { vars, cmp: true })
+      return Alpine.store('url').hrefFor('charts', { v: variableId(vars[0]), view: 'recent', cmp: false })
     },
-    /** Plain click on a tile: push Charts → Compare for its variables; the tile morphs into the section header. */
+    /** Plain click on a tile: push its variable page; the tile morphs into the page heading. */
     open(e: MouseEvent, vars: string[]): void {
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
       e.preventDefault()
-      void navigate('charts', { patch: { vars, cmp: true }, morph: e.currentTarget as HTMLElement })
+      void navigate('charts', { patch: { v: variableId(vars[0]), view: 'recent', cmp: false }, morph: e.currentTarget as HTMLElement })
     },
-    /** "All readings" → About, through the same pushState + transition as the section nav. */
+    /** "All readings" → About's readings table, through the same pushState + transition as the section nav. */
     toAbout(e: MouseEvent): void {
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
       e.preventDefault()
-      void navigate('about')
+      void navigate('about', { target: 'about-readings' })
     },
 
     pick(e: Event): void {

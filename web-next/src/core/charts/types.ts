@@ -35,6 +35,11 @@ export interface ChartContext {
   width: number
   /** True under `MCO.viewport.isCompact()`. */
   compact: boolean
+  /**
+   * True on a touch-first device (`(hover: none) and (pointer: coarse)`): no
+   * drag or pinch zoom (a swipe scrolls the page) and tap-triggered tooltips.
+   */
+  touch: boolean
 }
 
 /**

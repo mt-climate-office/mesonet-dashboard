@@ -6,7 +6,9 @@
  * Sections: #now (default) · #charts · #ag · #download · #about.
  * Legacy:   #latest     → #charts with cmp=1 (Compare; from/to/agg/vars/gridmet kept)
  *           #downloader → #download (dl_* keys kept; migrateLegacySearch renames first)
- *           #ag         → unchanged · #satellite → #now (globalNotices explains)
+ *           #ag         → unchanged; with Ag keys but no `var`, var=gdd is added
+ *                         (the old default tool; a bare #ag opens the tool cards)
+ *           #satellite  → #now (globalNotices explains)
  */
 
 export const SECTIONS = [
@@ -47,15 +49,19 @@ export function sectionForHash(hash: string, current: Section): Section {
 export const sectionLabel = (s: Section): string => SECTIONS.find((x) => x.id === s)?.label ?? s
 
 /**
- * History operation for a navigation: a section change adds an entry (Back
- * returns to the previous section); a change inside one section replaces it.
+ * History operation for a navigation: a section change or a drill-down (an Ag
+ * tool opened from its card, a Charts variable or sub-view) adds an entry, so
+ * Back returns; any other change inside one section replaces it.
  */
-export function historyMode(from: Section, to: Section): 'push' | 'replace' {
-  return from === to ? 'replace' : 'push'
+export function historyMode(from: Section, to: Section, drillDown = false): 'push' | 'replace' {
+  return from === to && !drillDown ? 'replace' : 'push'
 }
 
 /** Keys that only the old Latest tab read; a hash-less link carrying one meant Latest. */
 const LATEST_KEYS = ['from', 'to', 'agg', 'vars', 'gridmet'] as const
+
+/** Ag keys other than `var`; an old `#ag` link with one of these but no `var` showed GDD. */
+const AG_KEYS = ['crop', 'gdd_lo', 'gdd_hi', 'gdd_proj', 'ag_time', 'lt', 'soilv', 'annv', 'ag_from', 'ag_to'] as const
 
 /**
  * Boot-time rewrite of a legacy link (run after `migrateLegacySearch`, which
@@ -63,6 +69,7 @@ const LATEST_KEYS = ['from', 'to', 'agg', 'vars', 'gridmet'] as const
  * (`search` is `?…` or `''`), or null when the URL is already current.
  *  - `#latest`, or no hash with a Latest-only key → `#charts` + `cmp=1`
  *  - `#downloader` → `#download`
+ *  - `#ag` with an Ag key but no `var` → `var=gdd` appended (it showed GDD)
  * Every other key is kept byte-for-byte.
  */
 export function legacyRedirect(search: string, hash: string): { search: string; hash: string } | null {
@@ -75,5 +82,30 @@ export function legacyRedirect(search: string, hash: string): { search: string; 
     return { search: `?${withCmp}`, hash: '#charts' }
   }
   if (raw === 'downloader') return { search, hash: '#download' }
+  if (raw === 'ag' && !params.has('var') && AG_KEYS.some((k) => params.has(k))) {
+    return { search: `${search}&var=gdd`, hash }
+  }
   return null
+}
+
+/** The URL keys of a Charts drill-down (core/url-schema): variable, sub-view, Compare. */
+export interface ChartsKeys {
+  v: string | null
+  view: 'recent' | 'history' | 'table'
+  cmp: boolean
+}
+
+/**
+ * A section-nav link from `from` to `to`: the URL patch and whether it adds a
+ * history entry. Tapping Charts inside Charts returns to the variable list (a
+ * drill-down back up, pushed); leaving Charts drops the variable so the next
+ * visit opens the list. Other sections keep their state.
+ */
+export function sectionNavPatch(from: Section, to: Section, state: ChartsKeys): { patch: Partial<ChartsKeys>; drillDown: boolean } {
+  if (from === 'charts' && to === 'charts') {
+    const atList = state.v === null && !state.cmp
+    return { patch: { v: null, view: 'recent', cmp: false }, drillDown: !atList }
+  }
+  if (from === 'charts') return { patch: { v: null, view: 'recent' }, drillDown: false }
+  return { patch: {}, drillDown: false }
 }

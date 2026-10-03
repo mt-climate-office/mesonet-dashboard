@@ -20,7 +20,7 @@ const FONTS = { '--font-ui': "'Outfit', system-ui, sans-serif", '--font-mono': "
 export const fakeGetVar = (theme: Theme) => (name: string): string =>
   ({ ...TOKENS_SNAPSHOT[theme], ...CHROME[theme], ...FONTS })[name] ?? ''
 
-/** Builder context for a theme at a desktop width. */
-export function testCtx(theme: Theme = 'dark', width = 900, compact = false): ChartContext {
-  return { theme: readChartTheme(theme, fakeGetVar(theme)), width, compact }
+/** Builder context for a theme at a desktop width (mouse unless `touch`). */
+export function testCtx(theme: Theme = 'dark', width = 900, compact = false, touch = false): ChartContext {
+  return { theme: readChartTheme(theme, fakeGetVar(theme)), width, compact, touch }
 }

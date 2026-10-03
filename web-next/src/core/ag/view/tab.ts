@@ -34,6 +34,9 @@ export type AgUrl = Pick<
 >
 
 export interface AgTab {
+  /** A tool is open (`var` set); false = the tool cards. */
+  open: boolean
+  /** The open tool; GDD (the legacy default) for an unknown `var` and on the cards. */
   variable: AgVariable
   variableLabel: string
   crop: GddCrop
@@ -66,12 +69,13 @@ export function dateWindow(from: string | null, to: string | null, today: LocalD
 
 /** Resolve the URL + station row into the Ag selection (unknown values fall back to defaults). */
 export function resolveAgTab(url: AgUrl, station: Station | undefined, today: LocalDate): AgTab {
-  const variable = (VARIABLES.has(url.var) ? url.var : 'gdd') as AgVariable
+  const variable = (url.var && VARIABLES.has(url.var) ? url.var : 'gdd') as AgVariable
   const crop = (CROPS.has(url.crop) ? url.crop : 'wheat') as GddCrop
   const hasSwp = stationHasSwp(station)
   const soilOptions = SOIL_VAR_OPTIONS.filter((o) => hasSwp || !SWP_ONLY.has(o.value))
   const showTimeAgg = TIME_AGG.has(variable)
   return {
+    open: !!url.var,
     variable,
     variableLabel: DERIVED_VAR_OPTIONS.find((o) => o.value === variable)?.label ?? variable,
     crop,

@@ -1,0 +1,89 @@
+/* Charts (partials/charts/*): the variable list, the variable page and Compare.
+   Phones: one column; the variable chart is min(60dvh, 420px) tall and Compare's
+   panels ~1/3 of a screen each. Desktop: Compare's options beside its plot.
+   Kit tokens and the type scale only. */
+
+/* Shared */
+.charts-empty { padding: 2rem 1rem; text-align: center; font-size: var(--fs-sm); color: var(--text-secondary); }
+.charts-empty-title { font-weight: 700; color: var(--text-primary); }
+.var-back { display: inline-block; margin-bottom: 0.5rem; }
+
+/* List: one card per group, one link row per variable (name | value | sparkline). */
+.charts-groups { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1060px) and (min-height: 561px) {
+  .charts-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
+.charts-rows { list-style: none; }
+.charts-rows li + li { border-top: 1px solid var(--border); }
+.charts-row {
+  display: grid; align-items: center; gap: 0.25rem 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto minmax(4rem, 7rem);
+  min-height: 44px; padding: 0.4rem 0.25rem;
+  color: inherit; text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+}
+.charts-row:hover { background: var(--accent-hover); }
+.charts-row-name { font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary); }
+.charts-row-value { display: flex; flex-direction: column; align-items: flex-end; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--text-primary); white-space: nowrap; }
+.charts-row-note { font-family: var(--font-ui); font-size: var(--fs-xs); color: var(--text-muted); }
+.charts-row .dash-spark { margin-top: 0; }
+.charts-skel-row { height: 2rem; margin: 0.5rem 0; }
+.charts-compare { display: flex; flex-direction: column; gap: 0.2rem; }
+
+/* Variable page */
+.var-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; margin-bottom: 0.75rem; }
+.var-title { font-size: var(--fs-xl); }
+.var-near { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.var-chip { font-size: var(--fs-sm); text-decoration: none; }
+/* The sub-view links are a segmented row; the current one is filled (aria-current, not color alone: also bold). */
+.var-views { margin-bottom: 0.75rem; }
+.var-views .seg-btn { text-decoration: none; }
+.var-views .seg-btn[aria-current="page"] { background: var(--accent); border-color: var(--accent-line); color: var(--text-on-accent); font-weight: 700; }
+.var-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin-bottom: 0.5rem; }
+/* "7 d" and "1 y" are narrower than a 40 px touch target (HOUSE-STYLE §5.5). */
+@media (hover: none) { .var-presets .seg-btn { min-width: 44px; justify-content: center; } }
+.var-controls .ctl-note { flex-basis: 100%; margin: 0; }
+.var-custom { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.5rem 1.5rem; margin-bottom: 0.75rem; }
+.var-plot, .var-history, .var-table { padding: 0.5rem 0.25rem 0.25rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.var-history > .dash-section-note { padding: 0 0.5rem 0.25rem; }
+.var-canvas { position: relative; }
+.var-status { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; background: var(--bg-surface); }
+.var-status > * { width: 100%; }
+.var-chart { --chart-height: 420px; --chart-height-compact: min(60dvh, 420px); }
+.var-skel { --chart-height: 420px; }
+@media (max-width: 640px) { .var-skel { --chart-height: min(60dvh, 420px); } }
+
+/* Stats row: label over value, Space Mono values. */
+.var-stats { display: flex; flex-direction: column; gap: 0.35rem; padding: 0.5rem 0.75rem 0.25rem; border-top: 1px solid var(--border); }
+.var-stat-row { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+.var-stat { display: flex; flex-direction: column; min-width: 4.5rem; }
+.var-stat dt { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.var-stat dd { font-family: var(--font-mono); font-size: var(--fs-md); color: var(--text-primary); }
+.var-stat-depth dd { font-family: var(--font-ui); font-size: var(--fs-sm); color: var(--text-secondary); }
+
+/* Table view: scrolls sideways inside its box, never the page. */
+.var-table-scroll { overflow-x: auto; max-width: 100%; }
+.var-table-grid { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.var-table-grid th, .var-table-grid td { padding: 0.35rem 0.6rem; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.var-table-grid th:first-child, .var-table-grid td:first-child { text-align: left; }
+.var-table-grid thead th { font-weight: 600; color: var(--text-secondary); }
+.var-table-grid td { font-family: var(--font-mono); color: var(--text-primary); }
+.var-pager { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.5rem; font-size: var(--fs-sm); color: var(--text-secondary); }
+
+/* Compare: options (a disclosure) beside the plot on desktop, above it otherwise. */
+.cmp-layout { display: grid; gap: 0.75rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1060px) and (min-height: 561px) {
+  .cmp-layout { grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr); }
+}
+.cmp-summary { min-height: 40px; display: flex; align-items: center; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); cursor: pointer; }
+.cmp-group { display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.75rem; margin-top: 0.75rem; border-top: 1px solid var(--border); }
+.cmp-group .ctl-note { margin: 0; }
+.cmp-por { align-self: flex-start; }
+/* The variable chips scroll past ~200 px (legacy 200 px scroll area, LDC-011). */
+.cmp-vars { max-height: 12.5rem; overflow-y: auto; padding: 1px; }
+.cmp-plot { position: relative; min-height: 20rem; padding: 0.5rem 0.25rem 0.25rem; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); }
+/* Empty / loading: over the (cleared) chart, which stays sized so ECharts initialises at a real size. */
+.cmp-status { position: absolute; inset: 0; z-index: 2; display: flex; align-items: center; justify-content: center; padding: 1rem; background: var(--bg-surface); border-radius: var(--radius-lg); }
+.cmp-status > div { width: 100%; }
+.cmp-refreshing { position: absolute; top: 0.4rem; right: 0.75rem; z-index: 1; font-size: var(--fs-xs); color: var(--text-muted); }

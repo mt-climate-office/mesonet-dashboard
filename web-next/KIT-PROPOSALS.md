@@ -1421,3 +1421,41 @@ A one-page, checkable list. It is generated from the head and lint checks where 
 7. **pushState for drill-down (I2).** It changes Back-button behavior family-wide, so prove it on the dashboard first.
 8. **M2 touch targets** stays a recommendation (the user declined an issue). Confirm whether it should ride 0.8.0 anyway.
 9. **The 0.8.0 scope.** The additions above roughly double a release CONSUMERS already calls "the largest piece of work waiting". The alternative is 0.8.0 = the planned seven + T3/#3/#4/I6/M1/M4, with the rest in 0.8.1–0.8.x minors.
+
+## Tracking issues (mco-web-style)
+
+Opened 2026-10-02, one per P0/P1 proposal. M2 was declined and the P2 items (L3, I4, D3, F4, T4) were not filed. T3 widens #2 (comment there).
+
+| Proposal | Issue |
+| --- | --- |
+| L1 | [#5](https://github.com/mt-climate-office/mco-web-style/issues/5) |
+| L2 | [#6](https://github.com/mt-climate-office/mco-web-style/issues/6) |
+| L4 | [#7](https://github.com/mt-climate-office/mco-web-style/issues/7) |
+| L5 | [#8](https://github.com/mt-climate-office/mco-web-style/issues/8) |
+| L6 | [#9](https://github.com/mt-climate-office/mco-web-style/issues/9) |
+| L7 | [#10](https://github.com/mt-climate-office/mco-web-style/issues/10) |
+| I1 | [#11](https://github.com/mt-climate-office/mco-web-style/issues/11) |
+| I2 | [#12](https://github.com/mt-climate-office/mco-web-style/issues/12) |
+| I3 | [#13](https://github.com/mt-climate-office/mco-web-style/issues/13) |
+| I5 | [#14](https://github.com/mt-climate-office/mco-web-style/issues/14) |
+| I6 | [#15](https://github.com/mt-climate-office/mco-web-style/issues/15) |
+| I7 | [#16](https://github.com/mt-climate-office/mco-web-style/issues/16) |
+| D1 | [#17](https://github.com/mt-climate-office/mco-web-style/issues/17) |
+| D2 | [#18](https://github.com/mt-climate-office/mco-web-style/issues/18) |
+| D4 | [#19](https://github.com/mt-climate-office/mco-web-style/issues/19) |
+| D5 | [#20](https://github.com/mt-climate-office/mco-web-style/issues/20) |
+| F1 | [#21](https://github.com/mt-climate-office/mco-web-style/issues/21) |
+| F2 | [#22](https://github.com/mt-climate-office/mco-web-style/issues/22) |
+| F3 | [#23](https://github.com/mt-climate-office/mco-web-style/issues/23) |
+| F5 | [#24](https://github.com/mt-climate-office/mco-web-style/issues/24) |
+| T1 | [#25](https://github.com/mt-climate-office/mco-web-style/issues/25) |
+| T2 | [#26](https://github.com/mt-climate-office/mco-web-style/issues/26) |
+| T5 | [#27](https://github.com/mt-climate-office/mco-web-style/issues/27) |
+| T6 | [#28](https://github.com/mt-climate-office/mco-web-style/issues/28) |
+| T7 | [#29](https://github.com/mt-climate-office/mco-web-style/issues/29) |
+| M1 | [#30](https://github.com/mt-climate-office/mco-web-style/issues/30) |
+| M3 | [#31](https://github.com/mt-climate-office/mco-web-style/issues/31) |
+| M4 | [#32](https://github.com/mt-climate-office/mco-web-style/issues/32) |
+| M5 | [#33](https://github.com/mt-climate-office/mco-web-style/issues/33) |
+| Q1 | [#34](https://github.com/mt-climate-office/mco-web-style/issues/34) |
+| Q2 | [#35](https://github.com/mt-climate-office/mco-web-style/issues/35) |

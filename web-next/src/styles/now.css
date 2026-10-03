@@ -25,8 +25,8 @@
   .now-grid { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
 }
 
-/* Freshness line. */
-.now-fresh { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; font-size: var(--fs-sm); color: var(--text-muted); }
+/* Freshness line; positioned so the Provisional toggletip can span it. */
+.now-fresh { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; font-size: var(--fs-sm); color: var(--text-muted); }
 
 /* Shared tile text. */
 .now-label { display: block; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }

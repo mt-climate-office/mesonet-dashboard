@@ -1,0 +1,24 @@
+<!-- Data notes and API links (inside x-data="aboutView": `links` is core/about apiLinks). Static prose
+     about the QC level and provisional data; the QC level texts match core/downloader/request.ts. -->
+<section class="dash-card about-notes" aria-labelledby="about-notes-title" data-testid="about-notes">
+  <h3 class="dash-card-title" id="about-notes-title">About the data</h3>
+  <dl class="about-notes-list">
+    <dt>Quality control</dt>
+    <dd>Every value in this dashboard is quality-controlled (QC level 2): the daily QC pipeline removes
+        spikes, steps, stuck sensors and wind-affected precipitation. Download also offers the raw and
+        provisional levels.</dd>
+    <dt>Provisional data</dt>
+    <dd>The newest observations, usually the last day, have not been through the daily pipeline yet. They
+        are marked <strong>Provisional</strong> on Now and in the <code>provisional</code> column of
+        downloads, and they may still change.</dd>
+    <dt>Times and units</dt>
+    <dd>Times are Mountain Time. Values are in US units as the Mesonet API sends them; “Feels like” is the
+        NWS wind chill or heat index when one applies, otherwise the air temperature.</dd>
+  </dl>
+  <h4 class="about-subtitle">Mesonet API</h4>
+  <ul class="about-api">
+    <template x-for="l in links" :key="l.href">
+      <li><a class="dash-link" :href="l.href" target="_blank" rel="noopener noreferrer"><span x-text="l.label"></span><span class="sr-only"> (opens in a new tab)</span></a></li>
+    </template>
+  </ul>
+</section>

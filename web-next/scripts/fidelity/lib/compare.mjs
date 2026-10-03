@@ -285,6 +285,12 @@ export function paletteCheck(figs, palette) {
 /** Label → value from every two-column row of the card's tables. */
 const kv = (card) => new Map((card?.tables ?? []).flat().filter((r) => r.length === 2).map(([k, v]) => [k.replace(/\s+/g, ' ').trim(), v.trim()]))
 
+/**
+ * Rows that differ on purpose: web/ label → web-next label. Left out of the key and value diff and
+ * reported under `documented`. Real Feel → Feels like: DIVERGENCES "Feels like uses the NWS method".
+ */
+const DOCUMENTED_ROWS = new Map([['Real Feel [°F]', 'Feels like [°F]']])
+
 const CONTROL = new Set(['Map', 'Wind Rose', 'Weather Forecast', 'Latest Photo', 'Locator Map', 'Station Metadata', 'Current Conditions', 'Top card', 'Bottom card'])
 
 /**
@@ -298,6 +304,13 @@ export function compareCard(a, b, { volatile = [/^Timestamp$/] } = {}) {
   if (!a) return { status: 'WARN', note: 'card missing in web/' }
   const ka = kv(a)
   const kb = kv(b)
+  const documented = []
+  for (const [ra, rb] of DOCUMENTED_ROWS) {
+    if (!ka.has(ra) && !kb.has(rb)) continue
+    documented.push({ a: ra, valueA: ka.get(ra) ?? null, b: rb, valueB: kb.get(rb) ?? null, see: 'DIVERGENCES "Feels like uses the NWS method"' })
+    ka.delete(ra)
+    kb.delete(rb)
+  }
   const keys = setDiff([...ka.keys()], [...kb.keys()])
   const dec = (v) => (String(v).split('.')[1] ?? '').replace(/\D.*$/, '').length
   const valueDiffs = []
@@ -338,6 +351,7 @@ export function compareCard(a, b, { volatile = [/^Timestamp$/] } = {}) {
     rows: { A: ka.size, B: kb.size },
     stale,
     keys,
+    documented,
     valueDiffs: valueDiffs.slice(0, 40),
     lines: { onlyA: lines.onlyA.slice(0, 30), onlyB: lines.onlyB.slice(0, 30) },
     images: imgs,

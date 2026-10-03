@@ -290,9 +290,11 @@ export async function open(env, query, { viewport = VIEWPORTS[0], reducedMotion 
 /** Downloader with a small daily request ready to run (acebozem, Sept 2026). */
 export const DL_QUERY = '?s=acebozem&els=air_temp,ppt&period=daily&dl_from=2026-09-01&dl_to=2026-09-30#downloader'
 
-/** Click Run Request once the form allows it (station confirmed, elements loaded). */
+/** Click Run Request once the form allows it (station confirmed, elements loaded); on phones, Next to the Run step first. */
 export async function runDownload(page) {
   await page.waitForFunction(() => document.querySelector('[data-testid="dl-run"]')?.disabled === false, null, { timeout: 30000 })
+  const next = page.getByTestId('dl-next')
+  for (let i = 0; i < 2 && (await next.isVisible()); i++) await next.click()
   await page.getByTestId('dl-run').click()
 }
 

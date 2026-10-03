@@ -12,6 +12,12 @@ import { browserStorage, createStationStore } from './stores/station'
 import { createThemeStore } from './stores/theme'
 import { createUrlStore } from './stores/url'
 import { chart } from './ui/charts/chart'
+import { chartsView } from './ui/charts/chartsView'
+import { compare } from './ui/charts/compare'
+import { compareControls } from './ui/charts/compareControls'
+import { variableHistory } from './ui/charts/variableHistory'
+import { variableList } from './ui/charts/variableList'
+import { variablePage } from './ui/charts/variablePage'
 import { chips } from './ui/controls/chips'
 import { combobox } from './ui/controls/combobox'
 import { dateInput } from './ui/controls/dateInput'
@@ -21,17 +27,18 @@ import { rangeSlider } from './ui/controls/rangeSlider'
 import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
 import { downloader } from './ui/downloader/downloader'
-import { downloaderMap, pickerMap, stationMap } from './ui/map/presets'
-import { bottomCard } from './ui/latest/cards/bottomCard'
-import { currentCard } from './ui/latest/cards/currentCard'
-import { forecastCard } from './ui/latest/cards/forecastCard'
-import { metadataCard } from './ui/latest/cards/metadataCard'
-import { photoCard } from './ui/latest/cards/photoCard'
-import { topCard } from './ui/latest/cards/topCard'
-import { windRoseCard } from './ui/latest/cards/windRoseCard'
+import { downloaderMap, locatorMap, pickerMap, stationMap } from './ui/map/presets'
+import { forecastCard } from './ui/now/forecastCard'
+import { photoCard } from './ui/now/photoCard'
+import { windRoseCard } from './ui/now/windRoseCard'
 import { nowView } from './ui/now/nowView'
+import { aboutView } from './ui/about/aboutView'
+import { aboutDetails } from './ui/about/details'
+import { aboutHistory } from './ui/about/history'
+import { aboutReadings } from './ui/about/readings'
 import { stationPicker } from './ui/picker/stationPicker'
 import { globalNotices } from './ui/shell/globalNotices'
+import { toggletip } from './ui/shell/toggletip'
 import { helpDialog } from './ui/shell/helpDialog'
 import { navMeta } from './ui/shell/navMeta'
 import { outageNotice } from './ui/shell/outageNotice'
@@ -46,20 +53,17 @@ import './ui/layout/sectionNav.css'
 import './ui/layout/drawer.css'
 import './ui/layout/sheet.css'
 import './ui/layout/transition.css'
+import './ui/layout/toggletip.css'
 import './ui/controls/controls.css'
 import './ui/map/map.css'
 import './ui/charts/chart.css'
 import './styles/downloader.css'
 import './styles/picker.css'
 import './styles/now.css'
+import './styles/now-cards.css'
+import './styles/charts.css'
 import './styles/about.css'
 
-// Latest Data (W2 layout/sidebar/timeseries), shown as Charts → Compare until P1.
-import { latestLayout } from './ui/latest/layout'
-import { latestSidebar } from './ui/latest/sidebar'
-import { latestTimeseries } from './ui/latest/timeseries'
-import './styles/latest.css'
-import './styles/cards.css'
 // Ag Tools (W2)
 import { agAnnualView } from './ui/ag/agAnnualView'
 import { agControls } from './ui/ag/agControls'
@@ -107,7 +111,7 @@ Alpine.store('station', createStationStore())
 /* 3. Components (one line each; x-data="<name>" in the partials). -------- */
 
 // Shell (ui/shell/*): navbar meta, station switcher + header, section navs,
-// notices, Help and outage dialogs; the station picker (ui/picker).
+// notices, Help and outage dialogs, toggletips; the station picker (ui/picker).
 Alpine.data('navMeta', navMeta)
 Alpine.data('stationHeader', stationHeader)
 Alpine.data('sections', sections)
@@ -115,6 +119,7 @@ Alpine.data('stationPicker', stationPicker)
 Alpine.data('helpDialog', helpDialog)
 Alpine.data('outageNotice', outageNotice)
 Alpine.data('globalNotices', globalNotices)
+Alpine.data('toggletip', toggletip)
 
 // Form controls (ui/controls/README.md): x-data="combobox({ … })" etc.
 Alpine.data('combobox', combobox)
@@ -130,31 +135,37 @@ Alpine.data('rangeSlider', rangeSlider)
 Alpine.data('stationMap', stationMap)
 Alpine.data('downloaderMap', downloaderMap)
 Alpine.data('pickerMap', pickerMap)
+Alpine.data('locatorMap', locatorMap)
 
 // Charts (W1): the one ECharts host; ECharts itself loads lazily on the first
 // render. x-data="chart({ builder, table, label, model: () => …, onZoom, range })".
 Alpine.data('chart', chart)
 
+// Charts (ui/charts): section view switch, variable list, variable page + history, Compare.
+Alpine.data('chartsView', chartsView)
+Alpine.data('variableList', variableList)
+Alpine.data('variablePage', variablePage)
+Alpine.data('variableHistory', variableHistory)
+Alpine.data('compare', compare)
+Alpine.data('compareControls', compareControls)
+
 // Now (ui/now): the overview section.
 Alpine.data('nowView', nowView)
+// Now's panes (ui/now): the latest photo + its dialog, the wind rose (no camera), the NWS forecast.
+Alpine.data('photoCard', photoCard)
+Alpine.data('windRoseCard', windRoseCard)
+Alpine.data('forecastCard', forecastCard)
+
+// About (ui/about): the section wrapper and its cards (details, current readings, sensor changes).
+Alpine.data('aboutView', aboutView)
+Alpine.data('aboutDetails', aboutDetails)
+Alpine.data('aboutReadings', aboutReadings)
+Alpine.data('aboutHistory', aboutHistory)
 
 // Data Downloader (W2): the Download section's one component (ui/downloader/downloader.ts);
 // x-data="downloader" in partials/downloader/index.html.
 Alpine.data('downloader', downloader)
 
-// Latest Data (W2 layout/sidebar/timeseries): partials/latest/index.html (Charts → Compare).
-Alpine.data('latestLayout', latestLayout)
-Alpine.data('latestSidebar', latestSidebar)
-Alpine.data('latestTimeseries', latestTimeseries)
-// Latest cards (W2; partials/latest/cards/*): top and bottom card switchers and their panes,
-// also reused by Now (photo, wind rose, forecast) and About (metadata, current readings).
-Alpine.data('topCard', topCard)
-Alpine.data('windRoseCard', windRoseCard)
-Alpine.data('forecastCard', forecastCard)
-Alpine.data('photoCard', photoCard)
-Alpine.data('bottomCard', bottomCard)
-Alpine.data('metadataCard', metadataCard)
-Alpine.data('currentCard', currentCard)
 // Ag Tools (W2, ui/ag/*): tab wrapper, controls card, one view per variable group.
 Alpine.data('agTab', agTab)
 Alpine.data('agControls', agControls)

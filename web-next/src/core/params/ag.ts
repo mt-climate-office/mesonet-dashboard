@@ -12,15 +12,19 @@ export type DerivedVar =
   | 'swp'
   | 'percent_saturation'
 
-export const DERIVED_VAR_OPTIONS: { value: DerivedVar; label: string }[] = [
-  { value: 'etr', label: 'Reference ET' },
-  { value: 'feels_like', label: 'Feels Like Temperature' },
-  { value: 'gdd', label: 'Growing Degree Days' },
-  { value: 'soil_temp,soil_ec_blk', label: 'Soil Profile Plot' },
-  { value: 'annual', label: 'Annual Comparison Plot' },
-  { value: 'cci', label: 'Livestock Risk Index' },
-  { value: 'swp', label: 'Soil Water Potential' },
-  { value: 'percent_saturation', label: 'Percent Soil Saturation' },
+/**
+ * The Ag tools, in tool-card order: the `var` value, the name (card title,
+ * variable select, chart heading) and the one-line card description.
+ */
+export const DERIVED_VAR_OPTIONS: { value: DerivedVar; label: string; description: string }[] = [
+  { value: 'etr', label: 'Reference ET', description: 'Daily or hourly water use of a reference grass crop (ETr), with the running total.' },
+  { value: 'gdd', label: 'Growing degree days', description: 'Heat accumulated since the start date for a crop, with growth stages and a projection.' },
+  { value: 'feels_like', label: 'Feels like', description: 'How cold or hot it feels: NWS wind chill or heat index.' },
+  { value: 'cci', label: 'Livestock risk', description: 'Comprehensive Climate Index (CCI) stress classes for adult or newborn livestock.' },
+  { value: 'soil_temp,soil_ec_blk', label: 'Soil profile', description: 'Soil moisture, temperature or conductivity at every sensor depth over time.' },
+  { value: 'swp', label: 'Soil water potential', description: 'How hard roots work for water at each depth, against field capacity and wilting point.' },
+  { value: 'percent_saturation', label: 'Percent saturation', description: 'Soil water content as a share of the pore space at each depth.' },
+  { value: 'annual', label: 'Annual comparison', description: 'This year against past years for any variable the station reports.' },
 ]
 
 export const GDD_CROPS: { value: string; label: string }[] = [

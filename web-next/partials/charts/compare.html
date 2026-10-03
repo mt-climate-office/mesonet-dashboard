@@ -1,0 +1,83 @@
+<!-- Compare (cmp=1; legacy #latest links land here): the stacked station plot, one panel per variable
+     (x-data="compare", ui/charts/compare.ts) and its options (x-data="compareControls",
+     ui/charts/compareControls.ts) in a disclosure: beside the plot on desktop, above it on phones. -->
+<div class="cmp" data-testid="compare">
+  <div class="dash-section-head">
+    <a class="dash-link var-back" :href="listHref()" @click="toList($event)">‹ All variables</a>
+    <h2 class="dash-section-title" data-vt-target>Compare</h2>
+    <p class="dash-section-note">Several variables stacked on one time axis.</p>
+  </div>
+
+  <div class="cmp-layout">
+    <details class="dash-card cmp-options" x-data="compareControls" data-testid="compare-options">
+      <summary class="cmp-summary">Options</summary>
+      <div class="cmp-group">
+        <fieldset class="ctl-fieldset" data-testid="date-range"
+                  x-data="dateRange({ value: () => dates(), onChange: (r) => setDates(r), min: () => installed(), max: () => dateMax(), label: 'Date range' })">
+          <legend class="ctl-legend" x-text="label"></legend>
+          <div class="ctl-row">
+            <div class="ctl-field">
+              <label class="ctl-label" :for="ids.start">Start</label>
+              <input type="date" class="ctl-input" :id="ids.start" :min="min()" :max="max()" :value="start" :aria-invalid="invalid('start')" :aria-describedby="describedBy()" @change="setStart($event)">
+            </div>
+            <div class="ctl-field">
+              <label class="ctl-label" :for="ids.end">End</label>
+              <input type="date" class="ctl-input" :id="ids.end" :min="min()" :max="max()" :value="end" :aria-invalid="invalid('end')" :aria-describedby="describedBy()" @change="setEnd($event)">
+            </div>
+          </div>
+          <p class="ctl-error" aria-live="polite" :id="ids.error" x-text="errorText()"></p>
+        </fieldset>
+        <button type="button" class="nav-btn cmp-por" data-testid="por-button" :disabled="porDisabled()" @click="togglePor()" x-text="porLabel()"></button>
+      </div>
+
+      <div class="cmp-group">
+        <fieldset class="ctl-seg" data-testid="agg-select"
+                  x-data="segmented({ options: () => aggOptions, value: () => agg(), onChange: (v) => setAgg(v), label: 'Time aggregation' })">
+          <legend class="ctl-legend" x-text="label"></legend>
+          <div class="seg-btns">
+            <template x-for="opt in options()" :key="opt.value">
+              <label class="nav-btn seg-btn">
+                <input type="radio" :name="name" :value="opt.value" :checked="isChecked(opt.value)" :disabled="opt.disabled ?? false" @change="select(opt.value)">
+                <span x-text="opt.label"></span>
+              </label>
+            </template>
+          </div>
+        </fieldset>
+        <p class="ctl-note">Hourly and daily averages load faster. Avoid periods longer than 1 year for daily, 3 months for hourly, or 2 weeks for raw data.</p>
+        <label class="ctl-check" data-testid="gridmet-switch">
+          <input type="checkbox" role="switch" aria-describedby="cmp-gridmet-help" :checked="gridmet()" :disabled="gridmetDisabled()" @change="setGridmet($event)">
+          <span>Show gridMET Normals</span>
+        </label>
+        <p class="ctl-note" id="cmp-gridmet-help">Shows 1991-2020 gridMET climate normals. Only available on daily data.</p>
+      </div>
+
+      <div class="cmp-group">
+        <div class="ctl-chips cmp-vars" role="group" :aria-labelledby="ids.label" data-testid="variable-chips"
+             x-data="chips({ options: () => varOptions(), value: () => varValue(), onChange: (v) => setVars(v), label: 'Variables' })">
+          <span class="ctl-legend" :id="ids.label" x-text="label"></span>
+          <template x-for="opt in options()" :key="opt.value">
+            <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)" @click="toggle(opt.value)" x-text="opt.label"></button>
+          </template>
+        </div>
+        <a class="dash-link" href="https://climate.umt.edu/mesonet/variables/" target="_blank" rel="noopener noreferrer">About these variables<span class="sr-only"> (opens in a new tab)</span></a>
+      </div>
+    </details>
+
+    <section class="cmp-plot" aria-label="Station timeseries" x-data="compare" data-testid="latest-timeseries">
+      <div class="cmp-status" x-show="status().kind !== 'ready'" data-testid="timeseries-status">
+        <template x-if="status().kind === 'loading'">
+          <div><p class="sr-only" role="status">Loading station data…</p><span class="dash-skel dash-skel--chart" aria-hidden="true"></span></div>
+        </template>
+        <template x-if="status().kind === 'empty'">
+          <div class="charts-empty">
+            <p class="charts-empty-title" x-text="status().title"></p>
+            <p x-show="status().hint" x-text="status().hint"></p>
+          </div>
+        </template>
+      </div>
+      <p class="cmp-refreshing" x-show="status().kind === 'ready' && loading()" aria-hidden="true">Updating…</p>
+      <div class="chart cmp-chart" :aria-hidden="status().kind !== 'ready'" :style="heightStyle()"
+           x-data="chart({ builder: latestTimeseriesChart, table: latestTimeseriesTable, label: 'Station timeseries', model: () => model(), onZoom: (a, b) => onZoom(a, b), range: () => range() })"></div>
+    </section>
+  </div>
+</div>

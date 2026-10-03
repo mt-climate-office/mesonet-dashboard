@@ -27,6 +27,12 @@ describe('axes', () => {
     expect(timeZoom(testCtx('dark', 900, false)).map((z) => z.type)).toEqual(['inside', 'slider'])
     const [inside] = timeZoom(testCtx('dark', 390, true))
     expect(timeZoom(testCtx('dark', 390, true))).toHaveLength(1)
-    expect(inside).toMatchObject({ moveOnMouseMove: false, zoomOnMouseWheel: 'shift' })
+    expect(inside).toMatchObject({ moveOnMouseMove: false, zoomOnMouseWheel: 'shift', disabled: false })
+  })
+  it('zoom on touch: the inside zoom keeps the window but takes no gestures (swipes scroll the page)', () => {
+    const [inside, slider] = timeZoom(testCtx('dark', 900, false, true))
+    expect(inside).toMatchObject({ type: 'inside', disabled: true })
+    expect(slider).toMatchObject({ type: 'slider' })
+    expect(timeZoom(testCtx('dark', 390, true, true))).toEqual([expect.objectContaining({ type: 'inside', disabled: true })])
   })
 })

@@ -11,6 +11,7 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 | `agSoil.ts` | `soilProfileChart`/`soilProfileTable` (`SoilProfileModel`), `swpChart`/`swpTable`, `percentSaturationChart`/`percentSaturationTable` |
 | `agAnnual.ts` | `annualChart`/`annualTable` (`AnnualModel`) |
 | `latestTimeseries.ts` | `latestTimeseriesChart`/`latestTimeseriesTable` (`LatestTimeseriesModel`: core/models/timeseries + view/extent), `latestTimeseriesHeight(n, compact)` |
+| `variable.ts` | `variableChart`/`variableTable`/`variableTableAll` (`VariableModel`: a one-panel `LatestTimeseriesModel`; the plot fills the host height) |
 | `windRose.ts` | `windRoseChart`/`windRoseTable` (`WindRoseModel` from `core/models/windRose`), `windRoseTitle`, `binName` |
 | `downloaderPreview.ts` | `downloaderPreviewChart`/`downloaderPreviewTable` (`PreviewModel` from `core/models/downloaderPreview`), `previewHeight(m, compact)` |
 | `theme.ts` | `readChartTheme(name, getVar)` (kit tokens → `ChartTheme`), `echartsTheme(t)`, `paint(t, role)` (palette role → color) |
@@ -18,9 +19,9 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 ## Shared helpers (internal to this folder)
 
 - `format.ts`: `wallMs` (contract local time → Denver wall-clock ms, daily at noon), `fmtWall`/`isoWall`, `fmtNum`, `plainLabel` (Plotly `<br>`/`<sup>` → text), `escapeHtml`.
-- `axes.ts`: `timeAxis` (wall-clock level ticks), `valueAxis(name)`, `logAxis(name, min, max, {inverse, prefix})`, `dualAxis(left, right)` (y2 aligned, from 0), `grid`, `timeZoom` (inside + slider; no drag-pan on compact), `niceCeil`, `logExtent`.
+- `axes.ts`: `timeAxis` (wall-clock level ticks), `valueAxis(name)`, `logAxis(name, min, max, {inverse, prefix})`, `dualAxis(left, right)` (y2 aligned, from 0), `grid`, `timeZoom` (inside + slider; no drag-pan on compact; on touch the inside zoom is `disabled`, so swipes scroll the page), `niceCeil`, `logExtent`.
 - `series.ts`: `points(xs, ys, notes?)` (breaks lines at gaps > 1.5× cadence), `lineSeries` (LTTB over `LTTB_THRESHOLD`), `barSeries`, `markerSeries`; ids starting `AUX` (`aux:`) are drawing aids, skipped by tooltips and legends.
-- `tooltip.ts`: `tooltipBase` (kit `.mco-tooltip`), `axisTooltip(ctx, header, row)`, `tipText`, `legend(ctx, {data, title})` (bottom scroll legend; optional title text).
+- `tooltip.ts`: `tooltipBase(ctx, pinTop?)` (kit `.mco-tooltip`; on touch tap-triggered, on compact touch full width and pinned under the chart or at `pinTop`), `axisTooltip(ctx, header, row)`, `tipText`, `legend(ctx, {data, title})` (bottom scroll legend; optional title text).
 - `overlays.ts`: `bandSeries` (stacked q25–q75 style band), `normalsSeries`, `hBandSeries` (horizontal bands + boxed corner labels + dashed lines, e.g. SWP FC/WP), `sensorEventSeries` (hatched spans), `labelledLines` (markLines, e.g. GDD stages), `hatchDecal`.
 - `heatmap.ts`: `colorBar(ctx, scale, extent, {midpoint, ticks})` (hidden visualMap + bar drawn as graphics with min/max and the palette `midpointLabel`; vertical at the right, horizontal under the plot when `ctx.compact`), `frozenSeries` (hatched mask cells).
 - `zoom.ts` (used by the host): wall-clock ms ↔ category index (`categoryMs`, `toAxisRange`, `fromAxisRange`), `sameRange`, `carryState` (zoom + legend toggles across redraws).

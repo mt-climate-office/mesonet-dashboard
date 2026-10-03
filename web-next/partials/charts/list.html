@@ -1,0 +1,54 @@
+<!-- Charts list (x-data="variableList", ui/charts/variableList.ts): the station's variables by group,
+     each row a link to its variable page with the current value and a 48 h sparkline, then Compare.
+     A row's name carries [data-vt-source]: it morphs into the variable page heading. -->
+<div class="charts-list" x-data="variableList" data-testid="charts-list">
+  <div class="dash-section-head">
+    <h2 class="dash-section-title">Charts</h2>
+    <p class="dash-section-note">Pick a variable for its recent and historical charts, or compare several.</p>
+  </div>
+
+  <template x-if="state === 'none'">
+    <div class="dash-card" role="status"><p>Choose a station to see its charts.</p></div>
+  </template>
+  <template x-if="state === 'error'">
+    <div class="dash-card" role="status">
+      <p>This station's variables could not be loaded. <button type="button" class="nav-btn" @click="retry()">Retry</button></p>
+    </div>
+  </template>
+  <template x-if="state === 'loading'">
+    <div class="dash-card charts-group" aria-busy="true">
+      <p class="sr-only" role="status">Loading variables…</p>
+      <template x-for="i in 5" :key="i"><span class="dash-skel dash-skel--line charts-skel-row" aria-hidden="true"></span></template>
+    </div>
+  </template>
+
+  <template x-if="state === 'ready'">
+    <div class="charts-groups">
+      <template x-for="g in groups" :key="g.group">
+        <section class="dash-card charts-group" :aria-label="g.group">
+          <h3 class="dash-card-title" x-text="g.group"></h3>
+          <ul class="charts-rows">
+            <template x-for="r in g.rows" :key="r.id">
+              <li>
+                <a class="charts-row" :href="href(r.id)" @click="open($event, r.id)" :data-testid="'var-' + r.id">
+                  <span class="charts-row-name" data-vt-source x-text="r.name"></span>
+                  <span class="charts-row-value"><span x-text="r.value"></span><span class="charts-row-note" x-show="r.note" x-text="r.note"></span></span>
+                  <span class="dash-spark charts-row-spark" aria-hidden="true">
+                    <template x-if="r.spark"><svg :view-box.camel="r.spark.viewBox" preserveAspectRatio="none" focusable="false" :class="'is-' + r.spark.kind"><path :d="r.spark.d" vector-effect="non-scaling-stroke"/></svg></template>
+                    <template x-if="!r.spark && sparkLoading"><span class="dash-skel dash-skel--spark"></span></template>
+                  </span>
+                  <span class="sr-only" x-text="r.sparkLabel"></span>
+                </a>
+              </li>
+            </template>
+          </ul>
+        </section>
+      </template>
+
+      <a class="dash-card charts-compare" :href="compareHref()" @click="openCompare($event)" data-testid="charts-compare-link">
+        <span class="charts-row-name">Compare</span>
+        <span class="dash-section-note">Several variables stacked on one time axis.</span>
+      </a>
+    </div>
+  </template>
+</div>

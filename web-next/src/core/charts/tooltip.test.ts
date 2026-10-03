@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { testCtx } from './testing'
-import { axisTooltip, legend, tipText } from './tooltip'
+import { axisTooltip, legend, tipText, tooltipBase } from './tooltip'
 
 describe('tooltip / legend', () => {
   const ctx = testCtx('light')
@@ -20,6 +20,20 @@ describe('tooltip / legend', () => {
     expect(html).not.toContain('Aux')
     expect(html).not.toContain('B&lt;')
     expect(html).toContain('stage 1')
+  })
+  it('mouse: hover tooltip confined to the chart', () => {
+    expect(tooltipBase(ctx)).toMatchObject({ className: 'mco-tooltip', confine: true })
+    expect(tooltipBase(ctx).triggerOn).toBeUndefined()
+  })
+  it('touch: tap to show; compact touch pins it under the chart at full width', () => {
+    expect(tooltipBase(testCtx('light', 900, false, true))).toMatchObject({ triggerOn: 'click', confine: true })
+    const tip = tooltipBase(testCtx('light', 390, true, true))
+    expect(tip).toMatchObject({ triggerOn: 'click', confine: false })
+    expect(tip.extraCssText).toContain('width:390px')
+    const pos = tip.position as (p: number[], ...rest: unknown[]) => number[]
+    expect(pos([120, 80], null, null, null, { viewSize: [390, 420] })).toEqual([0, 424])
+    const under = tooltipBase(testCtx('light', 390, true, true), (y) => (y < 200 ? 200 : 400)).position as typeof pos
+    expect(under([10, 80], null, null, null, { viewSize: [390, 900] })).toEqual([0, 204])
   })
   it('legend with a title adds a text graphic and shifts the legend right', () => {
     const l = legend(ctx, { title: 'Index Used', data: ['x'] })

@@ -1,8 +1,16 @@
-<!-- Charts (P0): the existing Latest Data view, presented as "Compare" (stacked panels, `cmp=1`).
-     P1 adds the variable list and the single-variable page here. The heading is the shared-element
-     target a Now tile morphs into (ui/layout/transition.ts, [data-vt-target]). -->
-<div class="dash-section-head">
-  <h2 class="dash-section-title" data-vt-target>Compare</h2>
-  <p class="dash-section-note">Stacked charts of the variables you pick, with the station's photos, forecast and map.</p>
+<!-- Charts: the variable list (default), one variable's page (`v=`) or Compare (`cmp=1`), chosen by
+     core/variables `chartsMode` (x-data="chartsView", ui/charts/chartsView.ts). Mounted only while
+     the section is open; each view mounts only while shown, so it fetches only then. -->
+<template x-if="$store.url.section === 'charts'">
+<div class="charts" x-data="chartsView" data-testid="charts">
+  <template x-if="mode === 'list'">
+    <!-- @include partials/charts/list.html -->
+  </template>
+  <template x-if="mode === 'variable'">
+    <!-- @include partials/charts/variable.html -->
+  </template>
+  <template x-if="mode === 'compare'">
+    <!-- @include partials/charts/compare.html -->
+  </template>
 </div>
-<!-- @include partials/latest/index.html -->
+</template>

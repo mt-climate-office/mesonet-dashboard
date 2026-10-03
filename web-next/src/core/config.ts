@@ -8,6 +8,9 @@ export const API_URL =
 
 export const API_DOCS_URL = 'https://mesonet2.climate.umt.edu/api/v2/docs'
 
+/** The public API base for links shown to users (API_URL is the dev proxy in dev). */
+export const API_PUBLIC_URL = PROD_API
+
 export const LEGACY_DASHBOARD_URL = 'https://mesonet.climate.umt.edu/dash'
 
 export const FEEDBACK_URL =

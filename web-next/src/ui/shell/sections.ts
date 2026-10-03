@@ -2,14 +2,21 @@
  * `x-data="sections"` on the two section navs in partials/shell.html (phone
  * tab bar, desktop segmented row): the Alpine wrapper over
  * ui/layout/sectionNav.ts. Marks the current section from `$store.url.section`
- * and routes clicks through ui/shell/navigate.ts. With `data-publish="--tabbar-h"`
+ * and routes clicks through ui/shell/navigate.ts with core/router
+ * `sectionNavPatch` (Charts inside Charts → the list; leaving Charts drops `v`). With `data-publish="--tabbar-h"`
  * it also keeps that property equal to the bar's height.
  */
 import Alpine from 'alpinejs'
-import { parseSection } from '../../core/router'
+import { parseSection, sectionNavPatch, type Section } from '../../core/router'
 import { initSectionNav, publishHeight, type SectionNav } from '../layout/sectionNav'
 import { component } from '../component'
 import { navigate } from './navigate'
+
+/** Patch + history mode for a tap on `to` from the current section. */
+const navFor = (to: Section) => {
+  const url = Alpine.store('url')
+  return sectionNavPatch(url.section, to, url.state)
+}
 
 export function sections() {
   let nav: SectionNav | null = null
@@ -18,13 +25,20 @@ export function sections() {
   return component({
     init() {
       const el = this.$el as HTMLElement
-      nav = initSectionNav({ root: el, onNavigate: (s) => void navigate(parseSection(s)) })
+      nav = initSectionNav({
+        root: el,
+        onNavigate: (s) => {
+          const to = parseSection(s)
+          void navigate(to, navFor(to))
+        },
+      })
       effect = Alpine.effect(() => nav?.setCurrent(Alpine.store('url').section))
       if (el.dataset.publish) unpublish = publishHeight(el, el.dataset.publish)
     },
     /** href for a section link that keeps the current query (no-JS and new-tab fallback). */
     href(section: string): string {
-      return Alpine.store('url').hrefFor(parseSection(section))
+      const to = parseSection(section)
+      return Alpine.store('url').hrefFor(to, navFor(to).patch)
     },
     destroy() {
       if (effect) Alpine.release(effect)

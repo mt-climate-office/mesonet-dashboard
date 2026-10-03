@@ -16,7 +16,7 @@ describe('readUrlState / writeUrlSearch', () => {
     expect(s.agg).toBe('hourly')
     expect(s.vars).toBeNull()
     expect(s.nets).toEqual(['HydroMet', 'AgriMet', 'Cooperator'])
-    expect(s.var).toBe('gdd')
+    expect(s.var).toBeNull()
     expect(s.qc).toBeNull()
     expect(s.pct).toBe(true)
   })
@@ -44,11 +44,11 @@ describe('readUrlState / writeUrlSearch', () => {
     expect(writeUrlSearch({ ...readUrlState(''), vars: [] })).toBe('?vars=')
   })
 
-  it('Ag var stays at its default once set or present (nuqs clearOnDefault: false)', () => {
+  it('Ag var: absent (the tool cards) reads null; any tool is written, gdd included', () => {
     const d = readUrlState('')
-    expect(writeUrlSearch(d, '', new Set(['var']))).toBe('?var=gdd')
-    expect(writeUrlSearch(d, '?var=etr')).toBe('?var=gdd')
-    expect(writeUrlSearch({ ...d, crop: 'wheat' }, '', new Set(['crop']))).toBe('')
+    expect(d.var).toBeNull()
+    expect(writeUrlSearch({ ...d, var: 'gdd' })).toBe('?var=gdd')
+    expect(writeUrlSearch({ ...d, var: null }, '?var=etr')).toBe('')
   })
 
   it('keeps non-schema keys and round-trips', () => {
@@ -158,11 +158,6 @@ describe('viewHref', () => {
   it('reflects a write the store has not flushed yet', () => {
     expect(viewHref(loc(''), { ...readUrlState(''), s: 'acebozem' })).toBe(`${BASE}?s=acebozem#latest`)
   })
-  it('passes touched keys through (Ag var pinned at its default)', () => {
-    const d = readUrlState('')
-    expect(viewHref(loc('', '#ag'), d)).toBe(`${BASE}#ag`)
-    expect(viewHref(loc('', '#ag'), d, new Set(['var']))).toBe(`${BASE}?var=${d.var}#ag`)
-  })
 })
 
 describe('cmp (Charts → Compare)', () => {
@@ -173,5 +168,15 @@ describe('cmp (Charts → Compare)', () => {
     expect(readUrlState('?cmp=0').cmp).toBe(false)
     expect(writeUrlSearch({ ...readUrlState('?s=a'), cmp: false })).toBe('?s=a')
     expect(writeUrlSearch({ ...readUrlState('?s=a'), cmp: true })).toBe('?s=a&cmp=1')
+  })
+})
+
+describe('v / view (Charts → variable page)', () => {
+  it('reads the variable id and sub-view; recent is the default and stays out of the URL', () => {
+    expect(readUrlState('').v).toBeNull()
+    expect(readUrlState('?v=air_temp&view=history')).toMatchObject({ v: 'air_temp', view: 'history' })
+    expect(readUrlState('?view=nope').view).toBe('recent')
+    expect(writeUrlSearch({ ...readUrlState('?s=a'), v: 'ppt', view: 'recent' })).toBe('?s=a&v=ppt')
+    expect(writeUrlSearch({ ...readUrlState('?s=a'), v: 'ppt', view: 'table' })).toBe('?s=a&v=ppt&view=table')
   })
 })

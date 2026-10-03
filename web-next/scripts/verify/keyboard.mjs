@@ -1,8 +1,9 @@
 /**
  * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, one-row navbar
- * tab order + focus ring, station combobox, Help dialog, theme toggle, Latest
- * sidebar collapse, tabs mounting only while open (no cross-tab requests), chart
- * table twins, map sr-table selection, reduced motion. Run via `npm run verify`.
+ * tab order + focus ring, the picker's combobox and closing on a pick, Help dialog,
+ * theme toggle, the Now Provisional toggletip, the Charts drill-down and Back,
+ * tabs mounting only while open (no cross-tab requests), chart table twins, map
+ * sr-table selection, reduced motion. Run via `npm run verify`.
  */
 import { DL_QUERY, VIEWPORTS, check, finish, open, runDownload, start } from './lib.mjs'
 
@@ -91,76 +92,80 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await close()
 }
 
-/* ── Station combobox by keyboard ───────────────────────────────────────── */
+/* ── Station picker: a pick closes the desktop drawer ───────────────────── */
 {
-  const { page, problems, close } = await open(env, '?theme=light#latest')
-  const input = page.getByTestId('station-select').getByRole('combobox')
-  await page.waitForFunction(() => document.querySelector('[data-testid="station-select"] input')?.getAttribute('placeholder')?.length > 0)
+  // First visit (no station): the in-flow drawer is open at 1440 px.
+  const { page, problems, close } = await open(env, '?theme=light#now')
+  const input = page.getByTestId('picker-search').getByRole('combobox')
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Search by name or ID')
   await input.focus()
   await page.keyboard.type('acebozem')
   await page.keyboard.press('ArrowDown')
   const active = await page.evaluate(() => {
-    const id = document.querySelector('[data-testid="station-select"] input')?.getAttribute('aria-activedescendant')
+    const id = document.querySelector('[data-testid="picker-search"] input')?.getAttribute('aria-activedescendant')
     return id ? document.getElementById(id)?.textContent?.replace(/\s+/g, ' ').trim() : null
   })
   check('combobox: typing + ArrowDown sets aria-activedescendant on the match', /acebozem/.test(active ?? ''), String(active))
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('s') === 'acebozem', null, { timeout: 10000 }).catch(() => {})
   check('combobox: Enter selects the station (?s=acebozem)', (await urlParam(page, 's')) === 'acebozem')
-  check('combobox: popup closes, focus stays on the input',
-    await input.evaluate((el) => el.getAttribute('aria-expanded') === 'false' && document.activeElement === el))
-  await page.keyboard.press('Escape')
+  const picked = await page.evaluate(() => ({
+    drawer: document.getElementById('station-picker')?.classList.contains('is-open'),
+    saved: localStorage.getItem('mco-dashboard-drawer'),
+    focus: document.activeElement?.id,
+  }))
+  check('picker: a pick closes the desktop drawer (saved closed), focus moves to <main>',
+    picked.drawer === false && picked.saved === 'closed' && picked.focus === 'main', JSON.stringify(picked))
   const p = await problems()
-  check('combobox: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  check('picker: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
-/* ── Latest sidebar collapse (LDC-002): keyboard, focus, persistence ────── */
+/* ── Now: the Provisional toggletip ─────────────────────────────────────── */
 {
-  const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=light#latest')
-  await rendered({ charts: 1 })
+  const { page, problems, close } = await open(env, '?s=acebozem&theme=dark#now')
+  const btn = page.getByTestId('now-provisional').getByRole('button')
+  await btn.waitFor({ timeout: 10000 })
   const state = () => page.evaluate(() => ({
-    sidebar: document.querySelector('[data-testid="latest-sidebar"]')?.offsetParent !== null,
-    focus: document.activeElement?.id ?? '',
-    saved: localStorage.getItem('mco-dashboard-sidebar'),
-    expanded: document.getElementById('latest-sidebar-collapse')?.getAttribute('aria-expanded'),
-    controls: document.getElementById('latest-sidebar-expand')?.getAttribute('aria-controls'),
+    expanded: document.querySelector('[data-testid="now-provisional"] button')?.getAttribute('aria-expanded'),
+    shown: !document.getElementById('now-provisional-tip')?.hidden,
   }))
-  const s0 = await state()
-  check('sidebar: open by default, toggle has aria-expanded + aria-controls', s0.sidebar && s0.expanded === 'true' && s0.controls === 'latest-sidebar', JSON.stringify(s0))
-  // Reached by Tab from the skip-link target (<main>): the first stop inside the sidebar.
-  await page.locator('#main').focus()
-  for (let i = 0; i < 6 && (await focused(page)) !== 'Hide controls'; i++) await page.keyboard.press('Tab')
-  check('sidebar: "Hide controls" is reachable by Tab with a focus ring', (await focused(page)) === 'Hide controls' && (await ringVisible(page)))
+  await btn.focus()
   await page.keyboard.press('Enter')
-  // Focus moves on Alpine's next tick, after the layout class applies.
-  await page.waitForFunction(() => document.activeElement?.id === 'latest-sidebar-expand', null, { timeout: 5000 }).catch(() => {})
   const s1 = await state()
-  check('sidebar: Enter collapses it, focus moves to "Show controls", saved', !s1.sidebar && s1.focus === 'latest-sidebar-expand' && s1.saved === 'collapsed', JSON.stringify(s1))
-  await page.reload({ waitUntil: 'load' })
-  await page.waitForSelector('#latest-sidebar-expand', { state: 'visible', timeout: 10000 }).catch(() => {})
+  await page.keyboard.press('Escape')
   const s2 = await state()
-  check('sidebar: stays collapsed after a reload (localStorage, not the URL)', !s2.sidebar && !(await page.evaluate(() => location.search.includes('sidebar'))), JSON.stringify(s2))
-  await page.locator('#latest-sidebar-expand').focus()
-  await page.keyboard.press('Space')
-  await page.waitForFunction(() => document.activeElement?.id === 'latest-sidebar-collapse', null, { timeout: 5000 }).catch(() => {})
+  await btn.click()
+  await page.locator('.now-updated').click()
   const s3 = await state()
-  check('sidebar: Space expands it, focus returns to "Hide controls", saved open', s3.sidebar && s3.focus === 'latest-sidebar-collapse' && s3.saved === 'open', JSON.stringify(s3))
+  check('Provisional toggletip: Enter opens (aria-expanded), Esc and a click outside close',
+    s1.expanded === 'true' && s1.shown && s2.expanded === 'false' && !s2.shown && s3.expanded === 'false' && !s3.shown, JSON.stringify([s1, s2, s3]))
   const p = await problems()
-  check('sidebar: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  check('Provisional toggletip: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
+
+/* ── Charts drill-down: a Now tile opens its variable page (push), Back returns ── */
 {
-  // Phones: a saved collapse is ignored and neither toggle shows.
-  const { page, close } = await open(env, '?s=acebozem&theme=dark#latest', { viewport: VIEWPORTS[1] })
-  await page.evaluate(() => localStorage.setItem('mco-dashboard-sidebar', 'collapsed'))
-  await page.reload({ waitUntil: 'load' })
-  await page.waitForSelector('[data-testid="latest-sidebar"]', { timeout: 10000 })
-  const phone = await page.evaluate(() => ({
-    sidebar: document.querySelector('[data-testid="latest-sidebar"]')?.offsetParent !== null,
-    toggles: ['latest-sidebar-collapse', 'latest-sidebar-expand'].filter((id) => document.getElementById(id)?.offsetParent !== null),
-  }))
-  check('sidebar: 390 px ignores a saved collapse and shows no toggle', phone.sidebar && phone.toggles.length === 0, JSON.stringify(phone))
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=light')
+  await rendered({ filled: ['[data-testid="now-tiles"]'] })
+  await page.getByTestId('tile-rh').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => document.querySelector('[data-testid="variable-title"]')?.textContent === 'Relative Humidity', null, { timeout: 10000 }).catch(() => {})
+  const opened = await page.evaluate(() => ({ hash: location.hash, v: new URLSearchParams(location.search).get('v') }))
+  check('charts: Enter on a Now tile opens its variable page (#charts&v=rh)', opened.hash === '#charts' && opened.v === 'rh', JSON.stringify(opened))
+  await rendered({ charts: 1 })
+  await page.getByTestId('view-table').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForSelector('.var-table-grid tbody tr', { timeout: 15000 }).catch(() => {})
+  check('charts: the Table view shows the chart\'s rows', (await page.locator('.var-table-grid tbody tr').count()) > 0)
+  await page.goBack()
+  await page.goBack()
+  await page.waitForSelector('[data-testid="now-tiles"]', { timeout: 10000 }).catch(() => {})
+  const back = await page.evaluate(() => ({ hash: location.hash, v: new URLSearchParams(location.search).get('v') }))
+  check('charts: Back twice returns from the table to the variable, then to Now', back.hash === '' && back.v === null, JSON.stringify(back))
+  const p = await problems()
+  check('charts drill-down: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
@@ -172,6 +177,42 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&var=gdd#ag', 1], ['down
     // Latest-only endpoints (hourly record + derived ETr, latest obs, ppt summary, sensor config, camera schedule).
     .filter((u) => /observations\/(hourly|raw)|derived\/hourly|\/latest\b|derived\/ppt|\/config\/|photos\/schedule/.test(u)))
   check(`[${name}] first load makes no Latest-tab requests`, latest.length === 0, latest.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Download stepper (390 px): Next validates, focus + announcement follow ─ */
+{
+  const { page, close } = await open(env, '?s=acebozem#download', { viewport: VIEWPORTS[1] })
+  const progress = () => page.getByTestId('dl-progress').innerText()
+  const shown = () => page.evaluate(() => [...document.querySelectorAll('.dl-step')].filter((e) => e.offsetParent !== null).map((e) => e.dataset.testid))
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
+  check('stepper: Step 1 of 3, only Elements shown', (await progress()).includes('Step 1 of 3') && JSON.stringify(await shown()) === '["dl-step-elements"]', JSON.stringify(await shown()))
+  await page.getByTestId('dl-next').click()
+  // Wait for the hint rather than a fixed delay (a 200 ms sleep was flaky under load).
+  await page.getByTestId('dl-step-hint').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {})
+  check('stepper: Next without elements stays and says why', (await progress()).includes('Step 1 of 3') && (await page.getByTestId('dl-step-hint').isVisible()))
+  await close()
+}
+{
+  const { page, problems, close } = await open(env, DL_QUERY, { viewport: VIEWPORTS[1] })
+  const focused = () => page.evaluate(() => document.activeElement?.id)
+  const live = () => page.evaluate(() => [...document.querySelectorAll('[aria-live]')].map((e) => e.textContent).join(' '))
+  await page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
+  await page.getByTestId('dl-next').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(300)
+  check('stepper: Enter on Next → step 2, focus on its heading, announced',
+    (await focused()) === 'dl-step-1' && (await live()).includes('Step 2 of 3: Dates & period'), `${await focused()} | ${await live()}`)
+  await page.getByTestId('dl-next').click()
+  await page.waitForTimeout(300)
+  check('stepper: step 3 shows Run and the preview', (await focused()) === 'dl-step-2' && (await page.getByTestId('dl-run').isVisible()) && (await page.getByTestId('dl-preview').isVisible()))
+  await page.getByTestId('dl-run').click()
+  await page.waitForFunction(() => !document.querySelector('[data-testid="dl-download"]')?.disabled, null, { timeout: 30000 })
+  await page.waitForTimeout(300)
+  check('stepper: after Run, focus on the result heading and the row count announced',
+    (await focused()) === 'dl-preview-title' && /Request finished: [\d,]+ rows/.test(await live()), `${await focused()} | ${await live()}`)
+  const p = await problems()
+  check('stepper: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
@@ -206,7 +247,8 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&var=gdd#ag', 1], ['down
 
 /* ── Chart table twins: one per rendered chart, on every tab ────────────── */
 for (const [name, query, charts, before] of [
-  ['latest', '?s=acebozem&info=map&card=wind#latest', 2],
+  ['compare', '?s=acebozem#latest', 1],
+  ['variable', '?s=acebozem&v=air_temp#charts', 1],
   ['ag-soil-profile', '?s=acebozem&var=soil_temp,soil_ec_blk#ag', 1],
   ['downloader', DL_QUERY, 1, runDownload],
 ]) {
