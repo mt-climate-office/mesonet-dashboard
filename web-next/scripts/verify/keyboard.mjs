@@ -2,10 +2,13 @@
  * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, one-row navbar
  * tab order + focus ring, the picker's combobox and closing on a pick, Help dialog,
  * theme toggle, the Now Provisional toggletip, the Charts drill-down and Back,
- * tabs mounting only while open (no cross-tab requests), chart table twins, map
- * sr-table selection, reduced motion. Run via `npm run verify`.
+ * tabs mounting only while open (no cross-tab requests), the Download stepper,
+ * the picker drawer and sheet (focus, Esc, inert), the tab bar and history, the
+ * variable page's view switch and chips, focus after Charts drill-downs, the Ag
+ * Options disclosure, chart table twins, map sr-table selection, reduced motion.
+ * Run via `npm run verify`.
  */
-import { DL_QUERY, VIEWPORTS, check, finish, open, runDownload, start } from './lib.mjs'
+import { DL_QUERY, VIEWPORTS, check, finish, known, open, runDownload, start } from './lib.mjs'
 
 const env = await start()
 
@@ -270,6 +273,157 @@ for (const [name, query, charts, before] of [
   })
   const ok = twins.length >= charts && twins.every((t) => t.label && t.caption && t.scoped && t.rows > 0 && t.hidden)
   check(`[${name}] every drawn chart: role=img + label, sr-only table with caption, scoped headers, rows`, ok, JSON.stringify(twins))
+  await close()
+}
+
+/* ── Picker drawer (1440) and sheet (390): focus in, Esc, focus back, inert, tab order ── */
+for (const vp of VIEWPORTS) {
+  const label = vp.touch ? 'picker sheet (390)' : 'picker drawer (1440)'
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=dark', { viewport: vp })
+  await rendered({ filled: ['[data-testid="now-tiles"]'] })
+  // Shown = rendered and visible (a closed sheet is `hidden`, a closed drawer `visibility: hidden`).
+  const state = () => page.evaluate(() => {
+    const p = document.getElementById('station-picker')
+    return {
+      shown: !p.hidden && getComputedStyle(p).visibility === 'visible',
+      inside: p.contains(document.activeElement),
+      focus: document.activeElement?.dataset.testid ?? document.activeElement?.id,
+      inert: [...document.querySelectorAll('.mco-navbar, .dash-content, .dash-tabbar')].map((e) => e.inert),
+    }
+  })
+  const shown = (want) => page.waitForFunction((want) => {
+    const p = document.getElementById('station-picker')
+    return (!p.hidden && getComputedStyle(p).visibility === 'visible') === want
+  }, want, { timeout: 5000 }).catch(() => {})
+  const s0 = await state()
+  await page.getByTestId('station-switcher').focus()
+  await page.keyboard.press('Enter')
+  await shown(true)
+  const s1 = await state()
+  await page.keyboard.press('Escape')
+  await shown(false)
+  const s2 = await state()
+  check(`${label}: Enter on the switcher opens it, focus moves in`, !s0.shown && s1.shown && s1.inside, JSON.stringify([s0, s1]))
+  check(`${label}: Esc closes it, focus returns to the switcher`, !s2.shown && s2.focus === 'station-switcher', JSON.stringify(s2))
+  if (vp.touch) {
+    check(`${label}: navbar, content and tab bar inert while open, not after`, s1.inert.every(Boolean) && !s2.inert.some(Boolean), JSON.stringify([s1.inert, s2.inert]))
+  } else {
+    check(`${label}: the inline drawer is not modal (nothing inert)`, !s1.inert.some(Boolean), JSON.stringify(s1.inert))
+    // Closed = visibility:hidden, so Tab from the last navbar button skips it.
+    await page.locator('#btn-help').focus()
+    await page.keyboard.press('Tab')
+    const inPicker = await page.evaluate(() => document.getElementById('station-picker').contains(document.activeElement))
+    check(`${label}: a closed drawer is out of the tab order`, !inPicker)
+  }
+  const p = await problems()
+  check(`${label}: console + CSP clean`, p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Tab bar (390): keyboard reachable, aria-current, Back/Forward restore sections ── */
+{
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=light', { viewport: VIEWPORTS[1] })
+  await rendered({ filled: ['[data-testid="now-tiles"]'] })
+  const current = () => page.evaluate(() => ({
+    section: location.hash || '#now',
+    tab: document.querySelector('.dash-tabbar a[aria-current="page"]')?.dataset.section ?? null,
+  }))
+  // Shift+Tab from the top wraps to the end of the document: the tab bar is the last stop there.
+  await page.evaluate(() => document.activeElement?.blur())
+  let reached = false
+  for (let i = 0; i < 10 && !reached; i++) {
+    await page.keyboard.press('Shift+Tab')
+    reached = await page.evaluate(() => !!document.activeElement?.closest('.dash-tabbar'))
+  }
+  check('tab bar: reachable with the keyboard', reached)
+  check('tab bar: aria-current="page" on Now at load', (await current()).tab === 'now', JSON.stringify(await current()))
+  await page.locator('.dash-tabbar a[data-section="about"]').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => location.hash === '#about', null, { timeout: 5000 }).catch(() => {})
+  const a = await current()
+  await page.goBack()
+  await page.waitForFunction(() => location.hash !== '#about', null, { timeout: 5000 }).catch(() => {})
+  const b = await current()
+  await page.goForward()
+  await page.waitForFunction(() => location.hash === '#about', null, { timeout: 5000 }).catch(() => {})
+  const c = await current()
+  check('tab bar: Enter on About opens it, Back restores Now, Forward restores About (aria-current follows)',
+    a.section === '#about' && a.tab === 'about' && b.tab === 'now' && c.section === '#about' && c.tab === 'about', JSON.stringify([a, b, c]))
+  const p = await problems()
+  check('tab bar: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Variable page: the view switch and prev/next chips work from the keyboard ── */
+{
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&v=air_temp&theme=dark#charts')
+  await rendered({ charts: 1 })
+  const at = () => page.evaluate(() => ({ v: new URLSearchParams(location.search).get('v'), view: new URLSearchParams(location.search).get('view') }))
+  await page.getByTestId('view-history').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => new URLSearchParams(location.search).get('view') === 'history', null, { timeout: 5000 }).catch(() => {})
+  const h = await at()
+  const current = await page.evaluate(() => document.querySelector('.var-views [aria-current="page"]')?.textContent?.trim())
+  check('variable: Enter on History switches the view (aria-current follows)', h.view === 'history' && current === 'History', JSON.stringify({ ...h, current }))
+  await page.getByTestId('var-next').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => new URLSearchParams(location.search).get('v') !== 'air_temp', null, { timeout: 5000 }).catch(() => {})
+  const n = await at()
+  await page.getByTestId('var-prev').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => new URLSearchParams(location.search).get('v') === 'air_temp', null, { timeout: 5000 }).catch(() => {})
+  const pr = await at()
+  check('variable: Enter on the next chip, then the previous chip, walks the list', n.v && n.v !== 'air_temp' && pr.v === 'air_temp', JSON.stringify([n, pr]))
+  const p = await problems()
+  check('variable keyboard: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Charts drill-downs: focus lands inside the new view, not on <body> ─── */
+{
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=light#charts')
+  await rendered({ filled: ['[data-testid="var-air_temp"] .dash-spark svg'] })
+  /** Press Enter on `from`, wait for `view` to show, then report where focus is. */
+  const step = async (from, view) => {
+    await page.locator(from).first().focus()
+    await page.keyboard.press('Enter')
+    await page.waitForSelector(view, { timeout: 10000 }).catch(() => {})
+    // Focus is moved after the view mounts (a tick, or after the view transition).
+    await page.waitForFunction((view) => document.querySelector(view)?.contains(document.activeElement), view, { timeout: 2000 }).catch(() => {})
+    return page.evaluate((view) => ({
+      tag: document.activeElement?.tagName.toLowerCase(),
+      inside: !!document.querySelector(view)?.contains(document.activeElement),
+    }), view)
+  }
+  const steps = {
+    'a list row': await step('[data-testid="var-air_temp"]', '[data-testid="variable-title"]'),
+    'the next chip': await step('[data-testid="var-next"]', '[data-testid="variable-page"]'),
+    'the previous chip': await step('[data-testid="var-prev"]', '[data-testid="variable-page"]'),
+    '"‹ All variables"': await step('.var-back', '[data-testid="charts-list"]'),
+    'the Compare entry': await step('[data-testid="charts-compare-link"]', '[data-testid="compare"]'),
+  }
+  for (const [name, f] of Object.entries(steps)) {
+    known(`charts: Enter on ${name} leaves focus inside the new view, not on <body>`, f.tag !== 'body' && f.inside, 'ux/p3-review-fixes focuses the Charts headings', JSON.stringify(f))
+  }
+  const p = await problems()
+  check('charts drill-down focus: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Ag Options disclosure (390, collapsed): Enter and Space toggle it ──── */
+{
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&var=gdd&theme=light#ag', { viewport: VIEWPORTS[1] })
+  await rendered({ charts: 1 })
+  const isOpen = () => page.evaluate(() => document.querySelector('[data-testid="ag-controls"]').open)
+  const o0 = await isOpen()
+  await page.locator('[data-testid="ag-controls"] > summary').focus()
+  await page.keyboard.press('Enter')
+  const o1 = await isOpen()
+  await page.keyboard.press('Space')
+  const o2 = await isOpen()
+  check('Ag Options: collapsed on phones, Enter opens, Space closes', !o0 && o1 && !o2, JSON.stringify([o0, o1, o2]))
+  const p = await problems()
+  check('Ag Options: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
