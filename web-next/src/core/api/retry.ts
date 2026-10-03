@@ -1,6 +1,6 @@
 /**
  * Retry policy shared by every fetch (used by core/cache.ts): retry network
- * failures, 5xx and 429 (rate limited: it clears after a pause), never other
+ * failures and timeouts (http.ts `TimeoutError`), 5xx and 429 (rate limited: it clears after a pause), never other
  * 4xx — a bad request will not succeed on retry.
  */
 import { HttpError } from './http'
@@ -12,7 +12,7 @@ export const MAX_RETRIES = 2
 export function shouldRetry(error: unknown, attempt: number): boolean {
   if (attempt > MAX_RETRIES) return false
   if (error instanceof HttpError) return error.status >= 500 || error.status === 429
-  // Aborts are deliberate; anything else (TypeError: Failed to fetch, …) is network.
+  // Aborts are deliberate; anything else (TypeError: Failed to fetch, TimeoutError, …) is network.
   return !(error instanceof DOMException && error.name === 'AbortError')
 }
 

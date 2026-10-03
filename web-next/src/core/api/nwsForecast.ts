@@ -5,7 +5,7 @@
  * core/ag/data/forecast.ts instead.
  */
 import { parseWallClock } from '../sensorEvents'
-import { HttpError } from './http'
+import { HttpError, timedFetch } from './http'
 
 export interface ForecastPeriod {
   number: number
@@ -47,9 +47,10 @@ export const isNwsUrl = (url: unknown): url is string => typeof url === 'string'
 /** GET GeoJSON from api.weather.gov; any other URL (one a response pointed to) throws before fetching. */
 async function getGeoJson<T>(url: string): Promise<T> {
   if (!isNwsUrl(url)) throw new Error(`NWS URL is not on api.weather.gov: ${url}`)
-  const r = await fetch(url, { headers: { Accept: 'application/geo+json' } })
-  if (!r.ok) throw new HttpError(r.status, url, await r.text().catch(() => ''))
-  return (await r.json()) as T
+  return timedFetch(url, { headers: { Accept: 'application/geo+json' } }, async (r) => {
+    if (!r.ok) throw new HttpError(r.status, url, await r.text().catch(() => ''))
+    return (await r.json()) as T
+  })
 }
 
 /**

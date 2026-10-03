@@ -18,6 +18,38 @@ export class HttpError extends Error {
   }
 }
 
+/** How long a request (headers and body) may take before it is abandoned. */
+export const REQUEST_TIMEOUT_MS = 30_000
+
+/** A request that took longer than its timeout; retryable (core/api/retry.ts), like a network error. */
+export class TimeoutError extends Error {
+  constructor(url: string, ms: number) {
+    super(`No answer in ${ms / 1000} s from ${url}`)
+    this.name = 'TimeoutError'
+  }
+}
+
+/**
+ * `fetch(url, init)` and `read` its response, both within `ms`: past it the
+ * request is aborted and this throws `TimeoutError`. `read` gets every
+ * response (non-2xx included) and decides what to throw.
+ */
+export async function timedFetch<T>(url: string, init: RequestInit, read: (r: Response) => Promise<T>, ms = REQUEST_TIMEOUT_MS): Promise<T> {
+  const ctrl = new AbortController()
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      ctrl.abort()
+      reject(new TimeoutError(url, ms))
+    }, ms)
+  })
+  try {
+    return await Promise.race([fetch(url, { ...init, signal: ctrl.signal }).then(read), timeout])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* Query-param allowlist (generated from the OpenAPI spec; see gen:api)        */
 /* -------------------------------------------------------------------------- */
@@ -102,11 +134,10 @@ export async function fetchText(
   query: Record<string, unknown> = {},
 ): Promise<string> {
   const url = buildUrl(path, query)
-  const r = await fetch(url, { headers: { Accept: 'text/csv,application/json' } })
-  if (!r.ok) {
-    throw new HttpError(r.status, url, await r.text().catch(() => ''))
-  }
-  return r.text()
+  return timedFetch(url, { headers: { Accept: 'text/csv,application/json' } }, async (r) => {
+    if (!r.ok) throw new HttpError(r.status, url, await r.text().catch(() => ''))
+    return r.text()
+  })
 }
 
 export async function fetchJson<T>(
@@ -114,11 +145,10 @@ export async function fetchJson<T>(
   query: Record<string, unknown> = {},
 ): Promise<T> {
   const url = buildUrl(path, query)
-  const r = await fetch(url, { headers: { Accept: 'application/json' } })
-  if (!r.ok) {
-    throw new HttpError(r.status, url, await r.text().catch(() => ''))
-  }
-  return (await r.json()) as T
+  return timedFetch(url, { headers: { Accept: 'application/json' } }, async (r) => {
+    if (!r.ok) throw new HttpError(r.status, url, await r.text().catch(() => ''))
+    return (await r.json()) as T
+  })
 }
 
 /** GET `path` with `type=csv` and parse (LAB_SWAP-renamed headers). */
