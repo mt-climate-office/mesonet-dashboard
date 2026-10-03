@@ -47,13 +47,23 @@ FIDELITY_DEBUG=1 node scripts/fidelity/run.mjs …   # print each wait step
 | `downloader` | web/ Downloader | web-next | daily / hourly / monthly / derived-only requests: the downloaded CSV (byte-identical, else filename, columns, row count, values by datetime), the preview chart traces, the map's station list, palette |
 | `ag-api` | mesonet2 `/derived` (no `premade`, `keep=true`, `alpha=0.23`, level 2) | web-next Ag | ETr, GDD wheat/corn, feels-like, CCI, SWP, percent saturation: each derived output column is matched to the closest trace (raw or cumulative, depth-aware cm → in) |
 
-Statuses: **PASS** equal within tolerance (`abs 0.0011`, `rel 2e-4`; `FIDELITY_ABS_TOL`,
-`FIDELITY_REL_TOL`). **DOCUMENTED** differs on purpose, citing its `DIVERGENCES.md` entry: a figure or
-card web/ shows that web-next's page for the scenario does not (it moved section), or a moved card
-whose text or row labels changed while every value under a shared label matches. **WARN** label wording, points that differ only at the trailing edge (the two
-captures are seconds apart), advisory card text, off-palette colors, web-next console errors.
+Statuses: **PASS** everything web-next draws matches web/ within tolerance (`abs 0.0011`, `rel 2e-4`;
+`FIDELITY_ABS_TOL`, `FIDELITY_REL_TOL`). **DOCUMENTED** compared content differs on purpose, citing
+its `DIVERGENCES.md` entry: a renamed row (`DOCUMENTED_ROWS`, Real Feel ↔ Feels like), or a moved
+card whose text or row labels changed while every value under a shared label matches. **WARN**
+label wording, points that differ only at the trailing edge (the two captures are seconds apart),
+advisory card text, off-palette colors, web-next console errors.
 **FAIL** a trace, figure or card missing/extra/empty, interior value or null differences, sensor
 spans, CSV columns/rows/values. **ERROR** a side failed to load.
+
+**Moved** (latest only): a figure or card web/ shows that the scenario's web-next page does not
+draw (it moved section, or Now shows the other medium) is not compared. It is listed in the item's
+`comparison.moved` (`{ part, note, see }`, `see` = the DIVERGENCES entry), in the summary
+`results.json` and in the report, and does not lower the status. A card that page should draw and
+does not is still a FAIL.
+
+Known FAIL: ag-api mdamalta feels-like at exactly 50 °F (`/derived` applies no wind chill there,
+web-next and web/ do), filed upstream as mt-climate-office/mesonet-db-rds#201.
 
 ## How the extraction works
 
