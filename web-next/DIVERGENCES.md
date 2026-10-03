@@ -241,6 +241,9 @@ below, which stay for the record and name what replaced them.
   station and says so ("… has no soil water potential sensors, so this tool does not apply there.") with a
   button that opens the picker. A stats card shows Reference ET's total, feels-like and livestock-risk low and
   high, and GDD so far with the stage reached. Every Ag number, `.ag-chart-card` and its test ids are unchanged.
+- **Notes (Redesign C):** web/ showed each note (the NDAWN cutoff switch, the projection's sources, …) as an
+  alert above the chart; they are one ⓘ toggletip under the chips now, with the same text. On phones the GDD
+  legend uses short names and the stage labels sit at the right end of their lines.
 - **Why:** DESIGN.md "Ag tools (inside Charts)": controls before content, and a second station control beside the header's.
 
 ## UX refactor (P0 prototype, 2026-10)
