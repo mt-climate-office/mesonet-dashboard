@@ -13,6 +13,8 @@ import type { MetChart } from './results'
 export interface AgStat {
   label: string
   value: string
+  /** A text value (a growth stage, not a number): it may take two columns on phones. */
+  wide?: true
 }
 
 const finite = (xs: readonly (number | null)[]) => xs.filter((v): v is number => v !== null && Number.isFinite(v))
@@ -43,6 +45,6 @@ export function gddStats(m: GddModel | null): AgStat[] {
   const stage = m.stageMode === 'table' ? m.series.stageName.filter(Boolean).at(-1) : null
   return [
     ...(so === undefined ? [] : [{ label: 'So far', value: formatReading('gdd', so) }]),
-    ...(stage ? [{ label: 'Stage', value: stage }] : []),
+    ...(stage ? [{ label: 'Stage', value: stage, wide: true as const }] : []),
   ]
 }

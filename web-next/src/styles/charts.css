@@ -87,19 +87,20 @@
 @media (hover: none) { .chart-chips .dash-chip { min-width: 44px; } }
 
 /* Stats card: label over value. */
-.chart-stats { flex-direction: column; gap: 0.5rem; padding: calc(3 * var(--gap-tight)) var(--card-pad); }
+.chart-stats { flex-direction: column; gap: var(--gap); padding: calc(3 * var(--gap-tight)) var(--card-pad); }
 /* One line per sensor at every width. Wider screens: the rows share columns (subgrid; empty
    tracks take no room), each as wide as its longest entry ("Kernel / Watery Ripe"), at least
    7 rem, 2 rem apart. Compact: equal columns up to 7 rem, shrinking (a depth label plus Low,
-   High and Average fit 390 px). */
+   High and Average fit 390 px); a text value (.is-wide: a growth stage) takes two. */
 .chart-stats { display: grid; grid-template-columns: repeat(8, auto); justify-content: start; }
 .chart-stats > * { grid-column: 1 / -1; }
 .chart-stat-row { display: grid; grid-template-columns: subgrid; }
 .chart-stat { display: flex; flex-direction: column; min-width: 7rem; padding-right: 2rem; }
 @media (max-width: 640px), (max-height: 560px) {
   .chart-stats { display: flex; }
-  .chart-stat-row { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 7rem); gap: 0.35rem 1rem; }
+  .chart-stat-row { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 7rem); gap: var(--gap-tight) var(--gap); }
   .chart-stat { min-width: 0; padding-right: 0; }
+  .chart-stat.is-wide { grid-column: span 2; }
 }
 .chart-stat dt { font-size: var(--fs-xs); color: var(--text-muted); }
 .chart-stat dd { font-size: var(--fs-lg); font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums; }
