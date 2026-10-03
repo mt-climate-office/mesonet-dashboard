@@ -77,9 +77,12 @@
           </p>
 
           <div class="now-strip" data-testid="now-strip">
-            <template x-if="tier2"><span class="dash-skel now-strip-skel" aria-hidden="true"></span></template>
+            <template x-if="tier2"><div><p class="sr-only" role="status">Loading the 48-hour strip…</p><span class="dash-skel now-strip-skel" aria-hidden="true"></span></div></template>
             <template x-if="!tier2 && page.hero.strip">
               <div class="chart now-strip-chart" x-data="chart(stripChart())"></div>
+            </template>
+            <template x-if="!tier2 && !page.hero.strip">
+              <p class="now-strip-empty" role="status" data-testid="now-strip-empty">No hourly temperatures or forecast to draw for the last and next 24 hours.</p>
             </template>
           </div>
           <ul class="now-icons" x-show="page.icons.length" aria-label="Forecast periods" data-testid="now-icons">
