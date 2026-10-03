@@ -41,8 +41,8 @@ drawer) reads `MCO.viewport` and the desktop query in JS.
 | Name | Query | Sections | Station picker | Now grid |
 |---|---|---|---|---|
 | compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) | bottom sheet (peek / full) | one column, tiles 2-up |
-| tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | hero beside photo, tiles 3-up |
-| desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero 3/5 beside photo, tiles 4-up |
+| tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | one column, tiles 2-up |
+| desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero + photo beside tiles (2-up) + rows |
 
 The brand shows only on desktop (visually hidden below 1060 px; the kit's own step is 750 px).
 
@@ -64,14 +64,18 @@ then Send feedback (a link). One row at every width.
 
 ## Now
 
+One model, `core/overview` `buildNowPage` (hero.ts + relevance.ts + nowPage.ts), bound by `partials/now/index.html`
+and `ui/now/nowView.ts`. **Phones and tablets:** one column, hero → photo → tiles (2-up) → rows. **Desktop
+(≥ 1060 px):** two columns, hero + photo | tiles + rows (1.35 : 1), as in the mockup.
+
 | Slot | Content | Data (tier) |
 |---|---|---|
-| Freshness | "Updated 7 min ago", an ⓘ toggletip when the data are provisional (served at QC level 1 until the next daily QC run, about 8 AM), **No report for over 2 hours** warning | `/latest` (1) |
-| Hero | Air temperature; NWS feels-like with "Wind chill"/"Heat index"; today's high/low; gridMET normal high/low; 48 h sparkline | `/latest` (1); hourly + `tmmx`/`tmmn` (2) |
-| Tiles | Wind (speed, gust, compass glyph pointing where it blows), Precipitation (today, 24 h, 7 d, YTD vs normal), Humidity, Solar, Pressure, Soil (depth profile: temp + VWC bar), Snow depth (only with snow: ≥ 0.5 in now or in any hour of the last 72 h), VPD (AgriMet); each a link to its variable, with a 48 h sparkline | `/latest`, `/derived/ppt/` (1); hourly + `pr` (2) |
-| Media | Latest camera frame of the default direction (opens the photo dialog), or the wind rose without a camera | photo schedule, latest listings (1) |
-| Forecast | NWS periods in a horizontal strip with scroll snap | NWS (1) |
-| All readings | opens About's readings sheet (`navigate('about', { target: 'about-readings' })`; the target is the row, `data-sheet` opens its sheet) | — |
+| Hero | Air temperature (`.num-display`, 5 rem phones / 7 rem desktop); on the right today's high/low, the gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
+| Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
+| Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, observed high/low and period labels; its sr-only table. Below it the NWS period icons (api.weather.gov only, alt = the short forecast), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
+| Media | Latest camera frame of the default direction (16:9; 16:8 on desktop; opens the photo dialog), or the wind rose without a camera | photo schedule, latest listings (1) |
+| Tiles | Only the relevant ones (`nowTiles`): Wind (speed; compass word · gusts), Rain (7 d total, 24 h without the ppt summary; % of normal this year), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has SWP sensors), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page that morphs into the page heading, which takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, `/derived/hourly` SWP (2) |
+| Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens About's readings sheet (`target: 'about-readings'`, the row's `data-sheet`; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
 `<dialog class="mco-modal">` with a **Direction** segmented control (the directions with frames that day, legacy
@@ -84,13 +88,15 @@ caption). The dialog's content mounts only while open. On phones the day and tim
 targets 44 px; nothing scrolls sideways at 390 px. Focus stays in the modal (the page is inert), Esc closes,
 focus returns to the tile.
 
-Tier 1 requests start together when Now mounts; tier 2 (one 72 h hourly request for every sparkline, the
-normals CSVs) once `/latest` is in. Every slot holds its size with a skeleton while it loads, so nothing
-shifts. Values are Space Mono on the type scale; labels are small caps in `--text-muted`.
+**Loading.** Tier 1 (`/latest`, the ppt summary, the NWS periods, the photo schedule) starts together when Now
+mounts and renders the hero and tiles. Tier 2 (one 72 h hourly request for the strip, sparklines, high/low and
+pressure trend; the normals CSVs; the NWS hourly forecast from the periods' `forecastHourly` URL, `nwsh:<url>`,
+30 min; SWP for stations with SWP sensors, `nowSwpQuery`) starts once `/latest` is in and fills the strip,
+sparklines and chip. Every slot holds its size with a skeleton (the strip a fixed 9.5 / 11 rem box), so
+nothing shifts. Labels are sentence case in `--text-muted`; readings are `.num-display`.
 
-Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png`,
-`390-dark-sheet-peek.png`, `768-light-now-acebozem.png`, `1440-dark-now-acebozem.png`,
-`1440-dark-drawer-open.png`, `390-light-now-arskeogh.png` (AgriMet, wind rose).
+Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|dark|high-contrast>-<acebozem|arskeogh>.png`
+(arskeogh: AgriMet, wind rose, VPD).
 
 ## Charts
 
@@ -173,28 +179,43 @@ high-contrast.
 The Download sheet (`partials/sheets/download.html`) is open while `dl=1`: from the Charts list's "Download
 data" entry (`openSheet('download', opener)`), from an old `#download` / `#downloader` link, or any URL with
 `dl=1`. Closing (×, Esc, the scrim, a drag down on phones) clears `dl` and returns focus to the opener (to
-`<main>` when the URL opened it). It is a bottom sheet on phones and a centred panel (68 rem) from 641 px.
-Inside, unchanged: three step cards (`.dash-card`, `partials/downloader/index.html`) and the preview below them:
+`<main>` when the URL opened it). It is a bottom sheet on phones and a centred panel (34 rem) from 641 px;
+its body scrolls on its own. Every value comes from the URL's existing keys, so whatever opened it (a chart's
+⋯ menu writing `els`, `dl_from`, `dl_to`, `period`), the form shows that.
 
-| Step | Contents |
-|---|---|
-| 1 Elements | station combobox, variables multiselect, "Show uncommon variables", the station map (not on compact) |
-| 2 Dates & period | time aggregation, dates (install date … today), quality control |
-| 3 Run | recap ("Bozeman · 2 variables · Daily · 2026-09-01 to 2026-09-30"), Run, Download CSV, warnings |
+Inside is one short form (`partials/downloader/index.html`, logic in `core/downloader/form.ts`), one column at
+every width, flat on the sheet's surface:
 
-- **Desktop and tablet:** a two-column grid, Elements beside Dates & period over Run; the preview spans
-  both columns. No stepper.
-- **Compact:** no station map in Elements (the header's station picker has one; MapLibre is not started),
-  and a stepper. Only `.dl-step.is-current` shows (the Run step and the preview share step 3),
-  under "Step 2 of 3" and a three-segment bar, with Back / Next below. Next stays enabled; when the step
-  would block Run (no station or element; invalid dates, from the date control's `onValidity`) it stays put
-  and shows why. A step change scrolls the progress line into view, focuses the step heading and announces
-  "Step 2 of 3: Dates & period". Enter in a field is Next until step 3, then Run. The step is view state
-  (not in the URL); the logic is `core/downloader/stepper.ts`.
-- **After Run** (every width): the preview scrolls to the top of the view (instantly under reduced
-  motion), its heading takes focus, and the live region gives the row count.
-- **Touch:** inputs 16 px (controls.css), variable rows 44 px; on phones the variable list grows with the
-  page instead of scrolling inside its panel.
+| Row | Value (right) | Expands to (the existing control) | URL key |
+|---|---|---|---|
+| Variables | up to two names, then "+ N more"; "+ Add" | chips for the selection, "+ Add variables" (the grouped checklist with a filter), "Show uncommon variables" | `els`, `pub` |
+| Dates | "Sep 1 – Sep 30, 2026" | start/end date inputs bounded by the install date and today, the install-date notes | `dl_from`, `dl_to` |
+| Interval | Hourly · Daily · Monthly | a segmented control; Monthly adds its note | `period` |
+| Quality | Quality-controlled · Provisional (basic checks) · Unchecked | one option per line, with the level's description | `qc` (2 · 1 · 0) |
+| Station | "Bozeman (acebozem)" | not a button: the header's station picker changes it | `s` |
+
+- **Rows:** a label on the left, the value on the right (ellipsized), a chevron. Each is a button in an `<h3>`
+  (`aria-expanded`, `aria-controls` its `role="region"` panel). Tapping one expands it in place and closes
+  any other (`openRow`, view state, not in the URL). All start closed.
+- **One button** under the rows, full width (`.dl-btn-primary`), with one line under it saying why it cannot
+  act (`aria-describedby`): "Pick a station in the header first.", "Pick at least one variable.", the date
+  error, "Fix the dates.", or "No data for this selection. …". It reads **Preview** until the current inputs
+  have a result, then **Download CSV · N rows**; changing any input makes it Preview again. A large hourly
+  range (> 1 year) arms "Confirm large request" first. It is never natively `disabled` but `aria-disabled`
+  (clicks do nothing), so it keeps focus as its label changes; `data-testid` follows its job (`dl-run`, then
+  `dl-download`).
+- **Why two clicks, not one:** the CSV is saved by clicking a blob link, which browsers tie to a user
+  gesture. The fetch can take longer than the gesture lasts (about 5 s in Chrome), and Safari and Chrome's
+  repeated-download guard block or prompt for downloads started without one. Saving on the second click keeps
+  every download inside a click, and the row count is known before the user commits.
+- **After Preview:** the preview chart (the existing one) appears under the button; the live region says
+  "Request finished: N rows, M columns. Download CSV is ready."; focus stays on the button.
+- **Notices** under the rows, always visible: SWP variables dropped at a non-SWP station, variables that
+  failed to load (Retry), the large-hourly warning.
+- **Below:** the BLM funding line (legacy DL-020), a quiet centred caption.
+- **Touch:** rows and the button are ≥ 48 px; inputs 16 px (controls.css); checklist rows 44 px; the
+  checklist grows with the sheet body instead of scrolling inside its panel. Fits 390 × 844 with no sideways
+  scroll.
 
 ## About
 
@@ -268,10 +289,10 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 - **Section nav** (`sectionNav.ts`/`.css`) — the tab bar (three items on a solid `--bg-surface`, icon + label,
   ≥ 56 px, safe-area padding; the current one has a pill behind its icon and a bold label) and the header's
   segmented control (a `--bg-raised` track; the current one a raised `--bg-surface` pill, bold), `aria-current`.
-- **Skeletons** (`skeleton.css`) — `.dash-skel` + `--line`, `--value`, `--spark`, `--media`, `--period`,
+- **Skeletons** (`skeleton.css`) — `.dash-skel` + `--line`, `--value`, `--spark`, `--media`,
   `--chart`, `--table`; token shimmer, static under reduced motion, `aria-hidden`.
 - **Badge** (`card.css`) — `.dash-badge`, `.dash-badge--warn` (heavier border + icon; never colour alone).
-- **Toggletip** (`toggletip.ts`/`.css`) — an ⓘ button (`.mco-btn-info`, 24 px; the kit's 40 px on touch) that
+- **Toggletip** (`toggletip.ts`/`.css`) — an ⓘ button (`.mco-btn-info`, 24 px; the kit's 40 px on touch), or a text button (Now's "Provisional"), that
   shows a short note below it on click or tap: `aria-expanded` + `aria-controls`, the note right after the
   button in the DOM; Esc or a press outside closes it. The Alpine wrapper is `ui/shell/toggletip.ts`.
 - **Sparkline** (`core/charts/sparkline.ts` → SVG, `.dash-spark`) — a line (or bars for precipitation) in
@@ -307,14 +328,14 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
 
 - Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `header-menu`, `photo-dialog`, `about`,
   `about-readings`, `about-history` (each sheet open), `picker`, `picker-open` (both with the map revealed), `charts-list`, `variable` + `-history` + `-table`, `compare`,
-  `legacy-ag`, four Ag tools, `download-step1` (390), `downloader`, `help-dialog`) × 3 themes × 1440/390.
-  `keyboard.mjs` walks the header and its ⋯ menu (Help, Theme), the picker, the Download sheet, tab bar,
-  photo dialog, About's two sheets (and Now's "All readings" opening the readings sheet), variable page, Ag
-  Options and the legacy links; `layout.mjs` checks touch swipes over charts,
+  `legacy-ag`, four Ag tools, `download-variables`, `download-dates`, `downloader` (after Preview), `help-dialog`)
+  × 3 themes × 1440/390.
+  `keyboard.mjs` walks the header and its ⋯ menu (Help, Theme), the picker, the Download sheet and its form, tab bar,
+  photo dialog, About's two sheets (and Now's "All readings" opening the readings sheet), variable page, Ag Options and the legacy links; `layout.mjs` checks touch swipes over charts,
   sideways scroll at 390, the fold, the one-row header, the solid tab bar, the sheet's fit and reduced motion.
 - Charts: the Table view is a real `<table>` (caption, scoped headers) in a focusable, labelled scroll region;
   presets and view switches are radios / links with `aria-current`; stats are a `<dl>`.
 - Touch targets ≥ 40 px under `(hover: none)`; the tab bar is 56 px.
-- Status is text: "No report for over 2 hours", "Feels like 41° · Wind chill"; the ⓘ button is named "Provisional data".
+- Status is text: "No report for over 2 hours", "Feels like 41° · Wind chill"; the Provisional text button opens its note (`aria-expanded`).
 - The picker is `role="dialog" aria-modal="true"` only when it is modal (sheet, overlay drawer); the inline
   drawer is a plain landmark beside the content.

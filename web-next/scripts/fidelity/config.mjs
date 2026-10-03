@@ -86,7 +86,7 @@ export const LATEST_SCENARIOS = [
   },
   { id: 'raw', label: 'Raw', params: { agg: 'raw' } },
   { id: 'card-wind', label: 'Top card: Wind Rose', params: { card: 'wind' }, next: now({ media: 'wind', figures: ['windrose'], cards: { top: '[data-testid="now-media"]' } }) },
-  { id: 'card-forecast', label: 'Top card: Weather Forecast', params: { card: 'forecast' }, next: now({ cards: { top: '[data-testid="now-forecast"]' }, relabeled: true }) },
+  { id: 'card-forecast', label: 'Top card: Weather Forecast', params: { card: 'forecast' }, next: now({ cards: { top: '[data-testid="now-icons"]' }, relabeled: true }) },
   { id: 'card-photo', label: 'Top card: Latest Photo', params: { card: 'photo' }, next: now({ media: 'photo', cards: { top: '[data-testid="now-media"]' } }) },
   { id: 'info-map', label: 'Bottom card: Locator Map', params: { info: 'map' }, next: about({ cards: { bottom: '[data-testid="about-map"]' }, map: '[data-testid="about-map"]' }) },
   { id: 'info-metadata', label: 'Bottom card: Station Metadata', params: { info: 'metadata' }, next: about({ cards: { bottom: '[data-testid="about-details"]' }, relabeled: true }) },

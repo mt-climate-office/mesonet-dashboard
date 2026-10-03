@@ -1,12 +1,12 @@
 /**
  * Layout and motion checks (DESIGN.md "Charts on touch", "Layout ladder", "Motion"):
  * at 390 px with touch, a vertical swipe over a chart or the About map scrolls the page; no
- * view scrolls sideways; the first Now tile is above the fold at 390×844; the header is one
+ * view scrolls sideways; the Now hero through its strip is above the fold at 390×844; the header is one
  * row at 390 and 1440 (sections in it only from tablet up); the phone tab bar has three items
  * on a solid surface; the Download sheet fits the screen; with reduced motion a section change
  * starts no view transition. Run via `npm run verify`.
  */
-import { VIEWPORTS, check, finish, open, start } from './lib.mjs'
+import { DL_QUERY, VIEWPORTS, check, finish, open, start } from './lib.mjs'
 
 const PHONE = VIEWPORTS[1]
 const env = await start()
@@ -42,9 +42,9 @@ for (const [name, query, evidence, target] of [
   await close()
 }
 
-/* ── No horizontal overflow at 390 px; the first Now tile above the fold ── */
+/* ── No horizontal overflow at 390 px; the Now hero through its strip above the fold ── */
 for (const [name, query, evidence] of [
-  ['now', '?s=acebozem', { filled: ['[data-testid="now-tiles"]'] }],
+  ['now', '?s=acebozem', { charts: 1, filled: ['[data-testid="now-tiles"]'] }],
   ['charts-list', '?s=acebozem#charts', { filled: ['[data-testid="var-air_temp"] .dash-spark svg'] }],
   ['variable', '?s=acebozem&v=air_temp#charts', { charts: 1 }],
   ['variable-history', '?s=acebozem&v=air_temp&view=history#charts', { charts: 1 }],
@@ -52,7 +52,7 @@ for (const [name, query, evidence] of [
   ['compare', '?s=acebozem#latest', { charts: 1 }],
   ['legacy-ag', '?s=acebozem#ag', { filled: ['[data-testid="charts-ag-tools"] ul'] }],
   ['ag-gdd', '?s=acebozem&v=gdd#charts', { charts: 1 }],
-  ['download', '?s=acebozem&dl=1#charts', { filled: ['[data-testid="dl-step-elements"]'] }],
+  ['download', DL_QUERY, { filled: ['[data-testid="dl-station"]'] }],
   ['about', '?s=acebozem#about', { filled: ['[data-testid="about-details"] .about-dl', '[data-testid="about-map"] tbody'] }],
 ]) {
   const { page, close, rendered } = await open(env, query, { viewport: PHONE })
@@ -67,11 +67,11 @@ for (const [name, query, evidence] of [
   check(`[${name} 390] no horizontal overflow`, o.scroll <= o.vw, JSON.stringify(o))
   if (name === 'now') {
     const fold = await page.evaluate(() => {
-      const tile = document.querySelector('[data-testid="now-tiles"] .now-tile').getBoundingClientRect()
+      const strip = document.querySelector('[data-testid="now-strip"]').getBoundingClientRect()
       const bar = document.querySelector('.dash-tabbar').getBoundingClientRect()
-      return { tileBottom: Math.round(tile.bottom), foldAt: Math.round(Math.min(innerHeight, bar.top)) }
+      return { stripBottom: Math.round(strip.bottom), foldAt: Math.round(Math.min(innerHeight, bar.top)) }
     })
-    check('[now 390×844] the first tile is above the fold (above the tab bar)', fold.tileBottom <= fold.foldAt, JSON.stringify(fold))
+    check('[now 390×844] the hero through its 48 h strip is above the fold (above the tab bar)', fold.stripBottom <= fold.foldAt, JSON.stringify(fold))
   }
   await close()
 }
@@ -122,8 +122,8 @@ for (const vp of VIEWPORTS) {
 
 /* ── Download sheet: inside the screen at both widths ───────────────────── */
 for (const vp of VIEWPORTS) {
-  const { page, close, rendered } = await open(env, '?s=acebozem&dl=1#charts', { viewport: vp })
-  await rendered({ filled: ['[data-testid="dl-step-elements"]'] })
+  const { page, close, rendered } = await open(env, DL_QUERY, { viewport: vp })
+  await rendered({ filled: ['[data-testid="dl-station"]'] })
   await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 10000 })
   const r = await page.evaluate(() => {
     const b = document.getElementById('sheet-download').getBoundingClientRect()

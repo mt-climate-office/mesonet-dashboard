@@ -72,6 +72,64 @@ code and CSV bytes are unchanged.
 - **Why:** REDESIGN.md "About": flat surfaces, plain labels, and a sheet is easier than a long in-place table
   on phones.
 
+### Now: the forecast card becomes the hero's 48 h strip
+- **P1:** an NWS forecast card: the next 8 text periods (name, icon, temperature, short forecast, chance of
+  precipitation) in a horizontal scroll-snap strip, with a "{place} · NWS forecast" heading and a Retry button.
+- **New:** no forecast card. The hero's 48 h strip draws the last 24 h observed into the next 24 h of the NWS
+  **hourly** forecast (`forecastHourly`, one more request, `nwsh:<url>`, 30 min), labels the periods it spans
+  ("Tonight 45°"), and lists their icons under it (api.weather.gov only, alt text = the short forecast) beside a
+  "Full forecast" link to the NWS page. The current period's sky feeds the summary sentence. Beyond 24 h, and
+  the chance of precipitation, are on the NWS page. Without NWS coverage the strip shows the observed day only.
+- **Why:** REDESIGN.md "Now" 1 and 5: one picture of yesterday into tomorrow instead of a second card of text.
+
+### Now: tiles only where they mean something
+- **P1:** a tile for every reading the station reports: Wind (with a compass glyph), Precipitation today (24 h,
+  7 d and YTD lines), Humidity, Solar radiation (0 W/m² all night), Pressure, Soil (a depth profile table), Snow
+  depth (with snow), VPD; labels in API words ("Solar radiation", "mbar").
+- **New:** `nowTiles` (core/overview/relevance.ts) hides Sunlight at night (< 5 W/m²) and Pressure always;
+  precipitation is one **Rain** tile (the 7 d total, or 24 h without the ppt summary, with "% of normal this
+  year"), shown whenever there is a source, even after a dry week; humidity carries the dew point; soil
+  moisture shows the shallowest depth only, with a **Dry/Wet** badge from soil water potential (≥ 15 bar / ≤ 0.33
+  bar, the Ag SWP thresholds) for stations with SWP sensors (one `/derived/hourly` request; VWC alone gets no
+  badge, its thresholds depend on soil texture). Names, units and precision come from `core/variables/labels`
+  ("Sunlight", "mb", soil moisture as an integer). The full profile and every reading stay on About. The badge
+  is a neutral `.dash-badge` (the kit has no warm status token).
+- **Why:** REDESIGN.md "Visual language": every reading had equal weight, including empty ones.
+
+### Now: pressure as a trend in the "All readings" row
+- **P1:** a Pressure tile (847.2 mbar and a sparkline).
+- **New:** no tile. The "All readings" row's meta says "Pressure 847 mb, steady" (rising / falling when the
+  last 3 h changed by more than 1 mb, NWS practice; the word appears once the hourly rows are in) and the snow
+  depth ("Snow none" when the station measures it and there is none). A "Station details" row (network and
+  elevation) links to About.
+- **Why:** a station pressure of ~850 mb means little on its own; its 3 h change is what forecasts use.
+
+### Download: one short form, Preview then "Download CSV · N rows"
+- **P1:** three step cards (a phone stepper with Back/Next; two columns elsewhere) with a station combobox
+  and a station map, a recap, then Run Request and a separate Download CSV button.
+- **New:** one column of summary rows (Variables · Dates · Interval · Quality; label left, value right) that
+  expand in place one at a time to the existing controls, and a fixed "Station: Bozeman (acebozem)" line: the
+  header's picker changes the station, so the sheet has no station combobox or map (the `downloaderMap`
+  preset is gone). One primary button reads **Preview** until the current inputs have a result, then
+  **Download CSV · N rows**; any input change turns it back into Preview. It is `aria-disabled` (never
+  natively disabled, so focus stays on it) with one line saying why ("Pick at least one variable.", the date
+  error, …), which replaces web/'s "Please select a station and at least one variable first!" and "Please
+  'Run Request' before attempting to download." (DL-015, DL-016). Plain labels: Interval Hourly / Daily /
+  Monthly (finest first); Quality "Quality-controlled", "Provisional (basic checks)", "Unchecked" for
+  levels 2 / 1 / 0 (was "Quality-controlled", "Provisional", "Raw"). The funding line (DL-020) is a quiet
+  caption under the form, not an accent bar. After Preview, focus stays on the button (no scroll to the
+  preview); the row-count announcement is unchanged. A station change from the header no longer resets the
+  start date (`dl_from`); the date window still clamps to the new station's install date.
+- **Why two steps, not one "Download CSV" that fetches and saves:** the save is a click on a blob link,
+  which browsers tie to a user gesture. A fetch can outlast the gesture (about 5 s in Chrome), and Safari and
+  Chrome's repeated-download guard block or prompt for downloads started without one. Saving on the second
+  click keeps every download inside a click, and shows the row count before it.
+- **Not offered:** a 5-min (raw) interval. Legacy had none (DL-008), the `period` key has no such value, and
+  the request code is unchanged.
+- **Unchanged:** the request code, the CSV bytes (fidelity: byte-identical to web/), every `dl_*` / `els` /
+  `period` / `qc` / `pub` key, the `dl-run` / `dl-download` test ids the fidelity driver clicks.
+- **Why:** REDESIGN.md "Download sheet": a short form opened from a chart, prefilled from its keys.
+
 ## UX refactor (P0 prototype, 2026-10)
 
 The user-approved refactor (overview first, mobile first; DESIGN.md) changes the
@@ -163,7 +221,7 @@ layout parts of older entries below; data behaviour is unchanged.
   the station reports them, to the plan's six elements so every tile has a sparkline. Data older than 2 h
   shows a stale warning; the provisional ⓘ note follows `/latest`'s `provisional` flag.
 
-### Download: a stepper on phones, step cards elsewhere (P1)
+### Download: a stepper on phones, step cards elsewhere (P1; superseded by "Download: one short form")
 - **Legacy / web/:** one form column (station, variables, QC, aggregation, dates, Run / Download CSV) with
   the map under it, beside the preview; ≤ 900 px it all stacked, so on a phone the result landed
   off-screen after Run.
@@ -1227,7 +1285,7 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
   The control shows its own bound/order error; when an old link's start was
   clamped past the end, the install-specific message is shown under it too.
   Browser form validation is off so Run always reports the problem inline.
-- **Run waits for the station catalog.** Run is disabled while a `?s=` station
+- **Preview waits for the station catalog.** Preview is disabled while a `?s=` station
   is still being confirmed, so an early click no longer says "Please select a
   station…" for a station that is set.
 - **Messages** are kit-styled inline notes (⚠ + text, accent edge), not
@@ -1236,10 +1294,10 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
   instead of legacy's enabled button that answered "Please 'Run Request'
   before attempting to download." The state is visible on the button, so
   the message is never needed.
-- **Station label (DL-001)** is "Station" with the placeholder "Pick a
-  station" (legacy "Select Station" / "Select a Mesonet Station from the Map
-  or Dropdown..."), the same wording as Ag Tools. The map below is the
-  pointer alternative.
+- **Station (DL-001, DL-018, DL-019)** is a fixed line, "Station: Bozeman
+  (acebozem)"; the header's station picker (search, Near me, its map)
+  changes it. The sheet has no station combobox or map (redesign entry
+  "Download: one short form").
 - **Preview chart (DL-017).** ECharts small multiples, one grid per column,
   linked x zoom and axis pointer, the column name as each panel's title above
   the plot (not a rotated y title). Lines use the palette's preview cycle
@@ -1249,9 +1307,9 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
 - **Live region (new).** Run announces "Requesting … data for {station}…" and
   then "Request finished: N rows, M columns. Download CSV is ready." (or no
   data / failed).
-- **Funding footer (DL-020)** keeps its text, bold weight, 40 px height and
-  in-flow placement, but is filled with the kit `--accent` / `--text-on-accent`
-  tokens instead of `#129dff` on black (tokens only; legible in all themes).
+- **Funding footer (DL-020)** keeps its text and in-flow placement, as a
+  quiet centred caption under the form (`--text-secondary`) instead of a bold
+  `#129dff` bar.
 - **Run always refetches.** Download requests bypass `$store.data` (the one
   exception to the shared cache): the component keeps only the latest result,
   drops it when the station changes, and ignores a response from an older Run.

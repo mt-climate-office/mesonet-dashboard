@@ -33,23 +33,24 @@ export type QcLevel = 0 | 1 | 2
  */
 export const DEFAULT_QC_LEVEL: QcLevel = 2
 
+/** The Quality row, cleanest first. Plain labels; the `level` sent is the value (0 raw, 1 provisional, 2 QC). */
 export const QC_LEVEL_OPTIONS: ReadonlyArray<{ value: QcLevel; label: string; description: string }> = [
-  {
-    value: 0,
-    label: 'Raw',
-    description: 'Exactly as reported by the station; no QC applied.',
-  },
-  {
-    value: 1,
-    label: 'Provisional',
-    description:
-      'Only hard range breaches removed at ingest; values the daily QC checks would reject (spikes, stuck sensors, wind-affected precipitation) are kept.',
-  },
   {
     value: 2,
     label: 'Quality-controlled',
     description:
       'Recommended. Fully cleaned by the daily QC pipeline (step, persistence, wind-affected precipitation, …). Rows the pipeline has not reached yet (usually the last day) are served provisionally and marked in the "provisional" column.',
+  },
+  {
+    value: 1,
+    label: 'Provisional (basic checks)',
+    description:
+      'Only hard range breaches removed at ingest; values the daily QC checks would reject (spikes, stuck sensors, wind-affected precipitation) are kept.',
+  },
+  {
+    value: 0,
+    label: 'Unchecked',
+    description: 'Exactly as reported by the station; no QC applied.',
   },
 ]
 
