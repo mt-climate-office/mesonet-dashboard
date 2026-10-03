@@ -167,10 +167,10 @@ refetches in the background (the old data stays on screen), and requests built f
 in the same getter pick up a new date after midnight. A new key with a `slot` starts from the slot's
 last data, so that midnight key change shows no skeleton.
 
-Live: `/latest`, the ppt summary, the NWS forecast and hourly forecast (`ui/station/resources.ts`);
+Live: `/latest`, the ppt summary, the NWS forecast and hourly forecast, the latest photo listings (`ui/station/resources.ts`);
 Now's 72 h hourly rows, 7-day rain and SWP (`ui/now/resources.ts`, slotted); and `recordResource`
 windows that reach today (`core/latest` `endsToday`: the Charts list's 48 h rows, slotted; the
-variable page; Compare). Not live: normals, stations/elements/config, photos, the wind rose, Ag, and
+variable page; Compare). Not live: normals, stations/elements/config, past photo days, the wind rose, Ag, and
 All years (`live: false`). Now's "Updated N min ago" uses the current time on each recompute; if
 refetches fail, its "No report for over 2 hours" warning still comes from the last row's stamp.
 To make a new time-sensitive fetch live, pass `live: true` (and a `slot` if its key carries today).
