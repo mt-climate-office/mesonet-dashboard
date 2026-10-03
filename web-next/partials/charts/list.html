@@ -1,5 +1,6 @@
 <!-- Charts list (x-data="variableList", ui/charts/variableList.ts): the station's variables by group,
-     each row a link to its variable page with the current value and a 48 h sparkline, then Compare.
+     each row a link to its variable page with the current value and a 48 h sparkline, then the Ag
+     tools (#charts-ag-tools; a bare legacy #ag link scrolls here), then Compare.
      A row's name carries [data-vt-source]: it morphs into the variable page heading. -->
 <div class="charts-list" x-data="variableList" data-testid="charts-list">
   <div class="dash-section-head">
@@ -45,9 +46,27 @@
         </section>
       </template>
 
+      <section class="dash-card charts-group" id="charts-ag-tools" aria-labelledby="charts-ag-tools-title" data-testid="charts-ag-tools">
+        <h3 class="dash-card-title" id="charts-ag-tools-title">Ag tools</h3>
+        <ul class="charts-rows">
+          <template x-for="t in agTools" :key="t.id">
+            <li>
+              <a class="charts-row charts-row--tool" :href="toolHref(t.id)" @click="openTool($event, t.id)" :data-testid="'ag-tool-' + t.id">
+                <span class="charts-row-name"><span x-text="t.name"></span><span class="charts-row-sub" x-text="t.sub"></span></span>
+              </a>
+            </li>
+          </template>
+        </ul>
+      </section>
+
       <a class="dash-card charts-compare" :href="compareHref()" @click="openCompare($event)" data-testid="charts-compare-link">
         <span class="charts-row-name">Compare</span>
         <span class="dash-section-note">Several variables stacked on one time axis.</span>
+      </a>
+      <!-- Until each chart's ⋯ menu offers it (REDESIGN.md "Download sheet"), the sheet opens from here. -->
+      <a class="dash-card charts-compare" :href="downloadHref()" @click="openDownload($event)" data-testid="charts-download-link">
+        <span class="charts-row-name">Download data</span>
+        <span class="dash-section-note">Any variables and dates as a CSV file.</span>
       </a>
     </div>
   </template>

@@ -1,10 +1,10 @@
 /**
  * `x-data="sections"` on the two section navs in partials/shell.html (phone
- * tab bar, desktop segmented row): the Alpine wrapper over
+ * tab bar, the header's segmented control): the Alpine wrapper over
  * ui/layout/sectionNav.ts. Marks the current section from `$store.url.section`
  * and routes clicks through ui/shell/navigate.ts with core/router
- * `sectionNavPatch` (Charts inside Charts → the list, Ag inside Ag → the tool
- * cards; leaving Charts drops `v`). With `data-publish="--tabbar-h"` it also
+ * `sectionNavPatch` (Charts inside Charts → the list; leaving Charts drops
+ * `v`). With `data-publish="--tabbar-h"` it also
  * keeps that property equal to the bar's height.
  */
 import Alpine from 'alpinejs'

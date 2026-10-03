@@ -37,3 +37,33 @@
 }
 .dash-sheet-grab { width: 40px; height: 4px; border-radius: 999px; background: var(--ctrl-border); }
 .dash-sheet .modal-close { position: relative; } /* above the handle in the stacking order */
+
+/* Modal sheet (.dash-sheet--modal; Alpine wrapper ui/shell/sheet.ts): over everything, chrome
+   included, so the whole page dims behind it. Phones: a bottom sheet from the screen edge.
+   Wider: a centred panel (no handle), as wide as --sheet-w allows. Its scrim
+   (#<sheet id>-scrim) sits on the navbar's tier, later in the DOM, so it covers the bars. */
+.dash-sheet--modal {
+  z-index: var(--z-flyout); /* kit-override: a modal surface above the chrome tiers */
+  bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.dash-sheet--modal[data-state="full"] { max-height: calc(100dvh - 1rem); }
+/* The title takes focus on open: hug its text so the focus ring does too. */
+.dash-sheet--modal .dash-panel-title { flex: 0 1 auto; margin-right: auto; }
+.dash-sheet--modal.enter, .dash-sheet--modal.leaving { transform: translateY(100%); }
+.dash-sheet-scrim { z-index: var(--z-chrome-top); } /* kit-override: .mco-scrim sits under the chrome */
+
+@media (min-width: 641px) and (min-height: 561px) {
+  .dash-sheet--modal {
+    --sheet-gap: max(2rem, 8dvh);
+    left: 50%; right: auto; bottom: auto; top: var(--sheet-gap);
+    width: min(var(--sheet-w, 40rem), calc(100vw - 2rem));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    transform: translateX(-50%);
+    transition: transform var(--sheet-ease), opacity var(--sheet-ease);
+  }
+  .dash-sheet--modal[data-state] { max-height: calc(100dvh - 2 * var(--sheet-gap)); }
+  .dash-sheet--modal.enter, .dash-sheet--modal.leaving { transform: translate(-50%, 1rem); opacity: 0; }
+  .dash-sheet--modal .dash-sheet-handle { display: none; }
+}

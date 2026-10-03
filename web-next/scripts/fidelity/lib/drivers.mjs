@@ -1,8 +1,8 @@
 // Scenario drivers: open one tab of web/ (kind 'web') or web-next (kind 'next') from a deep link,
 // wait for render evidence (never networkidle), and return a capture:
 //   { url, figures[], cards{}, map, media, palette, messages[], download, log, shot, loadMs, error }
-// web-next pages follow the P1 routes: Latest → Compare / Now / About (config `sc.next`),
-// #downloader → #download; Ag deep links carry `var`, so they open the tool, not the cards.
+// web-next pages follow its routes: Latest → Compare / Now / About (config `sc.next`); an Ag
+// tool is #charts&v=<tool> (web/'s `var`); the Downloader is the Download sheet, #charts&dl=1.
 import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import { appUrl, TIMEOUTS } from '../config.mjs'
@@ -145,9 +145,12 @@ const nextAgReady = () => {
   return vis('.ag-chart-card .chart-canvas canvas') || vis('[data-testid="ag-empty"]') || vis('[data-testid="ag-error"]') || vis('[data-testid="ag-no-station"]')
 }
 
+/** web-next names the open Ag tool `v` (one namespace with the Charts variables); web/ calls it `var`. */
+const agParams = (target, { var: tool, ...rest }) => (target.kind === 'next' ? { ...rest, v: tool } : { ...rest, var: tool })
+
 export function captureAg(browser, target, station, sc, range, outDir) {
-  const params = { ...sc.params, ...(range ? { ag_from: range.start, ag_to: range.end } : {}) }
-  const url = appUrl(target, station, { tab: 'ag', params })
+  const params = agParams(target, { ...sc.params, ...(range ? { ag_from: range.start, ag_to: range.end } : {}) })
+  const url = appUrl(target, station, { tab: target.kind === 'next' ? 'charts' : 'ag', params })
   return withPage(browser, target, url, join(outDir, 'shots'), `${station}-${sc.id}-${target.kind}`, async (page, log, res) => {
     await page.waitForFunction(target.kind === 'web' ? webAgReady : nextAgReady, null, { timeout: TIMEOUTS.render, polling: 300 })
     await waitQuiet(page, log, target.kind)
@@ -167,8 +170,8 @@ async function readDownload(dl, dir, tag) {
 }
 
 export function captureDownloader(browser, target, station, sc, range, outDir) {
-  const params = { els: sc.elements, period: sc.period, qc: sc.qc, dl_from: range.start, dl_to: range.end }
-  const url = appUrl(target, station, { tab: target.kind === 'next' ? 'download' : 'downloader', params })
+  const params = { els: sc.elements, period: sc.period, qc: sc.qc, dl_from: range.start, dl_to: range.end, ...(target.kind === 'next' ? { dl: 1 } : {}) }
+  const url = appUrl(target, station, { tab: target.kind === 'next' ? 'charts' : 'downloader', params })
   const tag = `${station}-${sc.id}-${target.kind}`
   return withPage(browser, target, url, join(outDir, 'shots'), tag, async (page, log, res) => {
     let runBtn, dlBtn

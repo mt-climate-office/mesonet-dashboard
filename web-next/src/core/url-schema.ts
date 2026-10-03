@@ -10,11 +10,16 @@
  *              theme      dark | light | high-contrast (read first by the
  *                         inline anti-flash script; absent = saved/OS choice)
  *
- *   Charts     v          variable page: an element-family id (air_temp, ppt,
- *                         soil_vwc …; core/variables); absent = the list
+ *   Charts     v          what Charts shows, one namespace: an Ag tool id
+ *                         (core/params/ag AG_TOOL_IDS: gdd, etr, …) opens that
+ *                         tool; any other value is an element-family id
+ *                         (air_temp, ppt, soil_vwc …; core/variables) and opens
+ *                         its variable page; absent = the list
  *              view       variable sub-view: recent | history | table
  *              cmp        1 = the Compare (stacked) chart; `#latest` links map
  *                         here (core/router.ts). It reads the Latest keys.
+ *              dl         1 = the Download sheet is open over Charts; old
+ *                         `#download`/`#downloader` links map here
  *     (The variable page and Compare share from/to/agg/gridmet below.)
  *
  *   Latest     from, to   chart window (YYYY-MM-DD; pan/zoom writes these)
@@ -26,7 +31,8 @@
  *     (Latest keeps the un-prefixed legacy names because it is the most-shared
  *      tab and existing links must keep working.)
  *
- *   Ag Tools   var        the open tool (etr, gdd, …); absent = the tool cards
+ *   Ag Tools   (the open tool is `v` above; old links' `var` is mapped by
+ *              core/router.ts at boot)
  *              crop       GDD crop
  *              gdd_lo, gdd_hi  custom GDD cutoffs, °F (absent = the crop's)
  *              gdd_proj   GDD projection horizon: season | 30 | 60 | off
@@ -163,6 +169,7 @@ export const URL_SCHEMA = {
   v: str(),
   view: oneOf(CHART_VIEWS, 'recent'),
   cmp: flag(),
+  dl: flag(),
   // Latest (Compare)
   from: str(),
   to: str(),
@@ -172,7 +179,6 @@ export const URL_SCHEMA = {
   nets: list(NETWORK_OPTIONS),
   gridmet: bool(false),
   // Ag Tools
-  var: str(),
   crop: strOr('wheat'),
   gdd_lo: str(),
   gdd_hi: str(),

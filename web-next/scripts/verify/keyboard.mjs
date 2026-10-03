@@ -1,14 +1,16 @@
 /**
- * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, one-row navbar
- * tab order + focus ring, the picker's combobox and closing on a pick, Help dialog,
- * theme toggle, the Now Provisional toggletip and photo dialog, the Charts drill-down and Back,
- * tabs mounting only while open (no cross-tab requests), the Download stepper,
- * the picker drawer and sheet (focus, Esc, inert), the tab bar and history, the
- * variable page's view switch and chips, focus after Charts drill-downs, the Ag
- * Options disclosure, chart table twins, map sr-table selection, reduced motion.
+ * Keyboard and assistive-tech walkthroughs (HOUSE-STYLE §5): skip link, one-row header
+ * tab order + focus ring, the ⋯ menu (arrows, Esc, focus return), Help from the menu,
+ * the Theme item, the picker's combobox and closing on a pick, the Now Provisional
+ * toggletip and photo dialog, the Charts drill-down and Back, views mounting only while
+ * open (no cross-view requests), legacy links (#ag, #downloader), the Download sheet
+ * (focus, Esc, inert, dl key) and its phone stepper, the picker drawer and sheet (focus,
+ * Esc, inert), the tab bar and history, the variable page's view switch and chips, focus
+ * after Charts drill-downs (variables and Ag tools), the Ag Options disclosure, chart
+ * table twins, map sr-table selection, reduced motion.
  * Run via `npm run verify`.
  */
-import { DL_QUERY, VIEWPORTS, check, finish, open, runDownload, start } from './lib.mjs'
+import { DL_QUERY, VIEWPORTS, VISIBLE_SCOPES, animationsDone, check, finish, open, runDownload, start } from './lib.mjs'
 
 const env = await start()
 
@@ -29,55 +31,91 @@ const ringVisible = (page) =>
   })
 const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.search).get(k), k)
 
-/* ── Skip link, navbar order, focus ring, Help dialog, theme toggle ─────── */
+/* ── Skip link, header order, focus ring, the ⋯ menu, Help dialog, theme ── */
 {
   const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=dark#latest')
   await rendered({ charts: 1 })
 
-  // Fresh load: walk the navbar from the top of the document.
-  // One-row navbar (DESIGN.md): logo, station switcher, Share, theme, Help; sections are below it.
-  const want = ['Skip to main content', 'Montana Climate Office', 'Station: Bozeman. Change station', 'Copy a link to this view']
+  // Fresh load: walk the header from the top of the document.
+  // One-row header (DESIGN.md): logo, station button, the three sections (desktop), the ⋯ menu.
+  const want = ['Skip to main content', 'Montana Climate Office', 'Station: Bozeman. Change station', 'Now', 'Charts', 'About', 'More']
   const got = []
   const rings = []
-  for (let i = 0; i < want.length + 2; i++) {
+  for (let i = 0; i < want.length; i++) {
     await page.keyboard.press('Tab')
     got.push(await focused(page))
     rings.push(await ringVisible(page))
   }
-  const theme = got[want.length]
-  const help = got[want.length + 1]
-  check('navbar Tab order: skip, logo, station switcher, share, theme, help',
-    want.every((w, i) => got[i] === w) && /theme/i.test(theme) && help === 'About this dashboard', got.join(' → '))
-  check('every navbar stop shows the focus ring', rings.every(Boolean), got.filter((_, i) => !rings[i]).join(', '))
+  check('header Tab order: skip, logo, station button, Now, Charts, About, More', want.every((w, i) => got[i] === w), got.join(' → '))
+  check('every header stop shows the focus ring', rings.every(Boolean), got.filter((_, i) => !rings[i]).join(', '))
 
-  // Skip link: back to it (Shift+Tab past the navbar), Enter moves focus into <main>.
-  for (let i = 0; i < want.length + 1; i++) await page.keyboard.press('Shift+Tab')
+  // Skip link: back to it (Shift+Tab past the header), Enter moves focus into <main>.
+  for (let i = 0; i < want.length - 1; i++) await page.keyboard.press('Shift+Tab')
   check('Shift+Tab returns to the skip link', (await focused(page)) === 'Skip to main content')
   await page.keyboard.press('Enter')
   check('skip link moves focus to <main id="main">', await page.evaluate(() => document.activeElement?.id === 'main'))
 
-  // Help dialog: opens from the keyboard, Esc closes, focus returns to "?".
-  await page.locator('#btn-help').focus()
+  // The ⋯ menu (WAI-ARIA menu button): Enter opens on the first item, arrows move, End/Home jump,
+  // Esc closes and returns focus; ArrowUp on the button opens on the last item.
+  const menuState = () => page.evaluate(() => ({
+    open: !document.getElementById('header-menu').hidden,
+    expanded: document.querySelector('[data-testid="header-menu-button"]').getAttribute('aria-expanded'),
+    focus: document.activeElement?.dataset.testid ?? null,
+  }))
+  const menuBtn = page.getByTestId('header-menu-button')
+  await menuBtn.focus()
   await page.keyboard.press('Enter')
+  const m1 = await menuState()
+  await page.keyboard.press('ArrowDown')
+  const m2 = await menuState()
+  await page.keyboard.press('End')
+  const m3 = await menuState()
+  await page.keyboard.press('ArrowDown')
+  const m4 = await menuState()
+  check('menu: Enter opens it on the first item (aria-expanded), ArrowDown and End move, the last wraps to the first',
+    m1.open && m1.expanded === 'true' && m1.focus === 'menu-share' && m2.focus === 'menu-theme' && m3.focus === 'menu-feedback' && m4.focus === 'menu-share',
+    JSON.stringify([m1, m2, m3, m4]))
+  await page.keyboard.press('Escape')
+  const m5 = await menuState()
+  check('menu: Esc closes it and focus returns to the ⋯ button', !m5.open && m5.expanded === 'false' && m5.focus === 'header-menu-button', JSON.stringify(m5))
+  await page.keyboard.press('ArrowUp')
+  const m6 = await menuState()
+  await page.keyboard.press('Tab')
+  const m7 = await menuState()
+  check('menu: ArrowUp on the button opens it on the last item; Tab closes it', m6.open && m6.focus === 'menu-feedback' && !m7.open, JSON.stringify([m6, m7]))
+
+  // Help: from the menu with the keyboard; Esc closes the dialog and focus returns to the ⋯ button.
+  await menuBtn.focus()
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => document.getElementById('help-modal')?.open, null, { timeout: 5000 }).catch(() => {})
   const openState = await page.evaluate(() => {
     const d = document.getElementById('help-modal')
-    return { open: d?.open, inside: d?.contains(document.activeElement), labelled: !!d?.getAttribute('aria-labelledby') }
+    return { open: d?.open, inside: d?.contains(document.activeElement), labelled: !!d?.getAttribute('aria-labelledby'), menu: !document.getElementById('header-menu').hidden }
   })
-  check('Help opens with Enter, focus inside, aria-labelledby set', openState.open && openState.inside && openState.labelled, JSON.stringify(openState))
+  check('Help opens from the menu, the menu closes, focus inside, aria-labelledby set', openState.open && openState.inside && openState.labelled && !openState.menu, JSON.stringify(openState))
   await page.keyboard.press('Escape')
   // Read after the kit's close transition: focus must still be on the opener then, not just at keydown.
-  await page.waitForTimeout(600)
-  const after = await page.evaluate(() => ({ open: document.getElementById('help-modal')?.open, id: document.activeElement?.id }))
-  check('Help closes on Esc and focus returns to #btn-help', !after.open && after.id === 'btn-help', JSON.stringify(after))
+  await page.waitForFunction(() => !document.getElementById('help-modal')?.open, null, { timeout: 5000 }).catch(() => {})
+  await animationsDone(page)
+  const after = await page.evaluate(() => ({ open: document.getElementById('help-modal')?.open, focus: document.activeElement?.dataset.testid }))
+  check('Help closes on Esc and focus returns to the ⋯ button', !after.open && after.focus === 'header-menu-button', JSON.stringify(after))
 
-  // Theme toggle: Enter and Space both cycle dark → light → high-contrast, label + storage follow.
+  // Theme: the menu item cycles dark → light → high-contrast with Enter and Space and stays open;
+  // its state text, its accessible name and the saved theme follow.
   const themeState = () => page.evaluate(() => ({
     theme: document.documentElement.dataset.theme,
-    label: document.getElementById('btn-theme')?.getAttribute('aria-label'),
+    label: document.querySelector('[data-testid="menu-theme"]')?.getAttribute('aria-label'),
+    state: document.querySelector('[data-testid="menu-theme"] .dash-menu-state')?.textContent,
     saved: localStorage.getItem('mco-theme'),
+    open: !document.getElementById('header-menu').hidden,
   }))
+  await menuBtn.focus()
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('ArrowDown')
   const t0 = await themeState()
-  await page.locator('#btn-theme').focus()
   const pressAndWait = async (key, from) => {
     await page.keyboard.press(key)
     await page.waitForFunction((from) => document.documentElement.dataset.theme !== from, from, { timeout: 5000 }).catch(() => {})
@@ -85,10 +123,11 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   }
   const t1 = await pressAndWait('Enter', t0.theme)
   const t2 = await pressAndWait('Space', t1.theme)
-  check('theme toggle: Enter then Space cycle dark → light → high-contrast',
-    t0.theme === 'dark' && t1.theme === 'light' && t2.theme === 'high-contrast', `${t0.theme} → ${t1.theme} → ${t2.theme}`)
-  check('theme toggle: aria-label changes and mco-theme is saved', t0.label !== t1.label && t1.label !== t2.label && t2.saved === 'high-contrast',
-    JSON.stringify([t0, t1, t2]))
+  check('theme item: Enter then Space cycle dark → light → high-contrast, the menu stays open',
+    t0.theme === 'dark' && t1.theme === 'light' && t2.theme === 'high-contrast' && t1.open && t2.open, `${t0.theme} → ${t1.theme} → ${t2.theme}`)
+  check('theme item: state text and name follow, mco-theme is saved',
+    t0.state === 'Dark' && t1.state === 'Light' && t2.state === 'High contrast' && t0.label !== t1.label && t2.saved === 'high-contrast', JSON.stringify([t0, t1, t2]))
+  await page.keyboard.press('Escape')
 
   const p = await problems()
   check('keyboard walk: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
@@ -216,8 +255,15 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await close()
 }
 
-/* ── Tabs mount only while open: no Latest requests from #ag / #downloader ─ */
-for (const [name, query, charts] of [['ag', '?s=acebozem&var=gdd#ag', 1], ['downloader', '?s=acebozem#downloader', 0]]) {
+/* ── Views mount only while open: no Now/list requests from an Ag tool; no downloader while dl is off ─ */
+{
+  const { page, close, rendered } = await open(env, '?s=acebozem#charts')
+  await rendered({ filled: ['[data-testid="var-air_temp"] .dash-spark svg'] })
+  check('[charts list] the Download sheet is closed and its form not mounted', await page.evaluate(() =>
+    document.getElementById('sheet-download').hidden && !document.querySelector('[data-testid="downloader"]')))
+  await close()
+}
+for (const [name, query, charts] of [['ag', '?s=acebozem&v=gdd#charts', 1]]) {
   const { page, close, rendered } = await open(env, query)
   await rendered({ charts })
   const latest = await page.evaluate(() => performance.getEntriesByType('resource').map((e) => e.name)
@@ -229,7 +275,7 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&var=gdd#ag', 1], ['down
 
 /* ── Download stepper (390 px): Next validates, focus + announcement follow ─ */
 {
-  const { page, close } = await open(env, '?s=acebozem#download', { viewport: VIEWPORTS[1] })
+  const { page, close } = await open(env, '?s=acebozem&dl=1#charts', { viewport: VIEWPORTS[1] })
   const progress = () => page.getByTestId('dl-progress').innerText()
   const shown = () => page.evaluate(() => [...document.querySelectorAll('.dl-step')].filter((e) => e.offsetParent !== null).map((e) => e.dataset.testid))
   await page.waitForFunction(() => document.querySelector('[data-testid="dl-next"]')?.disabled === false, null, { timeout: 30000 })
@@ -296,15 +342,15 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&var=gdd#ag', 1], ['down
 for (const [name, query, charts, before] of [
   ['compare', '?s=acebozem#latest', 1],
   ['variable', '?s=acebozem&v=air_temp#charts', 1],
-  ['ag-soil-profile', '?s=acebozem&var=soil_temp,soil_ec_blk#ag', 1],
+  ['ag-soil-profile', '?s=acebozem&v=soil_temp,soil_ec_blk#charts', 1],
   ['downloader', DL_QUERY, 1, runDownload],
 ]) {
   const { page, close, rendered } = await open(env, query)
   await before?.(page)
   await rendered({ charts })
-  const twins = await page.evaluate(() => {
-    const panel = [...document.querySelectorAll('.tab-panel')].find((p) => p.offsetParent !== null)
-    return [...panel.querySelectorAll('.chart-canvas')].filter((c) => c.offsetParent !== null && c.querySelector('canvas')).map((c) => {
+  const twins = await page.evaluate((scopes) => {
+    const panels = [...document.querySelectorAll(scopes)].filter((p) => !p.hidden && p.getClientRects().length > 0)
+    return panels.flatMap((p) => [...p.querySelectorAll('.chart-canvas')]).filter((c) => c.offsetParent !== null && c.querySelector('canvas')).map((c) => {
       const t = c.parentElement.querySelector('.chart-table table')
       return {
         label: c.getAttribute('role') === 'img' && !!c.getAttribute('aria-label'),
@@ -314,7 +360,7 @@ for (const [name, query, charts, before] of [
         hidden: !!t?.closest('.sr-only'),
       }
     })
-  })
+  }, VISIBLE_SCOPES)
   const ok = twins.length >= charts && twins.every((t) => t.label && t.caption && t.scoped && t.rows > 0 && t.hidden)
   check(`[${name}] every drawn chart: role=img + label, sr-only table with caption, scoped headers, rows`, ok, JSON.stringify(twins))
   await close()
@@ -353,8 +399,8 @@ for (const vp of VIEWPORTS) {
     check(`${label}: navbar, content and tab bar inert while open, not after`, s1.inert.every(Boolean) && !s2.inert.some(Boolean), JSON.stringify([s1.inert, s2.inert]))
   } else {
     check(`${label}: the inline drawer is not modal (nothing inert)`, !s1.inert.some(Boolean), JSON.stringify(s1.inert))
-    // Closed = visibility:hidden, so Tab from the last navbar button skips it.
-    await page.locator('#btn-help').focus()
+    // Closed = visibility:hidden, so Tab from the last header button skips it.
+    await page.getByTestId('header-menu-button').focus()
     await page.keyboard.press('Tab')
     const inPicker = await page.evaluate(() => document.getElementById('station-picker').contains(document.activeElement))
     check(`${label}: a closed drawer is out of the tab order`, !inPicker)
@@ -442,6 +488,8 @@ for (const vp of VIEWPORTS) {
   await lands('the next chip', '[data-testid="var-next"]', 'var-title')
   await lands('the previous chip', '[data-testid="var-prev"]', 'var-title')
   await lands('"‹ All variables"', '.var-back', 'charts-list-title')
+  await lands('an Ag tools row', '[data-testid="ag-tool-gdd"]', 'ag-chart-title')
+  await lands('"‹ All charts"', '[data-testid="ag-back"]', 'charts-list-title')
   await lands('the Compare entry', '[data-testid="charts-compare-link"]', 'charts-compare-title')
   const p = await problems()
   check('charts drill-down focus: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
@@ -450,7 +498,7 @@ for (const vp of VIEWPORTS) {
 
 /* ── Ag Options disclosure (390, collapsed): Enter and Space toggle it ──── */
 {
-  const { page, problems, close, rendered } = await open(env, '?s=acebozem&var=gdd&theme=light#ag', { viewport: VIEWPORTS[1] })
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&v=gdd&theme=light#charts', { viewport: VIEWPORTS[1] })
   await rendered({ charts: 1 })
   const isOpen = () => page.evaluate(() => document.querySelector('[data-testid="ag-controls"]').open)
   const o0 = await isOpen()
@@ -463,6 +511,78 @@ for (const vp of VIEWPORTS) {
   const p = await problems()
   check('Ag Options: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
+}
+
+/* ── Download sheet (1440 centred, 390 bottom): opens from the list, focus in, inert, Esc, dl ── */
+for (const vp of VIEWPORTS) {
+  const label = `Download sheet (${vp.name})`
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=dark#charts', { viewport: vp })
+  await rendered({ filled: ['[data-testid="charts-ag-tools"] ul'] })
+  const state = () => page.evaluate(() => {
+    const s = document.getElementById('sheet-download')
+    return {
+      shown: !s.hidden && s.getClientRects().length > 0,
+      inside: s.contains(document.activeElement),
+      focus: document.activeElement?.dataset.testid ?? document.activeElement?.id,
+      dl: new URLSearchParams(location.search).get('dl'),
+      inert: [...document.querySelectorAll('.mco-navbar, .dash-shell, .dash-tabbar')].map((e) => e.inert),
+      form: !!s.querySelector('[data-testid="downloader"]'),
+    }
+  })
+  await page.getByTestId('charts-download-link').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => new URLSearchParams(location.search).get('dl') === '1' && !document.getElementById('sheet-download').hidden, null, { timeout: 5000 }).catch(() => {})
+  await animationsDone(page)
+  const s1 = await state()
+  check(`${label}: Enter on "Download data" opens it (dl=1), focus inside, the form mounted`, s1.shown && s1.inside && s1.dl === '1' && s1.form, JSON.stringify(s1))
+  check(`${label}: header, content and tab bar inert while open`, s1.inert.every(Boolean), JSON.stringify(s1.inert))
+  await page.keyboard.press('Escape')
+  await page.waitForFunction(() => document.getElementById('sheet-download').hidden, null, { timeout: 5000 }).catch(() => {})
+  const s2 = await state()
+  check(`${label}: Esc closes it, clears dl, unmounts the form, focus returns to the link`,
+    !s2.shown && s2.dl === null && !s2.form && s2.focus === 'charts-download-link' && !s2.inert.some(Boolean), JSON.stringify(s2))
+  const p = await problems()
+  check(`${label}: console + CSP clean`, p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── Legacy links land somewhere sensible (REDESIGN.md "Information architecture and URLs") ── */
+{
+  const at = (page) => page.evaluate(() => ({ hash: location.hash, q: Object.fromEntries(new URLSearchParams(location.search)) }))
+  {
+    // An old GDD link: Ag keys but no `var` → GDD with its crop kept.
+    const { page, problems, close, rendered } = await open(env, '?s=acebozem&crop=corn#ag')
+    await rendered({ charts: 1 })
+    const u = await at(page)
+    const head = await page.evaluate(() => ({ title: document.getElementById('ag-chart-title')?.textContent, summary: document.querySelector('[data-testid="ag-options-summary"]')?.textContent }))
+    check('legacy ?crop=corn#ag → #charts&v=gdd with corn', u.hash === '#charts' && u.q.v === 'gdd' && u.q.crop === 'corn' && /^Growing degree days/.test(head.title ?? '') && /^Corn/.test(head.summary ?? ''), JSON.stringify({ ...u, ...head }))
+    const p = await problems()
+    check('legacy #ag link: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+    await close()
+  }
+  {
+    // A bare #ag: the Charts list with its Ag tools group in view.
+    const { page, close, rendered } = await open(env, '?s=acebozem#ag')
+    await rendered({ filled: ['[data-testid="charts-ag-tools"] ul'] })
+    await page.waitForFunction(() => {
+      const r = document.getElementById('charts-ag-tools').getBoundingClientRect()
+      return r.top >= 0 && r.top < innerHeight
+    }, null, { timeout: 5000 }).catch(() => {})
+    const u = await at(page)
+    const top = await page.evaluate(() => Math.round(document.getElementById('charts-ag-tools').getBoundingClientRect().top))
+    check('legacy bare #ag → #charts, the Ag tools group in view', u.hash === '#charts' && top >= 0 && top < 900, JSON.stringify({ ...u, top }))
+    await close()
+  }
+  {
+    // An old Downloader link: the sheet over Charts, its keys renamed and kept.
+    const { page, close } = await open(env, '?s=acebozem&els=air_temp,ppt&period=daily&from=2026-09-01&to=2026-09-30#downloader')
+    await page.waitForFunction(() => !document.getElementById('sheet-download').hidden && document.querySelector('[data-testid="dl-run"]'), null, { timeout: 10000 }).catch(() => {})
+    const u = await at(page)
+    check('legacy #downloader → #charts&dl=1 with the sheet open and dl_from/dl_to kept',
+      u.hash === '#charts' && u.q.dl === '1' && u.q.dl_from === '2026-09-01' && u.q.dl_to === '2026-09-30' && u.q.els === 'air_temp,ppt' &&
+        (await page.evaluate(() => !document.getElementById('sheet-download').hidden)), JSON.stringify(u))
+    await close()
+  }
 }
 
 /* ── Reduced motion: no chart entrance animation ────────────────────────── */

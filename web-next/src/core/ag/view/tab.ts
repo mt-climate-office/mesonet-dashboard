@@ -1,5 +1,5 @@
 /**
- * Ag Tools tab state: URL keys (`$store.url.state`) + the station row → the
+ * Ag tool state: URL keys (`$store.url.state`; the tool is `v`) + the station row → the
  * resolved selection every Ag component reads, the URL patches the controls
  * write, and the one-off URL fix-ups (stale cutoffs, ineligible soil chip).
  * Pure; the ui/ag components call these.
@@ -7,9 +7,9 @@
 import type { Station, StationElement } from '../../api'
 import type { ComboboxItem } from '../../controls/comboboxModel'
 import type { RangeValue } from '../../controls/rangeModel'
-import { DERIVED_VAR_OPTIONS, type DerivedVar, GDD_CROPS, SOIL_VAR_OPTIONS } from '../../params/ag'
+import { DERIVED_VAR_OPTIONS, type DerivedVar, GDD_CROPS, SOIL_VAR_OPTIONS, isAgTool } from '../../params/ag'
 import { stationHasSwp } from '../../stations'
-import { URL_SCHEMA, type UrlKey, type UrlState } from '../../url-schema'
+import type { UrlKey, UrlState } from '../../url-schema'
 import { elementLabel } from '../../downloader/labels'
 import type { GddCrop, LocalDate } from '../contract'
 import { GDD_CUTOFFS_F } from '../compute/gdd'
@@ -20,7 +20,6 @@ import type { Period, SoilProfileVar } from './labels'
 export type AgVariable = DerivedVar
 export const SOIL_PROFILE = 'soil_temp,soil_ec_blk' satisfies AgVariable
 
-const VARIABLES = new Set<string>(DERIVED_VAR_OPTIONS.map((o) => o.value))
 const CROPS = new Set(GDD_CROPS.map((c) => c.value))
 /** Variables that need soil water potential sensors (legacy filter_to_only_swp_stations). */
 const SWP_ONLY = new Set<string>(['swp', 'percent_saturation'])
@@ -30,13 +29,13 @@ const TIME_AGG = new Set<string>(['etr', 'feels_like', 'cci', 'swp', 'percent_sa
 /** Ag URL keys this module reads. */
 export type AgUrl = Pick<
   UrlState,
-  's' | 'var' | 'crop' | 'gdd_lo' | 'gdd_hi' | 'gdd_proj' | 'ag_time' | 'lt' | 'soilv' | 'annv' | 'ag_from' | 'ag_to'
+  's' | 'v' | 'crop' | 'gdd_lo' | 'gdd_hi' | 'gdd_proj' | 'ag_time' | 'lt' | 'soilv' | 'annv' | 'ag_from' | 'ag_to'
 >
 
 export interface AgTab {
-  /** A tool is open (`var` set); false = the tool cards. */
+  /** `v` is an Ag tool id (core/params/ag `isAgTool`). */
   open: boolean
-  /** The open tool; GDD (the legacy default) for an unknown `var` and on the cards. */
+  /** The open tool; GDD (the legacy default) when `v` is not an Ag tool. */
   variable: AgVariable
   variableLabel: string
   crop: GddCrop
@@ -69,13 +68,13 @@ export function dateWindow(from: string | null, to: string | null, today: LocalD
 
 /** Resolve the URL + station row into the Ag selection (unknown values fall back to defaults). */
 export function resolveAgTab(url: AgUrl, station: Station | undefined, today: LocalDate): AgTab {
-  const variable = (url.var && VARIABLES.has(url.var) ? url.var : 'gdd') as AgVariable
+  const variable: AgVariable = isAgTool(url.v) ? url.v : 'gdd'
   const crop = (CROPS.has(url.crop) ? url.crop : 'wheat') as GddCrop
   const hasSwp = stationHasSwp(station)
   const soilOptions = SOIL_VAR_OPTIONS.filter((o) => hasSwp || !SWP_ONLY.has(o.value))
   const showTimeAgg = TIME_AGG.has(variable)
   return {
-    open: !!url.var,
+    open: isAgTool(url.v),
     variable,
     variableLabel: DERIVED_VAR_OPTIONS.find((o) => o.value === variable)?.label ?? variable,
     crop,
@@ -101,22 +100,11 @@ export function resolveAgTab(url: AgUrl, station: Station | undefined, today: Lo
  * link's explicit params survive the initial load.
  */
 export function variablePatch(v: string): Partial<UrlState> {
-  return { var: v, crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' }
+  return { v, crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' }
 }
 
-/** Ag keys other than `var`: every option a tool reads. */
+/** Ag keys other than the tool itself: every option a tool reads (old `#ag` links carry them; core/router). */
 export const AG_KEYS = ['crop', 'gdd_lo', 'gdd_hi', 'gdd_proj', 'ag_time', 'lt', 'soilv', 'annv', 'ag_from', 'ag_to'] as const satisfies readonly UrlKey[]
-
-/**
- * Back to the tool cards: `var` and every `AG_KEYS` key at its default, so the
- * URL keeps no Ag key (core/router `legacyRedirect` would read one without
- * `var` as an old GDD link and reopen GDD).
- */
-export function agCardsPatch(): Partial<UrlState> {
-  const patch: Record<string, unknown> = { var: null }
-  for (const k of AG_KEYS) patch[k] = URL_SCHEMA[k].default
-  return patch as Partial<UrlState>
-}
 
 /** A new crop starts from its own cutoffs. */
 export const cropPatch = (crop: string): Partial<UrlState> => ({ crop, gdd_lo: null, gdd_hi: null })

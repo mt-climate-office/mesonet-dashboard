@@ -99,7 +99,7 @@ web-next and web/ do), filed upstream as mt-climate-office/mesonet-db-rds#201.
 - `stations.json`: the station matrix (copied from `web/scripts/fidelity/`, made by its `select-stations.mjs`).
 - `lib/browser.mjs`: Playwright launch, instrumented page, settle, screenshots.
 - `lib/extract.mjs`: in-page extractors (Plotly, ECharts, cards, map) and the palette color set.
-- `lib/drivers.mjs`: per-tab drivers for both apps (deep link → wait → extract; Downloader clicks Run and Download). web-next follows the P1 routes (`#charts&cmp=1`, `#now`, `#about`, `#download`; Ag links carry `var`).
+- `lib/drivers.mjs`: per-tab drivers for both apps (deep link → wait → extract; Downloader clicks Run and Download). web-next follows its routes (`#charts&cmp=1`, `#now`, `#about`; an Ag tool is `#charts&v=<tool>`, web/'s `var`; the Downloader is the Download sheet, `#charts&dl=1`).
 - `lib/compare.mjs`: normalisation, trace matching and numeric diff, cards, CSV, palette check.
 - `lib/derived.mjs`: `/derived` fetch and the ag-api comparison.
 - `lib/report.mjs`: `report.html`. `lib/servers.mjs`: dev-server start/stop. `lib/util.mjs`: CSV, dates (Mountain Time), status ranking.

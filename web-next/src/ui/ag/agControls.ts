@@ -118,8 +118,9 @@ export function agControls() {
     },
 
     setStation: (id: string | null) => Alpine.store('station').select(id),
+    /** A new tool is a variable change: pushed, so Back returns to the previous tool. */
     setVariable(v: string) {
-      if (v !== this.tab.variable) set(variablePatch(v))
+      if (v !== this.tab.variable) Alpine.store('url').go('charts', variablePatch(v), true)
     },
     setDates: (r: { start: string; end: string }) => set({ ag_from: r.start, ag_to: r.end }),
     setTime: (v: string) => set({ ag_time: v as UrlState['ag_time'] }),

@@ -218,16 +218,17 @@ export async function open(env, query, { viewport = VIEWPORTS[0], reducedMotion 
     },
     /**
      * Render evidence (never networkidle; map tiles never idle): resolves when the visible tab
-     * panel holds at least `charts` drawn charts (an ECharts <canvas> with a size and a filled
-     * sr-only table twin), every selector in `filled` has children, and no data request has been
-     * in flight for 750 ms (late layers such as GDD normals and the NWS projection).
+     * panel and any open modal sheet together hold at least `charts` drawn charts (an ECharts
+     * <canvas> with a size and a filled sr-only table twin), every selector in `filled` has
+     * children, and no data request has been in flight for 750 ms (late layers such as GDD
+     * normals and the NWS projection).
      */
     async rendered({ charts = 0, filled = [] } = {}, timeout = 30000) {
       await page.waitForFunction(
         ({ charts, filled }) => {
-          const panel = [...document.querySelectorAll('.tab-panel')].find((p) => p.offsetParent !== null)
-          if (!panel) return false
-          const drawn = [...panel.querySelectorAll('.chart-canvas')].filter((c) => {
+          const panels = [...document.querySelectorAll('.tab-panel, .dash-sheet--modal')].filter((p) => !p.hidden && p.getClientRects().length > 0)
+          if (!panels.some((p) => p.matches('.tab-panel'))) return false
+          const drawn = panels.flatMap((p) => [...p.querySelectorAll('.chart-canvas')]).filter((c) => {
             const cv = c.querySelector('canvas')
             const rows = c.parentElement?.querySelectorAll('.chart-table tbody tr').length ?? 0
             return c.offsetParent !== null && cv && cv.width > 0 && rows > 0
@@ -287,8 +288,14 @@ export async function open(env, query, { viewport = VIEWPORTS[0], reducedMotion 
 
 /* ── Shared steps ───────────────────────────────────────────────────────── */
 
-/** Downloader with a small daily request ready to run (acebozem, Sept 2026). */
-export const DL_QUERY = '?s=acebozem&els=air_temp,ppt&period=daily&dl_from=2026-09-01&dl_to=2026-09-30#downloader'
+/** The Download sheet with a small daily request ready to run (acebozem, Sept 2026). */
+export const DL_QUERY = '?s=acebozem&els=air_temp,ppt&period=daily&dl_from=2026-09-01&dl_to=2026-09-30&dl=1#charts'
+
+/** Visible chart hosts in the visible tab panel and any open modal sheet (for table-twin checks). */
+export const VISIBLE_SCOPES = '.tab-panel, .dash-sheet--modal'
+
+/** Wait until no animation (view transition, sheet or dialog slide) is running: a condition, not a sleep. */
+export const animationsDone = (page) => page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 10000 })
 
 /** Click Run Request once the form allows it (station confirmed, elements loaded); on phones, Next to the Run step first. */
 export async function runDownload(page) {

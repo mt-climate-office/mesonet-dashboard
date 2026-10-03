@@ -2,32 +2,36 @@
 
 How the dashboard is laid out and why: the information architecture, the
 layout ladder, the shared components, motion and type. Read it with
-ARCHITECTURE.md (code layers, data flow, "How to …"). It describes the P0
-prototype of the UX refactor (plan "offer-this-as-a-unified-quill") and the
-P1 sections (Charts, Ag, Download, About).
+ARCHITECTURE.md (code layers, data flow, "How to …"). It describes the
+redesign's three places (REDESIGN.md; phase A: the shell, routing and
+primitives) over the P1 section content (Now, Charts, Ag tools, Download, About),
+which phase B restyles.
 
 ## Information architecture
 
 ```
 Station view (?s=<id>; remembered in localStorage mco-dashboard-station)
 ├─ Now       #now (default)  current-conditions overview
-├─ Charts    #charts         variable list → variable page (v=…, view=recent|history|table)
-│                            | Compare (cmp=1)
-├─ Ag        #ag             tool cards → a tool (var=…): Options disclosure + chart
-├─ Download  #download       Elements → Dates & period → Run, preview (a stepper on phones)
+├─ Charts    #charts         the list: variable groups · Ag tools · Compare · Download data
+│                            → a variable page (v=<family>, view=recent|history|table)
+│                            → an Ag tool (v=<Ag tool id>): Options disclosure + chart
+│                            → Compare (cmp=1)
+│            &dl=1           the Download sheet over any of them
 └─ About     #about          metadata, all current readings, locator map
+Header ⋯ menu: Share this view · Theme · Help · Send feedback
 Station picker: drawer (desktop/tablet) or bottom sheet (phones):
-                search · Near me · recents · network chips · map
+                search (Near me inside) · recents · Browse on the map (network chips + map)
 ```
 
 - **Entry:** `?s=` opens that station; otherwise the last one; otherwise the picker (first visit).
 - **Picking** a station closes the picker at every size (the desktop drawer saves "closed") and moves focus
   to `<main>`, the new station's content.
-- **History:** a section change or a drill-down (a Charts variable or sub-view, an Ag tool) is `pushState`,
-  so Back returns; other changes inside a section (dates, toggles) replace the entry. Section links are real `<a href>`s: they open in a new tab
-  and work before the JS runs.
-- **Old links** keep working (DIVERGENCES "UX refactor"): `#latest` → Charts → Compare, `#downloader` →
-  Download, `#ag` unchanged.
+- **History:** a section change or a drill-down (a Charts variable, Ag tool or sub-view) is `pushState`,
+  so Back returns; other changes inside a section (dates, toggles, opening the Download sheet) replace the
+  entry. Section links are real `<a href>`s: they open in a new tab and work before the JS runs.
+- **Old links** keep working (DIVERGENCES "Three places"): `#latest` → Compare; `#ag&var=<tool>` →
+  `#charts&v=<tool>`; a bare `#ag` → the list at its Ag tools group; `var=annual` → that variable's
+  All-years view; `#download` / `#downloader` → `#charts&dl=1`.
 
 ## Layout ladder
 
@@ -36,24 +40,27 @@ drawer) reads `MCO.viewport` and the desktop query in JS.
 
 | Name | Query | Sections | Station picker | Now grid |
 |---|---|---|---|---|
-| compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar | bottom sheet (peek / full) | one column, tiles 2-up |
-| tablet | 641–1059 px | segmented row under the station header | overlay drawer + scrim | hero beside photo, tiles 3-up |
-| desktop | ≥ 1060 px | segmented row | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero 3/5 beside photo, tiles 4-up |
+| compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) | bottom sheet (peek / full) | one column, tiles 2-up |
+| tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | hero beside photo, tiles 3-up |
+| desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero 3/5 beside photo, tiles 4-up |
 
-The kit's own steps still apply inside the navbar: labels shed ≤ 1400 px, chrome tightens ≤ 1060 px, the
-brand hides ≤ 750 px.
+The brand shows only on desktop (visually hidden below 1060 px; the kit's own step is 750 px).
 
-**Page frame** (`partials/shell.html`, `ui/layout/shell.css`): the sticky one-row navbar; below it one flex
-row, `.dash-shell` = picker drawer + content column (notices, station header, section row, the section,
-footer); the phone tab bar is fixed at the bottom. `--chrome-h` (navbar) and `--tabbar-h` (tab bar) are
+**Page frame** (`partials/shell.html`, `ui/layout/shell.css`): the sticky one-row header; below it one flex
+row, `.dash-shell` = picker drawer + content column (notices, the section, footer); the phone tab bar is
+fixed at the bottom; modal sheets come last. `--chrome-h` (header) and `--tabbar-h` (tab bar) are
 published on `<html>` and used for the drawer/sheet offsets, the body's bottom padding (the tab bar never
-covers content) and the toast.
+covers content) and the toast. There is no station meta line above the sections.
 
-**Navbar:** logo · brand · **station switcher** (pin icon + "Bozeman ▾", truncates, opens the picker) · Share ·
-theme · Help. One row at every width. Feedback lives in Help and the footer.
+**Header:** logo · brand (desktop) · **station button** ("Bozeman ▾", large, borderless, truncates, opens the
+picker) · the sections, Now | Charts | About, as a segmented control (tablet up; the current one a raised pill,
+bold) · one **⋯ menu**: Share this view, Theme (cycles dark → light → high contrast and stays open; the
+state, "Dark", shows on the right and is in the item's name), Help (the kit dialog; focus returns to ⋯),
+then Send feedback (a link). One row at every width.
 
-**Station header:** the station name (`--fs-xl` heading) over "network · county · elevation". On compact the
-switcher already shows the name, so the heading is `.sr-only` there and only the meta line shows.
+**Adding a menu item:** a `role="menuitem"` button (or link) inside `#header-menu` in partials/shell.html,
+`class="dash-menu-item"`, an icon `<svg aria-hidden="true">` and its label; `@click` calls a method on
+`navMeta` (ui/shell/navMeta.ts). The menu wiring needs no change.
 
 ## Now
 
@@ -96,9 +103,12 @@ Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png
 ```
 
 - **List** (`partials/charts/list.html`, `ui/charts/variableList.ts`, model `core/variables`): the station's
-  variables from `/elements/{s}`, one card per group, one row per variable: name · current value (from
-  `/latest`, shallowest depth for soil; the last 24 h total for precipitation and ETr) · 48 h sparkline (one
-  72 h hourly request for every listed variable). The last card opens Compare.
+  variables from `/elements/{s}`, one card per group (Weather · Rain and evaporation · Soil · Well · Other),
+  one row per variable: plain name (`core/variables/labels.ts`) · current value (from `/latest`, shallowest
+  depth for soil; the last 24 h total for precipitation and ETr) · 48 h sparkline (one 72 h hourly request
+  for every listed variable). Then **Ag tools** (`#charts-ag-tools`; `LIST_AG_TOOLS`: every Ag tool but
+  Annual comparison, each a plain name over a one-line description), then Compare and **Download data**
+  (opens the Download sheet; phase B moves it to each chart's ⋯ menu).
 - **Variable page** (`partials/charts/variable.html`, `ui/charts/variablePage.ts`): "‹ All variables", the
   heading (`[data-vt-target]`: a tapped Now tile or list row morphs into it), prev/next chips in list order,
   a Recent · History · Table switch, then
@@ -134,19 +144,17 @@ Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png
   panel), so it never covers the data;
 - chart height on phones: the variable chart `min(60dvh, 420px)`; Compare ~160 px per panel, about three
   per screen, and the page scrolls past the stack.
-## Ag
+## Ag tools (inside Charts)
 
-| State | Content |
-|---|---|
-| No `var` | "Ag tools": one `a.dash-card` per tool (`DERIVED_VAR_OPTIONS` in `core/params/ag.ts`: name + one-line description), as many columns as fit (min 16 rem) |
-| `var=<tool>` | "‹ All Ag tools" link · heading "<tool>: <station>" · **Options** disclosure · chart card (notes, then the chart or its state) |
+An Ag tool is a Charts entry: `#charts&v=<tool>` (`v` is an Ag tool id, `core/params/ag` `AG_TOOL_IDS`;
+`chartsMode` → `'ag'`). Until phase B gives it the variable-page frame, it renders the P1 tool view
+(`partials/ag/index.html`, `ui/ag/agTab.ts`): "‹ All charts" · heading "<tool>: <station>" · **Options**
+disclosure · chart card (notes, then the chart or its state).
 
-- **Navigation:** a card is a real link (`?…&var=<tool>#ag`); a plain click opens it with `pushState`
-  (`navigate('ag', { drillDown: true })`) and focuses the heading. "All Ag tools", and the Ag tab inside Ag,
-  return to the cards the same way (`core/ag/view/tab.ts#agCardsPatch`: `var` and every other Ag key back to
-  its default, so the link is not read as an old GDD one); the link focuses the card just left. Back returns
-  to the cards. Opening a tool applies `variablePatch` (the
-  same reset as changing the variable select inside Options).
+- **Navigation:** a list row is a real link; a plain click opens the tool with `pushState`
+  (`navigate('charts', { drillDown: true })`, `variablePatch`: the tool's options reset) and focuses the
+  heading. "‹ All charts", and the Charts tab, return to the list (pushed). Changing the tool in the
+  Options variable select pushes too.
 - **Options** (`<details class="dash-card ag-options">`): open on desktop, collapsed on phones (open there too
   while no station is chosen, since the station combobox is inside). The summary is one line, ellipsized:
   `core/ag/view/summary.ts#optionsSummary`, e.g. "Wheat · 32–70 °F · to Oct 31" (GDD: crop · cutoffs ·
@@ -160,9 +168,13 @@ Screenshots (P1, in the session scratchpad `ag/`): `390-<theme>-landing.png`, `3
 `390-<theme>-gdd-options.png`, `1440-<theme>-landing.png`, `1440-<theme>-gdd.png` for light, dark and
 high-contrast.
 
-## Download
+## Download (a sheet)
 
-Three step cards (`.dash-card`, `partials/downloader/index.html`) and the preview below them:
+The Download sheet (`partials/sheets/download.html`) is open while `dl=1`: from the Charts list's "Download
+data" entry (`openSheet('download', opener)`), from an old `#download` / `#downloader` link, or any URL with
+`dl=1`. Closing (×, Esc, the scrim, a drag down on phones) clears `dl` and returns focus to the opener (to
+`<main>` when the URL opened it). It is a bottom sheet on phones and a centred panel (68 rem) from 641 px.
+Inside, unchanged: three step cards (`.dash-card`, `partials/downloader/index.html`) and the preview below them:
 
 | Step | Contents |
 |---|---|
@@ -172,7 +184,7 @@ Three step cards (`.dash-card`, `partials/downloader/index.html`) and the previe
 
 - **Desktop and tablet:** a two-column grid, Elements beside Dates & period over Run; the preview spans
   both columns. No stepper.
-- **Compact:** no station map in Elements (the navbar's station picker has one; MapLibre is not started),
+- **Compact:** no station map in Elements (the header's station picker has one; MapLibre is not started),
   and a stepper. Only `.dl-step.is-current` shows (the Run step and the preview share step 3),
   under "Step 2 of 3" and a three-segment bar, with Back / Next below. Next stays enabled; when the step
   would block Run (no station or element; invalid dates, from the date control's `onValidity`) it stays put
@@ -204,19 +216,44 @@ never scrolls sideways at 390 px. Every fetch is in `ui/station/resources.ts`, s
 ## Components (`src/ui/layout/`; kit candidates, see KIT-NOTES.md)
 
 Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; the Alpine wrappers
-(`ui/picker/stationPicker.ts`, `ui/shell/sections.ts`, `ui/shell/navigate.ts`) only connect them to the stores.
+(`ui/picker/stationPicker.ts`, `ui/shell/sections.ts`, `ui/shell/menu.ts`, `ui/shell/sheet.ts`,
+`ui/shell/navigate.ts`) only connect them to the stores.
 
-- **`.dash-card`** — the one in-flow panel: `--bg-surface`, `--border`, `--radius-lg`, `--card-pad`
-  (1 rem; 0.875 rem compact), `.dash-card-title` (sm, 600, `--text-secondary`). A card may be an `<a>`
-  (tiles): hover border, kit focus ring. `.mco-panel` stays for glass over maps.
+- **`.dash-card`** — the one in-flow surface, flat: `--bg-surface`, radius `--card-radius` (16 px),
+  `--card-shadow` (two short layers tinted by the kit `--scrim`, lighter than `--shadow`), no border except in
+  high contrast; `--card-pad` (1 rem; 0.875 rem compact), `.dash-card-title` (sm, 600, `--text-secondary`).
+  A card may be an `<a>` (tiles): hover fill, kit focus ring. `.mco-panel` stays for glass over maps.
+- **Menu** (`menu.ts`/`.css`; Alpine `x-data="menu"`) — the ⋯ menu button. Markup:
+  `<div class="dash-menu" x-data="menu">` holding `<button class="dash-icon-btn" data-menu-button
+  aria-label="…">` and `<div class="dash-menu-panel" id="…" role="menu" aria-label="…" hidden>` with
+  `role="menuitem"` items (`.dash-menu-item`; `.dash-menu-state` for a value on the right; `<hr
+  class="dash-menu-sep">`). Focus moves to the first item on open (ArrowUp on the button: the last); arrows,
+  Home/End move; Esc closes and returns focus to the button; Tab, a press outside or focus leaving closes.
+  Choosing an item closes the menu before its handler runs (focus on the button), unless the item has
+  `data-keep-open`. Panel at `--z-flyout`, right-aligned under the button.
+- **Modal sheet** (`.dash-sheet--modal` on the bottom sheet below; Alpine `x-data="sheet({ id, urlKey? })"`) —
+  a task surface over everything: a bottom sheet on phones, a centred panel (`--sheet-w`) from 641 px; the
+  page behind is `inert`, Esc / × / scrim close, focus moves in (`[data-autofocus]`, else the first control)
+  and returns to the opener. Open or close from code with `openSheet(id, opener)` / `closeSheet(id)`
+  (`ui/shell/sheet.ts`); with `urlKey` the URL key is the open state. Content inside `<template
+  x-if="isOpen">` mounts only while open. Each sheet has a sibling scrim `#<id>-scrim`.
+- **Pill chips** (`card.css`) — `<button class="dash-chip" aria-pressed>`: a raised pill; pressed is filled
+  with high contrast (`--text-primary` fill, `--bg-deep` text) for the active range. `.dash-chip--quiet` for
+  the interval row: pressed is the accent tint with `--accent-line` text. `aria-pressed` alone drives the style.
+- **Display numerals** (`card.css`) — `.num-display`: Outfit, `tabular-nums`, −0.02 em tracking, for readings
+  at ≥ 1.75 rem (hero, tiles). Space Mono stays for tables, ids, timestamps and axes (mco-web-style#36).
+- **Plain labels** (`core/variables/labels.ts`, not a layout primitive but used by every surface) — `LABELS[v]`
+  (name, unit, `digits.display` / `digits.table`, an optional `sub`), `plainName(v, fallback)`,
+  `formatReading(v, value, 'display' | 'table')` ("54 °F", "8%", "0.05 in"), `compassWord(deg)` ("SSE").
 - **Bottom sheet** (`sheet.ts`/`.css`) — peek/full, drag on the handle (up = full, down = peek, then
   close), Enter/Space on the handle toggles, Esc closes, focus moves in and returns to the opener, the
   rest of the page is `inert`, the body scrolls with `overscroll-behavior: contain`. Sits on the tab bar.
 - **Drawer** (`drawer.ts`/`.css`) — inline (in the flex row, margin slide, content reflows, not modal)
   or overlay (fixed, scrim, modal). Closed = `visibility: hidden` + `inert`. Esc, focus in/out as the sheet.
 - **Focus scope** (`focusScope.ts`) — the shared focus-in / inert / Esc / focus-return logic.
-- **Section nav** (`sectionNav.ts`/`.css`) — the tab bar (icon + label, ≥ 56 px, safe-area padding,
-  indicator line + bold label for the current one) and the segmented row (filled pill), `aria-current`.
+- **Section nav** (`sectionNav.ts`/`.css`) — the tab bar (three items on a solid `--bg-surface`, icon + label,
+  ≥ 56 px, safe-area padding; the current one has a pill behind its icon and a bold label) and the header's
+  segmented control (a `--bg-raised` track; the current one a raised `--bg-surface` pill, bold), `aria-current`.
 - **Skeletons** (`skeleton.css`) — `.dash-skel` + `--line`, `--value`, `--spark`, `--media`, `--period`,
   `--chart`, `--table`; token shimmer, static under reduced motion, `aria-hidden`.
 - **Badge** (`card.css`) — `.dash-badge`, `.dash-badge--warn` (heavier border + icon; never colour alone).
@@ -231,7 +268,7 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 
 - **Section changes:** a same-document View Transition (`ui/layout/transition.ts`) where supported:
   only the section region (`view-transition-name: dash-section`) cross-fades with a 12 px slide, 180 ms,
-  kit easing; forward/back follows the section order. The navbar and tab bar stay still.
+  kit easing; forward/back follows the section order. The header and tab bar stay still.
 - **Shared element:** a tapped tile morphs into the destination heading (`[data-vt-target]`, 240 ms).
 - **Drawer and sheet:** 220 ms slides (`.enter`/`.leaving`, margin or transform). The state restored on
   page load does not animate.
@@ -254,11 +291,12 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
 
 ## Accessibility notes
 
-- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `photo-dialog`, `about`, `picker`, `picker-open`,
-  `charts-list`, `variable` + `-history` + `-table`, `compare`, `ag-tools`, four Ag tools, `download-step1`
-  (390), `downloader`, `help-dialog`) × 3 themes × 1440/390. `keyboard.mjs` walks the picker, tab bar,
-  photo dialog, variable page and Ag Options; `layout.mjs` checks touch swipes over charts, sideways scroll at 390, the
-  fold and reduced motion.
+- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `header-menu`, `photo-dialog`, `about`,
+  `picker`, `picker-open` (both with the map revealed), `charts-list`, `variable` + `-history` + `-table`, `compare`,
+  `legacy-ag`, four Ag tools, `download-step1` (390), `downloader`, `help-dialog`) × 3 themes × 1440/390.
+  `keyboard.mjs` walks the header and its ⋯ menu (Help, Theme), the picker, the Download sheet, tab bar,
+  photo dialog, variable page, Ag Options and the legacy links; `layout.mjs` checks touch swipes over charts,
+  sideways scroll at 390, the fold, the one-row header, the solid tab bar, the sheet's fit and reduced motion.
 - Charts: the Table view is a real `<table>` (caption, scoped headers) in a focusable, labelled scroll region;
   presets and view switches are radios / links with `aria-current`; stats are a `<dl>`.
 - Touch targets ≥ 40 px under `(hover: none)`; the tab bar is 56 px.

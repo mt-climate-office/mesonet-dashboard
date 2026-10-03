@@ -1,10 +1,12 @@
-/* Download section (partials/downloader/index.html). Desktop/tablet: the form
+/* The downloader (partials/downloader/index.html) in the Download sheet. Desktop/tablet: the form
    in two columns (Elements | Dates & period over Run) with the preview full
    width below. Compact: a stepper, one .dl-step.is-current at a time with the
    progress line and Back/Next. Plus inline messages, the primary button and
    the BLM funding footer. Kit tokens and the --fs-* scale only. */
 
-.dl-tab { display: flex; flex-direction: column; gap: 0.75rem; max-width: 120rem; margin: 0 auto; }
+/* The sheet is wide enough for the two columns (ui/layout/sheet.css reads --sheet-w). */
+.dl-sheet { --sheet-w: 68rem; }
+.dl-tab { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
 
 .dl-form {
   display: grid; gap: 0.75rem; align-items: start;

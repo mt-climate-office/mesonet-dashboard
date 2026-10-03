@@ -1,19 +1,11 @@
-/* Ag section (partials/ag/*): the tool cards, the open tool's Options
-   disclosure and chart card, and the chart states. Panels are .dash-card
+/* An Ag tool inside Charts (partials/ag/*): its Options disclosure and
+   chart card, and the chart states. Panels are .dash-card
    (ui/layout/card.css); sizes are the --fs-* scale; kit tokens only.
    Inputs are 16 px on touch through ui/controls/controls.css. */
 
 .ag { display: flex; flex-direction: column; gap: 0.75rem; }
-.ag-landing, .ag-open { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
 .ag-heading { margin: 0; font-size: var(--fs-lg); font-weight: 600; color: var(--text-primary); }
 .ag-back { align-self: flex-start; gap: 0.2rem; } /* gap: inline-flex on touch drops the space after ‹ */
-
-/* Tool cards: one per tool, as many columns as fit. */
-.ag-tools { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
-.ag-tools > li { display: flex; min-width: 0; }
-.ag-tool { flex: 1; }
-.ag-tool-title { margin: 0 0 0.25rem; font-size: var(--fs-md); font-weight: 600; color: var(--text-primary); }
-.ag-tool-desc { margin: 0; font-size: var(--fs-sm); line-height: 1.45; color: var(--text-secondary); }
 
 /* Options disclosure: a one-line summary (ellipsis), then the controls. */
 .ag-options-summary {

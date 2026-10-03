@@ -13,6 +13,7 @@ import { depthLabelFromColumn, latestVariableForColumn } from '../params'
 import { parseWallClock } from '../sensorEvents'
 import type { Variable } from './catalog'
 import { last24h } from './range'
+import { plainName } from './labels'
 import { fmtStat } from './stats'
 
 type ElementRow = { element: string; description_short: string }
@@ -21,6 +22,7 @@ const HOUR = 3_600_000
 
 export interface VariableRow {
   id: string
+  /** Plain name (core/variables/labels): "Humidity", not "Relative Humidity". */
   name: string
   /** "57 °F", or "—" without a reading. */
   value: string
@@ -73,7 +75,7 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
     if (v.sum) {
       const [from, to] = last24h(end)
       const day = col ? timed.filter((x) => x.t >= from && x.t < to).map((x) => num(x.r[col])).filter((x): x is number => x !== null) : []
-      return { id: v.id, name: v.name, value: day.length ? fmt(day.reduce((a, b) => a + b, 0), unit) : '—', note: day.length ? 'last 24 h' : '', spark, sparkLabel }
+      return { id: v.id, name: plainName(v.id, v.name), value: day.length ? fmt(day.reduce((a, b) => a + b, 0), unit) : '—', note: day.length ? 'last 24 h' : '', spark, sparkLabel }
     }
     // The current reading: /latest first (fresher), else the newest hourly value.
     const latestCol = latest ? primaryColumn(Object.keys(latest), v.name) : null
@@ -82,6 +84,6 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
     const value = now ?? newest
     const valueCol = now !== null ? latestCol : col
     const depth = valueCol ? depthLabelFromColumn(valueCol) : null
-    return { id: v.id, name: v.name, value: value === null ? '—' : fmt(value, unitOf(valueCol ?? '')), note: depth ? `at ${depth}` : '', spark, sparkLabel }
+    return { id: v.id, name: plainName(v.id, v.name), value: value === null ? '—' : fmt(value, unitOf(valueCol ?? '')), note: depth ? `at ${depth}` : '', spark, sparkLabel }
   })
 }

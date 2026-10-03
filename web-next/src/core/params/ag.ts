@@ -27,6 +27,16 @@ export const DERIVED_VAR_OPTIONS: { value: DerivedVar; label: string; descriptio
   { value: 'annual', label: 'Annual comparison', description: 'This year against past years for any variable the station reports.' },
 ]
 
+/**
+ * Ag tool ids: in Charts, a `v=` value in this list opens that Ag tool; any
+ * other value is an observed variable family (one namespace; core/router).
+ * `etr` is both an Ag tool and an element family: the Ag tool wins.
+ */
+export const AG_TOOL_IDS: readonly string[] = DERIVED_VAR_OPTIONS.map((o) => o.value)
+
+/** True when `v` is an Ag tool id (`AG_TOOL_IDS`). */
+export const isAgTool = (v: string | null | undefined): v is DerivedVar => !!v && AG_TOOL_IDS.includes(v)
+
 export const GDD_CROPS: { value: string; label: string }[] = [
   { value: 'wheat', label: 'Wheat' },
   { value: 'barley', label: 'Barley' },

@@ -1,0 +1,45 @@
+/* Menu button + menu (ui/layout/menu.ts; kit candidate .mco-menu, KIT-NOTES.md).
+     .dash-menu         the positioned wrapper around the button and the panel
+     .dash-icon-btn     a round, borderless 40 px icon button (the ⋯ trigger)
+     .dash-menu-panel   role="menu": a surface below the button, right-aligned, at --z-flyout
+     .dash-menu-item    role="menuitem" (button or link); .dash-menu-state is a muted value on
+                        its right ("Dark"); .dash-menu-sep a divider
+   Kit tokens only; the kit focus ring marks the active item. */
+
+.dash-menu { position: relative; display: inline-flex; }
+
+.dash-icon-btn {
+  display: inline-grid; place-items: center;
+  width: 40px; height: 40px; padding: 0;
+  border: 0; border-radius: 999px;
+  background: none; color: var(--text-secondary);
+  cursor: pointer; transition: var(--transition);
+}
+.dash-icon-btn:hover, .dash-icon-btn[aria-expanded="true"] { background: var(--accent-hover); color: var(--text-primary); }
+.dash-icon-btn svg { fill: currentColor; }
+
+.dash-menu-panel {
+  position: absolute; top: calc(100% + 0.4rem); right: 0; z-index: var(--z-flyout);
+  min-width: 14rem; max-width: calc(100vw - 1.5rem);
+  display: flex; flex-direction: column;
+  padding: 0.375rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.dash-menu-panel[hidden] { display: none; }
+
+.dash-menu-item {
+  display: flex; align-items: center; gap: 0.65rem;
+  width: 100%; min-height: 40px; padding: 0.5rem 0.75rem;
+  border: 0; border-radius: var(--radius-md);
+  background: none; color: var(--text-primary);
+  font: inherit; font-size: var(--fs-sm); text-align: left; text-decoration: none;
+  cursor: pointer; white-space: nowrap;
+}
+.dash-menu-item:hover { background: var(--accent-hover); }
+.dash-menu-item svg { flex-shrink: 0; stroke: var(--text-muted); }
+.dash-menu-state { margin-left: auto; padding-left: 1rem; color: var(--text-muted); }
+.dash-menu-sep { margin: 0.3rem 0.4rem; border: 0; border-top: 1px solid var(--border); }
+@media (hover: none) { .dash-menu-item { min-height: 44px; } }
