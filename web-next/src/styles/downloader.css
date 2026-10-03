@@ -21,10 +21,9 @@
 .dl-row-btn { cursor: pointer; border-radius: var(--radius-md); }
 .dl-row-btn:hover { background: var(--accent-hover); }
 .dl-row-label { flex: none; color: var(--text-secondary); }
-/* The value takes the rest and ellipsizes; "+ Add" never wraps away from it. */
+/* The value takes the rest and ellipsizes. */
 .dl-row-value { display: flex; justify-content: flex-end; align-items: baseline; gap: 0.5rem; flex: 1; min-width: 0; font-weight: 500; }
 .dl-row-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dl-row-add { flex: none; font-weight: 400; color: var(--text-secondary); }
 .dl-row-chevron { flex: none; stroke: var(--text-secondary); transition: transform var(--transition); }
 .dl-row-btn[aria-expanded="true"] .dl-row-chevron { transform: rotate(180deg); }
 /* Same columns as a button row, minus the chevron's space. */

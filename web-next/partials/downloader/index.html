@@ -6,13 +6,13 @@
 <div class="dl-tab" x-data="downloader" data-testid="downloader">
   <form class="dl-form" aria-label="Download request" novalidate @submit.prevent="act()">
     <div class="dl-rows">
-      <!-- Variables: chips for the selection, "+ Add" opens the grouped checklist. -->
+      <!-- Variables: chips for the selection; "+ Add variables" opens the grouped checklist. -->
       <div class="dl-row" data-testid="dl-row-vars">
         <h3 class="dl-row-head">
           <button type="button" class="dl-row-btn" id="dl-row-vars-btn" aria-controls="dl-row-vars-panel"
                   :aria-expanded="isOpen('vars')" @click="toggleRow('vars')">
             <span class="dl-row-label">Variables</span>
-            <span class="dl-row-value"><span class="dl-row-text" x-text="varsText"></span><span class="dl-row-add">+ Add</span></span>
+            <span class="dl-row-value"><span class="dl-row-text" x-text="varsText"></span></span>
             <svg class="dl-row-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
           </button>
         </h3>
