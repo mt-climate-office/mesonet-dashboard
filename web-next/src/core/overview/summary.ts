@@ -5,7 +5,7 @@
  * `nowWallMs` (Denver wall clock), never from the system clock.
  */
 import type { ObservationRow } from '../api'
-import { degToCompass } from '../params'
+import { compassWord } from '../variables/labels'
 import type { PrecipSummary } from './precip'
 
 /** Smallest amount (in) counted as rain; the gauges resolve 0.01 in. */
@@ -58,7 +58,7 @@ export function skyPhrase(shortForecast: string | null | undefined): string | nu
 export function windPhrase(mph: number, deg: number | null): string {
   const c = windClass(mph)
   if (c === 'calm') return 'calm'
-  const dir = deg === null ? '' : `${degToCompass(deg)} `
+  const dir = deg === null ? '' : `${compassWord(deg)} `
   return `${c === 'windy' ? 'strong' : c} ${dir}wind`
 }
 
