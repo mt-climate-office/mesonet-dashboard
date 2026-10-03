@@ -4,7 +4,7 @@
  *             chartsMode, chartPatch, chartHeading, matchesQuery, showsNormals, LIST_AG_TOOLS
  *  - labels:  LABELS, plainName, formatValue, formatReading, compassWord (plain names, units, precision)
  *  - summary: variableRows (list values + sparklines), listRequest, primaryColumn, currentReading
- *  - range:   RANGE_PRESETS, RANGE_CHIPS, presetPatch, activePreset, pageRange, rangeChipPatch,
+ *  - range:   RANGE_PRESETS, RANGE_CHIPS, presetPatch, activePreset, pageRange, rangeChipPatch, windowPatch,
  *             rangeLabel, rangeView
  *  - interval: intervalChips, effectiveAgg, intervalPatch, spanDays (Auto · 5-min · Hourly · Daily)
  *  - stats:   panelStats (low/high/average or total)

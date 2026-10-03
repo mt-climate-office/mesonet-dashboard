@@ -11,7 +11,7 @@ import { datesPatch, todayIso } from '../latest/sidebar'
 import { windowRange } from '../latest/view'
 import { chartWindow } from '../models/timeseries'
 import type { UrlState } from '../url-schema'
-import { rawAllowed } from './interval'
+import { rawAllowed, spanDays } from './interval'
 
 export interface RangePreset {
   id: '24h' | '7d' | '14d' | '30d' | '1y'
@@ -43,10 +43,25 @@ export const RANGE_CHIPS: readonly { id: RangePreset['id'] | 'all'; label: strin
 
 const HOUR = 3_600_000
 
+/** A preset's window, `start`/`end` (YYYY-MM-DD, `today` injectable for tests). */
+function presetWindow(id: RangePreset['id'], today = denverDay()): { start: string; end: string } {
+  const p = RANGE_PRESETS.find((x) => x.id === id) ?? RANGE_PRESETS[2]
+  return { start: today.subtract(p.days, 'day').format('YYYY-MM-DD'), end: todayIso(today) }
+}
+
 /** `from`/`to` for a preset (`today` injectable for tests). */
 export function presetPatch(id: RangePreset['id'], today = denverDay()): Pick<UrlState, 'from' | 'to'> {
-  const p = RANGE_PRESETS.find((x) => x.id === id) ?? RANGE_PRESETS[2]
-  return datesPatch(today.subtract(p.days, 'day').format('YYYY-MM-DD'), todayIso(today), today)
+  const w = presetWindow(id, today)
+  return datesPatch(w.start, w.end, today)
+}
+
+/**
+ * URL patch for a chart window `start`…`end` (a range chip or Custom dates):
+ * the dates, leaving All years, and the interval kept except 5-min (`raw`)
+ * where the window is longer than 7 days (Auto then), so no stale `agg=raw`.
+ */
+export function windowPatch(start: string, end: string, agg: UrlState['agg'], today = denverDay()): Partial<UrlState> {
+  return { view: 'recent', ...datesPatch(start, end, today), ...(agg === 'raw' && !rawAllowed(spanDays(start, end)) ? { agg: null } : {}) }
 }
 
 /** The preset the URL window matches, else 'custom'. */
@@ -61,14 +76,11 @@ export function pageRange(state: Pick<UrlState, 'view' | 'from' | 'to'>, today =
   return state.view === 'history' ? 'all' : activePreset(state, today)
 }
 
-/**
- * URL patch for a range chip. A window chip leaves All years and keeps the
- * interval, except 5-min where the new window does not offer it (Auto then).
- */
+/** URL patch for a range chip: All years, or the preset's window (`windowPatch`). */
 export function rangeChipPatch(id: RangePreset['id'] | 'all', agg: UrlState['agg'], today = denverDay()): Partial<UrlState> {
   if (id === 'all') return { view: 'history' }
-  const days = RANGE_PRESETS.find((p) => p.id === id)?.days ?? 14
-  return { view: 'recent', ...presetPatch(id, today), ...(agg === 'raw' && !rawAllowed(days) ? { agg: null } : {}) }
+  const w = presetWindow(id, today)
+  return windowPatch(w.start, w.end, agg, today)
 }
 
 /** The line under the title: "Last 7 days", "All years", or the custom dates ("Sep 1 – Sep 20, 2026"). */

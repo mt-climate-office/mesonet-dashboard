@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import { describe, expect, it } from 'vitest'
 import { windowRange } from '../latest/view'
-import { activePreset, pageRange, presetPatch, rangeChipPatch, rangeLabel, rangeView } from './range'
+import { activePreset, pageRange, presetPatch, rangeChipPatch, rangeLabel, rangeView, windowPatch } from './range'
 
 const today = dayjs('2026-10-02')
 const H = 3_600_000
@@ -25,6 +25,12 @@ describe('range chips', () => {
     expect(rangeChipPatch('7d', 'raw', today)).toEqual({ view: 'recent', from: '2026-09-25', to: '2026-10-02' })
     expect(rangeChipPatch('30d', 'raw', today)).toMatchObject({ view: 'recent', agg: null })
     expect(rangeChipPatch('30d', 'daily', today)).not.toHaveProperty('agg')
+  })
+  it('a custom window keeps 5-min up to 7 days and clears it beyond', () => {
+    expect(windowPatch('2026-09-01', '2026-09-08', 'raw', today)).toEqual({ view: 'recent', from: '2026-09-01', to: '2026-09-08' })
+    expect(windowPatch('2026-09-01', '2026-09-09', 'raw', today)).toEqual({ view: 'recent', from: '2026-09-01', to: '2026-09-09', agg: null })
+    expect(windowPatch('2026-09-01', '2026-09-30', 'hourly', today)).not.toHaveProperty('agg')
+    expect(windowPatch('2026-09-18', '2026-10-02', null, today)).toEqual({ view: 'recent', from: null, to: null })
   })
   it('labels the range under the title', () => {
     expect(rangeLabel('7d', '', '')).toBe('Last 7 days')
