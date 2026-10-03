@@ -60,6 +60,16 @@ layout parts of older entries below; data behaviour is unchanged.
   as `documented` (`scripts/fidelity/lib/compare.mjs`, LDB-007).
 - **Why:** user decision (2026-10-02): the NWS method everywhere.
 
+### About replaces the metadata and current-conditions cards
+- **Legacy / web/:** Station Metadata and Current Conditions were bottom-card tabs beside the locator map.
+- **New:** the About section (DESIGN.md "About"): station details with readable labels and formats (Network,
+  Coordinates "45.66° N, 111.07° W", Elevation "4,905 ft (1,495 m)", Installed "Oct 30, 2020") plus a
+  **period of record** (install date to the newest report); the one-pager as a link; a locator map that
+  needs two fingers or Ctrl/⌘ to move; the current-readings table with a header row and the
+  precipitation summary; a **sensor-change history** from `/config/{station}/` (new); data notes and API
+  links. The Compare cards keep the legacy rows until P1 retires them.
+- **Why:** plan "About": details stay reachable without crowding the overview.
+
 ### Now overview data
 - **New (no legacy equivalent):** today's high/low comes from today's hourly means plus the current
   reading, against the gridMET 1991–2020 **median** `tmmx`/`tmmn` for the date; year-to-date
