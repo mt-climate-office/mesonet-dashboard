@@ -78,15 +78,18 @@ export function extractPlotly(page) {
 /**
  * web-next: every chart host (`.chart`, ui/charts/chart.ts) via
  * `echarts.getInstanceByDom(canvas).getOption()`. The ECharts module is the one chart.ts
- * lazy-loaded (same Vite dev URL, so the same instance registry; nothing new is global).
+ * lazy-loaded (same Vite dev URL, so the same instance registry; nothing new is global). Its
+ * resource-timing entry gives the exact URL, else the dev path under `base`: the timing buffer
+ * (250 entries) can fill with map tiles before a lazy chart loads (Download's preview).
  * Without an instance (e.g. a production build) it falls back to the host's sr-only table twin.
  */
-export function extractECharts(page) {
-  return page.evaluate(async () => {
-    const url = performance
-      .getEntriesByType('resource')
-      .map((e) => e.name)
-      .find((n) => /\/ui\/charts\/echarts\.ts(\?|$)/.test(n))
+export function extractECharts(page, base) {
+  return page.evaluate(async (base) => {
+    const url =
+      performance
+        .getEntriesByType('resource')
+        .map((e) => e.name)
+        .find((n) => /\/ui\/charts\/echarts\.ts(\?|$)/.test(n)) ?? `${new URL(base).pathname}src/ui/charts/echarts.ts`
     let lib = null
     try {
       lib = url ? (await import(url)).echarts : null
@@ -242,7 +245,7 @@ export function extractECharts(page) {
       })
     }
     return out
-  })
+  }, base)
 }
 
 /**
@@ -286,7 +289,8 @@ export function extractCards(page, sel) {
         titles: [...el.querySelectorAll('h2, h3')].map((h) => h.textContent.replace(/\s+/g, ' ').trim()),
         tables: [...el.querySelectorAll('table')]
           .filter((t) => !hidden(t))
-          .map((t) => [...t.querySelectorAll('tr')].map((tr) => [...tr.children].map((c) => visibleText(c).join(' ')))),
+          // Header rows name the columns (About's "Reading | Value"); they are not label/value rows.
+          .map((t) => [...t.querySelectorAll('tr')].filter((tr) => !tr.closest('thead')).map((tr) => [...tr.children].map((c) => visibleText(c).join(' ')))),
         // A lazy image that has not loaded yet is not broken: only a finished load with no pixels is.
         images: [...el.querySelectorAll('img')].filter((i) => !hidden(i)).map((i) => ({ src: i.currentSrc || i.src, ok: !(i.complete && i.naturalWidth === 0), loaded: i.complete && i.naturalWidth > 0 })),
         links: [...el.querySelectorAll('a[href]')].filter((a) => !hidden(a)).map((a) => a.href),

@@ -155,12 +155,35 @@ async function runLatest(browser) {
       let cmp
       if (ca.error || cb.error) cmp = { status: 'ERROR', error: { 'web/': ca.error, 'web-next': cb.error } }
       else {
-        cmp = { figures: figurePairs(ca, cb), cards: {}, palette: paletteCheck(cb.figures, cb.palette) }
-        for (const k of ['top', 'bottom']) cmp.cards[k] = compareCard(ca.cards?.[k], cb.cards?.[k])
+        // What web-next's page for this scenario shows (config `sc.next`); a Now card only when Now shows its medium.
+        const nx = sc.next
+        const shown = !nx.media || cb.media === nx.media
+        const figs = shown ? nx.figures : []
+        const cards = shown ? nx.cards : {}
+        const doc = () => {
+          const issue = `documented: not on web-next #${nx.tab}${nx.media && !shown ? ` (Now shows the ${cb.media})` : ''}`
+          return { status: 'DOCUMENTED', issue, note: `${issue}; ${nx.see}`, see: nx.see }
+        }
+        cmp = {
+          figures: figurePairs(ca, cb).map((f) => (figs.includes(f.role) ? f : { role: f.role, ...doc() })),
+          cards: {},
+          palette: paletteCheck(cb.figures, cb.palette),
+        }
+        for (const k of ['top', 'bottom']) {
+          if (!cards[k]) {
+            cmp.cards[k] = doc()
+            continue
+          }
+          const c = compareCard(ca.cards?.[k], cb.cards?.[k])
+          // The card was redesigned on its new page: text (and, if `relabeled`, row label) changes
+          // are documented; a value under a shared label, an image or a missing card still counts.
+          const layoutOnly = c.status === 'WARN' && !c.valueDiffs.length && !c.images.onlyA.length && !c.images.onlyB.length && (nx.relabeled || (!c.keys.onlyA.length && !c.keys.onlyB.length))
+          cmp.cards[k] = layoutOnly ? { ...c, status: 'DOCUMENTED', note: `documented: text changed; ${nx.see}`, see: nx.see } : c
+        }
         // The map pane is compared as data (mapCheck), not as text (web/ and web-next legends differ by design).
         if (cb.map) cmp.cards.bottom = { status: 'PASS', note: 'map pane: see the map check' }
         // web/ draws the wind-rose title inside the Plotly figure; web-next as a heading in the card.
-        const roseTitle = ca.figures.find((f) => f.role === 'windrose')?.title
+        const roseTitle = figs.includes('windrose') && ca.figures.find((f) => f.role === 'windrose')?.title
         if (roseTitle) {
           const text = (cb.cards?.top?.titles ?? []).join(' ')
           cmp.cards.windTitle = text.includes(roseTitle) ? { status: 'PASS' } : { status: 'WARN', note: `title "${roseTitle}" not in web-next card`, lines: { onlyA: [roseTitle], onlyB: [] } }

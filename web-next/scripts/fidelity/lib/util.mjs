@@ -89,6 +89,7 @@ export const slug = (s) => String(s).replace(/[^a-zA-Z0-9_.-]+/g, '_').slice(0, 
 
 export const sha256 = (s) => createHash('sha256').update(s).digest('hex').slice(0, 16)
 
-const RANK = { PASS: 0, WARN: 1, FAIL: 2, ERROR: 3 }
+/** DOCUMENTED: differs on purpose (layout / IA), citing a DIVERGENCES entry; no data difference. */
+const RANK = { PASS: 0, DOCUMENTED: 1, WARN: 2, FAIL: 3, ERROR: 4 }
 /** The worst of any number of statuses (or arrays of them). */
 export const worst = (...s) => s.flat().reduce((a, b) => (RANK[b] > RANK[a] ? b : a), 'PASS')

@@ -67,9 +67,12 @@ export async function shoot(page, dir, name) {
   }
 }
 
-/** Compact request log: API calls and anything non-2xx. */
+/** A map tile MapLibre cancelled because the view changed (e.g. a resize as the page lays out): not a failure. */
+const cancelledTile = (r) => r.failed === 'net::ERR_ABORTED' && /\/\d+\/\d+\/\d+\.(png|pbf|webp|jpg)(\?|$)/.test(r.url)
+
+/** Compact request log: API calls and anything non-2xx (cancelled map tiles left out). */
 export function summarizeLog(log) {
-  const api = log.requests.filter((r) => r.status >= 400 || r.failed || /_api\/|\/api\/|data2\.climate|weather\.gov|githubusercontent/.test(r.url))
+  const api = log.requests.filter((r) => !cancelledTile(r) && (r.status >= 400 || r.failed || /_api\/|\/api\/|data2\.climate|weather\.gov|githubusercontent/.test(r.url)))
   return {
     consoleErrors: log.console,
     pageErrors: log.pageErrors,
