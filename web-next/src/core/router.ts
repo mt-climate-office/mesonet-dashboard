@@ -135,7 +135,8 @@ export const CHARTS_LIST_PATCH: Partial<UrlState> = { v: null, view: 'recent', t
  * A section-nav link from `from` to `to`: the URL patch and whether it adds a
  * history entry. Tapping Charts inside Charts returns to the list (a
  * drill-down back up, pushed unless already there); leaving Charts drops the
- * variable so the next visit opens the list. Other sections keep their state.
+ * variable and Compare (`CHARTS_LIST_PATCH`), so the next visit opens the
+ * list. Other sections keep their state.
  */
 export function sectionNavPatch(
   from: Section,
@@ -143,6 +144,6 @@ export function sectionNavPatch(
   state: Pick<UrlState, 'v' | 'cmp'>,
 ): { patch: Partial<UrlState>; drillDown: boolean } {
   if (from === 'charts' && to === 'charts') return { patch: CHARTS_LIST_PATCH, drillDown: state.v !== null || state.cmp }
-  if (from === 'charts') return { patch: { v: null, view: 'recent', tbl: false }, drillDown: false }
+  if (from === 'charts') return { patch: CHARTS_LIST_PATCH, drillDown: false }
   return { patch: {}, drillDown: false }
 }

@@ -213,7 +213,7 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
   match by element code first.
 - **History:** every list → page and page → page change is a `pushState` (`navigate(…, { drillDown: true })`),
   and so are Show as table / chart; range and interval chips, dates and options replace the entry. The Charts
-  tab inside Charts returns to the list (pushed); leaving Charts drops `v` and `tbl` (`sectionNavPatch`).
+  tab inside Charts returns to the list (pushed); leaving Charts drops `v`, `tbl` and `cmp` (`sectionNavPatch`).
 - **Focus:** a drill-down moves focus to the new page's heading (`#charts-list-title`, `#var-title`,
   `#ag-chart-title`, `#charts-compare-title`; ⋯ → Previous / Next too), so it never falls to `<body>`; chips
   keep focus.

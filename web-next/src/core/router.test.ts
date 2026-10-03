@@ -129,8 +129,9 @@ describe('sectionNavPatch', () => {
     expect(sectionNavPatch('charts', 'charts', { ...list, cmp: true }).drillDown).toBe(true)
     expect(sectionNavPatch('charts', 'charts', list).drillDown).toBe(false)
   })
-  it('leaving Charts drops the variable; other moves keep the URL', () => {
-    expect(sectionNavPatch('charts', 'now', page)).toEqual({ patch: { v: null, view: 'recent', tbl: false }, drillDown: false })
+  it('leaving Charts drops the variable and Compare; other moves keep the URL', () => {
+    expect(sectionNavPatch('charts', 'now', page)).toEqual({ patch: { v: null, view: 'recent', tbl: false, cmp: false }, drillDown: false })
+    expect(sectionNavPatch('charts', 'about', { v: null, cmp: true }).patch).toMatchObject({ cmp: false })
     expect(sectionNavPatch('now', 'charts', list)).toEqual({ patch: {}, drillDown: false })
     expect(sectionNavPatch('now', 'about', page)).toEqual({ patch: {}, drillDown: false })
   })
