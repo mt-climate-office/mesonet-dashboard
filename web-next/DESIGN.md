@@ -248,19 +248,27 @@ and the stage reached).
   away. Chips wrap; on phones the popover docks at the bottom like a small sheet.
 - **Station:** from the header's picker; there is no station control on the page. With no station, or for an
   SWP tool at a station without SWP sensors (`chartState` `'not-here'`), the card names why ("Crow Agency has no
-  soil water potential sensors, so this tool does not apply there.") with a button that opens the picker.
+  soil water potential sensors, so this tool does not apply there.") with a button that opens the picker,
+  and the option chips are hidden (`showsOptions`).
 - **Reference ET** is also the observed `etr` variable (one id, one page): its page adds an **All years** chip
-  (`view=history`, the variable page's history of the derived ETr) and ⋯ → Previous / Next in the variable
+  under the chart, as the variable page's range chips are, apart from the option chips (`view=history`, the
+  variable page's history of the derived ETr; `partials/ag/history-chip.html`) and ⋯ → Previous / Next in the variable
   list (plus the swipe). Annual comparison (`v=annual`) still renders for old links, but is not listed.
 - **Navigation:** a list row is a real link; a plain click opens the tool with `pushState` (`chartPatch` →
   `variablePatch`: the tool's options reset, chart view) and focuses its heading.
 - **Notes** (the NDAWN cutoff switch, the projection's sources, partial coverage, …) fold into one ⓘ
-  toggletip on a short row at the chart card's top right, just under the option chips, so they never push
-  the chart down (`partials/ag/status.html`; the button names the count, "Notes about this chart (2)").
-- **GDD on phones:** the legend uses short names (Daily · Cumulative · Range · Forecast · Normals) so it fits
-  one row without a pager; the stage lines' labels sit at the right end of each line on the chart surface,
-  clear of the daily bars.
-- **Charts:** 540 px tall; on phones `min(60dvh, 420px)`. On touch they follow "Charts on touch" above.
+  toggletip in the chart card's top-right corner, over the chart's empty top margin (the chart moves down
+  16 px to clear it), so they never add a row (`partials/ag/status.html`; the button names the count,
+  "Notes about this chart (2)").
+- **Legends** (`core/charts/agLegend.ts`): a plain legend that wraps onto more rows (the plot rises to make
+  room), never a pager. Sentence-case names ("No stress", "Wind chill"; titles "Index used", "Livestock risk
+  (adult)"); on compact screens short names (GDD: Daily · Cumulative · Range · Forecast · Normals; Feels like:
+  Air temperature; Reference ET: Cumulative) and no title. Series keep their names (fidelity matches them).
+- **GDD stage lines:** labelled in a gutter right of the plot (the cumulative axis moves past it), never on
+  the bars; where the longest label would take over a quarter of the chart (phones, tablets) the lines go
+  unlabelled and the tooltip, table and stats card name the stage (`stageGutter`).
+- **Charts:** 540 px tall; on compact screens (≤ 640 px wide or ≤ 560 px tall, so a landscape phone too)
+  `min(60dvh, 420px)`. On touch they follow "Charts on touch" above.
   Every Ag number, the `.ag-chart-card` and its `data-testid`s are unchanged (fidelity `ag` / `ag-api`).
 
 Screenshots (phase B, in the session scratchpad `rd-charts/`): `<390|1440>-<light|dark|high-contrast>-<list|var|var1y|vartable|varall|varmenu|vardates|gdd|gddcrop|etr|swpcrow|compare>.png`.
