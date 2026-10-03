@@ -81,13 +81,14 @@
         <template x-if="media === 'pending'"><span class="dash-skel dash-skel--media" aria-hidden="true"></span></template>
         <template x-if="media === 'photo'">
           <div class="now-photo" x-data="photoCard" data-testid="now-photo">
-            <template x-if="state === 'loading'"><span class="dash-skel dash-skel--media" aria-hidden="true"></span></template>
-            <template x-if="state === 'message'"><p class="now-photo-msg" x-text="message()"></p></template>
-            <template x-if="state === 'ready'">
+            <template x-if="tileState === 'loading'"><span class="dash-skel dash-skel--media" aria-hidden="true"></span></template>
+            <template x-if="tileState === 'message'"><p class="now-photo-msg" x-text="tileMessage()"></p></template>
+            <template x-if="tileState === 'ready'">
               <button type="button" class="now-photo-frame" @click="enlarge()" aria-haspopup="dialog"
-                      :aria-label="'Enlarge the latest ' + pick.label + ' photo'">
-                <img :src="pick.active.webpUrl" :alt="pick.alt" loading="lazy" data-testid="now-photo-image">
-                <span class="now-photo-cap"><span x-text="pick.label"></span><span x-text="pick.stamp" x-show="pick.stamp"></span></span>
+                      :aria-label="'Enlarge the latest ' + tile.label + ' photo, with other directions, days and times'"
+                      data-testid="now-photo-open">
+                <img :src="tile.active.webpUrl" :alt="tile.alt" loading="lazy" data-testid="now-photo-image">
+                <span class="now-photo-cap"><span x-text="tile.label"></span><span x-text="tile.stamp" x-show="tile.stamp"></span></span>
               </button>
             </template>
             <!-- @include partials/now/photo-dialog.html -->
