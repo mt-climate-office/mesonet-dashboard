@@ -1,20 +1,21 @@
 /**
- * `x-data="currentCard"`: Current Conditions ("Latest Data Summary") from
- * `/latest`, plus the Precipitation Summary from `/derived/ppt/` for HydroMet
- * stations only (it 422s for AgriMet). Rows: core/cards/currentConditions.
+ * `x-data="aboutReadings"` (partials/about/readings.html): every current
+ * reading from `/latest`, plus the precipitation summary from `/derived/ppt/`
+ * for HydroMet stations only (it 422s for AgriMet). Rows:
+ * core/cards/currentConditions. Now's "All readings" link scrolls here.
  */
 import Alpine from 'alpinejs'
-import { currentConditionsRows, pptSummaryRows } from '../../../core/cards'
-import { component } from '../../component'
-import { latestObs, pptSummary } from '../../station/resources'
+import { currentConditionsRows, pptSummaryRows } from '../../core/cards'
+import { component } from '../component'
+import { latestObs, pptSummary } from '../station/resources'
 
 type Row = readonly [string, string]
 
-export function currentCard() {
+export function aboutReadings() {
   return component({
-    get state(): 'none' | 'loading' | 'error' | 'empty' | 'ready' {
+    get state(): 'loading' | 'error' | 'empty' | 'ready' {
       const id = Alpine.store('station').id
-      if (!id) return 'none'
+      if (!id) return 'loading'
       const r = latestObs(id)
       if (r.status === 'loading' && !r.data) return 'loading'
       if (r.status === 'error' && !r.data) return 'error'

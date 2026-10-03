@@ -9,7 +9,7 @@ import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoMi
 import { basename, framesFor, localToday, type PhotoFrame, type StationCamera } from '../../../core/photos'
 import type { SelectOption } from '../../controls/timeSelect'
 import { component } from '../../component'
-import { confirmedDay, latestFrames, monthFrames, photoSchedule } from './resources'
+import { confirmedDay, latestFrames, monthFrames, photoSchedule } from '../../station/resources'
 
 type Source = { status: 'loading' | 'success' | 'error'; data: PhotoFrame[] | undefined }
 

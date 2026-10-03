@@ -47,15 +47,28 @@ layout parts of older entries below; data behaviour is unchanged.
   ("Bozeman ▾"), Share, theme, Help. Feedback is in Help and the footer.
 - **Why:** the old bar took 100 px of a phone screen and hid the app name.
 
-### Feels like uses the NWS method on Now
+### Feels like uses the NWS method
 - **Legacy / web/:** Current Conditions showed "Real Feel", the NWS wind-chill formula at every temperature
   (a legacy bug kept for parity; LDB-007).
-- **New:** the Now hero shows **Feels like** from `core/ag/compute/feelsLike.ts`, the same NWS rules the Ag
+- **New:** **Feels like** from `core/ag/compute/feelsLike.ts` everywhere, the same NWS rules the Ag
   tool uses: heat index at ≥ 80 °F, wind chill at ≤ 50 °F with wind > 3 mph, otherwise the air
-  temperature, labelled "Wind chill" / "Heat index" when it applies.
-- **Still legacy:** the About section's current-readings table (`core/cards/currentConditions.ts`) keeps
-  its Real Feel row until P1, so the fidelity rows stay comparable. Decision pending: drop or rename it.
+  temperature. The Now hero labels it "Wind chill" / "Heat index" when one applies. The About
+  current-readings table (`core/cards/currentConditions.ts`) replaces the "Real Feel [°F]" row with
+  "Feels like [°F]" (2 decimals, "(wind chill)" / "(heat index)" when one applies), shown whenever there
+  is an air temperature, calm wind included. The wind chill is MetPy's metric formula, so it can differ
+  from the °F formula by a few hundredths. The fidelity harness reports the Real Feel / Feels like pair
+  as `documented` (`scripts/fidelity/lib/compare.mjs`, LDB-007).
 - **Why:** user decision (2026-10-02): the NWS method everywhere.
+
+### About replaces the metadata and current-conditions cards
+- **Legacy / web/:** Station Metadata and Current Conditions were bottom-card tabs beside the locator map.
+- **New:** the About section (DESIGN.md "About"): station details with readable labels and formats (Network,
+  Coordinates "45.66° N, 111.07° W", Elevation "4,905 ft (1,495 m)", Installed "Oct 30, 2020") plus a
+  **period of record** (install date to the newest report); the one-pager as a link; a locator map that
+  needs two fingers or Ctrl/⌘ to move; the current-readings table with a header row and the
+  precipitation summary; a **sensor-change history** from `/config/{station}/` (new); data notes and API
+  links. The Compare cards keep the legacy rows until P1 retires them.
+- **Why:** plan "About": details stay reachable without crowding the overview.
 
 ### Now overview data
 - **New (no legacy equivalent):** today's high/low comes from today's hourly means plus the current
@@ -218,14 +231,13 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 
 #### Current Conditions rows (LDB-006, LDB-007, LDB-008)
 - **Same as legacy:**
-  - The row set and order: Timestamp, then the legacy `elem_labs` columns in API order, then Real Feel.
+  - The row set and order: Timestamp, then the legacy `elem_labs` columns in API order, then Feels like (was Real Feel; "Feels like uses the NWS method").
   - Raw values, and wind direction as "N (357.3 deg)".
-  - The wind-chill-at-all-temperatures Real Feel (legacy bug kept for parity).
 - **New:**
   - Snow Depth is shown. Legacy listed it as `Snow Depth [in.]` while the API sends `[in]`, so legacy silently dropped it (legacy bug not ported).
   - The timestamp is formatted ("Oct 1, 2026 2:30 PM").
   - Precipitation Summary values are rounded to 2 decimals and carry an " in" suffix ("0.10 in"; LDB-009).
-  - Real Feel is left out when the wind speed is 0 (or missing). Legacy still printed `35.74 + 0.6215·T` at calm wind, which is not a wind chill (LDB-007). Kept as web/ does, so the card matches web/ row for row.
+  - Real Feel (the wind-chill formula at every temperature, a legacy bug) is replaced by the NWS feels-like (LDB-007; "Feels like uses the NWS method").
 
 #### Wind rose (LDT-005, LDT-006, LDT-007)
 - **Same as legacy:** the rose follows the plotted date range and aggregation, and is titled "Wind Data from {start} to {end}" (Courier New).

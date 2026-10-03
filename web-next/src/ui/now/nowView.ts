@@ -11,7 +11,7 @@ import Alpine from 'alpinejs'
 import type { Station } from '../../core/api'
 import { buildOverview, type Overview } from '../../core/overview'
 import { hasCamera } from '../../core/photos'
-import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../latest/cards/resources'
+import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../station/resources'
 import { component } from '../component'
 import { togglePicker } from '../picker/stationPicker'
 import { navigate } from '../shell/navigate'
@@ -79,11 +79,11 @@ export function nowView() {
       e.preventDefault()
       void navigate('charts', { patch: { vars, cmp: true }, morph: e.currentTarget as HTMLElement })
     },
-    /** "All readings" → About, through the same pushState + transition as the section nav. */
+    /** "All readings" → About's readings table, through the same pushState + transition as the section nav. */
     toAbout(e: MouseEvent): void {
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
       e.preventDefault()
-      void navigate('about')
+      void navigate('about', { target: 'about-readings' })
     },
 
     pick(e: Event): void {

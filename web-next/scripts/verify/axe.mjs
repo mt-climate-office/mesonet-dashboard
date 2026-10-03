@@ -17,6 +17,8 @@ const openHelp = async (page) => {
 const SCENARIOS = [
   // The Now overview (default section) and a first visit (no station: the picker is open).
   { name: 'now', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]', '[data-testid="now-hero"] .dash-spark svg'] } },
+  // About: details, locator map, all current readings, sensor changes, data notes.
+  { name: 'about', query: '?s=acebozem#about', evidence: { filled: ['[data-testid="about-readings-table"] tbody', '[data-testid="about-history"] .about-days', '[data-testid="about-map"] tbody'] } },
   { name: 'picker', query: '', evidence: { filled: ['[data-testid="picker-map"] tbody'] } },
   // Default cards (current conditions + the auto top card), then the map + wind rose pair.
   { name: 'latest', query: '?s=acebozem#latest', evidence: { charts: 1, filled: ['[data-testid="current-table"] tbody'] } },

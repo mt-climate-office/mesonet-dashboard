@@ -3,6 +3,7 @@
  * (legacy get_station_latest) and the HydroMet Precipitation Summary
  * (legacy get_ppt_summary, `/derived/ppt/`).
  */
+import { feelsLikeF, readConditions } from '../overview/conditions'
 import { degToCompass } from '../params'
 import { parseWallClock } from '../sensorEvents'
 
@@ -57,9 +58,10 @@ export const formatWindDirection = (deg: number): string =>
 
 /**
  * Current-conditions rows in legacy order: Timestamp, then the kept columns
- * in API order, then "Real Feel [°F]" (NWS wind-chill formula at every
- * temperature, rounded to 2 decimals; legacy bug kept). Values are shown as
- * the API sends them; empty values are dropped.
+ * in API order, then "Feels like [°F]": the NWS feels-like (core/overview
+ * `feelsLikeF`; it replaces legacy "Real Feel", DIVERGENCES "Feels like"),
+ * rounded to 2 decimals, with "(wind chill)" or "(heat index)" when one
+ * applies. Values are shown as the API sends them; empty values are dropped.
  */
 export function currentConditionsRows(
   latest: Record<string, unknown>,
@@ -78,16 +80,11 @@ export function currentConditionsRows(
       k === 'Wind Direction [deg]' && typeof v === 'number' ? formatWindDirection(v) : String(v),
     ] as const)
   }
-  const airT = latest['Air Temperature [°F]']
-  const windKey = Object.keys(latest).find((k) => k.startsWith('Wind Speed')) ?? ''
-  const wind = windKey ? latest[windKey] : null
-  if (typeof airT === 'number' && typeof wind === 'number' && wind > 0) {
-    const realFeel =
-      35.74 +
-      0.6215 * airT -
-      35.75 * Math.pow(wind, 0.16) +
-      0.4275 * airT * Math.pow(wind, 0.16)
-    out.push(['Real Feel [°F]', String(Math.round(realFeel * 100) / 100)] as const)
+  const c = readConditions(latest)
+  const feels = feelsLikeF(c.airF, c.rh, c.windMph)
+  if (feels) {
+    const regime = feels.regime === 'wind_chill' ? ' (wind chill)' : feels.regime === 'heat_index' ? ' (heat index)' : ''
+    out.push(['Feels like [°F]', `${Math.round(feels.valueF * 100) / 100}${regime}`] as const)
   }
   return out
 }

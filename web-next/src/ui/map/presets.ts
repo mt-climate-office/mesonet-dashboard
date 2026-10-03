@@ -1,6 +1,7 @@
 /**
  * The station maps (thin wrappers over ui/map/map.ts + stationLayer):
- *   stationMap    — Latest card / About: select a station, fly to it.
+ *   stationMap    — Latest card: select a station, fly to it.
+ *   locatorMap    — About: as stationMap, small; the page keeps one-finger and wheel scrolling.
  *   downloaderMap — Downloader: counties emphasised, click selects, no re-centre (legacy).
  *   pickerMap     — station picker: the whole state stays in view, click selects.
  *
@@ -40,6 +41,8 @@ interface Preset {
   emphasiseCounties: boolean
   /** Centre on the selected station when it changes. */
   fly: boolean
+  /** Map gestures need two fingers or Ctrl/⌘ (ui/map/map.ts `cooperativeGestures`). */
+  cooperative?: boolean
 }
 
 const toSet = (v: ReadonlySet<string> | readonly string[] | null | undefined): ReadonlySet<string> | null =>
@@ -69,6 +72,7 @@ function mapView(opts: StationMapOptions, preset: Preset) {
       host = createMap(canvas, {
         label: opts.label ?? preset.label,
         emphasiseCounties: preset.emphasiseCounties,
+        cooperativeGestures: preset.cooperative,
         layers: (map, theme) => {
           const markers = layer?.add(map, theme)
           if (markers) legend.render(legendRows(markers, theme, cssVar))
@@ -114,6 +118,10 @@ function mapView(opts: StationMapOptions, preset: Preset) {
 /** Latest-card station map: selecting a station flies to it. */
 export const stationMap = (opts: StationMapOptions) =>
   mapView(opts, { label: 'Map of Montana Mesonet stations', emphasiseCounties: false, fly: true })
+
+/** About locator map: as stationMap, but the page scrolls over it (cooperative gestures). */
+export const locatorMap = (opts: StationMapOptions) =>
+  mapView({ legendCollapsed: true, ...opts }, { label: 'Locator map of Montana Mesonet stations', emphasiseCounties: false, fly: true, cooperative: true })
 
 /** Downloader station map: county lines emphasised; selection does not move the map. */
 export const downloaderMap = (opts: StationMapOptions) =>

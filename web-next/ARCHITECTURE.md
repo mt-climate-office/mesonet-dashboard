@@ -110,6 +110,10 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   With no `?s=`, main.ts puts the remembered station in the URL before the
   stores start; with none, the station picker opens.
 
+Per-station fetches shared by sections (latest obs, ppt summary, NWS, photos, one-pagers, station
+config) are one function each in `ui/station/resources.ts`; a section's own fetches sit beside it
+(e.g. `ui/now/resources.ts`).
+
 Former TanStack hooks map to `cached()` keys with these TTLs (keep them):
 stations / elements 1 h; station config, ppt summary, NWS forecast 30 min;
 observations 5 min (default); latest obs 5 min; Ag series 10 min; soil

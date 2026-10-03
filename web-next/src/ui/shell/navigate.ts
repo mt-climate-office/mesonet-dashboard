@@ -2,6 +2,8 @@
  * In-app navigation between sections: `$store.url.go` (pushState for a
  * section change) inside a view transition, then scroll to the top and
  * announce the section. Used by the section nav and by tile links.
+ * `target` scrolls to (and focuses) an element in the new section instead
+ * of the top, e.g. Now's "All readings" → `#about-readings`.
  */
 import Alpine from 'alpinejs'
 import { SECTIONS, sectionLabel, type Section } from '../../core/router'
@@ -11,8 +13,14 @@ import { announce } from './live'
 
 const order = (s: Section) => SECTIONS.findIndex((x) => x.id === s)
 
-/** Go to `section` (optionally patching URL state); `morph` is the tapped element for a shared-element transition. */
-export async function navigate(section: Section, opts: { patch?: Partial<UrlState>; morph?: HTMLElement | null } = {}): Promise<void> {
+/**
+ * Go to `section` (optionally patching URL state); `morph` is the tapped element for a
+ * shared-element transition; `target` is the id of an element to land on (it needs `tabindex="-1"`).
+ */
+export async function navigate(
+  section: Section,
+  opts: { patch?: Partial<UrlState>; morph?: HTMLElement | null; target?: string } = {},
+): Promise<void> {
   const url = Alpine.store('url')
   const from = url.section
   await withTransition(
@@ -22,8 +30,12 @@ export async function navigate(section: Section, opts: { patch?: Partial<UrlStat
     },
     { direction: order(section) < order(from) ? 'back' : 'forward', morph: opts.morph },
   )
-  if (from !== section) {
+  const target = opts.target ? document.getElementById(opts.target) : null
+  if (target) {
+    target.scrollIntoView({ block: 'start' })
+    target.focus({ preventScroll: true })
+  } else if (from !== section) {
     window.scrollTo({ top: 0 })
-    announce(sectionLabel(section))
   }
+  if (from !== section) announce(sectionLabel(section))
 }

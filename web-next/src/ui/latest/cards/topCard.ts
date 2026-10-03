@@ -9,7 +9,7 @@ import { hasCamera } from '../../../core/photos'
 import { TOP_CARDS, type TopCard } from '../../../core/url-schema'
 import type { SegmentedOption } from '../../controls/segmented'
 import { component } from '../../component'
-import { photoSchedule } from './resources'
+import { photoSchedule } from '../../station/resources'
 
 export function topCard() {
   return component({

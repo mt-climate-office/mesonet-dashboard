@@ -10,7 +10,7 @@ describe('formatWindDirection', () => {
 })
 
 describe('currentConditionsRows', () => {
-  it('keeps legacy rows in API order, Timestamp first, Real Feel last', () => {
+  it('keeps legacy rows in API order, Timestamp first, Feels like last', () => {
     const rows = currentConditionsRows({
       station: 'mdamalta',
       datetime: '2026-10-01 13:15:00-06:00',
@@ -34,12 +34,24 @@ describe('currentConditionsRows', () => {
       'Wind Direction [deg]',
       'Wind Speed [mi/hr]',
       'Well Water Level [in]',
-      'Real Feel [°F]',
+      'Feels like [°F]',
     ])
     expect(rows.find(([k]) => k === 'Wind Direction [deg]')?.[1]).toBe('ENE (69.6 deg)')
     expect(rows.find(([k]) => k === 'Air Temperature [°F]')?.[1]).toBe('60.08')
-    // 35.74 + 0.6215·60.08 − 35.75·V^0.16 + 0.4275·60.08·V^0.16, V = 10.021
-    expect(rows[rows.length - 1][1]).toBe('58.53')
+    // 60.08 °F is above wind chill (≤ 50 °F) and below heat index (≥ 80 °F): the air temperature.
+    expect(rows[rows.length - 1][1]).toBe('60.08')
+  })
+
+  it('Feels like is the NWS wind chill or heat index when one applies', () => {
+    const feels = (row: Record<string, unknown>) => currentConditionsRows(row).find(([k]) => k === 'Feels like [°F]')?.[1]
+    // Wind chill in MetPy's metric form (core/ag/compute/feelsLike), 20 °F at 15 mph: 6.18 °F
+    // (the °F formula's 6.22 differs only by its rounded coefficients).
+    expect(feels({ 'Air Temperature [°F]': 20, 'Wind Speed [mi/hr]': 15 })).toBe('6.18 (wind chill)')
+    // Calm wind (≤ 3 mph): no wind chill, so the air temperature.
+    expect(feels({ 'Air Temperature [°F]': 20, 'Wind Speed [mi/hr]': 0 })).toBe('20')
+    // Heat index at 90 °F and 50 % (Rothfusz): 94.6 °F.
+    expect(feels({ 'Air Temperature [°F]': 90, 'Relative Humidity [%]': 50 })).toMatch(/^94\.\d+ \(heat index\)$/)
+    expect(feels({ 'Wind Speed [mi/hr]': 15 })).toBeUndefined()
   })
 })
 

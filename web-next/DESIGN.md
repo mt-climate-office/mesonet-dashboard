@@ -64,7 +64,7 @@ switcher already shows the name, so the heading is `.sr-only` there and only the
 | Tiles | Wind (speed, gust, compass glyph pointing where it blows), Precipitation (today, 24 h, 7 d, YTD vs normal), Humidity, Solar, Pressure, Soil (depth profile: temp + VWC bar), Snow depth (only with snow: ≥ 0.5 in now or in any hour of the last 72 h), VPD (AgriMet); each a link to its variable, with a 48 h sparkline | `/latest`, `/derived/ppt/` (1); hourly + `pr` (2) |
 | Media | Latest camera frame (opens the photo dialog), or the wind rose without a camera | photo schedule (1) |
 | Forecast | NWS periods in a horizontal strip with scroll snap | NWS (1) |
-| All readings | link to About | — |
+| All readings | link to About's readings table (`navigate('about', { target: 'about-readings' })`) | — |
 
 Tier 1 requests start together when Now mounts; tier 2 (one 72 h hourly request for every sparkline, the
 normals CSVs) once `/latest` is in. Every slot holds its size with a skeleton while it loads, so nothing
@@ -73,6 +73,23 @@ shifts. Values are Space Mono on the type scale; labels are small caps in `--tex
 Screenshots (P0, in the session scratchpad `ux-p0/`): `390-dark-now-acebozem.png`,
 `390-dark-sheet-peek.png`, `768-light-now-acebozem.png`, `1440-dark-now-acebozem.png`,
 `1440-dark-drawer-open.png`, `390-light-now-arskeogh.png` (AgriMet, wind rose).
+
+## About
+
+Details that stay reachable but not front and center (`partials/about/*`, `ui/about/*`, models in
+`core/about`). One column on phones; from tablet up two (details | map, readings | sensor changes), notes
+full width.
+
+| Card | Content | Data |
+|---|---|---|
+| Station details | name, id, network, NWS ID, county, coordinates, elevation (ft and m), installed, period of record (install → newest report); one-pager link | `/stations`, `/latest`, one-pagers.json |
+| Location | `locatorMap` (ui/map/presets): the station map flown to the station, legend collapsed, **cooperative gestures** (one finger and a plain wheel scroll the page; two fingers or Ctrl/⌘ move the map) | `/stations` |
+| All current readings | the former Current Conditions table (`core/cards/currentConditions`, with **Feels like** by the NWS method) and, for HydroMet, the precipitation summary; `#about-readings` is the target of Now's link | `/latest`, `/derived/ppt/` |
+| Sensor changes | installs and removals by day, newest first (`core/about/sensorHistory`) | `/config/{station}/` (the response Compare's overlays use) |
+| About the data | QC level 2, provisional data, time and units; links to the API docs and this station's requests | — |
+
+Long tables and lists scroll inside `.about-scroll`, a focusable `role="region"` with a label, so the page
+never scrolls sideways at 390 px. Every fetch is in `ui/station/resources.ts`, shared with Now.
 
 ## Components (`src/ui/layout/`; kit candidates, see KIT-NOTES.md)
 
@@ -126,7 +143,7 @@ New CSS uses only these. Older per-tab CSS (latest/ag/downloader) moves onto the
 
 ## Accessibility notes
 
-- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `picker`) × 3 themes × 1440/390.
+- Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `about`, `picker`) × 3 themes × 1440/390.
 - Touch targets ≥ 40 px under `(hover: none)`; the tab bar is 56 px.
 - Status is text: "No report for over 2 hours", "Feels like 41° · Wind chill"; the ⓘ button is named "Provisional data".
 - The picker is `role="dialog" aria-modal="true"` only when it is modal (sheet, overlay drawer); the inline
