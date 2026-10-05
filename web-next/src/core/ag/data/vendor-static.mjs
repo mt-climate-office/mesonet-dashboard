@@ -2,16 +2,15 @@
 /**
  * Regenerates the vendored Ag static data in `web-next/public/data/`:
  *
- *   soil_params.json  ← mesonet-soils build/processed/<release>/compat/
- *                       {soil_parameters,soil_porosity,soil_raw_data}.csv
+ *   soil_params.json  ← mesonet-soils soil_params.json (copied verbatim; the
+ *                       same file data2 serves at soils/soil_params.json)
  *   gdd_stages.json   ← mesonet-db-rds derived/{combined_stages.tsv,
  *                       write_hemp_table.sql}
  *   MANIFEST.json     provenance (source repo, path, commit SHA, capture date)
  *
  * Usage (from web-next/):
  *   node src/core/ag/data/vendor-static.mjs \
- *     --soils ../../mesonet-soils --release 2026-09-25 \
- *     --rds ../../mesonet-db-rds
+ *     --soils ../../mesonet-soils --rds ../../mesonet-db-rds
  *
  * Not bundled (nothing imports it). Requires git on PATH for the SHAs.
  */
@@ -31,7 +30,6 @@ function arg(name, fallback) {
 }
 
 const soilsRepo = resolve(arg('soils', join(webRoot, '../../mesonet-soils')))
-const release = arg('release', '2026-09-25')
 const rdsRepo = resolve(arg('rds', join(webRoot, '../../mesonet-db-rds')))
 
 const gitSha = (repo) =>
@@ -44,71 +42,10 @@ const gitDirty = (repo, path) =>
 const readCsv = (p, delimiter = ',') =>
   Papa.parse(readFileSync(p, 'utf8'), { header: true, skipEmptyLines: true, delimiter }).data
 
-/** 12 significant digits: drops float noise like 47.740000000000005. */
-const tidy = (x) => Number(Number(x).toPrecision(12))
-
 /* ---------------------------------------------------------------- soils */
-const compatRel = `build/processed/${release}/compat`
-const compat = join(soilsRepo, compatRel)
-const params = readCsv(join(compat, 'soil_parameters.csv'))
-const porosity = readCsv(join(compat, 'soil_porosity.csv'))
-const raw = readCsv(join(compat, 'soil_raw_data.csv'))
-const soilsManifest = JSON.parse(
-  readFileSync(join(soilsRepo, `build/processed/${release}/manifest.json`), 'utf8'),
-)
-
-const FX_KEYS = ['r', 's', 'n', 'm', 'h']
-const VG_KEYS = ['r', 's', 'a', 'n']
-const byKey = new Map()
-const keyOf = (station, depth) => `${station}|${depth}`
-const entry = (station, depth) => {
-  const k = keyOf(station, depth)
-  if (!byKey.has(k)) {
-    byKey.set(k, {
-      station,
-      // compat depth = -10 × cm (negative millimetres)
-      depthCm: Math.round(-Number(depth) / 10),
-      fx: null,
-      vg: null,
-      porosity: null,
-      min: null,
-      max: null,
-    })
-  }
-  return byKey.get(k)
-}
-for (const row of params) {
-  const obj = JSON.parse(row.params)[0]
-  const e = entry(row.station, row.depth)
-  if (row.model === 'FX') e.fx = FX_KEYS.map((k) => tidy(obj[k]))
-  else if (row.model === 'VG') e.vg = VG_KEYS.map((k) => tidy(obj[k]))
-}
-for (const row of porosity) entry(row.station, row.depth).porosity = tidy(row.porosity)
-for (const row of raw) {
-  const e = byKey.get(keyOf(row.station, row.depth))
-  if (!e) continue // retention points without a fit are not usable for SWP
-  const v = Number(row.vwc) * 100 // fraction → %
-  e.min = e.min === null ? v : Math.min(e.min, v)
-  e.max = e.max === null ? v : Math.max(e.max, v)
-}
-const soilRows = [...byKey.values()]
-  .sort((a, b) => a.station.localeCompare(b.station) || a.depthCm - b.depthCm)
-  .map((e) => [
-    e.station,
-    e.depthCm,
-    e.fx,
-    e.vg,
-    e.porosity,
-    e.min === null ? null : tidy(e.min),
-    e.max === null ? null : tidy(e.max),
-  ])
-const soilJson = {
-  release,
-  fxKeys: FX_KEYS,
-  vgKeys: VG_KEYS,
-  columns: ['station', 'depthCm', 'fx', 'vg', 'porosityPct', 'labVwcMinPct', 'labVwcMaxPct'],
-  rows: soilRows,
-}
+// mesonet-soils publishes the app's contract directly: copy it byte for byte.
+const soilText = readFileSync(join(soilsRepo, 'soil_params.json'), 'utf8')
+const soilJson = JSON.parse(soilText)
 
 /* ---------------------------------------------------------------- stages */
 const NUMERIC_STAGE_CROPS = new Set(['wheat', 'barley'])
@@ -151,27 +88,18 @@ const stagesJson = { units: 'degF_day', release: `mesonet-db-rds@${gitSha(rdsRep
 /* -------------------------------------------------------------- manifest */
 const today = new Date().toISOString().slice(0, 10)
 const manifest = {
-  generated_by: 'web/src/features/ag/data/vendor-static.mjs',
+  generated_by: 'web-next/src/core/ag/data/vendor-static.mjs',
   captured_at: today,
   files: {
     'soil_params.json': {
       source_repo: 'mt-climate-office/mesonet-soils',
-      source_paths: [
-        `${compatRel}/soil_parameters.csv`,
-        `${compatRel}/soil_porosity.csv`,
-        `${compatRel}/soil_raw_data.csv`,
-      ],
+      source_paths: ['soil_params.json'],
       source_commit: gitSha(soilsRepo),
-      build_generator_sha: soilsManifest.generator?.git_sha ?? null,
-      build_generator_dirty: soilsManifest.generator?.git_dirty ?? null,
-      release,
-      build_generated_at: soilsManifest.generated_at ?? null,
-      rows: soilRows.length,
-      transform:
-        'One row per (station, depth). depthCm = -depth/10. fx = FX params[0] (r,s,n,m,h; h kPa), ' +
-        'vg = VG params[0] (r,s,a,n; a 1/kPa), porosityPct = HYPROP initial water content (Vol%), ' +
-        'labVwcMin/MaxPct = min/max of soil_raw_data.vwc × 100 for that (station, depth).',
-      data2_url: 'https://data2.climate.umt.edu/mesonet/soils/processed/latest/compat/',
+      source_dirty: gitDirty(soilsRepo, 'soil_params.json'),
+      release: soilJson.release,
+      rows: soilJson.rows.length,
+      transform: 'None (copied verbatim). One row per primary core (station, depthCm); see the mesonet-soils README.',
+      data2_url: 'https://data2.climate.umt.edu/mesonet/soils/soil_params.json',
       license:
         'Montana Climate Office / Montana Mesonet soil laboratory data; public, see https://climate.umt.edu/about/agreement/',
     },
@@ -193,7 +121,7 @@ const manifest = {
 }
 
 mkdirSync(outDir, { recursive: true })
-writeFileSync(join(outDir, 'soil_params.json'), JSON.stringify(soilJson) + '\n')
+writeFileSync(join(outDir, 'soil_params.json'), soilText)
 writeFileSync(join(outDir, 'gdd_stages.json'), JSON.stringify(stagesJson, null, 1) + '\n')
 writeFileSync(join(outDir, 'MANIFEST.json'), JSON.stringify(manifest, null, 2) + '\n')
-console.log(`soil rows: ${soilRows.length}; stage crops: ${Object.keys(crops).join(', ')}`)
+console.log(`soil rows: ${soilJson.rows.length} (${soilJson.release}); stage crops: ${Object.keys(crops).join(', ')}`)

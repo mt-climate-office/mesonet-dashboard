@@ -1,13 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { SoilSeries } from '../contract'
 import { percentSaturation, swp } from '../compute'
-import { parseCsvRaw } from '../data/parse'
 import { dailyMet, soilParams, soilSeries } from '../__tests__/adapters'
 import { annualTraces, coverage, partialNote, profileValues, unavailableMessage } from './derive'
 import { LEARN_MORE_BASE, learnMoreUrl } from './learnMore'
 import { projectionThrough } from './projection'
 import { HI_NONE, SLIDER_NONE, parseGddCutoffs, sliderWrites, toSlider } from './gddCutoffs'
-import { SWP_SOURCE, swpFromApiRows, swpFromParams } from './swpSource'
 
 describe('learnMoreUrl (legacy slugs, app.py ~686-717)', () => {
   it('maps gdd/soil profile/cci and passes the rest through', () => {
@@ -35,53 +32,6 @@ describe('projectionThrough', () => {
     expect(projectionThrough('2026-07-01', 'off', '2026-07-01')).toBeNull()
     expect(projectionThrough('2026-06-01', 'season', '2026-07-01')).toBeNull()
     expect(projectionThrough(undefined, 'season', '2026-07-01')).toBeNull()
-  })
-})
-
-describe('SWP source', () => {
-  it('defaults to the API until mesonet-db-rds#186', () => {
-    expect(SWP_SOURCE).toBe('api')
-  })
-
-  it('swpFromApiRows aligns API rows (bar) onto the soil axis (kPa), daily and hourly', () => {
-    const axis: SoilSeries = {
-      station: 'x',
-      level: 2,
-      provisional: [false, false, false],
-      depthsCm: [5, 10],
-      time: ['2026-09-20', '2026-09-21', '2026-09-22'],
-      epochMs: [0, 1, 2],
-      vwcPct: [[1, 1, 1], [1, 1, 1]],
-      tempC: [[1, 1, 1], [1, 1, 1]],
-    }
-    const rows = parseCsvRaw(
-      [
-        'station,datetime,Soil Water Potential @ -10 cm [bar],Soil Water Potential @ -5 cm [bar]',
-        'x,2026-09-20 00:00:00-06:00,0.449,0.459',
-        'x,2026-09-22 00:00:00-06:00,0.46,',
-      ].join('\n'),
-    )
-    const s = swpFromApiRows(rows, axis, 'daily')
-    expect(s.depthsCm).toEqual([5, 10])
-    expect(s.kPa[0]).toEqual([45.9, null, null])
-    expect(s.kPa[1][0]).toBeCloseTo(44.9, 10)
-    expect(s.kPa[1][2]).toBeCloseTo(46, 10)
-    expect(s.time).toEqual(axis.time)
-
-    const t0 = Date.parse('2026-09-20T06:00:00Z')
-    const hourly = { ...axis, time: ['a', 'b', 'c'], epochMs: [t0, t0 + 3_600_000, t0 + 7_200_000] }
-    const hrows = parseCsvRaw(
-      ['station,datetime,Soil Water Potential @ -5 cm [bar]', 'x,2026-09-20 01:00:00-06:00,0.3'].join('\n'),
-    )
-    expect(swpFromApiRows(hrows, hourly, 'hourly').kPa[0]).toEqual([null, 30, null])
-    expect(swpFromApiRows([], axis, 'daily').depthsCm).toEqual([])
-  })
-
-  it('client path is compute swp() and shares the soil axis', () => {
-    const soil = soilSeries('acebozem', 'daily', 'season2025')
-    const s = swpFromParams(soil, soilParams('acebozem'))
-    expect(s).toEqual(swp(soil, soilParams('acebozem')))
-    expect(s.time).toEqual(soil.time)
   })
 })
 

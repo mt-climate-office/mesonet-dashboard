@@ -1,6 +1,7 @@
 /**
  * Pure helpers over the station catalog (`/stations`).
  */
+import type { SoilParams } from './ag/contract'
 import type { Station } from './api'
 
 /**
@@ -15,14 +16,31 @@ export function isTrueFlag(value: unknown): boolean {
   return false
 }
 
-/** Stations with soil-water-potential sensors (`has_swp`). */
+/** Station ids with at least one Fredlund–Xing fit in the mesonet-soils parameters: these get SWP. */
+export function swpStationIds(params: readonly Pick<SoilParams, 'station' | 'fx'>[]): Set<string> {
+  return new Set(params.filter((p) => p.fx).map((p) => p.station))
+}
+
+/**
+ * The catalog with `has_swp` set from the soil parameters (`swpStationIds`).
+ * mesonet2's `/stations` has no `has_swp` column; the parameters are what
+ * SWP and percent saturation are computed from, so they decide.
+ */
+export function withSwpFlags<T extends Pick<Station, 'station' | 'has_swp'>>(
+  stations: readonly T[],
+  swp: ReadonlySet<string>,
+): T[] {
+  return stations.map((s) => ({ ...s, has_swp: swp.has(s.station) }))
+}
+
+/** Stations with soil-water-potential parameters (`has_swp`). */
 export function stationsWithSwp<T extends Pick<Station, 'has_swp'>>(
   stations: readonly T[],
 ): T[] {
   return stations.filter((s) => isTrueFlag(s.has_swp))
 }
 
-/** True when the station has soil-water-potential sensors. */
+/** True when the station has soil-water-potential parameters. */
 export function stationHasSwp(station: Pick<Station, 'has_swp'> | null | undefined): boolean {
   return !!station && isTrueFlag(station.has_swp)
 }

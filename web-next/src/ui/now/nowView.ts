@@ -7,6 +7,7 @@
  * computed once per change in an effect (the partial reads `page` many times).
  */
 import Alpine from 'alpinejs'
+import { soilParamsFor } from '../../core/ag/data'
 import type { Station } from '../../core/api'
 import { forecastDetailUrl } from '../../core/cards'
 import { heroStripChart, heroStripTable, type HeroStripModel } from '../../core/charts'
@@ -20,7 +21,7 @@ import { component } from '../component'
 import { togglePicker } from '../picker/stationPicker'
 import { follow } from '../shell/navigate'
 import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../station/resources'
-import { normals, nwsHourly, rainDaily, sparkRows, swpRows } from './resources'
+import { normals, nwsHourly, rainDaily, sparkRows, swpSoil } from './resources'
 
 type State = 'none' | 'loading' | 'error' | 'empty' | 'ready'
 interface View {
@@ -62,7 +63,9 @@ function compute(nowMs: number): View {
   const nm = { tmmx: normals(s.station, 'tmmx').data, tmmn: normals(s.station, 'tmmn').data, pr: normals(s.station, 'pr').data }
   const hourlyUrl = fc.data?.hourlyUrl
   const fcHourly = hourlyUrl ? nwsHourly(hourlyUrl) : null
-  const swp = stationHasSwp(s) ? swpRows(s.station, today) : null
+  const swp = stationHasSwp(s) ? swpSoil(s.station, today) : null
+  // Loaded by the station store (it decides has_swp), so this is already in hand.
+  const params = Alpine.store('station').soil?.data
   const rain = rainDaily(s.station, today)
   const page = buildNowPage({
     latest: raw(latest),
@@ -73,7 +76,7 @@ function compute(nowMs: number): View {
     nowMs,
     forecast: raw(fc.data),
     forecastHourly: raw(fcHourly?.data),
-    swpBar: latestSwpBar(raw(swp?.data)),
+    swpBar: latestSwpBar(raw(swp?.data), params && soilParamsFor(raw(params), s.station)),
     rainDaily: raw(rain.data),
     station: s,
   })

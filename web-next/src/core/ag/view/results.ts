@@ -6,13 +6,10 @@
  */
 import type { AnnualModel, CciModel, EtrModel, FeelsLikeModel, GddModel, PercentSaturationModel, SoilProfileModel, SwpModel } from '../../charts'
 import type { DailyMet, DailyNormals, GddStageTable, HourlyMet, LocalDate, SoilParams, SoilSeries, StationMeta } from '../contract'
-import { cciDaily, cciHourly, etoDaily, etoHourly, feelsLikeDaily, feelsLikeHourly, fToC, gdd, GDD_CUTOFFS_F, percentSaturation, projectGdd } from '../compute'
+import { cciDaily, cciHourly, etoDaily, etoHourly, feelsLikeDaily, feelsLikeHourly, fToC, gdd, GDD_CUTOFFS_F, percentSaturation, projectGdd, swp as swpFromParams } from '../compute'
 import type { AnnualDaily, ForecastResult } from '../data'
-import type { RawRow } from '../data/parse'
 import { annualTraces, coverage, partialNote, profileValues, unavailableMessage } from './derive'
-import type { Period, SoilProfileVar } from './labels'
-import { POROSITY_SOURCE, percentSaturationFromApiPorosity } from './porositySource'
-import { SWP_SOURCE, swpFromApiRows, swpFromParams } from './swpSource'
+import { type Period, type SoilProfileVar, SWP_CAP_BAR, swpBar } from './labels'
 import type { AgTab, AgVariable } from './tab'
 import { loadErrorText } from '../../loadError'
 import { latestVariableForColumn } from '../../params'
@@ -179,11 +176,7 @@ export interface SoilInputs {
   soilVar: SoilProfileVar
   period: Period
   soil: SoilSeries
-  /** `/derived?elements=swp` rows (SWP_SOURCE 'api'). */
-  swpRows?: RawRow[]
-  /** `/derived?elements=percent_saturation&keep=true` rows (POROSITY_SOURCE 'api'). */
-  porosityRows?: RawRow[]
-  /** Station soil parameters, for the client SWP / vendored porosity paths. */
+  /** Station soil parameters (mesonet-soils), for SWP and percent saturation. */
   params?: SoilParams[]
 }
 
@@ -191,14 +184,8 @@ export function soilView(i: SoilInputs): AgView<SoilChart> {
   const { soil, period } = i
   const sub = soilSub(i.variable, i.soilVar)
   if (soil.time.length === 0 || soil.depthsCm.length === 0) return emptyView('No soil data for the current selection.')
-  const swp =
-    sub !== 'swp' ? undefined : SWP_SOURCE === 'api' ? i.swpRows && swpFromApiRows(i.swpRows, soil, period) : i.params && swpFromParams(soil, i.params)
-  const pct =
-    sub !== 'percent_saturation'
-      ? undefined
-      : POROSITY_SOURCE === 'api'
-        ? i.porosityRows && percentSaturationFromApiPorosity(i.porosityRows, soil, period)
-        : i.params && percentSaturation(soil, i.params)
+  const swp = sub === 'swp' && i.params ? swpFromParams(soil, i.params) : undefined
+  const pct = sub === 'percent_saturation' && i.params ? percentSaturation(soil, i.params) : undefined
   if (sub === 'swp' && !swp) return view('loading', null)
   if (sub === 'percent_saturation' && !pct) return view('loading', null)
   if (pct && pct.depthsCm.length === 0) {
@@ -208,18 +195,11 @@ export function soilView(i: SoilInputs): AgView<SoilChart> {
     return emptyView('No soil water potential for this station and period.')
   }
   const notes: string[] = []
-  if (pct) {
+  if (pct) notes.push('Soil saturation uses published mesonet-soils porosity for each depth.')
+  if (swp) notes.push('Soil water potential is computed in the browser from published mesonet-soils parameters.')
+  if (swp && swpBar(swp).dry.some((col) => col.some(Boolean))) {
     notes.push(
-      POROSITY_SOURCE === 'api'
-        ? 'Soil saturation uses the Mesonet API’s soil porosity for each depth.'
-        : 'Soil saturation uses published mesonet-soils porosity for each depth.',
-    )
-  }
-  if (swp) {
-    notes.push(
-      SWP_SOURCE === 'api'
-        ? 'Soil water potential is computed by the Mesonet API from its soil parameters.'
-        : 'Soil water potential is computed in the browser from published mesonet-soils parameters.',
+      `Dashed lines: the soil is drier than the driest lab sample, so the true suction is at least the value shown (drawn no deeper than -${SWP_CAP_BAR.toLocaleString('en-US')} bar).`,
     )
   }
   if (i.variable === 'swp' && swp) return ready({ kind: 'swp', model: { series: swp, period } }, notes)

@@ -301,11 +301,6 @@
    "type": "application/json",
    "file": "mesonet2-observations_daily-8ac42b3e45.json"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=acebozem&start_time=2026-09-30&end_time=2026-10-02&elements=swp&level=2&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_hourly-054cad7148.csv"
-  },
   "https://api.weather.gov/gridpoints/TFX/95,57/forecast/hourly": {
    "status": 200,
    "type": "application/geo+json",
@@ -380,6 +375,16 @@
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-observations_hourly-134d45ed94.csv"
+  },
+  "https://data2.climate.umt.edu/mesonet/soils/soil_params.json": {
+   "status": 200,
+   "type": "application/json",
+   "file": "data2-soils_soil_params.json-1ae5c68290.json"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=acebozem&start_time=2026-09-30&end_time=2026-10-02&level=2&elements=soil_vwc,soil_temp,soil_ec_blk&agg_func=avg&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-11047a3fc1.csv"
   }
  }
 }

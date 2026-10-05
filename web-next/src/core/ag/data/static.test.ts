@@ -5,14 +5,15 @@ import manifestText from '../../../../public/data/MANIFEST.json?raw'
 import bozSoilRaw from '../__fixtures__/acebozem.soil-raw.csv?raw'
 import { GDD_CROPS, loadGddStages, parseGddStagesJson, type GddStagesJson } from './gddStages'
 import {
-  fromCompatCsv,
   fromVendoredJson,
   loadSoilParams,
   soilParamsFor,
   type VendoredSoilJson,
 } from './soilParams'
 import { parseCsvRaw } from './parse'
-import { DATA2_BASE, DATA2_STATIC_ENABLED } from './staticSource'
+import { swp } from '../compute'
+import { SWP_CAP_BAR, swpBar } from '../view/labels'
+import { DATA2_BASE, DATA2_GDD_ENABLED, DATA2_SOILS_ENABLED, DATA2_SOIL_PARAMS } from './staticSource'
 
 const soilJson = JSON.parse(soilJsonText) as VendoredSoilJson
 const stagesJson = JSON.parse(stagesJsonText) as GddStagesJson
@@ -37,7 +38,7 @@ const vendoredRoutes: Record<string, [number, string, string]> = {
 describe('vendored soil params', () => {
   const rows = fromVendoredJson(soilJson)
   it('has one row per station/depth with FX params and lab range', () => {
-    expect(soilJson.release).toBe('2026-09-25')
+    expect(soilJson.release).toBe('2026-10-04T17:21:00Z')
     expect(rows.length).toBe(507)
     const keys = new Set(rows.map((r) => `${r.station}|${r.depthCm}`))
     expect(keys.size).toBe(rows.length)
@@ -60,114 +61,98 @@ describe('vendored soil params', () => {
     expect(boz.map((r) => r.depthCm)).toEqual([5, 10, 20, 50, 100])
     for (const r of boz) {
       const v = api.get(r.depthCm)!
-      expect(r.labVwcMin).toBeCloseTo(Math.min(...v), 9)
-      expect(r.labVwcMax).toBeCloseTo(Math.max(...v), 9)
+      // mesonet-soils rounds to 6 significant digits.
+      expect(r.labVwcMin).toBeCloseTo(Math.min(...v), 4)
+      expect(r.labVwcMax).toBeCloseTo(Math.max(...v), 4)
     }
   })
+})
 
-  it('fromCompatCsv applies the same transform', () => {
-    const rows = fromCompatCsv(
-      {
-        parameters: [
-          'station,depth,model,params',
-          'x,-1000,FX,"[{""r"":0,""s"":0.5,""n"":0.7,""m"":0.8,""h"":3.6}]"',
-          'x,-1000,VG,"[{""r"":0.04,""s"":0.53,""a"":0.53,""n"":1.2}]"',
-          'x,-50,FX,"[{""r"":0,""s"":0.6,""n"":0.5,""m"":0.9,""h"":2.3}]"',
-        ].join('\n'),
-        porosity: 'station,depth,porosity\nx,-1000,51.2\nx,-50,56.5',
-        rawData: 'station,depth,kpa,vwc\nx,-1000,0.2,0.51\nx,-1000,1500,0.05\ny,-1000,1,0.3',
-      },
-      'r1',
-      'data2',
+describe('shipped bundle vs. the #75 reference values', () => {
+  // acebozem daily level-2 VWC on 2026-09-01 (mesonet2), and the SWP the
+  // issue reports from mesonet-soils' parameters for that day.
+  it('acebozem 2026-09-01: mid-range depths agree; 5 / 100 cm are dry-end clips, capped for display', () => {
+    const params = soilParamsFor({ source: 'vendored', release: soilJson.release, rows: fromVendoredJson(soilJson) }, 'acebozem')
+    const depthsCm = [5, 10, 20, 50, 100]
+    const vwc = [5.274, 10.336, 12.044, 17.135, 3.282]
+    const s = swp(
+      { station: 'acebozem', level: 2, provisional: [false], depthsCm, time: ['2026-09-01'], epochMs: [0], vwcPct: vwc.map((v) => [v]), tempC: vwc.map(() => [null]) },
+      params,
     )
-    expect(rows).toEqual([
-      {
-        station: 'x',
-        depthCm: 5,
-        model: 'FX',
-        source: 'data2',
-        release: 'r1',
-        fx: { r: 0, s: 0.6, n: 0.5, m: 0.9, h: 2.3 },
-        porosityPct: 56.5,
-      },
-      {
-        station: 'x',
-        depthCm: 100,
-        model: 'FX',
-        source: 'data2',
-        release: 'r1',
-        fx: { r: 0, s: 0.5, n: 0.7, m: 0.8, h: 3.6 },
-        vg: { r: 0.04, s: 0.53, a: 0.53, n: 1.2 },
-        porosityPct: 51.2,
-        labVwcMin: 5,
-        labVwcMax: 51,
-      },
-    ])
+    const bar = s.kPa.map((c) => c[0]! / 100)
+    expect(bar[0]).toBeCloseTo(3945, -1)
+    expect(bar[1]).toBeCloseTo(107, 0)
+    expect(bar[2]).toBeCloseTo(61, 0)
+    expect(bar[3]).toBeCloseTo(4.0, 1)
+    expect(bar[4]).toBeCloseTo(12771, -1)
+    expect(s.clipped.map((c) => c[0])).toEqual([true, false, false, false, true])
+    expect(swpBar(s).bar.map((c) => c[0])).toEqual([SWP_CAP_BAR, bar[1], bar[2], bar[3], SWP_CAP_BAR])
   })
 })
 
 describe('loadSoilParams source selection', () => {
-  it('falls back to vendored when data2 is missing (404 / SPA HTML 200)', async () => {
-    const b = await loadSoilParams({
-      vendoredBase: VENDORED,
-      data2Enabled: true,
-      fetchImpl: stubFetch({
-        ...vendoredRoutes,
-        'https://data2.climate.umt.edu/mesonet/soils/processed/latest/manifest.json': [
-          200,
-          'text/html',
-          '<!DOCTYPE html><html></html>',
-        ],
-      }),
-    })
-    expect(b.source).toBe('vendored')
-    expect(b.release).toBe('2026-09-25')
+  const data2 = (release: string, rows: VendoredSoilJson['rows'] = soilJson.rows): [number, string, string] => [
+    200,
+    'application/json',
+    JSON.stringify({ ...soilJson, release, rows }),
+  ]
+
+  it('reads data2 soils/soil_params.json', () => {
+    expect(DATA2_SOIL_PARAMS).toBe('https://data2.climate.umt.edu/mesonet/soils/soil_params.json')
   })
 
-  it('uses vendored when data2 advertises the same release', async () => {
+  it('falls back to vendored when data2 is missing (404 / SPA HTML 200)', async () => {
+    for (const hit of [undefined, [200, 'text/html', '<!DOCTYPE html><html></html>'] as [number, string, string]]) {
+      const b = await loadSoilParams({
+        vendoredBase: VENDORED,
+        data2Enabled: true,
+        fetchImpl: stubFetch(hit ? { ...vendoredRoutes, [DATA2_SOIL_PARAMS]: hit } : vendoredRoutes),
+      })
+      expect(b.source).toBe('vendored')
+      expect(b.release).toBe(soilJson.release)
+    }
+  })
+
+  it('uses vendored when data2 has the same release', async () => {
     const b = await loadSoilParams({
       vendoredBase: VENDORED,
       data2Enabled: true,
-      fetchImpl: stubFetch({
-        ...vendoredRoutes,
-        'https://data2.climate.umt.edu/mesonet/soils/processed/latest/manifest.json': [
-          200,
-          'application/json',
-          '{"release_id":"2026-09-25"}',
-        ],
-      }),
+      fetchImpl: stubFetch({ ...vendoredRoutes, [DATA2_SOIL_PARAMS]: data2(soilJson.release) }),
     })
     expect(b.source).toBe('vendored')
-    expect(b.data2Release).toBe('2026-09-25')
+    expect(b.data2Release).toBe(soilJson.release)
   })
 
   it('uses data2 when it has a newer release', async () => {
-    const base = 'https://data2.climate.umt.edu/mesonet/soils/processed/latest/'
     const b = await loadSoilParams({
       vendoredBase: VENDORED,
       data2Enabled: true,
       fetchImpl: stubFetch({
         ...vendoredRoutes,
-        [`${base}manifest.json`]: [200, 'application/json', '{"release_id":"2027-01-01"}'],
-        [`${base}compat/soil_parameters.csv`]: [
-          200,
-          'text/csv',
-          'station,depth,model,params\nz,-200,FX,"[{""r"":0,""s"":0.5,""n"":1,""m"":1,""h"":1}]"',
-        ],
-        [`${base}compat/soil_porosity.csv`]: [200, 'text/csv', 'station,depth,porosity\nz,-200,50'],
-        [`${base}compat/soil_raw_data.csv`]: [200, 'text/csv', 'station,depth,kpa,vwc\nz,-200,1,0.4'],
+        [DATA2_SOIL_PARAMS]: data2('2027-01-01T00:00:00Z', [['z', 20, [0, 0.5, 1, 1, 1], null, 50, 10, 40]]),
       }),
     })
     expect(b.source).toBe('data2')
-    expect(b.release).toBe('2027-01-01')
-    expect(b.rows).toHaveLength(1)
-    expect(b.rows[0]).toMatchObject({ station: 'z', depthCm: 20, source: 'data2', labVwcMax: 40 })
+    expect(b.release).toBe('2027-01-01T00:00:00Z')
+    expect(b.rows).toEqual([
+      { station: 'z', depthCm: 20, model: 'FX', source: 'data2', release: '2027-01-01T00:00:00Z', fx: { r: 0, s: 0.5, n: 1, m: 1, h: 1 }, porosityPct: 50, labVwcMin: 10, labVwcMax: 40 },
+    ])
+  })
+
+  it('uses data2 when the vendored copy is unreachable', async () => {
+    const b = await loadSoilParams({
+      vendoredBase: VENDORED,
+      data2Enabled: true,
+      fetchImpl: stubFetch({ [DATA2_SOIL_PARAMS]: data2(soilJson.release) }),
+    })
+    expect(b.source).toBe('data2')
   })
 })
 
-describe('DATA2_STATIC_ENABLED gate', () => {
-  it('is off until data2 publishes; the default loaders then never fetch data2', async () => {
-    expect(DATA2_STATIC_ENABLED).toBe(false)
+describe('data2 gates', () => {
+  it('soils probe data2 by default; GDD stages stay vendored until data2 publishes them', async () => {
+    expect(DATA2_SOILS_ENABLED).toBe(true)
+    expect(DATA2_GDD_ENABLED).toBe(false)
     const seen: string[] = []
     const f = stubFetch(vendoredRoutes)
     const spy: typeof fetch = (input, init) => {
@@ -178,7 +163,7 @@ describe('DATA2_STATIC_ENABLED gate', () => {
     const stages = await loadGddStages({ vendoredBase: VENDORED, fetchImpl: spy })
     expect(soil.source).toBe('vendored')
     expect(stages.source).toBe('vendored')
-    expect(seen.some((u) => u.startsWith(DATA2_BASE))).toBe(false)
+    expect(seen.filter((u) => u.startsWith(DATA2_BASE))).toEqual([DATA2_SOIL_PARAMS])
   })
 })
 

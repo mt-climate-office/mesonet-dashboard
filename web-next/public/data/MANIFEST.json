@@ -1,22 +1,18 @@
 {
-  "generated_by": "web/src/features/ag/data/vendor-static.mjs",
-  "captured_at": "2026-10-01",
+  "generated_by": "web-next/src/core/ag/data/vendor-static.mjs",
+  "captured_at": "2026-10-04",
   "files": {
     "soil_params.json": {
       "source_repo": "mt-climate-office/mesonet-soils",
       "source_paths": [
-        "build/processed/2026-09-25/compat/soil_parameters.csv",
-        "build/processed/2026-09-25/compat/soil_porosity.csv",
-        "build/processed/2026-09-25/compat/soil_raw_data.csv"
+        "soil_params.json"
       ],
-      "source_commit": "18672c337fdb44c84de049be18aeafa94b2cd9e8",
-      "build_generator_sha": "18672c337fdb44c84de049be18aeafa94b2cd9e8",
-      "build_generator_dirty": true,
-      "release": "2026-09-25",
-      "build_generated_at": "2026-09-26T00:03:07Z",
+      "source_commit": "0474b94d4d35e0dd86a34fa7d601b15476ef79d6",
+      "source_dirty": false,
+      "release": "2026-10-04T17:21:00Z",
       "rows": 507,
-      "transform": "One row per (station, depth). depthCm = -depth/10. fx = FX params[0] (r,s,n,m,h; h kPa), vg = VG params[0] (r,s,a,n; a 1/kPa), porosityPct = HYPROP initial water content (Vol%), labVwcMin/MaxPct = min/max of soil_raw_data.vwc × 100 for that (station, depth).",
-      "data2_url": "https://data2.climate.umt.edu/mesonet/soils/processed/latest/compat/",
+      "transform": "None (copied verbatim). One row per primary core (station, depthCm); see the mesonet-soils README.",
+      "data2_url": "https://data2.climate.umt.edu/mesonet/soils/soil_params.json",
       "license": "Montana Climate Office / Montana Mesonet soil laboratory data; public, see https://climate.umt.edu/about/agreement/"
     },
     "gdd_stages.json": {

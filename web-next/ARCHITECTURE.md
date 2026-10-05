@@ -169,7 +169,7 @@ in the same getter pick up a new date after midnight. A new key with a `slot` st
 last data, so that midnight key change shows no skeleton.
 
 Live: `/latest`, the ppt summary, the NWS forecast and hourly forecast, the latest photo listings (`ui/station/resources.ts`);
-Now's 72 h hourly rows, 7-day rain and SWP (`ui/now/resources.ts`, slotted); and `recordResource`
+Now's 72 h hourly rows, 7-day rain and the soil VWC behind its SWP chip (`ui/now/resources.ts`, slotted); and `recordResource`
 windows that reach today (`core/latest` `endsToday`: the Charts list's 48 h rows, slotted; the
 variable page; Compare). Not live: normals, stations/elements/config, past photo days, the wind rose, Ag, and
 All years (`live: false`). Now's "Updated N min ago" uses the current time on each recompute; if
@@ -387,8 +387,9 @@ leaving ~180 KB for the sections; at the UX P0 prototype the entry is 107 KB and
 
 ## Rules carried from web/
 
-Data from mesonet2 v2 at QC level 2; Ag computed client-side except SWP and
-porosity (`/derived`); photos only from data2 `webp_large`; soil and GDD
+Data from mesonet2 v2 at QC level 2; Ag computed client-side, SWP and percent
+saturation included (mesonet-soils `soil_params.json`, data2 first, which
+also decides `has_swp`); photos only from data2 `webp_large`; soil and GDD
 static data vendored in `public/data/` (`core/ag/data/vendor-static.mjs`);
 Satellite hidden. `web/` is frozen: hotfixes only, each mirrored into
 `core/` in the same PR. Intentional behaviour changes go in `DIVERGENCES.md`.

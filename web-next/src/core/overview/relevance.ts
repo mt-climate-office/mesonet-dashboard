@@ -66,8 +66,7 @@ export function pressureChange3h(rows: readonly ObservationRow[] | undefined): n
 export type SoilState = 'Dry' | 'Wet'
 
 /**
- * Soil state from soil water potential (bar, positive magnitude as `/derived`
- * sends it): "Wet" at or wetter than field capacity (≤ 0.33 bar), "Dry" at or
+ * Soil state from soil water potential (bar, positive magnitude): "Wet" at or wetter than field capacity (≤ 0.33 bar), "Dry" at or
  * past the wilting point (≥ 15 bar), else none. These are the standard
  * agronomic thresholds the Ag SWP chart draws. Volumetric water content
  * alone gets no state: its field capacity and wilting point depend on the
@@ -76,18 +75,6 @@ export type SoilState = 'Dry' | 'Wet'
 export function soilState(swpBar: number | null | undefined): SoilState | null {
   if (swpBar == null || !Number.isFinite(swpBar)) return null
   return swpBar <= SWP_FIELD_CAPACITY ? 'Wet' : swpBar >= SWP_WILTING_POINT ? 'Dry' : null
-}
-
-const SWP_COL = /^Soil Water Potential @ -?(\d+) cm \[bar\]$/
-
-/** The shallowest finite SWP (bar) in one `/derived` row (raw headers), or null. */
-export function shallowestSwpBar(row: Record<string, unknown> | undefined): number | null {
-  let best: [number, number] | null = null
-  for (const [k, v] of Object.entries(row ?? {})) {
-    const m = SWP_COL.exec(k)
-    if (m && typeof v === 'number' && Number.isFinite(v) && (!best || +m[1] < best[0])) best = [+m[1], v]
-  }
-  return best ? best[1] : null
 }
 
 /**

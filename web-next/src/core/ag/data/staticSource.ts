@@ -8,18 +8,21 @@
  */
 
 export const DATA2_BASE = 'https://data2.climate.umt.edu/mesonet/'
-export const DATA2_SOILS_LATEST = `${DATA2_BASE}soils/processed/latest/`
+/** mesonet-soils' single published contract (same shape as the vendored `soil_params.json`). */
+export const DATA2_SOIL_PARAMS = `${DATA2_BASE}soils/soil_params.json`
 export const DATA2_GDD_STAGES = `${DATA2_BASE}derived/gdd_stages.json`
 export const DATA2_TIMEOUT_MS = 2500
 
+/** Whether `loadSoilParams` probes data2 (mesonet-soils publishes `soils/soil_params.json`). */
+export const DATA2_SOILS_ENABLED = true
+
 /**
- * Whether the default loaders probe data2 at all. data2 does not publish
- * `derived/gdd_stages.json` or the soils manifest yet, so every probe is a
- * console 404 before the vendored fallback. Until data2 publishes, the app
- * goes straight to the vendored files; flip this to `true` then. The data2
- * code paths stay tested (`deps.data2Enabled` / `deps.only = 'data2'`).
+ * Whether `loadGddStages` probes data2. data2 does not publish
+ * `derived/gdd_stages.json` yet, so every probe would be a console 404 before
+ * the vendored fallback; flip this to `true` once it does. The data2 path
+ * stays tested (`deps.data2Enabled` / `deps.only = 'data2'`).
  */
-export const DATA2_STATIC_ENABLED = false
+export const DATA2_GDD_ENABLED = false
 
 export type StaticSource = 'data2' | 'vendored'
 
@@ -31,12 +34,12 @@ export interface StaticDeps {
   timeoutMs?: number
   /** Skip one source (testing / diagnostics). */
   only?: StaticSource
-  /** Override `DATA2_STATIC_ENABLED` for the default (data2 → vendored) order. */
+  /** Override the loader's `DATA2_*_ENABLED` flag for the default (data2 → vendored) order. */
   data2Enabled?: boolean
 }
 
-export function data2Enabled(deps?: StaticDeps): boolean {
-  return deps?.data2Enabled ?? DATA2_STATIC_ENABLED
+export function data2Enabled(deps: StaticDeps | undefined, enabled: boolean): boolean {
+  return deps?.data2Enabled ?? enabled
 }
 
 export function vendoredBase(deps?: StaticDeps): string {

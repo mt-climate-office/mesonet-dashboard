@@ -1,14 +1,11 @@
 /**
  * `x-data="agSoilView"`: the soil profile heatmap, soil water potential and
  * percent saturation card (partials/ag/soil.html). Level-2 soil observations
- * + the API's SWP / porosity rows (the only `/derived` requests) → core
- * `soilView`. The profile is always daily.
+ * + mesonet-soils parameters → core `soilView`. The profile is always daily.
  */
 import Alpine from 'alpinejs'
 import { type AgView, type SoilChart, gate, soilSub, soilView } from '../../core/ag/view/results'
 import { AG_TTL, agKeys } from '../../core/ag/view/keys'
-import { POROSITY_SOURCE, fetchPorosityRows } from '../../core/ag/view/porositySource'
-import { SWP_SOURCE, fetchSwpApiRows } from '../../core/ag/view/swpSource'
 import { SOIL_PROFILE } from '../../core/ag/view/tab'
 import { fetchSoilSeries, loadSoilParams, soilParamsFor } from '../../core/ag/data'
 import type { ChartTable } from '../../core/charts'
@@ -58,23 +55,15 @@ function compute(): AgView<SoilChart> {
   const data = Alpine.store('data')
   const ttl = AG_TTL.series
   const soil = data.cached(agKeys.soil(w, period), () => fetchSoilSeries(q), { ttl })
-  const swp = sub === 'swp' && SWP_SOURCE === 'api' ? data.cached(agKeys.swpRows(w, period), () => fetchSwpApiRows(q), { ttl }) : null
-  const porosity =
-    sub === 'percent_saturation' && POROSITY_SOURCE === 'api'
-      ? data.cached(agKeys.porosityRows(w, period), () => fetchPorosityRows(q), { ttl })
-      : null
-  // Only the client SWP / vendored porosity paths need the soil parameters.
-  const needsParams = (sub === 'swp' && !swp) || (sub === 'percent_saturation' && !porosity)
+  const needsParams = sub === 'swp' || sub === 'percent_saturation'
   const params = needsParams ? data.cached(agKeys.soilParams(), () => loadSoilParams(), { ttl: AG_TTL.static }) : null
   return (
-    gate<SoilChart>([soil, swp, porosity, params]) ??
+    gate<SoilChart>([soil, params]) ??
     soilView({
       variable,
       soilVar: t.soilVar,
       period,
       soil: raw(soil.data!),
-      swpRows: raw(swp?.data),
-      porosityRows: raw(porosity?.data),
       params: params?.data ? soilParamsFor(raw(params.data), w.station) : undefined,
     })
   )

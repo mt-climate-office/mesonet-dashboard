@@ -30,7 +30,8 @@ describe.skipIf(!live)('live Ag data sources', () => {
     console.log('soil params:', auto.source, auto.release, 'data2Release:', auto.data2Release ?? '(unreachable)')
     expect(vend.rows.length).toBe(507)
     expect(auto.rows.length).toBeGreaterThan(0)
-    await expect(loadSoilParams({ fetchImpl: shimFetch, only: 'data2' })).rejects.toThrow()
+    const d2 = await loadSoilParams({ fetchImpl: shimFetch, only: 'data2' })
+    expect(d2.release >= vend.release).toBe(true)
   }, 30_000)
 
   it('GDD stages: data2 (expected 404 today) falls back to vendored', async () => {

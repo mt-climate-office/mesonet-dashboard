@@ -136,7 +136,7 @@ below, which stay for the record and name what replaced them.
   year"), shown whenever there is a source, even after a dry week; its graphic is seven daily bars (one small
   daily `ppt` request, `rainBars`), and nothing at all after a dry week (a flat line said nothing); humidity carries the dew point; soil
   moisture shows the shallowest depth only, with a **Dry/Wet** badge from soil water potential (≥ 15 bar / ≤ 0.33
-  bar, the Ag SWP thresholds) for stations with SWP sensors (one `/derived/hourly` request; VWC alone gets no
+  bar, the Ag SWP thresholds) for stations with SWP parameters (one hourly `soil_vwc` request, SWP computed in the browser; VWC alone gets no
   badge, its thresholds depend on soil texture). Names, units and precision come from `core/variables/labels`
   ("Sunlight", "mb", soil moisture as an integer). The full profile and every reading stay on About. The badge
   is a neutral `.dash-badge` (the kit has no warm status token).
@@ -719,8 +719,7 @@ maximum absolute difference of 0.0005 in the fixture's units:
 | CCI (daily and hourly) | 0.1 °F | 0.0005 °F | 3 × 4 (2 API 404s) |
 | GDD daily and cumulative (default + 7 crops) | exact to 3 dp | 0.0005 °F·day | 3 × 2 × 8 |
 | GDD stage labels | exact | exact (except D-GDD-1/2/4) | 3 × 2 × 6 crops |
-| Percent saturation (vendored porosity, acebozem/arskeogh) | — | 0.0005 % | 2 × 4 |
-| Percent saturation (API porosity, D-PS-1; incl. mdamalta) | — | 0.0005 % | 3 × 2 |
+| Percent saturation (2026-09-25 test porosity, acebozem/arskeogh) | — | 0.0005 % | 2 × 4 |
 
 When the API returns 404 because `sol_rad` is missing for the whole window
 (arskeogh winter, daily and hourly, for ETo and CCI), compute returns an
@@ -763,93 +762,78 @@ all-null series and does not throw.
 - **Test:** `compute/soil.test.ts`, "clips each station to its own lab range
   (D-SWP-1)".
 
-#### D-SWP-2: the soil parameters come from vendored mesonet-soils, not the API DB (data divergence)
+#### D-SWP-2: the soil parameters come from mesonet-soils, not the API DB (data divergence)
+
+mesonet2's `/derived` has no `swp` or `percent_saturation` (HTTP 422; #75),
+and its `/stations` has no `has_swp`. SWP is therefore computed in the
+browser from mesonet-soils' published parameters,
+`data2 …/mesonet/soils/soil_params.json` (vendored fallback
+`public/data/soil_params.json`, `vendor-static.mjs`). A station has SWP when
+the bundle has at least one FX row for it (`core/stations` `withSwpFlags`).
 
 The SWP formula is a verbatim port: `derived.py:1099-1123`, with clipping at
-`188-299`. The parameters differ. The API reads `SoilParams` from its database,
-which is not public. Our tests use the mesonet-soils release `2026-09-25`
-(`compat/soil_parameters.csv`, copied to `__fixtures__/soil_params.test.csv`).
-That release fits FX with θr = 0. The DB holds older fits.
-
-Supporting evidence:
+`188-299`. The parameters differ from the legacy API's private database
+(older fits). The golden-parity tests use the mesonet-soils release
+`2026-09-25` (copied to `__fixtures__/soil_params.test.csv`) against frozen
+legacy `/derived` fixtures (captured 2026-09). They pin the arithmetic:
 
 - The **clip ranges and clipped flags match the API exactly** on every row:
   `flagMismatch = 0` for all 8 cores × 4 windows.
 - `fxInverse` exactly inverts the FX forward model.
-- The vendored parameters reproduce the lab retention data
+- The parameters reproduce the lab retention data
   (`<station>.soil-raw.csv`) with θ RMSE < 0.01 (test "vendored params
   reproduce the lab retention data").
-- Percent saturation with porosity from the same release matches to
-  0.0005 % **at these two stations**, whose porosities equal the DB's. That
-  does not hold network-wide; see D-PS-1.
 
-So the SWP gap comes from the parameters, not the code. Per the brief, the
-tolerance is **not** loosened. These cores are listed in
-`EXPECTED_SWP_DIVERGENCES` in `compute/soil.test.ts`. The tests assert that
-they still differ, so a parameter refresh that brings them into agreement
-fails the test and prompts removing them from the list.
+The value gap comes from the parameters, not the code. The cores below are
+listed in `EXPECTED_SWP_DIVERGENCES` in `compute/soil.test.ts` and asserted
+to still differ, so a fixture refresh that changes them fails loudly.
 
 | Station @ depth | Max abs diff (bar) | Median relative diff (per window) | Notes |
 |---|---|---|---|
-| acebozem @ 5 cm | 3765.9 | 0.24 – 9.6 | Dry-end clip (θ = 7.75 %): API 391.0 bar, vendored 4156.9 bar. The lab point there is about 309 bar. |
+| acebozem @ 5 cm | 3765.9 | 0.24 – 9.6 | Dry-end clip (θ = 7.75 %): API 391.0 bar, mesonet-soils 4156.9 bar. The lab point there is about 309 bar. |
 | acebozem @ 10 cm | 5.2 | 0.04 – 0.20 | |
 | acebozem @ 20 cm | 2.2 | 0.01 – 0.13 | |
 | acebozem @ 50 cm | 0.96 | 0.05 – 0.16 | |
-| acebozem @ 100 cm | 11065.8 | 0.18 – 14.2 | Dry-end clip (θ = 5.65 %), vendored about 14× the API. The lab point there is about 417 bar. |
+| acebozem @ 100 cm | 11065.8 | 0.18 – 14.2 | Dry-end clip (θ = 5.65 %), mesonet-soils about 14× the API. The lab point there is about 417 bar. |
 | arskeogh @ 10 cm | 0.31 | 0.03 – 0.06 | |
 | arskeogh @ 20 cm | 1.57 | 0.03 – 0.23 | |
 | arskeogh @ 50 cm | 0.83 | 0.03 – 0.12 | |
 
-Both tested stations differ at every depth. At the dry-end clip, the API's
-legacy fits are closer to the lab measurement than the θr = 0 vendored fits.
-Choosing the parameter source is a decision for workstream B and the
-orchestrator: data2 `mesonet/soils/…` should serve the DB parameters if parity
-is wanted.
+With the shipped `2026-10-04T17:21:00Z` bundle, mid-range values sit close to
+what the legacy API showed (acebozem 2026-09-01: 107 vs 98 bar at 10 cm, 61
+vs 58 at 20 cm, 4.0 vs 4.9 at 50 cm; `data/static.test.ts`).
 
-#### D-PS-1: percent saturation uses the API DB porosity, not mesonet-soils (data divergence)
+**Dry end.** When VWC is below a core's driest lab sample, `swp()` clips it
+to the lab range, and the FX tail there gives very large suctions (acebozem
+2026-09-01: about 3,900 bar at 5 cm, 12,800 at 100 cm; the legacy API showed
+391 and 778). mesonet-soils does not cap these; the dashboard decides how to
+show them (`ag/view/labels` `swpBar`):
+
+- Ag SWP chart: those points are **lower bounds**, drawn on a dashed, faded
+  line in the depth's color, capped at `SWP_CAP_BAR` (1,000 bar). The tooltip
+  and table read "≤ -1000.00 bar (drier than the lab range)", and a note
+  explains the dashes. The Soil Profile heatmap uses the same cap.
+- Now soil chip: the capped value, which is past the wilting point ("Dry").
+  Frozen hours are skipped, as on the Ag tab.
+- Data Downloader: the uncapped value, plus a
+  `Soil Water Potential @ -X cm Clipped?` column (data, not display).
+
+#### D-PS-1: percent saturation uses mesonet-soils porosity, not the API DB (data divergence)
 
 The formula is a verbatim port (`derived.py:302-359`,
 `clip(VWC / porosity · 100, 0, 100)`), and the VWC is the same level-2
-observation the API uses. The porosity is what differed (AG-PS-001: mdamalta
-1.4–18 percentage points below `/derived` at 4/8/20 in, plus a 36 in trace
-the API does not have).
+observation the API used. The porosity is mesonet-soils' `porosityPct` (the
+HYPROP initial water content, Vol%). A core with no porosity (acechest at
+100 cm) has no percent saturation.
 
-Root cause: a data-source difference, not a mapping or unit bug. Depths map
-1:1 (10/20/50/91 cm ↔ `Porosity @ -10/-20/-50/-91 cm`), both sources are
-Vol%, and the code was correct. mdamalta's porosity in the API DB is
-58.95 / 61.8 / 48.47 % at 10 / 20 / 50 cm and **absent at 91 cm**. The
-vendored mesonet-soils `2026-09-25` release has 62.64 / 67.06 / 54.46 /
-66.92 %.
-
-Survey (`scripts/fixtures/porosity-survey.mjs`; one keep=true request per
-station, 2026-09-01..30, level 2, serialized): **31 of 91 has_swp stations
-match at every depth, and 60 differ**. Of the 329 depths with both values,
-171 agree to 0.005 and 158 differ. The API/vendored ratio has a median of
-0.900 (IQR 0.899–0.918): most BLM/MDA stations look systematically scaled by
-about 0.9. The DB lacks porosity at 47 depths that vendored has (mostly
-91 cm; also acedupuy, acehuntl and aceingom at 50 cm; all of mdagildf), and
-has 5 that vendored lacks (acerapl2 at all depths, nctbirne at 91 cm). Some DB
-values are implausibly low, 14–20 % (blmterry, mdabench, mdafroid, wsrabsaw,
-wsrboydw, wsrmelvi), and pin the API's saturation at 100 %. Vendored
-acechest at 100 cm has porosity 0.
-
-Fix (the smallest that matches the API everywhere): percent saturation is
-still computed client-side from the level-2 VWC, but the **porosity comes
-from the API**. `ui/porositySource.ts` reads it from `/derived/{daily,hourly}?elements=percent_saturation&keep=true`
-(the `Porosity @ … [%]` columns, row by row) and keeps only the depths the API
-reports. `POROSITY_SOURCE = 'vendored'` is the one-line switch back to
-`compute` `percentSaturation()` over mesonet-soils, mirroring `SWP_SOURCE`
-(D-SWP-2). Which porosity is physically right (for example, whether the DB
-values are 0.9 × HYPROP initial water content, or bad rows such as blmterry)
-is for the mesonet-soils and mesonet-db-rds maintainers to decide.
-
-- **Tests:** `ui/porositySource.test.ts` checks golden parity with API
-  porosity for acebozem, arskeogh and **mdamalta** (daily season2025, hourly
-  jul2025; mdamalta fixtures from `capture.mjs --only mdamalta`). It also
-  asserts that mdamalta's vendored porosity still differs, so a parameter
-  refresh that fixes this fails the test and prompts the switch.
-- **Live:** the harness `ag/percent-saturation` comparison passes at every
-  station, mdamalta included.
+Until mesonet2 dropped `/derived` percent saturation, the porosity came from
+the API (`keep=true` `Porosity @ …` columns), because the API DB and
+mesonet-soils disagreed at 60 of 91 has_swp stations
+(`scripts/fixtures/porosity-survey.mjs`, 2026-09: API/mesonet-soils ratio
+median 0.900, with some implausibly low DB values of 14–20 % that pinned
+saturation at 100 %). That reference no longer exists, so mesonet-soils is
+the only source. At acebozem and arskeogh, whose porosities matched, the
+golden-parity test still holds to 0.0005 % (`compute/soil.test.ts`).
 
 #### D-GDD-1: wheat and barley stage labels are recomputed after the NDAWN switch
 
@@ -942,18 +926,17 @@ Ag Tools is now computed in the browser from raw `/observations` (QC level
 `ui/`. Differences a user can see, compared with the legacy Dash app
 (`app/mdb/app.py`, `utils/plot_derived.py`):
 
-- **Data source and QC.** Every variable except soil water potential is
-  computed client-side from level-2 observations (legacy: `/derived` at the
+- **Data source and QC.** Every variable is computed client-side from
+  level-2 observations (legacy: `/derived` at the
   API's default level). Live check, last 30 days (2026-09-02..10-01) vs
   `/derived/daily` (level 2, no `premade`): max |Δ| ETo 0.0005 in, GDD (corn)
   0 (≤ 1e-13), feels-like 0.0004 °F, CCI 0.0005 °F at acebozem, arskeogh and
   acecrowa (`ui/crosscheck.live.test.ts`).
-- **SWP stays on the API** (`/derived/{daily,hourly}?elements=swp`) until
-  mesonet-db-rds#186 resolves (D-SWP-2). `ui/swpSource.ts` `SWP_SOURCE` is the
-  one-line switch to the tested client path (`compute` `swp()`). Percent
-  saturation is computed client-side from VWC, with the **porosity from the
-  API** (`keep=true` Porosity columns; D-PS-1, switch `POROSITY_SOURCE`), so
-  it matches `/derived` at every has_swp station (to 0.0005 %).
+- **SWP and percent saturation** are computed client-side from level-2 VWC
+  and mesonet-soils parameters (`compute` `swp()` / `percentSaturation()`;
+  D-SWP-2, D-PS-1). mesonet2 has neither in `/derived`. A station offers them
+  when mesonet-soils has a fit for it (`has_swp` is derived from the bundle).
+  Dry-end values beyond the lab range are drawn dashed and capped (D-SWP-2).
 - **`var` is always in the URL.** The rebuild briefly defaulted to `etr`
   and dropped `var=etr` from links as the default; those links now open
   the legacy default (Growing Degree Days). `var` is now written even when
@@ -974,11 +957,12 @@ Ag Tools is now computed in the browser from raw `/observations` (QC level
   Derived data are cached in memory (`$store.data`), not in session storage.
 - **No-station state** uses the legacy text: "Select Station" / "To get
   started, select a station from the dropdown."
-- **Static data sources.** `data/staticSource.ts` `DATA2_STATIC_ENABLED =
-  false`: the soil parameters and GDD stage tables load straight from the
-  vendored `public/data/` files, with no data2 probes (and no console 404s),
-  until data2 publishes `derived/gdd_stages.json` and the soils manifest. The
-  data2 paths stay implemented and tested (`deps.data2Enabled`).
+- **Static data sources.** `data/staticSource.ts`: the soil parameters
+  load from data2 `soils/soil_params.json` and the vendored copy in parallel,
+  and the newer `release` wins (`DATA2_SOILS_ENABLED`). The GDD stage tables
+  load straight from `public/data/` (`DATA2_GDD_ENABLED = false`, no console
+  404s) until data2 publishes `derived/gdd_stages.json`; that path stays
+  tested (`deps.data2Enabled`).
 - **GDD cutoffs.** The slider shows the crop's cutoffs from `GDD_CUTOFFS_F`
   (what the API computes, incl. wheat/barley 32–70 °F switching to 32–95 °F at
   Haun stage 2), not the legacy slider table (wheat/barley 32–95, hemp 34–100,
@@ -1111,7 +1095,10 @@ recorded here as well.
   parameters (`request.ts` `DERIVED_OPTIONS`, `requiresSwp`). At a non-SWP
   station they are dropped from the request with a visible notice. The audit
   noted that this choice was documented only in code comments; it is recorded
-  here as well. Monthly values are means.
+  here as well. Monthly values are means. mesonet2's `/derived` has neither,
+  so they are computed in the browser from a separate `soil_vwc` request and
+  the mesonet-soils parameters (`soilDerived.ts`), with the legacy column
+  names plus a `… Clipped?` flag per SWP depth (D-SWP-2).
 - Option groups ("Standard elements" / "Derived variables") replace legacy's
   disabled header rows (DL-003).
 
@@ -1491,7 +1478,7 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
 
 ## Ag Tools (web-next)
 
-The Ag tab UI (`partials/ag/*`, `ui/ag/*`, logic in `core/ag/view/tab.ts`, `results.ts`, `keys.ts`) vs `web/src/tabs/AgToolsTab.tsx` + `features/ag/ui/AgVariableView.tsx`. Data, compute, texts and URL behaviour are unchanged (computed client-side from level-2 observations; only `/derived` requests are `elements=swp` and the `percent_saturation&keep=true` porosity rows).
+The Ag tab UI (`partials/ag/*`, `ui/ag/*`, logic in `core/ag/view/tab.ts`, `results.ts`, `keys.ts`) vs `web/src/tabs/AgToolsTab.tsx` + `features/ag/ui/AgVariableView.tsx`. Data, compute, texts and URL behaviour are unchanged (computed client-side from level-2 observations and the mesonet-soils parameters; no `/derived` requests).
 
 ### Controls
 - **web/:** Mantine selects, a range date picker, chips for crop / soil variable / livestock, one dual-thumb slider with marks.
