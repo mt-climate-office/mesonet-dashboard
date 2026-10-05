@@ -1,5 +1,6 @@
-<!-- Station picker (x-data="stationPicker", ui/picker/stationPicker.ts): search first (with the
-     "Near me" chip inside the field and its results below), recents, then "Browse on the map",
+<!-- Station picker (x-data="stationPicker", ui/picker/stationPicker.ts): search first (stations, and
+     places while typing; the "Near me" chip inside the field; Near me's or a picked place's stations
+     below), recents, then "Browse on the map",
      which reveals the network chips and the station map. A drawer (.dash-drawer, inline ≥ 1060 px /
      overlay) or, on compact viewports, a bottom sheet (.dash-sheet); the class follows the viewport.
      The head's handle button is the sheet's drag/toggle target and is hidden in drawer mode. -->
@@ -18,7 +19,7 @@
 
   <div class="dash-panel-body">
     <div class="ctl-combobox picker-search" data-testid="picker-search"
-         x-data="combobox({ items: () => items(), value: () => $store.station.id, onSelect: (id) => choose(id), label: 'Search stations' })"
+         x-data="combobox({ items: () => items(), value: () => $store.station.id, onSelect: (id) => pick(id), label: 'Search stations and places', sectionLimits: searchLimits })"
          x-effect="searchList(open)" @focusout="onFocusOut($event)">
       <label class="ctl-label sr-only" :id="ids.label" :for="ids.input" x-text="label"></label>
       <div class="ctl-combobox-field">
@@ -51,7 +52,7 @@
                     :aria-selected="isActive(item.id)" :class="{ 'is-current': isCurrent(item.id) }"
                     @mousedown.prevent @click="select(item.id)">
                   <span x-text="item.label"></span>
-                  <span class="ctl-option-meta" x-text="item.id"></span>
+                  <span class="ctl-option-meta" x-text="item.meta ?? item.id"></span>
                 </li>
               </template>
             </ul>
@@ -62,10 +63,12 @@
       <div role="status" class="sr-only" x-text="status()"></div>
     </div>
 
-    <!-- Near me results: shown once the chip in the field was pressed (it closes the search list, close() is the combobox's). -->
+    <!-- Near me's results (the chip in the field closes the search list; close() is the combobox's), or a
+         picked place's stations, headed by the place ("Gallatin County", "Near Bozeman"). -->
     <section class="picker-group" aria-labelledby="picker-near-title" x-show="near.status !== 'idle'" data-testid="near-results">
-      <h3 class="picker-group-title" id="picker-near-title">Near me</h3>
+      <h3 class="picker-group-title" id="picker-near-title" x-text="near.title"></h3>
       <p class="picker-note" role="status" x-show="near.status === 'locating'">Finding your location…</p>
+      <p class="picker-note" role="status" x-show="near.status === 'finding'">Finding stations…</p>
       <p class="picker-note" role="status" x-show="near.status === 'denied'" data-testid="near-denied">Location access is off for this site. Search by name or pick a station on the map.</p>
       <p class="picker-note" role="status" x-show="near.status === 'error'">Your location could not be found. Search by name or pick a station on the map.</p>
       <ul class="picker-list" x-show="near.status === 'ready'" data-testid="near-list">

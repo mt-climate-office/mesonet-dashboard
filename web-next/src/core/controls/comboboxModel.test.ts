@@ -1,7 +1,7 @@
 // Tests for the combobox's pure filter, ranking, grouping and key stepping.
 
 import { describe, expect, it } from 'vitest'
-import { escapeAction, filterItems, matchRank, resultSummary, stepIndex, type ComboboxItem } from './comboboxModel'
+import { escapeAction, filterItems, matchRank, normalize, resultSummary, stepIndex, typoDistance, type ComboboxItem } from './comboboxModel'
 
 const items: ComboboxItem[] = [
   { id: 'aceabsar', label: 'Absarokee', group: 'HydroMet', keywords: ['ABSM8'] },
@@ -144,5 +144,88 @@ describe('escapeAction', () => {
     expect(escapeAction('bo', false)).toBe('clear')
     expect(escapeAction('', true)).toBe('close')
     expect(escapeAction('', false)).toBe('pass')
+  })
+})
+
+describe('normalize', () => {
+  it('drops case, accents and apostrophes', () => {
+    expect(normalize('Apsáalooke')).toBe('apsaalooke')
+    expect(normalize('Rocky Boy’s')).toBe('rocky boys')
+    expect(normalize("Rocky Boy's")).toBe('rocky boys')
+  })
+  it('lets plain typing match accented and apostrophe names', () => {
+    const rocky = { id: 'r', label: 'Rocky Boy’s Reservation' }
+    expect(matchRank(rocky, 'rocky boys')).toBe(1)
+    expect(matchRank({ id: 'c', label: 'Crow Reservation', keywords: ['Apsáalooke'] }, 'apsaalooke')).toBe(0)
+  })
+})
+
+describe('typoDistance', () => {
+  it.each([
+    ['bozeman', 'bozeman', 0],
+    ['bozman', 'bozeman', 1], // deletion
+    ['bozemann', 'bozeman', 1], // insertion
+    ['bozaman', 'bozeman', 1], // substitution
+    ['bzoeman', 'bozeman', 1], // swap
+    ['misoula', 'missoula', 1],
+    ['billigns', 'billings', 1],
+  ] as const)('%s ~ %s = %i', (a, b, d) => expect(typoDistance(a, b, 2)).toBe(d))
+  it('stops early past the bound', () => {
+    expect(typoDistance('kalispell', 'bozeman', 1)).toBe(2)
+    expect(typoDistance('a', 'abcdef', 2)).toBe(3)
+  })
+})
+
+describe('typo matches (rank 7)', () => {
+  const bozeman = { id: 'acebozem', label: 'Bozeman Airport' }
+  it.each([
+    ['bozman', 7], // whole word, one edit
+    ['bozeman airprot', 7], // whole label, swap (2 edits allowed from 8 letters)
+    ['bozm', Infinity], // 4 letters: only a whole word, and "bozm" is 3 edits from "bozeman"
+    ['airprt', 7], // a later word, one edit
+    ['bozem', 2], // a real prefix still ranks as one
+    ['boze', 2],
+    ['bzo', Infinity], // under 4 letters: no typos
+    ['kalispell', Infinity],
+  ] as const)('%s → %s', (q, rank) => expect(matchRank(bozeman, q)).toBe(rank))
+  it('ranks after every substring match', () => {
+    const list: ComboboxItem[] = [
+      { id: 'a', label: 'Bozman Creek' }, // exact word for "bozman"
+      { id: 'b', label: 'Bozeman' }, // typo
+    ]
+    expect(filterItems(list, 'bozman').flat.map((i) => i.id)).toEqual(['a', 'b'])
+  })
+})
+
+describe('sections, query-only items and meta', () => {
+  const mixed: ComboboxItem[] = [
+    { id: 'acebozem', label: 'Bozeman', group: 'HydroMet', section: 'Stations' },
+    { id: 'acebozm4', label: 'Bozeman 4th', group: 'HydroMet', section: 'Stations' },
+    { id: 'place:p3008950', label: 'Bozeman', meta: 'City', section: 'Places', queryOnly: true },
+    { id: 'place:c30031', label: 'Gallatin County', meta: 'County', section: 'Places', queryOnly: true, keywords: ['Gallatin'] },
+    { id: 'place:z59715', label: '59715', meta: 'ZIP code', section: 'Places', queryOnly: true },
+  ]
+  it('leaves query-only items out of the full list', () => {
+    expect(filterItems(mixed, '').flat.map((i) => i.id)).toEqual(['acebozem', 'acebozm4'])
+  })
+  it('heads each section when more than one matches; stations first; a tie goes to the earlier section', () => {
+    const r = filterItems(mixed, 'bozeman')
+    expect(r.groups.map((g) => [g.name, g.items.map((i) => i.id)])).toEqual([
+      ['Stations', ['acebozem', 'acebozm4']],
+      ['Places', ['place:p3008950']],
+    ])
+    expect(r.best).toBe(0)
+  })
+  it('one section: no heading; best is the top rank even in a later section', () => {
+    expect(filterItems(mixed, '59715').groups).toEqual([{ name: null, items: [mixed[4]] }])
+    const g = filterItems([{ id: 'acegalla', label: 'Gallatin Gateway', section: 'Stations' }, ...mixed.slice(2)], 'gallatin')
+    expect(g.flat.map((i) => i.id)).toEqual(['acegalla', 'place:c30031'])
+    expect(g.best).toBe(1) // the county's keyword is exact (0); the station is a prefix (1)
+  })
+  it('caps a section with sectionLimits; total still counts every match', () => {
+    const many: ComboboxItem[] = Array.from({ length: 12 }, (_, i) => ({ id: `place:p${i}`, label: `Town ${i}`, section: 'Places', queryOnly: true }))
+    const r = filterItems([...mixed.slice(0, 2), ...many], 'town', 200, { Places: 8 })
+    expect(r.flat).toHaveLength(8)
+    expect(r.total).toBe(12)
   })
 })

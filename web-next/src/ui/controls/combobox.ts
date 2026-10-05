@@ -33,7 +33,7 @@
 //                   :aria-selected="isActive(item.id)" :class="{ 'is-current': isCurrent(item.id) }"
 //                   @mousedown.prevent @click="select(item.id)">
 //                 <span x-text="item.label"></span>
-//                 <span class="ctl-option-meta" x-text="item.id"></span>
+//                 <span class="ctl-option-meta" x-text="item.meta ?? item.id"></span>
 //               </li>
 //             </template>
 //           </ul>
@@ -62,6 +62,8 @@ export interface ComboboxOptions {
   placeholder?: string
   /** Max rendered options (default 200); the list says when more matched. */
   limit?: number
+  /** Max options per results section (ComboboxItem `section`), e.g. { Places: 8 }. */
+  sectionLimits?: Record<string, number>
 }
 
 /** Alpine.data factory for the combobox; see the markup in the file header. */
@@ -77,7 +79,7 @@ export function combobox(opts: ComboboxOptions) {
     active: -1,
 
     get result() {
-      return filterItems(opts.items(), this.query, opts.limit ?? DEFAULT_LIMIT)
+      return filterItems(opts.items(), this.query, opts.limit ?? DEFAULT_LIMIT, opts.sectionLimits)
     },
 
     /** The × shows whenever there is text to clear. */

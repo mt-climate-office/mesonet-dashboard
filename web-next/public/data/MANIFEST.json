@@ -27,6 +27,20 @@
       "known_differences": "Deployed derived.stages labels hemp stage 1 \"BBCH Stage 11\"; write_hemp_table.sql says \"BBCH Stages 0-11\". Vendored from the SQL.",
       "data2_url": "https://data2.climate.umt.edu/mesonet/derived/gdd_stages.json (planned)",
       "license": "Montana Climate Office; stage tables compiled from NDAWN / extension publications."
+    },
+    "places.json": {
+      "source": "US Census Bureau 2026 Gazetteer Files (public domain)",
+      "source_url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2026_Gazetteer/",
+      "source_paths": [
+        "2026_Gaz_counties_national.txt",
+        "2026_Gaz_aiannh_national.txt",
+        "2026_gaz_place_30.txt",
+        "2026_Gaz_zcta_national.txt"
+      ],
+      "captured_at": "2026-10-05",
+      "rows": 930,
+      "transform": "Montana only (counties USPS=MT; places file 30; ZCTAs 59xxx; reservations by GEOID; tribes with no Census reservation added by hand at their headquarters town, \"at\"). One row per place: id (c/r/p/z + GEOID), kind, display name (\" city\"/\" town\"/\" CDP\" dropped; consolidated city-counties renamed), Census internal point (4 dp), search keywords (county bare name, nations, former names).",
+      "generated_by": "web-next/src/core/places/vendor-places.mjs"
     }
   }
 }
