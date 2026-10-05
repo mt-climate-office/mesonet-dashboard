@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import type { SoilParams, SoilSeries } from '../ag/contract'
+import { SWP_CAP_BAR } from '../ag/view/labels'
 import type { ObservationRow } from '../api'
 import { buildNowPage, latestSwpBar, nowSwpQuery, stationMeta, type NowPageInput } from './nowPage'
 import { CALM_MPH } from './summary'
@@ -129,19 +131,38 @@ describe('icons', () => {
 })
 
 describe('soil water potential', () => {
-  it('request: yesterday through today, hourly, level 2; the key encodes every input', () => {
+  it('request: hourly level-2 soil VWC from yesterday through today; the key encodes every input', () => {
     const q = nowSwpQuery('acebozem', '2026-10-01')
-    expect(q.key).toBe('swp:acebozem:hourly:2026-09-30:2026-10-01:l2')
-    expect(q.request).toEqual({ path: 'derived/hourly/', query: { stations: 'acebozem', start_time: '2026-09-30', end_time: '2026-10-02', elements: 'swp', level: 2 } })
+    expect(q.key).toBe('soil:acebozem:hourly:2026-09-30:2026-10-01:l2')
+    expect(q.query).toEqual({ station: 'acebozem', start: '2026-09-30', end: '2026-10-01', period: 'hourly', level: 2 })
   })
-  it('the shallowest depth of the newest row that has one', () => {
-    const rows = [
-      { datetime: '2026-10-01 12:00:00-06:00', 'Soil Water Potential @ -5 cm [bar]': 3, 'Soil Water Potential @ -10 cm [bar]': 1 },
-      { datetime: '2026-10-01 13:00:00-06:00', 'Soil Water Potential @ -5 cm [bar]': 4 },
-      { datetime: '2026-10-01 14:00:00-06:00', 'Soil Water Potential @ -5 cm [bar]': null },
-    ]
-    expect(latestSwpBar(rows)).toBe(4)
-    expect(latestSwpBar([])).toBeNull()
-    expect(latestSwpBar(undefined)).toBeNull()
+
+  // FX with n = 0.5 makes the dry tail steep: VWC 5 % → ~4.9e6 bar.
+  const fx = { r: 0, s: 0.5, n: 0.5, m: 1, h: 1 }
+  const params: SoilParams[] = [5, 10].map((depthCm) => ({ station: 'x', depthCm, model: 'FX', fx, labVwcMin: 5, labVwcMax: 50, source: 'vendored', release: 'r' }))
+  const soil = (vwc5: (number | null)[], vwc10: (number | null)[], temp10 = [10, 10, 10]): SoilSeries => ({
+    station: 'x',
+    level: 2,
+    provisional: [false, false, false],
+    depthsCm: [10, 5],
+    time: ['2026-10-01T10:00', '2026-10-01T11:00', '2026-10-01T12:00'],
+    epochMs: [0, 3_600_000, 7_200_000],
+    vwcPct: [vwc10, vwc5],
+    tempC: [temp10, [10, 10, 10]],
+  })
+  const bar = (theta: number) => (Math.exp(0.5 / theta) - Math.E) ** 2 / 100
+
+  it('the shallowest depth of the newest hour that has one', () => {
+    expect(latestSwpBar(soil([30, 25, 40], [30, 28, 27]), params)).toBeCloseTo(bar(0.4), 9)
+    expect(latestSwpBar(soil([30, 25, null], [30, 28, 27]), params)).toBeCloseTo(bar(0.27), 9)
+    expect(latestSwpBar(soil([null, null, null], [null, null, null]), params)).toBeNull()
+    expect(latestSwpBar(undefined, params)).toBeNull()
+    expect(latestSwpBar(soil([30, 25, 40], [30, 28, 27]), undefined)).toBeNull()
+  })
+  it('skips frozen readings', () => {
+    expect(latestSwpBar(soil([30, 25, null], [30, 28, 27], [10, 10, -1]), params)).toBeCloseTo(bar(0.25), 9)
+  })
+  it('a dry-end clip (VWC below the lab range) reads as the capped lower bound', () => {
+    expect(latestSwpBar(soil([30, 25, 2], [30, 28, 27]), params)).toBe(SWP_CAP_BAR)
   })
 })

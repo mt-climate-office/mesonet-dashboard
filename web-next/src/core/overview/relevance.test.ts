@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ObservationRow } from '../api'
-import { dewPointF, nowTiles, pressureChange3h, pressureTrend, shallowestSwpBar, soilState, sunUp } from './relevance'
+import { dewPointF, nowTiles, pressureChange3h, pressureTrend, soilState, sunUp } from './relevance'
 import type { OverviewInput } from './tiles'
 
 const LATEST = {
@@ -76,11 +76,6 @@ describe('soil state (SWP against field capacity and wilting point)', () => {
     [null, null],
     [undefined, null],
   ] as const)('%s bar → %s', (v, out) => expect(soilState(v)).toBe(out))
-  it('shallowest finite SWP in a /derived row', () => {
-    expect(shallowestSwpBar({ 'Soil Water Potential @ -20 cm [bar]': 2, 'Soil Water Potential @ -5 cm [bar]': null, 'Soil Water Potential @ -10 cm [bar]': 0.8 })).toBe(0.8)
-    expect(shallowestSwpBar({ station: 'x' })).toBeNull()
-    expect(shallowestSwpBar(undefined)).toBeNull()
-  })
 })
 
 describe('nowTiles', () => {

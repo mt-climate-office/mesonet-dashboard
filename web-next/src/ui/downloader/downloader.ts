@@ -5,6 +5,7 @@
  * the logic is core/downloader (form.ts, view.ts, request.ts).
  */
 import Alpine from 'alpinejs'
+import { soilParamsFor } from '../../core/ag/data'
 import { getStationElements, type Station, type StationElement } from '../../core/api'
 import type { Resource } from '../../core/cache'
 import { downloaderPreviewChart, downloaderPreviewTable, previewHeight } from '../../core/charts'
@@ -16,6 +17,7 @@ import * as view from '../../core/downloader/view'
 import { labelFor, type MultiselectGroup, type MultiselectOption } from '../../core/controls/multiselectModel'
 import { buildPreviewModel, type PreviewModel } from '../../core/models/downloaderPreview'
 import { loadErrorText } from '../../core/loadError'
+import { stationHasSwp } from '../../core/stations'
 import { denverToday } from '../../core/today'
 import type { DlPeriod, UrlState } from '../../core/url-schema'
 import { elementsResource } from '../charts/resources'
@@ -66,7 +68,7 @@ export function downloader() {
     get stationId(): string | null { return this.$store.station.id },
     get station(): Station | undefined { return this.$store.station.current },
     get installDate(): string | null { return view.installDateOf(this.station) },
-    get hasSwp(): boolean { return this.station?.has_swp === true },
+    get hasSwp(): boolean { return stationHasSwp(this.station) },
 
     /** "Show uncommon" off → public=true (common elements only), as legacy. */
     get elements(): Resource<StationElement[]> | null {
@@ -88,7 +90,8 @@ export function downloader() {
       return els?.status === 'error' ? loadErrorText("This station's variables", els.error) : ''
     },
     get pruned(): { selected: string[]; droppedSwp: string[] } {
-      return view.pruneSelection(this.url.els, { stationKnown: !!this.station, hasSwp: this.hasSwp, standard: this.standard })
+      // has_swp is final only once the soil parameters settle (station store).
+      return view.pruneSelection(this.url.els, { stationKnown: !!this.station && this.$store.station.swpReady, hasSwp: this.hasSwp, standard: this.standard })
     },
     get droppedNotice(): string {
       const d = this.pruned.droppedSwp
@@ -175,7 +178,9 @@ export function downloader() {
       this.run = { query, key, status: 'loading', data: null, error: null }
       announce(`Requesting ${query.period} data for ${this.station?.name ?? query.station}…`)
       try {
-        const data = await fetchDownload(query)
+        // The station store already holds the soil parameters (it decides has_swp).
+        const soil = Alpine.store('station').soil?.data
+        const data = await fetchDownload(query, soil ? { soilParams: async (id) => soilParamsFor(Alpine.raw(soil), id) } : {})
         if (mine !== gen) return
         this.run = { query, key, status: 'success', data, error: null }
         announce(view.resultAnnouncement(data.rows.length, data.columns.length))

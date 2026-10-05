@@ -4,7 +4,7 @@
  * out of the old Plotly builders (web/src/features/ag/figures) so the ECharts
  * builders in core/charts reuse them unchanged.
  */
-import type { CciClass, FeelsLikeRegime, LocalDate, LocalDateTime, Nullable } from '../contract'
+import type { CciClass, FeelsLikeRegime, LocalDate, LocalDateTime, Nullable, SwpSeries } from '../contract'
 import { cToF, kPaToBar, mmToIn, msToMph } from '../compute'
 import { elementLabel } from '../../downloader/labels'
 import { axisTitle, cumulativeTitle, plainUnit } from '../../variables/labels'
@@ -16,6 +16,44 @@ export type SoilProfileVar = 'soil_vwc' | 'soil_temp' | 'soil_blk_ec' | 'swp' | 
 /** SWP band edges, positive bar magnitudes (field capacity, wilting point). */
 export const SWP_FIELD_CAPACITY = 0.33
 export const SWP_WILTING_POINT = 15
+
+/**
+ * Display ceiling (bar) for dry-end SWP. Where observed VWC is drier than the
+ * driest lab point, `swp()` clips it to the lab range, so its value is only a
+ * lower bound on suction, and the FX tail there runs to ~10⁴ bar. Those
+ * points draw at min(value, cap), muted, and read "≤ −… bar".
+ */
+export const SWP_CAP_BAR = 1000
+
+export interface SwpBar {
+  /** Positive bar magnitudes; dry-end clipped values capped at `SWP_CAP_BAR`. */
+  bar: Nullable[][]
+  /** `dry[d][i]`: VWC was below the lab range, so `bar` is a lower bound. */
+  dry: boolean[][]
+}
+
+/**
+ * `SwpSeries` (kPa) → display bar. A clipped value past the wilting point is
+ * a dry-end clip (VWC below the lab range); wet-end clips sit at the wettest
+ * lab point, near saturation, and stay as they are.
+ */
+export function swpBar(s: Pick<SwpSeries, 'kPa' | 'clipped'>): SwpBar {
+  const dry = s.kPa.map((col, d) =>
+    col.map((v, i) => !!s.clipped[d]?.[i] && v != null && kPaToBar(v)! >= SWP_WILTING_POINT),
+  )
+  const bar = s.kPa.map((col, d) =>
+    col.map((v, i) => {
+      const b = kPaToBar(v)
+      return dry[d][i] && b != null ? Math.min(b, SWP_CAP_BAR) : b
+    }),
+  )
+  return { bar, dry }
+}
+
+/** "-12.34 bar", or "≤ -1000.00 bar (drier than the lab range)" for a dry-end clip. */
+export function swpText(bar: number, dry: boolean): string {
+  return dry ? `≤ -${bar.toFixed(2)} bar (drier than the lab range)` : `-${bar.toFixed(2)} bar`
+}
 
 export const FEELS_LIKE_LABELS: Record<FeelsLikeRegime, string> = {
   wind_chill: 'Wind Chill',

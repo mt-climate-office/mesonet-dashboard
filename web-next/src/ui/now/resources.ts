@@ -3,13 +3,15 @@
  * latest obs, ppt summary, NWS periods, photos), all tier 2: callers ask
  * only once `/latest` (or, for the hourly forecast, the NWS periods) is in.
  * The 72 h hourly rows (sparklines, strip, pressure trend), the normals
- * CSVs, the NWS hourly forecast, the soil water potential for the chip and
+ * CSVs, the NWS hourly forecast, the soil VWC behind the chip's SWP and
  * the 7 daily precipitation totals for the Rain tile. All but the normals are
  * live (re-read on the freshness tick); those keyed by today's date keep a
  * slot, so the midnight rollover shows the last rows while the new ones load.
  */
 import Alpine from 'alpinejs'
-import { fetchCsv, fetchNwsHourly, getStationRecord, type HourlyForecastPoint, type ObservationRow } from '../../core/api'
+import { fetchSoilSeries } from '../../core/ag/data'
+import type { SoilSeries } from '../../core/ag/contract'
+import { fetchNwsHourly, getStationRecord, type HourlyForecastPoint, type ObservationRow } from '../../core/api'
 import type { Resource } from '../../core/cache'
 import { fetchDailyNormals, type NormalRow } from '../../core/normals'
 import { nowSwpQuery, rainDailyQuery, sparkQuery } from '../../core/overview'
@@ -30,10 +32,10 @@ export const normals = (station: string, code: 'tmmx' | 'tmmn' | 'pr'): Resource
 export const nwsHourly = (url: string): Resource<HourlyForecastPoint[]> =>
   Alpine.store('data').cached(`nwsh:${url}`, () => fetchNwsHourly(url), { ttl: 30 * MIN, live: true })
 
-/** Recent hourly soil water potential (core/overview `nowSwpQuery`); only for stations with SWP sensors. */
-export function swpRows(station: string, today: string): Resource<ObservationRow[]> {
+/** Recent hourly soil VWC for the soil chip's SWP (core/overview `nowSwpQuery`); only for stations with SWP parameters. */
+export function swpSoil(station: string, today: string): Resource<SoilSeries> {
   const q = nowSwpQuery(station, today)
-  return Alpine.store('data').cached(q.key, () => fetchCsv<ObservationRow>(q.request.path, q.request.query), { ttl: 30 * MIN, live: true, slot: `swp:${station}` })
+  return Alpine.store('data').cached(q.key, () => fetchSoilSeries(q.query), { ttl: 30 * MIN, live: true, slot: `swp:${station}` })
 }
 
 /** The last 7 days' daily precipitation for the Rain tile's bars (core/overview `rainDailyQuery`). */

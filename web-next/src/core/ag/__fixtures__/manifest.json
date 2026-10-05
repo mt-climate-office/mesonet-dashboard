@@ -15,11 +15,6 @@
     {
       "id": "acecrowa",
       "why": "HydroMet without soil water parameters"
-    },
-    {
-      "id": "mdamalta",
-      "why": "has_swp; API DB porosity differs from mesonet-soils and the API has none at 91 cm (AG-PS-001)",
-      "psOnly": true
     }
   ],
   "windows": {
@@ -564,22 +559,6 @@
     "acecrowa.elements.csv": {
       "url": "https://mesonet2.climate.umt.edu/api/v2/elements/acecrowa/?type=csv",
       "rows": 40
-    },
-    "mdamalta.daily.season2025.obs-soil.csv": {
-      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=mdamalta&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
-      "rows": 183
-    },
-    "mdamalta.daily.season2025.derived-percent_saturation.csv": {
-      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/daily/?stations=mdamalta&start_time=2025-04-01&end_time=2025-10-01&level=2&elements=percent_saturation&keep=true&type=csv",
-      "rows": 183
-    },
-    "mdamalta.hourly.jul2025.obs-soil.csv": {
-      "url": "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=mdamalta&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=soil_vwc,soil_temp&agg_func=avg&type=csv",
-      "rows": 744
-    },
-    "mdamalta.hourly.jul2025.derived-percent_saturation.csv": {
-      "url": "https://mesonet2.climate.umt.edu/api/v2/derived/hourly/?stations=mdamalta&start_time=2025-07-01&end_time=2025-08-01&level=2&elements=percent_saturation&keep=true&type=csv",
-      "rows": 744
     }
   }
 }

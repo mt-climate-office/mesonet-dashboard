@@ -18,10 +18,9 @@ import {
   frozenMask,
   groupByYear,
   isCumulativeVariable,
-  kPaToBar,
 } from '../compute'
 import type { AnnualDaily } from '../data'
-import { type SoilProfileVar, annualAxisLabel, fromSi, parseLabel } from './labels'
+import { type SoilProfileVar, annualAxisLabel, fromSi, parseLabel, swpBar } from './labels'
 
 /* ------------------------------------------------------ sensor coverage */
 
@@ -133,8 +132,7 @@ export function profileValues(
     case 'swp': {
       const s = extra.swp
       if (!s) return null
-      const bar = s.kPa.map((col) => col.map((v) => kPaToBar(v)))
-      return done(s.depthsCm, bar, true)
+      return done(s.depthsCm, swpBar(s).bar, true)
     }
     case 'percent_saturation': {
       const p = extra.pct

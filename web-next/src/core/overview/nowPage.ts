@@ -6,7 +6,10 @@
  * "All readings" and "Station details" rows. Precipitation is summarised once
  * per page. Also the one extra request behind the soil Dry/Wet chip. Pure.
  */
-import { derivedSwpRequest, type ObservationRow, type Station } from '../api'
+import { applyFrozenMask, frozenMask, swp } from '../ag/compute'
+import type { SoilParams, SoilSeries } from '../ag/contract'
+import { swpBar } from '../ag/view/labels'
+import type { ObservationRow, Station } from '../api'
 import { metersToFeet } from '../about/details'
 import type { StripPeriod } from '../charts/heroStrip'
 import { sparkline, type Sparkline, type SparkSeries } from '../charts/sparkline'
@@ -16,7 +19,7 @@ import { readConditions, type Conditions } from './conditions'
 import { buildHero, type HeroInput, type HeroView } from './hero'
 import { nowPrecip, type PrecipSummary } from './precip'
 import { ytdNormal } from './normals'
-import { dewPointF, nowTiles, pressureChange3h, pressureTrend, shallowestSwpBar, soilState, type SoilState } from './relevance'
+import { dewPointF, nowTiles, pressureChange3h, pressureTrend, soilState, type SoilState } from './relevance'
 import { rainBars } from './rainBars'
 import { peakGust, sparkSeries, type SeriesKey } from './series'
 import { hasSnow } from './snow'
@@ -24,7 +27,7 @@ import { CALM_MPH } from './summary'
 import type { Tile, TileId } from './tiles'
 
 export interface NowPageInput extends HeroInput {
-  /** Shallowest soil water potential (bar, `latestSwpBar`), when fetched; else no Dry/Wet chip. */
+  /** Shallowest soil water potential (bar, `latestSwpBar`), when computed; else no Dry/Wet chip. */
   swpBar?: number | null
   /** Daily precipitation for the last 7 days (`rainDailyQuery`), or undefined until loaded: the Rain tile's bars. */
   rainDaily?: readonly ObservationRow[]
@@ -151,26 +154,35 @@ export function buildNowPage(input: NowPageInput): NowPage {
 }
 
 /**
- * The request behind the soil chip: `/derived/hourly` SWP from yesterday
- * through `today` (local dates) at QC level 2, raw headers. `key` encodes
- * every input. Only for stations with SWP sensors (`stationHasSwp`).
+ * The request behind the soil chip: hourly level-2 soil VWC (core/ag/data
+ * `fetchSoilSeries`) from yesterday through `today` (local dates). `key`
+ * encodes every input. Only for stations with SWP parameters (`stationHasSwp`).
  */
 export function nowSwpQuery(station: string, today: string) {
   const [y, m, d] = today.split('-').map(Number)
   const start = new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10)
   return {
-    key: `swp:${station}:hourly:${start}:${today}:l2`,
-    request: derivedSwpRequest({ station, start, end: today, time: 'hourly', level: 2 }),
+    key: `soil:${station}:hourly:${start}:${today}:l2`,
+    query: { station, start, end: today, period: 'hourly' as const, level: 2 as const },
   }
 }
 
-/** The shallowest SWP (bar) of the newest row that has one, or null. */
-export function latestSwpBar(rows: readonly Record<string, unknown>[] | undefined): number | null {
-  let best: [number, number] | null = null
-  for (const r of rows ?? []) {
-    const t = parseWallClock(r.datetime)
-    const v = shallowestSwpBar(r)
-    if (t !== null && v !== null && (!best || t > best[0])) best = [t, v]
+/**
+ * The shallowest SWP (bar) of the newest hour that has one, computed in the
+ * browser (compute `swp()` over the station's mesonet-soils parameters), or
+ * null. Frozen readings are dropped, as on the Ag tab; a dry-end clip reads
+ * as its capped lower bound (labels `swpBar`), which is past the wilting point.
+ */
+export function latestSwpBar(soil: SoilSeries | undefined, params: readonly SoilParams[] | undefined): number | null {
+  if (!soil || !params) return null
+  const s = swp(soil, [...params])
+  const bar = applyFrozenMask(s, swpBar(s).bar, frozenMask(soil))
+  const order = s.depthsCm.map((_, d) => d).sort((a, b) => s.depthsCm[a] - s.depthsCm[b])
+  for (let i = s.time.length - 1; i >= 0; i--) {
+    for (const d of order) {
+      const v = bar[d][i]
+      if (v != null && Number.isFinite(v)) return v
+    }
   }
-  return best ? best[1] : null
+  return null
 }

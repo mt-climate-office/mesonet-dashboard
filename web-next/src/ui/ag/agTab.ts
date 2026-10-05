@@ -43,10 +43,13 @@ export function agTab() {
       stopPrefill()
     },
 
-    /** 'chart' | 'loading-stations' | 'no-station' | 'not-here' (an SWP tool at a station without SWP sensors). */
+    /** 'chart' | 'loading-stations' | 'no-station' | 'not-here' (an SWP tool at a station without soil parameters). */
     state(): ReturnType<typeof chartState> {
       const station = stations()
-      return chartState(currentTab(), url().state.s, station.id, station.catalog?.status !== 'loading')
+      const t = currentTab()
+      // An SWP tool waits for the soil parameters too: they decide has_swp.
+      const loaded = station.catalog?.status !== 'loading' && (!t.swpOnly || station.swpReady)
+      return chartState(t, url().state.s, station.id, loaded)
     },
     showsOptions,
     /** The card for the current tool, when a chart can be drawn (not All years). */

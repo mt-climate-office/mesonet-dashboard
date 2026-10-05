@@ -10,6 +10,9 @@ import {
   splitElements,
 } from './request'
 import { elementLabel } from './labels'
+import { soilDerivedRows } from './soilDerived'
+import type { SoilParams } from '../ag/contract'
+import { fxInverse } from '../ag/compute'
 import { toCsv } from '../csv'
 
 const M = 'Contains Missing Data'
@@ -117,11 +120,12 @@ describe('toCsv', () => {
   })
 })
 
+const csvResponse = (body: string, status = 200) =>
+  ({ ok: status < 400, status, text: async () => body }) as Response
+
 describe('fetchDownload', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  const csvResponse = (body: string, status = 200) =>
-    ({ ok: status < 400, status, text: async () => body }) as Response
 
   it('fetches only derived when only derived variables are selected, then aggregates monthly', async () => {
     const calls: string[] = []
@@ -210,3 +214,101 @@ describe('fetchDownload', () => {
     expect(empty.rows).toEqual([])
   })
 })
+
+describe('soil water potential / percent saturation (computed in the browser)', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  const fx = { r: 0.05, s: 0.5, n: 1.5, m: 0.8, h: 10 }
+  const params: SoilParams[] = [
+    { station: 'acebozem', depthCm: 5, model: 'FX', fx, porosityPct: 50, labVwcMin: 10, labVwcMax: 45, source: 'vendored', release: 'r' },
+    // 20 cm: porosity only (no FX fit) → percent saturation, no SWP.
+    { station: 'acebozem', depthCm: 20, model: 'VG', porosityPct: 40, source: 'vendored', release: 'r' },
+  ]
+  const vwc = [
+    'station,datetime,Soil VWC @ -5 cm [%],Soil VWC @ -10 cm [%],Soil VWC @ -20 cm [%],has_na,provisional',
+    'acebozem,2026-09-01 00:00:00-06:00,30,31,20,False,False',
+    'acebozem,2026-09-02 00:00:00-06:00,5,31,,True,False',
+  ].join('\n')
+  const SWP5 = 'Soil Water Potential @ -5 cm [bar]'
+  const CLIP5 = 'Soil Water Potential @ -5 cm Clipped?'
+  const bar = (theta: number) => Math.round(fxInverse(theta, fx)! / 100 * 1000) / 1000
+
+  it('soilDerivedRows: legacy /derived headers, 3 dp bar, clip flag, only parameterised depths', () => {
+    const rows = soilDerivedRows(
+      [
+        { station: 'acebozem', datetime: 'd1', 'Soil VWC @ -5 cm [%]': 30, 'Soil VWC @ -20 cm [%]': 20, [M]: false },
+        { station: 'acebozem', datetime: 'd2', 'Soil VWC @ -5 cm [%]': 5, 'Soil VWC @ -20 cm [%]': null, [M]: true },
+        { station: 'acebozem', datetime: 'd3', 'Soil VWC @ -5 cm [%]': null },
+      ],
+      params,
+      ['swp', 'percent_saturation'],
+    )
+    expect(rows[0]).toEqual({
+      station: 'acebozem',
+      datetime: 'd1',
+      [SWP5]: bar(0.3),
+      [CLIP5]: false,
+      'Percent Saturation @ -5 cm [%]': 60,
+      'Percent Saturation @ -20 cm [%]': 50,
+      [M]: false,
+    })
+    // 5 % is below the lab range: clipped to 10 %, flagged. No frozen mask, no cap: data.
+    expect(rows[1]).toMatchObject({ [SWP5]: bar(0.1), [CLIP5]: true, 'Percent Saturation @ -20 cm [%]': null, [M]: true })
+    expect(rows[2]).toMatchObject({ [SWP5]: null, [CLIP5]: null })
+    expect(soilDerivedRows([], params, ['swp'])).toEqual([])
+    // A station without parameters gets no soil columns.
+    const other = soilDerivedRows([{ station: 'x', datetime: 'd', 'Soil VWC @ -5 cm [%]': 30 }], params, ['swp', 'percent_saturation'])
+    expect(other).toEqual([{ station: 'x', datetime: 'd' }])
+  })
+
+  it('fetchDownload: no /derived request for swp; its own soil_vwc request; user VWC columns untouched', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', async (url: string) => {
+      calls.push(url)
+      if (url.includes('elements=soil_vwc')) return csvResponse(vwc)
+      return csvResponse(['station,datetime,Air Temperature @ 2 m [°F],has_na', 'acebozem,2026-09-01 00:00:00-06:00,61.5,False'].join('\n'))
+    })
+    const res = await fetchDownload(
+      { station: 'acebozem', start: '2026-09-01', end: '2026-09-02', period: 'daily', elements: ['air_temp_0200', 'swp'], level: 2 },
+      { soilParams: async () => params },
+    )
+    expect(calls.some((u) => u.includes('derived'))).toBe(false)
+    expect(calls).toHaveLength(2)
+    expect(res.columns).toEqual(['station', 'datetime', 'Air Temperature @ 2 m [°F]', SWP5, CLIP5, M, 'provisional'])
+    expect(res.rows).toHaveLength(2)
+    expect(res.rows[0]).toMatchObject({ [SWP5]: bar(0.3), [CLIP5]: false, [M]: false })
+    expect(res.rows[1]).toMatchObject({ [SWP5]: bar(0.1), [CLIP5]: true, [M]: true })
+    expect(res.warnings).toEqual([])
+  })
+
+  it('fetchDownload: server-derived codes still go to /derived; monthly means and any() clip flags', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', async (url: string) => {
+      calls.push(url)
+      if (url.includes('derived')) return csvResponse(['station,datetime,Feels Like Temperature [°F]', 'acebozem,2026-09-01 00:00:00-06:00,60', 'acebozem,2026-09-02 00:00:00-06:00,70'].join('\n'))
+      return csvResponse(vwc)
+    })
+    const res = await fetchDownload(
+      { station: 'acebozem', start: '2026-09-01', end: '2026-09-02', period: 'monthly', elements: ['feels_like', 'swp'], level: 2 },
+      { soilParams: async () => params },
+    )
+    expect(calls.filter((u) => u.includes('derived'))).toHaveLength(1)
+    expect(calls.find((u) => u.includes('derived'))).toContain('elements=feels_like&')
+    expect(res.rows[0]).toMatchObject({ 'Feels Like Temperature [°F]': 65, [CLIP5]: true })
+    expect(res.rows[0][SWP5]).toBeCloseTo((bar(0.3) + bar(0.1)) / 2, 3)
+  })
+
+  it('fetchDownload: the soil parameters failing warns when something else is shown, else fails', async () => {
+    vi.stubGlobal('fetch', async (url: string) =>
+      url.includes('soil_vwc') ? csvResponse(vwc) : csvResponse(['station,datetime,Air Temperature @ 2 m [°F]', 'acebozem,2026-09-01 00:00:00-06:00,61.5'].join('\n')),
+    )
+    const soilParams = async () => {
+      throw new Error('offline')
+    }
+    const q = { station: 'acebozem', start: '2026-09-01', end: '2026-09-02', period: 'daily' as const, level: 2 as const }
+    const res = await fetchDownload({ ...q, elements: ['air_temp_0200', 'swp', 'percent_saturation'] }, { soilParams })
+    expect(res.warnings).toEqual(['Derived variables (swp, percent_saturation) could not be computed for this request; showing the rest.'])
+    await expect(fetchDownload({ ...q, elements: ['swp'] }, { soilParams })).rejects.toThrow('offline')
+  })
+})
+

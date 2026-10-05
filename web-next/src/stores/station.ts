@@ -1,13 +1,17 @@
 /**
  * `$store.station`: the station catalog (via `$store.data`) and the selected
- * station. Rewrites an NWSLI or mis-cased `?s=` to the catalog id once the
+ * station. Each row's `has_swp` comes from the mesonet-soils parameters
+ * (core/stations `withSwpFlags`; false until they load or if they fail).
+ * Rewrites an NWSLI or mis-cased `?s=` to the catalog id once the
  * catalog loads (legacy `/dash/<NWSLI>` links), and remembers every confirmed
  * station as the last/recent one (core/stations/recent.ts).
  */
 import Alpine from 'alpinejs'
+import { loadSoilParams, type SoilParamsBundle } from '../core/ag/data'
+import { AG_TTL, agKeys } from '../core/ag/view/keys'
 import { getStations, type Station } from '../core/api'
 import type { Resource } from '../core/cache'
-import { confirmedStation, resolveStationId } from '../core/stations'
+import { confirmedStation, resolveStationId, swpStationIds, withSwpFlags } from '../core/stations'
 import { readRecent, rememberStation, type StorageLike } from '../core/stations/recent'
 import { selectStationPatch } from '../core/url-schema'
 
@@ -24,7 +28,11 @@ export function browserStorage(): StorageLike {
 
 export interface StationStore {
   catalog: Resource<Station[]> | null
-  /** Catalog rows ([] until loaded). */
+  /** mesonet-soils parameters (shared with the Ag tab's cache entry): decide `has_swp`. */
+  soil: Resource<SoilParamsBundle> | null
+  /** The soil parameters have loaded or failed, so `has_swp` is final. */
+  readonly swpReady: boolean
+  /** Catalog rows with `has_swp` set ([] until loaded). */
   readonly list: Station[]
   /** Confirmed station id for requests, or null (see core/stations `confirmedStation`). */
   readonly id: string | null
@@ -39,12 +47,17 @@ export interface StationStore {
 }
 
 export function createStationStore(): StationStore {
+  // `list` is read constantly; rebuild the flagged rows only when an input changes.
+  let memo: { rows: Station[]; soil: SoilParamsBundle | undefined; out: Station[] } | null = null
   return {
     catalog: null,
+    soil: null,
     recent: readRecent(browserStorage()),
 
     init() {
-      this.catalog = Alpine.store('data').cached('stations', getStations, { ttl: HOUR })
+      const data = Alpine.store('data')
+      this.catalog = data.cached('stations', getStations, { ttl: HOUR })
+      this.soil = data.cached(agKeys.soilParams(), () => loadSoilParams(), { ttl: AG_TTL.static })
       Alpine.effect(() => {
         const s = Alpine.store('url').state.s
         const list = this.catalog?.data
@@ -64,8 +77,18 @@ export function createStationStore(): StationStore {
       })
     },
 
+    get swpReady() {
+      return this.soil?.status !== 'loading'
+    },
+
     get list() {
-      return this.catalog?.data ?? []
+      const rows = this.catalog?.data
+      if (!rows) return []
+      const soil = this.soil?.data
+      if (memo?.rows !== rows || memo.soil !== soil) {
+        memo = { rows, soil, out: withSwpFlags(rows, swpStationIds(soil?.rows ?? [])) }
+      }
+      return memo.out
     },
 
     get id() {

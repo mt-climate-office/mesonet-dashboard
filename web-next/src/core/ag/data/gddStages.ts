@@ -8,6 +8,7 @@
  */
 import type { GddCrop, GddStage, GddStageTable } from '../contract'
 import {
+  DATA2_GDD_ENABLED,
   DATA2_GDD_STAGES,
   DATA2_TIMEOUT_MS,
   type StaticDeps,
@@ -92,11 +93,11 @@ export async function loadData2GddStages(deps?: StaticDeps): Promise<GddStagesBu
   return parseGddStagesJson(j, 'data2', 'data2')
 }
 
-/** data2 first (when `DATA2_STATIC_ENABLED`), vendored fallback. */
+/** data2 first (when `DATA2_GDD_ENABLED`), vendored fallback. */
 export async function loadGddStages(deps: StaticDeps = {}): Promise<GddStagesBundle> {
   if (deps.only === 'vendored') return loadVendoredGddStages(deps)
   if (deps.only === 'data2') return loadData2GddStages(deps)
-  if (!data2Enabled(deps)) return loadVendoredGddStages(deps)
+  if (!data2Enabled(deps, DATA2_GDD_ENABLED)) return loadVendoredGddStages(deps)
   try {
     return await loadData2GddStages(deps)
   } catch {

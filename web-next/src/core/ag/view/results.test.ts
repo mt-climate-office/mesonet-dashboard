@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { DailyNormals } from '../contract'
 import type { AnnualDaily } from '../data'
-import { parseCsvRaw } from '../data/parse'
-import { dailyMet, fixtureText, hourlyMet, soilSeries, stageTable, stationMeta } from '../__tests__/adapters'
+import { swp } from '../compute'
+import { dailyMet, hourlyMet, soilParams, soilSeries, stageTable, stationMeta } from '../__tests__/adapters'
 import { parseGddCutoffs } from './gddCutoffs'
 import { HttpError } from '../../api/http'
 import { annualView, annualYears, elementsGate, gate, gddView, metView, soilView, viewAnnouncement, type Loaded } from './results'
@@ -78,15 +78,21 @@ describe('gddView', () => {
 
 describe('soilView', () => {
   const daily = soilSeries('acebozem', 'daily', 'season2025')
-  it('SWP from the API rows; percent saturation from API porosity', () => {
-    const swpRows = parseCsvRaw(fixtureText('acebozem.daily.season2025.derived-swp.csv'))
-    const s = soilView({ variable: 'swp', soilVar: 'soil_vwc', period: 'daily', soil: daily, swpRows })
+  it('SWP and percent saturation from the mesonet-soils parameters', () => {
+    const params = soilParams('acebozem')
+    const s = soilView({ variable: 'swp', soilVar: 'soil_vwc', period: 'daily', soil: daily, params })
     expect(s).toMatchObject({ status: 'ready', model: { kind: 'swp' } })
+    if (s.model?.kind !== 'swp') throw new Error('expected swp')
+    expect(s.model.model.series).toEqual(swp(daily, params))
+    expect(s.notes.join(' ')).toMatch(/computed in the browser from published mesonet-soils parameters/)
+    // The season dries past the lab range at 2 in and 40 in.
+    expect(s.notes.join(' ')).toMatch(/Dashed lines: the soil is drier than the driest lab sample/)
+    const wet = { ...daily, vwcPct: daily.vwcPct.map((col) => col.map((v) => (v == null ? v : Math.max(v, 30)))) }
+    expect(soilView({ variable: 'swp', soilVar: 'soil_vwc', period: 'daily', soil: wet, params }).notes.join(' ')).not.toMatch(/Dashed/)
     expect(soilView({ variable: 'swp', soilVar: 'soil_vwc', period: 'daily', soil: daily }).status).toBe('loading')
-    const porosityRows = parseCsvRaw(fixtureText('acebozem.daily.season2025.derived-percent_saturation.csv'))
-    const p = soilView({ variable: 'percent_saturation', soilVar: 'soil_vwc', period: 'daily', soil: daily, porosityRows })
+    const p = soilView({ variable: 'percent_saturation', soilVar: 'soil_vwc', period: 'daily', soil: daily, params })
     expect(p.model?.kind).toBe('percent_saturation')
-    expect(p.notes[0]).toMatch(/API’s soil porosity/)
+    expect(p.notes[0]).toMatch(/mesonet-soils porosity/)
   })
   it('profile: frozen note in winter; temperature has none', () => {
     const winter = soilSeries('acebozem', 'daily', 'winter2526')

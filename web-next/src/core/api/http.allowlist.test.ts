@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { checkParams, enforceAllowlist, matchEndpoint } from './http'
-import { derivedSwpRequest } from './derived'
 import {
   getElements,
   getPptSummary,
@@ -99,15 +98,6 @@ describe('existing call sites respect the allowlist', () => {
       expect(obs.searchParams.has('na_info')).toBe(period !== 'raw')
     },
   )
-
-  it('derivedSwpRequest (daily + hourly, level 2)', () => {
-    for (const time of ['daily', 'hourly'] as const) {
-      const r = derivedSwpRequest({ station: 'acebozem', start: '2026-01-01', end: '2026-01-02', time, level: 2 })
-      expect(r.path).toBe(`derived/${time}/`)
-      expect(r.query.elements).toBe('swp')
-      expect(checkParams(r.path, { ...r.query, type: 'csv' })).toBeNull()
-    }
-  })
 
   it('Ag data layer requests', () => {
     const q = { station: 'acebozem', start: '2026-01-01', end: '2026-01-02' }

@@ -21,7 +21,7 @@ export type AgVariable = DerivedVar
 export const SOIL_PROFILE = 'soil_temp,soil_ec_blk' satisfies AgVariable
 
 const CROPS = new Set(GDD_CROPS.map((c) => c.value))
-/** Variables that need soil water potential sensors (legacy filter_to_only_swp_stations). */
+/** Variables that need mesonet-soils parameters (legacy filter_to_only_swp_stations). */
 const SWP_ONLY = new Set<string>(['swp', 'percent_saturation'])
 /** Variables with the Hourly/Daily toggle (legacy app.py:628-683). */
 const TIME_AGG = new Set<string>(['etr', 'feels_like', 'cci', 'swp', 'percent_saturation'])
@@ -192,8 +192,8 @@ export function annualElement(annv: string | null, options: { value: string }[] 
   return annv && options.some((o) => o.value === annv) ? annv : (options[0]?.value ?? null)
 }
 
-/** Why an SWP tool shows nothing at a station without SWP sensors (its empty state, beside "Choose a station"). */
-export const notHereMessage = (name: string) => `${name} has no soil water potential sensors, so this tool does not apply there.`
+/** Why an SWP tool shows nothing at a station without soil parameters (its empty state, beside "Choose a station"). */
+export const notHereMessage = (name: string) => `${name} has no lab-measured soil parameters, so this tool does not apply there.`
 
 /** Single-choice chips: the newly pressed value, or `current` when the pressed chip was clicked again. */
 export const pickOne = (values: string[], current: string): string => values.find((v) => v !== current) ?? current
@@ -214,7 +214,7 @@ export function variableGroup(v: AgVariable): 'met' | 'gdd' | 'soil' | 'annual' 
 /**
  * What the chart card shows: the chart, "Loading stations…" while `?s=` waits
  * on the catalog, the "Select Station" prompt without a station, or
- * `not-here` for an SWP tool at a station without SWP sensors
+ * `not-here` for an SWP tool at a station without soil parameters
  * (`notHereMessage`). The station comes from the header picker.
  */
 export function chartState(

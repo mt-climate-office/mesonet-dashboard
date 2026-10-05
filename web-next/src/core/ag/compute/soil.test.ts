@@ -15,12 +15,18 @@ const CASES: ['daily' | 'hourly', Window][] = [
 ]
 
 /**
+ * Golden parity against frozen fixtures from the retired legacy API's
+ * `/derived` (captured 2026-09, before mesonet2 dropped SWP), with the
+ * 2026-09-25 mesonet-soils test snapshot (`soil_params.test.csv`). The app
+ * no longer uses the API; these pin the FX inversion, clipping and percent
+ * saturation arithmetic against an independent implementation.
+ *
  * SWP is reported in bar to 3 decimals; ψ grows steeply as VWC falls, so the
  * 3-decimal VWC inputs alone move ψ by up to ~0.1 % at the dry end. The
  * tolerance is relative (0.5 % or 0.001 bar, whichever is larger).
- * Station/depths whose vendored mesonet-soils fit differs from the API's DB
- * fit are listed in EXPECTED_SWP_DIVERGENCES (see DIVERGENCES.md D-SWP-2) and
- * asserted to *still* differ, so a data refresh that fixes them fails loudly.
+ * Station/depths whose snapshot fit differs from the API's DB fit are listed
+ * in EXPECTED_SWP_DIVERGENCES (see DIVERGENCES.md D-SWP-2) and asserted to
+ * *still* differ, so a fixture refresh that changes them fails loudly.
  */
 const EXPECTED_SWP_DIVERGENCES = new Set<string>([
   'acebozem@5',

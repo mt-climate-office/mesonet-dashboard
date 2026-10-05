@@ -1,18 +1,23 @@
 /**
  * Data Downloader request pipeline: fetch observations and/or derived
  * variables from the v2 API, outer-join them, normalise the bookkeeping
- * columns, and (for Monthly) aggregate daily rows client-side.
+ * columns, and (for Monthly) aggregate daily rows client-side. Soil water
+ * potential and percent saturation are computed here from `soil_vwc` and
+ * the mesonet-soils parameters (soilDerived.ts); the API no longer has them.
  *
  * This deliberately does not go through `getStationRecord`: the Downloader
  * needs an explicit QC `level`, raw API headers (no LAB_SWAP, so sensor
  * heights survive into the CSV), an outer join, and has_na OR-merging across
  * the two requests (legacy behaviour).
  */
+import type { SoilParams } from '../ag/contract'
+import { loadSoilParams, soilParamsFor } from '../ag/data/soilParams'
 import { aggregateMonthly, DAYS_WITH_DATA_COLUMN, type Row } from '../aggregate'
 import { exclusiveEnd, fetchText, HttpError } from '../api'
 import { MISSING_DATA_COLUMN, parseCsv } from '../csv'
 import { DERIVED_ENDPOINTS, ENDPOINTS } from '../params'
 import { LABELS } from '../variables/labels'
+import { soilDerivedRows } from './soilDerived'
 
 /** Union of row keys in first-seen order. */
 function mergeKeyOrder(rows: ReadonlyArray<Row>): string[] {
@@ -68,7 +73,8 @@ export const DERIVED_OPTIONS: ReadonlyArray<DerivedOption> = [
   { value: 'etr', label: LABELS.etr.name },
   { value: 'cci', label: LABELS.cci.name },
   // Legacy had these commented out of the picker but still treated them as
-  // derived, so old `els=swp,…` links rely on them. Monthly = mean.
+  // derived, so old `els=swp,…` links rely on them. Computed in the browser
+  // (soilDerived.ts), not by `/derived`. Monthly = mean.
   { value: 'swp', label: LABELS.swp.name, requiresSwp: true },
   { value: 'percent_saturation', label: LABELS.percent_saturation.name, requiresSwp: true },
 ]
@@ -221,8 +227,17 @@ async function fetchRows(path: string, query: Record<string, unknown>): Promise<
   }
 }
 
-export async function fetchDownload(q: DownloadQuery): Promise<DownloadResult> {
+export interface DownloadDeps {
+  /** The station's mesonet-soils parameters (default: `loadSoilParams`). */
+  soilParams?: (station: string) => Promise<SoilParams[]>
+}
+
+const defaultSoilParams = async (station: string) => soilParamsFor(await loadSoilParams(), station)
+
+export async function fetchDownload(q: DownloadQuery, deps: DownloadDeps = {}): Promise<DownloadResult> {
   const { std, derived } = splitElements(q.elements)
+  const soil = derived.filter((e) => SWP_CODES.has(e))
+  const server = derived.filter((e) => !SWP_CODES.has(e))
   const warnings: string[] = []
   const common = {
     stations: q.station,
@@ -233,7 +248,7 @@ export async function fetchDownload(q: DownloadQuery): Promise<DownloadResult> {
   }
 
   // Monthly is aggregated from daily rows (ENDPOINTS.monthly is the daily path).
-  const [obsResult, derivedResult] = await Promise.allSettled([
+  const [obsResult, derivedResult, soilResult] = await Promise.allSettled([
     std.length > 0
       ? fetchRows(ENDPOINTS[q.period], {
           ...common,
@@ -243,22 +258,39 @@ export async function fetchDownload(q: DownloadQuery): Promise<DownloadResult> {
           public: false,
         })
       : Promise.resolve([] as Row[]),
-    derived.length > 0
-      ? fetchRows(DERIVED_ENDPOINTS[q.period], { ...common, elements: derived.join(',') })
+    server.length > 0
+      ? fetchRows(DERIVED_ENDPOINTS[q.period], { ...common, elements: server.join(',') })
+      : Promise.resolve([] as Row[]),
+    // Its own soil_vwc request, so the user's VWC selection is untouched.
+    soil.length > 0
+      ? Promise.all([
+          fetchRows(ENDPOINTS[q.period], { ...common, elements: 'soil_vwc', public: false }),
+          (deps.soilParams ?? defaultSoilParams)(q.station),
+        ]).then(([rows, params]) => soilDerivedRows(rows, params, soil))
       : Promise.resolve([] as Row[]),
   ])
 
   if (obsResult.status === 'rejected') throw obsResult.reason
   let obs = obsResult.value
   let der: Row[] = []
-  if (derivedResult.status === 'rejected') {
-    if (std.length === 0) throw derivedResult.reason
-    warnings.push(
-      `Derived variables (${derived.join(', ')}) could not be computed for this request; showing observations only.`,
-    )
-    console.warn('Derived request failed', derivedResult.reason)
-  } else {
-    der = sortValueKeys(derivedResult.value)
+  const failed: string[] = []
+  let reason: unknown
+  for (const [res, codes, sort] of [
+    [derivedResult, server, true],
+    [soilResult, soil, false],
+  ] as const) {
+    if (res.status === 'fulfilled') {
+      der = outerJoin(der, sort ? sortValueKeys(res.value) : res.value)
+      continue
+    }
+    failed.push(...codes)
+    reason ??= res.reason
+    console.warn('Derived request failed', res.reason)
+  }
+  // Nothing at all to show: fail the request.
+  if (std.length === 0 && failed.length === derived.length && failed.length > 0) throw reason
+  if (failed.length > 0) {
+    warnings.push(`Derived variables (${failed.join(', ')}) could not be computed for this request; showing the rest.`)
   }
 
   if (!std.includes(LOGGER_PRESSURE_ELEMENT)) {

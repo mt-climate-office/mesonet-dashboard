@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { confirmedStation, isKnownStation, isTrueFlag, resolveStationId, stationHasSwp, stationsWithSwp } from './stations'
+import soilJsonText from '../../public/data/soil_params.json?raw'
+import { fromVendoredJson, type VendoredSoilJson } from './ag/data/soilParams'
+import { confirmedStation, isKnownStation, isTrueFlag, resolveStationId, stationHasSwp, stationsWithSwp, swpStationIds, withSwpFlags } from './stations'
 
 const stations = [
   { station: 'aceabsar', nwsli_id: 'KEEM8', has_swp: 'True' as unknown as boolean },
@@ -37,6 +39,35 @@ describe('stationsWithSwp', () => {
     expect(stationHasSwp(stations[0])).toBe(true)
     expect(stationHasSwp(stations[1])).toBe(false)
     expect(stationHasSwp(null)).toBe(false)
+  })
+})
+
+describe('has_swp from the mesonet-soils parameters', () => {
+  const fx = { r: 0, s: 0.5, n: 1, m: 1, h: 1 }
+  it('a station has SWP when it has at least one FX row', () => {
+    const ids = swpStationIds([
+      { station: 'a', fx },
+      { station: 'b' }, // VG-only
+      { station: 'c', fx: undefined },
+      { station: 'c', fx },
+    ])
+    expect([...ids].sort()).toEqual(['a', 'c'])
+  })
+  it('withSwpFlags overrides the catalog flag (mesonet2 has none) and keeps the rows otherwise', () => {
+    const out = withSwpFlags(stations, new Set(['acealbio', 'blmround']))
+    expect(out.map((s) => [s.station, s.has_swp])).toEqual([
+      ['aceabsar', false],
+      ['acealbio', true],
+      ['arskeogh', false],
+      ['blmround', true],
+    ])
+    expect(out[0].nwsli_id).toBe('KEEM8')
+    expect(stations[0].has_swp).toBe('True') // input untouched
+  })
+  it('the vendored bundle covers the legacy has_swp stations used in tests', () => {
+    const ids = swpStationIds(fromVendoredJson(JSON.parse(soilJsonText) as VendoredSoilJson))
+    for (const id of ['acebozem', 'arskeogh', 'mdamalta', 'acerapl2']) expect(ids.has(id)).toBe(true)
+    expect(ids.has('acerapel')).toBe(false)
   })
 })
 

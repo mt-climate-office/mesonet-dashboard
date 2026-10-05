@@ -6,8 +6,7 @@
  */
 import type { EChartsOption, HeatmapSeriesOption, LineSeriesOption } from 'echarts'
 import type { LocalDate, LocalDateTime, Nullable, PercentSaturationSeries, SwpSeries } from '../ag/contract'
-import { kPaToBar } from '../ag/compute'
-import { PROFILE_META, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, type SoilProfileVar, depthLabel } from '../ag/view/labels'
+import { PROFILE_META, SWP_CAP_BAR, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, type SoilProfileVar, depthLabel, swpBar, swpText } from '../ag/view/labels'
 import { HEATMAP, SWP_BANDS, depthColor } from '../palette'
 import { grid, logAxis, logExtent, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtNum, fmtWall, isoWall, wallMs, type Period } from './format'
@@ -174,18 +173,42 @@ export interface SwpModel {
   period: Period
 }
 
-const toBar = (s: SwpSeries) => s.kPa.map((col) => col.map((v) => kPaToBar(v)))
+/** Point notes on the dry-end companion lines: a capped lower bound, or the joint to the solid line. */
+const DRY = 'dry'
+const JOINT = 'joint'
+
+/**
+ * Per depth, the solid line (dry-end clips nulled) and, when there are any,
+ * a dashed, faded companion in the same color and name (one legend entry)
+ * through the dry-end clips, joined to the solid line's neighbouring points.
+ */
+function swpLines(ctx: ChartContext, xs: number[], depthsCm: number[], bar: Nullable[][], dry: boolean[][], step: number): LineSeriesOption[] {
+  return depthsCm.flatMap((cm, d) => {
+    const color = depthColor(depthInches(cm), ctx.theme.name)
+    const name = depthLabel(cm)
+    const solid = lineSeries(name, points(xs, bar[d].map((v, i) => (dry[d][i] ? null : v)), step), { color })
+    if (!dry[d].some(Boolean)) return [solid]
+    const near = (i: number) => dry[d][i] || !!dry[d][i - 1] || !!dry[d][i + 1]
+    const ys = bar[d].map((v, i) => (near(i) ? v : null))
+    const notes = dry[d].map((x) => (x ? DRY : JOINT))
+    const faded = lineSeries(name, points(xs, ys, step, notes), { color, dash: 'dashed' })
+    return [solid, { ...faded, lineStyle: { ...faded.lineStyle, opacity: 0.55 } }]
+  })
+}
 
 /**
  * SWP in bar, one line per depth, on a log axis inverted so wet is at the
  * top; ticks read negative ("-15"). Bands shade saturated → field capacity
- * and beyond the wilting point, with corner labels.
+ * and beyond the wilting point, with corner labels. Dry-end clips (VWC below
+ * the lab range) are capped (labels `SWP_CAP_BAR`) and drawn dashed and faded.
  */
 export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
   const xs = m.series.time.map(wallMs)
-  const bar = toBar(m.series)
+  const { bar, dry } = swpBar(m.series)
   const flat = bar.flat().filter((v): v is number => v != null && v > 0)
-  const [min, max] = logExtent(Math.min(...flat), Math.max(...flat), [SWP_FIELD_CAPACITY, SWP_WILTING_POINT])
+  const [min, decade] = logExtent(Math.min(...flat), Math.max(...flat), [SWP_FIELD_CAPACITY, SWP_WILTING_POINT])
+  // Capped dry-end points sit on SWP_CAP_BAR: one more decade keeps them off the frame, ticks on decades.
+  const max = dry.some((col) => col.some(Boolean)) && decade <= SWP_CAP_BAR ? SWP_CAP_BAR * 10 : decade
   const lg = agLegend(ctx, m.series.depthsCm.map((cm) => ({ name: depthLabel(cm) })))
   const step = stepMs(m.period)
   // The slider traces the shallowest depth, wet up as the inverted log axis draws it.
@@ -216,15 +239,20 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
     xAxis: f.xAxis,
     yAxis: f.trace ? [y, f.trace.yAxis] : y,
     legend: lg.legend,
-    tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y) => tipText(name, `-${y.toFixed(2)} bar`)),
-    series: [...(f.trace ? [f.trace.series] : []), ...bands, ...depthLines(ctx, xs, m.series.depthsCm, bar, step)],
+    // A joint point repeats the solid line's value: list it once.
+    tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y, note) => (note === JOINT ? null : tipText(name, swpText(y, note === DRY)))),
+    series: [...(f.trace ? [f.trace.series] : []), ...bands, ...swpLines(ctx, xs, m.series.depthsCm, bar, dry, step)],
   } satisfies EChartsOption
 }
 
 export function swpTable(m: SwpModel): ChartTable {
-  return depthTable('Soil water potential by depth, bar (negative = suction)', m.period, m.series.time, m.series.depthsCm, toBar(m.series), (v) =>
+  const { bar, dry } = swpBar(m.series)
+  const t = depthTable('Soil water potential by depth, bar (negative = suction)', m.period, m.series.time, m.series.depthsCm, bar, (v) =>
     v == null ? MISSING : `-${v.toFixed(2)}`,
   )
+  // Dry-end clips are lower bounds on suction: "≤ -1000.00".
+  t.rows.forEach((row, i) => m.series.depthsCm.forEach((_, d) => dry[d][i] && (row[d + 1] = `≤ ${row[d + 1]}`)))
+  return t
 }
 
 /* ---------------------------------------------------- percent saturation */
