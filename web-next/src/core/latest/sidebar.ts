@@ -37,8 +37,10 @@ export function netsValue(next: readonly string[], options: readonly string[]): 
 
 /**
  * Combobox items: stations passing the network filter, grouped by network
- * (groups and names alphabetical). Typing also matches the NWSLI id and county;
- * while typing, the combobox ranks matches across networks (core/controls/comboboxModel).
+ * (groups and names alphabetical), in the "Stations" results section. Typing
+ * also matches the NWSLI id; a county is a place (core/places), which lists
+ * the stations in it. While typing, the combobox ranks matches across networks
+ * (core/controls/comboboxModel).
  */
 export function stationItems(list: readonly Station[], nets: readonly string[], selected: string | null): ComboboxItem[] {
   return list
@@ -48,7 +50,8 @@ export function stationItems(list: readonly Station[], nets: readonly string[], 
       id: s.station,
       label: s.name,
       group: s.sub_network,
-      keywords: [s.nwsli_id, s.county].filter((k): k is string => !!k),
+      section: 'Stations',
+      keywords: s.nwsli_id ? [s.nwsli_id] : [],
     }))
 }
 

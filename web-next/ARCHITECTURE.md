@@ -390,6 +390,7 @@ leaving ~180 KB for the sections; at the UX P0 prototype the entry is 107 KB and
 Data from mesonet2 v2 at QC level 2; Ag computed client-side, SWP and percent
 saturation included (mesonet-soils `soil_params.json`, data2 first, which
 also decides `has_swp`); photos only from data2 `webp_large`; soil and GDD
-static data vendored in `public/data/` (`core/ag/data/vendor-static.mjs`);
+static data vendored in `public/data/` (`core/ag/data/vendor-static.mjs`; the
+place gazetteer for the picker's search, `core/places/vendor-places.mjs`);
 Satellite hidden. `web/` is frozen: hotfixes only, each mirrored into
 `core/` in the same PR. Intentional behaviour changes go in `DIVERGENCES.md`.

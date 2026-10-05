@@ -54,8 +54,13 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
 - **Picking** a station closes the picker at every size (the desktop drawer saves "closed") and moves focus
   to `<main>`, the new station's content. Recent updates at once.
 - **Search** starts empty (the header names the station; Recent marks it). With text, matches rank across
-  networks (exact name or id, then the name starting with the text, then a later word, an id, any substring;
-  shorter names first within each), and on a phone the sheet goes full; with none, the list groups by network. × shows whenever there is
+  networks (exact name or id, then the name starting with the text, then a later word, an id, any substring,
+  then a typo of 1–2 letters; shorter names first within each; accents and apostrophes ignored), and on a
+  phone the sheet goes full; with none, the list groups by network. Typing also finds **places** (`core/places`,
+  the Census Gazetteer: counties, reservations, towns, ZIP codes; up to 8, under a "Places" heading below the
+  stations, with the kind beside the name). Picking a place lists its stations where Near me does, headed by
+  the place: a county or reservation every station inside it, a town or ZIP code (or an area with none) the
+  5 nearest; distances are from the place's centre. × shows whenever there is
   text: it clears it, keeps focus and shows the full list. Esc clears the text, then closes the list, then
   closes the picker.
 - **Browse on the map** on a phone opens the sheet full; recents and Near me step aside and the map takes the

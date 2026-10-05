@@ -136,6 +136,37 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await close()
 }
 
+/* ── Station picker: a place lists its stations (core/places) ─────────────── */
+{
+  const { page, problems, close } = await open(env, '?theme=light#now')
+  const input = page.getByTestId('picker-search').getByRole('combobox')
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town, county or ZIP')
+  await input.focus()
+  // The places load when the list opens.
+  await page.keyboard.type('bozeman')
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="picker-search"] .ctl-combobox-group').length > 0, null, { timeout: 10000 }).catch(() => {})
+  const heads = await page.locator('[data-testid="picker-search"] .ctl-combobox-group:visible').allInnerTexts()
+  check('place search: stations and places under their own headings', heads.join('|').toLowerCase() === 'stations|places', JSON.stringify(heads))
+  await page.keyboard.press('Escape') // clears the text
+  await page.keyboard.type('gallatin')
+  // The county's exact keyword becomes the active option.
+  await page.waitForFunction(() => {
+    const id = document.querySelector('[data-testid="picker-search"] input')?.getAttribute('aria-activedescendant')
+    return id && /Gallatin County/.test(document.getElementById(id)?.textContent ?? '')
+  }, null, { timeout: 5000 }).catch(() => {})
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="near-list"] .picker-row').length > 0, null, { timeout: 5000 }).catch(() => {})
+  const near = await page.evaluate(() => ({
+    title: document.getElementById('picker-near-title')?.textContent,
+    rows: document.querySelectorAll('[data-testid="near-list"] .picker-row').length,
+    s: new URLSearchParams(location.search).get('s'),
+  }))
+  check('place search: Enter on a county lists its stations, picks none', near.title === 'Gallatin County' && near.rows > 1 && near.s === null, JSON.stringify(near))
+  const p = await problems()
+  check('place search: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
 /* ── Station picker: a pick closes the desktop drawer ───────────────────── */
 {
   // First visit (no station): the in-flow drawer is open at 1440 px.
@@ -144,7 +175,7 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await page.evaluate(() => localStorage.setItem('mco-dashboard-recent', 'mdaglasw'))
   await page.reload({ waitUntil: 'load' })
   const input = page.getByTestId('picker-search').getByRole('combobox')
-  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Name or ID')
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town, county or ZIP')
   await input.focus()
   await page.keyboard.type('acebozem')
   await page.keyboard.press('ArrowDown')

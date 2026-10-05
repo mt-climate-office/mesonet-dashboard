@@ -123,5 +123,8 @@ const manifest = {
 mkdirSync(outDir, { recursive: true })
 writeFileSync(join(outDir, 'soil_params.json'), soilText)
 writeFileSync(join(outDir, 'gdd_stages.json'), JSON.stringify(stagesJson, null, 1) + '\n')
+// Keep entries other scripts own (places.json: core/places/vendor-places.mjs).
+const previous = JSON.parse(readFileSync(join(outDir, 'MANIFEST.json'), 'utf8'))
+manifest.files = { ...previous.files, ...manifest.files }
 writeFileSync(join(outDir, 'MANIFEST.json'), JSON.stringify(manifest, null, 2) + '\n')
 console.log(`soil rows: ${soilJson.rows.length} (${soilJson.release}); stage crops: ${Object.keys(crops).join(', ')}`)

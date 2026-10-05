@@ -1300,9 +1300,21 @@ Plotted values were checked against web/ point for point: acebozem hourly, mdama
 - **web/:** a searchable Select whose labels read "{name} ({sub_network})".
 - **New:**
   - The kit-style combobox lists stations under network headings, with the plain name as the label and the id beside it.
-  - Typing also matches the NWSLI id and the county.
+  - Typing also matches the NWSLI id. The county became a place (below).
   - The selected station stays in the list when the network filter hides its network, as it stays on the map.
 - **Why:** with the headings, the network suffix only repeated itself. The NWSLI search covers the old `/dash/<NWSLI>` users.
+
+### Station picker: place search and typo matches (new)
+- **Legacy / P1:** stations only, by name, id, NWSLI id or county substring.
+- **New:** typing also lists Montana places from the Census Gazetteer (`public/data/places.json`,
+  `core/places/vendor-places.mjs`: 56 counties, 7 reservations with the nations' names as keywords,
+  incorporated places and CDPs, ZIP codes), at most 8 under the stations. Picking one lists stations where
+  Near me does: every station in a county (the catalog's `county`) or on a reservation (its boundary in
+  `public/geo/`), nearest the centre first, else the 5 nearest. A typo of 1 letter (5+ letters typed) or 2
+  (8+) still matches, ranked last; numbers never match by typo. Accents and apostrophes are ignored.
+- **Why:** people know their town, county, reservation or ZIP code, not a station's name. The list is bundled
+  (15 KB gzipped, loaded when the search list first opens), so nothing typed leaves the browser and the CSP
+  needs no geocoder. Counties left the station keywords: the county place lists the same stations, nearest first.
 
 ### Network filter (ST-002, ST-003)
 - **Same as web/:** chips come from the catalog's networks, all are on by default, and turning every chip off shows every station.

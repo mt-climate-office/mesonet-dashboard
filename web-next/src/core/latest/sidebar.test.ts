@@ -46,6 +46,8 @@ describe('stationItems', () => {
       ['HydroMet', 'Alpha'],
     ])
     expect(items[0].keywords).toContain('BZNM8')
+    // A county is a place (core/places), not a station keyword.
+    expect(items.every((i) => i.section === 'Stations' && !i.keywords?.some((k) => /gallatin/i.test(k)))).toBe(true)
   })
 })
 
