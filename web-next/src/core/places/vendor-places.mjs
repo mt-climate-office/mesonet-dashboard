@@ -3,7 +3,7 @@
  * Regenerates `web-next/public/data/places.json`, the Montana gazetteer the
  * station search uses for place names (core/places): counties, American Indian
  * reservations, incorporated places and CDPs, and ZIP codes (ZCTAs), each with
- * its Census internal point. Adds its provenance to `MANIFEST.json`.
+ * its Census internal point, plus tribes with no Census reservation (TRIBES). Adds its provenance to `MANIFEST.json`.
  *
  * Source: US Census Bureau Gazetteer Files (public domain),
  * https://www.census.gov/geographies/reference-files/time-series/geo/gazetteer-files.html
@@ -62,10 +62,13 @@ const PLACE_NAMES = {
 }
 const PLACE_KIND = { 25: 'city', 43: 'town', 57: 'community', '00': 'city' }
 
-/** [id, kind, name, lat, lon, keywords?] */
+/** Tribal nations with no Census reservation, listed at the town of their headquarters: [id, name, keywords, town]. */
+const TRIBES = [['tlittleshell', 'Little Shell Tribe', ['Little Shell', 'Chippewa', 'Métis', 'Metis'], 'Great Falls']]
+
+/** [id, kind, name, lat, lon, keywords?, at?] */
 const rows = []
-const push = (id, kind, name, [lat, lon], keywords = []) =>
-  rows.push(keywords.length ? [id, kind, name, lat, lon, keywords] : [id, kind, name, lat, lon])
+const push = (id, kind, name, [lat, lon], keywords = [], at) =>
+  rows.push(at ? [id, kind, name, lat, lon, keywords, at] : keywords.length ? [id, kind, name, lat, lon, keywords] : [id, kind, name, lat, lon])
 
 for (const r of read(`${year}_Gaz_counties_national.txt`).filter((r) => r.USPS === 'MT')) {
   // The station catalog's `county` is the bare name ("Gallatin"), matched in core/places.
@@ -85,6 +88,11 @@ for (const r of read(`${year}_gaz_place_30.txt`)) {
   const [name, keywords] = PLACE_NAMES[r.NAME] ?? [r.NAME.replace(/ (city|town|CDP)$/, ''), []]
   push(`p${r.GEOID}`, kind, name, ll(r), keywords)
 }
+for (const [id, name, keywords, town] of TRIBES) {
+  const at = rows.find((r) => r[0].startsWith('p') && r[2] === town)
+  if (!at) throw new Error(`no place ${town} for ${name}`)
+  push(id, 'tribe', name, [at[3], at[4]], keywords, town)
+}
 for (const r of read(`${year}_Gaz_zcta_national.txt`).filter((r) => /^59\d{3}$/.test(r.GEOID))) {
   push(`z${r.GEOID}`, 'zip', r.GEOID, ll(r))
 }
@@ -92,7 +100,7 @@ for (const r of read(`${year}_Gaz_zcta_national.txt`).filter((r) => /^59\d{3}$/.
 const json = {
   source: `US Census Bureau ${year} Gazetteer Files`,
   release: year,
-  columns: ['id', 'kind', 'name', 'lat', 'lon', 'keywords'],
+  columns: ['id', 'kind', 'name', 'lat', 'lon', 'keywords', 'at'],
   rows,
 }
 writeFileSync(join(outDir, 'places.json'), JSON.stringify(json) + '\n')
@@ -111,7 +119,8 @@ manifest.files['places.json'] = {
   captured_at: new Date().toISOString().slice(0, 10),
   rows: rows.length,
   transform:
-    'Montana only (counties USPS=MT; places file 30; ZCTAs 59xxx; reservations by GEOID). One row per place: ' +
+    'Montana only (counties USPS=MT; places file 30; ZCTAs 59xxx; reservations by GEOID; tribes with no Census ' +
+    'reservation added by hand at their headquarters town, "at"). One row per place: ' +
     'id (c/r/p/z + GEOID), kind, display name (" city"/" town"/" CDP" dropped; consolidated city-counties renamed), ' +
     'Census internal point (4 dp), search keywords (county bare name, nations, former names).',
   generated_by: 'web-next/src/core/places/vendor-places.mjs',
@@ -119,5 +128,5 @@ manifest.files['places.json'] = {
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n')
 const count = (k) => rows.filter((r) => r[1] === k).length
 console.log(
-  `places: ${rows.length} (${['county', 'reservation', 'city', 'town', 'community', 'zip'].map((k) => `${k} ${count(k)}`).join(', ')})`,
+  `places: ${rows.length} (${['county', 'reservation', 'tribe', 'city', 'town', 'community', 'zip'].map((k) => `${k} ${count(k)}`).join(', ')})`,
 )

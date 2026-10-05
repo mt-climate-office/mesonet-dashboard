@@ -32,6 +32,7 @@ describe('places.json (Census Gazetteer, Montana)', () => {
     const count = (k: Place['kind']) => places.filter((p) => p.kind === k).length
     expect(count('county')).toBe(56)
     expect(count('reservation')).toBe(7)
+    expect(count('tribe')).toBe(1)
     expect(count('zip')).toBeGreaterThan(300)
     expect(count('city') + count('town') + count('community')).toBeGreaterThan(450)
     for (const p of places) {
@@ -79,6 +80,8 @@ describe('place search items', () => {
     ['rocky boys', 'Rocky Boy’s Reservation', 'Reservation'],
     ['billings', 'Billings', 'City'],
     ['lame deer', 'Lame Deer', 'Community'],
+    ['little shell', 'Little Shell Tribe', 'Tribe · Great Falls'],
+    ['metis', 'Little Shell Tribe', 'Tribe · Great Falls'],
   ] as const)('"%s" → %s (%s)', (q, label, meta) => {
     expect(top(q)).toMatchObject({ label, meta })
   })
@@ -157,6 +160,14 @@ describe('stationsForPlace', () => {
     expect(r.rows).toHaveLength(5)
     expect(r.rows[0].miles).toBeLessThan(10)
     expect(stationsForPlace(byName('59715', 'zip'), stations).title).toBe('Near 59715')
+  })
+  it('a tribe with no reservation lists the 5 nearest its town (Little Shell → Great Falls)', () => {
+    const tribe = byName('Little Shell Tribe')
+    const greatFalls = byName('Great Falls', 'city')
+    const r = stationsForPlace(tribe, stations)
+    expect(r).toMatchObject({ title: 'Near Great Falls', inside: false })
+    expect(r.rows).toEqual(stationsForPlace(greatFalls, stations).rows)
+    expect(placeAnnouncement(tribe, r)).toBe('5 stations near Great Falls')
   })
   it('an area with no station inside (or no boundary) falls back to the nearest', () => {
     const empty = stationsForPlace(byName('Gallatin County'), stations.filter((s) => s.county !== 'Gallatin'))

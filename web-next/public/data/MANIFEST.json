@@ -38,8 +38,8 @@
         "2026_Gaz_zcta_national.txt"
       ],
       "captured_at": "2026-10-05",
-      "rows": 929,
-      "transform": "Montana only (counties USPS=MT; places file 30; ZCTAs 59xxx; reservations by GEOID). One row per place: id (c/r/p/z + GEOID), kind, display name (\" city\"/\" town\"/\" CDP\" dropped; consolidated city-counties renamed), Census internal point (4 dp), search keywords (county bare name, nations, former names).",
+      "rows": 930,
+      "transform": "Montana only (counties USPS=MT; places file 30; ZCTAs 59xxx; reservations by GEOID; tribes with no Census reservation added by hand at their headquarters town, \"at\"). One row per place: id (c/r/p/z + GEOID), kind, display name (\" city\"/\" town\"/\" CDP\" dropped; consolidated city-counties renamed), Census internal point (4 dp), search keywords (county bare name, nations, former names).",
       "generated_by": "web-next/src/core/places/vendor-places.mjs"
     }
   }

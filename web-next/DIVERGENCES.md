@@ -1307,7 +1307,8 @@ Plotted values were checked against web/ point for point: acebozem hourly, mdama
 ### Station picker: place search and typo matches (new)
 - **Legacy / P1:** stations only, by name, id, NWSLI id or county substring.
 - **New:** typing also lists Montana places from the Census Gazetteer (`public/data/places.json`,
-  `core/places/vendor-places.mjs`: 56 counties, 7 reservations with the nations' names as keywords,
+  `core/places/vendor-places.mjs`: 56 counties, 7 reservations with the nations' names as keywords, the
+  Little Shell Tribe (no Census reservation; listed at Great Falls, its 5 nearest stations),
   incorporated places and CDPs, ZIP codes), at most 8 under the stations. Picking one lists stations where
   Near me does: every station in a county (the catalog's `county`) or on a reservation (its boundary in
   `public/geo/`), nearest the centre first, else the 5 nearest. A typo of 1 letter (5+ letters typed) or 2
