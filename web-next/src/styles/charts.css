@@ -26,8 +26,15 @@
 /* Desktop: two balanced columns of cards (CSS columns, so a short card never leaves a hole beside a tall one). */
 .charts-groups { display: flex; flex-direction: column; gap: var(--gap); }
 @media (min-width: 1060px) and (min-height: 561px) {
-  .charts-groups { display: block; columns: 2; column-gap: var(--gap); }
-  .charts-groups > .charts-group { break-inside: avoid; margin-bottom: var(--gap); }
+  /* Safari ignores break-inside on these cards and split one across the columns (a sliver of its
+     top above the other column). A column never splits an inline-block; the container's zero
+     font-size / line-height drops the line box strut that would still leave a 1 px sliver, and each
+     card restores the body's type. */
+  .charts-groups { display: block; columns: 2; column-gap: var(--gap); font-size: 0; line-height: 0; }
+  .charts-groups > .charts-group {
+    display: inline-block; width: 100%; vertical-align: top; break-inside: avoid; margin-bottom: var(--gap);
+    font-size: 1rem; line-height: normal;
+  }
 }
 /* Rows run edge to edge: the card has no padding, each row carries --card-pad. */
 .charts-group { display: flow-root; padding: 0; }
