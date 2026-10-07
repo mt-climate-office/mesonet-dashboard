@@ -15,6 +15,7 @@ import type { GddCrop, LocalDate } from '../contract'
 import { GDD_CUTOFFS_F } from '../compute/gdd'
 import { addDays } from '../data/parse'
 import { type GddCutoffState, SLIDER_NONE, parseGddCutoffs, sliderWrites, toSlider } from './gddCutoffs'
+import { gddSeasonWindow } from './gddSeason'
 import type { Period, SoilProfileVar } from './labels'
 
 export type AgVariable = DerivedVar
@@ -59,10 +60,18 @@ export interface AgTab {
   end: LocalDate
 }
 
-/** Default window: the last 365 days through today (legacy started today − 365 d). */
-export function dateWindow(from: string | null, to: string | null, today: LocalDate): { start: LocalDate; end: LocalDate } {
-  const end = to ?? today
-  const start = from ?? addDays(today, -365)
+/**
+ * The window from `ag_from` / `ag_to`; a missing bound comes from `fallback`
+ * (default: the last 365 days through today, as legacy). Start ≤ end.
+ */
+export function dateWindow(
+  from: string | null,
+  to: string | null,
+  today: LocalDate,
+  fallback: { start: LocalDate; end: LocalDate } = { start: addDays(today, -365), end: today },
+): { start: LocalDate; end: LocalDate } {
+  const end = to ?? (from && from > fallback.end ? today : fallback.end)
+  const start = from ?? fallback.start
   return start <= end ? { start, end } : { start: end, end }
 }
 
@@ -90,7 +99,8 @@ export function resolveAgTab(url: AgUrl, station: Station | undefined, today: Lo
     soilVar: (soilOptions.some((o) => o.value === url.soilv) ? url.soilv : 'soil_vwc') as SoilProfileVar,
     annualVar: url.annv,
     gddProj: url.gdd_proj,
-    ...dateWindow(url.ag_from, url.ag_to, today),
+    // GDD defaults to the crop's growing season (core/ag/view/gddSeason).
+    ...dateWindow(url.ag_from, url.ag_to, today, variable === 'gdd' ? gddSeasonWindow(crop, today) : undefined),
   }
 }
 

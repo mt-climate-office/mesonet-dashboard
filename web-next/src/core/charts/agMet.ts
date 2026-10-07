@@ -4,10 +4,10 @@
  * contract series; °C → °F and mm → in happen here.
  */
 import type { EChartsOption } from 'echarts'
-import type { CciSeries, EtoSeries, FeelsLikeRegime, FeelsLikeSeries } from '../ag/contract'
-import { cToF, cumulativeSum, mmToIn } from '../ag/compute'
+import type { CciClass, CciSeries, EtoSeries, FeelsLikeSeries } from '../ag/contract'
+import { CCI_HEAT_ONSET_F, cToF, cciColdOnsetF, cciSide, cumulativeSum, mmToIn } from '../ag/compute'
 import { CCI_CLASSES, FEELS_LIKE_LABELS } from '../ag/view/labels'
-import { ETR, FEELS_LIKE, INDEX_LINE, cciColor } from '../palette'
+import { ETR, FEELS_LIKE, INDEX_LINE, type StressSide, cciStyle } from '../palette'
 import { dualAxis, valueAxis } from './axes'
 import { fmtNum, fmtWall, isoWall, wallMs, type Period } from './format'
 import { AUX, barSeries, lineSeries, markerSeries } from './series'
@@ -76,21 +76,35 @@ export function etrTable(m: EtrModel): ChartTable {
 
 /* ------------------------------------------------- index line + markers */
 
-/** Thin index line (no tooltip) + one marker series per class present, in `order`. */
+type Ys = (number | null)[]
+
+/** Legend icon for a dashed line: three short dashes. */
+const DASH_ICON = 'path://M0,4h5v2H0zM7,4h5v2H7zM14,4h5v2h-5z'
+
+/**
+ * Thin index line (a drawing aid: no legend, no tooltip) + an optional named comparison line + one
+ * marker series per class present, in `order`, + optional dashed reference lines labelled inside
+ * the plot.
+ */
 function indexChart<K extends string>(
   ctx: ChartContext,
   o: {
     xs: number[]
-    yF: (number | null)[]
+    /** Index values (°F): the line and the marker heights. */
+    yF: Ys
+    /** A second, named line (legend, tooltip), dashed, e.g. the air temperature. */
+    compare?: { name: string; yF: Ys; id: string }
     classOf: (K | null)[]
     order: readonly K[]
-    /** Legend and tooltip name (sentence case); `short` on compact screens. */
+    /** Legend and tooltip name (also the series name). */
     label: (k: K) => string
-    short?: (k: K) => string
     style: (k: K) => { color: string; symbol?: string }
     period: Period
     yName: string
-    legendTitle: string
+    legendTitle?: string
+    refLines?: { y: number; label: string }[]
+    /** Tooltip row for a series name and its y (°F). */
+    tip: (name: string, y: number) => string | null
   },
 ): EChartsOption {
   const size = o.period === 'hourly' ? 5 : 8
@@ -103,14 +117,28 @@ function indexChart<K extends string>(
   const step = stepMs(o.period)
   const line = points(o.xs, o.yF, step)
   const f = timeFrame(ctx, { extent: plotExtent(o.xs, step, false), trace: line, yAxisIndex: 1, legendPx: LEGEND_PX })
-  const textOf = new Map(present.map((k) => [o.label(k), sentenceCase(o.label(k))]))
   const lg = agLegend(
     ctx,
-    present.map((k) => ({ name: o.label(k), text: textOf.get(o.label(k)), short: o.short?.(k) })),
+    [
+      ...(o.compare ? [{ name: o.compare.name, icon: DASH_ICON }] : []),
+      ...present.map((k) => ({ name: o.label(k), text: sentenceCase(o.label(k)) })),
+    ],
     { title: o.legendTitle },
   )
   // A temperature-equivalent index: a free axis (style yBounds), as air temperature.
-  const y = { ...valueAxis(o.yName), ...yAxisRange('Air Temperature', ...extentOf(o.yF)) }
+  const y = { ...valueAxis(o.yName), ...yAxisRange('Air Temperature', ...extentOf([...o.yF, ...(o.compare?.yF ?? [])])) }
+  const indexLine = paint(ctx.theme, INDEX_LINE)
+  const lineSeriesOpt = lineSeries('Index', line, { color: indexLine, width: REF_WIDTH, id: `${AUX}index-line` })
+  const compare = o.compare ? [lineSeries(o.compare.name, points(o.xs, o.compare.yF, step), { color: indexLine, dash: 'dashed', id: o.compare.id })] : []
+  if (o.refLines?.length) {
+    lineSeriesOpt.markLine = {
+      silent: true,
+      symbol: 'none',
+      lineStyle: { color: indexLine, type: 'dashed', width: 1 },
+      label: { position: 'insideStartTop', formatter: '{b}', color: ctx.theme.textMuted, fontFamily: ctx.theme.fontUi, fontSize: 11 },
+      data: o.refLines.map((l) => ({ yAxis: l.y, name: l.label })),
+    }
+  }
   return {
     useUTC: true,
     ...liftForLegend(f.grid, f.dataZoom, lg.extra),
@@ -118,12 +146,8 @@ function indexChart<K extends string>(
     yAxis: f.trace ? [y, f.trace.yAxis] : y,
     legend: lg.legend,
     graphic: lg.graphic,
-    tooltip: axisTooltip(ctx, (x) => fmtWall(x, o.period), (name, y) => tipText(textOf.get(name) ?? name, `${y.toFixed(1)} °F`)),
-    series: [
-      ...(f.trace ? [f.trace.series] : []),
-      lineSeries('Index', line, { color: paint(ctx.theme, INDEX_LINE), width: REF_WIDTH, id: `${AUX}index-line` }),
-      ...markers,
-    ],
+    tooltip: axisTooltip(ctx, (x) => fmtWall(x, o.period), o.tip),
+    series: [...(f.trace ? [f.trace.series] : []), lineSeriesOpt, ...compare, ...markers],
   }
 }
 
@@ -134,30 +158,57 @@ export interface FeelsLikeModel {
   period: Period
 }
 
-const REGIMES = Object.keys(FEELS_LIKE_LABELS) as FeelsLikeRegime[]
+/** Marker names: where the index differs from the air temperature, and which way. */
+export const FEELS_LIKE_MARKERS: Record<'wind_chill' | 'heat_index', string> = {
+  wind_chill: 'Wind chill (feels colder)',
+  heat_index: 'Heat index (feels hotter)',
+}
+const MARKED = ['wind_chill', 'heat_index'] as const
 
-/** Feels-like °F: grey line + markers by regime (wind chill ◆, heat index ▲, air temperature ●). */
-export const feelsLikeChart: ChartBuilder<FeelsLikeModel> = (m, ctx) =>
-  indexChart(ctx, {
+/** Series id of the air temperature line (the fidelity harness leaves it out: web/ has none). */
+export const AIR_TEMP_ID = 'feels:air-temp'
+
+/** The air temperature line's name: the daily mean for daily rows. */
+export const airTempName = (period: Period) => (period === 'daily' ? 'Average temperature' : 'Air temperature')
+
+/**
+ * Feels-like °F against the air temperature: the feels-like line, the air temperature dashed, and
+ * a marker wherever the two differ: wind chill (colder, blue ◆) or heat index (hotter, red ▲).
+ * Elsewhere the lines coincide (the feels-like temperature is the air temperature).
+ */
+export const feelsLikeChart: ChartBuilder<FeelsLikeModel> = (m, ctx) => {
+  const air = airTempName(m.period)
+  const kind = new Map<string, string>(MARKED.map((k) => [FEELS_LIKE_MARKERS[k], FEELS_LIKE_LABELS[k]]))
+  return indexChart(ctx, {
     xs: m.series.time.map(wallMs),
     yF: m.series.valueC.map((v) => cToF(v)),
-    classOf: m.series.regime,
-    order: REGIMES,
-    label: (k) => FEELS_LIKE_LABELS[k],
-    short: (k) => (k === 'air_temp' ? plainName('air_temp', 'Air temperature') : sentenceCase(FEELS_LIKE_LABELS[k])),
+    compare: { name: air, yF: m.series.airC.map((v) => cToF(v)), id: AIR_TEMP_ID },
+    classOf: m.series.regime.map((r) => (r === 'wind_chill' || r === 'heat_index' ? r : null)),
+    order: MARKED,
+    label: (k) => FEELS_LIKE_MARKERS[k],
     style: (k) => FEELS_LIKE[ctx.theme.name][k],
     period: m.period,
     yName: axisTitle('feels_like', 'Feels like'),
-    legendTitle: 'Index used',
+    tip: (name, y) => {
+      const value = `${y.toFixed(1)} °F`
+      return name === air ? tipText(air, value) : tipText(`Feels like (${sentenceCase(kind.get(name) ?? name).toLowerCase()})`, value)
+    },
   })
+}
 
 export function feelsLikeTable(m: FeelsLikeModel): ChartTable {
   return {
-    caption: 'Feels-like temperature, °F, and the index used',
-    columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', axisTitle('feels_like', 'Feels like'), 'Index used'],
+    caption: 'Feels-like temperature and air temperature, °F, and the index used',
+    columns: [
+      m.period === 'hourly' ? 'Time (MT)' : 'Date',
+      axisTitle('feels_like', 'Feels like'),
+      `${airTempName(m.period)} (°F)`,
+      'Index used',
+    ],
     rows: m.series.time.map((t, i) => [
       isoWall(wallMs(t), m.period),
       fmtNum(cToF(m.series.valueC[i]), 1),
+      fmtNum(cToF(m.series.airC[i]), 1),
       m.series.regime[i] ? FEELS_LIKE_LABELS[m.series.regime[i]!] : '—',
     ]),
   }
@@ -173,28 +224,57 @@ export interface CciModel {
 export const cciLegendTitle = (livestock: CciSeries['livestock']) =>
   `${plainName('cci', 'Livestock risk')} (${livestock === 'newborn' ? 'newborn' : 'adult'})`
 
-/** Livestock risk index °F: grey line + markers by class in severity order. */
-export const cciChart: ChartBuilder<CciModel> = (m, ctx) =>
-  indexChart(ctx, {
+type CciKey = `${StressSide}:${CciClass}` | 'none'
+const STRESS = CCI_CLASSES.slice(1)
+/** Legend order, cold to hot: worst cold … mild cold, no stress, mild heat … worst heat. */
+const CCI_KEYS: readonly CciKey[] = [
+  ...[...STRESS].reverse().map((c) => `cold:${c}` as const),
+  'none',
+  ...STRESS.map((c) => `heat:${c}` as const),
+]
+
+/** A row's class with its side: "Mild (cold)", "Severe (heat)", "No Stress". */
+export function cciClassText(cls: CciClass | null, valueF: number | null): string | null {
+  if (cls == null) return null
+  return cls === 'No Stress' || valueF == null ? cls : `${cls} (${cciSide(valueF)})`
+}
+
+const keyOf = (cls: CciClass | null, valueF: number | null): CciKey | null =>
+  cls == null || valueF == null ? null : cls === 'No Stress' ? 'none' : `${cciSide(valueF)}:${cls}`
+
+/**
+ * Livestock risk index °F: grey line + markers by class, blues for cold stress and reds for heat
+ * stress (palette `cciStyle`), and dashed lines where cold and heat stress start for the animal.
+ */
+export const cciChart: ChartBuilder<CciModel> = (m, ctx) => {
+  const yF = m.series.valueC.map((v) => cToF(v))
+  const lt = m.series.livestock
+  const label = (k: CciKey) => (k === 'none' ? 'No Stress' : `${k.slice(k.indexOf(':') + 1)} (${k.slice(0, k.indexOf(':'))})`)
+  return indexChart(ctx, {
     xs: m.series.time.map(wallMs),
-    yF: m.series.valueC.map((v) => cToF(v)),
-    classOf: m.series.class,
-    order: CCI_CLASSES,
-    label: (k) => k,
-    style: (k) => ({ color: cciColor(k, ctx.theme.name) }),
+    yF,
+    classOf: m.series.class.map((c, i) => keyOf(c, yF[i])),
+    order: CCI_KEYS,
+    label,
+    style: (k) => (k === 'none' ? cciStyle('No Stress', 'cold', ctx.theme.name) : cciStyle(k.slice(k.indexOf(':') + 1) as CciClass, k.slice(0, k.indexOf(':')) as StressSide, ctx.theme.name)),
     period: m.period,
     yName: CCI_AXIS,
-    legendTitle: cciLegendTitle(m.series.livestock),
+    legendTitle: cciLegendTitle(lt),
+    refLines: [
+      { y: CCI_HEAT_ONSET_F, label: `Heat stress from ${CCI_HEAT_ONSET_F} °F` },
+      { y: cciColdOnsetF(lt), label: `Cold stress below ${cciColdOnsetF(lt)} °F (${lt})` },
+    ],
+    tip: (name, y) => tipText(sentenceCase(name), `${y.toFixed(1)} °F`),
   })
+}
 
 export function cciTable(m: CciModel): ChartTable {
   return {
     caption: `Comprehensive Climate Index, °F, ${m.series.livestock} livestock risk class`,
     columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', CCI_AXIS, 'Risk class'],
-    rows: m.series.time.map((t, i) => [
-      isoWall(wallMs(t), m.period),
-      fmtNum(cToF(m.series.valueC[i]), 1),
-      m.series.class[i] ?? '—',
-    ]),
+    rows: m.series.time.map((t, i) => {
+      const f = cToF(m.series.valueC[i])
+      return [isoWall(wallMs(t), m.period), fmtNum(f, 1), cciClassText(m.series.class[i], f) ?? '—']
+    }),
   }
 }

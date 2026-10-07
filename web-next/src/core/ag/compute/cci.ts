@@ -43,6 +43,15 @@ export function cciValueC(tC: Nullable, rh: Nullable, windMs: Nullable, sradWm2:
   return clean(tC + cciRhCorrection(rh, tC) + cciWindCorrection(windMs) + cciRadCorrection(sradWm2, tC))
 }
 
+/** CCI (°F) from which heat stress starts (Mild); below the cold onset is cold stress. */
+export const CCI_HEAT_ONSET_F = 77
+
+/** CCI (°F) below which cold stress starts: newborn calves feel the cold 9 °F sooner. */
+export const cciColdOnsetF = (livestock: 'adult' | 'newborn'): number => (livestock === 'newborn' ? 42 : 33)
+
+/** Which end of the index a CCI value (°F) is at; meaningful for a stress class (not No Stress). */
+export const cciSide = (valueF: number): 'cold' | 'heat' => (valueF >= CCI_HEAT_ONSET_F ? 'heat' : 'cold')
+
 /**
  * Risk class for a CCI value in °F (thresholds as published, in °F; lifted
  * from the legacy dashboard / DerivedChart). Newborn calves use the
@@ -53,16 +62,16 @@ export function classifyCciF(value: number, newborn: boolean): CciClass {
   if (value >= 105) return 'Extreme'
   if (value >= 96) return 'Severe'
   if (value >= 87) return 'Moderate'
-  if (value >= 77) return 'Mild'
+  if (value >= CCI_HEAT_ONSET_F) return 'Mild'
   if (newborn) {
-    if (value >= 42) return 'No Stress'
+    if (value >= cciColdOnsetF('newborn')) return 'No Stress'
     if (value >= 32) return 'Mild'
     if (value >= 23) return 'Moderate'
     if (value >= 14) return 'Severe'
     if (value >= 5) return 'Extreme'
     return 'Extreme Danger'
   }
-  if (value >= 33) return 'No Stress'
+  if (value >= cciColdOnsetF('adult')) return 'No Stress'
   if (value >= 14) return 'Mild'
   if (value >= -4) return 'Moderate'
   if (value >= -22) return 'Severe'

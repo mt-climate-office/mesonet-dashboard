@@ -44,6 +44,11 @@ function canonicalName(t, side) {
     const edge = /^aux:p\d+-normal-(min|max)$/.exec(t.id ?? '')
     if (edge) return `normal ${edge[1]}`
     if (t.id === 'aux:index-line') return 'index line'
+    // Feels-like markers say which way the index moved; CCI classes say which side (cold/heat).
+    if (n === 'Wind chill (feels colder)') return 'Wind Chill'
+    if (n === 'Heat index (feels hotter)') return 'Heat Index'
+    const side = /^(No Stress|Mild|Moderate|Severe|Extreme|Extreme Danger) \((cold|heat)\)$/.exec(n)
+    if (side) return side[1]
   }
   // wind-rose bins: web-next adds the unit ("4 – 6 mph")
   return n.replace(/ mph$/, '')
@@ -86,6 +91,11 @@ function prepare(fig, side) {
       refs.push(valid[0])
       continue
     }
+    // Feels like: web/ marks every non-index day "Average Temperature"; web-next marks only wind
+    // chill / heat index and draws the air temperature as its own line instead (DIVERGENCES
+    // "Feels like and livestock risk colors").
+    if (side === 'A' && t.name === 'Average Temperature') continue
+    if (side === 'B' && t.id === 'feels:air-temp') continue
     const name = canonicalName(t, side)
     if (side === 'B' && (t.id === 'aux:bands' || /^(aux:normal-base|gridMET normal)$/.test(name))) continue
     let x = (t.x ?? []).map(normX)
@@ -93,6 +103,13 @@ function prepare(fig, side) {
     const timed = x.filter((v, i) => ys[i] !== null && /T\d\d:\d\d$/.test(v))
     if (timed.length && timed.length === x.filter((_, i) => ys[i] !== null).length && timed.every((v) => v.endsWith('T12:00')))
       x = x.map((v) => v.replace(/T12:00$/, ''))
+    // A CCI class on both sides (Mild cold, Mild heat) is one web/ trace: merge them.
+    const same = side === 'B' && traces.find((p) => p.name === name && p.panel === t.panel && p.kind === t.kind)
+    if (same) {
+      same.x = [...same.x, ...x]
+      same.y = [...same.y, ...t.y]
+      continue
+    }
     traces.push({ ...t, name, x, y: t.y })
   }
   const panelOf = panelKeys(traces)

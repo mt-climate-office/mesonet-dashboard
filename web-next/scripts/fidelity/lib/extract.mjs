@@ -351,7 +351,7 @@ export function paletteColors(page, base) {
     for (let n = 1; n <= 16; n++) (P.binColors?.(n, theme) ?? []).forEach(add)
     for (let n = 1; n <= 40; n++) (P.yearColors?.(n, theme) ?? []).forEach(add)
     for (let i = 0; i < 64; i++) add(P.previewColor?.(i, theme))
-    for (const c of P.CCI_CLASSES ?? []) add(P.cciColor?.(c, theme))
+    for (const side of ['cold', 'heat']) for (const c of P.CCI_CLASSES ?? []) add(P.cciStyle?.(c, side, theme)?.color)
     for (const v of P.STYLED_VARIABLES ?? []) add(P.variableStyle?.(v, theme)?.color)
     return [...set]
   }, base)

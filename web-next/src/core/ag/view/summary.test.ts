@@ -21,9 +21,9 @@ describe('dateRangeText', () => {
 
 describe('optionChips', () => {
   it('GDD: crop, cutoffs, dates, projection', () => {
-    expect(texts('?v=gdd')).toEqual(['Wheat', '32–70 °F', 'Since Oct 2, 2025', 'Projected to Oct 31'])
-    expect(texts('?v=gdd&crop=sunflower&gdd_proj=30')).toEqual(['Sunflower', 'from 44 °F', 'Since Oct 2, 2025', 'Projected +30 days'])
-    expect(texts('?v=gdd&crop=corn&gdd_lo=45&gdd_proj=off')).toEqual(['Corn', '45–86 °F', 'Since Oct 2, 2025', 'No projection'])
+    expect(texts('?v=gdd')).toEqual(['Wheat', '32–70 °F', 'Apr 15 – Sep 30, 2026', 'Projected to Oct 31'])
+    expect(texts('?v=gdd&crop=sunflower&gdd_proj=30')).toEqual(['Sunflower', 'from 44 °F', 'Since May 20, 2026', 'Projected +30 days'])
+    expect(texts('?v=gdd&crop=corn&gdd_lo=45&gdd_proj=off')).toEqual(['Corn', '45–86 °F', 'Since May 1, 2026', 'No projection'])
   })
   it('time-series tools: interval and window ("Since" when it ends today)', () => {
     expect(texts('?v=etr')).toEqual(['Daily', 'Since Oct 2, 2025'])

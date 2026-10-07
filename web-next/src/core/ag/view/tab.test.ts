@@ -28,10 +28,13 @@ const CROW = st('acecrowa', 'Crow Agency', false)
 const url = (q: string) => readUrlState(q)
 
 describe('resolveAgTab', () => {
-  it('defaults: no tool open (GDD behind it), wheat, daily, last 365 days through today', () => {
+  it('defaults: no tool open (GDD behind it), wheat, daily, the crop season; other tools the last 365 days', () => {
     const t = resolveAgTab(url(''), BOZ, TODAY)
-    expect(resolveAgTab(url('?v=etr'), BOZ, TODAY).open).toBe(true)
-    expect(t).toMatchObject({ open: false, variable: 'gdd', crop: 'wheat', period: 'daily', start: '2025-10-01', end: TODAY, soilVar: 'soil_vwc' })
+    expect(resolveAgTab(url('?v=etr'), BOZ, TODAY)).toMatchObject({ open: true, start: '2025-10-01', end: TODAY })
+    expect(t).toMatchObject({ open: false, variable: 'gdd', crop: 'wheat', period: 'daily', start: '2026-04-15', end: '2026-09-30', soilVar: 'soil_vwc' })
+    expect(resolveAgTab(url('?v=gdd&crop=corn'), BOZ, TODAY)).toMatchObject({ start: '2026-05-01', end: TODAY })
+    expect(resolveAgTab(url('?v=gdd&ag_from=2026-06-01'), BOZ, TODAY)).toMatchObject({ start: '2026-06-01', end: '2026-09-30' })
+    expect(resolveAgTab(url('?v=gdd&ag_from=2026-10-01'), BOZ, TODAY)).toMatchObject({ start: TODAY, end: TODAY })
     expect(t.cut.custom).toBe(false)
   })
   it('a non-Ag v and an unknown crop fall back; time agg only for etr/feels/cci/swp/ps', () => {

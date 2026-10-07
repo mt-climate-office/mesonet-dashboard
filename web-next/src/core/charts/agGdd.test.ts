@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { DailyNormals, GddSeries } from '../ag/contract'
 import { gdd, projectGdd } from '../ag/compute'
 import { dailyMet, stageTable } from '../ag/__tests__/adapters'
-import { GDD, GDD_STAGE_LINE, THEMES } from '../palette'
-import { GDD_NAMES, gddAxisMax, gddBarName, gddChart, gddTable, stageGutter, stageLines } from './agGdd'
+import { GDD, GDD_STAGE_LINE, THEMES, gddStageColors } from '../palette'
+import { GDD_NAMES, gddAxisMax, gddBarName, gddChart, gddTable, stageGutter, stageIndex, stageLines, stagePieces } from './agGdd'
 import { drawn, shownY, testCtx } from './testing'
 import { paint } from './theme'
 
@@ -61,17 +61,52 @@ describe('gddChart stage labels', () => {
 })
 
 describe('gddChart', () => {
-  it('bars + cumulative on y2 with stage lines from the table; palette colors per theme', () => {
+  it('bars + cumulative on y2 with stage lines from the table, colored by growth stage', () => {
     const s = gdd(met, { crop: 'wheat', stages: stageTable('wheat') })
+    const stages = stageTable('wheat').stages
     for (const t of THEMES) {
       const ctx = testCtx(t)
-      const [bars, cum] = series(gddChart({ series: s, cutoffsF: [32, 70], stageMode: 'table', stages: stageTable('wheat').stages }, ctx))
+      const o = gddChart({ series: s, cutoffsF: [32, 70], stageMode: 'table', stages }, ctx)
+      const [bars, cum] = series(o)
       expect([bars.type, cum.type, cum.yAxisIndex]).toEqual(['bar', 'line', 1])
-      expect([bars.color, cum.color]).toEqual([GDD[t].bar, GDD[t].cumulative])
+      const colors = gddStageColors(stages.length + 1, t)
+      // The series (and so the legend) carry the stage reached by the last day.
+      const now = stageIndex([...stages].sort((a, b) => a.gdd - b.gdd), s.cumulative.filter((v) => v != null).at(-1)!)!
+      expect([bars.color, cum.color]).toEqual([colors[now], colors[now]])
       expect(bars.name).toBe('Daily GDDs (32–70 °F)')
-      expect(cum.markLine!.data.length).toBeGreaterThan(0)
-      expect((cum.markLine as unknown as { lineStyle: { color: string } }).lineStyle.color).toBe(paint(ctx.theme, GDD_STAGE_LINE))
+      const ml = cum.markLine as unknown as { data: { yAxis: number; lineStyle: { color: string } }[] }
+      expect(ml.data.length).toBeGreaterThan(0)
+      for (const d of ml.data) expect(colors).toContain(d.lineStyle.color)
+      const vm = o.visualMap as { type: string; dimension: number; seriesIndex: number[]; pieces: { color: string }[] }
+      expect(vm).toMatchObject({ type: 'piecewise', dimension: 0 })
+      const all = o.series as S[]
+      expect(vm.seriesIndex.map((i) => all[i].name)).toEqual([bars.name, GDD_NAMES.cumulative])
+      expect(new Set(vm.pieces.map((p) => p.color)).size).toBeGreaterThan(3)
     }
+  })
+
+  it('no stage table (corn) or custom cutoffs: the GDD palette and no visualMap', () => {
+    const corn = gddChart({ series: gdd(met, { crop: 'corn', stages: { crop: 'corn', stages: [] } }), cutoffsF: [50, 86], stageMode: 'no-table', cropLabel: 'Corn' }, testCtx('light'))
+    const [bars, cum] = series(corn)
+    expect([bars.color, cum.color]).toEqual([GDD.light.bar, GDD.light.cumulative])
+    expect(corn.visualMap).toBeUndefined()
+    const custom = gddChart({ series: gdd(met, { crop: 'wheat', lowC: 0, highC: 30 }), cutoffsF: [32, 86], stageMode: 'custom', stages: stageTable('wheat').stages }, testCtx())
+    expect(custom.visualMap).toBeUndefined()
+    expect((series(custom)[1].markLine as unknown as { lineStyle: { color: string } } | undefined)?.lineStyle.color ?? paint(testCtx().theme, GDD_STAGE_LINE)).toBe(paint(testCtx().theme, GDD_STAGE_LINE))
+  })
+
+  it('stagePieces: one whole-day run per stage; a missing total keeps the stage', () => {
+    const st = [{ stage: 1, name: 'a', description: null, gdd: 10 }, { stage: 2, name: 'b', description: null, gdd: 20 }]
+    expect(stageIndex(st, 9)).toBe(0)
+    expect(stageIndex(st, 10)).toBe(1)
+    expect(stageIndex(st, null)).toBeNull()
+    const day = (d: string) => Date.parse(`${d}T00:00Z`)
+    const p = stagePieces(['2026-05-01', '2026-05-02', '2026-05-03', '2026-05-04'], [5, 12, null, 25], st, ['c0', 'c1', 'c2'])
+    expect(p).toEqual([
+      { gte: day('2026-05-01'), lt: day('2026-05-02'), color: 'c0' },
+      { gte: day('2026-05-02'), lt: day('2026-05-04'), color: 'c1' },
+      { gte: day('2026-05-04'), lt: day('2026-05-05'), color: 'c2' },
+    ])
   })
 
   it('tooltip notes: stage text, "No stage table for corn", "n/a (custom cutoffs)"', () => {

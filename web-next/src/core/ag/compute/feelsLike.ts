@@ -109,6 +109,7 @@ function build(
     epochMs,
     valueC: vals.map((v) => v.valueC),
     regime: vals.map((v) => v.regime),
+    airC: [...t],
   }
 }
 

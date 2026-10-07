@@ -43,7 +43,11 @@ export function barSeries(name: string, data: Point[], color: string, yAxisIndex
   return { type: 'bar', name, data, yAxisIndex, color, itemStyle: { color }, barMaxWidth: 18, barMinWidth: 1, barCategoryGap: '20%' }
 }
 
-/** Marker-only series (regime / class markers). Null points are dropped. */
+/**
+ * Marker-only series (regime / class markers). Null points are dropped. `large` lets ECharts draw
+ * a long series (a year of hourly markers) in one pass above its 2000-point threshold, instead of
+ * painting it progressively over many frames.
+ */
 export function markerSeries(
   name: string,
   data: Point[],
@@ -57,5 +61,6 @@ export function markerSeries(
     itemStyle: { color: style.color },
     symbol: style.symbol ?? 'circle',
     symbolSize: style.size ?? 6,
+    large: true,
   }
 }

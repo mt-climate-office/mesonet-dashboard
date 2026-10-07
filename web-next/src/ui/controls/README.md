@@ -165,7 +165,9 @@ Use it for a numeric pair with an optional "no upper limit" setting.
 rangeSlider({ min, max, step, allowNone, unit, value: () => {low, high | null}, onChange(v), label, lowLabel?, highLabel? })
 ```
 
-- It uses two native `<input type="range">`.
+- One track with two thumbs: two native `<input type="range">` laid over each other (only the thumbs take
+  the pointer; the stretch between them is filled). Each keeps its own label, keys and value text.
+- Past the middle of the track the low thumb sits on top, so touching thumbs can always be pulled apart.
 - Low stays at least one step below high.
 - With `allowNone`, the high slider has an extra stop at `max + step` that emits `high: null` and
   reads as "No upper limit".

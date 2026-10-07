@@ -2,12 +2,14 @@
  * Growing degree days: daily bars (y1) + cumulative line (y2) with labelled
  * growth-stage markLines, and an optional projection (NWS forecast segment,
  * then normals median with a q25–q75 band) continuing from the last
- * observed day. GDD values are already °F·day (contract), so no conversion.
+ * observed day. With a stage table, bars, line and projection are colored by
+ * the growth stage reached that day (a hidden piecewise visualMap on x).
+ * GDD values are already °F·day (contract), so no conversion.
  */
-import type { EChartsOption, LineSeriesOption } from 'echarts'
+import type { EChartsOption, LineSeriesOption, VisualMapComponentOption } from 'echarts'
 import type { GddProjection, GddSeries, GddStage, Nullable } from '../ag/contract'
 import { finiteMax, stageText } from '../ag/view/labels'
-import { GDD, GDD_STAGE_LINE, withAlpha } from '../palette'
+import { GDD, GDD_STAGE_LINE, gddStageColors, withAlpha } from '../palette'
 import { dualAxis, niceCeil } from './axes'
 import { fmtNum, fmtWall, wallMs } from './format'
 import { bandSeries, labelledLines } from './overlays'
@@ -138,6 +140,36 @@ export function stageLines(stages: GddStage[], y2max: number): { y: number; labe
   return out
 }
 
+/** How many of `stages` a cumulative total has reached (0 = none yet); null for a missing total. */
+export function stageIndex(stages: readonly GddStage[], cumulative: Nullable): number | null {
+  if (cumulative == null) return null
+  return stages.filter((s) => s.gdd <= cumulative).length
+}
+
+/**
+ * Pieces for a visualMap on x: one per run of days at the same stage, spanning those whole days
+ * (wall-clock midnight to midnight, so the noon-centred points fall inside), in `colors[stage]`.
+ * A missing total keeps the stage before it.
+ */
+export function stagePieces(
+  dates: readonly string[],
+  cumulative: readonly Nullable[],
+  stages: readonly GddStage[],
+  colors: readonly string[],
+): { gte: number; lt: number; color: string }[] {
+  const out: { gte: number; lt: number; color: string; ix: number }[] = []
+  let prev = 0
+  dates.forEach((d, i) => {
+    const ix = stageIndex(stages, cumulative[i]) ?? prev
+    prev = ix
+    const x = wallMs(d) - DAY / 2 // wallMs puts a date at noon
+    const last = out[out.length - 1]
+    if (last && last.ix === ix && last.lt === x) last.lt = x + DAY
+    else out.push({ gte: x, lt: x + DAY, color: colors[Math.min(ix, colors.length - 1)], ix })
+  })
+  return out.map(({ gte, lt, color }) => ({ gte, lt, color }))
+}
+
 /** Upper bound of the cumulative axis: covers observed, projected and the q75 envelope. */
 export function gddAxisMax(m: GddModel): number {
   const p = m.projection
@@ -150,17 +182,31 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
   const xs = m.series.date.map(wallMs)
   const stages = stageLabels(m)
   const y2max = gddAxisMax(m)
+  const table = m.stageMode === 'table' ? [...(m.stages ?? [])].sort((a, b) => a.gdd - b.gdd) : []
+  // One color per stage (index 0: before the first); the series take the stage reached so far,
+  // so the legend shows the current one.
+  const stageColors = table.length > 0 ? gddStageColors(table.length + 1, ctx.theme.name) : []
+  const nowStage = stageIndex(table, m.series.cumulative[lastIndex(m.series.cumulative)] ?? null) ?? 0
+  const barColor = stageColors[nowStage] ?? c.bar
+  const lineColor = stageColors[nowStage] ?? c.cumulative
   const cumPoints = points(xs, m.series.cumulative, DAY, stages)
   const cumulative = lineSeries(GDD_NAMES.cumulative, cumPoints, {
-    color: c.cumulative,
+    color: lineColor,
     yAxisIndex: 1,
   })
-  const lines = stageLines(m.stageMode === 'table' ? (m.stages ?? []) : [], y2max)
+  const lines = stageLines(table, y2max)
   const gutter = stageGutter(lines, ctx.width)
-  if (lines.length > 0) cumulative.markLine = labelledLines(paint(ctx.theme, GDD_STAGE_LINE), lines, ctx, { labels: gutter > 0, fontSize: STAGE_FONT })
+  if (lines.length > 0) {
+    const ml = labelledLines(paint(ctx.theme, GDD_STAGE_LINE), lines, ctx, { labels: gutter > 0, fontSize: STAGE_FONT })
+    // Each stage line in its stage's color (the labels stay muted text).
+    if (stageColors.length > 0) {
+      ml.data = lines.map((l) => ({ yAxis: l.y, name: l.label, lineStyle: { color: stageColors[stageIndex(table, l.y) ?? 0] } }))
+    }
+    cumulative.markLine = ml
+  }
   const proj =
     m.projection && m.projection.date.length > 0
-      ? projectionSeries(m, m.projection, { line: c.cumulative, band: withAlpha(c.cumulative, c.bandAlpha) })
+      ? projectionSeries(m, m.projection, { line: lineColor, band: withAlpha(c.cumulative, c.bandAlpha) })
       : []
   const barName = gddBarName(m.cutoffsF)
   const lg = agLegend(ctx, [
@@ -174,6 +220,25 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
   // The slider traces the cumulative GDDs, over the observed days and any projection.
   const allXs = [...xs, ...(m.projection?.date.map(wallMs) ?? [])]
   const f = timeFrame(ctx, { extent: plotExtent(allXs, DAY, true), trace: cumPoints, yAxisIndex: 2, legendPx: LEGEND_PX, right: 64 + gutter })
+  const series = [...(f.trace ? [f.trace.series] : []), barSeries(barName, points(xs, m.series.daily, DAY), barColor), cumulative, ...proj]
+  let visualMap: VisualMapComponentOption | undefined
+  if (stageColors.length > 0) {
+    const p = m.projection
+    const colored = series.flatMap((s, i) => (s.name === barName || s.name === GDD_NAMES.cumulative || s.name === GDD_NAMES.forecast || s.name === GDD_NAMES.normals ? [i] : []))
+    // An explicit line color would win over the visualMap's.
+    for (const i of colored) {
+      const ls = (series[i] as LineSeriesOption).lineStyle
+      if (ls) delete ls.color
+    }
+    visualMap = {
+      type: 'piecewise',
+      show: false,
+      dimension: 0,
+      seriesIndex: colored,
+      pieces: stagePieces([...m.series.date, ...(p?.date ?? [])], [...m.series.cumulative, ...(p?.cumulative ?? [])], table, stageColors),
+      outOfRange: { color: lineColor },
+    }
+  }
   return {
     useUTC: true,
     ...liftForLegend(f.grid, f.dataZoom, lg.extra),
@@ -181,13 +246,14 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
     // The cumulative axis moves right of the stage-label gutter.
     yAxis: [y1, gutter > 0 ? { ...y2, offset: gutter } : y2, ...(f.trace ? [f.trace.yAxis] : [])],
     legend: lg.legend,
+    ...(visualMap ? { visualMap } : {}),
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, 'daily'), (name, y, note) => {
       if (name === barName) return tipText('Daily GDD', y.toFixed(1))
       if (name === GDD_NAMES.band) return note ? tipText('Projected range', note) : null
       const label = name === GDD_NAMES.cumulative ? 'Cumulative GDDs' : name === GDD_NAMES.forecast ? 'Projected (forecast)' : 'Projected (normals)'
       return tipText(label, y.toFixed(0), note ? `Growth stage: ${note}` : undefined)
     }),
-    series: [...(f.trace ? [f.trace.series] : []), barSeries(barName, points(xs, m.series.daily, DAY), c.bar), cumulative, ...proj],
+    series,
   } satisfies EChartsOption
 }
 

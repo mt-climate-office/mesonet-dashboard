@@ -154,6 +154,14 @@ export const GDD: Record<Theme, BarLine & { bandAlpha: number }> = {
   dark: { bar: YL_OR_RD[3], cumulative: YL_OR_RD[1], bandAlpha: 0.2 },
   'high-contrast': { bar: YL_OR_RD[3], cumulative: YL_OR_RD[0], bandAlpha: 0.25 },
 }
+/**
+ * n growth-stage colors for the GDD chart, first stage → last (batlow, the house sequential:
+ * development reads as one ordered ramp). Index 0 is "before the first stage". Same span as
+ * binColors, so each clears 3:1 on the surface.
+ */
+export function gddStageColors(n: number, theme: Theme): string[] {
+  return batlowSamples(n, theme)
+}
 /** GDD growth-stage markLines (labelled with the stage name). */
 export const GDD_STAGE_LINE: TokenRef = { token: '--text-dim' }
 
@@ -165,16 +173,27 @@ export const INDEX_LINE: TokenRef = { token: '--text-dim' }
 /** Livestock CCI classes, mild → worst (No Stress is the grey class). */
 export const CCI_CLASSES = ['No Stress', 'Mild', 'Moderate', 'Severe', 'Extreme', 'Extreme Danger'] as const
 export type CciClass = (typeof CCI_CLASSES)[number]
+/** Which end of the index a stress class is at. */
+export type StressSide = 'cold' | 'heat'
 
-// No Stress grey + 5 OKLab samples of YlOrRd. The sampled span is the part of YlOrRd
-// that clears 3:1 on each surface: light 0.6–1 (≥3.10), dark 0.2–0.75 (≥3.25), HC 0.1–0.8 (≥3.9).
-const CCI_SPAN: Record<Theme, [number, number]> = { light: [0.6, 1], dark: [0.2, 0.75], 'high-contrast': [0.1, 0.8] }
+// Cold stress is the blue half of RdBu, heat stress the red half, each run light → dark from
+// Mild to Extreme Danger (5 OKLab samples); No Stress is grey. The span is the part of each half
+// that clears 3:1 on the surface: light 0.6–1 (cold ≥3.39, heat ≥3.72); dark 0.3–0.7 (cold ≥3.46,
+// heat ≥3.06) and HC 0.2–0.75 (≥4.10 / ≥3.57) skip the near-white end, so the mild classes keep
+// their hue and mild cold stays apart from mild heat.
+const RD_BU_COLD = RD_BU.slice(5)
+const RD_BU_HEAT = reversed(RD_BU.slice(0, 6))
+const STRESS_SPAN: Record<Theme, [number, number]> = { light: [0.6, 1], dark: [0.3, 0.7], 'high-contrast': [0.2, 0.75] }
 
-/** Marker color for a CCI class name. */
-export function cciColor(cls: CciClass, theme: Theme): string {
-  if (cls === 'No Stress') return GREY[theme]
-  const [from, to] = CCI_SPAN[theme]
-  return sample(YL_OR_RD, 5, { from, to })[CCI_CLASSES.indexOf(cls) - 1]
+/**
+ * Marker for a CCI class on the cold or heat side: blues for cold, reds for heat, grey for No
+ * Stress. Shape is the second channel, as on the feels-like chart: cold ◆, heat ▲, none ●.
+ */
+export function cciStyle(cls: CciClass, side: StressSide, theme: Theme): MarkerStyle {
+  if (cls === 'No Stress') return { color: GREY[theme], symbol: 'circle' }
+  const [from, to] = STRESS_SPAN[theme]
+  const ramp = side === 'cold' ? RD_BU_COLD : RD_BU_HEAT
+  return { color: sample(ramp, 5, { from, to })[CCI_CLASSES.indexOf(cls) - 1], symbol: side === 'cold' ? 'diamond' : 'triangle' }
 }
 
 /* -------------------------------------------------------------- feels-like */
