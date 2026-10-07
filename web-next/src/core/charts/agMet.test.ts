@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { cciDaily, etoDaily, etoHourly, feelsLikeDaily } from '../ag/compute'
+import { cciDaily, cciDailyRange, etoDaily, etoHourly, feelsLikeDaily, feelsLikeDailyRange } from '../ag/compute'
 import { dailyMet, hourlyMet, stationMeta } from '../ag/__tests__/adapters'
 import { ETR, FEELS_LIKE, INDEX_LINE, THEMES, cciStyle } from '../palette'
-import { ETR_AXIS, ETR_CUM_AXIS, FEELS_LIKE_MARKERS, cciChart, cciClassText, cciLegendTitle, cciTable, etrChart, etrTable, feelsLikeChart, feelsLikeTable } from './agMet'
+import { AIR_RANGE_NAME, CCI_RANGE_NAME, ETR_AXIS, ETR_CUM_AXIS, FEELS_LIKE_MARKERS, cciChart, cciClassText, cciLegendTitle, cciTable, etrChart, etrTable, feelsLikeChart, feelsLikeTable } from './agMet'
 import { drawn, shownY, testCtx } from './testing'
 import { paint } from './theme'
 
@@ -126,6 +126,44 @@ describe('cciChart', () => {
     expect(cciClassText('Mild', 20)).toBe('Mild (cold)')
     expect(cciClassText('Severe', 100)).toBe('Severe (heat)')
     expect(cciClassText('No Stress', 50)).toBe('No Stress')
+  })
+})
+
+describe('daily ranges (each day’s high and low hour)', () => {
+  const jul = hourlyMet('acebozem', 'jul2025')
+  type Pt = [number, number, string]
+  it('feels like: air temperature band; heat index ▲ at the high, wind chill ◆ at the low', () => {
+    const r = feelsLikeDailyRange(jul)
+    const o = feelsLikeChart({ range: r, period: 'daily' }, testCtx('light'))
+    const all = o.series as S[]
+    expect(all.map((x) => x.name)).toContain(AIR_RANGE_NAME)
+    const heat = all.find((x) => x.name === FEELS_LIKE_MARKERS.heat_index)!
+    expect(heat).toMatchObject({ type: 'scatter', symbol: 'triangle', color: FEELS_LIKE.light.heat_index.color })
+    const i = r.highRegime.indexOf('heat_index')
+    expect(heat.data).toContainEqual([Date.parse(`${r.date[i]}T12:00Z`), (r.highC[i]! * 9) / 5 + 32, 'Daily high'])
+    for (const p of heat.data as Pt[]) expect(p[2]).toBe('Daily high')
+    const t = feelsLikeTable({ range: r, period: 'daily' })
+    expect(t.columns[1]).toBe('Feels like high (°F)')
+    expect(t.rows).toHaveLength(r.date.length)
+  })
+  it('livestock risk: index band; only stressed ends get markers, sided by value; onset lines', () => {
+    const r = cciDailyRange(jul, 'adult')
+    const o = cciChart({ range: r, period: 'daily' }, testCtx())
+    const all = o.series as (S & { markLine?: { data: { yAxis: number }[] } })[]
+    expect(all.map((x) => x.name)).toContain(CCI_RANGE_NAME)
+    const markers = all.filter((x) => x.type === 'scatter')
+    expect(markers.length).toBeGreaterThan(0)
+    expect(markers.some((m) => m.name === 'No Stress')).toBe(false)
+    for (const m of markers.filter((x) => x.name.endsWith('(heat)'))) for (const p of m.data as Pt[]) expect(p[1]).toBeGreaterThanOrEqual(77)
+    expect(all.find((x) => x.markLine)?.markLine?.data.map((d) => d.yAxis)).toEqual([77, 33])
+    expect(cciTable({ range: r, period: 'daily' }).columns).toEqual(['Date', 'High (°F)', 'Risk class at high', 'Low (°F)', 'Risk class at low'])
+  })
+  it('daily highs show heat stress the daily means miss', () => {
+    const daily = cciChart({ series: cciDaily(dailyMet('acebozem', 'season2025'), 'adult'), period: 'daily' }, testCtx())
+    const ranged = cciChart({ range: cciDailyRange(jul, 'adult'), period: 'daily' }, testCtx())
+    const heatDays = (o: typeof daily) => (o.series as S[]).filter((x) => x.name.endsWith('(heat)')).reduce((a, x) => a + x.data.length, 0)
+    const julMeans = (daily.series as S[]).filter((x) => x.name.endsWith('(heat)')).flatMap((x) => x.data).filter((p) => (p[0] as number) >= Date.UTC(2025, 6, 1) && (p[0] as number) < Date.UTC(2025, 7, 1)).length
+    expect(heatDays(ranged)).toBeGreaterThan(julMeans)
   })
 })
 

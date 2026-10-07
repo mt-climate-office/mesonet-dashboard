@@ -318,3 +318,29 @@ export interface PercentSaturationSeries extends SeriesBase {
   epochMs: number[]
   pct: Nullable[][]
 }
+
+/**
+ * A daily index as each day's highest and lowest hourly value (ag/compute/dailyRange.ts): heat
+ * stress peaks in the afternoon and cold stress before dawn, which a daily mean averages away.
+ * `null` for a day with too few hours (the last day, still in progress, keeps what it has).
+ */
+export interface DailyRangeBase extends SeriesBase {
+  date: LocalDate[]
+  highC: Nullable[]
+  lowC: Nullable[]
+}
+
+export interface FeelsLikeRangeSeries extends DailyRangeBase {
+  /** The index in force at the hour of the high / the low. */
+  highRegime: (FeelsLikeRegime | null)[]
+  lowRegime: (FeelsLikeRegime | null)[]
+  /** The day's highest and lowest hourly air temperature (°C). */
+  airHighC: Nullable[]
+  airLowC: Nullable[]
+}
+
+export interface CciRangeSeries extends DailyRangeBase {
+  highClass: (CciClass | null)[]
+  lowClass: (CciClass | null)[]
+  livestock: 'adult' | 'newborn'
+}

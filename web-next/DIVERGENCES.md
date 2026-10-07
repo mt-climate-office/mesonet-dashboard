@@ -320,8 +320,9 @@ layout parts of older entries below; data behaviour is unchanged.
   and so lands on the wrong stage. The GDD cutoffs were two separate sliders.
 - **New:**
   - **Feels like** (`core/charts/agMet.ts` `feelsLikeChart`): the feels-like line, the air temperature
-    dashed (the daily mean for daily rows: "Average temperature"), and a marker only where the two differ:
-    wind chill blue ◆ ("feels colder"), heat index red ▲ ("feels hotter"). The tooltip and table give both.
+    dashed, and a marker only where an index applies: wind chill blue ◆, heat index red ▲ (in dry air the
+    heat index can sit below the air temperature, so the markers do not say "hotter"). The tooltip and
+    table give both.
   - **Livestock risk** (`cciChart`, palette `cciStyle`): cold stress in blues ◆, heat stress in reds ▲
     (RdBu halves, light → dark from Mild to Extreme Danger), No stress grey ●; the legend runs cold → hot,
     and the table names the side ("Mild (cold)"). Dashed lines mark where heat stress starts (77 °F) and
@@ -335,6 +336,16 @@ layout parts of older entries below; data behaviour is unchanged.
   - **Cutoffs** (`ui/controls/rangeSlider.ts`): one track with two thumbs (two native range inputs laid
     over each other, each with its own label, keys and value text).
   - Long marker series (a year of hourly rows) use ECharts' `large` mode, drawn in one pass.
+  - **Daily feels like and livestock risk are each day's high and low** (`core/ag/compute/dailyRange.ts`,
+    user decision 2026-10-07): the index is computed every hour, and a day shows its highest and lowest
+    hourly value (≥ 18 hours, or the day so far for today). Legacy, web/ and the API's daily `/derived`
+    compute from the daily *mean* temperature, humidity, wind and solar, which averages away afternoon heat
+    and pre-dawn cold (in Bozeman, July daily means never reached a heat index, and the 24-hour solar mean
+    understates the midday sun). The daily chart draws the day's range as a band (air temperature for
+    feels like, the index for livestock risk) with markers at a stressed end: heat index ▲ at the high,
+    wind chill ◆ at the low; livestock-risk stress classes at either end, No stress unmarked. The daily
+    view therefore fetches hourly rows (as Hourly does). The Download sheet still offers the API's daily
+    derived values, which are means.
 - **Why:** user issues #78, #79, #80 (2026-10-06/07). The fidelity harness maps the renamed series back to
   web/'s names and leaves out web/'s grey "Average Temperature" markers and web-next's air temperature line
   (`scripts/fidelity/lib/compare.mjs`).

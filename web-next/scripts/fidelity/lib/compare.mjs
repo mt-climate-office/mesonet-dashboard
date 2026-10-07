@@ -44,9 +44,7 @@ function canonicalName(t, side) {
     const edge = /^aux:p\d+-normal-(min|max)$/.exec(t.id ?? '')
     if (edge) return `normal ${edge[1]}`
     if (t.id === 'aux:index-line') return 'index line'
-    // Feels-like markers say which way the index moved; CCI classes say which side (cold/heat).
-    if (n === 'Wind chill (feels colder)') return 'Wind Chill'
-    if (n === 'Heat index (feels hotter)') return 'Heat Index'
+    // CCI classes say which side (cold/heat).
     const side = /^(No Stress|Mild|Moderate|Severe|Extreme|Extreme Danger) \((cold|heat)\)$/.exec(n)
     if (side) return side[1]
   }

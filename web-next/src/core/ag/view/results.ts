@@ -6,7 +6,7 @@
  */
 import type { AnnualModel, CciModel, EtrModel, FeelsLikeModel, GddModel, PercentSaturationModel, SoilProfileModel, SwpModel } from '../../charts'
 import type { DailyMet, DailyNormals, GddStageTable, HourlyMet, LocalDate, SoilParams, SoilSeries, StationMeta } from '../contract'
-import { cciDaily, cciHourly, etoDaily, etoHourly, feelsLikeDaily, feelsLikeHourly, fToC, gdd, GDD_CUTOFFS_F, percentSaturation, projectGdd, swp as swpFromParams } from '../compute'
+import { cciDailyRange, cciHourly, etoDaily, etoHourly, feelsLikeDailyRange, feelsLikeHourly, fToC, gdd, GDD_CUTOFFS_F, percentSaturation, projectGdd, swp as swpFromParams } from '../compute'
 import type { AnnualDaily, ForecastResult } from '../data'
 import { annualTraces, coverage, partialNote, profileValues, unavailableMessage } from './derive'
 import { type Period, type SoilProfileVar, SWP_CAP_BAR, swpBar } from './labels'
@@ -60,6 +60,13 @@ export type MetChart =
   | { kind: 'feels_like'; model: FeelsLikeModel }
   | { kind: 'cci'; model: CciModel }
 
+/** Why daily feels-like and livestock risk are not daily means (the ⓘ note). */
+export const DAILY_RANGE_NOTE = 'Daily values are each day’s highest and lowest hourly reading, so afternoon heat and pre-dawn cold are not averaged away.'
+
+/**
+ * ETr from daily or hourly rows as `period`; feels-like and livestock risk always from hourly rows
+ * (`met` must be HourlyMet): hourly as is, daily as each day's high and low hour.
+ */
 export function metView(
   variable: 'etr' | 'feels_like' | 'cci',
   period: Period,
@@ -71,11 +78,11 @@ export function metView(
   const cov = coverage(met, [...needs])
   const what = variable === 'etr' ? 'ETr' : variable === 'cci' ? 'the risk index' : 'feels-like'
   const notes: string[] = []
-  const partial = partialNote(cov, period, what)
+  const daily = 'date' in met
+  const partial = partialNote(cov, daily ? 'daily' : 'hourly', what)
   if (partial) notes.push(partial)
   const empty = unavailableMessage(cov)
   if (empty) return emptyView(empty, notes)
-  const daily = 'date' in met
   if (variable === 'etr') {
     if (!meta) return view('loading', null)
     const series = daily ? etoDaily(met, meta) : etoHourly(met as HourlyMet, meta)
@@ -84,12 +91,16 @@ export function metView(
     }
     return ready({ kind: 'etr', model: { series, period } }, notes)
   }
+  const hourly = met as HourlyMet
+  if (period === 'daily') notes.push(DAILY_RANGE_NOTE)
   if (variable === 'feels_like') {
-    const series = daily ? feelsLikeDaily(met) : feelsLikeHourly(met as HourlyMet)
-    return ready({ kind: 'feels_like', model: { series, period } }, notes)
+    const model: FeelsLikeModel =
+      period === 'daily' ? { range: feelsLikeDailyRange(hourly), period: 'daily' } : { series: feelsLikeHourly(hourly), period }
+    return ready({ kind: 'feels_like', model }, notes)
   }
-  const series = daily ? cciDaily(met, livestock) : cciHourly(met as HourlyMet, livestock)
-  return ready({ kind: 'cci', model: { series, period } }, notes)
+  const model: CciModel =
+    period === 'daily' ? { range: cciDailyRange(hourly, livestock), period: 'daily' } : { series: cciHourly(hourly, livestock), period }
+  return ready({ kind: 'cci', model }, notes)
 }
 
 /* ------------------------------------------------------------------ GDD */
