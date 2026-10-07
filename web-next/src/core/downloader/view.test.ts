@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Station, StationElement } from '../api'
 import {
+  dailyMeansNote,
   confirmKey,
   dateWindow,
   droppedSwpNotice,
@@ -149,5 +150,14 @@ describe('announcement', () => {
   it('resultAnnouncement', () => {
     expect(resultAnnouncement(0, 3)).toBe('Request finished: no data for this selection.')
     expect(resultAnnouncement(1234, 6)).toBe('Request finished: 1,234 rows, 6 columns. Download CSV is ready.')
+  })
+})
+
+describe('dailyMeansNote', () => {
+  it('only for daily or monthly feels like / livestock risk', () => {
+    expect(dailyMeansNote('daily', ['air_temp_0200', 'cci'])).toMatch(/daily means/)
+    expect(dailyMeansNote('monthly', ['feels_like'])).toMatch(/choose Hourly/)
+    expect(dailyMeansNote('hourly', ['cci'])).toBe('')
+    expect(dailyMeansNote('daily', ['etr'])).toBe('')
   })
 })

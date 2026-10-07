@@ -11,7 +11,7 @@
 import Alpine from 'alpinejs'
 import { learnMoreUrl } from '../../core/ag/view/learnMore'
 import { chartState, hasAllYears, notHereMessage, showsOptions, variableGroup } from '../../core/ag/view/tab'
-import { agToolElements, fromChart, prefillsFromChart } from '../../core/downloader/fromChart'
+import { agDownloadInterval, agToolElements, fromChart, prefillsFromChart } from '../../core/downloader/fromChart'
 import { POR_FALLBACK_START, installDate, todayIso } from '../../core/latest'
 import { neighbors, plainName, type Variable } from '../../core/variables'
 import { chartVariables, stationElements } from '../charts/resources'
@@ -116,7 +116,7 @@ export function agTab() {
       const whole = t.variable === 'annual' || this.history()
       const start = whole ? (installDate(stations().current) ?? POR_FALLBACK_START) : t.start
       const elements = agToolElements(t.variable, { soilVar: t.soilVar, annualVar: url().state.annv }, stationElements(id) ?? [])
-      url().set(fromChart({ elements, start, end: whole ? todayIso() : t.end, interval: whole ? 'daily' : t.period }))
+      url().set(fromChart({ elements, start, end: whole ? todayIso() : t.end, interval: whole ? 'daily' : agDownloadInterval(t.variable, t.period) }))
       return true
     },
   })

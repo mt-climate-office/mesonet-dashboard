@@ -65,7 +65,7 @@ export function HelpModal() {
       <List size="sm" spacing={2} mt={4} withPadding>
         <List.Item>
           Email{' '}
-          <Ext href="mailto:james.seielstad@mso.umt.edu">james.seielstad@mso.umt.edu</Ext>,
+          <Ext href="mailto:kyle.bocinsky@umontana.edu">kyle.bocinsky@umontana.edu</Ext>,
         </List.Item>
         <List.Item>
           Fill out our <Ext href={FEEDBACK_URL}>feedback form</Ext>,
@@ -75,9 +75,6 @@ export function HelpModal() {
         </List.Item>
       </List>
       <Text size="sm" mt="sm">
-        For questions or issues related to current Mesonet stations, please
-        contact our Mesonet Manager (Kevin Hyde) at{' '}
-        <Ext href="mailto:kevin.hyde@umontana.edu">kevin.hyde@umontana.edu</Ext>.
         For general questions about the Mesonet and its development, please
         contact the state climatologist (Kelsey Jencso) at{' '}
         <Ext href="mailto:kelsey.jencso@umontana.edu">kelsey.jencso@umontana.edu</Ext>.
@@ -87,18 +84,16 @@ export function HelpModal() {
         Montana Mesonet Background
       </Title>
       <Text size="sm" mt={4}>
-        The Montana Climate Office (MCO) installed 6 weather and soil moisture
-        monitoring stations in 2016 as part of the Montana Research and Economic
-        Development Initiative (MREDI). The Mesonet was designed to support
-        decision-making for statewide drought assessments, precision
-        agriculture and rangeland and forested watershed management. Since 2016
-        the network has grown to 94 stations through support from private
-        landowners, watershed groups, tribes, state agencies and grants from
-        federal entities. In 2020 the MCO was awarded a contract from the U.S.
-        Army Corps to add 205 additional stations. The new stations will be
-        installed every 500 square miles in central and eastern Montana to
-        improve drought assessments and flood forecasting - in the protection of
-        lives and property.
+        The Montana Climate Office (MCO) installed the Mesonet&apos;s first
+        weather and soil moisture monitoring stations in 2016 as part of the
+        Montana Research and Economic Development Initiative (MREDI). The
+        Mesonet was designed to support decision-making for statewide drought
+        assessments, precision agriculture and rangeland and forested watershed
+        management. The network grew through support from private landowners,
+        watershed groups, tribes, state agencies and federal grants, and
+        through a 2020 U.S. Army Corps of Engineers contract that added
+        stations across central and eastern Montana to improve drought
+        assessments and flood forecasting.
       </Text>
 
       <Title order={5} mt="md">

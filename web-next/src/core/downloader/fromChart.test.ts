@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readUrlState } from '../url-schema'
-import { PREFILL_RESET, agToolElements, fromChart, prefillsFromChart, variableElements } from './fromChart'
+import { agDownloadInterval, PREFILL_RESET, agToolElements, fromChart, prefillsFromChart, variableElements } from './fromChart'
 
 const els = [
   { element: 'air_temp_0200', description_short: 'Air Temperature @ 2 m' },
@@ -74,5 +74,14 @@ describe('prefillsFromChart', () => {
     expect(prefillsFromChart(at('?v=air_temp&dl=1&dl_from=2024-01-01'))).toBe(false)
     expect(prefillsFromChart(at('?v=air_temp&dl=1&dl_to=2024-01-31'))).toBe(false)
     expect(prefillsFromChart(at('?v=air_temp&dl=1&period=hourly'))).toBe(false)
+  })
+})
+
+describe('agDownloadInterval', () => {
+  it('feels like and livestock risk download hourly (their daily chart is hourly highs and lows); others keep the chart interval', () => {
+    expect(agDownloadInterval('feels_like', 'daily')).toBe('hourly')
+    expect(agDownloadInterval('cci', 'daily')).toBe('hourly')
+    expect(agDownloadInterval('etr', 'daily')).toBe('daily')
+    expect(agDownloadInterval('swp', 'hourly')).toBe('hourly')
   })
 })
