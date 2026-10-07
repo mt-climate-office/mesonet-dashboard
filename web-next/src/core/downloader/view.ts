@@ -32,6 +32,19 @@ export const PERIOD_OPTIONS: ReadonlyArray<{ value: DlPeriod; label: string }> =
 export const MONTHLY_NOTE =
   'Monthly values are computed from daily data: precipitation and Reference ET are summed, other variables averaged. "Days With Data" shows how many days each month includes. Totals are left blank for any month missing a day (including months only partly inside the date range).'
 
+/** Derived codes whose daily chart is each day's hourly high and low, not the API's daily mean. */
+const HIGH_LOW_CHARTS = new Set(['feels_like', 'cci'])
+
+/**
+ * The note under Interval when daily or monthly feels like / livestock risk is selected: the API's
+ * values come from daily means, while those charts show each day's highest and lowest hourly value
+ * (core/ag/compute/dailyRange). '' otherwise.
+ */
+export function dailyMeansNote(period: DlPeriod, elements: readonly string[]): string {
+  if (period === 'hourly' || !elements.some((e) => HIGH_LOW_CHARTS.has(e))) return ''
+  return 'Daily and monthly feels like and livestock risk are computed from daily means. The Feels like and Livestock risk charts use each day’s highest and lowest hourly value instead: choose Hourly to download the values behind them.'
+}
+
 /** Station install date as YYYY-MM-DD, or null. */
 export function installDateOf(s: Station | undefined): string | null {
   return s?.date_installed ? String(s.date_installed).slice(0, 10) : null

@@ -79,3 +79,11 @@ export function agToolElements(tool: DerivedVar, o: { soilVar: string; annualVar
       return [tool]
   }
 }
+
+/**
+ * The interval an Ag tool's download asks for: feels like and livestock risk always hourly (their
+ * daily chart is each day's hourly high and low, which the API's daily values, means, are not);
+ * every other tool its chart's interval.
+ */
+export const agDownloadInterval = (tool: DerivedVar, period: LatestAgg): LatestAgg =>
+  tool === 'feels_like' || tool === 'cci' ? 'hourly' : period

@@ -107,6 +107,8 @@ export function downloader() {
     get stationText(): string { return form.stationLine(this.station?.name, this.stationId ?? this.url.s) },
     get varsText(): string { return form.variablesSummary(this.pruned.selected.map((v) => labelFor(v, this.groups))) },
     get datesText(): string { return this.dates.error ? 'Invalid range' : form.dateRangeLabel(this.dates.start, this.dates.end) },
+    /** Under Interval: daily/monthly feels like and livestock risk are means, unlike their charts. */
+    get meansNote(): string { return view.dailyMeansNote(this.url.period, this.pruned.selected) },
     get intervalText(): string { return this.periodOptions.find((o) => o.value === this.url.period)?.label ?? this.url.period },
     isOpen(row: form.FormRow): boolean { return this.openRow === row },
     toggleRow(row: form.FormRow) { this.openRow = this.openRow === row ? null : row },

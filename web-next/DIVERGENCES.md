@@ -344,8 +344,9 @@ layout parts of older entries below; data behaviour is unchanged.
     understates the midday sun). The daily chart draws the day's range as a band (air temperature for
     feels like, the index for livestock risk) with markers at a stressed end: heat index ▲ at the high,
     wind chill ◆ at the low; livestock-risk stress classes at either end, No stress unmarked. The daily
-    view therefore fetches hourly rows (as Hourly does). The Download sheet still offers the API's daily
-    derived values, which are means.
+    view therefore fetches hourly rows (as Hourly does). Download data from these two charts prefills
+    the hourly values behind them (`agDownloadInterval`); picking Daily or Monthly for them in the Download
+    sheet shows a note that the API's values there are daily means (`dailyMeansNote`).
 - **Why:** user issues #78, #79, #80 (2026-10-06/07). The fidelity harness maps the renamed series back to
   web/'s names and leaves out web/'s grey "Average Temperature" markers and web-next's air temperature line
   (`scripts/fidelity/lib/compare.mjs`).

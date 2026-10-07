@@ -101,21 +101,19 @@ def generate_modal() -> html.Div:
                         To display data on this tab, select a station from the dropdown on the left. Selecting the "Timeseries" button shows a timeseries of a given variable for the current year, with previous years plotted as grey lines in the background for context.
                         Selecting the "Comparison" button allows you to choose two variable to plot against one another for the current year. 
                         If you encounter any bugs, would like to request a new feature, or have a question regarding the dashboard, please:
-                        - Email [james.seielstad@mso.umt.edu](mailto:james.seielstad@mso.umt.edu),
+                        - Email [kyle.bocinsky@umontana.edu](mailto:kyle.bocinsky@umontana.edu),
                         - Fill out our [feedback form](https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN/form),
                         - Or open an issue on [our GitHub](https://github.com/mt-climate-office/mesonet-dashboard/issues).      
 
-                        For questions or issues related to current Mesonet stations, please contact our Mesonet Manager (Kevin Hyde) at
-                        [kevin.hyde@umontana.edu](mailto:kevin.hyde@umontana.edu). For general questions about the Mesonet and its development,
+                        For general questions about the Mesonet and its development,
                         please contact the state climatologist (Kelsey Jencso) at [kelsey.jencso@umontana.edu](mailto:kelsey.jencso@umontana.edu).
 
                         #### Montana Mesonet Background
-                        The Montana Climate Office (MCO) installed 6 weather and soil moisture monitoring stations in 2016 as part of the Montana Research 
+                        The Montana Climate Office (MCO) installed the Mesonet's first weather and soil moisture monitoring stations in 2016 as part of the Montana Research 
                         and Economic Development Initiative (MREDI). The Mesonet was designed to support decision-making for statewide drought assessments, 
-                        precision agriculture and rangeland and forested watershed management. Since 2016 the network has grown to 94 stations through support
-                        from private landowners, watershed groups, tribes, state agencies and grants from federal entities. In 2020 the MCO was awarded a contract 
-                        from the U.S. Army Corps to add 205 additional stations. The new stations will be installed every 500 square miles in central and eastern
-                        Montana to improve drought assessments and flood forecasting - in the protection of lives and property.
+                        precision agriculture and rangeland and forested watershed management. The network grew through support from private landowners, watershed groups,
+                        tribes, state agencies and federal grants, and through a 2020 U.S. Army Corps of Engineers contract that added stations across central and eastern
+                        Montana to improve drought assessments and flood forecasting.
                         #### Source Code
                         See how we built this application at our [GitHub repository](https://github.com/mt-climate-office/mesonet-dashboard/tree/main).
                     """
