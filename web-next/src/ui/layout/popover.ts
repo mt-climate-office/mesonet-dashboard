@@ -28,6 +28,9 @@ export function initPopover(o: PopoverOptions): Popover {
   let open = false
   if (panel.id) button.setAttribute('aria-controls', panel.id)
   button.setAttribute('aria-haspopup', 'dialog')
+  // Safari never focuses a clicked radio or button: focus goes to the nearest focusable ancestor
+  // instead, and without this that is <main>, so focusout closed the panel before the click landed.
+  if (!panel.hasAttribute('tabindex')) panel.tabIndex = -1
 
   const paint = () => {
     panel.hidden = !open
