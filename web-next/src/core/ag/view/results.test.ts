@@ -5,7 +5,7 @@ import { swp } from '../compute'
 import { dailyMet, hourlyMet, soilParams, soilSeries, stageTable, stationMeta } from '../__tests__/adapters'
 import { parseGddCutoffs } from './gddCutoffs'
 import { HttpError } from '../../api/http'
-import { annualView, annualYears, elementsGate, gate, gddView, metView, soilView, viewAnnouncement, type Loaded } from './results'
+import { DAILY_RANGE_NOTE, annualView, annualYears, elementsGate, gate, gddView, metView, soilView, viewAnnouncement, type Loaded } from './results'
 
 const met = dailyMet('acebozem', 'season2025')
 const meta = stationMeta('acebozem')
@@ -26,9 +26,17 @@ describe('metView', () => {
     expect(metView('etr', 'daily', 'adult', met, undefined).status).toBe('loading')
     const h = metView('feels_like', 'hourly', 'adult', hourlyMet('acebozem', 'jul2025'), undefined)
     expect(h.model?.kind).toBe('feels_like')
-    const cci = metView('cci', 'daily', 'newborn', met, undefined)
-    expect(cci.model?.kind === 'cci' && cci.model.model.series.livestock).toBe('newborn')
-    const ars = metView('feels_like', 'daily', 'adult', dailyMet('arskeogh', 'season2025'), undefined)
+    const jul = hourlyMet('acebozem', 'jul2025')
+    const cci = metView('cci', 'daily', 'newborn', jul, undefined)
+    const m = cci.model?.kind === 'cci' ? cci.model.model : null
+    expect(m && 'range' in m && m.range.livestock).toBe('newborn')
+    expect(cci.notes).toContain(DAILY_RANGE_NOTE)
+    const fl = metView('feels_like', 'daily', 'adult', jul, undefined)
+    expect(fl.model?.kind === 'feels_like' && 'range' in fl.model.model).toBe(true)
+    const hourlyCci = metView('cci', 'hourly', 'adult', jul, undefined)
+    expect(hourlyCci.model?.kind === 'cci' && 'series' in hourlyCci.model.model).toBe(true)
+    expect(hourlyCci.notes).not.toContain(DAILY_RANGE_NOTE)
+    const ars = metView('feels_like', 'daily', 'adult', hourlyMet('arskeogh', 'jul2025'), undefined)
     expect(ars.status).toBe('ready')
     const arsEtr = metView('etr', 'daily', 'adult', dailyMet('arskeogh', 'season2025'), stationMeta('arskeogh'))
     if (arsEtr.status === 'ready') expect(arsEtr.notes.join(' ')).toMatch(/Wind measured at 8 ft/)

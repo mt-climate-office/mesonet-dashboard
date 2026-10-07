@@ -17,6 +17,13 @@ describe('metStats', () => {
     expect(metStats(met('cci', { valueC: [null] }))).toEqual([])
     expect(metStats(null)).toEqual([])
   })
+  it('daily ranges: the lowest low and the highest high', () => {
+    const range = { kind: 'cci', model: { range: { lowC: [-10, null, 5], highC: [20, 30, null] }, period: 'daily' } } as unknown as MetChart
+    expect(metStats(range)).toEqual([
+      { label: 'Low', value: '14 °F' },
+      { label: 'High', value: '86 °F' },
+    ])
+  })
 })
 
 describe('gddStats', () => {

@@ -1,6 +1,7 @@
 /**
  * `x-data="agMetView"`: the Reference ET, feels-like and livestock risk
- * card (partials/ag/met.html). Level-2 daily or hourly observations →
+ * card (partials/ag/met.html). Level-2 daily or hourly observations (always
+ * hourly for feels-like and livestock risk; core metView) →
  * core `metView` → the chart host, its table (tbl=1) and the stats card.
  */
 import Alpine from 'alpinejs'
@@ -56,8 +57,9 @@ function compute(): AgView<MetChart> {
   if (!q || (variable !== 'etr' && variable !== 'feels_like' && variable !== 'cci')) return LOADING
   const data = Alpine.store('data')
   const ttl = AG_TTL.series
+  // Feels like and livestock risk always read hourly rows: their daily view is each day's high and low hour.
   const met =
-    t.period === 'daily'
+    t.period === 'daily' && variable === 'etr'
       ? data.cached<DailyMet | HourlyMet>(agKeys.dailyMet(q), () => fetchDailyMet(q), { ttl })
       : data.cached<DailyMet | HourlyMet>(agKeys.hourlyMet(q), () => fetchHourlyMet(q), { ttl })
   // ETr needs the site (lat, elevation, wind height); the catalog is already loaded.

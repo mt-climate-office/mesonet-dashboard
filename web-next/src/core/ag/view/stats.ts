@@ -35,7 +35,13 @@ export function metStats(c: MetChart | null): AgStat[] {
     const inches = finite(c.model.series.etoMm.map((v) => mmToIn(v)))
     return inches.length ? [{ label: 'Total', value: formatReading('etr', inches.reduce((a, b) => a + b, 0)) }] : []
   }
-  return lowHigh(c.model.series.valueC.map((v) => cToF(v)), (f) => formatReading('feels_like', f))
+  const fmt = (f: number) => formatReading('feels_like', f)
+  if ('range' in c.model) {
+    // Daily: the lowest low and the highest high.
+    const r = c.model.range
+    return lowHigh([...r.lowC, ...r.highC].map((v) => cToF(v)), fmt)
+  }
+  return lowHigh(c.model.series.valueC.map((v) => cToF(v)), fmt)
 }
 
 /** GDD: the accumulation at the last observed day, and the growth stage reached (crops with a stage table). */
