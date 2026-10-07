@@ -17,6 +17,7 @@ import {
   PolarComponent,
   TooltipComponent,
   VisualMapContinuousComponent,
+  VisualMapPiecewiseComponent,
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 
@@ -35,6 +36,7 @@ echarts.use([
   MarkAreaComponent,
   MarkLineComponent,
   VisualMapContinuousComponent,
+  VisualMapPiecewiseComponent,
   GraphicComponent,
   AriaComponent,
   CanvasRenderer,

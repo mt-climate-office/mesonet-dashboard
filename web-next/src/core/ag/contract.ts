@@ -278,6 +278,8 @@ export interface FeelsLikeSeries extends SeriesBase {
   epochMs: number[]
   valueC: Nullable[]
   regime: (FeelsLikeRegime | null)[]
+  /** The air temperature the index was computed from (°C; the daily mean for daily rows). */
+  airC: Nullable[]
 }
 
 export type CciClass =

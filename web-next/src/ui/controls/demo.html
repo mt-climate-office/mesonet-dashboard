@@ -227,19 +227,13 @@
               unit: '°F', value: () => $store.demo.gdd, onChange: (v) => $store.demo.gdd = v,
               label: 'GDD thresholds' })">
       <legend class="ctl-legend" x-text="label"></legend>
-      <div class="ctl-range-row">
-        <label class="ctl-label" :for="ids.low" x-text="lowLabel"></label>
-        <span class="ctl-range-value" aria-hidden="true" x-text="lowText()"></span>
-        <input type="range" :id="ids.low" :min="cfg.min" :max="cfg.max" :step="cfg.step"
-               :value="draft.low" :aria-valuetext="lowText()"
-               @input="onLow($event)" @change="commit()">
+      <div class="ctl-range-values">
+        <label class="ctl-label" :for="ids.low"><span x-text="lowLabel"></span> <span class="ctl-range-value" aria-hidden="true" x-text="lowText()"></span></label>
+        <label class="ctl-label" :for="ids.high"><span x-text="highLabel"></span> <span class="ctl-range-value" aria-hidden="true" x-text="highText()"></span></label>
       </div>
-      <div class="ctl-range-row">
-        <label class="ctl-label" :for="ids.high" x-text="highLabel"></label>
-        <span class="ctl-range-value" aria-hidden="true" x-text="highText()"></span>
-        <input type="range" :id="ids.high" :min="cfg.min" :max="highMax()" :step="cfg.step"
-               :value="highPosition()" :aria-valuetext="highText()"
-               @input="onHigh($event)" @change="commit()">
+      <div class="ctl-range-track" :style="fill()">
+        <input type="range" :id="ids.low" :class="{ 'is-top': lowOnTop() }" :min="cfg.min" :max="highMax()" :step="cfg.step" :value="draft.low" :aria-valuetext="lowText()" @input="onLow($event)" @change="commit()">
+        <input type="range" :id="ids.high" :min="cfg.min" :max="highMax()" :step="cfg.step" :value="highPosition()" :aria-valuetext="highText()" @input="onHigh($event)" @change="commit()">
       </div>
     </fieldset>
     <p class="readout">gdd: <code x-data x-text="JSON.stringify($store.demo.gdd)"></code></p>

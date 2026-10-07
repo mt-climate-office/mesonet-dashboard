@@ -21,15 +21,16 @@ import {
   THEMES,
   type Theme,
   binColors,
-  cciColor,
+  cciStyle,
   depthColor,
+  gddStageColors,
   previewColor,
   resolve,
   variableStyle,
   withAlpha,
   yearColors,
 } from './roles'
-import { contrastRatio, luminance } from './contrast'
+import { contrastRatio, hexToRgb as hexToRgbLocal, luminance } from './contrast'
 import { TOKENS_SNAPSHOT } from './tokens.snapshot'
 
 const HEX = /^#[0-9a-f]{6}$/i
@@ -123,8 +124,17 @@ describe('roles', () => {
     expect(variableStyle('Soil VWC', 'dark')).toBeNull()
     expect(variableStyle('Precipitation', 'dark')).toBeNull()
   })
-  it('cciColor: grey for No Stress, distinct YlOrRd per class', () => {
-    for (const t of THEMES) expect(new Set(CCI_CLASSES.map((c) => cciColor(c, t))).size).toBe(6)
+  it('cciStyle: grey for No Stress, blues for cold, reds for heat, distinct per class', () => {
+    for (const t of THEMES) {
+      const all = (['cold', 'heat'] as const).flatMap((side) => CCI_CLASSES.map((c) => cciStyle(c, side, t).color))
+      expect(new Set(all).size).toBe(11)
+      const [r, , b] = hexToRgbLocal(cciStyle('Severe', 'cold', t).color)
+      expect(b).toBeGreaterThan(r)
+      const [r2, , b2] = hexToRgbLocal(cciStyle('Severe', 'heat', t).color)
+      expect(r2).toBeGreaterThan(b2)
+    }
+    expect(cciStyle('Mild', 'cold', 'light').symbol).toBe('diamond')
+    expect(cciStyle('Mild', 'heat', 'light').symbol).toBe('triangle')
   })
   it('heatmap soil temperature is RdBu reversed around 32 °F', () => {
     expect(HEATMAP.soil_temp.midpoint).toBe(32)
@@ -145,11 +155,12 @@ function lineMarkerColors(t: Theme): Record<string, string> {
     out[`${name} bar`] = r[t].bar
     out[`${name} cumulative`] = r[t].cumulative
   }
-  for (const c of CCI_CLASSES) out[`cci ${c}`] = cciColor(c, t)
+  for (const side of ['cold', 'heat'] as const) for (const c of CCI_CLASSES) out[`cci ${side} ${c}`] = cciStyle(c, side, t).color
   for (const [k, v] of Object.entries(FEELS_LIKE[t])) out[`feels ${k}`] = v.color
   for (const d of [2, 4, 8, 20, 28, 36, 40, 3, 15.7]) out[`depth ${d}`] = depthColor(d, t)
   binColors(8, t).forEach((c, i) => (out[`bin ${i}`] = c))
   yearColors(12, t).forEach((c, i) => (out[`year ${i}`] = c))
+  gddStageColors(18, t).forEach((c, i) => (out[`gdd stage ${i}`] = c))
   for (let i = 0; i < 7; i++) out[`preview ${i}`] = previewColor(i, t)
   out['annual current'] = resolve(ANNUAL_CURRENT.color, get)
   out['gdd stage'] = resolve(GDD_STAGE_LINE, get)

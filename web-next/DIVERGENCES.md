@@ -313,6 +313,32 @@ layout parts of older entries below; data behaviour is unchanged.
   as `documented` (`scripts/fidelity/lib/compare.mjs`, LDB-007).
 - **Why:** user decision (2026-10-02): the NWS method everywhere.
 
+### Ag tools: color by meaning, a season-long GDD window (issues #78–#80)
+- **Before:** Feels like drew every day as a marker on the feels-like line, grey where no index applied.
+  Livestock risk colored its classes with one YlOrRd ramp, so mild cold stress and mild heat stress looked
+  the same. GDD drew its bars and line in one color and opened on the last 365 days, which starts mid-season
+  and so lands on the wrong stage. The GDD cutoffs were two separate sliders.
+- **New:**
+  - **Feels like** (`core/charts/agMet.ts` `feelsLikeChart`): the feels-like line, the air temperature
+    dashed (the daily mean for daily rows: "Average temperature"), and a marker only where the two differ:
+    wind chill blue ◆ ("feels colder"), heat index red ▲ ("feels hotter"). The tooltip and table give both.
+  - **Livestock risk** (`cciChart`, palette `cciStyle`): cold stress in blues ◆, heat stress in reds ▲
+    (RdBu halves, light → dark from Mild to Extreme Danger), No stress grey ●; the legend runs cold → hot,
+    and the table names the side ("Mild (cold)"). Dashed lines mark where heat stress starts (77 °F) and
+    where cold stress starts for the chosen animal (33 °F adult, 42 °F newborn), so the Adult/Newborn chip
+    visibly moves the cold threshold.
+  - **GDD** (`gddChart`, palette `gddStageColors`): with a stage table, the bars, the cumulative line, the
+    projection and the stage lines are colored by the growth stage reached that day (batlow, first stage →
+    last; a hidden piecewise visualMap on x). Corn and custom cutoffs keep the GDD colors. With no
+    `ag_from` / `ag_to`, the window is the crop's season (`core/ag/view/gddSeason.ts`): planting → today
+    in season, planting → season end after it, last year's season before this year's planting date.
+  - **Cutoffs** (`ui/controls/rangeSlider.ts`): one track with two thumbs (two native range inputs laid
+    over each other, each with its own label, keys and value text).
+  - Long marker series (a year of hourly rows) use ECharts' `large` mode, drawn in one pass.
+- **Why:** user issues #78, #79, #80 (2026-10-06/07). The fidelity harness maps the renamed series back to
+  web/'s names and leaves out web/'s grey "Average Temperature" markers and web-next's air temperature line
+  (`scripts/fidelity/lib/compare.mjs`).
+
 ### About replaces the metadata and current-conditions cards
 - **Legacy / web/:** Station Metadata and Current Conditions were bottom-card tabs beside the locator map.
 - **New:** the About section (DESIGN.md "About"): station details with readable labels and formats (Network,
@@ -434,9 +460,9 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 | LDT-005 | Wind rose `Plasma_r` | `binColors(n, theme)`: batlow, slow → fast |
 | LDT-006 | Wind rose title black | Kit `--text-primary` (chrome, not a palette role) |
 | LDB-005 | Table odd rows `rgb(220,220,220)`, black on white | Kit table tokens (chrome, not a palette role) |
-| AG-FL-001 | Feels-like markers blue / red / green over a black line | `FEELS_LIKE`: wind chill `#2166ac` diamond, heat index `#b2182b` triangle, average temp grey `#767676` circle; line `INDEX_LINE` (`--text-dim`). Dark/HC step along RdBu toward the light end |
-| AG-CCI-003 | Extreme Danger `#843094`, Extreme `#CC0606`, Severe `#FF4400`, Moderate `#FFAD00`, Mild `#FFFF00`, No Stress `#A5A5A5`; black line (legacy). YlOrRd + `#BBBBBB` (web/) | `cciColor()`: No Stress grey + 5 YlOrRd samples, using the part of the ramp that clears 3:1 on each surface (light 0.6–1); line `INDEX_LINE` |
-| AG-GDD-005 | Orange bars + orange line, markers in a 24-color stage palette (legacy); Tol sand/indigo + Tol stage colors (web/) | `GDD`: YlOrRd bars `#fc4e2a` + cumulative `#bd0026`; projection band = cumulative at 15%; stages are labelled markLines in `--text-dim` (`GDD_STAGE_LINE`), not marker colors |
+| AG-FL-001 | Feels-like markers blue / red / green over a black line | `FEELS_LIKE`: wind chill `#2166ac` diamond, heat index `#b2182b` triangle, only where the index differs from the air temperature; feels-like line `INDEX_LINE` (`--text-dim`), air temperature dashed in the same token. Dark/HC step along RdBu toward the light end |
+| AG-CCI-003 | Extreme Danger `#843094`, Extreme `#CC0606`, Severe `#FF4400`, Moderate `#FFAD00`, Mild `#FFFF00`, No Stress `#A5A5A5`; black line (legacy). YlOrRd + `#BBBBBB` (web/) | `cciStyle()`: No Stress grey ●; cold stress 5 samples of RdBu's blue half ◆, heat stress 5 of its red half ▲, using the part that clears 3:1 on each surface (light 0.6–1); line `INDEX_LINE` |
+| AG-GDD-005 | Orange bars + orange line, markers in a 24-color stage palette (legacy); Tol sand/indigo + Tol stage colors (web/) | `GDD`: YlOrRd bars `#fc4e2a` + cumulative `#bd0026`; projection band = cumulative at 15%; with a stage table, bars, line, projection and stage lines take `gddStageColors` (batlow) by the stage reached; stage labels stay `--text-muted` |
 | AG-SOIL-004 | soil_temp `RdBu_r` mid 32; swp `BrBG_r`; others `BrBG` (legacy). Viridis / custom diverging (web/) | `HEATMAP`: soil_temp RdBu reversed, midpoint 32 °F; VWC YlGnBu; EC batlow; SWP BrBG reversed (wet teal → dry brown); percent saturation Blues. Frozen cells `FROZEN` grey (`#d9d9d9` light) + hatch |
 | AG-SWP-001 | Depth colors as LDP-011 | `depthColor()` (cm ÷ 2.54) |
 | AG-SWP-002 | FC/WP bands `rgba(128,128,128,0.2)` (legacy), `rgba(150,150,150,0.18)` + `#444` dashed lines (web/) | `SWP_BANDS`: `--text-dim` at 12% + dashed `--text-dim` lines, labelled "Field Capacity" / "Wilting Point" |

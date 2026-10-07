@@ -1,6 +1,8 @@
-// Low/high threshold pair (GDD base and cap, °F): two native range inputs, the
-// high one with an optional "none" stop meaning no upper cutoff. Emits
-// {low, high|null} on change; snapping and ordering in rangeModel.ts.
+// Low/high threshold pair (GDD base and cap, °F): one track with two thumbs,
+// built from two native range inputs laid over each other (each keeps its own
+// label, keys and screen-reader value). The high thumb has an optional "none"
+// stop meaning no upper cutoff. Emits {low, high|null} on change; snapping and
+// ordering in rangeModel.ts.
 //
 // Markup (register with Alpine.data('rangeSlider', rangeSlider)):
 //
@@ -8,16 +10,16 @@
 //             step: 1, allowNone: true, unit: '°F', value: () => …,
 //             onChange: (v) => …, label: 'GDD thresholds' })">
 //     <legend class="ctl-legend" x-text="label"></legend>
-//     <div class="ctl-range-row">
-//       <label class="ctl-label" :for="ids.low" x-text="lowLabel"></label>
-//       <span class="ctl-range-value" aria-hidden="true" x-text="lowText()"></span>
-//       <input type="range" :id="ids.low" :min="cfg.min" :max="cfg.max" :step="cfg.step"
-//              :value="draft.low" :aria-valuetext="lowText()"
-//              @input="onLow($event)" @change="commit()">
+//     <div class="ctl-range-values">
+//       <label class="ctl-label" :for="ids.low"><span x-text="lowLabel"></span>
+//         <span class="ctl-range-value" aria-hidden="true" x-text="lowText()"></span></label>
+//       <label class="ctl-label" :for="ids.high"><span x-text="highLabel"></span>
+//         <span class="ctl-range-value" aria-hidden="true" x-text="highText()"></span></label>
 //     </div>
-//     <div class="ctl-range-row">
-//       <label class="ctl-label" :for="ids.high" x-text="highLabel"></label>
-//       <span class="ctl-range-value" aria-hidden="true" x-text="highText()"></span>
+//     <div class="ctl-range-track" :style="fill()">
+//       <input type="range" :id="ids.low" :class="{ 'is-top': lowOnTop() }" :min="cfg.min"
+//              :max="highMax()" :step="cfg.step" :value="draft.low" :aria-valuetext="lowText()"
+//              @input="onLow($event)" @change="commit()">
 //       <input type="range" :id="ids.high" :min="cfg.min" :max="highMax()" :step="cfg.step"
 //              :value="highPosition()" :aria-valuetext="highText()"
 //              @input="onHigh($event)" @change="commit()">
@@ -79,6 +81,15 @@ export function rangeSlider(opts: RangeSliderOptions) {
     },
     highPosition(): number {
       return highToSlider(this.draft.high, cfg)
+    },
+    /** The filled stretch between the thumbs, as track percentages (controls.css `.ctl-range-track`). */
+    fill(): string {
+      const pct = (v: number) => ((v - cfg.min) / (highSliderMax(cfg) - cfg.min)) * 100
+      return `--lo: ${pct(this.draft.low)}%; --hi: ${pct(this.highPosition())}%`
+    },
+    /** Past the middle the low thumb sits on top, so two touching thumbs can always be pulled apart. */
+    lowOnTop(): boolean {
+      return this.draft.low > (cfg.min + highSliderMax(cfg)) / 2
     },
     lowText(): string {
       return valueText(this.draft.low, opts.unit)

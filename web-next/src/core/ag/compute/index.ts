@@ -25,7 +25,7 @@ export {
   heatIndexUnmaskedF,
 } from './feelsLike'
 export type { FeelsLikeValue } from './feelsLike'
-export { cciDaily, cciHourly, cciValueC, classifyCciC, classifyCciF } from './cci'
+export { CCI_HEAT_ONSET_F, cciColdOnsetF, cciDaily, cciHourly, cciSide, cciValueC, classifyCciC, classifyCciF } from './cci'
 export { swp, percentSaturation, frozenMask, applyFrozenMask, fxInverse } from './soil'
 export type { FrozenMask, DepthSeriesAxis } from './soil'
 export {

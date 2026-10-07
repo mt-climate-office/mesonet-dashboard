@@ -335,9 +335,9 @@ and the stage reached).
   16 px to clear it), so they never add a row (`partials/ag/status.html`; the button names the count,
   "Notes about this chart (2)").
 - **Legends** (`core/charts/agLegend.ts`): a plain legend that wraps onto more rows (the plot rises to make
-  room), never a pager. Sentence-case names ("No stress", "Wind chill"; titles "Index used", "Livestock risk
-  (adult)"); on compact screens short names (GDD: Daily · Cumulative · Range · Forecast · Normals; Feels like:
-  Air temperature; Reference ET: Cumulative) and no title. Series keep their names (fidelity matches them).
+  room), never a pager. Sentence-case names ("No stress", "Mild (cold)", "Wind chill (feels colder)"; title
+  "Livestock risk (adult)"); on compact screens short names (GDD: Daily · Cumulative · Range · Forecast ·
+  Normals; Reference ET: Cumulative) and no title. Series keep their names (fidelity matches them).
 - **GDD stage lines:** labelled in a gutter right of the plot (the cumulative axis moves past it), never on
   the bars; where the longest label would take over a quarter of the chart (phones, tablets) the lines go
   unlabelled and the tooltip, table and stats card name the stage (`stageGutter`).
