@@ -213,3 +213,13 @@ falls short.
   `<template x-for>` cannot live inside `<svg>`; draw repeated shapes as one path (`sparkline` bars).
 - **`.mco-panel` legend in a narrow drawer:** `MCO.initCollapsible({ startCollapsed: true })` already
   covers it (the map legend now takes `legendCollapsed`); no kit change.
+
+## Carousel (`dash-carousel`, proposed `.mco-carousel`)
+Now's photos: full-width slides on a scroll-snap track (a touch swipe is native scrolling), ‹ › buttons
+and decorative dots, `role="group"` + `aria-roledescription` on the carousel and each slide.
+`ui/layout/carousel.{ts,css}`: `initCarousel({ track, onIndex })` → `go(i)`, reduced-motion aware.
+
+## Keyboard inset (`--kb-inset`, `--vv-h`, `.kb-open`)
+iOS Safari covers bottom-anchored panels with the on-screen keyboard. `ui/layout/keyboard.ts` publishes
+the keyboard's height from `visualViewport`; sheets and phone popovers sit at
+`max(var(--tabbar-h), var(--kb-inset))`. A kit sheet would want the same.

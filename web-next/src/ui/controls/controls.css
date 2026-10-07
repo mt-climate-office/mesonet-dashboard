@@ -24,6 +24,11 @@
   color-scheme: dark;
 }
 [data-theme="light"] .ctl-input { color-scheme: light; }
+/* iOS Safari draws a date field natively, at an intrinsic width that ignores width: 100% and
+   min-width: 0, so it ran past its column (the photo dialog's Day). Without the native appearance it
+   sizes and looks like the other fields; tapping still opens the system date picker. */
+.ctl-input[type="date"] { -webkit-appearance: none; appearance: none; display: block; min-width: 0; max-width: 100%; text-align: left; }
+.ctl-input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
 .ctl-input::placeholder { color: var(--text-muted); opacity: 1; }
 .ctl-input:hover { border-color: var(--accent-line); }
 .ctl-input:disabled { opacity: 0.5; cursor: not-allowed; }

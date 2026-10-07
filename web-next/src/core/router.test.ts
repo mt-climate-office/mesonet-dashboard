@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AG_TOOLS_ANCHOR, DEFAULT_SECTION, SECTIONS, historyMode, legacyRedirect, parseSection, sectionForHash, sectionLabel, sectionNavPatch } from './router'
+import { AG_TOOLS_ANCHOR, DEFAULT_SECTION, SECTIONS, historyMode, legacyRedirect, nextBackTo, parseSection, readBackTo, sectionForHash, sectionLabel, sectionNavPatch } from './router'
 import { migrateLegacySearch, readUrlState } from './url-schema'
 
 /** The full boot rewrite, as main.ts runs it: key renames under the old hash, then the redirect. */
@@ -134,5 +134,22 @@ describe('sectionNavPatch', () => {
     expect(sectionNavPatch('charts', 'about', { v: null, cmp: true }).patch).toMatchObject({ cmp: false })
     expect(sectionNavPatch('now', 'charts', list)).toEqual({ patch: {}, drillDown: false })
     expect(sectionNavPatch('now', 'about', page)).toEqual({ patch: {}, drillDown: false })
+  })
+})
+
+describe('back target (a chart opened from Now returns there)', () => {
+  const now = { section: 'now' as const, depth: 1 }
+  it('a link from Now starts it; drill-downs in Charts carry it one deeper; the list or a section change drops it', () => {
+    expect(nextBackTo({ current: null, from: 'now', sameSection: false, drillDown: false, toList: false })).toEqual(now)
+    expect(nextBackTo({ current: now, sameSection: true, drillDown: true, toList: false })).toEqual({ section: 'now', depth: 2 })
+    expect(nextBackTo({ current: now, sameSection: true, drillDown: true, toList: true })).toBeNull()
+    expect(nextBackTo({ current: now, sameSection: false, drillDown: false, toList: false })).toBeNull()
+    expect(nextBackTo({ current: null, sameSection: true, drillDown: true, toList: false })).toBeNull()
+  })
+  it('reads only a well-formed history.state', () => {
+    expect(readBackTo({ backTo: { section: 'now', depth: 2 } })).toEqual({ section: 'now', depth: 2 })
+    expect(readBackTo(null)).toBeNull()
+    expect(readBackTo({ backTo: { section: 'nowhere', depth: 1 } })).toBeNull()
+    expect(readBackTo({ backTo: { section: 'now', depth: 0 } })).toBeNull()
   })
 })

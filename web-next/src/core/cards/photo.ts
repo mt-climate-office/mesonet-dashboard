@@ -113,6 +113,17 @@ export function photoPick(i: PhotoPickInput): PhotoPick {
   return { tokens, labels, direction, label, frames, active, stamp, alt: `${i.station} ${label} camera ${stamp}`.trim() }
 }
 
+/**
+ * Now's photo carousel: the newest frame of every direction that has one, the default direction
+ * (photoPick's: N, else the first) first, then the rest in canonical order. `direction` and
+ * `slotUtcMs` in the input are ignored.
+ */
+export function photoSlides(i: PhotoPickInput): PhotoPick[] {
+  const first = photoPick({ ...i, direction: null, slotUtcMs: null })
+  const order = [first.direction, ...first.tokens.filter((t) => t !== first.direction)]
+  return order.map((t) => (t === first.direction ? first : photoPick({ ...i, direction: t, slotUtcMs: null }))).filter((p) => p.active)
+}
+
 /** Time-select options for a direction's frames: value = slot ms, label = local time. */
 export const photoTimeOptions = (frames: readonly PhotoFrame[]): { value: string; label: string }[] =>
   frames.map((f) => ({ value: String(f.slotUtcMs), label: formatLocal(f.slotUtcMs) }))

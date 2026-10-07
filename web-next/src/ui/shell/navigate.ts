@@ -23,6 +23,8 @@ export interface NavigateOptions {
   morph?: HTMLElement | null
   /** Add a history entry inside the section (an Ag tool, a Charts variable or sub-view). */
   drillDown?: boolean
+  /** The section this link was followed from, so the new page's back arrow returns there (a Now tile → its chart). */
+  from?: Section
   /**
    * Id of the element that takes focus (it needs `tabindex="-1"` unless it is
    * focusable), so focus never falls to <body> when the clicked link unmounts.
@@ -41,7 +43,7 @@ export async function navigate(section: Section, opts: NavigateOptions = {}): Pr
   const from = url.section
   await withTransition(
     async () => {
-      url.go(section, opts.patch, opts.drillDown)
+      url.go(section, opts.patch, opts.drillDown, opts.from)
       await Alpine.nextTick()
     },
     { direction: order(section) < order(from) ? 'back' : 'forward', morph: opts.morph },
@@ -92,4 +94,17 @@ export function follow(e: MouseEvent, section: Section, opts: NavigateOptions = 
 export function stepChart(near: { prev: Variable | null; next: Variable | null }, dir: -1 | 1): void {
   const to = dir < 0 ? near.prev : near.next
   if (to) void navigate('charts', { patch: chartPatch(to.id), drillDown: true, target: chartHeading(to.id) })
+}
+
+/**
+ * A chart page's back arrow: back through history to where the chart was opened from (Now, at its
+ * scroll position) when the entry says so (`$store.url.backTo`), else the Charts list (pushed).
+ * Focus lands on `<main>` after a history step (the arrow unmounts).
+ */
+export function backFromChart(e: MouseEvent, toList: () => void): void {
+  const back = Alpine.store('url').backTo
+  if (!back || !plainClick(e)) return toList()
+  e.preventDefault()
+  window.addEventListener('popstate', () => void Alpine.nextTick(() => document.getElementById('main')?.focus({ preventScroll: true })), { once: true })
+  history.go(-back.depth)
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { framesFromListing, parseSchedule, type PhotoFrame, type RawSchedule } from '../photos'
-import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoLabel, photoMessage, photoMinDay, photoPick, photoState, photoTimeOptions } from './photo'
+import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoLabel, photoMessage, photoMinDay, photoPick, photoSlides, photoState, photoTimeOptions } from './photo'
 
 const B = 'https://data2.climate.umt.edu/mesonet/'
 const RAW: RawSchedule = {
@@ -45,6 +45,19 @@ describe('photoDay / isRecentDay / photoMinDay', () => {
     expect(photoMinDay(cam)).toBe('2017-01-01')
     expect(noCameraImages(cam)).toBe(false)
     expect(noCameraImages(undefined)).toBe(true)
+  })
+})
+
+describe('photoSlides', () => {
+  const base = { station: 'acebozem', cam, day: '2026-10-01', recent: true, frames, direction: 'E', slotUtcMs: 1 }
+  it('the newest frame of each direction, the default (N) first; picks ignored', () => {
+    const s = photoSlides(base)
+    expect(s.map((p) => p.direction)).toEqual(['N', 'E'])
+    expect(s.map((p) => p.active?.slotUtcMs)).toEqual([Date.UTC(2026, 9, 1, 21), Date.UTC(2026, 9, 1, 15)])
+  })
+  it('directions without a frame that day are left out; no frames, no slides', () => {
+    expect(photoSlides({ ...base, frames: frames.filter((f) => f.token === 'E') }).map((p) => p.direction)).toEqual(['E'])
+    expect(photoSlides({ ...base, frames: [] })).toEqual([])
   })
 })
 

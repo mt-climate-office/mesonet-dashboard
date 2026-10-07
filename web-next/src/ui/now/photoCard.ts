@@ -1,21 +1,24 @@
 /**
- * `x-data="photoCard"`: Now's photo from the data2 archive only (core/photos, view model core/cards/photo).
- * The tile always shows the newest frame of the default direction; it opens a kit dialog with direction,
- * day and time pickers over the webp_large frames and "Download original". Closing the dialog drops the picks.
+ * `x-data="photoCard"`: Now's photos from the data2 archive only (core/photos, view model core/cards/photo).
+ * The tile is a carousel of the newest frame of each direction (core/cards `photoSlides`; swipe, ‹ › or the
+ * dots, ui/layout/carousel); a slide opens a kit dialog on that direction, with direction, day and time
+ * pickers over the webp_large frames and "Download original". Closing the dialog drops the picks.
  */
 import Alpine from 'alpinejs'
-import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoMessage, photoMinDay, photoPick, photoState, photoTimeOptions, type PhotoPick, type PhotoStateInput } from '../../core/cards'
+import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoMessage, photoMinDay, photoPick, photoSlides, photoState, photoTimeOptions, type PhotoPick, type PhotoStateInput } from '../../core/cards'
 import { denverToday } from '../../core/today'
 import { basename, framesFor, type PhotoFrame, type StationCamera } from '../../core/photos'
 import type { SegmentedOption } from '../controls/segmented'
 import type { SelectOption } from '../controls/timeSelect'
 import { component } from '../component'
+import { initCarousel, type Carousel } from '../layout/carousel'
 import { confirmedDay, latestFrames, monthFrames, photoSchedule } from '../station/resources'
 
 type Source = { status: 'loading' | 'success' | 'error'; data: PhotoFrame[] | undefined }
 
 export function photoCard() {
   let modal: { open(): void } | null = null
+  let carousel: Carousel | null = null
   // The dialog's WebP, fetched as a blob while it is shown (see download()).
   let blob: { url: string; data: Blob | null } | null = null
   return component({
@@ -24,6 +27,8 @@ export function photoCard() {
     picked: null as string | null,
     direction: null as string | null,
     slot: null as number | null,
+    /** The carousel slide in view. */
+    slideIndex: 0,
 
     init() {
       // Picks belong to one station.
@@ -86,6 +91,26 @@ export function photoCard() {
       if (!cam || !this.station) return null
       const recent = isRecentDay(this.day, this.today)
       return photoPick({ station: this.station, cam, day: this.day, recent, frames: this.source?.data, direction: this.direction, slotUtcMs: this.slot })
+    },
+
+    /** The carousel: the newest frame of each direction, the default first. */
+    get slides(): PhotoPick[] {
+      const cam = this.cam
+      if (!cam || !this.station) return []
+      const day = photoDay(null, this.latest?.data, this.today)
+      return photoSlides({ station: this.station, cam, day, recent: isRecentDay(day, this.today), frames: this.latest?.data, direction: null, slotUtcMs: null })
+    },
+    /** `x-init` on the carousel track (it mounts once the photos are ready). */
+    mountCarousel(track: HTMLElement): void {
+      carousel?.destroy()
+      carousel = initCarousel({ track, onIndex: (i) => (this.slideIndex = i) })
+    },
+    step(dir: -1 | 1): void {
+      carousel?.go(this.slideIndex + dir)
+    },
+    destroy() {
+      carousel?.destroy()
+      carousel = null
     },
 
     tileView(): PhotoStateInput {
@@ -151,9 +176,11 @@ export function photoCard() {
       this.picked = this.direction = null
       this.slot = null
     },
-    enlarge(): void {
+    /** Open the dialog on `direction` (a carousel slide), else the default. */
+    enlarge(direction?: string): void {
       // Wired on first use: x-ref children are not registered yet during init().
       modal ??= MCO.initInfoModal({ dialog: this.$refs.dialog as HTMLDialogElement })
+      this.direction = direction ?? null
       this.open = true
       modal.open()
     },
