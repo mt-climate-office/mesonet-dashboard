@@ -1,0 +1,29 @@
+/* Carousel (ui/layout/carousel.ts; kit candidate .mco-carousel, KIT-NOTES.md): full-width slides on a
+   snapping horizontal track (a swipe is native scrolling), ‹ › buttons over the edges and dots
+   at the top centre (clear of captions). Kit tokens only. */
+.dash-carousel { position: relative; flex: 1; display: flex; min-width: 0; }
+.dash-carousel-track {
+  flex: 1; display: flex; margin: 0; padding: 0;
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.dash-carousel-track::-webkit-scrollbar { display: none; }
+.dash-carousel-slide { flex: 0 0 100%; display: flex; scroll-snap-align: start; scroll-snap-stop: always; }
+.dash-carousel-btn {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 1;
+  display: grid; place-items: center; width: 36px; height: 36px; padding: 0;
+  border: 0; border-radius: 50%; background: var(--glass); color: var(--text-primary); cursor: pointer;
+}
+.dash-carousel-btn svg { stroke: currentColor; }
+.dash-carousel-btn[disabled] { opacity: 0; pointer-events: none; }
+.dash-carousel-prev { left: 0.5rem; }
+.dash-carousel-next { right: 0.5rem; }
+/* Touch: the swipe is the gesture; the buttons stay (keyboard and screen-reader twins) at 40 px. */
+@media (hover: none) { .dash-carousel-btn { width: 40px; height: 40px; } }
+.dash-carousel-dots {
+  position: absolute; left: 50%; top: 0.625rem; transform: translateX(-50%);
+  display: flex; gap: 0.375rem; padding: 0.3rem 0.5rem; border-radius: 999px; background: var(--glass);
+  pointer-events: none;
+}
+.dash-carousel-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
+.dash-carousel-dots span[data-on] { background: var(--text-primary); }

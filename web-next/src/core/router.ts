@@ -67,6 +67,30 @@ export function historyMode(from: Section, to: Section, drillDown = false): 'pus
   return from === to && !drillDown ? 'replace' : 'push'
 }
 
+/** Where a chart page's back arrow returns: `section`, `depth` history entries back. */
+export interface BackTo {
+  section: Section
+  depth: number
+}
+
+/**
+ * The back target for a new history entry (null: the arrow goes to the Charts list): `from` when a
+ * link names where it was opened from (a Now tile); carried one entry deeper through drill-downs in
+ * the same section (a table view, Previous / Next); dropped on reaching the list or anything else.
+ */
+export function nextBackTo(o: { current: BackTo | null; from?: Section; sameSection: boolean; drillDown: boolean; toList: boolean }): BackTo | null {
+  if (o.toList) return null
+  if (o.from) return { section: o.from, depth: 1 }
+  return o.current && o.sameSection && o.drillDown ? { section: o.current.section, depth: o.current.depth + 1 } : null
+}
+
+/** The back target kept in `history.state` (anything malformed is null). */
+export function readBackTo(state: unknown): BackTo | null {
+  const b = (state as { backTo?: { section?: unknown; depth?: unknown } } | null)?.backTo
+  if (!b || !SECTIONS.some((s) => s.id === b.section) || !Number.isInteger(b.depth) || (b.depth as number) < 1) return null
+  return { section: b.section as Section, depth: b.depth as number }
+}
+
 /** Keys that only the old Latest tab read; a hash-less link carrying one meant Latest. */
 const LATEST_KEYS = ['from', 'to', 'agg', 'vars', 'gridmet'] as const
 

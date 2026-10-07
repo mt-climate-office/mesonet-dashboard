@@ -136,7 +136,7 @@ export function nowView() {
     },
     /** A tile: push its variable page; the tile morphs into the page heading, which takes focus. */
     open(e: MouseEvent, v: string): void {
-      follow(e, 'charts', { patch: { v, view: 'recent', cmp: false }, morph: e.currentTarget as HTMLElement, target: 'var-title' })
+      follow(e, 'charts', { patch: { v, view: 'recent', cmp: false }, morph: e.currentTarget as HTMLElement, target: 'var-title', from: 'now' })
     },
     /** A row to About, through the same pushState + transition as the section nav; `target` takes focus. */
     toAbout(e: MouseEvent, target?: string): void {

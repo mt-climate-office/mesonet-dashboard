@@ -360,6 +360,16 @@ layout parts of older entries below; data behaviour is unchanged.
   gone; the background is history (no siting plans), with the live station count from the catalog.
 - **Why:** user request (2026-10-07): the copy was out of date, and the MCO is no longer siting stations.
 
+### Now: a photo carousel; Back from a chart returns to Now
+- **Before:** Now's photo card showed only the default direction's newest frame; opening a chart from a
+  Now tile and pressing the chart's back arrow went to the Charts list.
+- **New:** the photo card is a carousel of each direction's newest frame (default first; swipe, ‹ ›,
+  dots; `core/cards` `photoSlides`, `ui/layout/carousel`), and a slide opens the photo dialog on that
+  direction. A chart opened from a Now tile says "Back to Now", and its back arrow returns there through
+  history (Now at its scroll position), also after a table view or Previous / Next (`$store.url.backTo`,
+  core/router `nextBackTo`). Opened any other way, it still goes to the list.
+- **Why:** user requests (2026-10-07).
+
 ### About replaces the metadata and current-conditions cards
 - **Legacy / web/:** Station Metadata and Current Conditions were bottom-card tabs beside the locator map.
 - **New:** the About section (DESIGN.md "About"): station details with readable labels and formats (Network,

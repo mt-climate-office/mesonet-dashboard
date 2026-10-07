@@ -6,10 +6,13 @@
 .dash-toggletip { display: inline-flex; }
 
 /* kit-override: .mco-btn-info is a 34 px navbar button; inline next to text it is 24 px.
-   Touch keeps the kit's 40 px target (HOUSE-STYLE §5). */
+   Touch keeps the kit's 40 px target (HOUSE-STYLE §5). The kit draws the circle; the button holds
+   only the letter (an icon with its own circle inside drew two rings and a tiny "i"). */
 @media (hover: hover) {
-  .dash-toggletip-btn.mco-btn-info { width: 1.5rem; height: 1.5rem; font-size: var(--fs-xs); }
+  .dash-toggletip-btn.mco-btn-info { width: 1.5rem; height: 1.5rem; }
 }
+.dash-info-i { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 700; font-size: 0.95rem; line-height: 1; }
+@media (hover: none) { .dash-info-i { font-size: 1.15rem; } }
 
 .dash-toggletip-tip {
   position: absolute; inset-inline-start: 0; top: calc(100% + 0.375rem); z-index: var(--z-flyout);

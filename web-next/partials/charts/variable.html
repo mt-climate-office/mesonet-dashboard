@@ -10,13 +10,13 @@
   </template>
   <template x-if="state === 'error'">
     <div>
-      <a class="dash-link var-back" :href="listHref()" @click="toList($event)">‹ All variables</a>
+      <a class="dash-link var-back" :href="listHref()" @click="toList($event)" x-text="'‹ ' + backLabel('All variables')">‹ All variables</a>
       <div class="dash-card"><!-- @include partials/load-error.html --></div>
     </div>
   </template>
   <template x-if="state === 'unknown'">
     <div>
-      <a class="dash-link var-back" :href="listHref()" @click="toList($event)">‹ All variables</a>
+      <a class="dash-link var-back" :href="listHref()" @click="toList($event)" x-text="'‹ ' + backLabel('All variables')">‹ All variables</a>
       <div class="dash-card" role="status"><p>This station does not report that variable. Pick another from the list.</p></div>
     </div>
   </template>
@@ -25,7 +25,7 @@
   <template x-for="variable in (state === 'ready' ? [variable] : [])" :key="variable.id">
     <div class="chart-body">
       <div class="chart-head">
-        <a class="dash-icon-btn var-back" :href="listHref()" @click="toList($event)" aria-label="All variables" data-testid="var-back">
+        <a class="dash-icon-btn var-back" :href="listHref()" @click="toList($event)" :aria-label="backLabel('All variables')" data-testid="var-back">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
         </a>
         <h2 class="chart-title" id="var-title" tabindex="-1" data-vt-target x-text="title()" data-testid="variable-title"></h2>

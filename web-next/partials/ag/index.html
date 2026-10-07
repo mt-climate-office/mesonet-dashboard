@@ -6,7 +6,7 @@
      header's station picker. -->
 <div class="ag chart-page" x-data="agTab" data-testid="ag-tool">
   <div class="chart-head">
-    <a class="dash-icon-btn ag-back" :href="listHref()" @click="toList($event)" aria-label="All charts" data-testid="ag-back">
+    <a class="dash-icon-btn ag-back" :href="listHref()" @click="toList($event)" :aria-label="backLabel('All charts')" data-testid="ag-back">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
     </a>
     <h2 class="chart-title" id="ag-chart-title" tabindex="-1" data-vt-target x-text="title()"></h2>
@@ -28,7 +28,7 @@
           Share this chart
         </button>
         <a class="dash-menu-item" role="menuitem" :href="learnHref()" target="_blank" rel="noopener noreferrer" data-testid="ag-learn-more">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1.3" fill="currentColor" stroke="none"/></svg>
           About this tool<span class="sr-only"> (opens in a new tab)</span>
         </a>
         <template x-if="near.prev || near.next"><hr class="dash-menu-sep"></template>
