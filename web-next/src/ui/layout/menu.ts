@@ -36,6 +36,9 @@ export function initMenu(o: MenuOptions): Menu {
   button.setAttribute('aria-haspopup', 'menu')
   if (panel.id) button.setAttribute('aria-controls', panel.id)
   for (const el of panel.querySelectorAll<HTMLElement>(ITEM)) el.tabIndex = -1
+  // Safari never focuses a clicked button: focus goes to the nearest focusable ancestor instead,
+  // and without this that is <main>, so focusout closed the menu before the item's click landed.
+  if (!panel.hasAttribute('tabindex')) panel.tabIndex = -1
 
   const paint = () => {
     panel.hidden = !open
