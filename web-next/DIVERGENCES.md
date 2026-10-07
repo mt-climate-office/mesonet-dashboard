@@ -350,6 +350,15 @@ layout parts of older entries below; data behaviour is unchanged.
   web/'s names and leaves out web/'s grey "Average Temperature" markers and web-next's air temperature line
   (`scripts/fidelity/lib/compare.mjs`).
 
+### Help: current copy and contacts
+- **Legacy / web/:** Help described the five old sections, a `/dash/<station>` address, a James Seielstad
+  contact, the Mesonet Manager (Kevin Hyde) for station questions, and a 94-station network with 205
+  Army Corps stations still to be installed.
+- **New:** Help (`partials/help.html`) describes Now · Charts · About, the chart ⋯ menu and this app's own
+  `?s=` address; the dashboard contact is kyle.bocinsky@umontana.edu; the Mesonet Manager sentence is
+  gone; the background is history (no siting plans), with the live station count from the catalog.
+- **Why:** user request (2026-10-07): the copy was out of date, and the MCO is no longer siting stations.
+
 ### About replaces the metadata and current-conditions cards
 - **Legacy / web/:** Station Metadata and Current Conditions were bottom-card tabs beside the locator map.
 - **New:** the About section (DESIGN.md "About"): station details with readable labels and formats (Network,
