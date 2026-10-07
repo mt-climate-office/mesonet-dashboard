@@ -50,6 +50,7 @@ import { popover } from './ui/shell/popover'
 import { sections } from './ui/shell/sections'
 import { sheet } from './ui/shell/sheet'
 import { stationHeader } from './ui/shell/stationHeader'
+import { initKeyboardInset } from './ui/layout/keyboard'
 import './styles/app.css'
 import './ui/layout/type.css'
 import './ui/layout/shell.css'
@@ -189,6 +190,9 @@ Alpine.data('agSoilView', agSoilView)
 Alpine.data('agAnnualView', agAnnualView)
 
 Alpine.start()
+
+// Bottom sheets and docked popovers stay above an on-screen keyboard (iOS Safari covers them otherwise).
+initKeyboardInset()
 
 // Page counts (GoatCounter; skipped off production and under DNT/GPC).
 startAnalytics()

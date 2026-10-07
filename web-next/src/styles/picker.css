@@ -73,6 +73,9 @@
 .dash-sheet.search-open .picker-search { flex: 1 1 auto; min-height: 0; }
 .dash-sheet.search-open .ctl-combobox-popup { position: static; flex: 1 1 auto; min-height: 0; max-height: none; }
 
+/* Keyboard open (typing a search): the results fill what is visible under the header. */
+.kb-open .dash-sheet.search-open[data-state="full"] { height: calc(var(--vv-h, 100dvh) - var(--chrome-h, 52px) - 0.5rem); }
+
 /* Montana is wide: a 4:3 frame in the drawer (map.css keeps it ≥ 240 px tall). */
 .picker-map { aspect-ratio: 4 / 3; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
 

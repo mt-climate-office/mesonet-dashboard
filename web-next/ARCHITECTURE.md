@@ -263,7 +263,10 @@ x-if="isOpen">`; add its `<!-- @include partials/sheets/<id>.html -->` beside
 the others at the end of `partials/shell.html`. Open it with
 `openSheet('<id>', opener)` and close it with `closeSheet('<id>')`
 (`ui/shell/sheet.ts`). Pass `urlKey` (a boolean schema key, like `dl`) only
-if the URL should hold the open state.
+if the URL should hold the open state. Anything anchored to the bottom of the screen (sheets, phone
+popovers) sits above an on-screen keyboard: `bottom: max(var(--tabbar-h, 0px), var(--kb-inset, 0px))`
+and, under `.kb-open`, a max height from `--vv-h` (`ui/layout/keyboard.ts` publishes both; iOS Safari
+otherwise covers the panel).
 
 **Add a Now tile.** (1) In `core/overview/tiles.ts`, a `TILES` entry (its id, the Charts `v=` id it
 opens, a `SeriesKey` for the 48 h sparkline) and its line in `reportedTiles` (when the station reports

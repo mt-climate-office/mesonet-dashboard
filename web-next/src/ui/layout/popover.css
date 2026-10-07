@@ -21,9 +21,11 @@
 @media (max-width: 640px), (max-height: 560px) {
   .dash-popover { position: static; }
   .dash-popover-panel {
-    position: fixed; top: auto; left: 0; right: 0; bottom: var(--tabbar-h, 0px);
+    /* Above the tab bar, or above an on-screen keyboard when one is open (ui/layout/keyboard.ts). */
+    position: fixed; top: auto; left: 0; right: 0; bottom: max(var(--tabbar-h, 0px), var(--kb-inset, 0px));
     width: auto; min-width: 0; max-width: none; max-height: 70dvh; overflow-y: auto;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   }
+  .kb-open .dash-popover-panel { max-height: calc(var(--vv-h, 100dvh) - var(--chrome-h, 52px) - 0.5rem); padding-bottom: 1rem; }
 }

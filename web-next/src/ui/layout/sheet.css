@@ -8,7 +8,8 @@
 .dash-sheet {
   --sheet-ease: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   position: fixed; z-index: var(--z-detail);
-  left: 0; right: 0; bottom: var(--tabbar-h, 0px);
+  /* Above the tab bar, or above an on-screen keyboard when one is open (ui/layout/keyboard.ts). */
+  left: 0; right: 0; bottom: max(var(--tabbar-h, 0px), var(--kb-inset, 0px));
   display: flex; flex-direction: column;
   max-height: min(64dvh, 34rem);
   background: var(--bg-surface);
@@ -22,6 +23,8 @@
 }
 .dash-sheet[hidden] { display: none; }
 .dash-sheet[data-state="full"] { max-height: calc(100dvh - var(--chrome-h, 52px) - var(--tabbar-h, 0px) - 0.5rem); }
+/* Keyboard open: only the visible area (--vv-h) under the header is left. */
+.kb-open .dash-sheet { max-height: calc(var(--vv-h, 100dvh) - var(--chrome-h, 52px) - 0.5rem); }
 .dash-sheet.enter, .dash-sheet.leaving { transform: translateY(calc(100% + var(--tabbar-h, 0px))); }
 .dash-sheet.no-anim { transition: none; }
 
@@ -44,9 +47,12 @@
    (#<sheet id>-scrim) sits on the navbar's tier, later in the DOM, so it covers the bars. */
 .dash-sheet--modal {
   z-index: var(--z-flyout); /* kit-override: a modal surface above the chrome tiers */
-  bottom: 0;
+  bottom: var(--kb-inset, 0px);
   padding-bottom: env(safe-area-inset-bottom);
 }
+/* Keyboard open: the sheet covers the chrome, so it may use the whole visible height; the keyboard
+   hides the home indicator, so no safe-area padding. */
+.kb-open .dash-sheet--modal { max-height: calc(var(--vv-h, 100dvh) - 1rem); padding-bottom: 0; }
 .dash-sheet--modal[data-state="full"] { max-height: calc(100dvh - 1rem); }
 /* The title takes focus on open (no ring: styles/app.css): it hugs its text, the × stays right. */
 .dash-sheet--modal .dash-panel-title { flex: 0 1 auto; margin-right: auto; }
