@@ -3,14 +3,17 @@
  * over the visible window, or the total for summed variables (precipitation,
  * reference ET). Input is one core/models/timeseries panel (display units).
  * With a daily low–high band (band.ts), Low and High are the true extremes
- * from the band, not the extremes of the daily means.
+ * from the band, not the extremes of the daily means. Wind direction has one
+ * stat, its prevailing direction (a vector mean, core/variables/direction):
+ * the low, high and plain average of bearings mean nothing.
  */
 import type { TimeseriesPanel } from '../models/timeseries'
-import { LABELS, formatReading } from './labels'
+import { PREVAILING_MIN_STRENGTH, WIND_DIRECTION, circularMean } from './direction'
+import { LABELS, compassWord, formatReading } from './labels'
 
 export interface StatItem {
-  label: 'Low' | 'High' | 'Average' | 'Total'
-  /** Formatted with the unit ("41.2 °F"), or "—" with no values. */
+  label: 'Low' | 'High' | 'Average' | 'Total' | 'Prevailing'
+  /** Formatted with the unit ("41.2 °F"), or "—" with no values; Prevailing is "SE (135°)" or "Variable". */
   value: string
 }
 
@@ -50,6 +53,7 @@ export function panelStats(panel: TimeseriesPanel, x: readonly number[], view: r
     const fmt = (v: number | null) => (v === null ? '—' : plain ? formatReading(id, v, 'table') : `${fmtStat(v)}${unit ? ` ${unit}` : ''}`)
     const label = single ? '' : (s.depth ?? s.name.replace(/\s*\[[^\]]*\]\s*$/, ''))
     if (sum) return { label, items: [{ label: 'Total', value: fmt(vals.length ? vals.reduce((a, b) => a + b, 0) : null) }] }
+    if (panel.variable === WIND_DIRECTION) return { label, items: [{ label: 'Prevailing', value: prevailing(vals) }] }
     // A reduce, not Math.min(...vals): a long raw window would overflow the argument list.
     const lows = s.band ? within(s.band.lo) : vals
     const highs = s.band ? within(s.band.hi) : vals
@@ -65,4 +69,11 @@ export function panelStats(panel: TimeseriesPanel, x: readonly number[], view: r
       ],
     }
   })
+}
+
+/** "SE (135°)" for the vector mean of `degs`; "Variable" when no direction prevails; "—" without values. */
+export function prevailing(degs: readonly number[]): string {
+  const m = circularMean(degs)
+  if (!m) return '—'
+  return m.strength < PREVAILING_MIN_STRENGTH ? 'Variable' : `${compassWord(m.deg)} (${Math.round(m.deg) % 360}°)`
 }

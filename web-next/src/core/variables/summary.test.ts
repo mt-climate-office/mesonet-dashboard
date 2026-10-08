@@ -66,9 +66,27 @@ describe('variableRows', () => {
     expect(byId.air_temp.spark?.kind).toBe('line')
     expect(byId.air_temp.sparkLabel).toBe('Last 48 hours: from 40 °F to 63 °F.')
   })
-  it('Rain draws no sparkline when the 48 h are dry (as the Now Rain tile)', () => {
+  it('a dry 48 h still draws Rain: its zero baseline, not an empty cell', () => {
     const dry = HOURLY.map((r) => ({ ...r, 'Precipitation [in]': 0 }))
-    expect(variableRows(VARS, LATEST, dry).find((r) => r.id === 'ppt')).toMatchObject({ value: '0.00 in', spark: null, sparkLabel: '' })
+    const row = variableRows(VARS, LATEST, dry).find((r) => r.id === 'ppt')!
+    expect(row).toMatchObject({ value: '0.00 in', sparkLabel: 'Last 48 hours: 0.00 in in total.' })
+    expect(row.spark?.bars).toEqual([])
+  })
+  it('scales a zero-based or fixed variable as its chart axis, so sensor noise stays small', () => {
+    const els = [{ element: 'snow_depth', description_short: 'Snow Depth' }, { element: 'rh', description_short: 'Relative Humidity' }]
+    const rows = HOURLY.map((r, i) => ({ ...r, 'Snow Depth [in]': i % 2 ? 0.1 : 0, 'Relative Humidity [%]': 40 + (i % 2) * 20 }))
+    const byVar = Object.fromEntries(variableRows(stationVariables(els), undefined, rows).map((r) => [r.id, r]))
+    expect([byVar.snow_depth.spark?.min, byVar.snow_depth.spark?.max]).toEqual([0, 1])
+    expect([byVar.rh.spark?.min, byVar.rh.spark?.max]).toEqual([0, 100])
+    expect([byId.air_temp.spark?.min, byId.air_temp.spark?.max]).toEqual([40, 63])
+  })
+  it('wind direction: the line breaks at north and the sentence names the prevailing direction', () => {
+    const els = [{ element: 'wind_dir_1000', description_short: 'Wind Direction @ 10 m' }]
+    const rows = HOURLY.map((r, i) => ({ ...r, 'Wind Direction [deg]': i % 2 ? 350 : 10 }))
+    const [row] = variableRows(stationVariables(els), undefined, rows)
+    expect(row.value).toBe('N')
+    expect(row.spark?.d.match(/M/g)?.length).toBe(48)
+    expect(row.sparkLabel).toBe('Last 48 hours: mostly N (0°).')
   })
   it('shows "—" and no sparkline without values, and works before the hourly rows load', () => {
     expect(byId.bp).toMatchObject({ value: '—', spark: null, sparkLabel: '' })
