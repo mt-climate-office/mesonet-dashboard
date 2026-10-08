@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { FROZEN, HEATMAP } from '../palette'
 import { colorBar, frozenSeries } from './heatmap'
+import { hatchDecal } from './overlays'
 import { testCtx } from './testing'
 
 describe('heatmap', () => {
@@ -17,7 +18,16 @@ describe('heatmap', () => {
     const cb = colorBar(ctx, HEATMAP.soil_vwc, [5, 5], { title: 'V', fmt: String, seriesIndex: 0 })
     expect(cb.visualMap).toMatchObject({ min: 4.5, max: 5.5 })
   })
+  it('vertical bar: the title sits above the plot, below the card’s ⓘ button', () => {
+    const cb = colorBar(ctx, HEATMAP.soil_vwc, [1, 35], { title: 'Soil moisture (%)', fmt: String, seriesIndex: 0 })
+    const title = cb.graphic.find((g) => (g as { style?: { text?: string } }).style?.text === 'Soil moisture (%)') as { top: number }
+    expect(title.top).toBeGreaterThanOrEqual(28)
+    expect(cb.gridTop).toBeGreaterThan(title.top + 12)
+    expect(colorBar(testCtx('light', 390, true), HEATMAP.soil_vwc, [1, 35], { title: 'T', fmt: String, seriesIndex: 0 }).gridTop).toBeUndefined()
+  })
   it('frozen cells use the FROZEN role per theme', () => {
-    expect(frozenSeries(testCtx('high-contrast'), 'Frozen', [[0, 0]]).itemStyle).toEqual({ color: FROZEN['high-contrast'].color })
+    const ctx = testCtx('high-contrast')
+    // The decal on the series style too, so the legend swatch is hatched like the cells.
+    expect(frozenSeries(ctx, 'Frozen', [[0, 0]]).itemStyle).toEqual({ color: FROZEN['high-contrast'].color, decal: hatchDecal(ctx.theme.textMuted) })
   })
 })

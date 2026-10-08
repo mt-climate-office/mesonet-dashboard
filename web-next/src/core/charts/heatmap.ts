@@ -22,10 +22,18 @@ export interface ColorBar {
   gridRight: number
   /** Grid bottom margin that clears the bar, its labels and the x labels (horizontal bar); 0 when vertical. */
   gridBottom: number
+  /** Grid top margin that clears the vertical bar's title; undefined when horizontal (the default top). */
+  gridTop?: number
 }
 
 const BAR_W = 12
-const TOP = 36
+/**
+ * The vertical bar's top (px); its title sits above it, below the card's ⓘ notes button (ag.css
+ * .ag-notes, 40 px on touch). The plot starts level with the bar (`ColorBar.gridTop`), so the title
+ * never sits on the cells.
+ */
+const TOP = 52
+const TITLE_TOP = 30
 const CHAR_W = 6.4 // ~11 px mono
 /** Height of the horizontal bar block: title, bar, tick labels. */
 const H_BLOCK = 44
@@ -134,7 +142,7 @@ export function colorBar(
   return {
     visualMap,
     graphic: [
-      { type: 'text', right: 8, top: 10, silent: true, style: { ...title, align: 'right' } },
+      { type: 'text', right: 8, top: TITLE_TOP, silent: true, style: { ...title, align: 'right' } },
       {
         // Bottom (min) → top (max): the same stops the visualMap maps through.
         type: 'rect',
@@ -155,6 +163,7 @@ export function colorBar(
     ],
     gridRight: ctx.width - barX + 12,
     gridBottom: 0,
+    gridTop: TOP,
   }
 }
 
@@ -171,7 +180,8 @@ export function frozenSeries(ctx: ChartContext, name: string, cells: [number, nu
     data: cells,
     encode: { x: 0, y: 1 },
     color: fill,
-    itemStyle: { color: fill },
+    // The decal here too, so the legend swatch is hatched like the cells.
+    itemStyle: { color: fill, decal: hatchDecal(ctx.theme.textMuted) },
     renderItem: (_params, api) => {
       const c = api.coord([api.value(0), api.value(1)])
       const s = api.size?.([1, 1]) as number[]

@@ -6,10 +6,10 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 
 | File | Exports |
 |---|---|
-| `agMet.ts` | `etrChart`/`etrTable` (`EtrModel`), `feelsLikeChart`/`feelsLikeTable`, `cciChart`/`cciTable` |
-| `agGdd.ts` | `gddChart`/`gddTable` (`GddModel`), `stageLines`, `stageGutter`, `gddAxisMax`, `GDD_NAMES` |
-| `agLegend.ts` | `agLegend` (the Ag charts' plain wrapping legend: short names and no title on compact screens), `liftForLegend`, `legendRows`, `sentenceCase` |
-| `agSoil.ts` | `soilProfileChart`/`soilProfileTable` (`SoilProfileModel`), `swpChart`/`swpTable`, `percentSaturationChart`/`percentSaturationTable` |
+| `agMet.ts` | `etrChart`/`etrTable` (`EtrModel`), `feelsLikeChart`/`feelsLikeTable`, `cciChart`/`cciTable` (CCI markers: one series per class, named by side, `CCI_GROUPS`: one ramp legend entry per side) |
+| `agGdd.ts` | `gddChart`/`gddTable` (`GddModel`), `stageLines` (thinned; the stage reached and the highest stay), `stageGutter`, `fittedStageLabels` (full names, else stage codes), `gddAxisMax`, `GDD_NAMES` |
+| `agLegend.ts` | `agLegend` (the Ag charts' plain wrapping legend: short names and no title on compact screens; an item may fill its icon with a color or a ramp), `liftForLegend`, `legendRows`, `sentenceCase` |
+| `agSoil.ts` | `soilProfileChart`/`soilProfileTable` (`SoilProfileModel`; month ticks past 60 days, `monthStarts`), `swpChart`/`swpTable`, `percentSaturationChart`/`percentSaturationTable` |
 | `agAnnual.ts` | `annualChart`/`annualTable` (`AnnualModel`) |
 | `latestTimeseries.ts` | `latestTimeseriesChart`/`latestTimeseriesTable` (`LatestTimeseriesModel`: core/models/timeseries + the view, also the axis extent), `latestTimeseriesHeight(n, compact)` |
 | `variable.ts` | `variableChart`/`variableTable`/`variableTableAll` (`VariableModel`: a one-panel `LatestTimeseriesModel`; the plot fills the host height) |
@@ -25,8 +25,8 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 - `axes.ts`: `timeAxis` (wall-clock level ticks), `valueAxis(name)`, `logAxis(name, min, max, {inverse, prefix})`, `dualAxis(left, right)` (y2 aligned, from 0), `grid`, `niceCeil`, `logExtent`, `fitAxisNames`.
 - `series.ts`: `lineSeries` (style width, straight, no symbols, LTTB over `LTTB_THRESHOLD`), `barSeries`, `markerSeries`; ids starting `AUX` (`aux:`) are drawing aids, skipped by tooltips, legends and the fidelity harness.
 - `tooltip.ts`: `tooltipBase(ctx, pinTop?)` (kit `.mco-tooltip`; on touch tap-triggered, on compact touch full width and pinned under the chart or at `pinTop`), `axisTooltip(ctx, header, row)`, `tipText`, `legend(ctx, {data, title})` (bottom scroll legend; optional title text).
-- `overlays.ts`: `bandSeries` (the one band style: stacked base + fill, under its line), `hBandSeries` (horizontal bands + boxed corner labels + dashed lines, e.g. SWP FC/WP), `sensorEventSeries` (hatched spans), `labelledLines` (markLines, e.g. GDD stages), `hatchDecal`.
-- `heatmap.ts`: `colorBar(ctx, scale, extent, {midpoint, ticks})` (hidden visualMap + bar drawn as graphics with min/max and the palette `midpointLabel`; vertical at the right, horizontal under the plot when `ctx.compact`), `frozenSeries` (hatched mask cells).
+- `overlays.ts`: `bandSeries` (the one band style: stacked base + fill, under its line), `hBandSeries` (horizontal bands + boxed labels + dashed lines, e.g. SWP FC/WP, each labelled at its line), `sensorEventSeries` (hatched spans), `labelledLines` (markLines, e.g. GDD stages), `hatchDecal`.
+- `heatmap.ts`: `colorBar(ctx, scale, extent, {midpoint, ticks})` (hidden visualMap + bar drawn as graphics with min/max and the palette `midpointLabel`; vertical at the right with `gridTop` keeping its title off the plot, horizontal under the plot when `ctx.compact`), `frozenSeries` (hatched mask cells).
 - `zoom.ts` (used by the host): wall-clock ms ↔ category index (`categoryMs`, `toAxisRange`, `fromAxisRange`), `sameRange`, `carryState` (zoom + legend toggles across redraws).
 - `testing.ts`: `testCtx(theme)` for tests (kit 0.7.1 token values).
 
@@ -58,7 +58,7 @@ Re-expressed in `agMet.test.ts`, `agGdd.test.ts`, `agSoil.test.ts`, `agAnnual.te
 ETr totals and axis titles; feels-like/CCI marker series per class in order,
 °F, adult ≠ newborn, legend titles; GDD bar name, stage tooltip text, the
 projection series order and anchors, y2 ≥ q75; SWP inverse log axis with "-"
-ticks, FC/WP bands, lines and corner labels, depth names; heatmap depth
+ticks, FC/WP bands, lines and their labels, depth names; heatmap depth
 dropping, frozen layer, 32 °F and 15 bar midpoints, log10 SWP; annual sort,
 current-year style, cumulative label. Intentional changes are under "Charts"
 in `web-next/DIVERGENCES.md`.

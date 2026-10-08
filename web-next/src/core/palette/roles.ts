@@ -361,7 +361,7 @@ export const SWP_BANDS = {
   fill: { token: '--text-dim', alpha: 0.12 } as TokenRef,
   line: { token: '--text-dim' } as TokenRef,
   dash: 'dashed' as const,
-  labels: { fieldCapacity: 'Field Capacity', wiltingPoint: 'Wilting Point' },
+  labels: { fieldCapacity: 'Field capacity', wiltingPoint: 'Wilting point' },
 }
 
 /* ------------------------------------------------------- downloader preview */
