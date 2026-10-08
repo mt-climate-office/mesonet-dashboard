@@ -134,5 +134,7 @@
     column-gap: var(--card-pad, 16px); row-gap: 0.1rem; min-height: 0;
   }
   .now-tile > :not(.dash-spark) { grid-column: 1; }
+  /* The soil "Dry" chip sits right after its label, not at column 1's far edge mid-tile. */
+  .now-tile-head { justify-content: flex-start; }
   .now-tile .dash-spark { grid-column: 2; grid-row: 1 / -1; align-self: center; height: 3.5rem; margin: 0; padding: 0; }
 }

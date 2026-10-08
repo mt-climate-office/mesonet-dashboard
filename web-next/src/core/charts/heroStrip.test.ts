@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { HERO_STRIP, THEMES, variableStyle, withAlpha } from '../palette'
-import { heroStripChart, heroStripTable, STRIP_3H_MIN_WIDTH, stripStepH, stripTickLabel, stripTicks, type HeroStripModel } from './heroStrip'
+import { heroStripChart, heroStripTable, STRIP_3H_MIN_WIDTH, STRIP_6H_MIN_WIDTH, stripStepH, stripTickLabel, stripTicks, type HeroStripModel } from './heroStrip'
 import { paint } from './theme'
 import { testCtx } from './testing'
 
@@ -58,14 +58,16 @@ describe('heroStripChart', () => {
     expect(y.min).toBe(29)
     expect(y.max).toBe(75)
   })
-  it('x ticks: Now plus every 6 h, every 3 h only on a wide plot, none crowding Now', () => {
+  it('x ticks: Now plus every 6 h, every 3 h only on a wide plot, 12 h on a phone, none crowding Now', () => {
     const ticks = (width: number, compact = false) => {
       const x = heroStripChart(MODEL, testCtx('dark', width, compact)).xAxis as { axisLabel: { customValues: number[] } }
       return x.axisLabel.customValues.map((t) => stripTickLabel(t, NOW))
     }
     // NOW is 14:00 wall clock: Noon (2 h before) would crowd Now.
     const six = ['6 PM', '12 AM', '6 AM', 'Now', '6 PM', '12 AM', '6 AM', 'Noon']
-    expect(ticks(390, true)).toEqual(six)
+    // A phone: every 12 h, so no label has to be dropped (and never Now).
+    expect(ticks(358, true)).toEqual(['12 AM', 'Now', '12 AM', 'Noon'])
+    expect(ticks(STRIP_6H_MIN_WIDTH, true)).toEqual(six)
     // The desktop hero column (~640 px) is too narrow for 16 mono labels.
     expect(ticks(640)).toEqual(six)
     expect(ticks(STRIP_3H_MIN_WIDTH)).toHaveLength(16)
@@ -73,10 +75,19 @@ describe('heroStripChart', () => {
     expect(wide.slice(wide.indexOf('Now') - 1, wide.indexOf('Now') + 2)).toEqual(['Noon', 'Now', '6 PM'])
     expect(stripTicks(0, 12 * H, 5 * H, 6)).toEqual([0, 5 * H, 12 * H])
   })
-  it('stripStepH: 3 h from STRIP_3H_MIN_WIDTH unless compact, else 6 h', () => {
+  it('stripStepH: 3 h from STRIP_3H_MIN_WIDTH unless compact, 6 h from STRIP_6H_MIN_WIDTH, else 12 h', () => {
     expect(stripStepH(STRIP_3H_MIN_WIDTH, false)).toBe(3)
     expect(stripStepH(STRIP_3H_MIN_WIDTH - 1, false)).toBe(6)
     expect(stripStepH(1200, true)).toBe(6)
+    expect(stripStepH(STRIP_6H_MIN_WIDTH, true)).toBe(6)
+    expect(stripStepH(STRIP_6H_MIN_WIDTH - 1, true)).toBe(12)
+    expect(stripStepH(STRIP_6H_MIN_WIDTH - 1, false)).toBe(12)
+    expect(stripStepH(320, true)).toBe(12)
+  })
+  it('x labels: no hideOverlap, so Now is never dropped', () => {
+    const x = heroStripChart(MODEL, testCtx('dark', 358, true)).xAxis as { axisLabel: { hideOverlap?: boolean; customValues: number[] } }
+    expect(x.axisLabel.hideOverlap).toBeFalsy()
+    expect(x.axisLabel.customValues).toContain(NOW)
   })
   it('palette colors per theme', () => {
     for (const t of THEMES) {

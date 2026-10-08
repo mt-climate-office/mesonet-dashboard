@@ -66,13 +66,20 @@ export function stripTicks(min: number, max: number, now: number, stepH: number)
 
 /** Plot width (CSS px) from which 3-hour ticks have room: 16 labels at ≥ 56 px apart. */
 export const STRIP_3H_MIN_WIDTH = 900
+/**
+ * Chart width (CSS px) from which 6-hour ticks have room: a plot of ~470 px puts 8 labels ≥ 58 px
+ * apart and a neighbour of "Now" (≥ 3 h away) clear of it. Narrower (phones) ticks every 12 h.
+ */
+export const STRIP_6H_MIN_WIDTH = 520
 
 /**
- * Hours between strip ticks: 3 on a plot at least STRIP_3H_MIN_WIDTH wide, else
- * 6 (phones, and the desktop hero column, where 3-hour mono labels run together).
+ * Hours between strip ticks: 3 on a plot at least STRIP_3H_MIN_WIDTH wide (not compact), 6 from
+ * STRIP_6H_MIN_WIDTH (the desktop hero column, tablets), else 12 (phones), so labels never touch
+ * and none is dropped.
  */
 export function stripStepH(width: number, compact: boolean): number {
-  return !compact && width >= STRIP_3H_MIN_WIDTH ? 3 : 6
+  if (!compact && width >= STRIP_3H_MIN_WIDTH) return 3
+  return width >= STRIP_6H_MIN_WIDTH ? 6 : 12
 }
 
 /** y range padded so the High/Low labels fit inside the grid: 30% of the span (≥ 4°) each side. */
@@ -128,7 +135,8 @@ export const heroStripChart: ChartBuilder<HeroStripModel> = (m, ctx) => {
   const fcY = m.now.v === null ? m.forecast.v : [m.now.v, ...m.forecast.v]
   const ext = extremes(m)
   const span: [number, number] = [m.now.t - H24, m.now.t + H24]
-  // Ticks every 6 h ("Now", "6 PM", "12 AM", …), every 3 h only on a wide plot.
+  // Ticks every 6 h ("Now", "6 PM", "12 AM", …), every 3 h on a wide plot, every 12 h on a phone:
+  // spaced so none overlap (no hideOverlap, which dropped labels, even "Now", at random).
   const ticks = stripTicks(span[0], span[1], m.now.t, stripStepH(ctx.width, ctx.compact))
   const y = yRange(m)
   return {
@@ -140,7 +148,7 @@ export const heroStripChart: ChartBuilder<HeroStripModel> = (m, ctx) => {
       max: span[1],
       splitLine: { show: false },
       axisTick: { customValues: ticks },
-      axisLabel: { hideOverlap: true, customValues: ticks, formatter: (t: number) => stripTickLabel(t, m.now.t) },
+      axisLabel: { customValues: ticks, formatter: (t: number) => stripTickLabel(t, m.now.t) },
     },
     yAxis: {
       type: 'value',
