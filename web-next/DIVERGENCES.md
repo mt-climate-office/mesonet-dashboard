@@ -284,7 +284,8 @@ layout parts of older entries below; data behaviour is unchanged.
 ### A bare `?s=` opens Now; no `?s=` reopens the last station
 - **Legacy / web/:** `?s=` opened Latest Data; no `?s=` showed an empty Latest tab.
 - **New:** `?s=` opens Now. Without it the last confirmed station (`mco-dashboard-station`) opens; with none
-  the station picker opens (first visit). The five most recent stations are `mco-dashboard-recent`.
+  the station picker opened (first visit; since 2026-10-08 the landing shows instead, "No-station landing").
+  The five most recent stations are `mco-dashboard-recent`.
 - **Why:** user decision (2026-10-02): reopen the last station.
 
 ### Station picker: drawer / bottom sheet with Near me (P0; its contents now follow "Station picker: search first")
@@ -441,6 +442,21 @@ mco-web-style#37). The behaviour changes:
   clicking its legend entry. Every table view has a **Show as chart** button above it. The All years note is
   per variable (`historyNote`: "each year as its own set of dots" for wind direction).
 - **Why:** the audit's leftovers (PR #90 comment).
+
+### No-station landing (2026-10-08)
+- **Before:** with no station (a first visit, or a `?s=` the station list does not know) the picker opened by
+  itself (the desktop drawer beside, the phone sheet over, a small "No station selected" card with a "Choose a
+  station" button; About showed "Station not found"), and its map stayed folded under "Browse on the map". The
+  auto-open dates from the P0 shell ("Station picker: drawer / bottom sheet": station choice is the first
+  decision on every visit), when the picker was the page on a first visit.
+- **New:** a landing stands in for every section until a station is chosen (DESIGN.md "No station: the
+  landing"): "Choose a station", one line naming the station count, the picker's search (shared markup and
+  code), and the station map filling the screen down to the tab bar (beside the text on a landscape phone). A
+  search, Near me, place or map pick selects the station as the picker does. The picker no longer opens by
+  itself without a station; the header's station button still opens it. A `?s=` or a remembered station still
+  goes straight to its page. Now's and About's no-station cards are gone.
+- **Why:** user request (2026-10-08): "On first load, the dashboard should be dominated by choosing a station
+  and the map. Currently, it is barren."
 
 ### UX audit leftovers: close colors, ETr (2026-10-08)
 - **Soil depths:** batlow positions per theme spaced so the closest neighbours sit furthest apart at 3:1

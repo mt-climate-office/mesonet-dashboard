@@ -5,7 +5,8 @@
  * view scrolls sideways; the Now hero through its strip is above the fold at 390×844; the header is one
  * row at 390 and 1440 (sections in it only from tablet up); the phone tab bar has three items
  * on a solid surface; the Download sheet fits the screen; the picker sheet's map is in view after
- * "Browse on the map" and a short handle drag never closes it; with reduced motion a section change
+ * "Browse on the map" and a short handle drag never closes it; the no-station landing fills the screen
+ * with its map (no picker over it) on every section; with reduced motion a section change
  * starts no view transition. Run via `npm run verify`.
  */
 import { DL_QUERY, VIEWPORTS, check, finish, open, start } from './lib.mjs'
@@ -149,6 +150,32 @@ for (const vp of VIEWPORTS) {
   })
   check('[tab bar 390] three items, solid --bg-surface, no glass blur, --tabbar-h published', t.items === 3 && t.bg === t.surface && (t.blur === 'none' || t.blur === '') && parseFloat(t.tabbarH) >= 56, JSON.stringify(t))
   await close()
+}
+
+/* ── No-station landing: search on top, the map down to the tab bar, the picker closed ── */
+for (const vp of VIEWPORTS) {
+  for (const hash of ['#now', '#charts', '#about']) {
+    const { page, problems, close, rendered } = await open(env, hash, { viewport: vp })
+    await rendered({ filled: ['[data-testid="landing-map"] tbody'] })
+    const r = await page.evaluate(() => {
+      const box = (sel) => document.querySelector(sel)?.getBoundingClientRect()
+      const map = box('[data-testid="landing-map"]')
+      const search = box('[data-testid="landing"] [data-testid="picker-search"]')
+      const bar = box('.dash-tabbar')
+      const p = document.getElementById('station-picker')
+      return {
+        mapTop: Math.round(map.top), mapBottom: Math.round(map.bottom), mapH: Math.round(map.height), searchBottom: Math.round(search.bottom),
+        floor: Math.round(bar && bar.height ? bar.top : innerHeight), vh: innerHeight,
+        picker: !p.hidden && getComputedStyle(p).visibility === 'visible',
+        sideways: document.documentElement.scrollWidth > innerWidth,
+      }
+    })
+    check(`[landing ${vp.name} ${hash}] search above the map; the map fills the screen to the tab bar (≥ half its height); no picker; no sideways scroll`,
+      r.searchBottom <= r.mapTop && r.mapBottom <= r.floor && r.floor - r.mapBottom <= 24 && r.mapH >= r.vh / 2 && !r.picker && !r.sideways, JSON.stringify(r))
+    const p = await problems()
+    check(`[landing ${vp.name} ${hash}] console + CSP clean`, p.length === 0, p.slice(0, 4).join(' | '))
+    await close()
+  }
 }
 
 /* ── Download sheet: inside the screen at both widths ───────────────────── */

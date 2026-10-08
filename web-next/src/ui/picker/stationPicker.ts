@@ -10,28 +10,15 @@
  * Openers dispatch `togglePicker(button)`.
  */
 import Alpine from 'alpinejs'
-import type { ComboboxItem } from '../../core/controls/comboboxModel'
-import { netsValue, networkOptions, stationItems } from '../../core/latest'
+import { netsValue, networkOptions } from '../../core/latest'
 import { visibleStationIds } from '../../core/latest/stations'
-import {
-  type AreaGeometry,
-  isPlaceItem,
-  loadPlaces,
-  loadReservationAreas,
-  PLACE_RESULTS,
-  placeAnnouncement,
-  placeIdOf,
-  placeItems,
-  stationsForPlace,
-  type Place,
-} from '../../core/places'
-import { formatMiles, nearestStations, type NearStation } from '../../core/stations/nearest'
 import { pickerStartsOpen, readDrawerOpen, saveDrawerOpen } from '../../core/stations/recent'
 import { browserStorage } from '../../stores/station'
 import { initDrawer } from '../layout/drawer'
 import { initSheet } from '../layout/sheet'
 import { component } from '../component'
 import { announce } from '../shell/live'
+import { stationSearch } from './stationSearch'
 
 const EVENT = 'dash:picker'
 const DESKTOP_MQ = '(min-width: 1060px)'
@@ -50,16 +37,6 @@ type Ctl = {
   /** Sheet only: peek / full. */
   setState?(s: 'peek' | 'full'): void
 }
-/** The list under the search: Near me, or a picked place's stations (`title` heads it). */
-type Near = {
-  status: 'idle' | 'locating' | 'finding' | 'ready' | 'denied' | 'error'
-  title: string
-  rows: { station: string; name: string; dist: string }[]
-}
-const nearRows = (rows: NearStation[]) => rows.map((r) => ({ station: r.station, name: r.name, dist: formatMiles(r.miles) }))
-/** Combobox section caps: a handful of places under the stations. */
-export const SEARCH_SECTION_LIMITS = { Places: PLACE_RESULTS }
-
 const modeNow = (): Mode =>
   matchMedia(NARROW_MQ).matches ? 'sheet' : !MCO.viewport.isCompact() && matchMedia(DESKTOP_MQ).matches ? 'inline' : 'overlay'
 const background = () => [...document.querySelectorAll('.mco-navbar, .dash-content, .dash-tabbar')]
@@ -67,14 +44,9 @@ const toggles = () => [...document.querySelectorAll<HTMLElement>('[data-picker-t
 
 export function stationPicker() {
   let ctl: Ctl | null = null
-  // Reservation boundaries load on the first reservation pick; a later pick supersedes an earlier one.
-  let areas: Promise<Map<string, AreaGeometry>> | null = null
-  let pickGen = 0
-  // placeItems for the loaded places, built once.
-  let placeCache: { places: Place[]; items: ComboboxItem[] } | null = null
   const cleanups: (() => void)[] = []
-  // True while the picker opens or closes by itself (first visit, bad station link, a viewport
-  // rebuild): not a preference to save.
+  // True while the picker opens or closes by itself (the saved desktop drawer, a viewport rebuild):
+  // not a preference to save.
   let auto = false
   const quietly = (f: () => void) => {
     auto = true
@@ -83,6 +55,7 @@ export function stationPicker() {
   }
   const autoOpen = () => quietly(() => ctl?.open({ focus: false }))
   return component({
+    ...stationSearch(),
     open: false,
     mode: 'inline' as Mode,
     /** "Browse on the map" is open: the network chips and the map show. */
@@ -91,11 +64,6 @@ export function stationPicker() {
     mapMounted: false,
     /** The search's result list is open (the phone sheet gives it the whole sheet). */
     searchOpen: false,
-    near: { status: 'idle', title: 'Near me', rows: [] } as Near,
-    /** Places load the first time the search list opens (15 KB gzipped). */
-    placesWanted: false,
-    searchLimits: SEARCH_SECTION_LIMITS,
-    geoSupported: typeof navigator !== 'undefined' && 'geolocation' in navigator,
 
     init() {
       this.build(false)
@@ -106,12 +74,6 @@ export function stationPicker() {
       const onViewport = () => modeNow() !== this.mode && this.build(true)
       for (const q of queries) q.addEventListener('change', onViewport)
       cleanups.push(MCO.viewport.onChange(onViewport), () => queries.forEach((q) => q.removeEventListener('change', onViewport)))
-      // A link whose station turns out not to exist: open the picker once the catalog says so.
-      const fx = Alpine.effect(() => {
-        const st = Alpine.store('station')
-        if (st.catalog?.status === 'success' && !st.id && !ctl?.isOpen) autoOpen()
-      })
-      cleanups.push(() => Alpine.release(fx))
     },
 
     /** (Re)create the presentation for the current viewport and apply the start rule. */
@@ -165,8 +127,7 @@ export function stationPicker() {
 
     /**
      * A station was picked here: select it and close at every size (the inline
-     * drawer saves 'closed'). Focus goes to <main>, the new station's content;
-     * the opener may be gone (the Now empty state's button).
+     * drawer saves 'closed'). Focus goes to <main>, the new station's content.
      */
     choose(id: string): void {
       const st = Alpine.store('station')
@@ -176,22 +137,7 @@ export function stationPicker() {
       document.getElementById('main')?.focus({ preventScroll: true })
     },
 
-    /* Search (ui/controls/combobox): stations, then places while typing */
-    items(): ComboboxItem[] {
-      const st = Alpine.store('station')
-      // The network beside each station, as in Recent (the combobox shows the id otherwise).
-      const stations = stationItems(st.list, Alpine.store('url').state.nets, st.id).map((s) => ({ ...s, meta: s.group }))
-      const places = this.places()
-      if (!places) return stations
-      if (placeCache?.places !== places) placeCache = { places, items: placeItems(places) }
-      return [...stations, ...placeCache.items]
-    },
-    /** The loaded places, or null (not asked for yet, loading, or failed: the search still finds stations). */
-    places(): Place[] | null {
-      if (!this.placesWanted) return null
-      const res = Alpine.store('data').cached('places', () => loadPlaces(), { ttl: Infinity })
-      return res.data ? Alpine.raw(res.data) : null
-    },
+    /* Search (ui/controls/combobox; ./stationSearch): stations, then places while typing */
     /** The search's result list opened or closed. On a phone the sheet goes full and the list fills it. */
     searchList(open: boolean): void {
       this.searchOpen = open
@@ -204,30 +150,6 @@ export function stationPicker() {
       if (c?.status === 'error') return 'Failed to load stations'
       if (!c?.data) return 'Loading stations…'
       return this.mode === 'sheet' ? 'Station, town, county or ZIP' : 'Station, town or ZIP'
-    },
-    /** A search pick: a station is chosen; a place lists its stations below. */
-    pick(id: string): void {
-      if (isPlaceItem(id)) void this.choosePlace(placeIdOf(id))
-      else this.choose(id)
-    },
-    async choosePlace(placeId: string): Promise<void> {
-      const place = this.places()?.find((p) => p.id === placeId)
-      if (!place) return
-      const gen = ++pickGen
-      let area: AreaGeometry | undefined
-      if (place.kind === 'reservation') {
-        this.near = { status: 'finding', title: place.name, rows: [] }
-        areas ??= loadReservationAreas()
-        // Without the boundary, the stations nearest the reservation's point.
-        area = await areas.then((m) => m.get(place.id)).catch(() => {
-          areas = null
-          return undefined
-        })
-        if (gen !== pickGen) return
-      }
-      const r = stationsForPlace(place, Alpine.store('station').list, area)
-      this.near = { status: 'ready', title: r.title, rows: nearRows(r.rows) }
-      announce(placeAnnouncement(place, r))
     },
 
     /* Browse on the map */
@@ -262,26 +184,6 @@ export function stationPicker() {
         const s = st.byId(id)
         return s ? [{ station: id, name: s.name, network: s.sub_network, current: id === st.id }] : []
       })
-    },
-
-    /* Near me: geolocation only on this tap; denied → a message, never a retry loop. */
-    locate(): void {
-      if (!this.geoSupported) return
-      const gen = ++pickGen
-      this.near = { status: 'locating', title: 'Near me', rows: [] }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (gen !== pickGen) return
-          const rows = nearestStations(Alpine.store('station').list, pos.coords.latitude, pos.coords.longitude)
-          this.near = { status: 'ready', title: 'Near me', rows: nearRows(rows) }
-          announce(`${rows.length} stations near you`)
-        },
-        (err) => {
-          if (gen !== pickGen) return
-          this.near = { status: err.code === err.PERMISSION_DENIED ? 'denied' : 'error', title: 'Near me', rows: [] }
-        },
-        { enableHighAccuracy: false, timeout: 10_000, maximumAge: 600_000 },
-      )
     },
 
     destroy() {

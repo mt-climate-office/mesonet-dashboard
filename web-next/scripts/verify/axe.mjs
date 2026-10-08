@@ -78,14 +78,14 @@ const ABOUT = { filled: ['[data-testid="about-details"] .about-dl', '[data-testi
 
 // `before` runs once the page loads, `after` once the evidence is in; `only` limits the viewports.
 const SCENARIOS = [
-  // The Now overview (default section), with the header ⋯ menu open, and a first visit (no station: the picker is open).
+  // The Now overview (default section), with the header ⋯ menu open, and a first visit (no station: the landing, its map drawn).
   { name: 'now', query: '?s=acebozem', evidence: { charts: 1, filled: ['[data-testid="now-tiles"]', '[data-testid="tile-wind"] .dash-spark svg'] } },
   { name: 'header-menu', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openMenu },
   // About: details, locator map, the two rows, data notes; then each row's sheet.
   { name: 'about', query: '?s=acebozem#about', evidence: ABOUT },
   { name: 'about-readings', query: '?s=acebozem#about', evidence: ABOUT, after: aboutSheet('about-readings-row', '[data-testid="about-readings-table"] tbody') },
   { name: 'about-history', query: '?s=acebozem#about', evidence: ABOUT, after: aboutSheet('about-history-row', '[data-testid="about-history"] .about-days') },
-  { name: 'picker', query: '', evidence: {}, after: browseMap },
+  { name: 'landing', query: '', evidence: { filled: ['[data-testid="landing-map"] tbody'] } },
   { name: 'picker-open', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPicker },
   // Charts: the variable list (with the Ag tools group), a variable page, and Compare (a legacy #latest link lands there).
   { name: 'charts-list', query: '?s=acebozem#charts', evidence: { filled: ['[data-testid="var-air_temp"] .dash-spark svg', '[data-testid="charts-ag-tools"] ul'] } },

@@ -1,0 +1,20 @@
+<!-- No-station landing (x-data="stationLanding", ui/picker/stationLanding.ts): in place of the sections
+     while no station is chosen (core/stations/landing `showsLanding`), whichever section the URL names.
+     A heading and one line, the picker's station search (partials/picker/search.html), then the
+     station map filling the rest of the screen; a search or map pick selects the station and the
+     section renders. Mounted only while shown, so MapLibre starts only on a first visit. -->
+<template x-if="$store.station.landing">
+<section class="tab-panel landing" x-data="stationLanding" aria-labelledby="landing-title" data-testid="landing">
+  <div class="landing-head">
+    <h2 class="landing-title" id="landing-title">Choose a station</h2>
+    <p class="landing-line" x-text="line()"></p>
+    <p class="landing-note" role="status" x-text="note()"></p>
+  </div>
+  <div class="landing-search">
+    <!-- @include partials/picker/search.html -->
+  </div>
+  <div class="landing-map" data-testid="landing-map"
+       x-data="landingMap({ stations: () => $store.station.list, selected: () => $store.station.id,
+                onSelect: (id) => choose(id), label: 'Map of Montana Mesonet stations: pick one' })"></div>
+</section>
+</template>

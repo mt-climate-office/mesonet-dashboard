@@ -122,7 +122,6 @@
 /* No station / no data. */
 .now-empty { max-width: 34rem; }
 .now-empty p { font-size: var(--fs-sm); color: var(--text-secondary); line-height: 1.5; }
-.now-empty-btn { margin-top: 0.85rem; }
 
 @media (min-width: 1060px) and (min-height: 561px) {
   .now-strip, .now-strip-chart { height: 11rem; --chart-height: 11rem; }

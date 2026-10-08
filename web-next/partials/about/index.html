@@ -5,13 +5,8 @@
      Mounted only while the section is open. -->
 <template x-if="$store.url.section === 'about'">
 <div class="about" x-data="aboutView" data-testid="about">
-  <template x-if="state === 'none' || state === 'missing'">
-    <div class="dash-card about-empty" data-testid="about-empty">
-      <h3 class="dash-card-title" x-text="state === 'none' ? 'No station selected' : 'Station not found'"></h3>
-      <p>Pick a station to see its details, current readings and sensor history.</p>
-      <button type="button" class="nav-btn" data-picker-toggle aria-controls="station-picker" aria-expanded="false" @click="pick($event)">Choose a station</button>
-    </div>
-  </template>
+  <!-- 'none' and 'missing' (no station, or one the list does not know) draw nothing: the landing
+       (partials/landing.html) stands in for the section. -->
   <template x-if="state === 'error'">
     <div class="dash-card"><!-- @include partials/load-error.html --></div>
   </template>

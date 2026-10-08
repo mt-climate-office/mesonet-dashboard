@@ -8,8 +8,7 @@
   .about-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-.about-empty p, .about-message { margin: 0 0 var(--gap, 12px); font-size: var(--fs-sm); color: var(--text-secondary); }
-.about-message { margin: 0; }
+.about-message { margin: 0; font-size: var(--fs-sm); color: var(--text-secondary); }
 
 /* List cards pad 0: their rows and blocks carry --card-pad, so a row's hover fill and hairline
    run edge to edge without negative margins. */

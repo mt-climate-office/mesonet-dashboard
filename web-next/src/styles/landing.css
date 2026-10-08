@@ -1,0 +1,39 @@
+/* No-station landing (partials/landing.html): heading and line, the picker's search (picker.css),
+   then the station map filling the screen down to the tab bar. A short, wide screen (a landscape
+   phone) puts the map beside the text and search instead. Kit tokens only. */
+
+.landing {
+  /* A .tab-panel (width, gutters), standing in for the section. */
+  display: flex; flex-direction: column; gap: var(--gap);
+  /* The screen under the header and above the tab bar: the map takes what the text leaves. */
+  min-height: calc(100dvh - var(--chrome-h, 52px) - var(--tabbar-h, 0px));
+}
+.landing-head { display: flex; flex-direction: column; gap: var(--gap-tight); }
+.landing-title { font-size: var(--fs-xl); font-weight: 700; line-height: 1.15; color: var(--text-primary); }
+.landing-line { font-size: var(--fs-md); color: var(--text-secondary); }
+.landing-note { font-size: var(--fs-sm); color: var(--text-primary); }
+.landing-note:empty { display: none; }
+
+/* The search: wider and a step taller than in the picker, and the results list sits over the map. */
+.landing-search { display: flex; flex-direction: column; gap: var(--gap); width: 100%; max-width: 40rem; }
+.landing .picker-search .ctl-input { min-height: 52px; }
+.landing .picker-near { height: 40px; }
+.landing .picker-search .ctl-combobox-popup { max-height: min(24rem, 55dvh); }
+
+.landing-map {
+  flex: 1 1 auto; min-height: 18rem;
+  border-radius: var(--card-radius, 16px); overflow: hidden;
+  border: 1px solid var(--border); box-shadow: var(--card-shadow);
+}
+
+/* Short, wide (a landscape phone, 844 × 390): text and search on the left, the map on the right at full height. */
+@media (max-height: 560px) and (min-width: 641px) {
+  .landing {
+    display: grid; grid-template-columns: minmax(15rem, 2fr) 3fr; grid-template-rows: auto 1fr;
+    align-content: start; column-gap: var(--gap);
+  }
+  .landing-head, .landing-search { grid-column: 1; }
+  .landing-title { font-size: var(--fs-lg); }
+  .landing-line { font-size: var(--fs-sm); }
+  .landing-map { grid-column: 2; grid-row: 1 / span 2; min-height: 0; }
+}

@@ -75,11 +75,10 @@ export function saveDrawerOpen(storage: StorageLike, open: boolean): void {
 }
 
 /**
- * Should the picker start open? With no station it always does (first visit:
- * the picker is the page). Otherwise only the desktop drawer reopens, and only
- * if it was left open; the phone sheet and tablet drawer start closed.
+ * Should the picker start open? Never without a station (the landing is the
+ * page: core/stations/landing). Otherwise only the desktop drawer reopens, and
+ * only if it was left open; the phone sheet and tablet drawer start closed.
  */
 export function pickerStartsOpen(hasStation: boolean, desktop: boolean, saved: boolean | null): boolean {
-  if (!hasStation) return true
-  return desktop && saved === true
+  return hasStation && desktop && saved === true
 }

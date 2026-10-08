@@ -136,72 +136,95 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await close()
 }
 
-/* ── Station picker: a place lists its stations (core/places) ─────────────── */
+/* ── Landing search (first visit): a place lists its stations (core/places) ── */
 {
   const { page, problems, close } = await open(env, '?theme=light#now')
-  const input = page.getByTestId('picker-search').getByRole('combobox')
-  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town or ZIP')
+  const SEARCH = '[data-testid="landing"] [data-testid="picker-search"]'
+  const input = page.locator(SEARCH).getByRole('combobox')
+  await page.waitForFunction((sel) => document.querySelector(`${sel} input`)?.getAttribute('placeholder') === 'Station, town, county or ZIP', SEARCH)
   await input.focus()
   // The places load when the list opens.
   await page.keyboard.type('bozeman')
-  await page.waitForFunction(() => document.querySelectorAll('[data-testid="picker-search"] .ctl-combobox-group').length > 0, null, { timeout: 10000 }).catch(() => {})
-  const heads = await page.locator('[data-testid="picker-search"] .ctl-combobox-group:visible').allInnerTexts()
+  await page.waitForFunction((sel) => document.querySelectorAll(`${sel} .ctl-combobox-group`).length > 0, SEARCH, { timeout: 10000 }).catch(() => {})
+  const heads = await page.locator(`${SEARCH} .ctl-combobox-group:visible`).allInnerTexts()
   check('place search: stations and places under their own headings', heads.join('|').toLowerCase() === 'stations|places', JSON.stringify(heads))
   await page.keyboard.press('Escape') // clears the text
   await page.keyboard.type('gallatin')
   // The county's exact keyword becomes the active option.
-  await page.waitForFunction(() => {
-    const id = document.querySelector('[data-testid="picker-search"] input')?.getAttribute('aria-activedescendant')
+  await page.waitForFunction((sel) => {
+    const id = document.querySelector(`${sel} input`)?.getAttribute('aria-activedescendant')
     return id && /Gallatin County/.test(document.getElementById(id)?.textContent ?? '')
-  }, null, { timeout: 5000 }).catch(() => {})
+  }, SEARCH, { timeout: 5000 }).catch(() => {})
   await page.keyboard.press('Enter')
-  await page.waitForFunction(() => document.querySelectorAll('[data-testid="near-list"] .picker-row').length > 0, null, { timeout: 5000 }).catch(() => {})
-  const near = await page.evaluate(() => ({
-    title: document.getElementById('picker-near-title')?.textContent,
-    rows: document.querySelectorAll('[data-testid="near-list"] .picker-row').length,
-    s: new URLSearchParams(location.search).get('s'),
-  }))
-  check('place search: Enter on a county lists its stations, picks none', near.title === 'Gallatin County' && near.rows > 1 && near.s === null, JSON.stringify(near))
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="landing"] [data-testid="near-list"] .picker-row').length > 0, null, { timeout: 5000 }).catch(() => {})
+  const near = await page.evaluate(() => {
+    const group = document.querySelector('[data-testid="landing"] [data-testid="near-results"]')
+    const title = group?.querySelector('h3')
+    return {
+      title: title?.textContent,
+      labelled: !!title?.id && group.getAttribute('aria-labelledby') === title.id,
+      rows: group?.querySelectorAll('.picker-row').length,
+      s: new URLSearchParams(location.search).get('s'),
+    }
+  })
+  check('place search: Enter on a county lists its stations under its name, picks none',
+    near.title === 'Gallatin County' && near.labelled && near.rows > 1 && near.s === null, JSON.stringify(near))
   const p = await problems()
   check('place search: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
-/* ── Station picker: a pick closes the desktop drawer ───────────────────── */
+/* ── First visit: the landing, not the picker; its search picks; the picker then closes on a pick ── */
 {
-  // First visit (no station): the in-flow drawer is open at 1440 px.
   const { page, problems, close } = await open(env, '?theme=light#now')
   // One earlier station in Recent, so the pick below should make two rows without a reload.
   await page.evaluate(() => localStorage.setItem('mco-dashboard-recent', 'mdaglasw'))
   await page.reload({ waitUntil: 'load' })
-  const input = page.getByTestId('picker-search').getByRole('combobox')
-  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town or ZIP')
+  const SEARCH = '[data-testid="landing"] [data-testid="picker-search"]'
+  const input = page.locator(SEARCH).getByRole('combobox')
+  await page.waitForFunction((sel) => document.querySelector(`${sel} input`)?.getAttribute('placeholder') === 'Station, town, county or ZIP', SEARCH)
+  const first = await page.evaluate(() => ({
+    drawer: document.getElementById('station-picker')?.classList.contains('is-open'),
+    sections: getComputedStyle(document.querySelector('.dash-section-host')).display,
+    heading: document.getElementById('landing-title')?.textContent,
+  }))
+  check('first visit: the landing shows in place of the sections; the picker drawer stays closed',
+    first.drawer === false && first.sections === 'none' && first.heading === 'Choose a station', JSON.stringify(first))
   await input.focus()
   await page.keyboard.type('acebozem')
   await page.keyboard.press('ArrowDown')
-  const active = await page.evaluate(() => {
-    const id = document.querySelector('[data-testid="picker-search"] input')?.getAttribute('aria-activedescendant')
+  const active = await page.evaluate((sel) => {
+    const id = document.querySelector(`${sel} input`)?.getAttribute('aria-activedescendant')
     return id ? document.getElementById(id)?.textContent?.replace(/\s+/g, ' ').trim() : null
-  })
+  }, SEARCH)
   // The option shows the station's name and network ("Bozeman HydroMet"), as the Recent rows do.
   check('combobox: typing + ArrowDown sets aria-activedescendant on the match', /^Bozeman\b/.test(active ?? ''), String(active))
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('s') === 'acebozem', null, { timeout: 10000 }).catch(() => {})
   check('combobox: Enter selects the station (?s=acebozem)', (await urlParam(page, 's')) === 'acebozem')
   const picked = await page.evaluate(() => ({
+    landing: !!document.querySelector('[data-testid="landing"]'),
+    now: !!document.querySelector('[data-testid="now"]') && getComputedStyle(document.querySelector('.dash-section-host')).display !== 'none',
+    focus: document.activeElement?.id,
+  }))
+  check('landing: a pick shows the section, focus moves to <main>', !picked.landing && picked.now && picked.focus === 'main', JSON.stringify(picked))
+  // Recent follows the pick at once (it used to need a reload); a pick in the drawer closes it.
+  await page.getByTestId('station-switcher').click()
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="recent-list"] .picker-row').length === 2, null, { timeout: 5000 }).catch(() => {})
+  const recent = await page.locator('[data-testid="recent-list"] .picker-row').allInnerTexts()
+  check('picker: after a pick, opening it shows 2 Recent rows (new first)', recent.length === 2 && /Bozeman/.test(recent[0]), JSON.stringify(recent))
+  // Bozeman again (the fixtures hold only its data): a pick closes the drawer even when the station stays.
+  await page.locator('[data-testid="recent-list"] .picker-row').first().click()
+  await page.waitForFunction(() => !document.getElementById('station-picker')?.classList.contains('is-open'), null, { timeout: 5000 }).catch(() => {})
+  const closed = await page.evaluate(() => ({
     drawer: document.getElementById('station-picker')?.classList.contains('is-open'),
     saved: localStorage.getItem('mco-dashboard-drawer'),
     focus: document.activeElement?.id,
   }))
   check('picker: a pick closes the desktop drawer (saved closed), focus moves to <main>',
-    picked.drawer === false && picked.saved === 'closed' && picked.focus === 'main', JSON.stringify(picked))
-  // Recent follows the pick at once (it used to need a reload).
-  await page.getByTestId('station-switcher').click()
-  await page.waitForFunction(() => document.querySelectorAll('[data-testid="recent-list"] .picker-row').length === 2, null, { timeout: 5000 }).catch(() => {})
-  const recent = await page.locator('[data-testid="recent-list"] .picker-row').allInnerTexts()
-  check('picker: after a pick, reopening shows 2 Recent rows (new first)', recent.length === 2 && /Bozeman/.test(recent[0]), JSON.stringify(recent))
+    closed.drawer === false && closed.saved === 'closed' && closed.focus === 'main', JSON.stringify(closed))
   const p = await problems()
-  check('picker: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  check('landing + picker: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 
@@ -472,12 +495,11 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&v=gdd#charts', 1]]) {
 }
 
 /* ── Map sr-only table: keyboard selection ──────────────────────────────── */
-// On the picker's map (a first visit opens the picker): a pick sets ?s=.
+// On the landing's map (a first visit): a pick sets ?s=.
 {
   const { page, problems, close } = await open(env, '?theme=dark')
-  await page.getByTestId('picker-browse').click()
-  const table = page.getByTestId('picker-map').locator('.sr-only table')
-  await page.waitForFunction(() => document.querySelectorAll('[data-testid="picker-map"] .sr-only tbody button').length > 10, null, { timeout: 30000 })
+  const table = page.getByTestId('landing-map').locator('.sr-only table')
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="landing-map"] .sr-only tbody button').length > 10, null, { timeout: 30000 })
   const shape = await table.evaluate((t) => ({
     caption: t.caption?.textContent?.trim() ?? '',
     cols: [...t.querySelectorAll('thead th')].every((th) => th.scope === 'col'),
@@ -493,7 +515,11 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&v=gdd#charts', 1]]) {
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('s') === 'acebozem', null, { timeout: 10000 }).catch(() => {})
   check('map sr table: ArrowDown + Enter selects acebozem', (await urlParam(page, 's')) === 'acebozem')
-  await page.waitForFunction(() => document.querySelector('[data-testid="picker-map"] .sr-only button[aria-current="true"]')?.dataset.id === 'acebozem', null, { timeout: 10000 }).catch(() => {})
+  // The landing gives way to Now; the picker's map (opened from the header) marks the selection.
+  check('map sr table: the pick replaces the landing with Now', await page.evaluate(() => !document.querySelector('[data-testid="landing"]') && !!document.querySelector('[data-testid="now"]')))
+  await page.getByTestId('station-switcher').click()
+  await page.getByTestId('picker-browse').click()
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-map"] .sr-only button[aria-current="true"]')?.dataset.id === 'acebozem', null, { timeout: 30000 }).catch(() => {})
   check('map sr table: aria-current marks the selection',
     await page.evaluate(() => document.querySelector('[data-testid="picker-map"] .sr-only button[aria-current="true"]')?.dataset.id === 'acebozem'))
   const p = await problems()
