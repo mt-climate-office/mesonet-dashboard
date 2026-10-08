@@ -146,7 +146,8 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await input.focus()
   // The places load when the list opens.
   await page.keyboard.type('bozeman')
-  await page.waitForFunction((sel) => document.querySelectorAll(`${sel} .ctl-combobox-group`).length > 0, SEARCH, { timeout: 10000 }).catch(() => {})
+  // Wait for the end state (both headings shown): the places arrive after the stations, and under load slowly.
+  await page.waitForFunction((sel) => [...document.querySelectorAll(`${sel} .ctl-combobox-group`)].filter((g) => g.offsetParent).map((g) => g.textContent.trim().toLowerCase()).join('|') === 'stations|places', SEARCH, { timeout: 20000 }).catch(() => {})
   const heads = await page.locator(`${SEARCH} .ctl-combobox-group:visible`).allInnerTexts()
   check('place search: stations and places under their own headings', heads.join('|').toLowerCase() === 'stations|places', JSON.stringify(heads))
   await page.keyboard.press('Escape') // clears the text
@@ -365,6 +366,18 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
     !after.open && after.focus === 'now-photo-open' && after.tile === tileSrc, JSON.stringify(after))
   const p = await problems()
   check('photo dialog: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── The Now hero opens Air temperature, as a tile opens its variable ── */
+{
+  const { page, close, rendered } = await open(env, '?s=acebozem&theme=light')
+  await rendered({ filled: ['[data-testid="now-tiles"]'] })
+  await page.getByTestId('now-hero-link').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => document.querySelector('[data-testid="variable-title"]')?.textContent === 'Air temperature' && document.activeElement?.id === 'var-title', null, { timeout: 10000 }).catch(() => {})
+  const hero = await page.evaluate(() => ({ hash: location.hash, v: new URLSearchParams(location.search).get('v'), focus: document.activeElement?.id }))
+  check('now: Enter on the hero opens Air temperature (#charts&v=air_temp), its heading focused', hero.hash === '#charts' && hero.v === 'air_temp' && hero.focus === 'var-title', JSON.stringify(hero))
   await close()
 }
 

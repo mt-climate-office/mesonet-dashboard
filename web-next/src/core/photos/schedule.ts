@@ -82,7 +82,8 @@ const LEGACY_LABELS: Record<string, string> = {
   SNOW: 'Snow',
 }
 
-const DIRECTION_ORDER = ['N', 'S', 'E', 'W', 'SNOW', 'NS', 'SS', 'G']
+/** West first (user decision 2026-10-08): it opens the carousel and the dialog. */
+const DIRECTION_ORDER = ['W', 'E', 'N', 'S', 'SNOW', 'NS', 'SS', 'G']
 
 /** Legacy label for a token, else the schedule's view name, else the token. */
 export function directionLabel(token: string, view?: string): string {
@@ -90,7 +91,7 @@ export function directionLabel(token: string, view?: string): string {
   return LEGACY_LABELS[t] ?? (view && view !== token ? view : token)
 }
 
-/** Canonical N/S/E/W/Snow/sky order; unknown tokens last, alphabetically. */
+/** Canonical W/E/N/S/Snow/sky order; unknown tokens last, alphabetically. */
 export function compareTokens(a: string, b: string): number {
   const rank = (t: string) => {
     const i = DIRECTION_ORDER.indexOf(t.toUpperCase())

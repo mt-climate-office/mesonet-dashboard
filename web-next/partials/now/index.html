@@ -43,6 +43,10 @@
       <div class="now-col">
         <section class="dash-card now-hero" aria-labelledby="now-hero-title" data-testid="now-hero">
           <h2 class="sr-only" id="now-hero-title">Current conditions</h2>
+          <!-- The temperature and summary open the Air temperature page, as a tile opens its own; the link's
+               hit area covers the card (styles/now.css) under the card's own controls. -->
+          <a class="now-hero-link" :href="href('air_temp')" @click="open($event, 'air_temp')" data-testid="now-hero-link">
+          <span class="sr-only">Air temperature: </span>
           <div class="now-hero-top">
             <p class="now-temp num-display" data-testid="now-temp">
               <span x-text="page.hero.temp ?? '—'"></span><span class="now-temp-unit" x-show="page.hero.temp">F</span>
@@ -55,6 +59,7 @@
             </p>
           </div>
           <p class="now-summary" x-show="page.hero.summary" x-text="page.hero.summary" data-testid="now-summary"></p>
+          </a>
           <p class="now-fresh" x-show="page.hero.freshness" data-testid="now-freshness">
             <span class="now-updated" x-text="page.hero.freshness?.updated"></span>
             <template x-if="page.hero.freshness?.provisional">
