@@ -1,7 +1,7 @@
 /**
  * Bottom scroll fade (framework-free): while `el` has more to scroll below, it carries
  * `data-scroll-more` and ui/layout/sheet.css fades its bottom edge, a cue that it scrolls (macOS hides
- * scrollbars). Used by the modal sheets' bodies (ui/shell/sheet.ts), the About sheets' tables and the Help and photo dialogs.
+ * scrollbars). Used by the modal sheets' bodies (ui/shell/sheet.ts), the About sheets' tables, the Download checklist and the Help and photo dialogs.
  * Returns the cleanup.
  */
 export function initScrollFade(el: HTMLElement): () => void {

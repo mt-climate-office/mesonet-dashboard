@@ -382,42 +382,50 @@ mco-web-style#37). The behaviour changes:
 - **Feels like (hourly):** the feels-like line is named and in the legend (`FEELS_LIKE_LINE`); air temperature
   is the lighter dashed line. **Livestock risk:** one legend entry per side ("Cold stress (mild → extreme)",
   "Heat stress (mild → extreme danger)") with the classes in the tooltip and table; onset labels sit in a
-  right gutter. Bands read "Air temperature (daily low–high)" / "Livestock risk (daily low–high)".
+  right gutter (short "77 °F heat" / "33 °F cold" on phones). GDD stage lines are one neutral stroke over a surface
+  strip, and the GDD lines carry a surface halo, so both stay visible over the stage-colored bars. Bands read "Air temperature (daily low–high)" / "Livestock risk (daily low–high)".
 - **Y axes** allow up to 8 steps (−24…113 °F → −40…120). Reference ET's running total uses the text color and its
   own axis steps.
 - **Soil water potential:** every value drier than 1,000 bar is drawn capped and dashed, flagged clipped or not
   (dry-end values are lower bounds); the axis stops at 10⁴ bar; band labels sit at their lines with values
-  ("Wilting point (-15 bar)"). The Now soil chip uses the same cap. **Soil profile:** month ticks over 60 days,
-  a hatched frozen swatch.
+  ("Wilting point (-15 bar)") in a right gutter beside the plot; a depth on the cap for ≥ 90% of the window is left
+  out with a note; log ticks have thousands separators. The Now soil chip uses the same cap. **Soil profile:** month
+  ticks over 60 days (every 2nd/3rd month on phones), a hatched frozen swatch.
 - **Palette:** light soil depths spread out (`DEPTH_GAMMA`), past years start at batlow 0.2, wider dark/high-contrast
   stress spans (all ≥ 3:1).
 - **Wind direction:** the stats card shows a prevailing direction from a vector mean ("Prevailing SSE (156°)",
-  "Variable" when bearings cancel) instead of low/high/average; lines break where the bearing wraps through
-  north; ticks read N/E/S/W/N; the axis title keeps "(°)".
+  "Variable" when bearings cancel) instead of low/high/average; it is drawn as small dots (no 360→0 strokes) on the
+  variable page, Compare and All years; ticks read N/E/S/W/N; the axis title keeps "(°)".
 - **Charts:** sparklines use their chart's y-axis rule (snow depth no longer autoscales noise) and dry rain draws
   a baseline; rain bars are at least 2 px; phone time axes over 3–60 days tick whole days; station-chart keys sit
   top-left (daily air temperature keys "Daily mean" and "Daily low–high"); All years ticks month starts at the
-  bottom; the chart ⋯ trigger is a vertical ⋮ (the header's stays ⋯). All years and Annual fetch the install year
+  bottom with a wrapping legend, current year first (also Ag Annual); the chart ⋯ trigger is a vertical ⋮ (the
+  header's stays ⋯); the table view is full width; on phones the station's own keys come before chart-wide ones. All years and Annual fetch the install year
   together with the next (no 404 for an empty first year).
 - **Now:** desktop tiles are one per row with the sparkline on the right; a dry week draws a bare baseline; copy
   "High 73° · Low 38° (24 h)", "Normal 63° · 35°", "Peak gust 14 mph (24 h)", Rain "Last 7 days" + "This year:
-  81% of normal"; strip ticks every 6 h; forecast icons outlined.
+  81% of normal"; strip ticks every 6 h (12 h on phones, never dropping "Now"); forecast icons outlined.
 - **Picker:** the drawer placeholder is "Station, town or ZIP"; search results show the station's network (IDs
   stay searchable).
 - **Controls:** one control height token (`--ctl-h`: 34 px, 40 px on touch, 44 in the photo dialog); every select
   draws its own chevron and every date field its own calendar icon (so Safari matches Chrome); the page
   `color-scheme` follows the theme.
-- **Photo dialog:** titled with the station name; Time options show the time only; Safari no longer inserts " at "
+- **Photo dialog:** titled with the station name and aligned with the photo; on landscape phones the photo sits beside
+  the controls; Time options show the time only; Safari no longer inserts " at "
   in photo times (`formatToParts`).
 - **Dialogs and sheets** focus their heading on open and fade their bottom edge while there is more to scroll
   (`ui/layout/scrollFade`).
-- **Download:** the Variables row opens straight to the checklist (`multiselect` `inline`); the daily-means note is
+- **Download:** the Variables row opens straight to the checklist (`multiselect` `inline`): the uncommon-variables
+  switch, the filter, a height-capped scrolling checklist, then the chosen chips (so ticking never moves the list);
+  in high contrast a disabled Preview is dashed and muted; the daily-means note is
   a visible notice naming the selected charts; the variable list names a sensor height only when a station has
   several of that variable.
-- **About:** units in their own column in the readings table; sensor changes in depth order; "26 readings".
-  **Maps:** the selected station pushes town labels aside; the attribution button matches the zoom buttons.
-- **Short wide screens** (landscape phones) keep the header sections and attached popovers instead of the tab bar
-  and bottom sheets; menus scroll when taller than the room below.
+- **About:** units in their own column in the readings table (unit-less values in the UI font); sensor changes in
+  depth order; "26 readings"; Location breaks before the "·". **Maps:** the selected station pushes town labels
+  aside; the attribution button matches the zoom buttons; the locator map fits the station and its nearest neighbour
+  clear of the legend and controls (`core/about/locator`) instead of a fixed zoom.
+- **Short wide screens** (landscape phones) keep the header sections, attached popovers and the overlay picker drawer
+  instead of the tab bar and bottom sheets; menus scroll when taller than the room below.
 - **Why:** user review of the audit (2026-10-07): fix every finding in this repo.
 
 ### About replaces the metadata and current-conditions cards

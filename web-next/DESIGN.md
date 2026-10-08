@@ -120,7 +120,7 @@ drawer) reads `MCO.viewport` and the desktop query in JS.
 
 | Name | Query | Sections | Station picker | Now grid |
 |---|---|---|---|---|
-| compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) on narrow screens (≤ 640 px); a short, wide screen (landscape phone) keeps the header sections | bottom sheet (peek / full) | one column, tiles 2-up |
+| compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) on narrow screens (≤ 640 px); a short, wide screen (landscape phone) keeps the header sections | bottom sheet (peek / full) on narrow screens; the overlay drawer on short, wide ones | one column, tiles 2-up |
 | tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | one column, tiles 2-up |
 | desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero + tiles (4-up) beside photo + rows |
 

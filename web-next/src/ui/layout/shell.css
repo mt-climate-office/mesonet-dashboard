@@ -1,7 +1,8 @@
 /* Shell layout (partials/shell.html; DESIGN.md "Layout ladder"):
-     compact  ≤ 640 px wide or ≤ 560 px tall (MCO.viewport.COMPACT_MQ): one column,
-              picker = bottom sheet; the bottom tab bar only when narrow (a short, wide
-              landscape phone keeps the sections in the header, sectionNav.css)
+     compact  ≤ 640 px wide or ≤ 560 px tall (MCO.viewport.COMPACT_MQ): one column;
+              when narrow, picker = bottom sheet and the bottom tab bar; a short, wide
+              landscape phone keeps the sections in the header (sectionNav.css) and the
+              overlay picker drawer
      tablet   641–1059 px: sections in the header, picker = overlay drawer
      desktop  ≥ 1060 px: sections and the brand in the header, picker = in-flow drawer
    The station picker and the content column share one flex row (.dash-shell). */
