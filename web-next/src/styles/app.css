@@ -4,6 +4,11 @@
 
 [x-cloak] { display: none !important; }
 
+/* Native widgets (checkboxes, date pickers, select popups, scrollbars) follow the theme, not the OS:
+   dark and high-contrast are dark schemes. The kit sets no color-scheme. */
+:root { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+
 /* Page frame: navbar, then the active tab, footer at the bottom. Normal
    document scroll (tabs are long pages, not a full-viewport map). */
 body { min-height: 100dvh; display: flex; flex-direction: column; }

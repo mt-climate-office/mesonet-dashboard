@@ -4,10 +4,10 @@ import { soilParams, soilSeries } from '../ag/__tests__/adapters'
 import { profileValues } from '../ag/view/derive'
 import { SWP_CAP_BAR, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, depthLabel, swpBar } from '../ag/view/labels'
 import { FROZEN, HEATMAP, THEMES, depthColor } from '../palette'
-import { FROZEN_NAME, percentSaturationChart, percentSaturationTable, soilProfileChart, soilProfileTable, swpChart, swpTable, type SoilProfileModel } from './agSoil'
+import { FROZEN_NAME, monthStarts, percentSaturationChart, percentSaturationTable, soilProfileChart, soilProfileTable, swpChart, swpTable, type SoilProfileModel } from './agSoil'
 import { drawn, shownY, testCtx } from './testing'
 
-type S = { type: string; name: string; id?: string; data: unknown[]; color: string; lineStyle?: { type: string; opacity?: number }; markArea?: { data: [{ yAxis: number; name: string; label: { position: string } }, { yAxis: number }][] }; markLine?: { data: { yAxis: number }[] } }
+type S = { type: string; name: string; id?: string; data: unknown[]; color: string; lineStyle?: { type: string; opacity?: number }; markArea?: { data: [{ yAxis: number }, { yAxis: number }][] }; markLine?: { data: { yAxis: number; name?: string }[] } }
 const series = (o: { series?: unknown }) => drawn<S>(o)
 const texts = (o: { graphic?: unknown }) =>
   ((o.graphic ?? []) as { type: string; style?: { text?: string } }[]).filter((g) => g.type === 'text').map((g) => g.style!.text)
@@ -17,21 +17,32 @@ const params = soilParams('acebozem')
 
 describe('swpChart', () => {
   const s = swp(soil, params)
-  it('inverse log axis with "-" ticks covering FC and WP; bands + dashed lines + corner labels; one line per depth', () => {
+  it('inverse log axis with "-" ticks covering FC and WP; bands + dashed lines + labels at the lines; one line per depth', () => {
     const o = swpChart({ series: s, period: 'daily' }, testCtx())
     const [y] = shownY<{ type: string; inverse: boolean; min: number; max: number; axisLabel: { formatter: (v: number) => string } }>(o)
     expect(y).toMatchObject({ type: 'log', inverse: true })
     expect(y.min).toBeLessThanOrEqual(SWP_FIELD_CAPACITY)
     expect(y.max).toBeGreaterThanOrEqual(SWP_WILTING_POINT)
     expect(y.axisLabel.formatter(10)).toBe('-10')
+    expect(y.axisLabel.formatter(10000)).toBe('-10,000')
+    expect(y.axisLabel.formatter(0.1)).toBe('-0.1')
     const [bands, ...all] = series(o)
     const lines = all.filter((l) => l.lineStyle?.type === 'solid')
     expect(bands.id).toBe('aux:bands')
-    expect(bands.markArea!.data.map((b) => [b[0].name, b[0].label.position])).toEqual([
-      ['Field Capacity', 'insideTopLeft'],
-      ['Wilting Point', 'insideBottomLeft'],
+    // Inverted axis: wet band from the top to field capacity, dry band from the wilting point down.
+    expect(bands.markArea!.data.map((b) => [b[0].yAxis, b[1].yAxis])).toEqual([
+      [y.min, SWP_FIELD_CAPACITY],
+      [SWP_WILTING_POINT, y.max],
     ])
-    expect(bands.markLine!.data.map((l) => l.yAxis)).toEqual([SWP_FIELD_CAPACITY, SWP_WILTING_POINT])
+    // The line labels sit right of the plot, in a gutter the grid leaves for them.
+    expect(bands.markLine!.data).toEqual([
+      { yAxis: SWP_FIELD_CAPACITY, name: 'Field capacity\n-0.33 bar' },
+      { yAxis: SWP_WILTING_POINT, name: 'Wilting point\n-15 bar' },
+    ])
+    expect((o.grid as { right: number }).right).toBeGreaterThanOrEqual(90)
+    const phone = swpChart({ series: s, period: 'daily' }, testCtx('light', 390, true))
+    expect(series(phone)[0].markLine!.data.map((l) => l.name)).toEqual(['Field\ncapacity\n-0.33 bar', 'Wilting\npoint\n-15 bar'])
+    expect((phone.grid as { right: number }).right).toBeLessThan((o.grid as { right: number }).right)
     expect(lines.map((l) => l.name)).toEqual(s.depthsCm.map(depthLabel))
     const i = s.kPa[1].findIndex((v) => v != null)
     expect((lines[1].data[i] as number[])[1]).toBeCloseTo(s.kPa[1][i]! / 100, 10)
@@ -43,7 +54,7 @@ describe('swpChart', () => {
       expect(lines.map((l) => l.color)).toEqual(s.depthsCm.map((cm) => depthColor(Number.parseInt(depthLabel(cm)), t)))
     }
   })
-  it('dry-end clips: capped, on a dashed faded companion of the same name and color, "≤" in tooltip and table', () => {
+  it('lower bounds: capped, on a dashed companion of the same name and color, "≤" in tooltip and table', () => {
     const { bar, dry } = swpBar(s)
     // The fixture season dries 2 in and 40 in past the lab range.
     const dryDepths = s.depthsCm.filter((_, d) => dry[d].some(Boolean))
@@ -57,7 +68,8 @@ describe('swpChart', () => {
     expect(dashed.map((l) => l.name)).toEqual(dryDepths.map(depthLabel))
     const d = s.depthsCm.indexOf(dryDepths[0])
     expect(dashed[0].color).toBe(lines.find((l) => l.name === dashed[0].name && l.lineStyle?.type === 'solid')!.color)
-    expect(dashed[0].lineStyle!.opacity).toBeLessThan(1)
+    // Full strength: a depth capped all season must not read as a reference line.
+    expect(dashed[0].lineStyle!.opacity ?? 1).toBe(1)
     const i = dry[d].indexOf(true)
     const pts = dashed[0].data as [number, number | null, string][]
     expect(pts.find((p) => p[0] === pts.filter((q) => q[2] === 'dry')[0][0])![1]).toBe(bar[d][i])
@@ -70,6 +82,15 @@ describe('swpChart', () => {
     expect(tip('joint')).not.toContain('2 in')
     const t = swpTable({ series: s, period: 'daily' })
     expect(t.rows[i][d + 1]).toBe(`≤ -${bar[d][i]!.toFixed(2)}`)
+  })
+  it('every value drier than the cap is a capped lower bound, clipped or not; the axis stops at 10⁴ bar', () => {
+    const kPa = [[1500, 50_000, 3_000_000, null]]
+    const { bar, dry } = swpBar({ kPa, clipped: [[false, false, false, false]] })
+    expect(bar[0]).toEqual([15, 500, SWP_CAP_BAR, null])
+    expect(dry[0]).toEqual([false, false, true, false])
+    const series = { ...s, depthsCm: [5], kPa, clipped: [[false, false, false, false]], time: s.time.slice(0, 4) }
+    const [y] = shownY<{ max: number }>(swpChart({ series, period: 'daily' }, testCtx()))
+    expect(y.max).toBe(SWP_CAP_BAR * 10)
   })
   it('table shows suction as negative bar', () => {
     const t = swpTable({ series: s, period: 'daily' })
@@ -90,6 +111,27 @@ describe('percentSaturationChart', () => {
 })
 
 describe('soilProfileChart', () => {
+  it('month ticks on windows over 60 days (the first cell of each month), day labels on shorter ones', () => {
+    const days = (from: string, n: number) => Array.from({ length: n }, (_, i) => Date.parse(`${from}T12:00Z`) + i * 86_400_000)
+    const year = days('2025-10-07', 366)
+    const starts = monthStarts(year)!
+    expect([...starts].map((i) => new Date(year[i]).toISOString().slice(0, 10)).slice(0, 3)).toEqual(['2025-11-01', '2025-12-01', '2026-01-01'])
+    expect(monthStarts(days('2026-09-01', 30))).toBeNull()
+    const xs = days('2025-10-07', 120)
+    const time = xs.map((x) => new Date(x).toISOString().slice(0, 10))
+    const o = soilProfileChart({ variable: 'soil_vwc', time, depthsCm: [5], values: [xs.map(() => 20)], period: 'daily' }, testCtx())
+    const ax = o.xAxis as { axisLabel: { interval: (i: number) => boolean; formatter: (v: number) => string } }
+    expect(xs.filter((_, i) => ax.axisLabel.interval(i)).map((x) => ax.axisLabel.formatter(x))).toEqual(['Nov', 'Dec', '2026', 'Feb'])
+    // Phones: every 2nd month (every 3rd over 8 months), the year always; every month keeps its tick.
+    const labels = (x: number[], t: string[]) => {
+      const p = soilProfileChart({ variable: 'soil_vwc', time: t, depthsCm: [5], values: [x.map(() => 20)], period: 'daily' }, testCtx('light', 390, true))
+      const a = p.xAxis as { axisLabel: { interval: (i: number) => boolean; formatter: (v: number) => string }; axisTick: { interval: (i: number) => boolean } }
+      return { names: x.filter((_, i) => a.axisLabel.interval(i)).map((v) => a.axisLabel.formatter(v)), ticks: x.filter((_, i) => a.axisTick.interval(i)).length }
+    }
+    expect(labels(xs, time)).toEqual({ names: ['Nov', '2026'], ticks: 4 })
+    const yearTime = year.map((x) => new Date(x).toISOString().slice(0, 10))
+    expect(labels(year, yearTime)).toEqual({ names: ['2026', 'Apr', 'Jul', 'Oct'], ticks: 12 })
+  })
   const base: SoilProfileModel = {
     variable: 'soil_vwc',
     time: ['2026-01-01', '2026-01-02'],

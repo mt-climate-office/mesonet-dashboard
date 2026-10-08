@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SWP_BANDS } from '../palette'
-import { bandSeries, hBandSeries, hatchDecal, labelledLines, sensorEventSeries } from './overlays'
+import { bandSeries, hBandGutter, hBandSeries, hatchDecal, labelledLines, sensorEventSeries } from './overlays'
 import { testCtx } from './testing'
 import { paint } from './theme'
 
@@ -21,16 +21,19 @@ describe('overlays', () => {
     const [base, fill] = bandSeries('Band', 'Base', [0, 1], [-15, -5], [10, 20], { color: '#000000', stack: 's', step: 1 })
     expect([base.stackStrategy, fill.stackStrategy]).toEqual(['all', 'all'])
   })
-  it('hBandSeries: markArea per band with corner labels and dashed markLines', () => {
-    const s = hBandSeries(ctx, [0, 10], [{ from: 0.1, to: 0.33, label: 'FC', labelAt: 'insideTopLeft' }], [{ y: 0.33 }])
+  it('hBandSeries: unlabelled bands, dashed lines labelled right of the plot; a gutter that fits the labels', () => {
+    const s = hBandSeries(ctx, [0, 10], [{ from: 0.1, to: 0.33 }], [{ y: 0.33, label: 'Field capacity\n-0.33 bar' }])
     expect(s.id).toBe('aux:bands')
-    const area = s.markArea!.data as unknown as [{ yAxis: number; name: string; label: { position: string } }, { yAxis: number }][]
-    expect(area[0][0]).toMatchObject({ yAxis: 0.1, name: 'FC', label: { position: 'insideTopLeft' } })
+    const area = s.markArea!.data as unknown as [{ yAxis: number }, { yAxis: number }][]
+    expect(area[0]).toEqual([{ yAxis: 0.1 }, { yAxis: 0.33 }])
+    expect(s.markArea!.label).toMatchObject({ show: false })
     expect(s.markArea!.itemStyle!.color).toBe(paint(ctx.theme, SWP_BANDS.fill))
-    // Boxed labels (AG-SWP-003): text-colored 2 px border on the surface at 0.8.
-    expect(s.markArea!.label).toMatchObject({ borderWidth: 2, borderColor: ctx.theme.text, fontSize: 14 })
-    expect(String(s.markArea!.label!.backgroundColor)).toMatch(/^rgba\(.*,0\.8\)$/)
     expect(s.markLine!.lineStyle!.type).toBe('dashed')
+    expect(s.markLine!.label).toMatchObject({ show: true, position: 'end', color: ctx.theme.text })
+    expect(s.markLine!.data).toEqual([{ yAxis: 0.33, name: 'Field capacity\n-0.33 bar' }])
+    // The longest line of the label, not the whole text.
+    expect(hBandGutter(ctx, ['Field capacity\n-0.33 bar'])).toBe(hBandGutter(ctx, ['Field capacity']))
+    expect(hBandGutter(ctx, ['Field capacity'])).toBeGreaterThan(hBandGutter(ctx, ['-15 bar']))
   })
   it('sensor events: hatched custom series with hover text', () => {
     const s = sensorEventSeries(ctx, [{ x0: 0, x1: 6 * H, text: 'Sensor added' }])

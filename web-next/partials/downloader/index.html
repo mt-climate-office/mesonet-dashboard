@@ -6,7 +6,9 @@
 <div class="dl-tab" x-data="downloader" data-testid="downloader">
   <form class="dl-form" aria-label="Download request" novalidate @submit.prevent="act()">
     <div class="dl-rows">
-      <!-- Variables: chips for the selection; "+ Add variables" opens the grouped checklist. -->
+      <!-- Variables: the uncommon switch, the filter, the grouped checklist (capped, its own scroller) and
+           chips for the selection under it, so ticking a box never moves the list. The row is the
+           disclosure, so the multiselect is inline (no second button). -->
       <div class="dl-row" data-testid="dl-row-vars">
         <h3 class="dl-row-head">
           <button type="button" class="dl-row-btn" id="dl-row-vars-btn" aria-controls="dl-row-vars-panel"
@@ -20,9 +22,36 @@
           </button>
         </h3>
         <div class="dl-row-panel" id="dl-row-vars-panel" role="region" aria-labelledby="dl-row-vars-btn" x-show="isOpen('vars')">
+          <label class="ctl-check dl-switch">
+            <input type="checkbox" role="switch" :checked="url.pub" @change="toggleUncommon($event)" data-testid="dl-uncommon">
+            <span>Show uncommon variables</span>
+          </label>
           <div class="ctl-multiselect" x-show="stationId" x-data="multiselect({ groups: () => groups,
-               value: () => pruned.selected, onChange: (v) => setElements(v), label: 'Variables' })"
+               value: () => pruned.selected, onChange: (v) => setElements(v), label: 'Variables', inline: true })"
                data-testid="dl-elements">
+            <div class="ctl-multiselect-panel" role="group" :id="ids.panel"
+                 :aria-label="label" @keydown.escape="escape($event)">
+              <label class="ctl-label" :for="ids.filter">Filter</label>
+              <input type="search" class="ctl-input" :id="ids.filter" x-model="query" autocomplete="off">
+              <p class="ctl-note" x-show="!labelsReady && elements?.status !== 'error'">Loading variables…</p>
+              <div class="dl-checklist" x-init="hint($el)" data-testid="dl-checklist">
+                <template x-for="group in visibleGroups" :key="group.id">
+                  <fieldset class="ctl-fieldset">
+                    <legend class="ctl-legend" x-text="group.label"></legend>
+                    <label class="ctl-check ctl-check-all">
+                      <input type="checkbox" :checked="stateOf(group) === 'all'"
+                             x-effect="markMixed($el, group)" @change="setGroup(group, $event)">
+                      <span>Select all</span></label>
+                    <template x-for="opt in group.options" :key="opt.value">
+                      <label class="ctl-check">
+                        <input type="checkbox" :checked="isSelected(opt.value)" @change="toggleValue(opt.value)">
+                        <span x-text="opt.label"></span></label>
+                    </template>
+                  </fieldset>
+                </template>
+                <p class="ctl-note" x-show="labelsReady && visibleGroups.length === 0">No matches</p>
+              </div>
+            </div>
             <ul x-ref="chips" class="ctl-chip-list" :aria-label="'Selected ' + label" x-show="labelsReady && selected().length > 0">
               <template x-for="v in selected()" :key="v">
                 <li><button type="button" class="nav-btn ctl-chip" :aria-label="'Remove ' + labelOf(v)"
@@ -30,36 +59,7 @@
                     <span aria-hidden="true">&times;</span></button></li>
               </template>
             </ul>
-            <button type="button" class="nav-btn ctl-disclosure" :id="ids.button"
-                    :aria-expanded="open" :aria-controls="ids.panel" @click="toggle()">
-              <span>+ Add variables</span><span class="ctl-count" x-text="countText()"></span>
-            </button>
-            <div class="ctl-multiselect-panel" role="group" :id="ids.panel"
-                 :aria-labelledby="ids.button" x-show="open" @keydown.escape.prevent.stop="escape()">
-              <label class="ctl-label" :for="ids.filter">Filter</label>
-              <input type="search" class="ctl-input" :id="ids.filter" x-model="query" autocomplete="off">
-              <p class="ctl-note" x-show="!labelsReady && elements?.status !== 'error'">Loading variables…</p>
-              <template x-for="group in visibleGroups" :key="group.id">
-                <fieldset class="ctl-fieldset">
-                  <legend class="ctl-legend" x-text="group.label"></legend>
-                  <label class="ctl-check ctl-check-all">
-                    <input type="checkbox" :checked="stateOf(group) === 'all'"
-                           x-effect="markMixed($el, group)" @change="setGroup(group, $event)">
-                    <span>Select all</span></label>
-                  <template x-for="opt in group.options" :key="opt.value">
-                    <label class="ctl-check">
-                      <input type="checkbox" :checked="isSelected(opt.value)" @change="toggleValue(opt.value)">
-                      <span x-text="opt.label"></span></label>
-                  </template>
-                </fieldset>
-              </template>
-              <p class="ctl-note" x-show="labelsReady && visibleGroups.length === 0">No matches</p>
-            </div>
           </div>
-          <label class="ctl-check dl-switch">
-            <input type="checkbox" role="switch" :checked="url.pub" @change="toggleUncommon($event)" data-testid="dl-uncommon">
-            <span>Show uncommon variables</span>
-          </label>
         </div>
       </div>
 
@@ -127,7 +127,6 @@
             </div>
           </fieldset>
           <p class="ctl-note" x-show="url.period === 'monthly'" x-text="monthlyNote"></p>
-          <p class="ctl-note" x-show="meansNote" x-text="meansNote" data-testid="dl-means-note"></p>
         </div>
       </div>
 
@@ -167,6 +166,7 @@
     </div>
 
     <p class="dl-msg" x-show="droppedNotice" x-text="droppedNotice" data-testid="dl-dropped-swp"></p>
+    <p class="dl-msg" x-show="meansNote" x-text="meansNote" data-testid="dl-means-note"></p>
     <template x-if="elements?.status === 'error'">
       <div data-testid="dl-elements-error"><!-- @include partials/load-error.html --></div>
     </template>
@@ -196,6 +196,6 @@
   </section>
 
   <footer class="dl-funding" data-testid="dl-funding-footer">
-    <p>Supported by Bureau of Land Management (RM-CESU Award L16AC00359)</p>
+    <p>Supported by Bureau of Land Management <span class="dl-nowrap">(RM-CESU Award L16AC00359)</span></p>
   </footer>
 </div>

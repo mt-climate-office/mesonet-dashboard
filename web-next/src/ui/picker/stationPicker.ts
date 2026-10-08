@@ -3,8 +3,8 @@
  * station search (Near me inside it; places too: a picked county, reservation,
  * town or ZIP code lists its stations where Near me does), recents, and "Browse on the map"
  * (network chips + map, revealed on demand), presented as a
- * bottom sheet on compact viewports and a drawer elsewhere (inline at ≥ 1060
- * px, overlay between). The presentations are ui/layout/{sheet,drawer}.ts;
+ * bottom sheet on narrow viewports (≤ 640 px) and a drawer elsewhere (inline at
+ * ≥ 1060 px unless short, overlay between and on short, wide screens). The presentations are ui/layout/{sheet,drawer}.ts;
  * this wrapper picks one per viewport, decides when it starts open
  * (core/stations/recent `pickerStartsOpen`) and handles the picks.
  * Openers dispatch `togglePicker(button)`.
@@ -35,6 +35,8 @@ import { announce } from '../shell/live'
 
 const EVENT = 'dash:picker'
 const DESKTOP_MQ = '(min-width: 1060px)'
+/** Narrow screens get the bottom sheet; a short, wide one (a landscape phone, 844 × 390) the overlay drawer. */
+const NARROW_MQ = '(max-width: 640px)'
 
 /** Open or close the picker from any button (it becomes the focus-return target). */
 export const togglePicker = (opener: HTMLElement | null): void => void window.dispatchEvent(new CustomEvent(EVENT, { detail: { opener } }))
@@ -58,7 +60,8 @@ const nearRows = (rows: NearStation[]) => rows.map((r) => ({ station: r.station,
 /** Combobox section caps: a handful of places under the stations. */
 export const SEARCH_SECTION_LIMITS = { Places: PLACE_RESULTS }
 
-const modeNow = (): Mode => (MCO.viewport.isCompact() ? 'sheet' : matchMedia(DESKTOP_MQ).matches ? 'inline' : 'overlay')
+const modeNow = (): Mode =>
+  matchMedia(NARROW_MQ).matches ? 'sheet' : !MCO.viewport.isCompact() && matchMedia(DESKTOP_MQ).matches ? 'inline' : 'overlay'
 const background = () => [...document.querySelectorAll('.mco-navbar, .dash-content, .dash-tabbar')]
 const toggles = () => [...document.querySelectorAll<HTMLElement>('[data-picker-toggle]')]
 
@@ -99,10 +102,10 @@ export function stationPicker() {
       const onEvent = (e: Event) => this.toggle((e as CustomEvent<{ opener: HTMLElement | null }>).detail?.opener ?? null)
       window.addEventListener(EVENT, onEvent)
       cleanups.push(() => window.removeEventListener(EVENT, onEvent))
-      const desktop = matchMedia(DESKTOP_MQ)
+      const queries = [matchMedia(DESKTOP_MQ), matchMedia(NARROW_MQ)]
       const onViewport = () => modeNow() !== this.mode && this.build(true)
-      desktop.addEventListener('change', onViewport)
-      cleanups.push(MCO.viewport.onChange(onViewport), () => desktop.removeEventListener('change', onViewport))
+      for (const q of queries) q.addEventListener('change', onViewport)
+      cleanups.push(MCO.viewport.onChange(onViewport), () => queries.forEach((q) => q.removeEventListener('change', onViewport)))
       // A link whose station turns out not to exist: open the picker once the catalog says so.
       const fx = Alpine.effect(() => {
         const st = Alpine.store('station')
@@ -176,7 +179,8 @@ export function stationPicker() {
     /* Search (ui/controls/combobox): stations, then places while typing */
     items(): ComboboxItem[] {
       const st = Alpine.store('station')
-      const stations = stationItems(st.list, Alpine.store('url').state.nets, st.id)
+      // The network beside each station, as in Recent (the combobox shows the id otherwise).
+      const stations = stationItems(st.list, Alpine.store('url').state.nets, st.id).map((s) => ({ ...s, meta: s.group }))
       const places = this.places()
       if (!places) return stations
       if (placeCache?.places !== places) placeCache = { places, items: placeItems(places) }
@@ -194,9 +198,12 @@ export function stationPicker() {
       if (open) this.placesWanted = true
       if (open && this.mode === 'sheet') ctl?.setState?.('full')
     },
+    /** The 336 px drawer has room beside "Near me" for the short hint only (picker.css); the sheet names counties too. */
     searchPlaceholder(): string {
       const c = Alpine.store('station').catalog
-      return c?.status === 'error' ? 'Failed to load stations' : c?.data ? 'Station, town, county or ZIP' : 'Loading stations…'
+      if (c?.status === 'error') return 'Failed to load stations'
+      if (!c?.data) return 'Loading stations…'
+      return this.mode === 'sheet' ? 'Station, town, county or ZIP' : 'Station, town or ZIP'
     },
     /** A search pick: a station is chosen; a place lists its stations below. */
     pick(id: string): void {

@@ -4,19 +4,14 @@
  * `document.startViewTransition` when the browser has it and reduced motion is
  * off; otherwise it just runs it. CSS (ui/layout/transition.css): a 180 ms
  * cross-fade + short slide on the `dash-section` region, direction from
- * `<html data-vt-dir="forward|back">`. Shared-element morph: pass `morph`
- * (the tapped element) and mark the destination `[data-vt-target]`; both get
- * the same `view-transition-name` for the snapshot only.
+ * `<html data-vt-dir="forward|back">`.
  */
 
 export interface TransitionOptions {
   /** 'forward' slides the new view in from the right, 'back' from the left. */
   direction?: 'forward' | 'back'
-  /** Element to morph into the first visible `[data-vt-target]` after the update. */
-  morph?: HTMLElement | null
 }
 
-const MORPH = 'dash-morph'
 const reduced = () => (typeof MCO !== 'undefined' ? MCO.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches)
 
 type StartVT = (cb: () => Promise<void> | void) => { finished: Promise<void>; ready: Promise<void>; updateCallbackDone: Promise<void> }
@@ -32,16 +27,8 @@ export async function withTransition(update: () => void | Promise<void>, opts: T
   }
   const root = document.documentElement
   root.dataset.vtDir = opts.direction ?? 'forward'
-  const from = opts.morph ?? null
-  let to: HTMLElement | null = null
-  if (from) from.style.viewTransitionName = MORPH
   const vt = (document.startViewTransition as unknown as StartVT).call(document, async () => {
-    if (from) from.style.viewTransitionName = ''
     await update()
-    if (from) {
-      to = [...document.querySelectorAll<HTMLElement>('[data-vt-target]')].find((el) => el.getClientRects().length > 0) ?? null
-      if (to) to.style.viewTransitionName = MORPH
-    }
   })
   // A quick second navigation skips this one: `ready` then rejects, which is expected, not an error.
   vt.ready.catch(() => {})
@@ -50,8 +37,6 @@ export async function withTransition(update: () => void | Promise<void>, opts: T
   } catch {
     /* skipped (e.g. a second navigation started); the update already ran */
   } finally {
-    if (from) from.style.viewTransitionName = ''
-    if (to) (to as HTMLElement).style.viewTransitionName = ''
     delete root.dataset.vtDir
   }
 }

@@ -2,7 +2,8 @@
    (.dash-section-host, view-transition-name: dash-section) moves: a 180 ms
    cross-fade with a 12 px slide whose direction follows the tab order
    (html[data-vt-dir]). The page root (navbar, tab bar) does not animate.
-   dash-morph is the tapped tile growing into the destination heading.
+   No shared-element morph: it added little over the slide and stretched
+   text in WebKit (DIVERGENCES.md).
    Reduced motion: none of this (the kit's blanket clamp, plus JS skips
    startViewTransition, so this block is belt and braces). */
 
@@ -24,8 +25,6 @@ html[data-vt-dir="back"]::view-transition-new(dash-section) { animation-name: da
 @keyframes dash-vt-in { from { opacity: 0; transform: translateX(12px); } }
 @keyframes dash-vt-out-back { to { opacity: 0; transform: translateX(12px); } }
 @keyframes dash-vt-in-back { from { opacity: 0; transform: translateX(-12px); } }
-
-::view-transition-group(dash-morph) { animation-duration: 240ms; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
 
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),

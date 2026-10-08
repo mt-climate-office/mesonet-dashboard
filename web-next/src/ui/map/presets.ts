@@ -1,7 +1,8 @@
 /**
  * The station maps (thin wrappers over ui/map/map.ts + stationLayer):
  *   stationMap    — Latest card: select a station, fly to it.
- *   locatorMap    — About: as stationMap, small; the page keeps one-finger and wheel scrolling.
+ *   locatorMap    — About: frames the selected station and its near neighbours clear of the overlays;
+ *                   the page keeps one-finger and wheel scrolling.
  *   pickerMap     — station picker: the whole state stays in view, click selects; cooperative on touch.
  *
  * Markup: an empty element with a height; the component builds the map,
@@ -14,6 +15,7 @@
 import Alpine from 'alpinejs'
 import type * as MapLibre from 'maplibre-gl'
 import type { Station } from '../../core/api'
+import { locatorFrame } from '../../core/about'
 import { legendRows, selectionAnnouncement, stationRows, visibleStations } from '../../core/map'
 import { component } from '../component'
 import { announce } from '../shell/live'
@@ -40,6 +42,11 @@ interface Preset {
   label: string
   /** Centre on the selected station when it changes. */
   fly: boolean
+  /**
+   * With `fly`: frame the selected station and its neighbours within 50 km (core/about `locatorFrame`)
+   * inside the space clear of the legend (top-left), the zoom buttons and the attribution (right).
+   */
+  frame?: boolean
   /** Map gestures need two fingers or Ctrl/⌘ (ui/map/map.ts `cooperativeGestures`). */
   cooperative?: boolean
   /** Fit padding (ui/map/map.ts `fitPadding`). */
@@ -99,7 +106,12 @@ function mapView(opts: StationMapOptions, preset: Preset) {
         const first = last === undefined
         last = selected
         if (!first) announce(selectionAnnouncement(s))
-        if (preset.fly && s) host.flyTo([s.longitude, s.latitude], { animate: !first })
+        // Centre the station in the space below the legend (top-left), so the legend covers less around it.
+        const legendBottom = legend.element.offsetTop + legend.element.offsetHeight
+        if (!preset.fly || !s) return
+        const box = preset.frame ? locatorFrame(stations, s.station) : null
+        if (box && host.fitTo(box, { padding: clearOfOverlays(legendBottom), maxZoom: 10, animate: !first })) return
+        host.flyTo([s.longitude, s.latitude], { animate: !first, offset: [0, legendBottom / 2] })
       })
     },
 
@@ -117,13 +129,23 @@ function mapView(opts: StationMapOptions, preset: Preset) {
   })
 }
 
+/**
+ * Fit padding (px) that keeps markers 8 px clear of the frame's overlays: the legend (top-left, measured)
+ * and the zoom buttons and attribution ⓘ down the right edge (10 px in, 31 px wide, 42 px on touch:
+ * map.css). Those are sizes, not measurements: the controls are not in the DOM at the first fit.
+ */
+function clearOfOverlays(legendBottom: number): Required<MapLibre.PaddingOptions> {
+  const control = 10 + (matchMedia('(hover: none)').matches ? 42 : 31) + 8
+  return { top: legendBottom + 8, right: control, bottom: control, left: 12 }
+}
+
 /** Latest-card station map: selecting a station flies to it. */
 export const stationMap = (opts: StationMapOptions) =>
   mapView(opts, { label: 'Map of Montana Mesonet stations', fly: true })
 
-/** About locator map: as stationMap, but the page scrolls over it (cooperative gestures). */
+/** About locator map: frames the station and its neighbours; the page scrolls over it (cooperative gestures). */
 export const locatorMap = (opts: StationMapOptions) =>
-  mapView({ legendCollapsed: true, ...opts }, { label: 'Locator map of Montana Mesonet stations', fly: true, cooperative: true })
+  mapView({ legendCollapsed: true, ...opts }, { label: 'Locator map of Montana Mesonet stations', fly: true, frame: true, cooperative: true })
 
 /**
  * Station-picker map: picking a station does not move the map (the whole network stays in view).

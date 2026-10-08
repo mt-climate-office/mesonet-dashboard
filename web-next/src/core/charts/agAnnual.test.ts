@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { groupByYear } from '../ag/compute'
 import { annualAxisLabel } from '../ag/view/labels'
 import { THEMES, yearColors } from '../palette'
-import { MONTH_START_DOY, annualChart, annualTable, doyHeader, monthDay } from './agAnnual'
+import { MONTH_MID_DOY, MONTH_START_DOY, annualChart, annualTable, doyHeader, monthDay } from './agAnnual'
 import { testCtx } from './testing'
 
 type S = { name: string; color: string; lineStyle: { width: number; color: string }; data: unknown[][] }
@@ -22,13 +22,47 @@ describe('annualChart', () => {
       expect(s[0].data).toEqual([[1, 1, 'Jan 1'], [2, 3, 'Jan 2']])
     }
   })
-  it('axes: day of year 1–366 with month ticks at the 1st, plain cumulative y title', () => {
+  it('axes: day of year 1–366, month ticks at the 1st and names mid-month, x axis at the bottom, plain cumulative y title', () => {
+    type X = { type: string; min: number; max: number; axisLine: { onZero: boolean }; axisTick: { customValues: number[] }; axisLabel: { customValues: number[]; fontSize: number; formatter: (v: number) => string } }
     const o = annualChart(model, testCtx())
-    const x = o.xAxis as { type: string; min: number; max: number; axisLabel: { customValues: number[]; formatter: (v: number) => string } }
-    expect(x).toMatchObject({ type: 'value', min: 1, max: 366 })
-    expect(x.axisLabel.customValues).toEqual(MONTH_START_DOY)
-    expect(MONTH_START_DOY.map(x.axisLabel.formatter)).toEqual(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+    const x = o.xAxis as X
+    expect(x).toMatchObject({ type: 'value', min: 1, max: 366, axisLine: { onZero: false } })
+    expect(x.axisTick.customValues).toEqual(MONTH_START_DOY)
+    expect(x.axisLabel.customValues).toEqual(MONTH_MID_DOY)
+    expect(MONTH_MID_DOY.slice(0, 2)).toEqual([17, 46])
+    expect(MONTH_MID_DOY.map(x.axisLabel.formatter)).toEqual(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
     expect(o.yAxis).toMatchObject({ name: 'Cumulative rain (in)' })
+    // Phones: every other month, 10 px labels, as the other phone axes.
+    const phone = annualChart(model, testCtx('light', 390, true)).xAxis as X
+    expect(phone.axisLabel.customValues.map(phone.axisLabel.formatter)).toEqual(['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov'])
+    expect(phone.axisLabel.fontSize).toBe(10)
+  })
+  it('the years key sits at the top left of the plot', () => {
+    const o = annualChart(model, testCtx())
+    const g = o.grid as { left: number; top: number }
+    expect(o.legend).toMatchObject({ top: 0, left: g.left })
+    expect((o.legend as { bottom?: number }).bottom).toBeUndefined()
+    expect(g.top).toBeGreaterThan(24)
+  })
+  it('the years key is a plain legend that wraps (no pages), the current year first', () => {
+    const many = Array.from({ length: 12 }, (_, i) => 2015 + i).flatMap((y) => groupByYear([`${y}-01-01`], [1]))
+    const wide = annualChart({ ...model, traces: many }, testCtx('light', 1200))
+    const phone = annualChart({ ...model, traces: many }, testCtx('light', 358, true))
+    const lg = phone.legend as { type: string; data: string[] }
+    expect(lg.type).toBe('plain')
+    expect(lg.data[0]).toBe('2026')
+    expect(lg.data.slice(1)).toEqual(Array.from({ length: 11 }, (_, i) => String(2015 + i)))
+    // The wrapped rows push the plot down.
+    expect((phone.grid as { top: number }).top).toBeGreaterThan((wide.grid as { top: number }).top)
+  })
+  it('wind direction: compass ticks and small dots per year (the current year a little larger)', () => {
+    const wind = groupByYear(['2025-01-01', '2025-01-02', '2026-01-03'], [350, 10, 20])
+    const o = annualChart({ traces: wind, yLabel: 'Wind direction (°)', currentYear: 2026, variable: 'Wind Direction' }, testCtx())
+    expect((o.yAxis as { axisLabel: { formatter: (v: number) => string } }).axisLabel.formatter(90)).toBe('E')
+    const s = o.series as (S & { type: string; symbolSize: number })[]
+    expect(s.map((x) => x.type)).toEqual(['scatter', 'scatter'])
+    expect(s[0].data.map((p) => p[1])).toEqual([350, 10])
+    expect(s[1].symbolSize).toBeGreaterThan(s[0].symbolSize)
   })
   it('tooltip: DOY-only header; each year shows its own (leap-aware) date', () => {
     const leap = groupByYear(['2024-02-29', '2024-03-01'], [1, 2])

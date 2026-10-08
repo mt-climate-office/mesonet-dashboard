@@ -12,17 +12,20 @@
 
 /* List: a search field, then one card per group, one link row per entry (name over sub | value | sparkline). */
 .charts-ready { display: flex; flex-direction: column; gap: var(--gap); }
-.charts-search {
-  display: flex; align-items: center; gap: 0.5rem;
-  min-height: 44px; padding: 0 var(--card-pad); border-radius: 999px;
-  background: var(--bg-surface); box-shadow: var(--card-shadow); color: var(--text-muted);
-}
-[data-theme="high-contrast"] .charts-search { border: 1px solid var(--border); box-shadow: none; }
+/* The input is the pill (the kit's focus ring follows its radius); the icon and the clear button sit over its ends. */
+.charts-search { position: relative; color: var(--text-muted); }
 .charts-search input {
-  flex: 1; min-width: 0; min-height: 40px; padding: 0;
-  border: 0; background: transparent;
+  display: block; width: 100%; min-height: 44px; margin: 0;
+  padding: 0 calc(var(--card-pad) + 2rem) 0 calc(var(--card-pad) + 18px + 0.5rem);
+  border: 0; border-radius: 999px; background: var(--bg-surface); box-shadow: var(--card-shadow);
   font: inherit; font-size: var(--fs-md); color: var(--text-primary);
+  -webkit-appearance: none; appearance: none;
 }
+[data-theme="high-contrast"] .charts-search input { border: 1px solid var(--border); box-shadow: none; }
+/* One clear button in every engine (Chrome draws a blue ×, Safari a grey ⊗). */
+.charts-search input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; display: none; }
+.charts-search-icon { position: absolute; left: var(--card-pad); top: 50%; transform: translateY(-50%); pointer-events: none; }
+.charts-search-clear { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
 /* Desktop: two balanced columns of cards (CSS columns, so a short card never leaves a hole beside a tall one). */
 .charts-groups { display: flex; flex-direction: column; gap: var(--gap); }
 @media (min-width: 1060px) and (min-height: 561px) {
@@ -30,7 +33,9 @@
      top above the other column). A column never splits an inline-block; the container's zero
      font-size / line-height drops the line box strut that would still leave a 1 px sliver, and each
      card restores the body's type. */
-  .charts-groups { display: block; columns: 2; column-gap: var(--gap); font-size: 0; line-height: 0; }
+  /* orphans/widows 1: each card is one line box, and Chrome's default of 2 kept a two-card search
+     result (two lines) whole in the left column. */
+  .charts-groups { display: block; columns: 2; column-gap: var(--gap); font-size: 0; line-height: 0; orphans: 1; widows: 1; }
   .charts-groups > .charts-group {
     display: inline-block; width: 100%; vertical-align: top; break-inside: avoid; margin-bottom: var(--gap);
     font-size: 1rem; line-height: normal;
@@ -127,7 +132,8 @@
 .var-table-scroll { overflow-x: auto; max-width: 100%; }
 .var-table-grid { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .var-table-grid th, .var-table-grid td { padding: 0.35rem 0.6rem; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
-.var-table-grid th:first-child, .var-table-grid td:first-child { text-align: left; }
+/* The time column, left. :first-of-type, not :first-child: each row's first child is its <template x-for>. */
+.var-table-grid th:first-of-type, .var-table-grid td:first-of-type { text-align: left; }
 .var-table-grid thead th { font-weight: 600; color: var(--text-secondary); }
 .var-table-grid td { font-family: var(--font-mono); color: var(--text-primary); }
 .var-pager { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); padding: calc(2 * var(--gap-tight)); font-size: var(--fs-sm); color: var(--text-secondary); }
@@ -135,19 +141,40 @@
 /* The Custom dates sheet: a small panel. */
 .dates-sheet { --sheet-w: 28rem; }
 .dates-form { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gap); padding-bottom: 0.5rem; }
+/* Done is the sheet's one action: the primary style (as the Download sheet's). --accent as a fill only. */
+.nav-btn.dates-done { min-width: 6rem; justify-content: center; font-weight: 600; background: var(--accent); border-color: var(--accent-line); color: var(--text-on-accent); }
+.nav-btn.dates-done:hover { background: var(--accent); color: var(--text-on-accent); filter: brightness(1.1); }
 
 /* Compare: options (a disclosure) beside the plot on desktop, above it otherwise. */
 .cmp-layout { display: grid; gap: var(--gap); grid-template-columns: minmax(0, 1fr); align-items: start; }
 @media (min-width: 1060px) and (min-height: 561px) {
   .cmp-layout { grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr); }
 }
-.cmp-summary { min-height: 40px; display: flex; align-items: center; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); cursor: pointer; }
+.cmp-summary {
+  min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: var(--gap-tight);
+  font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); cursor: pointer; list-style: none;
+}
+/* Our chevron instead of each engine's marker (Safari keeps its own beside a flex summary). */
+.cmp-summary::-webkit-details-marker { display: none; }
+.cmp-chevron { flex-shrink: 0; color: var(--text-muted); transition: transform var(--transition); }
+.cmp-options[open] .cmp-chevron { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .cmp-chevron { transition: none; } }
 .cmp-group { display: flex; flex-direction: column; align-items: flex-start; gap: calc(2 * var(--gap-tight)); padding-top: var(--gap); margin-top: var(--gap); border-top: 1px solid var(--border); }
 .cmp-group > * { max-width: 100%; }
 .cmp-group .ctl-note { margin: 0; }
 .cmp-legend { font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
 /* Interval and variable chips wrap; every variable shows (no inner scroll box to cut a row). */
 .cmp-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; padding: 2px; }
+/* The normals switch off (not daily data): dimmed like a chip not offered here; the note under it says why. */
+.cmp .ctl-check:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
+.cmp .ctl-check:has(input:disabled) input { cursor: not-allowed; }
+/* Beside the plot the column is too narrow for two date fields in Chrome (Safari's are narrower), so
+   Start and End stack on purpose in every engine, each the column's width. */
+@media (min-width: 1060px) and (min-height: 561px) {
+  .cmp-options .ctl-row { flex-direction: column; flex-wrap: nowrap; gap: calc(2 * var(--gap-tight)); }
+  .cmp-options .ctl-fieldset { align-self: stretch; }
+  .cmp-options .ctl-row .ctl-input { width: 100%; }
+}
 /* Date fields and the normals switch: a 44 px target on touch (HOUSE-STYLE §5.5). */
 @media (hover: none) { .cmp .ctl-input, .cmp .ctl-check { min-height: 44px; } }
 .cmp-skel { height: 32rem; border-radius: var(--card-radius); }

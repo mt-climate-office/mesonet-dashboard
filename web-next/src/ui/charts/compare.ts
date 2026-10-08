@@ -6,7 +6,7 @@
  * Markup in partials/charts/compare.html.
  */
 import Alpine from 'alpinejs'
-import { latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, type LatestTimeseriesModel } from '../../core/charts'
+import { keyedGaps, latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, type LatestTimeseriesModel } from '../../core/charts'
 import { dataSettled, datesPatch, installDate, plotStatus, todayIso, viewAnnouncement, windowRange, zoomWindow, type PlotStatus } from '../../core/latest'
 import { availableVars, chartWindow, emptyState, type TimeseriesEmpty } from '../../core/models/timeseries'
 import { loadErrorText } from '../../core/loadError'
@@ -111,7 +111,9 @@ export function compare() {
     },
     heightStyle(): string {
       // The selected panels' height from the start (the model brings no more panels), so the plot never grows as it loads.
-      const px = latestTimeseriesHeight(this.vars()?.length ?? 1, this.compact)
+      // Keyed gaps from the panels once loaded, predicted from the variables before (core/charts keyedGaps).
+      const m = this.model()
+      const px = latestTimeseriesHeight(this.vars()?.length ?? 1, this.compact, keyedGaps(m ? m.ts.panels : (this.vars() ?? [])))
       return `--chart-height: ${px}px; --chart-height-compact: ${px}px`
     },
     /** Live-region text once a new view has data; '' while loading. */

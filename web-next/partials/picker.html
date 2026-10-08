@@ -2,7 +2,8 @@
      places while typing; the "Near me" chip inside the field; Near me's or a picked place's stations
      below), recents, then "Browse on the map",
      which reveals the network chips and the station map. A drawer (.dash-drawer, inline ≥ 1060 px /
-     overlay) or, on compact viewports, a bottom sheet (.dash-sheet); the class follows the viewport.
+     overlay, also on short, wide screens) or, ≤ 640 px wide, a bottom sheet (.dash-sheet); the class
+     follows the viewport.
      The head's handle button is the sheet's drag/toggle target and is hidden in drawer mode. -->
 <aside id="station-picker" class="dash-picker" x-data="stationPicker"
        x-cloak :class="panelClass()"

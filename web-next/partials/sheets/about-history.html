@@ -20,7 +20,7 @@
         <template x-if="state === 'error'"><!-- @include partials/load-error.html --></template>
         <template x-if="state === 'empty'"><p class="about-message">No sensor changes on record.</p></template>
         <template x-if="state === 'ready'">
-          <div class="about-scroll" role="region" aria-label="Sensor changes (scrollable)" tabindex="0">
+          <div class="about-scroll" x-init="hint($el)" role="region" aria-label="Sensor changes (scrollable)" tabindex="0">
             <ol class="about-days">
               <template x-for="d in days" :key="d.date">
                 <li>

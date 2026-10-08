@@ -6,8 +6,10 @@
 import type { LegendRow } from '../../core/map'
 import { uniqueId } from '../controls/ids'
 
+// A down chevron: the kit turns it up while expanded, so on this top-docked panel it shows the action
+// (down = open below, up = fold away); the kit's own up glyph is for bottom-docked panels.
 const CHEVRON =
-  '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>'
 
 export interface Legend {
   readonly element: HTMLElement

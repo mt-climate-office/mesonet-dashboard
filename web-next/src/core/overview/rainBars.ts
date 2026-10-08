@@ -1,7 +1,7 @@
 /**
  * The Now Rain tile's graphic: seven daily precipitation bars (the last six
- * days and today, local dates), or nothing when no rain fell in that week (a
- * flat line says nothing). One small daily request; pure.
+ * days and today, local dates) on a zero baseline, so a dry week draws the
+ * bare baseline ("0 every day") rather than a blank. One small daily request; pure.
  */
 import type { ObservationRow } from '../api'
 import { sparkline, type Sparkline } from '../charts/sparkline'
@@ -26,8 +26,8 @@ export function rainDailyQuery(station: string, today: string) {
 
 /**
  * Seven daily totals (in, oldest first; a day without a row is a gap) as bars
- * plus their screen-reader sentence, or null when the rows are not in yet or
- * no day had rain (> 0 in): the tile then draws nothing.
+ * on a baseline plus their screen-reader sentence (a dry week: the baseline
+ * alone, "no rain"), or null when the rows are not in yet or no day reported.
  */
 export function rainBars(rows: readonly ObservationRow[] | undefined, today: string): { spark: Sparkline; sparkLabel: string } | null {
   if (!rows) return null
@@ -39,10 +39,10 @@ export function rainBars(rows: readonly ObservationRow[] | undefined, today: str
   const days = Array.from({ length: DAYS }, (_, i) => daysBefore(today, DAYS - 1 - i))
   const v = days.map((d) => byDate.get(d) ?? null)
   const total = v.reduce<number>((a, x) => a + (x ?? 0), 0)
-  if (!(total > 0)) return null
   // Half-day null points at both ends centre each bar in its seventh of the width (no clamped end bars).
   const spark = sparkline({ t: [-0.5, ...days.map((_, i) => i), DAYS - 0.5], v: [null, ...v, null] }, { kind: 'bars' })
   if (!spark) return null
+  if (!(total > 0)) return { spark, sparkLabel: 'Last 7 days: no rain.' }
   const wet = v.filter((x) => x !== null && x > 0).length
   return { spark, sparkLabel: `Last 7 days: ${total.toFixed(2)} in in total, rain on ${wet} ${wet === 1 ? 'day' : 'days'}.` }
 }

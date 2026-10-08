@@ -328,9 +328,10 @@ layout parts of older entries below; data behaviour is unchanged.
     and the table names the side ("Mild (cold)"). Dashed lines mark where heat stress starts (77 °F) and
     where cold stress starts for the chosen animal (33 °F adult, 42 °F newborn), so the Adult/Newborn chip
     visibly moves the cold threshold.
-  - **GDD** (`gddChart`, palette `gddStageColors`): with a stage table, the bars, the cumulative line, the
-    projection and the stage lines are colored by the growth stage reached that day (batlow, first stage →
-    last; a hidden piecewise visualMap on x). Corn and custom cutoffs keep the GDD colors. With no
+  - **GDD** (`gddChart`, palette `gddStageColors`): with a stage table, the bars and the stage lines are
+    colored by the growth stage reached that day (batlow, first stage → last; a hidden piecewise visualMap
+    on x); the running total and its projection are drawn in the text color (`CUMULATIVE_LINE`), so they
+    stay visible over the bars (UX audit, below). Corn and custom cutoffs keep the GDD colors. With no
     `ag_from` / `ag_to`, the window is the crop's season (`core/ag/view/gddSeason.ts`): planting → today
     in season, planting → season end after it, last year's season before this year's planting date.
   - **Cutoffs** (`ui/controls/rangeSlider.ts`): one track with two thumbs (two native range inputs laid
@@ -369,6 +370,63 @@ layout parts of older entries below; data behaviour is unchanged.
   history (Now at its scroll position), also after a table view or Previous / Next (`$store.url.backTo`,
   core/router `nextBackTo`). Opened any other way, it still goes to the list.
 - **Why:** user requests (2026-10-07).
+
+### UX audit fixes (2026-10-07)
+A sweep of every view in Chrome and WebKit (desktop, phone, tablet, landscape; three themes) and a review of each
+screenshot produced 40 findings (issue drafts, `issue-drafts/ux-audit-2026-10-07`; the style-kit item is
+mco-web-style#37). The behaviour changes:
+- **GDD:** a window that ends in the past shows "No projection (past dates)" with an "End the dates today"
+  button (`projectable`), not a projection chip with nothing drawn. Thinning keeps the stage reached and the
+  highest stage; narrow screens label stage lines with their codes ("3", "V1"). Wheat and barley read
+  "32–70/95 °F" (the NDAWN switch) on the chip, legend and table caption.
+- **Feels like (hourly):** the feels-like line is named and in the legend (`FEELS_LIKE_LINE`); air temperature
+  is the lighter dashed line. **Livestock risk:** one legend entry per side ("Cold stress (mild → extreme)",
+  "Heat stress (mild → extreme danger)") with the classes in the tooltip and table; onset labels sit in a
+  right gutter (short "77 °F heat" / "33 °F cold" on phones). GDD stage lines are one neutral stroke over a surface
+  strip, and the GDD lines carry a surface halo, so both stay visible over the stage-colored bars. Bands read "Air temperature (daily low–high)" / "Livestock risk (daily low–high)".
+- **Y axes** allow up to 8 steps (−24…113 °F → −40…120). Reference ET's running total uses the text color and its
+  own axis steps.
+- **Soil water potential:** every value drier than 1,000 bar is drawn capped and dashed, flagged clipped or not
+  (dry-end values are lower bounds); the axis stops at 10⁴ bar; band labels sit at their lines with values
+  ("Wilting point (-15 bar)") in a right gutter beside the plot; a depth on the cap for ≥ 90% of the window is left
+  out with a note; log ticks have thousands separators. The Now soil chip uses the same cap. **Soil profile:** month
+  ticks over 60 days (every 2nd/3rd month on phones), a hatched frozen swatch.
+- **Palette:** light soil depths spread out (`DEPTH_GAMMA`), past years start at batlow 0.2, wider dark/high-contrast
+  stress spans (all ≥ 3:1).
+- **Wind direction:** the stats card shows a prevailing direction from a vector mean ("Prevailing SSE (156°)",
+  "Variable" when bearings cancel) instead of low/high/average; it is drawn as small dots (no 360→0 strokes) on the
+  variable page, Compare and All years; ticks read N/E/S/W/N; the axis title keeps "(°)".
+- **Charts:** sparklines use their chart's y-axis rule (snow depth no longer autoscales noise) and dry rain draws
+  a baseline; rain bars are at least 2 px; phone time axes over 3–60 days tick whole days; station-chart keys sit
+  top-left (daily air temperature keys "Daily mean" and "Daily low–high"); All years ticks month starts at the
+  bottom with a wrapping legend, current year first (also Ag Annual); the chart ⋯ trigger is a vertical ⋮ (the
+  header's stays ⋯); the table view is full width; on phones the station's own keys come before chart-wide ones. All years and Annual fetch the install year
+  together with the next (no 404 for an empty first year).
+- **Now:** desktop tiles are one per row with the sparkline on the right; a dry week draws a bare baseline; copy
+  "High 73° · Low 38° (24 h)", "Normal 63° · 35°", "Peak gust 14 mph (24 h)", Rain "Last 7 days" + "This year:
+  81% of normal"; strip ticks every 6 h (12 h on phones, never dropping "Now"); forecast icons outlined.
+- **Picker:** the drawer placeholder is "Station, town or ZIP"; search results show the station's network (IDs
+  stay searchable).
+- **Controls:** one control height token (`--ctl-h`: 34 px, 40 px on touch, 44 in the photo dialog); every select
+  draws its own chevron and every date field its own calendar icon (so Safari matches Chrome); the page
+  `color-scheme` follows the theme.
+- **Photo dialog:** titled with the station name and aligned with the photo; on landscape phones the photo sits beside
+  the controls; Time options show the time only; Safari no longer inserts " at "
+  in photo times (`formatToParts`).
+- **Dialogs and sheets** focus their heading on open and fade their bottom edge while there is more to scroll
+  (`ui/layout/scrollFade`).
+- **Download:** the Variables row opens straight to the checklist (`multiselect` `inline`): the uncommon-variables
+  switch, the filter, a height-capped scrolling checklist, then the chosen chips (so ticking never moves the list);
+  in high contrast a disabled Preview is dashed and muted; the daily-means note is
+  a visible notice naming the selected charts; the variable list names a sensor height only when a station has
+  several of that variable.
+- **About:** units in their own column in the readings table (unit-less values in the UI font); sensor changes in
+  depth order; "26 readings"; Location breaks before the "·". **Maps:** the selected station pushes town labels
+  aside; the attribution button matches the zoom buttons; the locator map fits the station and its nearest neighbour
+  clear of the legend and controls (`core/about/locator`) instead of a fixed zoom.
+- **Short wide screens** (landscape phones) keep the header sections, attached popovers and the overlay picker drawer
+  instead of the tab bar and bottom sheets; menus scroll when taller than the room below.
+- **Why:** user review of the audit (2026-10-07): fix every finding in this repo.
 
 ### About replaces the metadata and current-conditions cards
 - **Legacy / web/:** Station Metadata and Current Conditions were bottom-card tabs beside the locator map.
@@ -461,8 +519,9 @@ Data requests are unchanged
 
 ### Now tiles open the variable page
 - **P0:** a tile opened Compare with its variables.
-- **New:** a tile opens its first variable's page (wind → Wind Speed, soil → Soil VWC), with the
-  shared-element morph into the page heading (none under reduced motion).
+- **New:** a tile opens its first variable's page (wind → Wind Speed, soil → Soil VWC) with the usual
+  section slide. A shared-element morph (the tile or list row growing into the page heading) was tried and
+  removed: it added little over the slide and stretched the text in WebKit.
 
 ### Charts on touch screens
 - **web/ and P0:** the inside dataZoom took drags and pinches, so a swipe over a chart panned it instead of
@@ -493,7 +552,7 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 | LDB-005 | Table odd rows `rgb(220,220,220)`, black on white | Kit table tokens (chrome, not a palette role) |
 | AG-FL-001 | Feels-like markers blue / red / green over a black line | `FEELS_LIKE`: wind chill `#2166ac` diamond, heat index `#b2182b` triangle, only where the index differs from the air temperature; feels-like line `INDEX_LINE` (`--text-dim`), air temperature dashed in the same token. Dark/HC step along RdBu toward the light end |
 | AG-CCI-003 | Extreme Danger `#843094`, Extreme `#CC0606`, Severe `#FF4400`, Moderate `#FFAD00`, Mild `#FFFF00`, No Stress `#A5A5A5`; black line (legacy). YlOrRd + `#BBBBBB` (web/) | `cciStyle()`: No Stress grey ●; cold stress 5 samples of RdBu's blue half ◆, heat stress 5 of its red half ▲, using the part that clears 3:1 on each surface (light 0.6–1); line `INDEX_LINE` |
-| AG-GDD-005 | Orange bars + orange line, markers in a 24-color stage palette (legacy); Tol sand/indigo + Tol stage colors (web/) | `GDD`: YlOrRd bars `#fc4e2a` + cumulative `#bd0026`; projection band = cumulative at 15%; with a stage table, bars, line, projection and stage lines take `gddStageColors` (batlow) by the stage reached; stage labels stay `--text-muted` |
+| AG-GDD-005 | Orange bars + orange line, markers in a 24-color stage palette (legacy); Tol sand/indigo + Tol stage colors (web/) | `GDD`: YlOrRd bars `#fc4e2a` + cumulative `#bd0026`; projection band = cumulative at 15%; with a stage table, bars and stage lines take `gddStageColors` (batlow) by the stage reached, the running total and projection `CUMULATIVE_LINE` (`--text-primary`); stage labels stay `--text-muted` |
 | AG-SOIL-004 | soil_temp `RdBu_r` mid 32; swp `BrBG_r`; others `BrBG` (legacy). Viridis / custom diverging (web/) | `HEATMAP`: soil_temp RdBu reversed, midpoint 32 °F; VWC YlGnBu; EC batlow; SWP BrBG reversed (wet teal → dry brown); percent saturation Blues. Frozen cells `FROZEN` grey (`#d9d9d9` light) + hatch |
 | AG-SWP-001 | Depth colors as LDP-011 | `depthColor()` (cm ÷ 2.54) |
 | AG-SWP-002 | FC/WP bands `rgba(128,128,128,0.2)` (legacy), `rgba(150,150,150,0.18)` + `#444` dashed lines (web/) | `SWP_BANDS`: `--text-dim` at 12% + dashed `--text-dim` lines, labelled "Field Capacity" / "Wilting Point" |

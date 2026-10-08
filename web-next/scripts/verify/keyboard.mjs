@@ -140,7 +140,7 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
 {
   const { page, problems, close } = await open(env, '?theme=light#now')
   const input = page.getByTestId('picker-search').getByRole('combobox')
-  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town, county or ZIP')
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town or ZIP')
   await input.focus()
   // The places load when the list opens.
   await page.keyboard.type('bozeman')
@@ -175,7 +175,7 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await page.evaluate(() => localStorage.setItem('mco-dashboard-recent', 'mdaglasw'))
   await page.reload({ waitUntil: 'load' })
   const input = page.getByTestId('picker-search').getByRole('combobox')
-  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town, county or ZIP')
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town or ZIP')
   await input.focus()
   await page.keyboard.type('acebozem')
   await page.keyboard.press('ArrowDown')
@@ -183,7 +183,8 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
     const id = document.querySelector('[data-testid="picker-search"] input')?.getAttribute('aria-activedescendant')
     return id ? document.getElementById(id)?.textContent?.replace(/\s+/g, ' ').trim() : null
   })
-  check('combobox: typing + ArrowDown sets aria-activedescendant on the match', /acebozem/.test(active ?? ''), String(active))
+  // The option shows the station's name and network ("Bozeman HydroMet"), as the Recent rows do.
+  check('combobox: typing + ArrowDown sets aria-activedescendant on the match', /^Bozeman\b/.test(active ?? ''), String(active))
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('s') === 'acebozem', null, { timeout: 10000 }).catch(() => {})
   check('combobox: Enter selects the station (?s=acebozem)', (await urlParam(page, 's')) === 'acebozem')
@@ -409,7 +410,10 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&v=gdd#charts', 1]]) {
   check('download form: a row expands in place; opening another closes it (Enter works)',
     r1['dl-row-vars-btn'] === 'true' && r2['dl-row-vars-btn'] === 'false' && r2['dl-row-dates-btn'] === 'true' && datesShown && varsHidden, JSON.stringify([r1, r2, datesShown, varsHidden]))
   await page.locator('#dl-row-vars-btn').click()
-  await page.getByTestId('dl-elements').locator('.ctl-disclosure').click()
+  const firstCheck = page.getByTestId('dl-elements').locator('.ctl-check:not(.ctl-check-all)').first()
+  check('download form: the Variables row opens straight to the checklist (no second disclosure)',
+    (await page.getByTestId('dl-elements').locator('.ctl-disclosure').count()) === 0 &&
+      (await firstCheck.waitFor({ state: 'visible', timeout: 30000 }).then(() => true, () => false)))
   await page.getByTestId('dl-elements').locator('.ctl-check:not(.ctl-check-all)').first().click()
   await page.waitForFunction(() => document.querySelector('[data-testid="dl-run"]')?.getAttribute('aria-disabled') === 'false', null, { timeout: 5000 }).catch(() => {})
   check('download form: picking a variable enables Preview and clears the reason',
@@ -420,16 +424,10 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&v=gdd#charts', 1]]) {
   const cleared = { value: await filter.inputValue(), panel: await filter.isVisible(), focused: await filter.evaluate((el) => el === document.activeElement) }
   check('download form: the first Esc in the checklist clears the filter text and keeps it open',
     cleared.value === '' && cleared.panel && cleared.focused, JSON.stringify(cleared))
-  await filter.fill('air')
-  await page.getByTestId('dl-elements').locator('.ctl-disclosure').click()
-  await filter.waitFor({ state: 'hidden', timeout: 5000 })
-  await page.getByTestId('dl-elements').locator('.ctl-disclosure').click()
-  await filter.waitFor({ state: 'visible', timeout: 5000 })
-  check('download form: closing the checklist resets its filter', (await filter.inputValue()) === '', await filter.inputValue())
-  await filter.focus()
   await page.keyboard.press('Escape')
-  check('download form: Esc in the checklist closes the checklist, not the sheet',
-    !(await page.evaluate(() => document.getElementById('sheet-download').hidden)) && (await page.evaluate(() => document.activeElement?.classList.contains('ctl-disclosure'))))
+  await page.locator('#sheet-download').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+  check('download form: the next Esc (empty filter) goes on to close the sheet',
+    await page.evaluate(() => document.getElementById('sheet-download').hidden))
   const p = await problems()
   check('download form: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()

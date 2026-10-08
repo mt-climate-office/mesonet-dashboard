@@ -31,6 +31,18 @@ describe('sparkline', () => {
     expect(s.bars[0].h).toBe(14)
     for (const b of s.bars) expect(b.x + b.w).toBeLessThanOrEqual(100)
   })
+  it('covers a given range, so small noise stays small', () => {
+    const s = sparkline({ t: [0, 1], v: [0, 0.1] }, { range: [0, 1] })!
+    expect([s.min, s.max]).toEqual([0, 1])
+    expect(s.d).toBe('M0 26.5L100 24')
+    expect(sparkline({ t: [0, 1], v: [0, 5] }, { range: [0, 1] })!.max).toBe(5)
+  })
+  it('breaks the line where neighbours are further apart than breakAbove (a wind-direction wrap)', () => {
+    const s = sparkline({ t: [0, 1, 2, 3], v: [350, 10, 20, 200] }, { range: [0, 360], breakAbove: 180 })!
+    expect(s.d.match(/M/g)).toHaveLength(2)
+    expect(s.d.startsWith('M0 ')).toBe(true)
+    expect(s.d).toContain('M33.33 ')
+  })
   it('is deterministic', () => {
     const a = { t: [0, 5, 9], v: [3, 1, 2] }
     expect(sparkline(a)).toEqual(sparkline(a))

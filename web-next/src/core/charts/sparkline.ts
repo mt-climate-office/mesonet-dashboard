@@ -21,6 +21,10 @@ export interface SparkOptions {
   height?: number
   /** Force the y range to include 0 (bars always do). */
   zero?: boolean
+  /** A y range the scale always covers (the variable's chart axis), so a calm or dry day's noise stays small. */
+  range?: readonly [number, number]
+  /** Break the line between neighbours further apart than this (wind direction: 180°, a wrap through north). */
+  breakAbove?: number
 }
 
 export interface Sparkline {
@@ -52,8 +56,12 @@ export function sparkline(s: SparkSeries, opts: SparkOptions = {}): Sparkline | 
   const t0 = s.t[0]
   const t1 = s.t[s.t.length - 1]
   let min = Math.min(...pts.map((p) => p[1]))
-  const max = Math.max(...pts.map((p) => p[1]))
+  let max = Math.max(...pts.map((p) => p[1]))
   if (kind === 'bars' || opts.zero) min = Math.min(0, min)
+  if (opts.range) {
+    min = Math.min(min, opts.range[0])
+    max = Math.max(max, opts.range[1])
+  }
   // 1 px of padding top and bottom so a 2 px stroke is never clipped.
   const pad = kind === 'line' ? 1.5 : 0
   const span = max - min || 1
@@ -76,14 +84,17 @@ export function sparkline(s: SparkSeries, opts: SparkOptions = {}): Sparkline | 
 
   let d = ''
   let pen = false
+  let prev = 0
   for (let i = 0; i < s.t.length; i++) {
     const v = s.v[i]
     if (typeof v !== 'number' || !Number.isFinite(v)) {
       pen = false
       continue
     }
+    if (opts.breakAbove !== undefined && Math.abs(v - prev) > opts.breakAbove) pen = false
     d += `${pen ? 'L' : 'M'}${r2(x(s.t[i]))} ${r2(y(v))}`
     pen = true
+    prev = v
   }
   return { viewBox: `0 0 ${W} ${H}`, kind, d, bars: [], min, max, points: pts.length }
 }

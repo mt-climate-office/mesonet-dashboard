@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getStationRecord, type ObservationRow } from '../api'
 import { stationVariables } from './catalog'
-import { HISTORY_MAX_YEARS, historyModel, historyRequest, historyRows, historyYears } from './history'
+import { HISTORY_MAX_YEARS, historyModel, historyRequest, historyRows, historyYears, requestGroups } from './history'
 
 const ELEMENTS = [
   ['air_temp_0200', 'Air Temperature @ 2 m'],
@@ -23,12 +23,26 @@ describe('historyYears', () => {
   })
 })
 
+describe('requestGroups', () => {
+  it('one year each; the install year rides with the year after it', () => {
+    expect(requestGroups([2026, 2025, 2024, 2023, 2022, 2021, 2020], '2020-10-30')).toEqual([[2026], [2025], [2024], [2023], [2022], [2021, 2020]])
+    // Install year outside the cap, unknown, or the only year: no folding.
+    expect(requestGroups([2026, 2025], '2016-08-11')).toEqual([[2026], [2025]])
+    expect(requestGroups([2026, 2025], null)).toEqual([[2026], [2025]])
+    expect(requestGroups([2026], '2026-03-01')).toEqual([[2026]])
+    expect(requestGroups([2026, 2025], '2025-06-01')).toEqual([[2026, 2025]])
+  })
+})
+
 describe('historyRequest', () => {
-  it('one daily request per calendar year, ending today this year and starting at the install date', () => {
-    expect(historyRequest('acebozem', 2025, AIR, ELEMENTS, '2026-10-02', '2016-08-11')?.key).toBe('obs:acebozem:daily:2025-01-01:2025-12-31:air_temp:')
-    expect(historyRequest('acebozem', 2026, AIR, ELEMENTS, '2026-10-02', null)?.query).toMatchObject({ period: 'daily', start: '2026-01-01', end: '2026-10-02' })
-    expect(historyRequest('acebozem', 2016, AIR, ELEMENTS, '2026-10-02', '2016-08-11')?.query.start).toBe('2016-08-11')
-    expect(historyRequest('acebozem', 2025, ETR, ELEMENTS, '2026-10-02', null)?.query).toMatchObject({ elements: '', hasEtr: true })
+  it('one daily request per group, ending today this year and starting at the install date', () => {
+    expect(historyRequest('acebozem', [2025], AIR, ELEMENTS, '2026-10-02', '2016-08-11')?.key).toBe('obs:acebozem:daily:2025-01-01:2025-12-31:air_temp:')
+    expect(historyRequest('acebozem', [2026], AIR, ELEMENTS, '2026-10-02', null)?.query).toMatchObject({ period: 'daily', start: '2026-01-01', end: '2026-10-02' })
+    expect(historyRequest('acebozem', [2016], AIR, ELEMENTS, '2026-10-02', '2016-08-11')?.query.start).toBe('2016-08-11')
+    expect(historyRequest('acebozem', [2025], ETR, ELEMENTS, '2026-10-02', null)?.query).toMatchObject({ elements: '', hasEtr: true })
+    // The install year with the next: install date through Dec 31 of the newer year (or today).
+    expect(historyRequest('acebozem', [2021, 2020], AIR, ELEMENTS, '2026-10-02', '2020-10-30')?.query).toMatchObject({ start: '2020-10-30', end: '2021-12-31' })
+    expect(historyRequest('acebozem', [2026, 2025], AIR, ELEMENTS, '2026-10-02', '2025-06-01')?.query).toMatchObject({ start: '2025-06-01', end: '2026-10-02' })
   })
 })
 
@@ -53,7 +67,7 @@ describe('historyModel', () => {
 describe('historyRows', () => {
   afterEach(() => vi.unstubAllGlobals())
   const stub = (status: number, body: string) => vi.stubGlobal('fetch', vi.fn(async () => new Response(body, { status })))
-  const year = (y: number) => historyRequest('acebozem', y, AIR, ELEMENTS, '2026-10-02', '2020-10-30')!.query
+  const year = (y: number) => historyRequest('acebozem', [y], AIR, ELEMENTS, '2026-10-02', '2020-10-30')!.query
 
   it("the API's 404 for a year without data is an empty year", async () => {
     stub(404, '{"detail":"No data available for the specified time period."}')

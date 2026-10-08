@@ -11,7 +11,7 @@ import { HEATMAP, SWP_BANDS, depthColor } from '../palette'
 import { grid, logAxis, logExtent, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtNum, fmtWall, isoWall, wallMs, type Period } from './format'
 import { colorBar, frozenSeries } from './heatmap'
-import { hBandSeries } from './overlays'
+import { hBandGutter, hBandSeries } from './overlays'
 import { lineSeries } from './series'
 import { LEGEND_PX, bottomLayout, plotExtent, points, showsSlider, stepMs, timeFrame, timeZoom, valued, zoomTrace, type Point } from './style'
 import { agLegend, liftForLegend } from './agLegend'
@@ -52,6 +52,47 @@ const categoryLabel = (period: Period) => (v: string | number) => {
   const d = new Date(Number(v))
   const day = `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`
   return period === 'hourly' ? `${day}\n${String(d.getUTCHours()).padStart(2, '0')}:00` : day
+}
+
+/** A window longer than this (days) gets month ticks, as the time axes elsewhere. */
+const MONTH_TICKS_DAYS = 60
+
+/**
+ * Indices of the cells (wall-clock ms) that start a month, when the window spans more than
+ * MONTH_TICKS_DAYS; null for a shorter window (day labels, thinned where they overlap).
+ */
+export function monthStarts(xMs: readonly number[]): Set<number> | null {
+  if (xMs.length < 2 || xMs[xMs.length - 1] - xMs[0] <= MONTH_TICKS_DAYS * 86_400_000) return null
+  const month = (x: number) => new Date(x).getUTCMonth()
+  return new Set(xMs.flatMap((x, i) => (i > 0 && month(x) !== month(xMs[i - 1]) ? [i] : [])))
+}
+
+/** Month tick text: "Jul", or the year at January ("2026"), as the time axes. */
+const monthLabel = (v: string | number) => {
+  const d = new Date(Number(v))
+  return d.getUTCMonth() === 0 ? String(d.getUTCFullYear()) : MONTHS[d.getUTCMonth()]
+}
+
+/**
+ * Month labels on a compact axis: every `n`th month start, so "Nov Dec 2026 Feb" never runs
+ * together. January (the year) is always labelled; others count from it.
+ */
+export function labelledMonths(xMs: readonly number[], months: Set<number>, every: number): Set<number> {
+  const monthIndex = (i: number) => new Date(xMs[i]).getUTCMonth()
+  return new Set([...months].filter((i) => monthIndex(i) % every === 0))
+}
+
+/**
+ * The time (category) axis: month ticks on long windows (on compact screens labelled every 2nd
+ * month, every 3rd over 8 months), else day labels thinned where they overlap.
+ */
+function categoryAxis(xMs: number[], period: Period, compact: boolean) {
+  const months = monthStarts(xMs)
+  if (!months) return { type: 'category' as const, data: xMs, axisLabel: { formatter: categoryLabel(period), hideOverlap: true }, axisTick: { alignWithLabel: true } }
+  const every = !compact ? 1 : months.size > 8 ? 3 : 2
+  const named = every > 1 ? labelledMonths(xMs, months, every) : months
+  const tick = (i: number) => months.has(i)
+  return { type: 'category' as const, data: xMs, axisLabel: { formatter: monthLabel, interval: (i: number) => named.has(i), hideOverlap: true }, axisTick: { interval: tick } }
 }
 
 export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
@@ -103,11 +144,11 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
   }
   // Hourly cells have two-line labels ("Jul 1" over "14:00").
   const b = bottomLayout(slider, cells.length ? LEGEND_PX : 0, m.period === 'hourly' ? 42 : 30)
-  const g = grid(ctx, { right: cb.gridRight, bottom: ctx.compact ? cb.gridBottom : b.grid })
+  const g = grid(ctx, { right: cb.gridRight, bottom: ctx.compact ? cb.gridBottom : b.grid, top: cb.gridTop })
   const lg = agLegend(ctx, [{ name: FROZEN_NAME }])
   return {
     grid: g,
-    xAxis: { type: 'category', data: xMs, axisLabel: { formatter: categoryLabel(m.period), hideOverlap: true }, axisTick: { alignWithLabel: true } },
+    xAxis: categoryAxis(xMs, m.period, ctx.compact),
     yAxis: [{ type: 'category', data: y, inverse: true, name: 'Soil depth', nameLocation: 'middle', nameGap: 44, nameRotate: 90 }, ...(trace ? [trace.yAxis] : [])],
     visualMap: cb.visualMap,
     graphic: cb.graphic,
@@ -178,9 +219,10 @@ const DRY = 'dry'
 const JOINT = 'joint'
 
 /**
- * Per depth, the solid line (dry-end clips nulled) and, when there are any,
- * a dashed, faded companion in the same color and name (one legend entry)
- * through the dry-end clips, joined to the solid line's neighbouring points.
+ * Per depth, the solid line (lower bounds nulled) and, when there are any, a
+ * dashed companion in the same color and name (one legend entry) through the
+ * lower bounds, joined to the solid line's neighbouring points. Full opacity:
+ * a depth that is capped all season must still read as that depth's data.
  */
 function swpLines(ctx: ChartContext, xs: number[], depthsCm: number[], bar: Nullable[][], dry: boolean[][], step: number): LineSeriesOption[] {
   return depthsCm.flatMap((cm, d) => {
@@ -191,16 +233,28 @@ function swpLines(ctx: ChartContext, xs: number[], depthsCm: number[], bar: Null
     const near = (i: number) => dry[d][i] || !!dry[d][i - 1] || !!dry[d][i + 1]
     const ys = bar[d].map((v, i) => (near(i) ? v : null))
     const notes = dry[d].map((x) => (x ? DRY : JOINT))
-    const faded = lineSeries(name, points(xs, ys, step, notes), { color, dash: 'dashed' })
-    return [solid, { ...faded, lineStyle: { ...faded.lineStyle, opacity: 0.55 } }]
+    return [solid, lineSeries(name, points(xs, ys, step, notes), { color, dash: 'dashed' })]
   })
 }
 
 /**
+ * The SWP band lines and their gutter labels: "Field capacity" over "-0.33 bar"; on compact
+ * screens the name breaks too, so the gutter stays narrow.
+ */
+function swpBandLines(ctx: ChartContext): { y: number; label: string }[] {
+  const label = (name: string, bar: number) => `${ctx.compact ? name.replace(' ', '\n') : name}\n-${bar} bar`
+  return [
+    { y: SWP_FIELD_CAPACITY, label: label(SWP_BANDS.labels.fieldCapacity, SWP_FIELD_CAPACITY) },
+    { y: SWP_WILTING_POINT, label: label(SWP_BANDS.labels.wiltingPoint, SWP_WILTING_POINT) },
+  ]
+}
+
+/**
  * SWP in bar, one line per depth, on a log axis inverted so wet is at the
- * top; ticks read negative ("-15"). Bands shade saturated → field capacity
- * and beyond the wilting point, with corner labels. Dry-end clips (VWC below
- * the lab range) are capped (labels `SWP_CAP_BAR`) and drawn dashed and faded.
+ * top; ticks read negative ("-15", "-10,000"). Bands shade saturated → field
+ * capacity and beyond the wilting point, each boundary labelled beside the plot. Lower
+ * bounds (dry-end clips and anything drier than `SWP_CAP_BAR`; labels
+ * `swpBar`) sit at most on the cap and are drawn dashed.
  */
 export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
   const xs = m.series.time.map(wallMs)
@@ -214,7 +268,9 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
   // The slider traces the shallowest depth, wet up as the inverted log axis draws it.
   const top = bar[shallowest(m.series.depthsCm)] ?? []
   const trace = points(xs, top.map((v) => (v != null && v > 0 ? -Math.log10(v) : null)), step)
-  const f = timeFrame(ctx, { extent: plotExtent(xs, step, false), trace, yAxisIndex: 1, legendPx: LEGEND_PX })
+  // The band lines' labels sit in a gutter right of the plot, so no depth line covers them.
+  const lines = swpBandLines(ctx)
+  const f = timeFrame(ctx, { extent: plotExtent(xs, step, false), trace, yAxisIndex: 1, legendPx: LEGEND_PX, right: hBandGutter(ctx, lines.map((l) => l.label)) })
   const bands =
     xs.length > 0
       ? [
@@ -222,13 +278,10 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
             ctx,
             [xs[0], xs[xs.length - 1]],
             [
-              { from: min, to: SWP_FIELD_CAPACITY, label: SWP_BANDS.labels.fieldCapacity, labelAt: 'insideTopLeft' },
-              { from: SWP_WILTING_POINT, to: max, label: SWP_BANDS.labels.wiltingPoint, labelAt: 'insideBottomLeft' },
+              { from: min, to: SWP_FIELD_CAPACITY },
+              { from: SWP_WILTING_POINT, to: max },
             ],
-            [
-              { y: SWP_FIELD_CAPACITY, label: `Field Capacity (${SWP_FIELD_CAPACITY} bar)` },
-              { y: SWP_WILTING_POINT, label: `Wilting Point (${SWP_WILTING_POINT} bar)` },
-            ],
+            lines,
           ),
         ]
       : []

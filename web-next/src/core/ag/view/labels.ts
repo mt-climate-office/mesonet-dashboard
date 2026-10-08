@@ -20,26 +20,31 @@ export const SWP_WILTING_POINT = 15
 /**
  * Display ceiling (bar) for dry-end SWP. Where observed VWC is drier than the
  * driest lab point, `swp()` clips it to the lab range, so its value is only a
- * lower bound on suction, and the FX tail there runs to ~10⁴ bar. Those
- * points draw at min(value, cap), muted, and read "≤ −… bar".
+ * lower bound on suction; the curve's dry tail also runs to ~10⁴ bar before
+ * any clip. Every value drier than this, and every dry-end clip, is a lower
+ * bound: it draws at min(value, cap), dashed, and reads "≤ −… bar".
  */
 export const SWP_CAP_BAR = 1000
 
 export interface SwpBar {
-  /** Positive bar magnitudes; dry-end clipped values capped at `SWP_CAP_BAR`. */
+  /** Positive bar magnitudes, never past `SWP_CAP_BAR`. */
   bar: Nullable[][]
-  /** `dry[d][i]`: VWC was below the lab range, so `bar` is a lower bound. */
+  /** `dry[d][i]`: a dry-end clip or past the cap, so `bar` is a lower bound. */
   dry: boolean[][]
 }
 
 /**
- * `SwpSeries` (kPa) → display bar. A clipped value past the wilting point is
- * a dry-end clip (VWC below the lab range); wet-end clips sit at the wettest
- * lab point, near saturation, and stay as they are.
+ * `SwpSeries` (kPa) → display bar. A value past the cap, or a clipped value
+ * past the wilting point (a dry-end clip: VWC below the lab range), is a lower
+ * bound, capped at `SWP_CAP_BAR`; wet-end clips sit at the wettest lab point,
+ * near saturation, and stay as they are.
  */
 export function swpBar(s: Pick<SwpSeries, 'kPa' | 'clipped'>): SwpBar {
   const dry = s.kPa.map((col, d) =>
-    col.map((v, i) => !!s.clipped[d]?.[i] && v != null && kPaToBar(v)! >= SWP_WILTING_POINT),
+    col.map((v, i) => {
+      const b = kPaToBar(v)
+      return b != null && (b > SWP_CAP_BAR || (!!s.clipped[d]?.[i] && b >= SWP_WILTING_POINT))
+    }),
   )
   const bar = s.kPa.map((col, d) =>
     col.map((v, i) => {
@@ -48,6 +53,33 @@ export function swpBar(s: Pick<SwpSeries, 'kPa' | 'clipped'>): SwpBar {
     }),
   )
   return { bar, dry }
+}
+
+/** Share of a depth's readings on the cap at or above which the SWP chart leaves the depth out. */
+export const SWP_CAPPED_SHARE = 0.9
+
+/**
+ * Depths drier than `SWP_CAP_BAR` for (nearly) the whole window: at least `SWP_CAPPED_SHARE` of
+ * their readings sit on the cap, so the chart would draw a flat dashed line at the cap that reads
+ * as a reference line. Returns the series without them and one note per depth dropped
+ * ("40 in: drier than -1,000 bar for the whole period, so it is not drawn.").
+ */
+export function dropCappedDepths(s: SwpSeries): { series: SwpSeries; notes: string[] } {
+  const { bar } = swpBar(s)
+  const notes: string[] = []
+  const keep = s.depthsCm.flatMap((cm, d) => {
+    const valued = bar[d].filter((v) => v != null).length
+    const capped = bar[d].filter((v) => v != null && v >= SWP_CAP_BAR).length
+    if (valued === 0 || capped / valued < SWP_CAPPED_SHARE) return [d]
+    const when = capped === valued ? 'the whole period' : 'nearly the whole period'
+    notes.push(`${depthLabel(cm)}: drier than -${SWP_CAP_BAR.toLocaleString('en-US')} bar for ${when}, so it is not drawn.`)
+    return []
+  })
+  if (keep.length === s.depthsCm.length) return { series: s, notes }
+  return {
+    series: { ...s, depthsCm: keep.map((d) => s.depthsCm[d]), kPa: keep.map((d) => s.kPa[d]), clipped: keep.map((d) => s.clipped[d]) },
+    notes,
+  }
 }
 
 /** "-12.34 bar", or "≤ -1000.00 bar (drier than the lab range)" for a dry-end clip. */

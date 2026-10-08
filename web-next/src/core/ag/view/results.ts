@@ -9,8 +9,9 @@ import type { DailyMet, DailyNormals, GddStageTable, HourlyMet, LocalDate, SoilP
 import { cciDailyRange, cciHourly, etoDaily, etoHourly, feelsLikeDailyRange, feelsLikeHourly, fToC, gdd, GDD_CUTOFFS_F, percentSaturation, projectGdd, swp as swpFromParams } from '../compute'
 import type { AnnualDaily, ForecastResult } from '../data'
 import { annualTraces, coverage, partialNote, profileValues, unavailableMessage } from './derive'
-import { type Period, type SoilProfileVar, SWP_CAP_BAR, swpBar } from './labels'
+import { type Period, type SoilProfileVar, SWP_CAP_BAR, dropCappedDepths, swpBar } from './labels'
 import type { AgTab, AgVariable } from './tab'
+import { NOT_PROJECTABLE } from './projection'
 import { loadErrorText } from '../../loadError'
 import { latestVariableForColumn } from '../../params'
 
@@ -156,12 +157,13 @@ export function gddView({ tab, met, table, through, normals, forecast }: GddInpu
       notes.push('No climate normals for this station, so no projection is shown.')
     }
   } else if (tab.gddProj !== 'off' && met.date.length > 0) {
-    notes.push('The projection is shown when the date range ends today.')
+    notes.push(NOT_PROJECTABLE)
   }
   return ready(
     {
       series,
       cutoffsF: custom ? [cut.loF ?? crops[0], cut.hiF ?? crops[1]] : [crops[0], crops[1]],
+      ...(series.ndawnSwitch ? { switchHighF: GDD_CUTOFFS_F[`${crop as 'wheat' | 'barley'}2`][1] } : {}),
       stageMode: custom ? 'custom' : hasTable ? 'table' : 'no-table',
       cropLabel,
       stages: custom || !hasTable ? undefined : table.stages,
@@ -195,17 +197,23 @@ export function soilView(i: SoilInputs): AgView<SoilChart> {
   const { soil, period } = i
   const sub = soilSub(i.variable, i.soilVar)
   if (soil.time.length === 0 || soil.depthsCm.length === 0) return emptyView('No soil data for the current selection.')
-  const swp = sub === 'swp' && i.params ? swpFromParams(soil, i.params) : undefined
+  const swpAll = sub === 'swp' && i.params ? swpFromParams(soil, i.params) : undefined
+  // The line chart leaves out a depth on the cap for (nearly) the whole window; the profile keeps it.
+  const capped = swpAll && i.variable === 'swp' ? dropCappedDepths(swpAll) : undefined
+  const swp = capped?.series ?? swpAll
   const pct = sub === 'percent_saturation' && i.params ? percentSaturation(soil, i.params) : undefined
   if (sub === 'swp' && !swp) return view('loading', null)
   if (sub === 'percent_saturation' && !pct) return view('loading', null)
   if (pct && pct.depthsCm.length === 0) {
     return emptyView('No soil porosity parameters for this station, so percent saturation is unavailable.')
   }
-  if (swp && (swp.depthsCm.length === 0 || !swp.kPa.some((c) => c.some((v) => v != null && v > 0)))) {
+  if (swpAll && (swpAll.depthsCm.length === 0 || !swpAll.kPa.some((c) => c.some((v) => v != null && v > 0)))) {
     return emptyView('No soil water potential for this station and period.')
   }
-  const notes: string[] = []
+  if (swp && swp.depthsCm.length === 0) {
+    return emptyView(`Every depth is drier than -${SWP_CAP_BAR.toLocaleString('en-US')} bar for this period.`, capped?.notes)
+  }
+  const notes: string[] = [...(capped?.notes ?? [])]
   if (pct) notes.push('Soil saturation uses published mesonet-soils porosity for each depth.')
   if (swp) notes.push('Soil water potential is computed in the browser from published mesonet-soils parameters.')
   if (swp && swpBar(swp).dry.some((col) => col.some(Boolean))) {

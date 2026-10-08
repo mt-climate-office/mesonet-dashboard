@@ -24,6 +24,12 @@ export const RECENT_DAYS = 3
 export const SEASON_END_MMDD = '10-31'
 export const SEASON_MIN_DAYS = 14
 
+/** Whether a window (or series) ending `end` can be projected: it ends at, or within RECENT_DAYS of, today. */
+export const projectable = (end: LocalDate, today: LocalDate): boolean => daysBetween(end, today) <= RECENT_DAYS
+
+/** Why a past window draws no projection (the projection popover and the chart notes). */
+export const NOT_PROJECTABLE = 'The projection is shown when the dates end today.'
+
 /** Projection end date, or null when no projection should be drawn. */
 export function projectionThrough(
   lastObserved: LocalDate | undefined,
@@ -31,7 +37,7 @@ export function projectionThrough(
   today: LocalDate,
 ): LocalDate | null {
   if (!lastObserved || horizon === 'off') return null
-  if (daysBetween(lastObserved, today) > RECENT_DAYS) return null
+  if (!projectable(lastObserved, today)) return null
   if (horizon === '30') return addDays(lastObserved, 30)
   if (horizon === '60') return addDays(lastObserved, 60)
   const seasonEnd = `${lastObserved.slice(0, 4)}-${SEASON_END_MMDD}`

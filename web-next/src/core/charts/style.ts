@@ -107,14 +107,14 @@ export function niceStep(raw: number): number {
   return 10 * p
 }
 
-/** An axis has 4 to 7 tick steps from its min to its max. */
+/** An axis has 4 to 8 tick steps from its min to its max. */
 export const MIN_STEPS = 4
-export const MAX_STEPS = 7
+export const MAX_STEPS = 8
 /** Room kept between the data and the axis ends, as a share of the data's span. */
 export const Y_PAD = 0.02
 
 /**
- * [lo, hi] rounded out to whole nice steps: of the steps that give 4–7 intervals, the one with the
+ * [lo, hi] rounded out to whole nice steps: of the steps that give 4–8 intervals, the one with the
  * least padding (the tighter axis; on a tie, the finer step). Never a coarse jump: −21–106 is
  * −20–120 by 20, not −50–150 by 50.
  */

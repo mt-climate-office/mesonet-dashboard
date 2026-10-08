@@ -19,8 +19,6 @@ const order = (s: Section) => SECTIONS.findIndex((x) => x.id === s)
 export interface NavigateOptions {
   /** URL state to apply with the move. */
   patch?: Partial<UrlState>
-  /** The tapped element, for a shared-element transition into `[data-vt-target]`. */
-  morph?: HTMLElement | null
   /** Add a history entry inside the section (an Ag tool, a Charts variable or sub-view). */
   drillDown?: boolean
   /** The section this link was followed from, so the new page's back arrow returns there (a Now tile → its chart). */
@@ -46,7 +44,7 @@ export async function navigate(section: Section, opts: NavigateOptions = {}): Pr
       url.go(section, opts.patch, opts.drillDown, opts.from)
       await Alpine.nextTick()
     },
-    { direction: order(section) < order(from) ? 'back' : 'forward', morph: opts.morph },
+    { direction: order(section) < order(from) ? 'back' : 'forward' },
   )
   // A target inside an x-for under an x-if renders one tick after the x-if.
   if (opts.target) await Alpine.nextTick()

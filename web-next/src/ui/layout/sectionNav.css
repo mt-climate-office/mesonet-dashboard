@@ -3,6 +3,8 @@
                      current one a raised pill)
      .dash-tabbar    compact: a bottom tab bar with a solid surface, icon + label, ≥ 56 px,
                      fixed, safe-area padding; its height is --tabbar-h on <html>
+   The tab bar is for narrow screens only: a short, wide screen (a landscape phone, 844 × 390) keeps
+   the header row, which has room for the sections there, and gives the bar's height to the content.
    Kit candidates .mco-section-nav / .mco-tabbar (KIT-NOTES.md). The current link is
    aria-current="page", never colour alone: a raised pill + bolder label in the header; a pill
    behind the icon + bolder label in the tab bar. */
@@ -30,7 +32,7 @@
 
 .dash-tabbar { display: none; }
 
-@media (max-width: 640px), (max-height: 560px) {
+@media (max-width: 640px) {
   .dash-sections { display: none; }
   .dash-tabbar {
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));

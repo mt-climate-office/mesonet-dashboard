@@ -22,10 +22,10 @@ export function formatDay(value: string | null | undefined): string | null {
 /** No-break space: keeps a number with its unit or hemisphere, so a narrow line never strands "W" or "ft". */
 const NBSP = '\u00a0'
 
-/** "45.66° N, 111.07° W" (each coordinate joined by NBSP), as the catalog sends the degrees. */
+/** "45.66° N, 111.07° W" as the catalog sends the degrees, all NBSP-joined: the pair never wraps inside. */
 export function formatCoordinates(lat: number, lon: number): string {
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return MISSING
-  return `${Math.abs(lat)}°${NBSP}${lat < 0 ? 'S' : 'N'}, ${Math.abs(lon)}°${NBSP}${lon < 0 ? 'W' : 'E'}`
+  return `${Math.abs(lat)}°${NBSP}${lat < 0 ? 'S' : 'N'},${NBSP}${Math.abs(lon)}°${NBSP}${lon < 0 ? 'W' : 'E'}`
 }
 
 /** Elevation in feet from metres, as legacy: round(m × 3.281). */
@@ -50,10 +50,13 @@ export function periodOfRecord(installed: string | null, latestStamp: string | n
   return `${from} – ${latestStamp?.slice(0, 10) === today ? 'today' : to}`
 }
 
-/** "Gallatin County · 45.66° N, 111.07° W" (coordinates alone without a county). */
+/**
+ * "Gallatin County · 45.66° N, 111.07° W" (coordinates alone without a county). A no-break space after
+ * "·" keeps the separator with the coordinates, so a narrow line breaks before it, never after.
+ */
 export function formatLocation(s: Station): string {
   const coords = formatCoordinates(s.latitude, s.longitude)
-  return s.county ? `${s.county} County · ${coords}` : coords
+  return s.county ? `${s.county} County ·\u00a0${coords}` : coords
 }
 
 /** Rows in display order: Station (name, id in mono), Network, Location, Elevation, Record. */

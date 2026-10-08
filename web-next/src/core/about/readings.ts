@@ -1,21 +1,31 @@
 /**
  * About's "All current readings" sheet: the current-conditions rows
  * (core/cards/currentConditions) and the HydroMet precipitation summary with
- * plain labels (core/variables/labels) and units on the values. Each row keeps
- * its API column (`col`) for the fidelity harness, which matches web/'s labels.
+ * plain labels (core/variables/labels), each number with its unit kept apart so
+ * the table can line the numbers up. Each row keeps its API column (`col`) for
+ * the fidelity harness, which matches web/'s labels.
  */
 import { ELEM_MAP } from '../params/latest'
 import { depthLabelFromColumn, variableForColumn } from '../params/columns'
 import { currentConditionsRows, pptSummaryRows } from '../cards/currentConditions'
-import { LABELS, formatReading } from '../variables/labels'
+import { LABELS, formatValue } from '../variables/labels'
 
 export interface Reading {
   /** The API column ("Soil VWC @ 4 in [%]"), or "Timestamp". */
   col: string
   /** Plain label: "Soil moisture at 4 in". */
   label: string
-  /** Value with its unit: "13.4%", "57.0 °F", "ESE (111.6 deg)". */
+  /** The number at table precision ("13.4", "57.0"), or the whole text ("ESE (111.6 deg)"). */
   value: string
+  /** The number's unit ("%", "°F", "mS/cm"); "" for text values. */
+  unit: string
+}
+
+/** A reading's parts: its value and unit (as `Reading`) and a note the value carried ("(wind chill)"), or "". */
+export interface ReadingValue {
+  value: string
+  unit: string
+  note: string
 }
 
 /** The LABELS id for a (LAB_SWAP-normalised) column, or null. */
@@ -39,23 +49,32 @@ export function readingLabel(col: string): string {
 }
 
 /**
- * A value as the table shows it: a leading number at the variable's table
- * precision with its unit ("56.984" → "57.0 °F"; "41.23 (wind chill)" →
- * "41.2 °F (wind chill)"); other text (timestamps, "ESE (111.6 deg)") as is.
- * Unknown columns keep the number and take the unit from the column's brackets.
+ * A value as the table shows it, split into number and unit: a leading number
+ * at the variable's table precision ("56.984" → "57.0" + "°F"; "41.23 (wind
+ * chill)" → "41.2" + "°F", note "(wind chill)"); other text (timestamps,
+ * "ESE (111.6 deg)") whole, without a unit. Unknown columns keep the number
+ * and take the unit from the column's brackets.
  */
-export function readingValue(col: string, value: string): string {
+export function readingValue(col: string, value: string): ReadingValue {
   const m = /^(-?\d+(?:\.\d+)?)(.*)$/.exec(value)
-  if (!m || col === 'Timestamp') return value
+  if (!m || col === 'Timestamp') return { value, unit: '', note: '' }
+  const note = m[2].trim()
   const id = labelId(col)
-  if (id) return formatReading(id, Number(m[1]), 'table') + m[2]
+  if (id) return { value: formatValue(id, Number(m[1]), 'table'), unit: LABELS[id].unit, note }
   const unit = /\[([^\]]+)\]/.exec(col)?.[1]
-  return unit ? `${m[1]} ${unit}${m[2]}` : value
+  return unit ? { value: m[1], unit, note } : { value, unit: '', note: '' }
 }
 
-/** Every current reading, Observed first (order as core/cards `currentConditionsRows`). */
+/**
+ * Every current reading, Observed first (order as core/cards `currentConditionsRows`).
+ * A value's note joins its label ("Feels like (wind chill)"), so the unit column stays narrow.
+ */
 export function readingRows(latest: Record<string, unknown>): Reading[] {
-  return currentConditionsRows(latest).map(([col, v]) => ({ col, label: readingLabel(col), value: readingValue(col, v) }))
+  return currentConditionsRows(latest).map(([col, v]) => {
+    const { value, unit, note } = readingValue(col, v)
+    const label = readingLabel(col)
+    return { col, label: note ? `${label} ${note}` : label, value, unit }
+  })
 }
 
 /**
@@ -71,7 +90,7 @@ export function pptLabel(col: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 }
 
-/** The HydroMet precipitation summary (core/cards `pptSummaryRows`, newest window first). */
+/** The HydroMet precipitation summary (core/cards `pptSummaryRows`, newest window first), in inches. */
 export function pptRows(summary: Record<string, unknown> | undefined): Reading[] {
-  return pptSummaryRows(summary).map(([col, value]) => ({ col, label: pptLabel(col), value }))
+  return pptSummaryRows(summary).map(([col, total]) => ({ col, label: pptLabel(col), value: total.replace(/ in$/, ''), unit: 'in' }))
 }

@@ -2,7 +2,9 @@
      ui/about/readings.ts): every reading from /latest with plain labels, then the HydroMet rain totals.
      Opened by About's row #about-readings (data-sheet), which Now's "All readings" link targets.
      The tables scroll inside a named, focusable region (WCAG 2.1.1); each row header keeps its API
-     column in data-col for the fidelity harness. Content mounts only while open. -->
+     column in data-col for the fidelity harness. A unit sits in its own fixed-width span after the
+     number (about.css), so the numbers end on one line; a text value (no unit: Observed, wind direction)
+     is set in the UI font across the whole value column. Content mounts only while open. -->
 <div class="mco-scrim dash-scrim dash-sheet-scrim" id="sheet-about-readings-scrim" hidden></div>
 <section id="sheet-about-readings" class="dash-sheet dash-sheet--modal about-sheet" role="dialog" aria-modal="true"
          aria-labelledby="sheet-about-readings-title" x-data="sheet({ id: 'about-readings' })" data-testid="sheet-about-readings" hidden>
@@ -22,13 +24,13 @@
         <template x-if="state === 'error'"><!-- @include partials/load-error.html --></template>
         <template x-if="state === 'empty'"><p class="about-message">No recent observations.</p></template>
         <template x-if="state === 'ready'">
-          <div class="about-scroll" role="region" aria-label="All current readings (scrollable)" tabindex="0">
+          <div class="about-scroll" x-init="hint($el)" role="region" aria-label="All current readings (scrollable)" tabindex="0">
             <table class="about-table" data-testid="about-readings-table">
               <caption>Latest observation</caption>
               <thead><tr><th scope="col">Reading</th><th scope="col">Value</th></tr></thead>
               <tbody>
                 <template x-for="r in rows" :key="r.col">
-                  <tr><th scope="row" :data-col="r.col" x-text="r.label"></th><td x-text="r.value"></td></tr>
+                  <tr><th scope="row" :data-col="r.col" x-text="r.label"></th><td :class="{ 'about-text': !r.unit }"><span x-text="r.value"></span><template x-if="r.unit"><span class="about-unit" x-text="r.unit"></span></template></td></tr>
                 </template>
               </tbody>
             </table>
@@ -38,7 +40,7 @@
                 <thead><tr><th scope="col">Period</th><th scope="col">Total</th></tr></thead>
                 <tbody>
                   <template x-for="r in pptRows" :key="r.col">
-                    <tr><th scope="row" :data-col="r.col" x-text="r.label"></th><td x-text="r.value"></td></tr>
+                    <tr><th scope="row" :data-col="r.col" x-text="r.label"></th><td><span x-text="r.value"></span><template x-if="r.unit"><span class="about-unit" x-text="r.unit"></span></template></td></tr>
                   </template>
                 </tbody>
               </table>

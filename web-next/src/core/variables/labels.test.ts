@@ -58,11 +58,11 @@ describe('formatValue', () => {
 })
 
 describe('axisTitle', () => {
-  it('plain name and unit; degrees and unitless take the name alone; unknown ids keep the fallback', () => {
+  it('plain name and unit (degrees too); unitless takes the name alone; unknown ids keep the fallback', () => {
     expect(axisTitle('air_temp', 'Air Temperature')).toBe('Air temperature (°F)')
     expect(axisTitle('soil_vwc', 'Soil VWC')).toBe('Soil moisture (%)')
     expect(axisTitle('windgust', 'Gust Speed')).toBe('Wind gusts (mph)')
-    expect(axisTitle('wind_dir', 'Wind Direction')).toBe('Wind direction')
+    expect(axisTitle('wind_dir', 'Wind Direction')).toBe('Wind direction (°)')
     expect(axisTitle('cci', 'cci')).toBe('Livestock risk')
     expect(axisTitle('new_thing', 'New Thing')).toBe('New Thing')
   })

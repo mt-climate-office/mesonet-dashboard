@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { TimeseriesPanel } from '../models/timeseries'
-import { fmtStat, panelStats } from './stats'
+import { fmtStat, panelStats, prevailing } from './stats'
 
 type S = { name: string; depth?: string; values: (number | null)[]; band?: { lo: (number | null)[]; hi: (number | null)[] } }
-const panel = (series: S[]): TimeseriesPanel => ({
-  variable: 'X',
+const panel = (series: S[], variable = 'X'): TimeseriesPanel => ({
+  variable,
   axisTitle: 'X',
   isSoil: false,
   noData: false,
@@ -51,6 +51,13 @@ describe('panelStats', () => {
   it('in the plain unit and table precision with the variable id', () => {
     const [row] = panelStats(panel([{ name: 'Wind Speed [mi/hr]', values: [4.04, 10.06, null, 1] }]), x, [0, 30], false, 'wind_spd')
     expect(row.items.map((i) => i.value)).toEqual(['4.0 mph', '10.1 mph', '7.1 mph'])
+  })
+  it('wind direction: only the prevailing direction, a vector mean (N and NE average to NNE, not S)', () => {
+    const [row] = panelStats(panel([{ name: 'Wind Direction [deg]', values: [350, 10, 30, 50] }], 'Wind Direction'), x, [0, 30], false, 'wind_dir')
+    expect(row.items).toEqual([{ label: 'Prevailing', value: 'N (10°)' }])
+    expect(prevailing([90, 135, 180])).toBe('SE (135°)')
+    expect(prevailing([0, 180])).toBe('Variable')
+    expect(prevailing([])).toBe('—')
   })
   it('formats by magnitude', () => {
     expect([0.0349, 5.678, 56.78, 848.93, -12.34].map(fmtStat)).toEqual(['0.03', '5.68', '56.8', '849', '-12.3'])

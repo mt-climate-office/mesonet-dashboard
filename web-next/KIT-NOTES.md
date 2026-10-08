@@ -151,12 +151,12 @@ falls short.
 - **Proposed:** `.mco-spark` CSS and a tiny `MCO.sparkPath(t[], v[], {kind, width, height})` if a second app wants it.
 
 ### View Transitions — new
-- **Here:** `withTransition(update, { direction, morph })` (`ui/layout/transition.ts`) and
-  `ui/layout/transition.css` (180 ms cross-fade + 12 px slide on one named region; `dash-morph` shared element).
+- **Here:** `withTransition(update, { direction })` (`ui/layout/transition.ts`) and
+  `ui/layout/transition.css` (180 ms cross-fade + 12 px slide on one named region; no shared-element morph).
 - **Gap in the kit:** the reduced-motion blanket (`*, *::before, *::after`) does not match the
   `::view-transition-*` pseudo-elements, so an app has to add its own reduced-motion block (done here) as
   well as skip `startViewTransition` in JS.
-- **Proposed:** `MCO.transition(update, { direction, morph })` and add
+- **Proposed:** `MCO.transition(update, { direction })` and add
   `::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important }`
   to the kit's reduced-motion block.
 
@@ -223,3 +223,13 @@ and decorative dots, `role="group"` + `aria-roledescription` on the carousel and
 iOS Safari covers bottom-anchored panels with the on-screen keyboard. `ui/layout/keyboard.ts` publishes
 the keyboard's height from `visualViewport`; sheets and phone popovers sit at
 `max(var(--tabbar-h), var(--kb-inset))`. A kit sheet would want the same.
+
+### UX audit (2026-10-07) — kit candidates
+- **`color-scheme` per theme:** the kit sets none, so native checkboxes and pickers draw light in dark themes. The app
+  sets it on `:root` (`styles/app.css`); the kit should.
+- **Control height:** kit `.seg-btn` is 30 px next to 34 px fields. The app's `--ctl-h` token (34 / 40 touch) could be
+  a kit token.
+- **Disabled `.ctl-check`:** the app dims it only in Compare; a kit style would cover every checklist.
+- **Panel toggle direction:** `.mco-panel-toggle`'s chevron assumes a bottom-docked panel; a top-docked option.
+- **Map attribution:** a compact attribution button matching the zoom controls, 40 px on touch (app override).
+- **Brand text and glass/scrims without blur:** mco-web-style#37.

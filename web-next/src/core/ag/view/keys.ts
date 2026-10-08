@@ -39,7 +39,8 @@ export const agKeys = {
   gddStages: () => 'ag:gddStages',
   normals: (station: string) => `ag:normals:${station}`,
   forecast: (lat: number, lon: number) => `ag:forecast:${lat.toFixed(4)}:${lon.toFixed(4)}`,
-  annual: (station: string, element: string, year: number) => `ag:annual:${station}:${element}:L${DEFAULT_AG_LEVEL}:${year}`,
+  /** One request group's years (core/variables `requestGroups`): "2025", or "2021+2020" for the install year with the next. */
+  annual: (station: string, element: string, years: readonly number[]) => `ag:annual:${station}:${element}:L${DEFAULT_AG_LEVEL}:${years.join('+')}`,
 }
 
 /** True when a degraded forecast fetched at `fetchedAt` should be retried now. */

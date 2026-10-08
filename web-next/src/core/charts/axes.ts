@@ -52,18 +52,46 @@ export function timeTickLabel(ms: number, finer: boolean): string {
   return finer ? day : MONTHS[d.getUTCMonth()]
 }
 
+const DAY = 86_400_000
+/** The whole-day steps a compact axis picks from. */
+const DAY_STEPS = [1, 2, 3, 4, 5, 7, 10, 14, 15]
+/** Compact axes over this many days (inclusive) get `dayTicks`; shorter ones tick hours, longer ones months. */
+export const DAY_TICK_SPAN = { min: 3, max: 60 } as const
+
+/**
+ * Evenly spaced midnights (wall-clock ms) inside [min, max] for a phone's time axis: the smallest
+ * step in DAY_STEPS that gives at most `maxTicks`, centred so both ends keep the same margin
+ * (ECharts' own ticks snap to month starts: "Sep 25 · Oct 1 · Oct 5", 6 then 4 days apart).
+ * [] outside DAY_TICK_SPAN, where ECharts' own ticks apply.
+ */
+export function dayTicks(min: number, max: number, maxTicks = 4): number[] {
+  const span = (max - min) / DAY
+  if (!(span >= DAY_TICK_SPAN.min && span <= DAY_TICK_SPAN.max)) return []
+  const first = Math.ceil(min / DAY) * DAY
+  const days = Math.floor((max - first) / DAY)
+  const step = DAY_STEPS.find((s) => Math.floor(days / s) + 1 <= maxTicks) ?? DAY_STEPS[DAY_STEPS.length - 1]
+  const n = Math.floor(days / step) + 1
+  const offset = Math.floor((days - (n - 1) * step) / 2)
+  return Array.from({ length: n }, (_, i) => first + (offset + i * step) * DAY)
+}
+
 /**
  * Time x axis over Denver wall-clock ms (pair with `useUTC: true` on the option), labelled by
- * `timeTickLabel`. `compact`: fewer ticks, so phone axes do not crowd.
+ * `timeTickLabel`. `compact`: fewer ticks, so phone axes do not crowd; over 3–60 days they are
+ * whole days, evenly spaced (`dayTicks`).
  */
 export function timeAxis(opts: { min?: number; max?: number; compact?: boolean } = {}): XAXisComponentOption {
+  const days = opts.compact && opts.min !== undefined && opts.max !== undefined ? dayTicks(opts.min, opts.max) : []
+  const custom = days.length ? { customValues: days } : {}
   return {
     type: 'time',
     min: opts.min,
     max: opts.max,
     splitNumber: opts.compact ? 3 : 5,
     splitLine: { show: false },
-    axisLabel: { hideOverlap: true, formatter: (v: number, _i: number, extra?: { level?: number }) => timeTickLabel(v, (extra?.level ?? 0) > 0) },
+    axisTick: custom,
+    // Custom ticks are all midnights: a month start reads "Oct 1" beside them, never a bare "Oct".
+    axisLabel: { hideOverlap: true, ...custom, formatter: (v: number, _i: number, extra?: { level?: number }) => timeTickLabel(v, days.length > 0 || (extra?.level ?? 0) > 0) },
   }
 }
 
@@ -97,7 +125,8 @@ export function logAxis(name: string, min: number, max: number, opts: { inverse?
     min,
     max,
     inverse: opts.inverse ?? false,
-    axisLabel: { formatter: (v: number) => `${opts.prefix ?? ''}${v}` },
+    // Thousands separators: "-10,000", not "-10000".
+    axisLabel: { formatter: (v: number) => `${opts.prefix ?? ''}${v.toLocaleString('en-US', { maximumFractionDigits: 6 })}` },
   }
 }
 

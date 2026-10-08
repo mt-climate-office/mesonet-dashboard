@@ -2,7 +2,11 @@
 
 Small, accessible form controls shared by the tabs. Each one is an `Alpine.data` factory plus a
 markup snippet. The full snippet is in the factory's file header, and `demo.html` uses every one.
-`controls.css` styles them using kit tokens only.
+`controls.css` styles them using kit tokens only. Fields, selects, date fields and segmented buttons share
+one height, `--ctl-h` (34 px, 40 px on touch), so controls side by side line up; a context may raise it
+(the photo dialog: 44 px on touch; the Download sheet's rows: 40 px). Selects and date fields drop the
+native look (WebKit ignores a select's height and draws no date-picker cue) and draw a CSS chevron or
+calendar icon instead.
 
 How the controls work:
 
@@ -66,7 +70,7 @@ Use it to pick many items from a few named groups.
 **API**
 
 ```ts
-multiselect({ groups: () => Group[], value: () => string[], onChange(string[]), label })
+multiselect({ groups: () => Group[], value: () => string[], onChange(string[]), label, inline? })
 Group = { id, label, options: { value, label }[] }
 ```
 
@@ -78,6 +82,9 @@ Group = { id, label, options: { value, label }[] }
 - Escape clears the filter text first; the next Escape closes the panel (clearing the filter) and returns focus to the button.
 - The selection shows as removable chips. Removing one moves focus to the next chip.
 - Output is always in option order, not click order.
+- `inline: true` shows the checklist always, with no disclosure button, where the place around it is
+  already a disclosure (the Download sheet's Variables row). Escape then clears the filter, and the next
+  Escape goes on to the enclosing dialog.
 
 ```html
 <div class="ctl-multiselect" x-data="multiselect({ groups: () => …, value: () => …, onChange: (v) => …, label: 'Elements' })">

@@ -22,17 +22,20 @@ export interface SensorChangeDay {
   date: string
   /** "Aug 2, 2024". */
   label: string
-  /** Installs first, then removals; each by sensor name. */
+  /** Installs first, then removals; each by sensor name, then by what it measures (depths in order). */
   changes: SensorChange[]
 }
 
 const str = (v: unknown): string => (typeof v === 'string' ? v.trim() : '')
 
-/** An API label without its unit → its plain name ("Soil VWC @ 2 in" → "Soil moisture at 2 in"). */
+/**
+ * An API label without its unit → its plain name ("Soil VWC @ 2 in" → "Soil moisture at 2 in", "at 2 in"
+ * joined by no-break spaces so a wrapped line never strands "in" or the number).
+ */
 function plainMeasure(label: string): string {
   const [name, depth] = label.replace(/\s*\[[^\]]*\]$/, '').split(/\s*@\s*/)
   const plain = plainName(ELEM_MAP[name]?.[0] ?? '', name)
-  return depth ? `${plain} at ${depth}` : plain
+  return depth ? `${plain} ${`at ${depth}`.replace(/ /g, '\u00a0')}` : plain
 }
 
 /** Element codes → unique plain labels without units ("Soil moisture at 2 in"); codes with no public label are dropped. */
@@ -71,7 +74,10 @@ export function sensorHistory(instruments: readonly RawInstrument[] | null | und
     for (const d of starts) add(d, { kind: 'installed', sensor, measures })
     for (const d of ends) add(d, { kind: 'removed', sensor, measures })
   }
-  const order = (a: SensorChange, b: SensorChange) => a.kind.localeCompare(b.kind) || a.sensor.localeCompare(b.sensor)
+  // Numeric collation puts one model's depths in order (2, 4, 8, 20, 40 in), not 2, 20, 4, 40, 8.
+  const byText = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true })
+  const order = (a: SensorChange, b: SensorChange) =>
+    a.kind.localeCompare(b.kind) || byText(a.sensor, b.sensor) || byText(a.measures, b.measures)
   return [...days]
     .sort(([a], [b]) => b.localeCompare(a))
     .map(([date, changes]) => ({ date, label: formatDay(date) ?? date, changes: [...changes.values()].sort(order) }))

@@ -1,12 +1,12 @@
 /**
  * Reference overlays: shaded bands (normals q25–q75, GDD projection range),
- * horizontal bands with corner labels (SWP field capacity / wilting point),
+ * horizontal bands with line labels beside the plot (SWP field capacity / wilting point),
  * hatched sensor-change spans, labelled horizontal markLines (GDD stages) and
  * the diagonal hatch decal. Colors are palette roles resolved with `paint()`.
  */
 import type { CustomSeriesOption, LineSeriesOption, MarkLineComponentOption } from 'echarts'
 import type { Nullable } from '../ag/contract'
-import { SENSOR_EVENT, SWP_BANDS, withAlpha } from '../palette'
+import { SENSOR_EVENT, SWP_BANDS } from '../palette'
 import { AUX } from './series'
 import { points } from './style'
 import { paint } from './theme'
@@ -59,18 +59,20 @@ export function bandSeries(
 }
 
 /**
- * Horizontal bands across the whole plot with corner labels, carried by an
- * invisible two-point line (id `aux:bands`) so they stay when legend items
- * are toggled. `y` values are in axis units; dashed lines mark the inner edges.
+ * Horizontal bands across the whole plot (no labels of their own) and dashed lines at their inner
+ * edges, labelled right of the plot (the builder leaves a gutter: `hBandGutter`), so no data line
+ * covers a label. Carried by an invisible two-point line (id `aux:bands`) so they stay when legend
+ * items are toggled. `y` values are in axis units; a label may hold "\n" line breaks.
  */
 export function hBandSeries(
   ctx: ChartContext,
   x: [number, number],
-  bands: { from: number; to: number; label: string; labelAt: 'insideTopLeft' | 'insideBottomLeft' }[],
+  bands: { from: number; to: number }[],
   lines: { y: number; label?: string }[],
 ): LineSeriesOption {
   const fill = paint(ctx.theme, SWP_BANDS.fill)
   const stroke = paint(ctx.theme, SWP_BANDS.line)
+  const fontSize = ctx.compact ? 10 : 11
   return {
     type: 'line',
     id: `${AUX}bands`,
@@ -85,31 +87,33 @@ export function hBandSeries(
     markArea: {
       silent: true,
       itemStyle: { color: fill },
-      // Boxed corner labels, as legacy (AG-SWP-003: border 2, white at 0.8): kit text color
-      // border and the surface at 0.8, so the band text reads over the data in every theme.
-      label: {
-        color: ctx.theme.text,
-        fontFamily: ctx.theme.fontUi,
-        fontSize: 14,
-        fontWeight: 600,
-        backgroundColor: ctx.theme.surface.startsWith('#') ? withAlpha(ctx.theme.surface, 0.8) : ctx.theme.surface,
-        borderColor: ctx.theme.text,
-        borderWidth: 2,
-        padding: [3, 6],
-      },
-      data: bands.map((b) => [
-        { yAxis: b.from, name: b.label, label: { position: b.labelAt } },
-        { yAxis: b.to },
-      ]),
+      label: { show: false },
+      data: bands.map((b) => [{ yAxis: b.from }, { yAxis: b.to }]),
     },
     markLine: {
       silent: true,
       symbol: 'none',
       lineStyle: { color: stroke, type: SWP_BANDS.dash, width: 1 },
-      label: { show: false },
-      data: lines.map((l) => ({ yAxis: l.y, name: l.label })),
+      label: {
+        show: true,
+        position: 'end',
+        distance: 6,
+        formatter: '{b}',
+        color: ctx.theme.text,
+        fontFamily: ctx.theme.fontUi,
+        fontSize,
+        fontWeight: 600,
+        lineHeight: fontSize + 3,
+      },
+      data: lines.map((l) => ({ yAxis: l.y, name: l.label ?? '' })),
     },
   }
+}
+
+/** Grid right margin (px) that fits `hBandSeries` labels beside the plot: the longest label line, 6 px off, 8 px clear. */
+export function hBandGutter(ctx: ChartContext, labels: string[]): number {
+  const longest = Math.max(0, ...labels.flatMap((l) => l.split('\n')).map((l) => l.length))
+  return Math.ceil(longest * (ctx.compact ? 10 : 11) * 0.58) + 14
 }
 
 /** One sensor-change span in wall-clock ms with its hover text. */

@@ -4,8 +4,8 @@
  * (`role="dialog"` with a label) holding form controls, such as an Ag tool's
  * option chip. Opening moves focus to the panel's first control; Esc closes it
  * and returns focus to the button; a press outside, or focus leaving, closes
- * it. Below the button on wide screens, docked at the bottom like a small
- * sheet on phones (CSS: ui/layout/popover.css). Alpine wrapper: ui/shell/popover.ts.
+ * it. Below the button (wide or short screens), docked at the bottom like a small
+ * sheet on narrow phones (CSS: ui/layout/popover.css). Alpine wrapper: ui/shell/popover.ts.
  */
 import { firstFocusable } from './focusScope'
 
