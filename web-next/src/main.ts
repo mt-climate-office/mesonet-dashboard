@@ -40,6 +40,7 @@ import { aboutReadings } from './ui/about/readings'
 import { stationLanding } from './ui/picker/stationLanding'
 import { stationPicker } from './ui/picker/stationPicker'
 import { startAnalytics } from './ui/shell/analytics'
+import { installTip, startInstall } from './ui/shell/install'
 import { globalNotices } from './ui/shell/globalNotices'
 import { toggletip } from './ui/shell/toggletip'
 import { helpDialog } from './ui/shell/helpDialog'
@@ -137,6 +138,7 @@ Alpine.data('stationLanding', stationLanding)
 Alpine.data('helpDialog', helpDialog)
 Alpine.data('outageNotice', outageNotice)
 Alpine.data('globalNotices', globalNotices)
+Alpine.data('installTip', installTip)
 Alpine.data('toggletip', toggletip)
 
 // Form controls (ui/controls/README.md): x-data="combobox({ … })" etc.
@@ -201,4 +203,6 @@ initKeyboardInset()
 
 // Page counts (GoatCounter; skipped off production and under DNT/GPC).
 startAnalytics()
+// Install the app: the manifest on the install address, the browser's prompt, the phone tip (after analytics, which it counts with).
+startInstall()
 document.documentElement.classList.add('layout-ready')

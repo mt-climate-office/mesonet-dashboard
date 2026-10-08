@@ -13,6 +13,7 @@
     default-src 'none';
     script-src 'self' 'sha256-o+rXj9Jy2CUuPoewBVeBz2GYT71qiUGzjc3SklYSaSw=' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com;
     worker-src 'self' blob:;
+    manifest-src 'self';
     style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com;
     font-src https://cdn.jsdelivr.net;
     img-src 'self' data: blob: https://cdn.jsdelivr.net https://data2.climate.umt.edu https://api.weather.gov;
@@ -22,6 +23,12 @@
   <!-- viewport-fit=cover makes the kit's env(safe-area-inset-*) padding live. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="author" content="Montana Climate Office">
+  <!-- Home-screen app (ui/shell/install.ts links the manifest on the install address only). iOS reads these
+       when "Add to Home Screen" is used from any address. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MT Mesonet">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="theme-color" content="#1a6faf" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#161b22" media="(prefers-color-scheme: dark)">
 

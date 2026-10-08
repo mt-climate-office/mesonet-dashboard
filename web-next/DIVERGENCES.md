@@ -1672,3 +1672,9 @@ The Ag tab UI (`partials/ag/*`, `ui/ag/*`, logic in `core/ag/view/tab.ts`, `resu
 ### Annual comparison controls
 - **web/:** the date range stays visible (and is ignored); a failed element list shows an empty select.
 - **New:** the date range is hidden for Annual. A failed element list says "Variables could not be loaded." in the control and the card, each with Retry. The card waits for the station's element list and never fetches years for a comparison variable the station does not offer (a stale `annv` after a station change); it draws the first option meanwhile, which is what the URL is corrected to.
+
+### Install the app (home-screen web app)
+- **Legacy / web/:** no manifest; a phone could only bookmark the page.
+- **New:** on the install address `mesonet.climate.umt.edu/dash/next/` (`core/install` `INSTALL_HOME`; user decision 2026-10-08) `ui/shell/install.ts` links `manifest.webmanifest` relative to the page, so it resolves under `/dash/next/` behind the Caddy proxy (name "Montana Mesonet Dashboard", short name "MT Mesonet", standalone, the kit's icons vendored in `public/icons/`, the 512 also as maskable). Android / Chromium get **Install app** in the ⋯ menu and an **Install** button in a one-time phone tip (the browser's `beforeinstallprompt`); iPhone and iPad, which have no prompt, get the tip "To install, tap Share, then “Add to Home Screen”" and the menu item reopens it. The tip shows on phones once a station is open (never over the first-load landing) until dismissed (`mco-dashboard-install-tip`). Nothing is offered when already installed or on any other address (GitHub Pages included), so installs all point at one URL. No service worker: data stays live. The CSP adds `manifest-src 'self'`; iOS meta tags name the home-screen app. GoatCounter events: `install`, `install/prompt`, `launch/installed`.
+- **Why:** user request (2026-10-08): let new mobile users install the app easily.
+
