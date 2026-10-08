@@ -34,8 +34,11 @@ export interface MapHostOptions {
 
 export interface MapHost {
   readonly map: MapLibre.Map
-  /** Centre on a point, zooming in to at least `minZoom` (default 8); animates unless `animate` is false or motion is reduced. */
-  flyTo(lngLat: [number, number], opts?: { minZoom?: number; animate?: boolean }): void
+  /**
+   * Centre on a point, zooming in to at least `minZoom` (default 8); animates unless `animate` is false or
+   * motion is reduced. `offset` (px, [x, y]) moves the point from the centre, e.g. below an overlay.
+   */
+  flyTo(lngLat: [number, number], opts?: { minZoom?: number; animate?: boolean; offset?: [number, number] }): void
   /** Remove listeners and the map (call from Alpine `destroy`). */
   dispose(): void
 }
@@ -83,6 +86,7 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   // Every style load (first, then each setStyle) starts from a bare basemap.
   map.on('style.load', () => {
     retried = false
+    letPlaceLabelsMove(map)
     addBoundaries(map)
     opts.layers(map, MCO.getTheme())
   })
@@ -122,8 +126,8 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
 
   return {
     map,
-    flyTo(lngLat, { minZoom = 8, animate = true } = {}) {
-      map.flyTo({ center: lngLat, zoom: Math.max(map.getZoom(), minZoom), animate: animate && !MCO.reducedMotion() })
+    flyTo(lngLat, { minZoom = 8, animate = true, offset = [0, 0] as [number, number] } = {}) {
+      map.flyTo({ center: lngLat, zoom: Math.max(map.getZoom(), minZoom), offset, animate: animate && !MCO.reducedMotion() })
     },
     dispose() {
       clearTimeout(retryTimer)
@@ -132,6 +136,19 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
       floor.dispose()
       map.remove()
     },
+  }
+}
+
+/**
+ * CARTO's town and city names sit centred on the place. Let each step above, below or beside it when
+ * centred would collide with a symbol drawn over it (the selected station, stationLayer.ts), so the
+ * marker never covers its own town's name ("B●MAN").
+ */
+function letPlaceLabelsMove(map: MapLibre.Map): void {
+  for (const l of map.getStyle().layers) {
+    if (l.type !== 'symbol' || l['source-layer'] !== 'place' || l.layout?.['text-anchor'] !== 'center') continue
+    map.setLayoutProperty(l.id, 'text-variable-anchor', ['center', 'top', 'bottom', 'left', 'right'])
+    map.setLayoutProperty(l.id, 'text-radial-offset', 1.2)
   }
 }
 

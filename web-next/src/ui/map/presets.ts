@@ -99,7 +99,9 @@ function mapView(opts: StationMapOptions, preset: Preset) {
         const first = last === undefined
         last = selected
         if (!first) announce(selectionAnnouncement(s))
-        if (preset.fly && s) host.flyTo([s.longitude, s.latitude], { animate: !first })
+        // Centre the station in the space below the legend (top-left), so the legend covers less around it.
+        const legendBottom = legend.element.offsetTop + legend.element.offsetHeight
+        if (preset.fly && s) host.flyTo([s.longitude, s.latitude], { animate: !first, offset: [0, legendBottom / 2] })
       })
     },
 
