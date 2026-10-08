@@ -9,7 +9,7 @@ const RAW: RawSchedule = {
       first_month: '2017-01',
       periods: [
         { from: '2000-01-01T00:00:00-07:00', until: '2026-09-20T10:06:00-06:00', views: { S: { view: 'South' }, N: { view: 'North' }, NS: {} } },
-        { from: '2026-09-20T10:06:00-06:00', until: null, views: { SNOW: {}, N: {}, E: {} } },
+        { from: '2026-09-20T10:06:00-06:00', until: null, views: { SNOW: {}, N: {}, E: {}, W: {} } },
       ],
     },
   },
@@ -28,6 +28,7 @@ const listing = (token: string, ...stamps: string[]) =>
 const frames: PhotoFrame[] = [
   ...listing('N', '20261001T150000Z', '20261001T210000Z', '20260930T210000Z'),
   ...listing('E', '20261001T150000Z'),
+  ...listing('W', '20261001T150000Z', '20261001T210000Z'),
 ]
 
 describe('photoDay / isRecentDay / photoMinDay', () => {
@@ -50,10 +51,10 @@ describe('photoDay / isRecentDay / photoMinDay', () => {
 
 describe('photoSlides', () => {
   const base = { station: 'acebozem', cam, day: '2026-10-01', recent: true, frames, direction: 'E', slotUtcMs: 1 }
-  it('the newest frame of each direction, the default (N) first; picks ignored', () => {
+  it('the newest frame of each direction, W E N S order (West first); picks ignored', () => {
     const s = photoSlides(base)
-    expect(s.map((p) => p.direction)).toEqual(['N', 'E'])
-    expect(s.map((p) => p.active?.slotUtcMs)).toEqual([Date.UTC(2026, 9, 1, 21), Date.UTC(2026, 9, 1, 15)])
+    expect(s.map((p) => p.direction)).toEqual(['W', 'E', 'N'])
+    expect(s.map((p) => p.active?.slotUtcMs)).toEqual([Date.UTC(2026, 9, 1, 21), Date.UTC(2026, 9, 1, 15), Date.UTC(2026, 9, 1, 21)])
   })
   it('directions without a frame that day are left out; no frames, no slides', () => {
     expect(photoSlides({ ...base, frames: frames.filter((f) => f.token === 'E') }).map((p) => p.direction)).toEqual(['E'])
@@ -64,29 +65,29 @@ describe('photoSlides', () => {
 describe('photoPick', () => {
   const base = { station: 'acebozem', cam, day: '2026-10-01', recent: true, frames, direction: null, slotUtcMs: null }
 
-  it('chips from the day’s frames with legacy labels; N by default; newest frame', () => {
+  it('chips from the day’s frames with legacy labels; the first (West) by default; newest frame', () => {
     const p = photoPick(base)
-    expect(p.tokens).toEqual(['N', 'E'])
-    expect(p.labels).toEqual({ N: 'North', E: 'East' })
-    expect(p.direction).toBe('N')
+    expect(p.tokens).toEqual(['W', 'E', 'N'])
+    expect(p.labels).toEqual({ W: 'West', E: 'East', N: 'North' })
+    expect(p.direction).toBe('W')
     expect(p.frames.map((f) => f.slotUtcMs)).toEqual([Date.UTC(2026, 9, 1, 21), Date.UTC(2026, 9, 1, 15)])
-    expect(p.active?.webpUrl).toBe(`${B}photos/webp/large/acebozem/acebozem_N_20261001T210000Z.webp`)
+    expect(p.active?.webpUrl).toBe(`${B}photos/webp/large/acebozem/acebozem_W_20261001T210000Z.webp`)
     expect(p.stamp).toBe('Oct 1, 2026 3:00 PM')
-    expect(p.alt).toBe('acebozem North camera Oct 1, 2026 3:00 PM')
+    expect(p.alt).toBe('acebozem West camera Oct 1, 2026 3:00 PM')
   })
   it('honours a picked direction and slot', () => {
     const p = photoPick({ ...base, direction: 'N', slotUtcMs: Date.UTC(2026, 9, 1, 15) })
     expect(p.active?.slotUtcMs).toBe(Date.UTC(2026, 9, 1, 15))
     expect(photoPick({ ...base, direction: 'E' }).frames).toHaveLength(1)
-    // A direction not offered that day falls back to N.
-    expect(photoPick({ ...base, direction: 'SNOW' }).direction).toBe('N')
+    // A direction not offered that day falls back to the first (West).
+    expect(photoPick({ ...base, direction: 'SNOW' }).direction).toBe('W')
   })
   it('no frames: chips from the schedule (current views when recent, else that day’s periods)', () => {
-    expect(photoPick({ ...base, frames: undefined }).tokens).toEqual(['N', 'E', 'SNOW'])
+    expect(photoPick({ ...base, frames: undefined }).tokens).toEqual(['W', 'E', 'N', 'SNOW'])
     expect(photoPick({ ...base, frames: [], day: '2025-07-01', recent: false }).tokens).toEqual(['N', 'S', 'NS'])
     const none = photoPick({ ...base, frames: [] })
     expect(none.active).toBeUndefined()
-    expect(none.alt).toBe('acebozem North camera')
+    expect(none.alt).toBe('acebozem West camera')
   })
   it('time options are local labels keyed by slot ms', () => {
     expect(photoTimeOptions(photoPick(base).frames)).toEqual([
@@ -95,8 +96,8 @@ describe('photoPick', () => {
     ])
   })
   it('the dialog title names the station, direction and stamp', () => {
-    expect(photoTitle('Bozeman', photoPick({ ...base, station: 'Bozeman' }))).toBe('Bozeman · North · Oct 1, 2026 3:00 PM')
-    expect(photoTitle('Bozeman', photoPick({ ...base, frames: [] }))).toBe('Bozeman · North')
+    expect(photoTitle('Bozeman', photoPick({ ...base, station: 'Bozeman' }))).toBe('Bozeman · West · Oct 1, 2026 3:00 PM')
+    expect(photoTitle('Bozeman', photoPick({ ...base, frames: [] }))).toBe('Bozeman · West')
     expect(photoTitle('Bozeman', null)).toBe('')
   })
 })
@@ -105,10 +106,10 @@ describe('labels', () => {
   it('a day with no views still has a direction label (pre-install / gap days)', () => {
     const p = photoPick({ station: 'acebozem', cam, day: '1999-01-01', recent: false, frames: [], direction: null, slotUtcMs: null })
     expect(p.tokens).toEqual([])
-    expect(p.direction).toBe('N')
-    expect(p.label).toBe('North')
-    expect(p.labels.N).toBeUndefined()
-    expect(p.alt).toBe('acebozem North camera')
+    expect(p.direction).toBe('W')
+    expect(p.label).toBe('West')
+    expect(p.labels.W).toBeUndefined()
+    expect(p.alt).toBe('acebozem West camera')
   })
   it('photoLabel falls back to legacy words, then the token', () => {
     expect(photoLabel(cam, 'NS')).toBe('North Sky')
@@ -139,7 +140,7 @@ describe('photoState / photoMessage', () => {
   it('ready with a frame; a message for an empty day', () => {
     expect(photoState(ok)).toBe('ready')
     expect(photoState({ ...ok, pick: empty })).toBe('message')
-    expect(photoMessage({ ...ok, pick: empty })).toBe('No camera images are available for North on this date.')
+    expect(photoMessage({ ...ok, pick: empty })).toBe('No camera images are available for West on this date.')
   })
   it('loading while the schedule or a first source fetch loads; stale frames stay shown', () => {
     expect(photoState({ ...ok, schedule: 'loading' })).toBe('loading')

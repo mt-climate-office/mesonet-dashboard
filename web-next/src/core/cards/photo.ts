@@ -107,7 +107,7 @@ export function photoPick(i: PhotoPickInput): PhotoPick {
       ).map((v) => v.token)
   const labels = Object.fromEntries(tokens.map((t) => [t, photoLabel(i.cam, t)]))
   const direction =
-    i.direction && tokens.includes(i.direction) ? i.direction : tokens.includes('N') ? 'N' : (tokens[0] ?? 'N')
+    i.direction && tokens.includes(i.direction) ? i.direction : (tokens[0] ?? 'W')
   const frames = dayFrames.filter((f) => f.token === direction)
   const active = frames.find((f) => f.slotUtcMs === i.slotUtcMs) ?? frames[0]
   const stamp = active ? formatLocal(active.slotUtcMs) : ''

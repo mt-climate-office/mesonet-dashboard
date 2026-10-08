@@ -97,8 +97,8 @@ describe('schedule', () => {
     expect(cam.name).toBe('Bozeman')
     expect(cam.firstMonth).toBe('2017-01')
     expect(cam.currentViews).toEqual([
-      { token: 'N', label: 'North' },
       { token: 'E', label: 'East' },
+      { token: 'N', label: 'North' },
       { token: 'SNOW', label: 'Snow' },
     ])
     expect(cam.allLabels).toMatchObject({ NS: 'North Sky', S: 'South', SNOW: 'Snow' })
@@ -115,8 +115,8 @@ describe('schedule', () => {
     const cam = s.stations.get('acebozem')!
     const day = (d: string) => viewsBetween(cam, localToUtcMs(d), localToUtcMs(addDays(d, 1))).map((v) => v.token)
     expect(day('2025-07-15')).toEqual(['N', 'S', 'NS'])
-    expect(day('2026-09-20')).toEqual(['N', 'S', 'E', 'SNOW', 'NS'])
-    expect(day('2026-09-30')).toEqual(['N', 'E', 'SNOW'])
+    expect(day('2026-09-20')).toEqual(['E', 'N', 'S', 'SNOW', 'NS'])
+    expect(day('2026-09-30')).toEqual(['E', 'N', 'SNOW'])
   })
   it('directionLabel prefers legacy words', () => {
     expect(directionLabel('SS', 'SS')).toBe('South Sky')
@@ -223,8 +223,9 @@ describe('fetchers', () => {
     })
     const frames = await fetchLatestFrames(schedule, cam, Date.UTC(2026, 9, 1, 22))
     expect(urls).toHaveLength(9)
+    // Current views in canonical order (E, N, SNOW here), three UTC days each.
     expect(urls[0]).toBe(
-      `${B}?list-type=2&prefix=${encodeURIComponent('photos/webp/large/acebozem/acebozem_N_20260929')}`,
+      `${B}?list-type=2&prefix=${encodeURIComponent('photos/webp/large/acebozem/acebozem_E_20260929')}`,
     )
     expect(urls.every((u) => !u.includes('/api/'))).toBe(true)
     expect(frames).toHaveLength(2)
