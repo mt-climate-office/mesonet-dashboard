@@ -54,6 +54,15 @@
 .dl-row-panel .ctl-multiselect-panel { padding: 0; background: none; border: 0; }
 .dl-row-panel .ctl-multiselect .ctl-fieldset { grid-template-columns: minmax(0, 1fr); }
 .dl-switch { align-self: flex-start; }
+/* The checklist (40–60 rows) scrolls on its own, so the rest of the form stays in reach; the shared
+   scroll fade (ui/layout/scrollFade) cues it. A nested scroller: no inherited sheet-body fade offsets,
+   only its own gap. The 2 px padding keeps checkbox focus rings inside the scrollport. */
+.dl-checklist {
+  display: flex; flex-direction: column; gap: 0.75rem;
+  max-height: min(45dvh, 22rem); overflow-y: auto; overscroll-behavior: contain;
+  padding: 2px;
+  --fade-pad: 2px; --fade-gap: 0.75rem;
+}
 
 /* ── Notices, the button, its reason ───────────────────────────────────── */
 /* ⚠ + text, so the meaning never rests on color. */
@@ -84,6 +93,11 @@
   background: var(--bg-raised); border-color: var(--ctrl-border); color: var(--text-secondary);
   cursor: not-allowed; filter: none;
 }
+/* High contrast has no mid tones, so the raised fill and grey text read as a live button: a dashed
+   border and muted text mark it unavailable. */
+[data-theme="high-contrast"] .nav-btn.dl-btn-primary[aria-disabled="true"] {
+  border-style: dashed; border-color: var(--text-muted); color: var(--text-muted);
+}
 .nav-btn.dl-btn-primary[aria-busy="true"] { cursor: progress; }
 .dl-reason { font-size: var(--fs-sm); color: var(--text-secondary); text-align: center; }
 
@@ -100,6 +114,8 @@
 
 /* Funder attribution (legacy DL-020), as a quiet line under the form. */
 .dl-funding { font-size: var(--fs-xs); color: var(--text-secondary); text-align: center; }
+/* The award reference wraps as one piece, never "(RM-CESU Award" / "L16AC00359)". */
+.dl-nowrap { white-space: nowrap; }
 
 /* Element checklists by thumb: 44 px rows (WCAG 2.5.5), above the 40 px control minimum. */
 @media (max-width: 640px), (max-height: 560px), (hover: none) {

@@ -22,6 +22,7 @@ import { denverToday } from '../../core/today'
 import type { DlPeriod, UrlState } from '../../core/url-schema'
 import { elementsResource } from '../charts/resources'
 import { component } from '../component'
+import { initScrollFade } from '../layout/scrollFade'
 import { announce } from '../shell/live'
 
 const HOUR = 60 * 60 * 1000
@@ -44,6 +45,7 @@ export function downloader() {
   let model: PreviewModel | null = null
   // Bumped per Preview and on a station change; a response from an older one is ignored.
   let gen = 0
+  let unhint: (() => void) | null = null
 
   return component({
     run: null as Run | null,
@@ -62,6 +64,14 @@ export function downloader() {
     init() {
       // A station change (from the header) ignores any preview still in flight.
       this.$watch('stationId', () => void gen++)
+    },
+    /** `x-init` on the variable checklist: fade its bottom while there is more (ui/layout/scrollFade). */
+    hint(el: HTMLElement): void {
+      unhint?.()
+      unhint = initScrollFade(el)
+    },
+    destroy() {
+      unhint?.()
     },
 
     get url(): UrlState { return this.$store.url.state },
