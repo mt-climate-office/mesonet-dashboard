@@ -26,6 +26,11 @@ html[data-vt-dir="back"]::view-transition-new(dash-section) { animation-name: da
 @keyframes dash-vt-in-back { from { opacity: 0; transform: translateX(-12px); } }
 
 ::view-transition-group(dash-morph) { animation-duration: 240ms; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+/* The snapshots keep their own size, pinned top-left, and cross-fade while the group moves. By default
+   they fill the group's width, so a short row name sized to the full-width heading (flex: 1) blew the text
+   up across the viewport (WebKit most visibly). */
+::view-transition-old(dash-morph),
+::view-transition-new(dash-morph) { width: auto; height: auto; object-fit: none; object-position: left top; }
 
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
