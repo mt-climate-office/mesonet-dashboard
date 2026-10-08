@@ -10,7 +10,7 @@ import Alpine from 'alpinejs'
 import { getStationRecord, type ObservationRow } from '../../core/api'
 import { annualChart, annualTable, type AnnualModel } from '../../core/charts'
 import { installDate, todayIso } from '../../core/latest'
-import { findVariable, historyModel, historyRequest, historyRows, historyYears, plainName, requestGroups, type Variable } from '../../core/variables'
+import { findVariable, historyModel, historyNote, historyRequest, historyRows, historyYears, plainName, requestGroups, type Variable } from '../../core/variables'
 import { component } from '../component'
 import { announce } from '../shell/live'
 import { chartVariables, stationElements } from './resources'
@@ -34,6 +34,10 @@ export function variableHistory() {
     label(): string {
       const v = this.variable
       return `${v ? plainName(v.id, v.name) : 'History'} by year`
+    },
+    /** The note above the chart (core/variables historyNote): how each year is drawn. */
+    note(): string {
+      return historyNote(this.variable)
     },
     /** Each request group's rows so far (newest first); requests stop at the first group still loading. */
     get years(): { years: number[]; rows: ObservationRow[] | null; loading: boolean }[] {

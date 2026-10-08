@@ -2,10 +2,10 @@
  * Annual comparison: one line per calendar year on a day-of-year axis.
  * Prior years from batlow (old → new), the current year in --text-primary
  * at width 3. Axes as every time chart's (mono labels, 10 px on phones, the
- * x axis at the bottom); the years' key at the top left, where the station
- * charts put theirs: a plain legend that wraps (never paged), the current year
- * first. Wind direction draws dots (windDirection.ts). Traces arrive in display
- * units (core/ag/view/derive#annualTraces).
+ * x axis at the bottom); the years' key is the station charts' key (keys.ts) at
+ * the top left, wrapping onto more rows, the current year first and emphasized.
+ * Wind direction draws dots (windDirection.ts). Traces arrive in display units
+ * (core/ag/view/derive#annualTraces). Used by All years (variable page) and Ag Annual.
  */
 import type { EChartsOption, YAXisComponentOption } from 'echarts'
 import type { AnnualTrace } from '../ag/compute'
@@ -15,7 +15,7 @@ import { WIND_DIRECTION } from '../variables/direction'
 import { MISSING, fmtNum } from './format'
 import { lineSeries } from './series'
 import { LINE_WIDTH, bottomLayout, extentOf, points, stepMs, yAxisRange } from './style'
-import { LEGEND_ROW, legendRows } from './agLegend'
+import { KEY_ROW, keyRow, wrapKeys, type KeyEntry } from './keys'
 import { paint } from './theme'
 import { axisTooltip, tipText } from './tooltip'
 import type { ChartBuilder, ChartTable } from './types'
@@ -30,11 +30,9 @@ export interface AnnualModel {
   variable?: string
 }
 
-/** The legend's first row above the plot (px); each wrapped row adds agLegend LEGEND_ROW. */
-const LEGEND_ROW_PX = 26
-/** Legend marks (px) and the gap between items. */
-const ITEM_W = 16
-const ITEM_GAP = 10
+/** The middle of the key's first row (px from the top); the plot starts this far under its last row. */
+const KEY_TOP = 10
+const KEY_CLEAR = 20
 
 const sortedTraces = (m: AnnualModel) => [...m.traces].sort((a, b) => a.year - b.year)
 
@@ -60,25 +58,30 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
   const prior = traces.filter((t) => t.year !== m.currentYear)
   const colors = yearColors(prior.length, ctx.theme.name)
   const current = paint(ctx.theme, ANNUAL_CURRENT.color)
+  const dots = m.variable === WIND_DIRECTION
+  const colorOf = (t: AnnualTrace) => (t.year === m.currentYear ? current : colors[prior.indexOf(t)])
   const series = traces.map((t) => {
     const isCurrent = t.year === m.currentYear
-    const color = isCurrent ? current : colors[prior.indexOf(t)]
+    const color = colorOf(t)
     // One line width; the current year is the design's one highlight (ANNUAL_CURRENT).
     const pts = points(t.doy, t.values, stepMs('doy'), t.date.map(monthDay))
-    const s =
-      m.variable === WIND_DIRECTION
-        ? directionDots(String(t.year), pts, { color, size: isCurrent ? DIRECTION_DOT + 2 : DIRECTION_DOT })
-        : lineSeries(String(t.year), pts, { color, width: isCurrent ? ANNUAL_CURRENT.width : LINE_WIDTH })
+    const s = dots
+      ? directionDots(String(t.year), pts, { color, size: isCurrent ? DIRECTION_DOT + 2 : DIRECTION_DOT })
+      : lineSeries(String(t.year), pts, { color, width: isCurrent ? ANNUAL_CURRENT.width : LINE_WIDTH })
     return isCurrent ? { ...s, z: 3 } : s
   })
   const fontSize = ctx.compact ? 10 : 11
   // The current year leads the key, so it is on the first row however many years wrap below it.
-  const keyed = [...traces.filter((t) => t.year === m.currentYear), ...prior].map((t) => String(t.year))
+  const keyed: KeyEntry[] = [...traces.filter((t) => t.year === m.currentYear), ...prior].map((t) => ({
+    label: String(t.year),
+    color: colorOf(t),
+    ...(dots ? { glyph: '●' } : {}),
+    ...(t.year === m.currentYear ? { strong: true } : {}),
+  }))
   const base = grid(ctx, { bottom: bottomLayout(false).grid })
-  // ECharts pads the legend 5 px a side.
-  const avail = ctx.width - (base.left as number) - (base.right as number) - 10
-  const rows = legendRows(keyed.map((y) => ITEM_W + 5 + Math.ceil(y.length * fontSize * 0.6)), avail, ITEM_GAP)
-  const g = { ...base, top: LEGEND_ROW_PX + 6 + Math.max(0, rows - 1) * LEGEND_ROW }
+  const left = base.left as number
+  const rows = wrapKeys(ctx, keyed, ctx.width - left - (base.right as number))
+  const g = { ...base, top: KEY_TOP + Math.max(0, rows.length - 1) * KEY_ROW + KEY_CLEAR }
   // Phones label every other month.
   const labelled = MONTH_MID_DOY.filter((_, i) => !ctx.compact || i % 2 === 0)
   return {
@@ -106,8 +109,8 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
       nameTextStyle: { fontSize },
       axisLabel: { fontSize, ...(m.variable === WIND_DIRECTION ? { formatter: compassTick } : {}) },
     } as YAXisComponentOption,
-    // The years' key: a row at the top left, as the station charts' keys.
-    legend: { type: 'plain', top: 0, left: g.left as number, right: g.right as number, data: keyed, itemWidth: ITEM_W, itemHeight: 10, itemGap: ITEM_GAP, textStyle: { fontSize } },
+    // The years' key: rows at the top left, as the station charts' keys.
+    graphic: rows.flatMap((r, i) => keyRow(ctx, r, left, KEY_TOP + i * KEY_ROW)),
     tooltip: axisTooltip(ctx, doyHeader, (name, y, date) => tipText(date ? `${name} (${date})` : name, y.toFixed(2))),
     series,
   } satisfies EChartsOption

@@ -428,6 +428,20 @@ mco-web-style#37). The behaviour changes:
   instead of the tab bar and bottom sheets; menus scroll when taller than the room below.
 - **Why:** user review of the audit (2026-10-07): fix every finding in this repo.
 
+### UX audit leftovers (2026-10-08)
+- **Legacy / web/:** a window ending today ran its x axis to tonight's midnight (just after midnight, a whole
+  empty day ahead), and the Daily interval drew today's few hours as a full day, in the stats too. All years and
+  Annual used the ECharts legend; a table view could only go back to the chart from the ⋯ menu; All years said
+  "one line per year" for wind direction too.
+- **New:** hourly and 5-min views of a window reaching today end at the next whole hour (`core/latest`
+  `untilNow`); Daily keeps today, marked "Today (so far)" (a hollow ring or a lighter bar, the key, the tooltip,
+  the table), left out of Average / Prevailing (and Low / High without the band) but kept in a Total and the
+  band's Low / High (`partialDay`, `panelStats`). All years and Ag Annual draw the station charts' key row
+  (`core/charts/keys.ts`; the current year first, bold, a heavier swatch), so a year can no longer be hidden by
+  clicking its legend entry. Every table view has a **Show as chart** button above it. The All years note is
+  per variable (`historyNote`: "each year as its own set of dots" for wind direction).
+- **Why:** the audit's leftovers (PR #90 comment).
+
 ### About replaces the metadata and current-conditions cards
 - **Legacy / web/:** Station Metadata and Current Conditions were bottom-card tabs beside the locator map.
 - **New:** the About section (DESIGN.md "About"): station details with readable labels and formats (Network,

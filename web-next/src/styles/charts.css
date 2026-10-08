@@ -129,6 +129,7 @@
 @media (max-width: 640px), (max-height: 560px) { .var-skel { --chart-height: var(--var-h-compact); } }
 
 /* A chart as a table (partials/charts/table.html): scrolls sideways inside its box, never the page. */
+.var-table-bar { display: flex; justify-content: flex-end; padding-bottom: var(--gap-tight); }
 .var-table-scroll { overflow-x: auto; max-width: 100%; }
 .var-table-grid { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .var-table-grid th, .var-table-grid td { padding: 0.35rem 0.6rem; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }

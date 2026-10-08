@@ -3,7 +3,9 @@
  * visible, in place of the chart (⋯ → Show as table, `tbl=1`), newest rows
  * first, 50 per page (core/variables `tablePage`). Any chart page uses it
  * with its builder's `…Table(model)`; markup in partials/charts/table.html.
+ * Its Show as chart button calls the page's `toggleTable()`, then `focusHeading()`.
  */
+import Alpine from 'alpinejs'
 import type { ChartTable } from '../../core/charts'
 import { tablePage, type TablePage } from '../../core/variables'
 import { component } from '../component'
@@ -24,6 +26,11 @@ export function chartTable(o: { table: () => ChartTable | null }) {
     },
     get view(): TablePage {
       return tablePage(this.table?.rows ?? [], this.page)
+    },
+    /** After Show as chart, whose button unmounts with the table: focus the page's heading, never <body>. */
+    focusHeading(): void {
+      const heading = (this.$el as HTMLElement).closest('.chart-page')?.querySelector<HTMLElement>('.chart-title')
+      if (heading) void Alpine.nextTick(() => heading.focus())
     },
   })
 }
