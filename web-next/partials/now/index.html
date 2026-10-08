@@ -5,14 +5,7 @@
      every slot's size while tier 1 / tier 2 load. Mounted only while the section is open. -->
 <template x-if="$store.url.section === 'now'">
 <div class="now" x-data="nowView" data-testid="now">
-  <template x-if="state === 'none'">
-    <div class="dash-card now-empty" data-testid="now-empty">
-      <h2 class="dash-card-title">No station selected</h2>
-      <p>Pick a station to see its current conditions, recent trends and forecast.</p>
-      <button type="button" class="nav-btn now-empty-btn" data-picker-toggle aria-controls="station-picker" aria-expanded="false" @click="pick($event)">Choose a station</button>
-    </div>
-  </template>
-
+  <!-- 'none' (no station) draws nothing: the landing (partials/landing.html) stands in for the section. -->
   <template x-if="state === 'error'">
     <div class="dash-card now-empty"><!-- @include partials/load-error.html --></div>
   </template>

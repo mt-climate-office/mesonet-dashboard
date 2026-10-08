@@ -12,6 +12,7 @@ import { AG_TTL, agKeys } from '../core/ag/view/keys'
 import { getStations, type Station } from '../core/api'
 import type { Resource } from '../core/cache'
 import { confirmedStation, resolveStationId, swpStationIds, withSwpFlags } from '../core/stations'
+import { showsLanding } from '../core/stations/landing'
 import { readRecent, rememberStation, type StorageLike } from '../core/stations/recent'
 import { selectStationPatch } from '../core/url-schema'
 
@@ -38,6 +39,8 @@ export interface StationStore {
   readonly id: string | null
   /** Catalog row of `id`, or undefined. */
   readonly current: Station | undefined
+  /** No station to show: the landing replaces the sections (core/stations/landing `showsLanding`). */
+  readonly landing: boolean
   byId(id: string | null): Station | undefined
   /** User picked a station: set `s` (core/url-schema `selectStationPatch`). */
   select(id: string | null): void
@@ -98,6 +101,10 @@ export function createStationStore(): StationStore {
 
     get current() {
       return this.byId(this.id)
+    },
+
+    get landing() {
+      return showsLanding(Alpine.store('url').state.s, this.catalog?.status, this.id)
     },
 
     byId(id) {

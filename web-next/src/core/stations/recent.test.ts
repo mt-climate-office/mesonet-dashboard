@@ -75,9 +75,9 @@ describe('drawer memory', () => {
     expect(readDrawerOpen(s)).toBe(true)
     expect(readDrawerOpen(mem({ [DRAWER_KEY]: 'yes' }))).toBeNull()
   })
-  it('pickerStartsOpen: always without a station; else only a saved-open desktop drawer', () => {
-    expect(pickerStartsOpen(false, false, null)).toBe(true)
-    expect(pickerStartsOpen(false, true, false)).toBe(true)
+  it('pickerStartsOpen: never without a station (the landing); else only a saved-open desktop drawer', () => {
+    expect(pickerStartsOpen(false, false, null)).toBe(false)
+    expect(pickerStartsOpen(false, true, true)).toBe(false)
     expect(pickerStartsOpen(true, true, true)).toBe(true)
     expect(pickerStartsOpen(true, true, null)).toBe(false)
     expect(pickerStartsOpen(true, false, true)).toBe(false)

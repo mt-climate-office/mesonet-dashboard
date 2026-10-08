@@ -29,7 +29,7 @@ import { rangeSlider } from './ui/controls/rangeSlider'
 import { segmented } from './ui/controls/segmented'
 import { timeSelect } from './ui/controls/timeSelect'
 import { downloader } from './ui/downloader/downloader'
-import { locatorMap, pickerMap, stationMap } from './ui/map/presets'
+import { landingMap, locatorMap, pickerMap, stationMap } from './ui/map/presets'
 import { photoCard } from './ui/now/photoCard'
 import { windRoseCard } from './ui/now/windRoseCard'
 import { nowView } from './ui/now/nowView'
@@ -37,6 +37,7 @@ import { aboutView } from './ui/about/aboutView'
 import { aboutDetails } from './ui/about/details'
 import { aboutHistory } from './ui/about/history'
 import { aboutReadings } from './ui/about/readings'
+import { stationLanding } from './ui/picker/stationLanding'
 import { stationPicker } from './ui/picker/stationPicker'
 import { startAnalytics } from './ui/shell/analytics'
 import { installTip, startInstall } from './ui/shell/install'
@@ -70,6 +71,7 @@ import './ui/map/map.css'
 import './ui/charts/chart.css'
 import './styles/downloader.css'
 import './styles/picker.css'
+import './styles/landing.css'
 import './styles/now.css'
 import './styles/now-cards.css'
 import './styles/charts.css'
@@ -103,7 +105,7 @@ if (routed) replaceUrl(routed.search, routed.hash)
 // A bare #ag lands on the Charts list, scrolled to its Ag tools group once that renders.
 if (routed?.anchor) revealWhenReady(routed.anchor)
 
-// No `?s=`: reopen the remembered station (the catalog confirms it; a stale id opens the picker).
+// No `?s=`: reopen the remembered station (the catalog confirms it; a stale id shows the landing).
 if (!new URLSearchParams(location.search).has('s')) {
   const last = readStation(browserStorage())
   if (last) {
@@ -124,7 +126,7 @@ Alpine.store('station', createStationStore())
 /* 3. Components (one line each; x-data="<name>" in the partials). -------- */
 
 // Shell (ui/shell/*): header actions, station button, section navs, ⋯ menus, popovers, modal
-// sheets, notices, Help and outage dialogs, toggletips; the station picker (ui/picker).
+// sheets, notices, Help and outage dialogs, toggletips; the station picker and the no-station landing (ui/picker).
 Alpine.data('navMeta', navMeta)
 Alpine.data('stationHeader', stationHeader)
 Alpine.data('sections', sections)
@@ -132,6 +134,7 @@ Alpine.data('menu', menu)
 Alpine.data('popover', popover)
 Alpine.data('sheet', sheet)
 Alpine.data('stationPicker', stationPicker)
+Alpine.data('stationLanding', stationLanding)
 Alpine.data('helpDialog', helpDialog)
 Alpine.data('outageNotice', outageNotice)
 Alpine.data('globalNotices', globalNotices)
@@ -151,6 +154,7 @@ Alpine.data('rangeSlider', rangeSlider)
 // Station maps (ui/map/presets.ts): x-data="stationMap({ stations, selected, onSelect })".
 Alpine.data('stationMap', stationMap)
 Alpine.data('pickerMap', pickerMap)
+Alpine.data('landingMap', landingMap)
 Alpine.data('locatorMap', locatorMap)
 
 // Charts (W1): the one ECharts host; ECharts itself loads lazily on the first

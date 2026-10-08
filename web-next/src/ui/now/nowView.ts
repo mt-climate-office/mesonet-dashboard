@@ -18,7 +18,6 @@ import { loadErrorText } from '../../core/loadError'
 import { denverToday } from '../../core/today'
 import type { ChartBindings } from '../charts/chart'
 import { component } from '../component'
-import { togglePicker } from '../picker/stationPicker'
 import { follow } from '../shell/navigate'
 import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../station/resources'
 import { normals, nwsHourly, rainDaily, sparkRows, swpSoil } from './resources'
@@ -141,10 +140,6 @@ export function nowView() {
     /** A row to About, through the same pushState + transition as the section nav; `target` takes focus. */
     toAbout(e: MouseEvent, target?: string): void {
       follow(e, 'about', target ? { target } : {})
-    },
-
-    pick(e: Event): void {
-      togglePicker(e.currentTarget as HTMLElement)
     },
   })
 }

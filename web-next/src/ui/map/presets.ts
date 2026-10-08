@@ -4,6 +4,7 @@
  *   locatorMap    — About: frames the selected station and its near neighbours clear of the overlays;
  *                   the page keeps one-finger and wheel scrolling.
  *   pickerMap     — station picker: the whole state stays in view, click selects; cooperative on touch.
+ *   landingMap    — the no-station landing: the picker's map, large, its legend open beside Montana.
  *
  * Markup: an empty element with a height; the component builds the map,
  * legend panel and sr-only table twin inside it.
@@ -20,7 +21,7 @@ import { legendRows, selectionAnnouncement, stationRows, visibleStations } from 
 import { component } from '../component'
 import { announce } from '../shell/live'
 import { createLegend } from './legend'
-import { createMap, cssVar, type MapHost } from './map'
+import { createMap, cssVar, type FitPadding, type MapHost } from './map'
 import { createSrTable } from './srTable'
 import { createStationLayer, type StationLayer } from './stationLayer'
 
@@ -50,8 +51,8 @@ interface Preset {
   frame?: boolean
   /** Map gestures need two fingers or Ctrl/⌘ (ui/map/map.ts `cooperativeGestures`). */
   cooperative?: boolean
-  /** Fit padding (ui/map/map.ts `fitPadding`). */
-  fitPadding?: MapLibre.PaddingOptions
+  /** Fit padding (ui/map/map.ts `fitPadding`: fixed, or a function of the frame's size). */
+  fitPadding?: FitPadding
 }
 
 const toSet = (v: ReadonlySet<string> | readonly string[] | null | undefined): ReadonlySet<string> | null =>
@@ -162,4 +163,26 @@ export const pickerMap = (opts: StationMapOptions) => {
     cooperative: touch,
     fitPadding: { top: 56, right: touch ? 56 : 48, bottom: 16, left: 12 },
   })
+}
+
+/** Montana's width over its height on the web-mercator map (about 12° of longitude by 4.6° of latitude). */
+const MT_ASPECT = 1.8
+
+/**
+ * No-station landing map (partials/landing.html): the picker map at page size. The legend starts open
+ * except on compact screens (ui/map/legend.ts), so on a wide frame Montana fits right of it. A phone's
+ * frame is taller than Montana: the state is centred at full width when that clears the zoom buttons
+ * (three, 40 px on touch: map.css), else it sits just below them. On touch two fingers move the map
+ * and one scrolls the page.
+ */
+export const landingMap = (opts: StationMapOptions) => {
+  const touch = matchMedia('(hover: none)').matches
+  const controls = 10 + 3 * (touch ? 40 : 29) + 8
+  const fitPadding = (w: number, h: number): MapLibre.PaddingOptions => {
+    if (matchMedia('(min-width: 900px)').matches && !MCO.viewport.isCompact()) return { top: 24, right: 64, bottom: 24, left: 220 }
+    if (!matchMedia('(max-width: 640px)').matches) return { top: touch ? 76 : 56, right: touch ? 56 : 48, bottom: 16, left: 12 }
+    const centredTop = (h - (w - 24) / MT_ASPECT) / 2
+    return { top: centredTop >= controls ? 12 : controls, right: 12, bottom: 12, left: 12 }
+  }
+  return mapView(opts, { label: 'Map of Montana Mesonet stations', fly: false, cooperative: touch, fitPadding })
 }

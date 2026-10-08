@@ -50,7 +50,8 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
                 search (Near me inside) · recents · Browse on the map (network chips + map)
 ```
 
-- **Entry:** `?s=` opens that station; otherwise the last one; otherwise the picker (first visit).
+- **Entry:** `?s=` opens that station; otherwise the last one; otherwise the **landing** (first visit; "No
+  station: the landing" under Now), which also answers a `?s=` the station list does not know.
 - **Picking** a station closes the picker at every size (the desktop drawer saves "closed") and moves focus
   to `<main>`, the new station's content. Recent updates at once.
 - **Search** starts empty (the header names the station; Recent marks it). With text, matches rank across
@@ -183,6 +184,31 @@ nothing shifts. Labels are sentence case in `--text-muted`; readings are `.num-d
 
 Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|dark|high-contrast>-<acebozem|arskeogh>.png`
 (arskeogh: AgriMet, wind rose, VPD).
+
+### No station: the landing
+
+With no station (a first visit: no `?s=` and none remembered; or a `?s=` the station list does not know), the page
+is the **landing** (`partials/landing.html`, `ui/picker/stationLanding.ts`), whichever section the URL names
+(Now, Charts and About all show it; the section host is hidden). It replaced a small "No station selected" card
+under an auto-opened picker drawer or sheet, which left the page barren (DIVERGENCES "No-station landing").
+
+- **Heading and line:** "Choose a station" (`--fs-xl`) and "Current conditions, trends and forecasts from N
+  Montana Mesonet stations." (N from the catalog; `core/stations/landing`). An unknown `?s=` adds "There is no
+  station “x”. Choose another below." (a status).
+- **Search:** the picker's own combobox (`partials/picker/search.html` + `ui/picker/stationSearch.ts`, shared):
+  station, town, county or ZIP, Near me inside the field, places and Near me's results below it. 52 px tall,
+  at most 40 rem wide; its results list drops over the map.
+- **Map:** the picker's station map (`landingMap`, `ui/map/presets.ts`: the same station layer, network styling,
+  legend, hover name and sr-only table twin) fills the rest of the screen, down to the tab bar on phones (at
+  least 18 rem; the page scrolls to the footer). The legend starts open from tablet up (Montana fits right of
+  it) and collapsed on compact screens; on a phone Montana is centred at full width, or sits below the zoom
+  buttons when centring would put it under them. On touch two fingers move it. A short, wide screen (≤ 560 px
+  tall, a landscape phone) puts the text and search on the left and the map on the right at full height.
+- **Picking** (a search result, a Near me or place row, a marker or the table twin) selects the station as the
+  picker does: announced, focus to `<main>`, and the section renders. The picker no longer opens by itself
+  with no station (`pickerStartsOpen`); the header's station button ("Choose a station") still opens it.
+- **Keyboard and screen readers:** the search is the primary path (Tab from the header reaches it first); the
+  map is the picker map's `role="application"` with its legend and the sr-only station table after it.
 
 ## Charts
 
@@ -532,11 +558,13 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
 ## Accessibility notes
 
 - Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `header-menu`, `photo-dialog`, `about`,
-  `about-readings`, `about-history` (each sheet open), `picker`, `picker-open` (both with the map revealed),
+  `about-readings`, `about-history` (each sheet open), `landing` (the no-station landing, its map drawn),
+  `picker-open` (the map revealed),
   `charts-list`, `variable` + `-menu` + `-history` + `-table` + `-daily` (the band), `dates-sheet`, `compare`,
   `legacy-ag`, four Ag tools, the GDD crop and cutoff popovers, the Reference ET ⋯ menu, `download-variables`,
   `download-dates`, `downloader` (after Preview), `help-dialog`) × 3 themes × 1440/390.
-  `keyboard.mjs` walks the header and its ⋯ menu (Help, Theme), the picker, the Download sheet and its form, tab bar,
+  `keyboard.mjs` walks the header and its ⋯ menu (Help, Theme), the landing's search (a place, a station) and
+  its map's table twin, the picker, the Download sheet and its form, tab bar,
   photo dialog, About's two sheets (and Now's "All readings" opening the readings sheet), the variable page (⋯ Show
   as table / Previous / Next / Custom dates, range and interval chips), Download prefilled from ⋯, Ag option chips
   (Enter opens, a pick applies, Esc returns focus) and the legacy links; `layout.mjs` checks touch swipes over

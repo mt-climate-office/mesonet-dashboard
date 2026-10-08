@@ -119,10 +119,13 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   and fires one `window` event `mco-theme-change` (`detail.theme`).
 - **`$store.station`** (`stores/station.ts`): `catalog` (a Resource), `list`,
   `id` (the `?s=` value once confirmed against the catalog; null while
-  loading), `current` (its row), `byId(id)`, `select(id)` (sets `s`), `recent` (last 5). It rewrites NWSLI / mis-cased `?s=` to
+  loading), `current` (its row), `byId(id)`, `select(id)` (sets `s`), `recent` (last 5), `landing` (no station to
+  show: core/stations/landing `showsLanding`). It rewrites NWSLI / mis-cased `?s=` to
   the catalog id and remembers every confirmed station (core/stations/recent.ts).
   With no `?s=`, main.ts puts the remembered station in the URL before the
-  stores start; with none, the station picker opens.
+  stores start; with none (or a `?s=` the catalog does not know), the no-station landing
+  (`partials/landing.html`, `ui/picker/stationLanding.ts`) stands in for the sections: the picker's search
+  (`partials/picker/search.html` + `ui/picker/stationSearch.ts`, shared) over the `landingMap`.
 
 ### Routing
 
@@ -365,7 +368,7 @@ with `tabindex="-1"`, are focus targets, not controls: no ring); ≥ 40 px touch
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
-`npm run verify` runs axe on its scenarios (Now, the header ⋯ menu, the photo dialog, the picker on a first visit and
+`npm run verify` runs axe on its scenarios (Now, the header ⋯ menu, the photo dialog, the no-station landing, the picker
 opened with a station, the Charts list, the legacy `#ag` landing, a variable page in each view (⋯ menu, All
 years, table, the Daily band, the Custom dates sheet), Compare, 4 Ag tools (two option popovers, a ⋯ menu), the
 Download sheet (a row open, after Preview), About and its two sheets, Help) × 1440/390 px × 3 themes

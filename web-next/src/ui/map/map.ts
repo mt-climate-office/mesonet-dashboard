@@ -28,9 +28,14 @@ export interface MapHostOptions {
   cooperativeGestures?: boolean
   /** Fit Montana again whenever the frame resizes, until the user moves the map (a frame that grows on reveal). */
   refit?: boolean
-  /** Padding (px) when fitting Montana, for overlays on the frame (default the kit's 24 all round). */
-  fitPadding?: MapLibre.PaddingOptions
+  /**
+   * Padding (px) when fitting Montana, for overlays on the frame (default the kit's 24 all round). A function
+   * gets the frame's size and is asked again on each resize (a frame that is hidden when the map starts).
+   */
+  fitPadding?: FitPadding
 }
+
+export type FitPadding = MapLibre.PaddingOptions | ((width: number, height: number) => MapLibre.PaddingOptions)
 
 export interface MapHost {
   readonly map: MapLibre.Map
@@ -57,7 +62,10 @@ export interface MapHost {
 export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   el.setAttribute('role', 'application')
   el.setAttribute('aria-label', opts.label)
-  const fitOpts: MapLibre.FitBoundsOptions = { ...MCO.map.FIT_OPTS, ...(opts.fitPadding ? { padding: opts.fitPadding } : {}) }
+  const padding = (): MapLibre.PaddingOptions | undefined =>
+    typeof opts.fitPadding === 'function' ? opts.fitPadding(el.clientWidth, el.clientHeight) : opts.fitPadding
+  // One object, shared with the kit's fit control and zoom floor (they read it when they fit).
+  const fitOpts: MapLibre.FitBoundsOptions = { ...MCO.map.FIT_OPTS, ...(opts.fitPadding ? { padding: padding() } : {}) }
 
   const map = new maplibregl.Map({
     container: el,
@@ -127,6 +135,7 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   })
   const resize = new ResizeObserver(() => {
     map.resize()
+    if (typeof opts.fitPadding === 'function') fitOpts.padding = padding()
     if (opts.refit && !userMoved) {
       floor.refresh()
       map.fitBounds(MCO.map.MT_FIT_BOUNDS, { ...fitOpts, animate: false })

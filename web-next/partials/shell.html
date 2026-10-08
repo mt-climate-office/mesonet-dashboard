@@ -1,7 +1,7 @@
 <!-- Page shell (DESIGN.md "Layout ladder"): skip link; one-row header (logo, brand on desktop,
      station button, the Now | Charts | About segmented nav from tablet up, the ⋯ menu); then the
-     station picker (drawer / sheet) beside the content column: notices, the three sections,
-     footer. The phone tab bar is fixed at the bottom; modal sheets come last.
+     station picker (drawer / sheet) beside the content column: notices, the three sections (or,
+     with no station, the landing), footer. The phone tab bar is fixed at the bottom; modal sheets come last.
      Section content comes from partials/<section>/index.html; each mounts only while open. -->
 <a class="mco-skip-link" href="#main">Skip to main content</a>
 
@@ -97,7 +97,10 @@
         </template>
       </section>
 
-      <div class="dash-section-host">
+      <!-- @include partials/landing.html -->
+
+      <!-- Hidden while the no-station landing stands in for it. -->
+      <div class="dash-section-host" x-data x-show="!$store.station.landing">
         <section id="section-now" class="tab-panel" aria-label="Now" x-data x-show="$store.url.section === 'now'" x-cloak>
           <!-- @include partials/now/index.html -->
         </section>
