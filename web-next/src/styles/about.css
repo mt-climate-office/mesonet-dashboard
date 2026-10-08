@@ -63,8 +63,11 @@
 .about-table tbody th { font-weight: 400; color: var(--text-secondary); text-align: left; padding: 8px; overflow-wrap: anywhere; }
 .about-table td { font-family: var(--font-mono); color: var(--text-primary); text-align: right; padding: 8px; white-space: nowrap; }
 /* The unit in a fixed-width box after the number (mono, so 5ch fits "mS/cm"): every number ends on
-   one line and same-precision decimals line up; text values (Observed, wind direction) run to the edge. */
+   one line and same-precision decimals line up. */
 .about-unit { display: inline-block; min-width: 5ch; margin-left: 1ch; text-align: left; color: var(--text-secondary); }
+/* A text value (no unit: Observed, wind direction) is words, not digits to line up: the UI font, ending at
+   the same right edge as the units. */
+.about-table td.about-text { font-family: inherit; font-variant-numeric: tabular-nums; }
 .about-table tbody tr + tr { border-top: 1px solid var(--border); }
 
 /* Sensor changes: a badge column of one width (the wider "Installed"), the sensor beside it and what it

@@ -43,7 +43,7 @@ describe('details', () => {
     expect(stationDetails(bozeman, '2026-10-01 13:15:00-06:00', '2026-10-02')).toEqual([
       { label: 'Station', value: 'Bozeman', id: 'acebozem' },
       { label: 'Network', value: 'HydroMet' },
-      { label: 'Location', value: 'Gallatin County · 45.66°\u00a0N,\u00a0111.07°\u00a0W' },
+      { label: 'Location', value: 'Gallatin County ·\u00a045.66°\u00a0N,\u00a0111.07°\u00a0W' },
       { label: 'Elevation', value: '4,905\u00a0ft (1,495\u00a0m)' },
       { label: 'Record', value: 'Oct 30, 2020 – Oct 1, 2026' },
     ])

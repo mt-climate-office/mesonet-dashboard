@@ -3,7 +3,8 @@
      Opened by About's row #about-readings (data-sheet), which Now's "All readings" link targets.
      The tables scroll inside a named, focusable region (WCAG 2.1.1); each row header keeps its API
      column in data-col for the fidelity harness. A unit sits in its own fixed-width span after the
-     number (about.css), so the numbers end on one line. Content mounts only while open. -->
+     number (about.css), so the numbers end on one line; a text value (no unit: Observed, wind direction)
+     is set in the UI font across the whole value column. Content mounts only while open. -->
 <div class="mco-scrim dash-scrim dash-sheet-scrim" id="sheet-about-readings-scrim" hidden></div>
 <section id="sheet-about-readings" class="dash-sheet dash-sheet--modal about-sheet" role="dialog" aria-modal="true"
          aria-labelledby="sheet-about-readings-title" x-data="sheet({ id: 'about-readings' })" data-testid="sheet-about-readings" hidden>
@@ -29,7 +30,7 @@
               <thead><tr><th scope="col">Reading</th><th scope="col">Value</th></tr></thead>
               <tbody>
                 <template x-for="r in rows" :key="r.col">
-                  <tr><th scope="row" :data-col="r.col" x-text="r.label"></th><td><span x-text="r.value"></span><template x-if="r.unit"><span class="about-unit" x-text="r.unit"></span></template></td></tr>
+                  <tr><th scope="row" :data-col="r.col" x-text="r.label"></th><td :class="{ 'about-text': !r.unit }"><span x-text="r.value"></span><template x-if="r.unit"><span class="about-unit" x-text="r.unit"></span></template></td></tr>
                 </template>
               </tbody>
             </table>

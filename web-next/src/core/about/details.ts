@@ -50,10 +50,13 @@ export function periodOfRecord(installed: string | null, latestStamp: string | n
   return `${from} – ${latestStamp?.slice(0, 10) === today ? 'today' : to}`
 }
 
-/** "Gallatin County · 45.66° N, 111.07° W" (coordinates alone without a county). */
+/**
+ * "Gallatin County · 45.66° N, 111.07° W" (coordinates alone without a county). A no-break space after
+ * "·" keeps the separator with the coordinates, so a narrow line breaks before it, never after.
+ */
 export function formatLocation(s: Station): string {
   const coords = formatCoordinates(s.latitude, s.longitude)
-  return s.county ? `${s.county} County · ${coords}` : coords
+  return s.county ? `${s.county} County ·\u00a0${coords}` : coords
 }
 
 /** Rows in display order: Station (name, id in mono), Network, Location, Elevation, Record. */
