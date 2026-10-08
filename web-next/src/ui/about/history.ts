@@ -10,7 +10,7 @@ import type { RawInstrument } from '../../core/sensorEvents'
 import { loadErrorText } from '../../core/loadError'
 import { component } from '../component'
 import { stationConfig } from '../station/resources'
-import { scrollHint } from './scrollHint'
+import { initScrollFade } from '../layout/scrollFade'
 
 /** Station `id`'s sensor changes by day, newest first; [] until the config answers. */
 export function sensorChanges(id: string | null): SensorChangeDay[] {
@@ -21,10 +21,10 @@ export function sensorChanges(id: string | null): SensorChangeDay[] {
 export function aboutHistory() {
   let unhint: (() => void) | null = null
   return component({
-    /** `x-init` on the scroll region: fade its bottom while there is more (scrollHint.ts). */
+    /** `x-init` on the scroll region: fade its bottom while there is more (ui/layout/scrollFade). */
     hint(el: HTMLElement): void {
       unhint?.()
-      unhint = scrollHint(el)
+      unhint = initScrollFade(el)
     },
 
     /** The error state's text (partials/load-error.html); '' unless the request failed. */

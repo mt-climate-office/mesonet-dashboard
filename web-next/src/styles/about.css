@@ -50,14 +50,7 @@
 .about-sheet .dash-panel-body { overflow: hidden; }
 .about-sheet-content { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 .about-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; border-radius: var(--radius-md); }
-/* Scroll hint: a fade over the last rows while there is more below ([data-more], ui/about/scrollHint.ts).
-   A sticky overlay at the region's bottom, not a mask, which would clip the region's focus ring. */
-.about-scroll::after {
-  content: ''; display: block; position: sticky; bottom: 0; height: 40px; margin-top: -40px;
-  background: linear-gradient(to bottom, transparent, var(--bg-surface)); pointer-events: none;
-  opacity: 0; transition: opacity var(--transition);
-}
-.about-scroll[data-more]::after { opacity: 1; }
+/* The scroll region fades its bottom while there is more below: ui/layout/scrollFade + sheet.css. */
 
 /* Current readings. */
 .about-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }

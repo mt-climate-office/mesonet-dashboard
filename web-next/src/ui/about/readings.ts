@@ -9,7 +9,7 @@ import { pptRows, readingRows, type Reading } from '../../core/about'
 import { loadErrorText } from '../../core/loadError'
 import { component } from '../component'
 import { latestObs, pptSummary } from '../station/resources'
-import { scrollHint } from './scrollHint'
+import { initScrollFade } from '../layout/scrollFade'
 
 /** Station `id`'s current readings, Observed first; [] until `/latest` answers. */
 export function currentReadings(id: string | null): Reading[] {
@@ -20,10 +20,10 @@ export function currentReadings(id: string | null): Reading[] {
 export function aboutReadings() {
   let unhint: (() => void) | null = null
   return component({
-    /** `x-init` on the scroll region: fade its bottom while there is more (scrollHint.ts). */
+    /** `x-init` on the scroll region: fade its bottom while there is more (ui/layout/scrollFade). */
     hint(el: HTMLElement): void {
       unhint?.()
-      unhint = scrollHint(el)
+      unhint = initScrollFade(el)
     },
 
     /** The error state's text (partials/load-error.html); '' unless the request failed. */

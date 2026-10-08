@@ -77,7 +77,7 @@
 /* Scroll fade (ui/layout/scrollFade.ts): while a scroller has more below, its bottom edge fades into the
    surface, a cue that it scrolls. The fade sticks to the bottom of the scrollport (--fade-pad cancels the
    scroller's bottom padding) and takes no room (its negative margin cancels its height and any gap).
-   Modal sheet bodies and the kit dialogs (Help, photo) use it. */
+   Modal sheet bodies, the About sheets' tables and the kit dialogs (Help, photo) use it. */
 [data-scroll-more]::after {
   content: ''; display: block; flex: none;
   position: sticky; bottom: calc(-1 * var(--fade-pad, 0px));
