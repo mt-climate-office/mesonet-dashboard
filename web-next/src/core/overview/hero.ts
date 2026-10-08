@@ -29,9 +29,9 @@ export interface HeroView {
   /** "Feels like 49°" and "Wind chill"/"Heat index" (null when it is the air temperature). */
   feels: string | null
   feelsKind: string | null
-  /** "24 h high 74° · low 41°": the strip's observed 24 h, so the two agree; null before the hourly rows. */
+  /** "High 74° · Low 41° (24 h)": the strip's observed 24 h, so the two agree; null before the hourly rows. */
   highLow: string | null
-  /** "Normal 67° / 38°" for today's Denver date, or null without normals. */
+  /** "Normal 67° · 38°" (high · low) for today's Denver date, or null without normals. */
   normal: string | null
   /** One sentence ("Clear tonight, light SSE wind, no rain in 5 days."), "" when nothing is known. */
   summary: string
@@ -79,10 +79,10 @@ function observed(input: HeroInput, now: number, airF: number | null): HeroStrip
   return { t, v: t.map((x) => pts.get(x) ?? null) }
 }
 
-/** "24 h high 74° · low 41°" over the observed points, or null without one. */
+/** "High 74° · Low 41° (24 h)" over the observed points, or null without one. */
 function highLow(v: readonly (number | null)[]): string | null {
   const xs = v.filter((x): x is number => x !== null)
-  return xs.length ? `24 h high ${deg(Math.max(...xs))} · low ${deg(Math.min(...xs))}` : null
+  return xs.length ? `High ${deg(Math.max(...xs))} · Low ${deg(Math.min(...xs))} (24 h)` : null
 }
 
 /**
@@ -102,7 +102,7 @@ export function buildHero(input: HeroInput, p: PrecipSummary = nowPrecip(input))
     temp: c.airF === null ? null : deg(c.airF),
     feels: fl ? `Feels like ${deg(fl.valueF)}` : null,
     feelsKind: fl?.regime === 'wind_chill' ? 'Wind chill' : fl?.regime === 'heat_index' ? 'Heat index' : null,
-    normal: c.airF !== null && nHi !== null && nLo !== null ? `Normal ${deg(nHi)} / ${deg(nLo)}` : null,
+    normal: c.airF !== null && nHi !== null && nLo !== null ? `Normal ${deg(nHi)} · ${deg(nLo)}` : null,
     freshness: freshness(c, input.nowMs),
   }
   const now = parseWallClock(c.stamp)

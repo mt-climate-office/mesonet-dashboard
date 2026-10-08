@@ -23,8 +23,13 @@ describe('rainBars', () => {
     expect(r.spark.max).toBe(0.4)
     expect(r.sparkLabel).toBe('Last 7 days: 0.50 in in total, rain on 2 days.')
   })
-  it('nothing in a dry week, with no rows, or before the rows load', () => {
-    expect(rainBars(WEEK.map((d) => row(d, 0)), TODAY)).toBeNull()
+  it('a dry week: the zero baseline alone (no bars), read as "no rain"', () => {
+    const r = rainBars(WEEK.map((d) => row(d, 0)), TODAY)!
+    expect(r.spark).toMatchObject({ kind: 'bars', bars: [], points: 7 })
+    expect(r.spark.d).toBe('M0 27h100v1h-100Z')
+    expect(r.sparkLabel).toBe('Last 7 days: no rain.')
+  })
+  it('nothing with no rows, or before the rows load', () => {
     expect(rainBars([], TODAY)).toBeNull()
     expect(rainBars(undefined, TODAY)).toBeNull()
   })

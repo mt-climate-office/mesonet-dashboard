@@ -53,13 +53,13 @@ describe('buildNowPage tiles', () => {
   it('wind: compass word and gusts; humidity: dew point; rain: window and YTD share', () => {
     expect(tile('wind')).toMatchObject({ value: '7', unit: 'mph', sub: 'SSE · gusts 12' })
     expect(tile('rh').sub).toBe('Dew point 49°')
-    expect(tile('precip')).toMatchObject({ value: '0.05', unit: 'in', sub: 'Last 7 days · 87% of normal this year' })
+    expect(tile('precip')).toMatchObject({ value: '0.05', unit: 'in', sub: 'Last 7 days', detail: 'This year: 87% of normal' })
   })
   it('wind with gust rows: "now · SSE" beside the value, the 24 h peak gust below; "Calm" under 1 mph', () => {
     const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 02:00:00-06:00', 'Gust Speed [mi/hr]': 43.24 }]
     const wind = (w: number) => buildNowPage({ ...BASE, latest: { ...LATEST, 'Wind Speed [mi/h]': w }, hourly }).tiles.find((t) => t.id === 'wind')
-    expect(wind(1.2)).toMatchObject({ value: '1', unit: 'mph', note: 'now · SSE', sub: 'Gusts to 43 mph · 24 h' })
-    expect(wind(0.4)).toMatchObject({ value: 'Calm', unit: '', note: '', sub: 'Gusts to 43 mph · 24 h' })
+    expect(wind(1.2)).toMatchObject({ value: '1', unit: 'mph', note: 'now · SSE', sub: 'Peak gust 43 mph (24 h)' })
+    expect(wind(0.4)).toMatchObject({ value: 'Calm', unit: '', note: '', sub: 'Peak gust 43 mph (24 h)' })
   })
   it('one calm threshold (CALM_MPH, Beaufort 0): the tile and the summary agree on either side of it', () => {
     const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 02:00:00-06:00', 'Gust Speed [mi/hr]': 9 }]
@@ -73,14 +73,14 @@ describe('buildNowPage tiles', () => {
   })
   it('rain without the ppt summary: the last 24 h from the hourly rows', () => {
     const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 10:00:00-06:00', 'Precipitation [in]': 0.12 }]
-    expect(buildNowPage({ ...BASE, ppt: undefined, hourly }).tiles.find((t) => t.id === 'precip')).toMatchObject({ value: '0.12', sub: 'Last 24 hours' })
+    expect(buildNowPage({ ...BASE, ppt: undefined, hourly }).tiles.find((t) => t.id === 'precip')).toMatchObject({ value: '0.12', sub: 'Last 24 hours', detail: '' })
   })
-  it('rain: 7 daily bars when it rained this week, nothing in a dry week or before the rows load', () => {
+  it('rain: 7 daily bars when it rained this week, a bare zero baseline in a dry week, nothing before the rows load', () => {
     const daily = (vals: number[]): ObservationRow[] => vals.map((v, i) => ({ station: 'x', datetime: ['2026-09-25', '2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01'][i], 'Precipitation [in]': v }))
     const rain = (rainDaily?: ObservationRow[]) => buildNowPage({ ...BASE, rainDaily }).tiles.find((t) => t.id === 'precip')!
     expect(rain(daily([0, 0, 0.3, 0, 0, 0, 0])).spark).toMatchObject({ kind: 'bars', points: 7 })
     expect(rain(daily([0, 0, 0.3, 0, 0, 0, 0])).spark?.bars).toHaveLength(1)
-    expect(rain(daily([0, 0, 0, 0, 0, 0, 0]))).toMatchObject({ spark: null, sparkLabel: '' })
+    expect(rain(daily([0, 0, 0, 0, 0, 0, 0]))).toMatchObject({ spark: { kind: 'bars', bars: [] }, sparkLabel: 'Last 7 days: no rain.' })
     expect(rain(undefined).spark).toBeNull()
   })
   it('sparkline sentences in the plain unit and display precision (mb, not mbar)', () => {

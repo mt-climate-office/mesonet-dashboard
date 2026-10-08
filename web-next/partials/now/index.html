@@ -97,8 +97,9 @@
             </template>
           </ul>
           <div class="now-strip-foot">
-            <span class="now-legend" aria-hidden="true"><i></i>Observed</span>
-            <span class="now-legend" aria-hidden="true"><i class="is-forecast"></i>NWS forecast</span>
+            <!-- The samples draw the strip's own strokes: 1.5 px, and ECharts' "dashed" at that width (6 on, 3 off). -->
+            <span class="now-legend" aria-hidden="true"><svg width="24" height="4" viewBox="0 0 24 4" focusable="false"><path d="M0 2h24"/></svg>Observed</span>
+            <span class="now-legend" aria-hidden="true"><svg width="24" height="4" viewBox="0 0 24 4" focusable="false"><path d="M0 2h24" stroke-dasharray="6 3"/></svg>NWS forecast</span>
             <a class="dash-link now-forecast-link" :href="forecastUrl" target="_blank" rel="noopener noreferrer" data-testid="now-full-forecast">Full forecast<span class="sr-only"> (NWS, opens in a new tab)</span></a>
           </div>
         </section>
@@ -161,6 +162,7 @@
                 </span>
                 <span class="now-tile-value"><span class="num-display" x-text="t.value"></span><span class="now-unit" x-text="t.unit"></span><span class="now-unit" x-text="t.note" x-show="t.note"></span></span>
                 <span class="now-tile-sub" x-text="t.sub"></span>
+                <span class="now-tile-sub now-tile-detail" x-show="t.detail" x-text="t.detail"></span>
                 <span class="dash-spark" aria-hidden="true">
                   <template x-if="t.spark"><svg :view-box.camel="t.spark.viewBox" preserveAspectRatio="none" focusable="false" :class="'is-' + t.spark.kind"><path :d="t.spark.d" vector-effect="non-scaling-stroke"/></svg></template>
                   <template x-if="!t.spark && tier2"><span class="dash-skel dash-skel--spark"></span></template>
