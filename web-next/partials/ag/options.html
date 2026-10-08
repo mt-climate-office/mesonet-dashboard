@@ -11,7 +11,7 @@
       </button>
       <div class="dash-popover-panel" id="ag-opt-crop-panel" role="dialog" aria-label="Crop" hidden>
         <div class="ctl-chips" role="group" :aria-labelledby="ids.label" data-testid="ag-crop"
-             x-data="chips({ options: () => crops, value: () => [tab.crop], onChange: (v) => { setCrop(v); closePopover() }, label: 'GDD crop' })">
+             x-data="chips({ options: () => crops, value: () => [tab.crop], onChange: (v) => { setCrop(v); closePopover() }, label: 'Crop' })">
           <span class="ctl-legend" :id="ids.label" x-text="label"></span>
           <template x-for="opt in options()" :key="opt.value">
             <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)" @click="toggle(opt.value)" x-text="opt.label"></button>
@@ -160,12 +160,19 @@
         <div class="ctl-field" data-testid="ag-projection"
              x-data="timeSelect({ options: () => projections, value: () => tab.gddProj, onChange: (v) => setProjection(v), label: 'Projection' })">
           <label class="ctl-label" :for="ids.select" x-text="label"></label>
-          <select class="ctl-input ctl-select" :id="ids.select" @change="set($event)">
+          <select class="ctl-input ctl-select" :id="ids.select" :disabled="!canProject()" :aria-describedby="canProject() ? null : 'ag-opt-projection-note'" @change="set($event)">
             <template x-for="opt in options()" :key="opt.value">
               <option :value="opt.value" :selected="isSelected(opt.value)" x-text="opt.label"></option>
             </template>
           </select>
         </div>
+        <!-- Past dates draw no projection (core/ag/view/projection projectable): say why, offer dates that end today. -->
+        <template x-if="!canProject()">
+          <div>
+            <p class="ctl-note" id="ag-opt-projection-note" x-text="notProjectable"></p>
+            <button type="button" class="nav-btn ag-reset" @click="endDatesToday()" data-testid="ag-projection-today">End the dates today</button>
+          </div>
+        </template>
       </div>
     </div>
   </template>

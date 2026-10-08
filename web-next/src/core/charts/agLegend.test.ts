@@ -41,14 +41,27 @@ describe('agLegend', () => {
 
 describe('Ag met legends on phones', () => {
   const winter = dailyMet('acebozem', 'winter2526')
-  it('livestock risk: sentence-case classes, no title, room for each row', () => {
+  it('livestock risk: one short entry per marker group, no title, on one row', () => {
     const o = cciChart({ series: cciDaily(winter, 'adult'), period: 'daily' }, testCtx('light', 340, true))
     const lg = o.legend as Lg
     expect(lg.type).toBe('plain')
     expect(o.graphic).toEqual([])
-    const shown = (lg.data as string[]).map(lg.formatter)
-    expect(shown.every((t) => t === sentenceCase(t))).toBe(true)
-    expect((o.grid as { bottom: number }).bottom).toBeGreaterThanOrEqual(56)
+    const shown = lg.data.map((d) => lg.formatter(typeof d === 'string' ? d : (d as { name: string }).name))
+    expect(shown).toEqual(['Cold stress', 'No stress'])
+    expect(agLegend(testCtx('light', 340, true), shown.map((name) => ({ name }))).extra).toBe(0)
+  })
+  it('the title sits beside the first row of a wrapped legend', () => {
+    const many = Array.from({ length: 8 }, (_, i) => ({ name: `Class number ${i}` }))
+    const lg = agLegend(testCtx('light', 600), many, { title: 'Livestock risk (adult)' })
+    expect(lg.extra).toBeGreaterThan(0)
+    expect((lg.graphic[0] as { bottom: number }).bottom).toBe(7 + lg.extra)
+  })
+  it('an icon fill: a color or a left-to-right gradient', () => {
+    const lg = agLegend(testCtx(), [{ name: 'a', color: '#123456' }, { name: 'b', icon: 'diamond', color: { stops: ['#000000', '#ffffff'] } }])
+    expect(lg.legend.data).toEqual([
+      { name: 'a', itemStyle: { color: '#123456' } },
+      { name: 'b', icon: 'diamond', itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0, colorStops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }] } } },
+    ])
   })
   it('feels like: short names, no title', () => {
     const o = feelsLikeChart({ series: feelsLikeDaily(winter), period: 'daily' }, testCtx('light', 340, true))

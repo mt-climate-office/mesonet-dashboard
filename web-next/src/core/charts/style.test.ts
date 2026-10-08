@@ -85,14 +85,16 @@ describe('y-axis rule per variable family', () => {
     expect(yBounds('Soil VWC', 12, 12)!.max).toBeGreaterThan(12)
   })
 
-  it('picks the step with 4–7 intervals and the least padding, never a coarse jump', () => {
+  it('picks the step with 4–8 intervals and the least padding, never a coarse jump', () => {
     // acebozem, last year, daily: band lows to −15.3 °F, highs to 100.2 °F (normals inside): −20–120 by 20, not −50–150 by 50.
     expect(yBounds('Air Temperature', -15.34, 100.166)).toEqual({ min: -20, max: 120, interval: 20 })
+    // A year of livestock risk (−24…113 °F): −40–120 by 20, not −50–125 by 25 (a 7-step cap wasted a fifth of the axis).
+    expect(yBounds('Air Temperature', -24, 113)).toEqual({ min: -40, max: 120, interval: 20 })
     for (const [lo, hi] of [[-15.34, 100.166], [0, 95], [35, 81], [-31, 104], [842.1, 851.7], [0.3, 0.9]]) {
       const b = yBounds('Air Temperature', lo, hi)!
       const n = Math.round((b.max - b.min) / b.interval)
       expect(n).toBeGreaterThanOrEqual(4)
-      expect(n).toBeLessThanOrEqual(7)
+      expect(n).toBeLessThanOrEqual(8)
       expect(b.min).toBeLessThanOrEqual(lo)
       expect(b.max).toBeGreaterThanOrEqual(hi)
     }

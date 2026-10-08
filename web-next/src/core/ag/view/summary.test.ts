@@ -20,8 +20,13 @@ describe('dateRangeText', () => {
 })
 
 describe('optionChips', () => {
-  it('GDD: crop, cutoffs, dates, projection', () => {
-    expect(texts('?v=gdd')).toEqual(['Wheat', '32–70 °F', 'Apr 15 – Sep 30, 2026', 'Projected to Oct 31'])
+  it('GDD: crop, cutoffs (NDAWN’s second upper cutoff for wheat and barley), dates, projection', () => {
+    expect(texts('?v=gdd')).toEqual(['Wheat', '32–70/95 °F', 'Apr 15 – Sep 30, 2026', 'Projected to Oct 31'])
+    // A week later the season's dates are past: no projection is drawn, and the chip says so.
+    const later = '2026-10-07'
+    expect(optionChips(resolveAgTab(readUrlState('?v=gdd'), BOZ, later), null, later).at(-1)!.text).toBe('No projection (past dates)')
+    expect(texts('?v=gdd&crop=barley&ag_from=2026-04-15&ag_to=2026-10-02')).toEqual(['Barley', '32–70/95 °F', 'Since Apr 15, 2026', 'Projected to Oct 31'])
+    expect(texts('?v=gdd&gdd_hi=80&gdd_proj=off')).toEqual(['Wheat', '32–80 °F', 'Apr 15 – Sep 30, 2026', 'No projection'])
     expect(texts('?v=gdd&crop=sunflower&gdd_proj=30')).toEqual(['Sunflower', 'from 44 °F', 'Since May 20, 2026', 'Projected +30 days'])
     expect(texts('?v=gdd&crop=corn&gdd_lo=45&gdd_proj=off')).toEqual(['Corn', '45–86 °F', 'Since May 1, 2026', 'No projection'])
   })

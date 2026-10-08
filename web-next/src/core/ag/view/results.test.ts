@@ -58,10 +58,10 @@ describe('gddView', () => {
   it('crop cutoffs: stage table, NDAWN note, stage lines', () => {
     const v = gddView({ tab: tab(), met, table, through: null, normals: undefined, forecast: undefined })
     expect(v.status).toBe('ready')
-    expect(v.model).toMatchObject({ stageMode: 'table', cutoffsF: [32, 70] })
+    expect(v.model).toMatchObject({ stageMode: 'table', cutoffsF: [32, 70], switchHighF: 95 })
     expect(v.model?.stages?.length).toBeGreaterThan(0)
     expect(v.notes.join(' ')).toMatch(/follows NDAWN: 32–70 °F until Haun stage 2, then 32–95 °F/)
-    expect(v.notes.join(' ')).toMatch(/projection is shown when the date range ends today/)
+    expect(v.notes.join(' ')).toMatch(/projection is shown when the dates end today/)
   })
   it('custom cutoffs drop stages and say so', () => {
     const v = gddView({ tab: tab({ lo: '40' }), met, table, through: null, normals: undefined, forecast: undefined })

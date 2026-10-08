@@ -43,9 +43,9 @@ function canonicalName(t, side) {
   } else {
     const edge = /^aux:p\d+-normal-(min|max)$/.exec(t.id ?? '')
     if (edge) return `normal ${edge[1]}`
-    if (t.id === 'aux:index-line') return 'index line'
-    // CCI classes say which side (cold/heat).
-    const side = /^(No Stress|Mild|Moderate|Severe|Extreme|Extreme Danger) \((cold|heat)\)$/.exec(n)
+    if (t.id === 'aux:index-line' || t.id === 'feels:index-line') return 'index line'
+    // CCI class series are named by side ("Cold stress"); the id names the class and side.
+    const side = /^cci:(No Stress|Mild|Moderate|Severe|Extreme|Extreme Danger)(?: \((cold|heat)\))?$/.exec(t.id ?? '')
     if (side) return side[1]
   }
   // wind-rose bins: web-next adds the unit ("4 – 6 mph")

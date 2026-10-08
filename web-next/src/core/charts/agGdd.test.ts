@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { DailyNormals, GddSeries } from '../ag/contract'
 import { gdd, projectGdd } from '../ag/compute'
 import { dailyMet, stageTable } from '../ag/__tests__/adapters'
-import { GDD, GDD_STAGE_LINE, THEMES, gddStageColors } from '../palette'
-import { GDD_NAMES, gddAxisMax, gddBarName, gddChart, gddTable, stageGutter, stageIndex, stageLines, stagePieces } from './agGdd'
+import { CUMULATIVE_LINE, GDD, GDD_STAGE_LINE, THEMES, gddStageColors } from '../palette'
+import { GDD_NAMES, fittedStageLabels, gddAxisMax, gddBarName, gddChart, gddTable, stageGutter, stageIndex, stageLines, stagePieces } from './agGdd'
 import { drawn, shownY, testCtx } from './testing'
 import { paint } from './theme'
 
@@ -26,7 +26,7 @@ function withProjection() {
 }
 
 describe('gddChart on phones', () => {
-  it('short legend names in a wrapping legend (series keep theirs); stage lines unlabelled', () => {
+  it('short legend names in a wrapping legend (series keep theirs); stage lines labelled by code', () => {
     const { s, p } = withProjection()
     const o = gddChart({ series: s, cutoffsF: [41, 86], stageMode: 'table', stages: stageTable('hemp').stages, projection: p }, testCtx('light', 390, true))
     const lg = o.legend as { type: string; data: (string | { name: string })[]; formatter: (n: string) => string }
@@ -34,10 +34,14 @@ describe('gddChart on phones', () => {
     expect(lg.type).toBe('plain')
     expect(names.map(lg.formatter)).toEqual(['Daily', 'Cumulative', 'Range', 'Forecast', 'Normals'])
     expect(series(o).map((x) => x.name)).toContain(GDD_NAMES.cumulative)
-    const ml = series(o)[1].markLine as unknown as { label: { show: boolean }; data: unknown[] }
+    const ml = series(o)[1].markLine as unknown as { label: { show: boolean }; data: { name: string }[] }
     expect(ml.data.length).toBeGreaterThan(0)
-    expect(ml.label.show).toBe(false)
-    expect((o.grid as { right: number }).right).toBe(64)
+    expect(ml.label.show).toBe(true)
+    // Hemp's "BBCH Stages 12-14" reads "12-14"; the tooltip and table keep the full name.
+    expect(ml.data.map((d) => d.name).every((n) => !n.startsWith('BBCH'))).toBe(true)
+    const gutter = stageGutter(ml.data.map((d) => ({ label: d.name })), 390)
+    expect(gutter).toBeGreaterThan(0)
+    expect((o.grid as { right: number }).right).toBe(64 + gutter)
   })
 })
 
@@ -58,6 +62,14 @@ describe('gddChart stage labels', () => {
     expect(stageGutter(long, 1400)).toBeGreaterThan(150)
     expect(stageGutter(long, 720)).toBe(0)
   })
+  it('fittedStageLabels: full names when they fit, else the stage codes, else none', () => {
+    const lines = [{ y: 538, label: '3 – Leaf 3 (Tillers Begin To Emerge)', short: '3' }]
+    expect(fittedStageLabels(lines, 1400).lines[0].label).toBe(lines[0].label)
+    const phone = fittedStageLabels(lines, 390)
+    expect(phone.lines[0].label).toBe('3')
+    expect(phone.gutter).toBeGreaterThan(0)
+    expect(fittedStageLabels([{ y: 1, label: 'x'.repeat(80), short: 'y'.repeat(80) }], 390).gutter).toBe(0)
+  })
 })
 
 describe('gddChart', () => {
@@ -70,9 +82,10 @@ describe('gddChart', () => {
       const [bars, cum] = series(o)
       expect([bars.type, cum.type, cum.yAxisIndex]).toEqual(['bar', 'line', 1])
       const colors = gddStageColors(stages.length + 1, t)
-      // The series (and so the legend) carry the stage reached by the last day.
+      // The bars (and so the legend) carry the stage reached by the last day; the running total is
+      // the text color, so it never vanishes into the bars.
       const now = stageIndex([...stages].sort((a, b) => a.gdd - b.gdd), s.cumulative.filter((v) => v != null).at(-1)!)!
-      expect([bars.color, cum.color]).toEqual([colors[now], colors[now]])
+      expect([bars.color, cum.color]).toEqual([colors[now], paint(ctx.theme, CUMULATIVE_LINE)])
       expect(bars.name).toBe('Daily GDDs (32–70 °F)')
       const ml = cum.markLine as unknown as { data: { yAxis: number; lineStyle: { color: string } }[] }
       expect(ml.data.length).toBeGreaterThan(0)
@@ -80,7 +93,7 @@ describe('gddChart', () => {
       const vm = o.visualMap as { type: string; dimension: number; seriesIndex: number[]; pieces: { color: string }[] }
       expect(vm).toMatchObject({ type: 'piecewise', dimension: 0 })
       const all = o.series as S[]
-      expect(vm.seriesIndex.map((i) => all[i].name)).toEqual([bars.name, GDD_NAMES.cumulative])
+      expect(vm.seriesIndex.map((i) => all[i].name)).toEqual([bars.name])
       expect(new Set(vm.pieces.map((p) => p.color)).size).toBeGreaterThan(3)
     }
   })
@@ -88,7 +101,7 @@ describe('gddChart', () => {
   it('no stage table (corn) or custom cutoffs: the GDD palette and no visualMap', () => {
     const corn = gddChart({ series: gdd(met, { crop: 'corn', stages: { crop: 'corn', stages: [] } }), cutoffsF: [50, 86], stageMode: 'no-table', cropLabel: 'Corn' }, testCtx('light'))
     const [bars, cum] = series(corn)
-    expect([bars.color, cum.color]).toEqual([GDD.light.bar, GDD.light.cumulative])
+    expect([bars.color, cum.color]).toEqual([GDD.light.bar, paint(testCtx('light').theme, CUMULATIVE_LINE)])
     expect(corn.visualMap).toBeUndefined()
     const custom = gddChart({ series: gdd(met, { crop: 'wheat', lowC: 0, highC: 30 }), cutoffsF: [32, 86], stageMode: 'custom', stages: stageTable('wheat').stages }, testCtx())
     expect(custom.visualMap).toBeUndefined()
@@ -138,11 +151,18 @@ describe('gddChart', () => {
     expect((o.legend as { data: unknown[] }).data).not.toContain(GDD_NAMES.q25)
   })
 
-  it('stage lines are thinned so labels never stack', () => {
-    const lines = stageLines([{ stage: 1, name: 'a', description: null, gdd: 100 }, { stage: 2, name: 'b', description: null, gdd: 110 }, { stage: 3, name: 'c', description: null, gdd: 900 }], 1600)
+  it('stage lines are thinned so labels never stack; the stage reached and the highest stay', () => {
+    const st = (stage: number, gdd: number, name = String.fromCharCode(96 + stage)) => ({ stage, name, description: null, gdd })
+    const lines = stageLines([st(1, 100), st(2, 110), st(3, 900)], 1600)
     expect(lines.map((l) => l.y)).toEqual([100, 900])
-    expect(lines[0].label).toBe('1 – a')
+    expect(lines[0]).toMatchObject({ label: '1 – a', short: '1' })
+    // Wheat-like crowding at the top: 1539–1825 within y2max / 16 of each other.
+    const top = [st(1, 180), st(9, 1396), st(10, 1539), st(11, 1682), st(12, 1739), st(13, 1825)]
+    expect(stageLines(top, 5000).map((l) => l.y)).toEqual([180, 1396, 1825])
+    // The stage reached (11: 1682 so far) stays, and its neighbours give way.
+    expect(stageLines(top, 5000, 1700).map((l) => l.y)).toEqual([180, 1682, 1825])
     expect(gddBarName([50, 86])).toBe('Daily GDDs (50–86 °F)')
+    expect(gddBarName([32, 70], 95)).toBe('Daily GDDs (32–70/95 °F)')
   })
 
   it('table: observed then projected rows', () => {

@@ -11,6 +11,7 @@ import type { AnnualDaily, ForecastResult } from '../data'
 import { annualTraces, coverage, partialNote, profileValues, unavailableMessage } from './derive'
 import { type Period, type SoilProfileVar, SWP_CAP_BAR, swpBar } from './labels'
 import type { AgTab, AgVariable } from './tab'
+import { NOT_PROJECTABLE } from './projection'
 import { loadErrorText } from '../../loadError'
 import { latestVariableForColumn } from '../../params'
 
@@ -156,12 +157,13 @@ export function gddView({ tab, met, table, through, normals, forecast }: GddInpu
       notes.push('No climate normals for this station, so no projection is shown.')
     }
   } else if (tab.gddProj !== 'off' && met.date.length > 0) {
-    notes.push('The projection is shown when the date range ends today.')
+    notes.push(NOT_PROJECTABLE)
   }
   return ready(
     {
       series,
       cutoffsF: custom ? [cut.loF ?? crops[0], cut.hiF ?? crops[1]] : [crops[0], crops[1]],
+      ...(series.ndawnSwitch ? { switchHighF: GDD_CUTOFFS_F[`${crop as 'wheat' | 'barley'}2`][1] } : {}),
       stageMode: custom ? 'custom' : hasTable ? 'table' : 'no-table',
       cropLabel,
       stages: custom || !hasTable ? undefined : table.stages,

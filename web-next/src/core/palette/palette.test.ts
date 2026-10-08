@@ -7,8 +7,10 @@ import { colorAt, sample, toOklab } from './ramps'
 import {
   ANNUAL_CURRENT,
   CCI_CLASSES,
+  CUMULATIVE_LINE,
   ETR,
   FEELS_LIKE,
+  FEELS_LIKE_LINE,
   GDD,
   GDD_STAGE_LINE,
   HEATMAP,
@@ -151,10 +153,9 @@ function lineMarkerColors(t: Theme): Record<string, string> {
   const out: Record<string, string> = {}
   for (const [k, v] of Object.entries(NETWORK_COLOR[t])) out[`network ${k}`] = v
   for (const v of STYLED_VARIABLES) out[`var ${v}`] = variableStyle(v, t)!.color
-  for (const [name, r] of Object.entries({ PRECIP, ETR, GDD })) {
-    out[`${name} bar`] = r[t].bar
-    out[`${name} cumulative`] = r[t].cumulative
-  }
+  for (const [name, r] of Object.entries({ PRECIP, ETR, GDD })) out[`${name} bar`] = r[t].bar
+  out['precip cumulative'] = PRECIP[t].cumulative
+  out['cumulative line'] = resolve(CUMULATIVE_LINE, get)
   for (const side of ['cold', 'heat'] as const) for (const c of CCI_CLASSES) out[`cci ${side} ${c}`] = cciStyle(c, side, t).color
   for (const [k, v] of Object.entries(FEELS_LIKE[t])) out[`feels ${k}`] = v.color
   for (const d of [2, 4, 8, 20, 28, 36, 40, 3, 15.7]) out[`depth ${d}`] = depthColor(d, t)
@@ -165,6 +166,7 @@ function lineMarkerColors(t: Theme): Record<string, string> {
   out['annual current'] = resolve(ANNUAL_CURRENT.color, get)
   out['gdd stage'] = resolve(GDD_STAGE_LINE, get)
   out['index line'] = resolve(INDEX_LINE, get)
+  out['feels-like line'] = resolve(FEELS_LIKE_LINE, get)
   out['normals line'] = resolve(NORMALS.line, get)
   out['selection'] = resolve(SELECTION_RING, get)
   return out

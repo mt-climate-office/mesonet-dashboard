@@ -2,14 +2,16 @@
  * Growing degree days: daily bars (y1) + cumulative line (y2) with labelled
  * growth-stage markLines, and an optional projection (NWS forecast segment,
  * then normals median with a q25–q75 band) continuing from the last
- * observed day. With a stage table, bars, line and projection are colored by
- * the growth stage reached that day (a hidden piecewise visualMap on x).
+ * observed day. With a stage table, the bars are colored by the growth stage
+ * reached that day (a hidden piecewise visualMap on x) and each stage line by
+ * its stage; the cumulative line and the projection stay in the text color, so
+ * they never vanish into same-colored bars.
  * GDD values are already °F·day (contract), so no conversion.
  */
 import type { EChartsOption, LineSeriesOption, VisualMapComponentOption } from 'echarts'
 import type { GddProjection, GddSeries, GddStage, Nullable } from '../ag/contract'
 import { finiteMax, stageText } from '../ag/view/labels'
-import { GDD, GDD_STAGE_LINE, gddStageColors, withAlpha } from '../palette'
+import { CUMULATIVE_LINE, GDD, GDD_STAGE_LINE, gddStageColors } from '../palette'
 import { dualAxis, niceCeil } from './axes'
 import { fmtNum, fmtWall, wallMs } from './format'
 import { bandSeries, labelledLines } from './overlays'
@@ -24,6 +26,8 @@ export interface GddModel {
   series: GddSeries
   /** Display cutoffs (°F) for the bar name; Infinity = no upper cap. */
   cutoffsF: readonly [number, number]
+  /** The upper cutoff (°F) after the NDAWN switch at Haun stage 2 (wheat, barley), when it applies. */
+  switchHighF?: number
   /** Crop with a stage table, crop without one, or custom cutoffs. */
   stageMode: 'table' | 'no-table' | 'custom'
   /** Crop display name for "No stage table for …". */
@@ -55,8 +59,8 @@ const STAGE_FONT = 10
 /**
  * Width (px) of a gutter right of the plot for the stage labels, so they
  * never sit on the daily bars; 0 when the longest label would take more than
- * a quarter of the chart (phones, tablets): the lines then go unlabelled and
- * the tooltip, table and stats card name the stage.
+ * a quarter of the chart: the lines then go unlabelled and the tooltip,
+ * table and stats card name the stage.
  */
 export function stageGutter(lines: { label: string }[], width: number): number {
   if (lines.length === 0) return 0
@@ -64,10 +68,24 @@ export function stageGutter(lines: { label: string }[], width: number): number {
   return w <= width / 4 ? w : 0
 }
 
+/**
+ * The stage labels that fit beside the plot: the full ones ("3 – Leaf 3 …"), else the stage codes
+ * alone ("3"; phones, tablets: the tooltip names the stage), else none (gutter 0).
+ */
+export function fittedStageLabels(lines: StageLine[], width: number): { lines: { y: number; label: string }[]; gutter: number } {
+  for (const key of ['label', 'short'] as const) {
+    const fitted = lines.map((l) => ({ y: l.y, label: l[key] }))
+    const gutter = stageGutter(fitted, width)
+    if (gutter > 0) return { lines: fitted, gutter }
+  }
+  return { lines: lines.map((l) => ({ y: l.y, label: l.label })), gutter: 0 }
+}
+
 const fmtF = (f: number) => (Number.isFinite(f) ? `${f}` : '∞')
 
-/** "Daily GDDs (32–∞ °F)". */
-export const gddBarName = (cutoffsF: readonly [number, number]) => `Daily GDDs (${fmtF(cutoffsF[0])}–${fmtF(cutoffsF[1])} °F)`
+/** "Daily GDDs (32–∞ °F)", or "Daily GDDs (32–70/95 °F)" with the NDAWN switch's second upper cutoff. */
+export const gddBarName = (cutoffsF: readonly [number, number], switchHighF?: number) =>
+  `Daily GDDs (${fmtF(cutoffsF[0])}–${fmtF(cutoffsF[1])}${switchHighF != null ? `/${fmtF(switchHighF)}` : ''} °F)`
 
 /** Per-day growth-stage text for the tooltip and table. */
 function stageLabels(m: GddModel): string[] {
@@ -125,19 +143,33 @@ function projectionSeries(m: GddModel, p: GddProjection, colors: { line: string;
   return out
 }
 
+export interface StageLine {
+  y: number
+  /** "3 – Leaf 3 (Tillers Begin To Emerge)". */
+  label: string
+  /** The stage code alone ("3", "V1", "12-14") for narrow charts. */
+  short: string
+}
+
+/** "V1 (Emergence)" → "V1", "BBCH Stages 12-14" → "12-14", "0.5" → "0.5". */
+const shortStage = (code: string) => code.replace(/\s*\(.*\)$/, '').replace(/^BBCH Stages? /, '')
+
 /**
- * Stage lines within (0, y2max], thinned so labels never stack: a stage
- * closer than y2max / 16 to the last kept one is skipped (its name still
- * shows in the tooltip and table).
+ * Stage lines within (0, y2max], thinned so labels never stack: the highest stage drawn and the
+ * stage `reached` (cumulative GDDs so far) always stay; any other stage closer than y2max / 16 to
+ * one kept is skipped (its name still shows in the tooltip and table).
  */
-export function stageLines(stages: GddStage[], y2max: number): { y: number; label: string }[] {
-  const out: { y: number; label: string }[] = []
-  for (const s of [...stages].sort((a, b) => a.gdd - b.gdd)) {
-    if (s.gdd <= 0 || s.gdd > y2max) continue
-    if (out.length && s.gdd - out[out.length - 1].y < y2max / 16) continue
-    out.push({ y: s.gdd, label: stageText(s.code ?? s.stage, s.name) })
-  }
-  return out
+export function stageLines(stages: GddStage[], y2max: number, reached?: Nullable): StageLine[] {
+  const inRange = [...stages].sort((a, b) => a.gdd - b.gdd).filter((s) => s.gdd > 0 && s.gdd <= y2max)
+  if (inRange.length === 0) return []
+  const reachedIx = reached == null ? -1 : inRange.filter((s) => s.gdd <= reached).length - 1
+  const pinned = new Set([inRange[inRange.length - 1], ...(reachedIx >= 0 ? [inRange[reachedIx]] : [])])
+  const gap = y2max / 16
+  const kept = [...pinned]
+  for (const s of inRange) if (!pinned.has(s) && kept.every((k) => Math.abs(k.gdd - s.gdd) >= gap)) kept.push(s)
+  return kept
+    .sort((a, b) => a.gdd - b.gdd)
+    .map((s) => ({ y: s.gdd, label: stageText(s.code ?? s.stage, s.name), short: shortStage(String(s.code ?? s.stage)) }))
 }
 
 /** How many of `stages` a cumulative total has reached (0 = none yet); null for a missing total. */
@@ -183,19 +215,19 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
   const stages = stageLabels(m)
   const y2max = gddAxisMax(m)
   const table = m.stageMode === 'table' ? [...(m.stages ?? [])].sort((a, b) => a.gdd - b.gdd) : []
-  // One color per stage (index 0: before the first); the series take the stage reached so far,
+  // One color per stage (index 0: before the first); the bars take the stage reached so far,
   // so the legend shows the current one.
   const stageColors = table.length > 0 ? gddStageColors(table.length + 1, ctx.theme.name) : []
-  const nowStage = stageIndex(table, m.series.cumulative[lastIndex(m.series.cumulative)] ?? null) ?? 0
+  const soFar = m.series.cumulative[lastIndex(m.series.cumulative)] ?? null
+  const nowStage = stageIndex(table, soFar) ?? 0
   const barColor = stageColors[nowStage] ?? c.bar
-  const lineColor = stageColors[nowStage] ?? c.cumulative
+  const lineColor = paint(ctx.theme, CUMULATIVE_LINE)
   const cumPoints = points(xs, m.series.cumulative, DAY, stages)
   const cumulative = lineSeries(GDD_NAMES.cumulative, cumPoints, {
     color: lineColor,
     yAxisIndex: 1,
   })
-  const lines = stageLines(table, y2max)
-  const gutter = stageGutter(lines, ctx.width)
+  const { lines, gutter } = fittedStageLabels(stageLines(table, y2max, soFar), ctx.width)
   if (lines.length > 0) {
     const ml = labelledLines(paint(ctx.theme, GDD_STAGE_LINE), lines, ctx, { labels: gutter > 0, fontSize: STAGE_FONT })
     // Each stage line in its stage's color (the labels stay muted text).
@@ -206,9 +238,9 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
   }
   const proj =
     m.projection && m.projection.date.length > 0
-      ? projectionSeries(m, m.projection, { line: lineColor, band: withAlpha(c.cumulative, c.bandAlpha) })
+      ? projectionSeries(m, m.projection, { line: lineColor, band: paint(ctx.theme, { ...CUMULATIVE_LINE, alpha: c.bandAlpha }) })
       : []
-  const barName = gddBarName(m.cutoffsF)
+  const barName = gddBarName(m.cutoffsF, m.switchHighF)
   const lg = agLegend(ctx, [
     { name: barName, short: 'Daily' },
     { name: GDD_NAMES.cumulative, short: SHORT[GDD_NAMES.cumulative] },
@@ -223,20 +255,13 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
   const series = [...(f.trace ? [f.trace.series] : []), barSeries(barName, points(xs, m.series.daily, DAY), barColor), cumulative, ...proj]
   let visualMap: VisualMapComponentOption | undefined
   if (stageColors.length > 0) {
-    const p = m.projection
-    const colored = series.flatMap((s, i) => (s.name === barName || s.name === GDD_NAMES.cumulative || s.name === GDD_NAMES.forecast || s.name === GDD_NAMES.normals ? [i] : []))
-    // An explicit line color would win over the visualMap's.
-    for (const i of colored) {
-      const ls = (series[i] as LineSeriesOption).lineStyle
-      if (ls) delete ls.color
-    }
     visualMap = {
       type: 'piecewise',
       show: false,
       dimension: 0,
-      seriesIndex: colored,
-      pieces: stagePieces([...m.series.date, ...(p?.date ?? [])], [...m.series.cumulative, ...(p?.cumulative ?? [])], table, stageColors),
-      outOfRange: { color: lineColor },
+      seriesIndex: [series.findIndex((s) => s.name === barName)],
+      pieces: stagePieces(m.series.date, m.series.cumulative, table, stageColors),
+      outOfRange: { color: barColor },
     }
   }
   return {
@@ -269,7 +294,7 @@ export function gddTable(m: GddModel): ChartTable {
     })
   }
   return {
-    caption: `Growing degree days, ${gddBarName(m.cutoffsF).replace('Daily GDDs ', '')}`,
+    caption: `Growing degree days, ${gddBarName(m.cutoffsF, m.switchHighF).replace('Daily GDDs ', '')}`,
     columns: ['Date', 'Source', 'Daily GDD (°F)', 'Cumulative GDD (°F)', 'Growth stage'],
     rows,
   }
