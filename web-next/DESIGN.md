@@ -45,7 +45,7 @@ Station view (?s=<id>; remembered in localStorage mco-dashboard-station)
 │                            → Compare (cmp=1)
 │            &dl=1           the Download sheet over any of them (a chart's ⋯ → Download data)
 └─ About     #about          metadata, all current readings, locator map
-Header ⋯ menu: Share this view · Theme · Help · Send feedback
+Header ⋯ menu: Share this view · Install app (where it can be installed) · Theme · Help · Send feedback
 Station picker: drawer (desktop/tablet) or bottom sheet (phones):
                 search (Near me inside) · recents · Browse on the map (network chips + map)
 ```
@@ -136,7 +136,7 @@ covers content) and the toast. There is no station meta line above the sections.
 
 **Header:** logo · brand (desktop) · **station button** ("Bozeman ▾", large, borderless, truncates, opens the
 picker) · the sections, Now | Charts | About, as a segmented control (tablet up; the current one a raised pill,
-bold) · one **⋯ menu**: Share this view, Theme (cycles dark → light → high contrast and stays open; the
+bold) · one **⋯ menu**: Share this view, Install app (on the install address, when not installed; DIVERGENCES "Install the app"), Theme (cycles dark → light → high contrast and stays open; the
 state, "Dark", shows on the right and is in the item's name), Help (the kit dialog; focus returns to ⋯),
 then Send feedback (a link). One row at every width.
 

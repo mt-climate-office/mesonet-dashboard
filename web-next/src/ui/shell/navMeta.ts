@@ -1,7 +1,7 @@
 /**
  * `x-data="navMeta"` on the header (partials/shell.html): the ⋯ menu's
- * actions (Share this view, the 3-state Theme cycle, Help; Send feedback is
- * a plain link). Also keeps `document.title` naming the selected station
+ * actions (Share this view, Install app where it can be installed, the 3-state
+ * Theme cycle, Help; Send feedback is a plain link). Also keeps `document.title` naming the selected station
  * (core/pageTitle.ts) and publishes the header height as `--chrome-h`.
  */
 import Alpine from 'alpinejs'
@@ -10,6 +10,7 @@ import { pageTitle } from '../../core/pageTitle'
 import { publishHeight } from '../layout/sectionNav'
 import { component } from '../component'
 import { openHelp } from './helpDialog'
+import { install, offer } from './install'
 import { announce } from './live'
 import { shareView } from './share'
 
@@ -28,6 +29,12 @@ export function navMeta() {
 
     /** Copy the view's URL (ui/shell/share.ts). */
     share: () => shareView(),
+
+    /** Install app (ui/shell/install.ts): shown only where there is something to offer. */
+    get canInstall(): boolean {
+      return offer() !== 'none'
+    },
+    install: () => install(),
 
     /** dark → light → high contrast; the menu stays open and the item's state text follows. */
     cycleTheme() {
