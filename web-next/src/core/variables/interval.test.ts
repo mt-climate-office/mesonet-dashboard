@@ -36,6 +36,7 @@ describe('interval', () => {
     expect(pressed(all)).toBe('auto')
     expect(all[0].label).toBe('Auto (daily)')
     expect(disabled(all)).toEqual(['raw', 'hourly', 'daily'])
+    expect(all[1].reason).toBe('All years shows daily values')
   })
   it('Auto clears the key', () => {
     expect(intervalPatch('auto')).toEqual({ agg: null })

@@ -1,18 +1,22 @@
 /**
  * Annual comparison: one line per calendar year on a day-of-year axis.
  * Prior years from batlow (old → new), the current year in --text-primary
- * at width 3. Traces arrive in display units (core/ag/view/derive#annualTraces).
+ * at width 3. Axes as every time chart's (mono labels, 10 px on phones, the
+ * x axis at the bottom); the years' key at the top left, where the station
+ * charts put theirs. Traces arrive in display units (core/ag/view/derive#annualTraces).
  */
-import type { EChartsOption } from 'echarts'
+import type { EChartsOption, YAXisComponentOption } from 'echarts'
 import type { AnnualTrace } from '../ag/compute'
 import { ANNUAL_CURRENT, yearColors } from '../palette'
 import { grid, valueAxis } from './axes'
+import { WIND_DIRECTION } from '../variables/direction'
 import { MISSING, fmtNum } from './format'
 import { lineSeries } from './series'
 import { LINE_WIDTH, bottomLayout, extentOf, points, stepMs, yAxisRange } from './style'
 import { paint } from './theme'
 import { axisTooltip, legend, tipText } from './tooltip'
 import type { ChartBuilder, ChartTable } from './types'
+import { breakWraps, compassTick } from './windDirection'
 
 export interface AnnualModel {
   traces: AnnualTrace[]
@@ -23,7 +27,7 @@ export interface AnnualModel {
   variable?: string
 }
 
-/** The scroll legend's row under the plot (px). */
+/** The scroll legend's row above the plot (px). */
 const LEGEND_ROW_PX = 26
 
 const sortedTraces = (m: AnnualModel) => [...m.traces].sort((a, b) => a.year - b.year)
@@ -32,6 +36,12 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 /** Day of year of each month's 1st in a non-leap year: the x-axis month ticks. */
 export const MONTH_START_DOY = [1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
+
+/**
+ * Each month's middle day of year: where its label sits, between its ticks, so "Jan" never sits on
+ * the y axis beside its lowest label.
+ */
+export const MONTH_MID_DOY = MONTH_START_DOY.map((d, i) => Math.round((d + (MONTH_START_DOY[i + 1] ?? 366)) / 2))
 
 /** "2024-02-29" → "Feb 29": the trace's own calendar date, so leap years read correctly. */
 export const monthDay = (date: string) => `${MONTHS[Number(date.slice(5, 7)) - 1]} ${Number(date.slice(8, 10))}`
@@ -48,28 +58,41 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
     const isCurrent = t.year === m.currentYear
     const color = isCurrent ? current : colors[prior.indexOf(t)]
     // One line width; the current year is the design's one highlight (ANNUAL_CURRENT).
-    const s = lineSeries(String(t.year), points(t.doy, t.values, stepMs('doy'), t.date.map(monthDay)), { color, width: isCurrent ? ANNUAL_CURRENT.width : LINE_WIDTH })
+    const pts = points(t.doy, t.values, stepMs('doy'), t.date.map(monthDay))
+    const s = lineSeries(String(t.year), m.variable === WIND_DIRECTION ? breakWraps(pts) : pts, { color, width: isCurrent ? ANNUAL_CURRENT.width : LINE_WIDTH })
     return isCurrent ? { ...s, z: 3 } : s
   })
+  const g = grid(ctx, { top: LEGEND_ROW_PX + 6, bottom: bottomLayout(false).grid })
+  const fontSize = ctx.compact ? 10 : 11
+  // Phones label every other month.
+  const labelled = MONTH_MID_DOY.filter((_, i) => !ctx.compact || i % 2 === 0)
   return {
-    // No zoom: a calendar year is the whole axis. The legend sits under the month labels.
-    grid: grid(ctx, { bottom: bottomLayout(false, LEGEND_ROW_PX).grid }),
-    // Month ticks at the 1st (non-leap DOY); the tooltip gives each year's exact date.
+    // No zoom: a calendar year is the whole axis.
+    grid: g,
+    // Month ticks at the 1st (non-leap DOY), names mid-month; the tooltip gives each year's exact date.
     xAxis: {
       type: 'value',
       min: 1,
       max: 366,
       splitLine: { show: false },
+      axisLine: { onZero: false },
       axisTick: { customValues: MONTH_START_DOY },
       axisLabel: {
-        customValues: MONTH_START_DOY,
-        formatter: (v: number) => MONTHS[MONTH_START_DOY.indexOf(v)] ?? '',
+        customValues: labelled,
+        formatter: (v: number) => MONTHS[MONTH_MID_DOY.indexOf(v)] ?? '',
         hideOverlap: true,
-        fontFamily: ctx.theme.fontUi,
+        fontSize,
       },
     },
-    yAxis: { ...valueAxis(m.yLabel), ...yAxisRange(m.variable ?? '', ...extentOf(...traces.map((t) => t.values))) },
-    legend: legend(ctx).legend,
+    yAxis: {
+      ...valueAxis(m.yLabel),
+      ...yAxisRange(m.variable ?? '', ...extentOf(...traces.map((t) => t.values))),
+      nameGap: ctx.compact ? 36 : 46,
+      nameTextStyle: { fontSize },
+      axisLabel: { fontSize, ...(m.variable === WIND_DIRECTION ? { formatter: compassTick } : {}) },
+    } as YAXisComponentOption,
+    // The years' key: a row at the top left, as the station charts' keys.
+    legend: { ...legend(ctx).legend, bottom: undefined, top: 0, left: g.left as number, right: g.right as number, textStyle: { fontSize } },
     tooltip: axisTooltip(ctx, doyHeader, (name, y, date) => tipText(date ? `${name} (${date})` : name, y.toFixed(2))),
     series,
   } satisfies EChartsOption

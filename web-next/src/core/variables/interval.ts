@@ -52,7 +52,7 @@ export function intervalChips(agg: LatestAgg | null, days: number, all = false):
   const current: Interval = agg === null || all || effectiveAgg(agg, days) !== agg ? 'auto' : agg
   return ORDER.map((id) => {
     const disabled = id !== 'auto' && (all || (id === 'raw' && !rawAllowed(days)))
-    const reason = !disabled ? '' : all ? 'All years is always daily' : `5-minute data is offered for ${RAW_MAX_DAYS} days or less`
+    const reason = !disabled ? '' : all ? 'All years shows daily values' : `5-minute data is offered for ${RAW_MAX_DAYS} days or less`
     const label = id === 'auto' ? `Auto (${LABEL[autoAgg(days, all)].toLowerCase()})` : LABEL[id]
     return { id, label, pressed: id === current, disabled, reason }
   })

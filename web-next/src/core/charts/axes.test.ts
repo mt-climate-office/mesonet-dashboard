@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dualAxis, fitAxisNames, logAxis, logExtent, niceCeil, valueAxis, timeAxis, timeTickLabel } from './axes'
+import { dayTicks, dualAxis, fitAxisNames, logAxis, logExtent, niceCeil, valueAxis, timeAxis, timeTickLabel } from './axes'
 
 describe('axes', () => {
   it('time axis: 12-hour labels read in UTC (= Denver wall clock), fewer ticks on compact', () => {
@@ -10,6 +10,24 @@ describe('axes', () => {
     expect(a.axisLabel.formatter(Date.UTC(2026, 9, 1), 0, { level: 1 })).toBe('Oct 1')
     expect(a.axisLabel.formatter(Date.UTC(2026, 9, 1), 0, { level: 0 })).toBe('Oct')
     expect((timeAxis({ compact: true }) as { splitNumber: number }).splitNumber).toBeLessThan(a.splitNumber)
+  })
+  it('compact time axis over 3–60 days: evenly spaced whole days, centred in the window', () => {
+    const d = (mo: number, day: number) => Date.UTC(2026, mo, day)
+    const label = (t: number) => timeTickLabel(t, true)
+    // 14 days (Sep 23 through Oct 7, the axis ends at Oct 8 00:00): 4 days apart, never a month-start snap.
+    expect(dayTicks(d(8, 23), d(9, 8)).map(label)).toEqual(['Sep 24', 'Sep 28', 'Oct 2', 'Oct 6'])
+    expect(dayTicks(d(9, 1), d(9, 8)).map(label)).toEqual(['Oct 1', 'Oct 3', 'Oct 5', 'Oct 7'])
+    const month = dayTicks(d(8, 7), d(9, 8))
+    expect(month.length).toBeLessThanOrEqual(4)
+    expect(new Set(month.slice(1).map((t, i) => t - month[i])).size).toBe(1)
+    expect(dayTicks(d(9, 6), d(9, 8))).toEqual([])
+    expect(dayTicks(d(0, 1), d(9, 8))).toEqual([])
+    type Ax = { axisLabel: { customValues?: number[]; formatter: (v: number, i: number) => string }; axisTick: { customValues?: number[] } }
+    const a = timeAxis({ min: d(8, 23), max: d(9, 8), compact: true }) as Ax
+    expect(a.axisLabel.customValues).toEqual(dayTicks(d(8, 23), d(9, 8)))
+    expect(a.axisTick.customValues).toEqual(a.axisLabel.customValues)
+    expect(a.axisLabel.formatter(d(9, 1), 0)).toBe('Oct 1')
+    expect((timeAxis({ min: d(8, 23), max: d(9, 8) }) as Ax).axisLabel.customValues).toBeUndefined()
   })
   it('time tick labels: hours as on Now, days, a month beside days names its day, Jan 1 the year', () => {
     const at = (mo: number, d: number, h = 0, m = 0) => Date.UTC(2026, mo, d, h, m)

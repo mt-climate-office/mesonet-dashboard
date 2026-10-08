@@ -4,14 +4,17 @@
  * by depth), bars for precipitation and reference ET, gridMET normals (band
  * or percentile markers), hatched sensor-change spans and per-panel
  * "not available" notes, in the house chart style (style.ts: gaps, y-axis
- * rule, slider and its trace). Input is core/models/timeseries (display units).
+ * rule, slider and its trace). Every key sits in one place: a row at the top
+ * left of its panel. Wind direction breaks at the north wrap and has compass
+ * ticks (windDirection.ts). Input is core/models/timeseries (display units).
  */
 import type { EChartsOption, GraphicComponentOption, SeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { TimeseriesModel, TimeseriesPanel, TimeseriesSeries } from '../models/timeseries'
 import { panelNoDataText } from '../models/timeseries'
-import { ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, variableStyle } from '../palette'
+import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, variableStyle, withAlpha } from '../palette'
 import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
+import { WIND_DIRECTION } from '../variables/direction'
 import { formatValue, plainName, plainUnit } from '../variables/labels'
 import { timeAxis, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtWall, isoWall, plainLabel } from './format'
@@ -21,6 +24,7 @@ import { REF_WIDTH, extentOf, isAccumulation, points, runningTotal, showsSlider,
 import { paint } from './theme'
 import { tipText, tooltipBase, type TipParam } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
+import { breakWraps, compassTick } from './windDirection'
 
 export interface LatestTimeseriesModel {
   ts: TimeseriesModel
@@ -30,7 +34,9 @@ export interface LatestTimeseriesModel {
 }
 
 /**
- * Layout in CSS px. Each panel has a key row (depths, columns) in the gap above it. Under the last
+ * Layout in CSS px. Each panel has a key row (depths, columns) in the gap above it; the first
+ * panel's also carries the chart-wide keys, on a row of their own above it when one row is too
+ * long. Under the last
  * panel: the x labels and the slider (style `bottomLayout(true)`: 56), or the labels alone on phones.
  */
 export const LAYOUT = { panel: 190, single: 340, compactPanel: 160, gap: 34, top: 30, bottom: 56, compactBottom: 30 } as const
@@ -88,16 +94,24 @@ interface KeyEntry {
   block?: boolean
 }
 
-/** A row of keys, right-aligned, ending at `right` px with its middle at `y`. */
-function keyRow(ctx: ChartContext, entries: KeyEntry[], right: number, y: number): GraphicComponentOption[] {
+/** Space between two keys in a row (px). */
+const KEY_GAP = 12
+
+/** One key's width in px: its swatch, 4 px, and its text (estimated from the label's length). */
+function keyWidth(ctx: ChartContext, e: KeyEntry): number {
+  return (e.glyph ? 10 : 14) + 4 + Math.ceil(e.label.length * (ctx.compact ? 5.6 : 6.2))
+}
+
+/** A row's width in px. */
+const rowWidth = (ctx: ChartContext, entries: KeyEntry[]) => entries.reduce((w, e, i) => w + keyWidth(ctx, e) + (i ? KEY_GAP : 0), 0)
+
+/** A row of keys, left-aligned from `left` px with its middle at `y`. */
+function keyRow(ctx: ChartContext, entries: KeyEntry[], left: number, y: number): GraphicComponentOption[] {
   const font = `${ctx.compact ? 10 : 11}px ${ctx.theme.fontUi}`
-  const charW = ctx.compact ? 5.6 : 6.2
-  let x = right
+  let x = left
   const out: GraphicComponentOption[] = []
-  for (const e of [...entries].reverse()) {
-    const textW = Math.ceil(e.label.length * charW)
+  for (const e of entries) {
     const swatchW = e.glyph ? 10 : 14
-    x -= textW + swatchW + 4
     const swatch = e.glyph
       ? { type: 'text' as const, x: 0, y: 0, style: { text: e.glyph, fill: e.color, font, verticalAlign: 'middle' as const } }
       : e.block
@@ -110,7 +124,7 @@ function keyRow(ctx: ChartContext, entries: KeyEntry[], right: number, y: number
       silent: true,
       children: [swatch, { type: 'text', x: swatchW + 4, y: 0, style: { text: e.label, fill: ctx.theme.textMuted, font, verticalAlign: 'middle' } }],
     } as GraphicComponentOption)
-    x -= 12
+    x += keyWidth(ctx, e) + KEY_GAP
   }
   return out
 }
@@ -142,6 +156,7 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
   }
   const graphic: GraphicComponentOption[] = []
   const global = { normals: false, markers: false, sensor: false }
+  const panelKeys: KeyEntry[][] = []
 
   panels.forEach((p, i) => {
     const axes = { xAxisIndex: i, yAxisIndex: i }
@@ -150,18 +165,22 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
       const color = seriesColor(ctx, p, s, i)
       const { label, unit } = plainSeries(p, s)
       if (isBar(p)) {
-        // barMinWidth: raw 5–15 min bars over a week are narrower than a pixel and would vanish.
-        push({ ...barSeries(s.name, pts(s.values), color, i), ...axes, barMinWidth: 1, id: `p${i}:${s.name}` }, { panel: i, label, unit })
+        // barMinWidth: hourly bars over two weeks on a phone (or raw ones over a week) are under a
+        // pixel apart; 2 px keeps a shower visible, and neighbours merge into one wet spell.
+        push({ ...barSeries(s.name, pts(s.values), color, i), ...axes, barMinWidth: 2, id: `p${i}:${s.name}` }, { panel: i, label, unit })
         return
       }
       const dash = p.legend ? DASHES[j % DASHES.length] : variableStyle(p.variable, ctx.theme.name)?.dash
-      push({ ...lineSeries(s.name, pts(s.values), { color, dash, yAxisIndex: i, id: `p${i}:${s.name}` }), xAxisIndex: i }, {
+      const line = p.variable === WIND_DIRECTION ? breakWraps(pts(s.values)) : pts(s.values)
+      push({ ...lineSeries(s.name, line, { color, dash, yAxisIndex: i, id: `p${i}:${s.name}` }), xAxisIndex: i }, {
         panel: i,
         label,
         unit,
       })
       if (s.depth) keys.push({ label: s.depth, color })
       else if (p.legend) keys.push({ label: columnKey(p.variable, s.name), color, dash })
+      // The variable page's Daily band (core/variables/band; drawn by variable.ts) and the mean it surrounds.
+      else if (s.band) keys.push({ label: 'Daily mean', color }, { label: DAILY_RANGE.label, color: withAlpha(color, DAILY_RANGE.alpha), block: true })
     })
 
     const nm = p.normals
@@ -198,7 +217,7 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
       push({ ...sensorEventSeries(ctx, p.sensorSpans), ...axes, id: `${AUX}sensor-events-${i}` }, null)
     }
 
-    if (keys.length) graphic.push(...keyRow(ctx, keys, ctx.width - right, topOf(i) - 10))
+    panelKeys.push(keys)
     if (p.noData) {
       graphic.push({
         type: 'text',
@@ -222,20 +241,22 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
     }
   })
 
-  // Chart-wide keys (top row, left): overlays that recur across panels.
+  // Chart-wide keys: overlays that recur across panels, after the first panel's own keys.
   const globalKeys: KeyEntry[] = []
   if (global.normals) globalKeys.push({ label: 'gridMET normal (1991–2020)', color: paint(ctx.theme, NORMALS.band), block: true })
   if (global.markers) {
     globalKeys.push({ label: '75th', color: normalColor, glyph: '▼' }, { label: 'median', color: normalColor, glyph: '●' }, { label: '25th pct. normal', color: normalColor, glyph: '▲' })
   }
   if (global.sensor) globalKeys.push({ label: SENSOR_EVENT.label, color: paint(ctx.theme, SENSOR_EVENT.fill), block: true })
-  if (globalKeys.length) {
-    // Laid out right-aligned from the end of the row, then shifted so the row starts at the plot's left edge.
-    const row = keyRow(ctx, globalKeys, 10_000, 10)
-    const first = Math.min(...row.map((g) => (g as { x: number }).x))
-    row.forEach((g) => ((g as { x: number }).x += left - first))
-    graphic.push(...row)
-  }
+  panelKeys.forEach((keys, i) => {
+    const first = i === 0 ? [...keys, ...globalKeys] : keys
+    if (i > 0 || rowWidth(ctx, first) <= plotW) {
+      if (first.length) graphic.push(...keyRow(ctx, first, left, topOf(i) - 12))
+      return
+    }
+    // Too long for one row: the chart-wide keys go on a row of their own above.
+    graphic.push(...keyRow(ctx, globalKeys, left, topOf(0) - 23), ...keyRow(ctx, keys, left, topOf(0) - 9))
+  })
 
   const xIdx = panels.map((_, i) => i)
   const xAxis: XAXisComponentOption[] = panels.map((_, i) => {
@@ -255,7 +276,7 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
       gridIndex: i,
       nameGap: ctx.compact ? 36 : 46,
       nameTextStyle: { fontSize: ctx.compact ? 10 : 11, lineHeight: ctx.compact ? 12 : 14 },
-      axisLabel: { show: !p.noData, fontSize: ctx.compact ? 10 : 11 },
+      axisLabel: { show: !p.noData, fontSize: ctx.compact ? 10 : 11, ...(p.variable === WIND_DIRECTION ? { formatter: compassTick } : {}) },
       splitLine: { show: !p.noData },
     } as YAXisComponentOption
   })
