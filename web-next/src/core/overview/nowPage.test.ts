@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { SoilParams, SoilSeries } from '../ag/contract'
 import { SWP_CAP_BAR } from '../ag/view/labels'
 import type { ObservationRow } from '../api'
-import { buildNowPage, latestSwpBar, nowSwpQuery, stationMeta, type NowPageInput } from './nowPage'
+import { buildNowPage, latestSwpBar, nowSwpQuery, rainNow, stationMeta, type NowPageInput } from './nowPage'
 import { CALM_MPH } from './summary'
 
 const LATEST = {
@@ -70,6 +70,15 @@ describe('buildNowPage tiles', () => {
     const at = page(CALM_MPH)
     expect(at.tiles.find((t) => t.id === 'wind')?.value).toBe('1')
     expect(at.hero.summary).toMatch(/light SSE wind/i)
+  })
+  it('rain now, after the window: the latest rate, or whether any fell in the latest interval', () => {
+    expect(rainNow({ pptIn: 0.01, pptRateInH: 0.123 })).toBe('0.12 in/h now')
+    expect(rainNow({ pptIn: 0, pptRateInH: 0.002 })).toBe('raining now')
+    expect(rainNow({ pptIn: 0.01, pptRateInH: null })).toBe('raining now') // AgriMet: no rate column
+    expect(rainNow({ pptIn: 0, pptRateInH: 0 })).toBe('dry now')
+    expect(rainNow({ pptIn: null, pptRateInH: null })).toBe('')
+    const page = buildNowPage({ ...BASE, latest: { ...LATEST, 'Precipitation [in]': 0, 'Max Precip Rate [in/h]': 0 } })
+    expect(page.tiles.find((t) => t.id === 'precip')?.sub).toBe('Last 7 days · dry now')
   })
   it('rain without the ppt summary: the last 24 h from the hourly rows', () => {
     const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 10:00:00-06:00', 'Precipitation [in]': 0.12 }]
