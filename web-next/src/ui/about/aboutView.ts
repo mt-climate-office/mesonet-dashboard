@@ -36,10 +36,10 @@ export function aboutView() {
       return id ? apiLinks(id) : []
     },
 
-    /** How many readings the station reports now (Observed not counted); '' until `/latest` answers. */
+    /** "26 readings": how many the station reports now (Observed not counted); '' until `/latest` answers. */
     get readingsMeta(): string {
       const n = currentReadings(Alpine.store('station').id).filter((r) => r.col !== 'Timestamp').length
-      return n ? String(n) : ''
+      return n ? `${n} ${n === 1 ? 'reading' : 'readings'}` : ''
     },
 
     /** The newest sensor change's date; '' until the config answers or without changes. */
