@@ -74,10 +74,9 @@ export function variableList() {
     href(id: string): string {
       return Alpine.store('url').hrefFor('charts', chartPatch(id))
     },
-    /** A row: push its page; the row's name morphs into the page heading, which takes focus. */
+    /** A row: push its page; the page heading takes focus. */
     open(e: MouseEvent, id: string): void {
-      const morph = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('[data-vt-source]')
-      follow(e, 'charts', { patch: chartPatch(id), drillDown: true, morph, target: chartHeading(id) })
+      follow(e, 'charts', { patch: chartPatch(id), drillDown: true, target: chartHeading(id) })
     },
     compareHref(): string {
       return Alpine.store('url').hrefFor('charts', { v: null, cmp: true })

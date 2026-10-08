@@ -2,8 +2,7 @@
      rows (the field itself is the pill, so the kit's focus ring follows its shape; one app clear
      button replaces each engine's own), then the station's variables by group (Weather · Rain and evaporation · Soil · …), each row
      a link to its page: plain name over a sub-label, the current value, a 48 h sparkline. Then Ag
-     tools (#charts-ag-tools; a bare legacy #ag link scrolls here) and More (Compare variables).
-     A row's name carries [data-vt-source]: it morphs into the page heading. -->
+     tools (#charts-ag-tools; a bare legacy #ag link scrolls here) and More (Compare variables). -->
 <div class="charts-list" x-data="variableList" data-testid="charts-list">
   <div class="dash-section-head">
     <h2 class="dash-section-title" id="charts-list-title" tabindex="-1">Charts</h2>
@@ -50,7 +49,7 @@
               <template x-for="r in filter(g.group, g.rows)" :key="r.id">
                 <li>
                   <a class="charts-row" :href="href(r.id)" @click="open($event, r.id)" :data-testid="'var-' + r.id">
-                    <span class="charts-row-name"><span data-vt-source x-text="r.name"></span><span class="charts-row-sub" x-show="r.note" x-text="r.note"></span></span>
+                    <span class="charts-row-name"><span x-text="r.name"></span><span class="charts-row-sub" x-show="r.note" x-text="r.note"></span></span>
                     <span class="charts-row-value" x-text="r.value"></span>
                     <span class="dash-spark charts-row-spark" aria-hidden="true">
                       <template x-if="r.spark"><svg :view-box.camel="r.spark.viewBox" preserveAspectRatio="none" focusable="false" :class="'is-' + r.spark.kind"><path :d="r.spark.d" vector-effect="non-scaling-stroke"/></svg></template>
@@ -70,7 +69,7 @@
             <template x-for="t in agTools()" :key="t.id">
               <li>
                 <a class="charts-row charts-row--tool" :href="href(t.id)" @click="open($event, t.id)" :data-testid="'ag-tool-' + t.id">
-                  <span class="charts-row-name"><span data-vt-source x-text="t.name"></span><span class="charts-row-sub" x-text="t.note"></span></span>
+                  <span class="charts-row-name"><span x-text="t.name"></span><span class="charts-row-sub" x-text="t.note"></span></span>
                 </a>
               </li>
             </template>

@@ -9,7 +9,7 @@
     <a class="dash-icon-btn ag-back" :href="listHref()" @click="toList($event)" :aria-label="backLabel('All charts')" data-testid="ag-back">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
     </a>
-    <h2 class="chart-title" id="ag-chart-title" tabindex="-1" data-vt-target x-text="title()"></h2>
+    <h2 class="chart-title" id="ag-chart-title" tabindex="-1" x-text="title()"></h2>
     <div class="dash-menu" x-data="menu" data-testid="ag-menu">
       <button type="button" class="dash-icon-btn" data-menu-button aria-expanded="false" aria-label="More for this chart" data-testid="ag-menu-button">
         <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>

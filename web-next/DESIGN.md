@@ -157,7 +157,7 @@ tiles, rows at every width.
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
 | Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table; a "Loading the 48-hour strip…" status while tier 2 loads and a short note in its place when there is nothing to draw. Below it the forecast periods as an icon row (api.weather.gov only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
 | Media | Latest camera frame of the default direction (opens the photo dialog; its caption bottom right, clear of the camera's own label), or the wind rose without a camera (a fixed 20 rem card) | photo schedule, latest listings (1) |
-| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page that morphs into the page heading, which takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
+| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page, whose heading takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
 | Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens About's readings sheet (`target: 'about-readings'`, the row's `data-sheet`; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
@@ -204,7 +204,7 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
   last 24 h total for totals; none for Ag tools) · a 48 h sparkline (none for Rain and Rain rate when all 48 h are dry, as on Now; one 72 h hourly request for every listed
   variable). Every row opens its page through `chartPatch(id)` (core/variables).
 - **Chart page frame** (variable page and Ag tools, `.chart-page` in styles/charts.css): back chevron (to the
-  list) · title (`[data-vt-target]`: a tapped Now tile or list row morphs into it) · **⋯ menu**; under it one
+  list) · title (takes focus when a Now tile or list row opens the page) · **⋯ menu**; under it one
   line (the variable page: "57 °F now · Last 14 days", `currentReading` + `rangeLabel`; an Ag tool: the station);
   then the chart card, the chips and a stats card. Cards are flat `.dash-card`s.
 - **Variable page** (`partials/charts/variable.html`, `ui/charts/variablePage.ts`):
@@ -487,7 +487,7 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 - **Section changes:** a same-document View Transition (`ui/layout/transition.ts`) where supported:
   only the section region (`view-transition-name: dash-section`) cross-fades with a 12 px slide, 180 ms,
   kit easing; forward/back follows the section order. The header and tab bar stay still.
-- **Shared element:** a tapped tile morphs into the destination heading (`[data-vt-target]`, 240 ms).
+- **No shared element:** a tapped tile or row does not morph into the heading; the section slide is enough.
 - **Drawer and sheet:** 220 ms slides (`.enter`/`.leaving`, margin or transform). The state restored on
   page load does not animate.
 - **Reduced motion:** no view transition (`MCO.reducedMotion()` checked at call time), static skeletons,

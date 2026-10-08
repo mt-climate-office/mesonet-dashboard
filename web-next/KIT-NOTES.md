@@ -151,12 +151,12 @@ falls short.
 - **Proposed:** `.mco-spark` CSS and a tiny `MCO.sparkPath(t[], v[], {kind, width, height})` if a second app wants it.
 
 ### View Transitions — new
-- **Here:** `withTransition(update, { direction, morph })` (`ui/layout/transition.ts`) and
-  `ui/layout/transition.css` (180 ms cross-fade + 12 px slide on one named region; `dash-morph` shared element).
+- **Here:** `withTransition(update, { direction })` (`ui/layout/transition.ts`) and
+  `ui/layout/transition.css` (180 ms cross-fade + 12 px slide on one named region; no shared-element morph).
 - **Gap in the kit:** the reduced-motion blanket (`*, *::before, *::after`) does not match the
   `::view-transition-*` pseudo-elements, so an app has to add its own reduced-motion block (done here) as
   well as skip `startViewTransition` in JS.
-- **Proposed:** `MCO.transition(update, { direction, morph })` and add
+- **Proposed:** `MCO.transition(update, { direction })` and add
   `::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important }`
   to the kit's reduced-motion block.
 

@@ -519,8 +519,9 @@ Data requests are unchanged
 
 ### Now tiles open the variable page
 - **P0:** a tile opened Compare with its variables.
-- **New:** a tile opens its first variable's page (wind → Wind Speed, soil → Soil VWC), with the
-  shared-element morph into the page heading (none under reduced motion).
+- **New:** a tile opens its first variable's page (wind → Wind Speed, soil → Soil VWC) with the usual
+  section slide. A shared-element morph (the tile or list row growing into the page heading) was tried and
+  removed: it added little over the slide and stretched the text in WebKit.
 
 ### Charts on touch screens
 - **web/ and P0:** the inside dataZoom took drags and pinches, so a swipe over a chart panned it instead of
