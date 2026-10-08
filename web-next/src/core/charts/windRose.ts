@@ -1,6 +1,7 @@
 /**
- * The one wind rose: stacked polar bars of readings per 16-point compass
- * direction × speed bin (core/models/windRose), legacy `plot_wind` /
+ * The one wind rose: stacked polar bars of each 16-point compass direction ×
+ * speed bin's percent of every reading (calm included, so roses of any window
+ * or interval share one unit) (core/models/windRose), legacy `plot_wind` /
  * px.bar_polar. Bin colors are batlow via `binColors`, slow → fast. Two
  * layouts of the same option: `windRoseChart` (Now's 17 rem media card) and
  * `windRoseLargeChart` (the Wind direction page's Rose view, as large as the card allows).
@@ -38,9 +39,13 @@ export const ROSE_SIDE_KEY_MIN_WIDTH = 560
 interface ItemParam {
   seriesName?: string
   name?: string
-  value?: unknown
+  seriesIndex?: number
+  dataIndex?: number
   marker?: unknown
 }
+
+/** `count` as a percent of every reading, calm included (the radius). */
+const percentOf = (count: number, m: WindRoseModel): number => (m.n + m.calm ? (100 * count) / (m.n + m.calm) : 0)
 
 /** The shared option; `layout` places the rose and its key. */
 function roseOption(m: WindRoseModel, ctx: ChartContext, layout: { polar: object; legend: object }): EChartsOption {
@@ -64,7 +69,7 @@ function roseOption(m: WindRoseModel, ctx: ChartContext, layout: { polar: object
       type: 'value',
       min: 0,
       splitNumber: 4,
-      axisLabel: { fontSize: 9 },
+      axisLabel: { fontSize: 9, formatter: '{value}%' },
       axisLine: { show: false },
       axisTick: { show: false },
     },
@@ -73,19 +78,25 @@ function roseOption(m: WindRoseModel, ctx: ChartContext, layout: { polar: object
     tooltip: {
       ...tooltipBase(ctx),
       trigger: 'item',
-      formatter: ((p: ItemParam) =>
-        `<div class="tooltip-name">${escapeHtml(p.seriesName ?? '')}</div>` +
-        `<div>${typeof p.marker === 'string' ? p.marker : ''}${escapeHtml(p.name ?? '')}: ` +
-        `<span style="font-family:var(--font-mono)">${escapeHtml(String(p.value ?? ''))}</span>` +
-        (typeof p.value === 'number' ? ` (${shareText(p.value, m)})` : '') +
-        `</div>`) as never,
+      // The share, then the readings behind it (the series data holds percents; the model the counts).
+      formatter: ((p: ItemParam) => {
+        const count = m.bins[p.seriesIndex ?? -1]?.counts[p.dataIndex ?? -1]
+        return (
+          `<div class="tooltip-name">${escapeHtml(p.seriesName ?? '')}</div>` +
+          `<div>${typeof p.marker === 'string' ? p.marker : ''}${escapeHtml(p.name ?? '')}: ` +
+          (count === undefined
+            ? ''
+            : `<span style="font-family:var(--font-mono)">${shareText(count, m)}</span> (${count.toLocaleString('en-US')} ${count === 1 ? 'reading' : 'readings'})`) +
+          `</div>`
+        )
+      }) as never,
     },
     series: m.bins.map((b, i) => ({
       type: 'bar',
       coordinateSystem: 'polar',
       name: names[i],
       stack: 'rose',
-      data: [...b.counts],
+      data: b.counts.map((c) => percentOf(c, m)),
       color: colors[i],
       // Thin surface-colored seams keep adjacent bins apart where colors are close.
       itemStyle: { borderColor: ctx.theme.surface, borderWidth: 0.5 },
@@ -112,16 +123,16 @@ export const windRoseLargeChart: ChartBuilder<WindRoseModel> = (m, ctx) =>
     : roseOption(m, ctx, { polar: { center: ['50%', Math.round(ctx.width / 2) + 16], radius: '86%' }, legend: { bottom: 4, left: 'center' } })
 
 /**
- * Table twin: one row per direction (N first, not by time), one column per speed bin (readings),
- * then the direction's share of every reading; the caption names the calm readings left out.
+ * Table twin: one row per direction (N first, not by time), one column per speed bin (its share of
+ * every reading, as drawn), then the direction's share; the caption names the calm readings left out.
  */
 export function windRoseTable(m: WindRoseModel, last24h = false): ChartTable {
   const totals = directionTotals(m)
   const calm = m.calm ? `; ${m.calm.toLocaleString('en-US')} calm readings (under ${CALM_MPH} mph, ${shareText(m.calm, m)}) are not drawn` : ''
   return {
-    caption: `${windRoseTitle(m, last24h) ?? 'Wind data'}: readings by direction and speed${calm}`,
+    caption: `${windRoseTitle(m, last24h) ?? 'Wind data'}: share of readings by direction and speed${calm}`,
     columns: ['Direction', ...m.bins.map((b) => binName(b.label)), 'Share'],
-    rows: m.directions.map((d, i) => [d, ...m.bins.map((b) => String(b.counts[i])), shareText(totals[i], m)]),
+    rows: m.directions.map((d, i) => [d, ...m.bins.map((b) => shareText(b.counts[i], m)), shareText(totals[i], m)]),
     fixedOrder: true,
   }
 }

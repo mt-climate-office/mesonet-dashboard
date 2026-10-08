@@ -43,10 +43,15 @@ describe('windRoseChart', () => {
     const top = parseFloat(center[1]) / 100 - parseFloat(radius) / 100 / 2
     expect(top).toBeGreaterThanOrEqual(0.1)
   })
-  it('counts per compass point equal the model; every observation counted once', () => {
+  it('radius is the percent of every reading: the model counts over the total; the bars sum to 100% with no calm', () => {
     const s = windRoseChart(model, testCtx()).series as Bar[]
-    s.forEach((x, i) => expect(x.data).toEqual(model.bins[i].counts))
-    expect(s.flatMap((x) => x.data).reduce((a, b) => a + b, 0)).toBe(rows.length)
+    s.forEach((x, i) => expect(x.data).toEqual(model.bins[i].counts.map((c) => (100 * c) / rows.length)))
+    expect(s.flatMap((x) => x.data).reduce((a, b) => a + b, 0)).toBeCloseTo(100)
+    expect((windRoseChart(model, testCtx()).radiusAxis as { axisLabel: { formatter: string } }).axisLabel.formatter).toBe('{value}%')
+  })
+  it('calm readings count in the denominator, so the bars sum to the drawn share', () => {
+    const s = windRoseChart({ ...model, calm: 10 }, testCtx()).series as Bar[]
+    expect(s.flatMap((x) => x.data).reduce((a, b) => a + b, 0)).toBeCloseTo(50)
   })
   it('16-point clockwise angle axis with N centred at the top; 8 labelled points', () => {
     const a = windRoseChart(model, testCtx()).angleAxis as {
@@ -61,11 +66,14 @@ describe('windRoseChart', () => {
     expect(a.clockwise).toBe(true)
     expect(a.data.map(a.axisLabel.formatter).filter(Boolean)).toEqual(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'])
   })
-  it('item tooltip escapes text and gives the share of every reading', () => {
+  it('item tooltip escapes text and gives the share, then the readings behind it', () => {
     const tip = windRoseChart(model, testCtx()).tooltip as { trigger: string; formatter: (p: unknown) => string }
     expect(tip.trigger).toBe('item')
-    expect(tip.formatter({ seriesName: '<b>', name: 'N', value: 3 })).toContain('&lt;b&gt;')
-    expect(tip.formatter({ seriesName: 'x', name: 'N', value: 3 })).toContain('(30%)')
+    expect(tip.formatter({ seriesName: '<b>', name: 'N', seriesIndex: 0, dataIndex: 0 })).toContain('&lt;b&gt;')
+    // Every bin of this model holds one or two readings of 10.
+    const i = model.bins[0].counts.findIndex(Boolean)
+    const html = tip.formatter({ seriesName: 'x', name: model.directions[i], seriesIndex: 0, dataIndex: i })
+    expect(html).toMatch(/>(10|20)%<\/span> \((1 reading|2 readings)\)/)
   })
 })
 
@@ -95,19 +103,20 @@ describe('title + table', () => {
     expect(windRoseTitle({ ...model, span: null })).toBeNull()
     expect(windRoseTitle(model, true)).toBe('Wind, last 24 hours')
   })
-  it('one row per direction (fixed order, N first), one column per bin, then the share', () => {
+  it('one row per direction (fixed order, N first), one column per bin (its share), then the share', () => {
     const t = windRoseTable(model)
     expect(t.columns).toEqual(['Direction', ...model.bins.map((b) => `${b.label} mph`), 'Share'])
     expect(t.rows).toHaveLength(16)
     expect(t.rows[0][0]).toBe('N')
     expect(t.rows[0].at(-1)).toBe('30%') // 0°, 10° and 355°: 3 of 10
+    expect(t.rows[0].slice(1, -1).every((c) => /^(\d+|<1)%$/.test(c))).toBe(true)
     expect(t.fixedOrder).toBe(true)
-    expect(t.caption).toBe('Wind, Sep 17 – Sep 19: readings by direction and speed')
+    expect(t.caption).toBe('Wind, Sep 17 – Sep 19: share of readings by direction and speed')
     expect(windRoseTable(model, true).caption).toMatch(/^Wind, last 24 hours/)
   })
   it('the caption names the calm readings left out', () => {
     expect(windRoseTable({ ...model, calm: 10 }).caption).toBe(
-      'Wind, Sep 17 – Sep 19: readings by direction and speed; 10 calm readings (under 1 mph, 50%) are not drawn',
+      'Wind, Sep 17 – Sep 19: share of readings by direction and speed; 10 calm readings (under 1 mph, 50%) are not drawn',
     )
   })
 })

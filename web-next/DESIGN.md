@@ -268,7 +268,8 @@ under an auto-opened picker drawer or sheet, which left the page barren (DIVERGE
     between the range chips and the Interval row; a press pushes the history entry (like Show as table). The rose
     replaces the time series in its card under a title in the Now card's style ("Wind, Oct 1 – Oct 8"; "Wind, last
     24 hours" for 24 h): the one rose builder (`windRoseLargeChart`, sharing `windRoseChart`'s option: 16 compass
-    points, stacked speed bins in batlow slow → fast, an item tooltip with the count and its share). On a card
+    points, stacked speed bins in batlow slow → fast, the radius in percent of every reading (calm included) so
+    roses of any window or interval share a unit, an item tooltip with the share and its count). On a card
     560 px wide and up the key is a column at the right and the rose fills a 30 rem canvas (the height under the
     header on a short screen); narrower (a phone) the rose spans the card and the canvas is as tall as it is wide
     plus 5.5 rem for the key's rows under it (a container query). It follows the range chips and Custom dates (24 h:
@@ -279,7 +280,7 @@ under an auto-opened picker drawer or sheet, which left the page barren (DIVERGE
     `CALM_MPH`) are counted, not drawn (their direction means nothing); all calm draws a note instead. The
     **stats card** under the chips: Most often from ("SE · 22%"), Calm, Average speed (calm included), Readings,
     two by two on phones. ⋯: Show as table puts the rose's table in its place (16 directions, N first, one column
-    per bin, then Share; not paged); its Show as chart returns to the rose; Download data prefills wind direction
+    per bin with its share, then Share; not paged); its Show as chart returns to the rose; Download data prefills wind direction
     and wind speed for the window at the rose's interval (5-min as hourly); Share keeps `wd=rose`. The rose has
     its own request (wind speed + direction, `rm_na`; live while the window reaches today) and announces each new
     window in the live region ("Wind rose updated: Bozeman, Wind, Oct 1 – Oct 8, 180 hourly readings, most often
