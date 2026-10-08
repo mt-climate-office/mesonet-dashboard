@@ -71,8 +71,8 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
     return isCurrent ? { ...s, z: 3 } : s
   })
   const fontSize = ctx.compact ? 10 : 11
-  // The current year leads the key, so it is on the first row however many years wrap below it.
-  const keyed: KeyEntry[] = [...traces.filter((t) => t.year === m.currentYear), ...prior].map((t) => ({
+  // The current year leads the key, so it is on the first row however many years wrap below it; then newest → oldest.
+  const keyed: KeyEntry[] = [...traces.filter((t) => t.year === m.currentYear), ...[...prior].reverse()].map((t) => ({
     label: String(t.year),
     color: colorOf(t),
     ...(dots ? { glyph: '●' } : {}),

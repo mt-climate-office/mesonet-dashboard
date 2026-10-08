@@ -45,7 +45,7 @@ describe('annualChart', () => {
     const g = o.grid as { left: number; top: number }
     expect(o.legend).toBeUndefined()
     const row = keys(o)
-    expect(row.map((k) => k.text)).toEqual(['2026', '2024', '2025'])
+    expect(row.map((k) => k.text)).toEqual(['2026', '2025', '2024'])
     expect(row[0].x).toBe(g.left)
     expect(new Set(row.map((k) => k.y)).size).toBe(1)
     expect(g.top).toBeGreaterThan(row[0].y)
@@ -54,13 +54,13 @@ describe('annualChart', () => {
     expect(row[0].font).toMatch(/^600 /)
     expect(row[1]).toMatchObject({ fill: ctx.theme.textMuted })
   })
-  it('the years key wraps onto more rows, the current year first', () => {
+  it('the years key wraps onto more rows, the current year first, then newest to oldest', () => {
     const many = Array.from({ length: 12 }, (_, i) => 2015 + i).flatMap((y) => groupByYear([`${y}-01-01`], [1]))
     const wide = annualChart({ ...model, traces: many }, testCtx('light', 1200))
     const phone = annualChart({ ...model, traces: many }, testCtx('light', 358, true))
     const row = keys(phone)
     expect(row[0].text).toBe('2026')
-    expect(row.slice(1).map((k) => k.text)).toEqual(Array.from({ length: 11 }, (_, i) => String(2015 + i)))
+    expect(row.slice(1).map((k) => k.text)).toEqual(Array.from({ length: 11 }, (_, i) => String(2025 - i)))
     expect(new Set(row.map((k) => k.y)).size).toBeGreaterThan(1)
     expect(new Set(keys(wide).map((k) => k.y)).size).toBe(1)
     // The wrapped rows push the plot down.
