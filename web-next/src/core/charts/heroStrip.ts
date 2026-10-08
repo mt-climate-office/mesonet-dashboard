@@ -64,6 +64,17 @@ export function stripTicks(min: number, max: number, now: number, stepH: number)
   return out.sort((a, b) => a - b)
 }
 
+/** Plot width (CSS px) from which 3-hour ticks have room: 16 labels at ≥ 56 px apart. */
+export const STRIP_3H_MIN_WIDTH = 900
+
+/**
+ * Hours between strip ticks: 3 on a plot at least STRIP_3H_MIN_WIDTH wide, else
+ * 6 (phones, and the desktop hero column, where 3-hour mono labels run together).
+ */
+export function stripStepH(width: number, compact: boolean): number {
+  return !compact && width >= STRIP_3H_MIN_WIDTH ? 3 : 6
+}
+
 /** y range padded so the High/Low labels fit inside the grid: 30% of the span (≥ 4°) each side. */
 function yRange(m: HeroStripModel): { min: number; max: number } | null {
   const vs = [...m.observed.v, ...m.forecast.v, m.now.v].filter((v): v is number => v !== null)
@@ -117,8 +128,8 @@ export const heroStripChart: ChartBuilder<HeroStripModel> = (m, ctx) => {
   const fcY = m.now.v === null ? m.forecast.v : [m.now.v, ...m.forecast.v]
   const ext = extremes(m)
   const span: [number, number] = [m.now.t - H24, m.now.t + H24]
-  // Ticks every 6 h on phones ("Now", "6 PM", "12 AM", …), every 3 h wider.
-  const ticks = stripTicks(span[0], span[1], m.now.t, ctx.compact ? 6 : 3)
+  // Ticks every 6 h ("Now", "6 PM", "12 AM", …), every 3 h only on a wide plot.
+  const ticks = stripTicks(span[0], span[1], m.now.t, stripStepH(ctx.width, ctx.compact))
   const y = yRange(m)
   return {
     useUTC: true,

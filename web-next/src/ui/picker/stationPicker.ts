@@ -176,7 +176,8 @@ export function stationPicker() {
     /* Search (ui/controls/combobox): stations, then places while typing */
     items(): ComboboxItem[] {
       const st = Alpine.store('station')
-      const stations = stationItems(st.list, Alpine.store('url').state.nets, st.id)
+      // The network beside each station, as in Recent (the combobox shows the id otherwise).
+      const stations = stationItems(st.list, Alpine.store('url').state.nets, st.id).map((s) => ({ ...s, meta: s.group }))
       const places = this.places()
       if (!places) return stations
       if (placeCache?.places !== places) placeCache = { places, items: placeItems(places) }
@@ -194,9 +195,12 @@ export function stationPicker() {
       if (open) this.placesWanted = true
       if (open && this.mode === 'sheet') ctl?.setState?.('full')
     },
+    /** The 336 px drawer has room beside "Near me" for the short hint only (picker.css); the sheet names counties too. */
     searchPlaceholder(): string {
       const c = Alpine.store('station').catalog
-      return c?.status === 'error' ? 'Failed to load stations' : c?.data ? 'Station, town, county or ZIP' : 'Loading stations…'
+      if (c?.status === 'error') return 'Failed to load stations'
+      if (!c?.data) return 'Loading stations…'
+      return this.mode === 'sheet' ? 'Station, town, county or ZIP' : 'Station, town or ZIP'
     },
     /** A search pick: a station is chosen; a place lists its stations below. */
     pick(id: string): void {
