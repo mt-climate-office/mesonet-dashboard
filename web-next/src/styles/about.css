@@ -51,6 +51,8 @@
 .about-sheet-content { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 .about-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; border-radius: var(--radius-md); }
 /* The scroll region fades its bottom while there is more below: ui/layout/scrollFade + sheet.css. */
+/* It scrolls itself (no bottom padding or gap), so it must not inherit the sheet body's fade offsets. */
+.about-scroll { --fade-pad: 0px; --fade-gap: 0px; }
 
 /* Current readings. */
 .about-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
