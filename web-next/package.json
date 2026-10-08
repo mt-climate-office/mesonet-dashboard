@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "size": "node scripts/check-size.mjs",
-    "verify": "vite build && node scripts/verify/consumer.mjs && node scripts/verify/axe.mjs && node scripts/verify/keyboard.mjs && node scripts/verify/layout.mjs && node scripts/verify/freshness.mjs && node scripts/verify/errors.mjs"
+    "verify": "vite build && node scripts/verify/consumer.mjs && node scripts/verify/axe.mjs && node scripts/verify/keyboard.mjs && node scripts/verify/layout.mjs && node scripts/verify/freshness.mjs && node scripts/verify/errors.mjs",
+    "og-card": "node scripts/og-card.mjs"
   },
   "dependencies": {
     "alpinejs": "^3.17.4",

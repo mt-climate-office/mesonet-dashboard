@@ -12,7 +12,7 @@ Settled precedents (MIGRATING.md) and pure-WCAG fixes are applied without asking
 | Head | Anti-flash script | none (light only) | `snippets/anti-flash.html` inline | KIT-NEW | adopted verbatim; CSP hash guarded by `vite/indexHtml.test.ts` |
 | Head | `viewport-fit=cover` | absent | required | KIT-NEW | adopted (WCAG/settled) |
 | Head | Meta CSP | none | meta CSP pattern | KIT-NEW | adopted; adds `'unsafe-eval'` for Alpine (documented) |
-| Head | Favicons / OG card | app `favicon.svg`, no OG | kit-hosted favicon set + og-card | KIT-NEW | adopted kit assets |
+| Head | Favicons / OG card | app `favicon.svg`, no OG | kit-hosted favicon set; own og-card (`public/og-card.png`, `npm run og-card`) | KIT-NEW | adopted kit favicons; the kit's og-card is a Station Status screenshot |
 | Head | Page title | "Montana Mesonet Dashboard" | `<Short> · <Family>` | DRIFT | `Dashboard · MT Mesonet` (§1 rule, plan); `<Station> · Dashboard · MT Mesonet` once a station is selected (DIVERGENCES "Page title") |
 | Tokens | Colors | Mantine blue + 144 hard-coded hexes | tokens, 3 themes | DRIFT | tokens only; data colors → `core/palette` (W1) |
 | Tokens | Themes | light only | dark / light / high-contrast | KIT-NEW | all three (user decision) |
