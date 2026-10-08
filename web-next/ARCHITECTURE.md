@@ -266,9 +266,10 @@ x-if="isOpen">`; add its `<!-- @include partials/sheets/<id>.html -->` beside
 the others at the end of `partials/shell.html`. Open it with
 `openSheet('<id>', opener)` and close it with `closeSheet('<id>')`
 (`ui/shell/sheet.ts`). Pass `urlKey` (a boolean schema key, like `dl`) only
-if the URL should hold the open state. Anything anchored to the bottom of the screen (sheets, phone
+if the URL should hold the open state. Modal sheet bodies fade their bottom edge while there is more to scroll
+(`ui/layout/scrollFade.ts`, wired in `ui/shell/sheet.ts`); call `initScrollFade(el)` for any other scroller. Anything anchored to the bottom of the screen (sheets, phone
 popovers) sits above an on-screen keyboard: `bottom: max(var(--tabbar-h, 0px), var(--kb-inset, 0px))`
-and, under `.kb-open`, a max height from `--vv-h` (`ui/layout/keyboard.ts` publishes both; iOS Safari
+and, under `.kb-open`, a max height from `--vv-h` ("phone popovers" are narrow screens only, ≤ 640 px) (`ui/layout/keyboard.ts` publishes both; iOS Safari
 otherwise covers the panel).
 
 **Add a Now tile.** (1) In `core/overview/tiles.ts`, a `TILES` entry (its id, the Charts `v=` id it
@@ -276,7 +277,7 @@ opens, a `SeriesKey` for the 48 h sparkline) and its line in `reportedTiles` (wh
 it; read it in `core/overview/conditions.ts` if it is a new `/latest` column); add the element code to
 `SPARK_ELEMENTS` (or `OPTIONAL_SPARK_ELEMENTS`) and its column to `keyFor` in `series.ts` (a tile with
 its own graphic overrides the line in `tileView`, `nowPage.ts`, as Rain does with `rainBars`: seven
-daily bars, none after a dry week). (2) A test in `core/overview/overview.test.ts`. (3) If it should
+daily bars, a bare baseline after a dry week; a tile may add a second `detail` line, as Rain does). (2) A test in `core/overview/overview.test.ts`. (3) If it should
 hide when it means nothing, a rule in `nowTiles` (`core/overview/relevance.ts`). `nowPage.ts` is the
 only formatter: the name, unit and precision (sparkline sentence included) come from `LABELS` for its
 `v=` id, its number from `reading()` and any sub-line from `sub()` (+ a line in `nowPage.test.ts`). The
@@ -360,7 +361,7 @@ Skip link + `<main id="main" tabindex="-1">`; live region for canvas changes;
 an `.sr-only` table twin per chart (rendered by the chart host); kit focus
 ring only (no per-selector focus rules; the one exception, `main` and headings
 with `tabindex="-1"`, are focus targets, not controls: no ring); ≥ 40 px touch targets under
-`(hover: none)`; `aria-pressed` drives toggle styling; keyboard twin for every
+`(hover: none)`; `aria-pressed` drives toggle styling; dialogs focus their heading on open (`tabindex="-1" autofocus`); keyboard twin for every
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).

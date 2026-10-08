@@ -120,7 +120,7 @@ drawer) reads `MCO.viewport` and the desktop query in JS.
 
 | Name | Query | Sections | Station picker | Now grid |
 |---|---|---|---|---|
-| compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) | bottom sheet (peek / full) | one column, tiles 2-up |
+| compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) on narrow screens (≤ 640 px); a short, wide screen (landscape phone) keeps the header sections | bottom sheet (peek / full) | one column, tiles 2-up |
 | tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | one column, tiles 2-up |
 | desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero + tiles (4-up) beside photo + rows |
 
@@ -146,19 +146,18 @@ then Send feedback (a link). One row at every width.
 
 One model, `core/overview` `buildNowPage` (hero.ts + relevance.ts + nowPage.ts), bound by `partials/now/index.html`
 and `ui/now/nowView.ts`. **Phones and tablets:** one column, hero → photo (16:9, at most 20 rem tall) →
-tiles (2-up) → rows. **Desktop (≥ 1060 px):** two columns (1.35 : 1), hero over the photo | tiles (2-up) over
-the rows. The columns end level: the photo (from 20 rem, cropped to fit) and the tiles (rows shared evenly,
-sparklines growing to 4 rem) take up the difference, so there is no dead area for 4–6 tiles. With an odd
+tiles (2-up) → rows. **Desktop (≥ 1060 px):** two columns (1.35 : 1), hero over the photo | tiles (one per row, the sparkline on the right) over
+the rows. The columns end level: the photo (from 20 rem, cropped to fit) takes up the difference, so there is no dead area for 4–6 tiles. With an odd
 tile count the last tile spans its row at every width. The DOM, reading and Tab order stays hero, photo,
 tiles, rows at every width.
 
 | Slot | Content | Data (tier) |
 |---|---|---|
-| Hero | Air temperature (`.num-display`, `--fs-display-hero`: 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("24 h high 74° · low 41°", so the two agree), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain; "calm after gusts to 43 mph earlier" when the 24 h peak gust is ≥ 25 mph) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
+| Hero | Air temperature (`.num-display`, `--fs-display-hero`: 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("High 74° · Low 41° (24 h)", so the two agree; normal "Normal 67° · 38°"), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain; "calm after gusts to 43 mph earlier" when the 24 h peak gust is ≥ 25 mph) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
 | Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table; a "Loading the 48-hour strip…" status while tier 2 loads and a short note in its place when there is nothing to draw. Below it the forecast periods as an icon row (api.weather.gov only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
 | Media | Latest camera frame of the default direction (opens the photo dialog; its caption bottom right, clear of the camera's own label), or the wind rose without a camera (a fixed 20 rem card) | photo schedule, latest listings (1) |
-| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Gusts to 43 mph · 24 h" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, 24 h without the ppt summary; % of normal this year; seven daily bars, `rainBars`, or no graphic after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page that morphs into the page heading, which takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
+| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page that morphs into the page heading, which takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
 | Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens About's readings sheet (`target: 'about-readings'`, the row's `data-sheet`; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
@@ -528,3 +527,18 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
 - Status is text: "No report for over 2 hours", "Feels like 41° · Wind chill"; the Provisional text button opens its note (`aria-expanded`).
 - The picker is `role="dialog" aria-modal="true"` only when it is modal (sheet, overlay drawer); the inline
   drawer is a plain landmark beside the content.
+
+## Controls and dialogs (UX audit, 2026-10-07)
+
+- One control height, `--ctl-h` on `:root` (`ui/controls/controls.css`): 34 px, 40 px on touch. Fields, selects,
+  date fields and `.ctl-seg` buttons use it, so controls side by side match. The photo dialog raises it to 44 px on
+  touch (its × and Download are 44); the Download rows use 40 px with 16 px text.
+- Selects draw their own chevron and date fields their own calendar icon (token gradients), so Safari and Chrome
+  look the same; Chrome's own picker icon stays on top, invisible, so clicking it still opens the picker.
+- The page `color-scheme` follows the theme (`styles/app.css`), so checkboxes and native popups are dark in dark
+  and high contrast.
+- Dialogs (kit `<dialog>`s and modal sheets) focus their heading on open. Scrollers in sheets and long dialogs fade
+  their bottom edge while there is more below (`ui/layout/scrollFade`, `data-scroll-more`).
+- Menus scroll when taller than the room below them. Popovers dock as bottom sheets only on narrow screens
+  (≤ 640 px).
+- The station picker's drawer placeholder is "Station, town or ZIP"; search results show a station's network.

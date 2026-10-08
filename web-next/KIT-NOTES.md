@@ -223,3 +223,13 @@ and decorative dots, `role="group"` + `aria-roledescription` on the carousel and
 iOS Safari covers bottom-anchored panels with the on-screen keyboard. `ui/layout/keyboard.ts` publishes
 the keyboard's height from `visualViewport`; sheets and phone popovers sit at
 `max(var(--tabbar-h), var(--kb-inset))`. A kit sheet would want the same.
+
+### UX audit (2026-10-07) — kit candidates
+- **`color-scheme` per theme:** the kit sets none, so native checkboxes and pickers draw light in dark themes. The app
+  sets it on `:root` (`styles/app.css`); the kit should.
+- **Control height:** kit `.seg-btn` is 30 px next to 34 px fields. The app's `--ctl-h` token (34 / 40 touch) could be
+  a kit token.
+- **Disabled `.ctl-check`:** the app dims it only in Compare; a kit style would cover every checklist.
+- **Panel toggle direction:** `.mco-panel-toggle`'s chevron assumes a bottom-docked panel; a top-docked option.
+- **Map attribution:** a compact attribution button matching the zoom controls, 40 px on touch (app override).
+- **Brand text and glass/scrims without blur:** mco-web-style#37.
