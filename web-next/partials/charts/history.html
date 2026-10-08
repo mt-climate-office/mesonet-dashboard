@@ -1,9 +1,9 @@
-<!-- All years (view=history; x-data="variableHistory", ui/charts/variableHistory.ts): one line per
-     year on a day-of-year axis, filled in as each year's request lands; or, in table mode (the
+<!-- All years (view=history; x-data="variableHistory", ui/charts/variableHistory.ts): each year in
+     its own color (a line; wind direction, dots) on a day-of-year axis, filled in as each year's request lands; or, in table mode (the
      including page's tableMode(), tbl=1), its table. Included by the variable page and the
      Reference ET tool page. -->
 <div class="var-history" x-data="variableHistory" data-testid="variable-history">
-  <p class="dash-section-note">Daily values, one line per year<span x-show="variable?.sum">, as a running total within each year</span>. <span x-text="progress"></span></p>
+  <p class="dash-section-note"><span x-text="note()"></span> <span x-text="progress"></span></p>
   <template x-if="!tableMode()">
     <div class="var-canvas">
       <div class="var-status" x-show="!model()">

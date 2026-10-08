@@ -36,18 +36,33 @@ export function fmtStat(v: number): string {
  * One row per series of `panel`, over the points with `view[0] <= x < view[1]`
  * (`x` aligned with the series values, wall-clock ms). With the variable's
  * `id`, values use its plain unit and table precision (core/variables/labels).
+ *
+ * `partial` is the x of today's daily row while the day is in progress (core/latest
+ * `partialDay`). It counts where what it holds has happened: the Total so far, and
+ * Low / High from the daily band (true readings). It is left out of what averages
+ * whole days: Average, Prevailing, and Low / High of the daily means without a band
+ * (a few hours' mean just after midnight would read as the window's coldest day).
  */
-export function panelStats(panel: TimeseriesPanel, x: readonly number[], view: readonly [number, number], sum: boolean, id?: string): StatRow[] {
+export function panelStats(
+  panel: TimeseriesPanel,
+  x: readonly number[],
+  view: readonly [number, number],
+  sum: boolean,
+  id?: string,
+  partial: number | null = null,
+): StatRow[] {
   const single = panel.series.length === 1
   return panel.series.map((s) => {
-    const within = (ys: readonly (number | null)[]) => {
+    const within = (ys: readonly (number | null)[], whole = false) => {
       const out: number[] = []
       ys.forEach((v, i) => {
+        if (whole && x[i] === partial) return
         if (v !== null && Number.isFinite(v) && x[i] >= view[0] && x[i] < view[1]) out.push(v)
       })
       return out
     }
-    const vals = within(s.values)
+    // A total keeps the day so far; averages of whole days leave it out.
+    const vals = within(s.values, !sum)
     const unit = unitOf(s.name)
     const plain = id !== undefined && id in LABELS
     const fmt = (v: number | null) => (v === null ? '—' : plain ? formatReading(id, v, 'table') : `${fmtStat(v)}${unit ? ` ${unit}` : ''}`)
@@ -55,6 +70,7 @@ export function panelStats(panel: TimeseriesPanel, x: readonly number[], view: r
     if (sum) return { label, items: [{ label: 'Total', value: fmt(vals.length ? vals.reduce((a, b) => a + b, 0) : null) }] }
     if (panel.variable === WIND_DIRECTION) return { label, items: [{ label: 'Prevailing', value: prevailing(vals) }] }
     // A reduce, not Math.min(...vals): a long raw window would overflow the argument list.
+    // The band's lows and highs are readings, so today's so far count.
     const lows = s.band ? within(s.band.lo) : vals
     const highs = s.band ? within(s.band.hi) : vals
     const min = lows.length ? lows.reduce((a, b) => (b < a ? b : a)) : null

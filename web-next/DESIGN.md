@@ -189,7 +189,7 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
 #charts&v=air_temp                   variable page, 14 d, Auto interval (no keys)
 #charts&v=air_temp&from=…&to=…       another window (a range chip or Custom dates…)
 #charts&v=air_temp&agg=daily         Interval: absent = Auto · raw (5-min) · hourly · daily
-#charts&v=air_temp&view=history      All years: one line per year (daily)
+#charts&v=air_temp&view=history      All years: each year in its own color (daily)
 #charts&v=air_temp&tbl=1             the chart as a table (newest first, 50 per page)
 #charts&v=gdd&crop=corn              an Ag tool with its keys (core/ag/view/tab)
 #charts&cmp=1                        Compare: stacked panels + options (legacy #latest lands here)
@@ -214,7 +214,7 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
   - **Range chips** (`RANGE_CHIPS`, `.dash-chip` pills, one scrolling row): 24 h · 7 d · 14 d · 30 d · 1 y over
     `from`/`to` (14 d = no keys; 24 h shows the 24 hours up to the newest reading) and **All years**
     (`view=history`, the progressive years-overlaid chart: one calendar year per request, newest first, at most
-    10). A window from Custom dates… presses no chip. Chips replace the history entry.
+    10; its note says how a year is drawn, `historyNote`: a line, a running total, or dots for wind direction). A window from Custom dates… presses no chip. Chips replace the history entry.
   - **Interval row** (`intervalChips`, quiet chips over `agg`): **Auto** (key absent; hourly up to 30 days,
     daily beyond and for All years; its label says which, "Auto (hourly)") · **5-min** (`raw`; only for windows
     of 7 days or less, disabled with the reason otherwise) · Hourly · Daily. A range chip drops 5-min where the
@@ -222,11 +222,14 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
     daily request with `agg_func=min,max` (`recordRequest({ extremes })`, `core/variables/band.ts`), drawn for a
     one-column variable (the band, in the line's color, is in the tooltip and the table's Low/High columns).
   - **Stats card:** Low · High · Average per sensor over the visible range (Total for precipitation and ETr), in
-    the variable's plain unit (`panelStats(…, id)`); on Daily, Low and High are the band's true extremes. One
+    the variable's plain unit (`panelStats(…, id)`); on Daily, Low and High are the band's true extremes, and
+    today's partial day counts as "Today, so far" above says. One
     line per sensor at every width (equal columns up to 7 rem; a text value such as a growth stage takes two on phones); values in the UI font with `tabular-nums`.
   - **⋯ menu:** Download data (the sheet prefilled: `core/downloader/fromChart`, the variable's element codes,
     the window (All years: install date … today) and the interval, 5-min as hourly) · Show as table / Show as
-    chart (`tbl`, pushed, so Back returns; replaces the chart in place; All years tables its years) · Custom
+    chart (`tbl`, pushed, so Back returns; replaces the chart in place; All years tables its years; the table
+    also has a visible **Show as chart** button above it, right-aligned, which returns focus to the heading;
+    partials/charts/table.html, so Ag tools' tables have it too) · Custom
     dates… (the `dates` modal sheet, `partials/sheets/dates.html`: `dateRange` over `from`/`to`, install date …
     today; a valid range applies at once) · Share this chart (`shareView`) · Previous / Next variable.
   - **Swipe:** on touch, a sideways swipe on the page (`ui/layout/swipe.ts`, `core/swipe.ts`: ≥ 60 px and
@@ -267,8 +270,8 @@ All years, every Ag tool, the Download preview and the Now strip.
 
 - **Lines:** one width, `LINE_WIDTH` 1.5 px (reference lines under data, such as the normals' edges and the
   feels-like index, `REF_WIDTH` 1 px; the current year in All years is the one highlight, `ANNUAL_CURRENT`).
-  Straight segments (no smoothing), no symbols (the Now strip's "now" dot is the one last-point marker),
-  `sampling: 'lttb'` over 2,000 points (LTTB keeps the gap nulls).
+  Straight segments (no smoothing), no symbols (the Now strip's "now" dot is the one last-point marker, and
+  today's partial daily point the one hollow ring, below), `sampling: 'lttb'` over 2,000 points (LTTB keeps the gap nulls).
 - **Gaps are breaks:** a step longer than 1.5 × the expected interval gets a null midway, and lines never
   connect nulls (`points(xs, ys, stepMs(interval))`). The interval is known: hourly 1 h, daily 1 day, monthly
   31 days, day of year 1; 5-min is the station's own logging interval (the median step, 5 min, or 15 at some
@@ -279,6 +282,16 @@ All years, every Ag tool, the Download preview and the Now strip.
 - **The daily band** (the Daily interval's low–high) is one style, `bandSeries`: the line's own color at
   `DAILY_RANGE` alpha, no outline, under its mean line. The gridMET normals band and the GDD projection range
   use the same series with their palette roles.
+- **Today, so far** (Daily interval, `core/latest` `partialDay`): today's row is kept but marked as the day in
+  progress: a hollow ring (surface fill, the line's color) on its point, or a lighter bar outlined in the full
+  color; the key adds "Today (so far)", the tooltip header reads "Today (so far), <date>" and the table's date
+  "2026-10-08 (so far)". The stats card leaves it out of what averages whole days (Average, Prevailing, and Low /
+  High of daily means without a band) and keeps it where it is real (Total so far; the band's Low / High, true readings).
+- **Keys** (`core/charts/keys.ts`): one style for every station chart and the years charts (All years, Ag
+  Annual): a row of swatches (a 14 px line, a block or a glyph such as ● for dots) with `--text-secondary`
+  labels at the top left of the plot, drawn as graphics, wrapping onto more rows when long (the plot moves down).
+  The current year leads the years' key and is its one strong entry: a 3 px swatch and a bold `--text-primary`
+  label. Ag tools keep their bottom legends (`agLegend`).
 - **Soil depths:** shallow → deep, each in `depthColor` (a depth keeps its color whatever else is drawn),
   one line width.
 - **Y axis, by variable family** (`axisFamily`, `yBounds`): *zero* (precipitation, ETr, wind and gusts,
@@ -288,7 +301,8 @@ All years, every Ag tool, the Download preview and the Now strip.
   moisture and temperature, VPD …) is the data ± 2 %, never pulled to zero, but it stops at 0 for a never-negative variable (soil moisture, EC, pressure, VPD) whose data does. Every axis is rounded out to a
   nice step (1, 2, 2.5 or 5 × 10ⁿ): of the steps giving 4–7 intervals, the one with the least padding (−15–100 °F is −20–120 by 20), over everything the panel draws (band and normals included).
 - **X axis:** spans exactly what is plotted: the requested window on the variable page and Compare (whole
-  local days; 24 h zooms to the last 24 hours), else the first to the last point, plus half a step each side
+  local days; 24 h zooms to the last 24 hours; a window reaching today ends at the next whole hour, never at
+  tonight's midnight, except on Daily, where today's slot holds its partial point: `core/latest` `untilNow`), else the first to the last point, plus half a step each side
   where bars are drawn so the end bars are whole.
 - **Zoom slider:** wide screens only (phones zoom with the range chips and date fields), and only where it adds
   something: a plotted extent over 2 days and at least 30 points (`showsSlider`: not 24 h, not a short daily

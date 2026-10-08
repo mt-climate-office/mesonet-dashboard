@@ -7,6 +7,7 @@ import { formatIsoDate, parseIsoDate } from '../controls/dateModel'
 import type { LatestAgg } from '../url-schema'
 
 const DAY = 86_400_000
+const HOUR = 3_600_000
 
 /** YYYY-MM-DD → wall-clock ms at 00:00 (no `new Date(string)`). */
 export function dayMs(iso: string): number {
@@ -25,6 +26,32 @@ export function msDay(ms: number): string {
 export function windowRange(start: string, end: string): [number, number] {
   return [dayMs(start), dayMs(end) + DAY]
 }
+
+/**
+ * The visible range of a window that may reach today: hourly and 5-min views end at the next whole
+ * hour after `nowWall` (Denver wall-clock ms, core/today `denverWallMs`), never at tonight's
+ * midnight (just after midnight that is a whole empty day ahead). Daily keeps today's whole slot:
+ * a day is its unit, and today's point is drawn as partial (`partialDay`). A window ending before
+ * now is unchanged.
+ */
+export function untilNow(view: [number, number], agg: LatestAgg, nowWall: number): [number, number] {
+  if (agg === 'daily') return view
+  const end = Math.ceil(nowWall / HOUR) * HOUR
+  return end > view[0] && end < view[1] ? [view[0], end] : view
+}
+
+/**
+ * On the Daily interval, the x (wall-clock ms at 00:00) of today's row when `x` has it: the day
+ * still in progress, drawn and labelled "Today (so far)"; null otherwise.
+ */
+export function partialDay(agg: LatestAgg, x: readonly number[], today: string): number | null {
+  if (agg !== 'daily') return null
+  const t = dayMs(today)
+  return x.includes(t) ? t : null
+}
+
+/** The tooltip and table label of the partial day (`partialDay`). */
+export const PARTIAL_DAY_LABEL = 'Today (so far)'
 
 /**
  * A user zoom → inclusive dates for `from`/`to`: the days the window

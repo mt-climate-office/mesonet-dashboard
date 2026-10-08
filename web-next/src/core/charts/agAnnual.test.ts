@@ -37,21 +37,32 @@ describe('annualChart', () => {
     expect(phone.axisLabel.customValues.map(phone.axisLabel.formatter)).toEqual(['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov'])
     expect(phone.axisLabel.fontSize).toBe(10)
   })
-  it('the years key sits at the top left of the plot', () => {
-    const o = annualChart(model, testCtx())
+  type G = { x: number; y: number; children: { style: { text?: string; fill?: string; font?: string } }[] }
+  const keys = (o: unknown) => ((o as { graphic: G[] }).graphic ?? []).map((g) => ({ text: g.children[1].style.text, fill: g.children[1].style.fill, font: g.children[1].style.font, x: g.x, y: g.y }))
+  it('the years key is the station charts’ key row (graphics, no ECharts legend) at the top left of the plot', () => {
+    const ctx = testCtx()
+    const o = annualChart(model, ctx)
     const g = o.grid as { left: number; top: number }
-    expect(o.legend).toMatchObject({ top: 0, left: g.left })
-    expect((o.legend as { bottom?: number }).bottom).toBeUndefined()
-    expect(g.top).toBeGreaterThan(24)
+    expect(o.legend).toBeUndefined()
+    const row = keys(o)
+    expect(row.map((k) => k.text)).toEqual(['2026', '2024', '2025'])
+    expect(row[0].x).toBe(g.left)
+    expect(new Set(row.map((k) => k.y)).size).toBe(1)
+    expect(g.top).toBeGreaterThan(row[0].y)
+    // The current year stands out: text color and bold; prior years muted.
+    expect(row[0]).toMatchObject({ fill: ctx.theme.text })
+    expect(row[0].font).toMatch(/^600 /)
+    expect(row[1]).toMatchObject({ fill: ctx.theme.textMuted })
   })
-  it('the years key is a plain legend that wraps (no pages), the current year first', () => {
+  it('the years key wraps onto more rows, the current year first', () => {
     const many = Array.from({ length: 12 }, (_, i) => 2015 + i).flatMap((y) => groupByYear([`${y}-01-01`], [1]))
     const wide = annualChart({ ...model, traces: many }, testCtx('light', 1200))
     const phone = annualChart({ ...model, traces: many }, testCtx('light', 358, true))
-    const lg = phone.legend as { type: string; data: string[] }
-    expect(lg.type).toBe('plain')
-    expect(lg.data[0]).toBe('2026')
-    expect(lg.data.slice(1)).toEqual(Array.from({ length: 11 }, (_, i) => String(2015 + i)))
+    const row = keys(phone)
+    expect(row[0].text).toBe('2026')
+    expect(row.slice(1).map((k) => k.text)).toEqual(Array.from({ length: 11 }, (_, i) => String(2015 + i)))
+    expect(new Set(row.map((k) => k.y)).size).toBeGreaterThan(1)
+    expect(new Set(keys(wide).map((k) => k.y)).size).toBe(1)
     // The wrapped rows push the plot down.
     expect((phone.grid as { top: number }).top).toBeGreaterThan((wide.grid as { top: number }).top)
   })
@@ -63,6 +74,9 @@ describe('annualChart', () => {
     expect(s.map((x) => x.type)).toEqual(['scatter', 'scatter'])
     expect(s[0].data.map((p) => p[1])).toEqual([350, 10])
     expect(s[1].symbolSize).toBeGreaterThan(s[0].symbolSize)
+    // Dots are keyed with a dot glyph.
+    const g = (o as unknown as { graphic: G[] }).graphic
+    expect(g.map((k) => (k.children[0].style as { text?: string }).text)).toEqual(['●', '●'])
   })
   it('tooltip: DOY-only header; each year shows its own (leap-aware) date', () => {
     const leap = groupByYear(['2024-02-29', '2024-03-01'], [1, 2])

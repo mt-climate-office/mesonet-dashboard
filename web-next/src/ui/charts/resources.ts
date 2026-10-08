@@ -2,17 +2,18 @@
  * The Charts section's fetches and its one timeseries model, shared by the
  * variable list, the variable page and Compare. Each fetch is one
  * `$store.data.cached` call (keys and TTLs from core/latest/requests); the
- * model is core/models/timeseries with the URL window as its view (and axis).
+ * model is core/models/timeseries with the URL window, up to now, as its view (and axis).
  */
 import Alpine from 'alpinejs'
 import { getStationElements, getStationRecord, type ObservationRow, type StationConfig, type StationElement } from '../../core/api'
 import type { Resource } from '../../core/cache'
 import type { LatestTimeseriesModel } from '../../core/charts'
-import { TTL, elementsKey, endsToday, normalsKey, recordRequest, windowRange, type RecordRequest } from '../../core/latest'
+import { TTL, elementsKey, endsToday, normalsKey, partialDay, recordRequest, untilNow, windowRange, type RecordRequest } from '../../core/latest'
 import { NORMALS_VARS, buildTimeseriesModel, type WindowPlan } from '../../core/models/timeseries'
 import { fetchNormals, type StationNormals } from '../../core/normals'
 import { explodeInstruments, type ConfigRow, type RawInstrument } from '../../core/sensorEvents'
 import { loadErrorText } from '../../core/loadError'
+import { denverToday, denverWallMs } from '../../core/today'
 import { stationVariables, type Variable } from '../../core/variables'
 import type { LatestAgg } from '../../core/url-schema'
 import { stationConfig } from '../station/resources'
@@ -99,11 +100,13 @@ export function seriesModel(): (q: SeriesQuery) => LatestTimeseriesModel | null 
     const config = sensorConfig(q.station)
     const normals = seriesNormals(q.station, q.vars, q.agg, q.gridmet)
     const w = q.window
-    const inputs = [rows, config, ...(normals ? Object.values(normals) : []), w.start, w.end, scope]
+    // The axis stops at the next hour (core/latest untilNow); today's daily row is partial.
+    const view = untilNow(windowRange(w.start, w.end), q.agg, denverWallMs())
+    const today = denverToday()
+    const inputs = [rows, config, ...(normals ? Object.values(normals) : []), w.start, w.end, scope, view[1], today]
     if (memo && memo.inputs.length === inputs.length && memo.inputs.every((v, i) => v === inputs[i])) return memo.model
     const ts = buildTimeseriesModel({ rows, vars: q.vars, period: q.agg, normalsByVar: normals, sensorConfig: config })
-    const view = windowRange(w.start, w.end)
-    const model = ts ? { ts, period: q.agg, view } : null
+    const model = ts ? { ts, period: q.agg, view, partial: partialDay(q.agg, ts.x, today) } : null
     memo = { inputs, model, scope }
     return model
   }

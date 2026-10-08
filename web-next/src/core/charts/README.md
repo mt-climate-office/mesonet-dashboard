@@ -10,8 +10,8 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 | `agGdd.ts` | `gddChart`/`gddTable` (`GddModel`), `stageLines` (thinned; the stage reached and the highest stay), `stageGutter`, `fittedStageLabels` (full names, else stage codes), `gddAxisMax`, `GDD_NAMES` |
 | `agLegend.ts` | `agLegend` (the Ag charts' plain wrapping legend: short names and no title on compact screens; an item may fill its icon with a color or a ramp), `liftForLegend`, `legendRows`, `sentenceCase` |
 | `agSoil.ts` | `soilProfileChart`/`soilProfileTable` (`SoilProfileModel`; month ticks past 60 days, `monthStarts`), `swpChart`/`swpTable`, `percentSaturationChart`/`percentSaturationTable` |
-| `agAnnual.ts` | `annualChart`/`annualTable` (`AnnualModel`) |
-| `latestTimeseries.ts` | `latestTimeseriesChart`/`latestTimeseriesTable` (`LatestTimeseriesModel`: core/models/timeseries + the view, also the axis extent), `latestTimeseriesHeight(n, compact)` |
+| `agAnnual.ts` | `annualChart`/`annualTable` (`AnnualModel`; its years' key is `keys.ts`, current year first and strong) |
+| `latestTimeseries.ts` | `latestTimeseriesChart`/`latestTimeseriesTable` (`LatestTimeseriesModel`: core/models/timeseries + the view, also the axis extent, + `partial`, today's daily row in progress), `latestTimeseriesHeight(n, compact)` |
 | `variable.ts` | `variableChart`/`variableTable`/`variableTableAll` (`VariableModel`: a one-panel `LatestTimeseriesModel`; the plot fills the host height) |
 | `windRose.ts` | `windRoseChart`/`windRoseTable` (`WindRoseModel` from `core/models/windRose`), `windRoseTitle`, `binName` |
 | `downloaderPreview.ts` | `downloaderPreviewChart`/`downloaderPreviewTable` (`PreviewModel` from `core/models/downloaderPreview`), `previewHeight(m, compact)` |
@@ -20,6 +20,7 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 
 ## Shared helpers (internal to this folder)
 
+- `keys.ts`: the one key style (`keyRow`, `wrapKeys`, `rowWidth`, `KeyEntry`): swatches with muted labels at the top left of the plot, drawn as graphics; used by `latestTimeseries`/`variable` and `agAnnual`.
 - `format.ts`: `wallMs` (contract local time → Denver wall-clock ms, daily at noon), `fmtWall`/`isoWall`, `fmtNum`, `plainLabel` (Plotly `<br>`/`<sup>` → text), `escapeHtml`.
 - `style.ts`: **the one chart style** (DESIGN.md "Chart style"); every builder uses it. `LINE_WIDTH`/`REF_WIDTH`; `stepMs(interval, xs)` and `points(xs, ys, step, notes?)` (a null midway across every step over 1.5 × the interval: gaps are breaks); `isAccumulation` (bars at every interval) and `runningTotal`; `axisFamily`/`yBounds`/`yAxisRange` (the y-axis rule per variable family); `plotExtent` (the x extent; half a step more for bars); `showsSlider`, `bottomLayout`, `timeZoom` (inside + slider; no drag-pan on compact; on touch the inside zoom is `disabled`, so swipes scroll the page), `zoomTrace` (the slider's background trace: a hidden first series on a hidden y axis), `timeFrame` (all of these for a one-grid time chart); `animates` (first draw only).
 - `axes.ts`: `timeAxis` (wall-clock level ticks), `valueAxis(name)`, `logAxis(name, min, max, {inverse, prefix})`, `dualAxis(left, right)` (y2 aligned, from 0), `grid`, `niceCeil`, `logExtent`, `fitAxisNames`.
