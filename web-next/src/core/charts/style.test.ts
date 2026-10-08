@@ -64,6 +64,8 @@ describe('y-axis rule per variable family', () => {
   it('zero-based: 0 to the padded max, rounded up to a nice step, never under the family minimum', () => {
     expect(yBounds('Precipitation', 0, 0.42)).toEqual({ min: 0, max: 0.5, interval: 0.1 })
     expect(yBounds('Precipitation', 0, 0)).toEqual({ min: 0, max: 0.05, interval: 0.01 })
+    // Hourly ETr (peaks near 0.03 in) fills its axis rather than sitting under a 0.05 floor.
+    expect(yBounds('Reference ET', 0, 0.026)).toEqual({ min: 0, max: 0.03, interval: 0.005 })
     expect(yBounds('Wind Speed', 0, 23)).toEqual({ min: 0, max: 25, interval: 5 })
     expect(yBounds('Snow Depth', 0, 0.2)).toEqual({ min: 0, max: 1, interval: 0.2 })
     expect(yBounds('Solar Radiation', 0, 870)).toEqual({ min: 0, max: 1000, interval: 200 })

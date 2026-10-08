@@ -218,7 +218,7 @@ export function soilView(i: SoilInputs): AgView<SoilChart> {
   if (swp) notes.push('Soil water potential is computed in the browser from published mesonet-soils parameters.')
   if (swp && swpBar(swp).dry.some((col) => col.some(Boolean))) {
     notes.push(
-      `Dashed lines: the soil is drier than the driest lab sample, so the true suction is at least the value shown (drawn no deeper than -${SWP_CAP_BAR.toLocaleString('en-US')} bar).`,
+      `Dotted lines: the soil is drier than the driest lab sample, so the true suction is at least the value shown (drawn no deeper than -${SWP_CAP_BAR.toLocaleString('en-US')} bar).`,
     )
   }
   if (i.variable === 'swp' && swp) return ready({ kind: 'swp', model: { series: swp, period } }, notes)

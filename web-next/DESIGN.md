@@ -294,10 +294,14 @@ All years, every Ag tool, the Download preview and the Now strip.
   labels at the top left of the plot, drawn as graphics, wrapping onto more rows when long (the plot moves down).
   The current year leads the years' key and is its one strong entry: a 3 px swatch and a bold `--text-primary`
   label. Ag tools keep their bottom legends (`agLegend`).
-- **Soil depths:** shallow → deep, each in `depthColor` (a depth keeps its color whatever else is drawn),
-  one line width.
+- **Soil depths:** shallow → deep, each in `depthStyle` (a depth keeps its color and dash whatever else is
+  drawn): batlow spaced as far apart as 3:1 allows, and every other sensor depth (4, 20, 36 in) dashed, since
+  neighbouring batlow colors alone stay close; one line width. SWP's lower bounds are dotted.
+- **Past years** (All years, Annual; `yearColors`): the current year in the text color at width 3, last year and
+  the year before in their own batlow colors, older years grey and fainter with age, so the newest stand out.
+  Reference ET bars are BrBG teal (`ETR`), apart from the Blues rain bars.
 - **Y axis, by variable family** (`axisFamily`, `yBounds`): *zero* (precipitation, ETr, wind and gusts,
-  solar radiation, snow depth) runs from 0 to the max + 2 %, never under a small floor (0.05 in, 5 mph,
+  solar radiation, snow depth) runs from 0 to the max + 2 %, never under a small floor (0.05 in of rain, 0.01 in of ETr, 5 mph,
   100 W/m², 1 in) so a calm or dry window is not drawn as a full-height wiggle; *fixed* is relative humidity
   0–100 % and wind direction 0–360° (soil saturation 0–100 % too); *free* (temperature, pressure, soil
   moisture and temperature, VPD …) is the data ± 2 %, never pulled to zero, but it stops at 0 for a never-negative variable (soil moisture, EC, pressure, VPD) whose data does. Every axis is rounded out to a

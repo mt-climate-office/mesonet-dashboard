@@ -25,6 +25,7 @@ import {
   binColors,
   cciStyle,
   depthColor,
+  depthStyle,
   gddStageColors,
   previewColor,
   resolve,
@@ -36,6 +37,8 @@ import { contrastRatio, hexToRgb as hexToRgbLocal, luminance } from './contrast'
 import { TOKENS_SNAPSHOT } from './tokens.snapshot'
 
 const HEX = /^#[0-9a-f]{6}$/i
+/** Euclidean OKLab distance: ~0.1 is a just-clear difference between thin lines. */
+const oklabDist = (a: string, b: string) => Math.hypot(...toOklab(a).map((x, i) => x - toOklab(b)[i]))
 const RAMPS: Record<string, readonly string[]> = Object.fromEntries(
   Object.entries(ramps).filter(([, v]) => Array.isArray(v)),
 ) as Record<string, readonly string[]>
@@ -99,10 +102,61 @@ describe('depthColor', () => {
     expect(toOklab(depthColor(40, 'dark'))[0]).toBeGreaterThan(toOklab(depthColor(2, 'dark'))[0])
   })
   it('the common depths (2, 4, 8, 20, 40 in) stay distinguishable in every theme', () => {
-    const dist = (a: string, b: string) => Math.hypot(...toOklab(a).map((x, i) => x - toOklab(b)[i]))
     for (const t of THEMES) {
       const c = [2, 4, 8, 20, 40].map((d) => depthColor(d, t))
-      for (let i = 1; i < c.length; i++) expect(dist(c[i], c[i - 1]), `${t} ${i}`).toBeGreaterThan(0.07)
+      // Neighbours: as far apart as batlow allows at 3:1 (was 0.089 in light, 0.109 in dark; best 0.113) …
+      for (let i = 1; i < c.length; i++) expect(oklabDist(c[i], c[i - 1]), `${t} ${i}`).toBeGreaterThan(0.11)
+      // … and they alternate solid/dashed, so depths that share a dash are two steps apart in color.
+      for (let i = 2; i < c.length; i++) expect(oklabDist(c[i], c[i - 2]), `${t} ${i}`).toBeGreaterThan(0.2)
+    }
+  })
+  it('depthStyle: depthColor, dashed at every other sensor depth', () => {
+    for (const t of THEMES) {
+      expect([2, 4, 8, 20, 28, 36, 40].map((d) => depthStyle(d, t).dash)).toEqual([undefined, 'dashed', undefined, 'dashed', undefined, 'dashed', undefined])
+      expect(depthStyle(3.9, t)).toEqual({ color: depthColor(3.9, t), dash: 'dashed' })
+      expect(depthStyle(50, t)).toEqual(depthStyle(40, t))
+    }
+  })
+})
+
+describe('yearColors', () => {
+  it('older years fade to grey; last year and the year before stay apart from each other and the current year', () => {
+    for (const t of THEMES) {
+      const current = resolve(ANNUAL_CURRENT.color, (n) => TOKENS_SNAPSHOT[t][n])
+      const y = yearColors(10, t)
+      const [prev, last] = y.slice(-2)
+      for (const [a, b] of [[last, current], [prev, current], [last, prev]]) expect(oklabDist(a, b), `${t} ${a} ${b}`).toBeGreaterThan(0.14)
+      // The year before that (the first grey) is as far from its neighbour; every grey stays clear of both.
+      expect(oklabDist(y[7], prev), t).toBeGreaterThan(0.14)
+      for (const old of y.slice(0, -2)) {
+        expect(oklabDist(old, last), `${t} ${old}`).toBeGreaterThan(0.1)
+        expect(oklabDist(old, prev), `${t} ${old}`).toBeGreaterThan(0.1)
+        // Muted: OKLab chroma near zero (dark's fade leans to the slate surface).
+        const [, a, b] = toOklab(old)
+        expect(Math.hypot(a, b), `${t} ${old}`).toBeLessThan(0.03)
+      }
+      // Oldest faintest: closest to the surface in contrast.
+      const bg = TOKENS_SNAPSHOT[t]['--bg-surface']
+      for (let i = 1; i < 8; i++) expect(contrastRatio(y[i], bg)).toBeGreaterThan(contrastRatio(y[i - 1], bg))
+    }
+  })
+  it('a year keeps its color by age, whatever the count', () => {
+    for (const t of THEMES) {
+      expect(yearColors(1, t)).toEqual(yearColors(10, t).slice(-1))
+      expect(yearColors(2, t)).toEqual(yearColors(10, t).slice(-2))
+      expect(yearColors(0, t)).toEqual([])
+    }
+  })
+})
+
+describe('ETR', () => {
+  it('is a calm teal, apart from the precipitation bars', () => {
+    for (const t of THEMES) {
+      const [, a, b] = toOklab(ETR[t].bar)
+      // Hue between green and blue (OKLab a < 0, b ≈ 0): not the red/orange of an alarm.
+      expect(a, t).toBeLessThan(0)
+      expect(oklabDist(ETR[t].bar, PRECIP[t].bar), t).toBeGreaterThan(0.1)
+      expect(Math.abs(b), t).toBeLessThan(0.05)
     }
   })
 })
@@ -160,7 +214,7 @@ function lineMarkerColors(t: Theme): Record<string, string> {
   for (const [k, v] of Object.entries(FEELS_LIKE[t])) out[`feels ${k}`] = v.color
   for (const d of [2, 4, 8, 20, 28, 36, 40, 3, 15.7]) out[`depth ${d}`] = depthColor(d, t)
   binColors(8, t).forEach((c, i) => (out[`bin ${i}`] = c))
-  yearColors(12, t).forEach((c, i) => (out[`year ${i}`] = c))
+  for (const n of [1, 2, 3, 12]) yearColors(n, t).forEach((c, i) => (out[`year ${i}/${n}`] = c))
   gddStageColors(18, t).forEach((c, i) => (out[`gdd stage ${i}`] = c))
   for (let i = 0; i < 7; i++) out[`preview ${i}`] = previewColor(i, t)
   out['annual current'] = resolve(ANNUAL_CURRENT.color, get)

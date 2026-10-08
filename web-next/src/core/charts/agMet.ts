@@ -15,7 +15,7 @@ import { AUX, barSeries, lineSeries, markerSeries } from './series'
 import { DAY, LEGEND_PX, REF_WIDTH, extentOf, plotExtent, points, stepMs, timeFrame, yAxisRange, yBounds } from './style'
 import { bandSeries } from './overlays'
 import { paint } from './theme'
-import { type AgLegendItem, agLegend, liftForLegend, sentenceCase } from './agLegend'
+import { type AgLegendItem, DASH_ICON, agLegend, liftForLegend, sentenceCase } from './agLegend'
 import { type TipRow, axisTooltip, tipText } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
 import { axisTitle, cumulativeTitle, plainName } from '../variables/labels'
@@ -83,9 +83,6 @@ export function etrTable(m: EtrModel): ChartTable {
 /* ------------------------------------------------- index line + markers */
 
 type Ys = (number | null)[]
-
-/** Legend icon for a dashed line: three short dashes. */
-const DASH_ICON = 'path://M0,4h5v2H0zM7,4h5v2H7zM14,4h5v2h-5z'
 
 /** How the markers of one class draw. */
 interface MarkerClass {
