@@ -147,11 +147,13 @@ export const PRECIP: Record<Theme, BarLine> = {
  */
 export const CUMULATIVE_LINE: TokenRef = { token: '--text-primary' }
 
-// YlOrRd bars (the running total is CUMULATIVE_LINE). light 4.74, dark 6.64, HC 9.05.
+// BrBG teal bars in every theme: water going back to the air, a calm hue that stays apart from
+// precipitation's Blues (YlOrRd red read as an alarm; the lighter #80cdc1 neared the HC rain bars).
+// The running total is CUMULATIVE_LINE. light 3.51, dark 4.39, HC 5.97.
 export const ETR: Record<Theme, { bar: string }> = {
-  light: { bar: YL_OR_RD[6] },
-  dark: { bar: YL_OR_RD[4] },
-  'high-contrast': { bar: YL_OR_RD[4] },
+  light: { bar: BR_BG[8] },
+  dark: { bar: BR_BG[8] },
+  'high-contrast': { bar: BR_BG[8] },
 }
 
 // YlOrRd bars when there is no stage table (light 3.35, dark 8.58, HC 11.7); the running total and
@@ -243,33 +245,49 @@ export const FEELS_LIKE: Record<Theme, Record<FeelsLikeRegime, MarkerStyle>> = {
 // light 0–0.55 (≥3.52), dark 0.45–1 (≥3.38), HC 0.35–1 (≥3.65).
 const BATLOW_SPAN: Record<Theme, [number, number]> = { light: [0, 0.55], dark: [0.45, 1], 'high-contrast': [0.35, 1] }
 
-// Mesonet soil sensor depths (in) and their positions within the theme's depth span. The five
-// depths most stations carry (2, 4, 8, 20, 40) are evenly spaced; 28 and 36 sit between 20 and 40.
-// (Even spacing over all seven left 2/4/8 in as near-identical olives in the dark theme.)
+// Mesonet soil sensor depths (in) and their place in the depth order: the five depths most stations
+// carry (2, 4, 8, 20, 40) are steps 0–4; 28 and 36 sit between 20 and 40.
 const SOIL_DEPTHS_IN = [2, 4, 8, 20, 28, 36, 40]
-const DEPTH_POS = [0, 0.25, 0.5, 0.75, 5 / 6, 11 / 12, 1]
+const DEPTH_STEP = [0, 1, 2, 3, 10 / 3, 11 / 3, 4]
 
-// Depth lines use a wider dark span than bins/years: 0.42 is 3.13:1 on the dark surface; light runs
-// to 0.58 (3.26:1). light 0–0.58 (≥3.26), dark 0.42–1 (≥3.13), HC 0.35–1 (≥3.65).
-const DEPTH_SPAN: Record<Theme, [number, number]> = { light: [0, 0.58], dark: [0.42, 1], 'high-contrast': [0.35, 1] }
-// Batlow's dark end changes slowly, so in light the shallow depths get more of the span
-// (position ** 0.7): 2 in navy, 4 in teal, 8 in green (evenly spaced, 2 and 4 in were both navy).
-const DEPTH_GAMMA: Record<Theme, number> = { light: 0.7, dark: 1, 'high-contrast': 1 }
+// Batlow position of each step, per theme: the spacing that keeps the closest neighbours furthest
+// apart (OKLab) inside the part of batlow that clears 3:1. light 0–0.6 (≥3.08), dark 0.41–1 (≥3.07),
+// HC 0.28–1 (≥3.08). That best is still only 0.11–0.13 OKLab between neighbours (0.137 in HC): batlow
+// can't do better at 3:1, so neighbours also differ in dash (depthStyle).
+const DEPTH_T: Record<Theme, readonly number[]> = {
+  light: [0, 0.12, 0.29, 0.45, 0.6], // navy, blue-teal, teal, olive, ochre
+  dark: [0.41, 0.56, 0.7, 0.85, 1], // olive, ochre, orange, salmon, pink
+  'high-contrast': [0.28, 0.47, 0.64, 0.81, 1], // teal, olive, ochre, salmon, pink
+}
+
+/** A depth's fractional step (see DEPTH_STEP): 1 in → 0, 4 in → 1, 30 in → 3.5, ≥ 40 in → 4. */
+function depthStep(depthInches: number): number {
+  const d = SOIL_DEPTHS_IN
+  if (depthInches >= d[d.length - 1]) return DEPTH_STEP[d.length - 1]
+  if (depthInches <= d[0]) return 0
+  const i = d.findIndex((x) => x >= depthInches)
+  return DEPTH_STEP[i - 1] + ((DEPTH_STEP[i] - DEPTH_STEP[i - 1]) * (depthInches - d[i - 1])) / (d[i] - d[i - 1])
+}
 
 /**
  * Line color for a soil depth in inches (cm callers divide by 2.54). Depends only on depth and theme,
  * so a depth keeps its color whichever other depths are present. Shallow → batlow start; ≥ 40 in → end.
  */
 export function depthColor(depthInches: number, theme: Theme): string {
-  const d = SOIL_DEPTHS_IN
-  let pos = 0
-  if (depthInches >= d[d.length - 1]) pos = 1
-  else if (depthInches > d[0]) {
-    const i = d.findIndex((x) => x >= depthInches)
-    pos = DEPTH_POS[i - 1] + ((DEPTH_POS[i] - DEPTH_POS[i - 1]) * (depthInches - d[i - 1])) / (d[i] - d[i - 1])
-  }
-  const [from, to] = DEPTH_SPAN[theme]
-  return colorAt(BATLOW, from + (to - from) * pos ** DEPTH_GAMMA[theme])
+  const s = depthStep(depthInches)
+  const t = DEPTH_T[theme]
+  const i = Math.min(t.length - 2, Math.floor(s))
+  return colorAt(BATLOW, t[i] + (t[i + 1] - t[i]) * (s - i))
+}
+
+/**
+ * Line style for a soil depth: depthColor, dashed at every other sensor depth (4, 20, 36 in; other
+ * depths follow the nearest), so neighbouring depths differ in dash as well as in color.
+ */
+export function depthStyle(depthInches: number, theme: Theme): LineStyle {
+  const color = depthColor(depthInches, theme)
+  const near = SOIL_DEPTHS_IN.reduce((a, b) => (Math.abs(b - depthInches) < Math.abs(a - depthInches) ? b : a))
+  return SOIL_DEPTHS_IN.indexOf(near) % 2 === 1 ? { color, dash: 'dashed' } : { color }
 }
 
 function batlowSamples(n: number, theme: Theme): string[] {
@@ -282,14 +300,24 @@ export function binColors(n: number, theme: Theme): string[] {
   return batlowSamples(n, theme)
 }
 
-// Past years in light start at teal, not navy: navy matched the current year (ANNUAL_CURRENT, the
-// near-black text color). light 0.2–0.58 (≥3.26); dark and HC as BATLOW_SPAN.
-const YEAR_SPAN: Record<Theme, [number, number]> = { ...BATLOW_SPAN, light: [0.2, 0.58] }
+// Last year and the year before in batlow, picked to sit furthest (OKLab ≥ 0.14) from each other, from
+// the current year (ANNUAL_CURRENT, the text color) and from the greys: light ochre 3.24 / blue-teal
+// 10.4; dark orange 5.92 / salmon 8.88; HC ochre 5.96 / teal 3.17. (A batlow ramp over every year left
+// neighbouring years ~0.03 apart, and dark's newest was the near-white of the current year.)
+const RECENT_YEAR_T: Record<Theme, readonly [number, number]> = { light: [0.58, 0.13], dark: [0.67, 0.86], 'high-contrast': [0.55, 0.29] }
+// Older years fade from GREY (three years back) toward the surface, oldest faintest: light
+// #8f8f8f 3.23, dark #6c7380 3.23, HC #7a7a7a 4.89 (fainter neared the dim teal of the year before).
+const OLD_YEAR_FADE: Record<Theme, string> = { light: '#8f8f8f', dark: '#6c7380', 'high-contrast': '#7a7a7a' }
 
-/** n colors for past years in the annual chart, oldest → newest. The current year uses ANNUAL_CURRENT. */
+/**
+ * n colors for past years in the annual chart, oldest → newest. The current year uses ANNUAL_CURRENT;
+ * last year and the year before get their own colors; older years are muted greys, fainter with age.
+ */
 export function yearColors(n: number, theme: Theme): string[] {
-  const [from, to] = YEAR_SPAN[theme]
-  return sample(BATLOW, n, { from, to })
+  const recent = RECENT_YEAR_T[theme].slice(0, n).map((t) => colorAt(BATLOW, t))
+  const old = n - recent.length
+  const greys = old === 1 ? [GREY[theme]] : sample([OLD_YEAR_FADE[theme], GREY[theme]], old)
+  return [...greys, ...recent.reverse()]
 }
 /** Current-year line in the annual chart. */
 export const ANNUAL_CURRENT: { color: TokenRef; width: number } = { color: { token: '--text-primary' }, width: 3 }

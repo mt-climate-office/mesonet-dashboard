@@ -28,6 +28,10 @@ const fill = (c: LegendFill) =>
     ? c
     : { type: 'linear' as const, x: 0, y: 0, x2: 1, y2: 0, colorStops: c.stops.map((color, i) => ({ offset: i / Math.max(1, c.stops.length - 1), color })) }
 
+/** Legend icons for a line without its dot: solid, and dashed (three short dashes). */
+export const LINE_ICON = 'path://M0,4h19v2H0z'
+export const DASH_ICON = 'path://M0,4h5v2H0zM7,4h5v2H7zM14,4h5v2h-5z'
+
 /** Height of one more legend row (10 px marks, 11–12 px text, the row gap). */
 export const LEGEND_ROW = 22
 

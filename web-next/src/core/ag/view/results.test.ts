@@ -95,9 +95,9 @@ describe('soilView', () => {
     expect(s.model.model.series).toEqual(swp(daily, params))
     expect(s.notes.join(' ')).toMatch(/computed in the browser from published mesonet-soils parameters/)
     // The season dries past the lab range at 2 in and 40 in.
-    expect(s.notes.join(' ')).toMatch(/Dashed lines: the soil is drier than the driest lab sample/)
+    expect(s.notes.join(' ')).toMatch(/Dotted lines: the soil is drier than the driest lab sample/)
     const wet = { ...daily, vwcPct: daily.vwcPct.map((col) => col.map((v) => (v == null ? v : Math.max(v, 30)))) }
-    expect(soilView({ variable: 'swp', soilVar: 'soil_vwc', period: 'daily', soil: wet, params }).notes.join(' ')).not.toMatch(/Dashed/)
+    expect(soilView({ variable: 'swp', soilVar: 'soil_vwc', period: 'daily', soil: wet, params }).notes.join(' ')).not.toMatch(/Dotted/)
     // A depth bone dry all season is left out of the line chart, with a note; the profile keeps it.
     const last = daily.depthsCm.length - 1
     const parched = { ...daily, vwcPct: daily.vwcPct.map((col, d) => (d === last ? col.map((v) => (v == null ? v : 0.1)) : col)) }

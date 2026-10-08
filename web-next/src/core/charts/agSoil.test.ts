@@ -3,8 +3,9 @@ import { percentSaturation, swp } from '../ag/compute'
 import { soilParams, soilSeries } from '../ag/__tests__/adapters'
 import { profileValues } from '../ag/view/derive'
 import { SWP_CAP_BAR, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, depthLabel, swpBar } from '../ag/view/labels'
-import { FROZEN, HEATMAP, THEMES, depthColor } from '../palette'
+import { FROZEN, HEATMAP, THEMES, depthStyle } from '../palette'
 import { FROZEN_NAME, monthStarts, percentSaturationChart, percentSaturationTable, soilProfileChart, soilProfileTable, swpChart, swpTable, type SoilProfileModel } from './agSoil'
+import { DASH_ICON, LINE_ICON } from './agLegend'
 import { drawn, shownY, testCtx } from './testing'
 
 type S = { type: string; name: string; id?: string; data: unknown[]; color: string; lineStyle?: { type: string; opacity?: number }; markArea?: { data: [{ yAxis: number }, { yAxis: number }][] }; markLine?: { data: { yAxis: number; name?: string }[] } }
@@ -27,7 +28,7 @@ describe('swpChart', () => {
     expect(y.axisLabel.formatter(10000)).toBe('-10,000')
     expect(y.axisLabel.formatter(0.1)).toBe('-0.1')
     const [bands, ...all] = series(o)
-    const lines = all.filter((l) => l.lineStyle?.type === 'solid')
+    const lines = all.filter((l) => l.lineStyle?.type !== 'dotted')
     expect(bands.id).toBe('aux:bands')
     // Inverted axis: wet band from the top to field capacity, dry band from the wilting point down.
     expect(bands.markArea!.data.map((b) => [b[0].yAxis, b[1].yAxis])).toEqual([
@@ -46,15 +47,19 @@ describe('swpChart', () => {
     expect(lines.map((l) => l.name)).toEqual(s.depthsCm.map(depthLabel))
     const i = s.kPa[1].findIndex((v) => v != null)
     expect((lines[1].data[i] as number[])[1]).toBeCloseTo(s.kPa[1][i]! / 100, 10)
-    expect((o.legend as { data: string[] }).data).toEqual(s.depthsCm.map(depthLabel))
+    // The key draws each depth's dash (4 and 20 in are dashed).
+    const key = (o.legend as { data: { name: string; icon: string }[] }).data
+    expect(key.map((k) => k.name)).toEqual(s.depthsCm.map(depthLabel))
+    expect(key.map((k) => k.icon)).toEqual(s.depthsCm.map((cm) => (depthStyle(Number.parseInt(depthLabel(cm)), 'light').dash ? DASH_ICON : LINE_ICON)))
   })
   it('depth colors are stable palette roles per theme', () => {
     for (const t of THEMES) {
-      const lines = series(swpChart({ series: s, period: 'daily' }, testCtx(t))).slice(1).filter((l) => l.lineStyle?.type === 'solid')
-      expect(lines.map((l) => l.color)).toEqual(s.depthsCm.map((cm) => depthColor(Number.parseInt(depthLabel(cm)), t)))
+      const lines = series(swpChart({ series: s, period: 'daily' }, testCtx(t))).slice(1).filter((l) => l.lineStyle?.type !== 'dotted')
+      const want = s.depthsCm.map((cm) => depthStyle(Number.parseInt(depthLabel(cm)), t))
+      expect(lines.map((l) => [l.color, l.lineStyle?.type])).toEqual(want.map((w) => [w.color, w.dash ?? 'solid']))
     }
   })
-  it('lower bounds: capped, on a dashed companion of the same name and color, "≤" in tooltip and table', () => {
+  it('lower bounds: capped, on a dotted companion of the same name and color, "≤" in tooltip and table', () => {
     const { bar, dry } = swpBar(s)
     // The fixture season dries 2 in and 40 in past the lab range.
     const dryDepths = s.depthsCm.filter((_, d) => dry[d].some(Boolean))
@@ -64,17 +69,17 @@ describe('swpChart', () => {
     expect(dryVals).toContain(SWP_CAP_BAR)
     const o = swpChart({ series: s, period: 'daily' }, testCtx())
     const lines = series(o).slice(1)
-    const dashed = lines.filter((l) => l.lineStyle?.type === 'dashed')
-    expect(dashed.map((l) => l.name)).toEqual(dryDepths.map(depthLabel))
+    const dotted = lines.filter((l) => l.lineStyle?.type === 'dotted')
+    expect(dotted.map((l) => l.name)).toEqual(dryDepths.map(depthLabel))
     const d = s.depthsCm.indexOf(dryDepths[0])
-    expect(dashed[0].color).toBe(lines.find((l) => l.name === dashed[0].name && l.lineStyle?.type === 'solid')!.color)
+    expect(dotted[0].color).toBe(lines.find((l) => l.name === dotted[0].name && l.lineStyle?.type !== 'dotted')!.color)
     // Full strength: a depth capped all season must not read as a reference line.
-    expect(dashed[0].lineStyle!.opacity ?? 1).toBe(1)
+    expect(dotted[0].lineStyle!.opacity ?? 1).toBe(1)
     const i = dry[d].indexOf(true)
-    const pts = dashed[0].data as [number, number | null, string][]
+    const pts = dotted[0].data as [number, number | null, string][]
     expect(pts.find((p) => p[0] === pts.filter((q) => q[2] === 'dry')[0][0])![1]).toBe(bar[d][i])
-    // The solid line has a gap where the dashed one draws.
-    const solid = lines.find((l) => l.name === dashed[0].name && l.lineStyle?.type === 'solid')!.data as [number, number | null][]
+    // The solid line has a gap where the dotted one draws.
+    const solid = lines.find((l) => l.name === dotted[0].name && l.lineStyle?.type !== 'dotted')!.data as [number, number | null][]
     expect(solid.filter((p) => p[1] != null)).toHaveLength(bar[d].filter((v, k) => v != null && !dry[d][k]).length)
     const fmt = (o.tooltip as { formatter: (p: unknown) => string }).formatter
     const tip = (note: string) => fmt([{ seriesName: '2 in', value: [pts[0][0], 1000, note], marker: '', axisValue: pts[0][0] }])

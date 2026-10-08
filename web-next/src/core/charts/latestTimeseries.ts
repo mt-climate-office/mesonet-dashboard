@@ -11,7 +11,7 @@
 import type { EChartsOption, GraphicComponentOption, SeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { TimeseriesModel, TimeseriesPanel, TimeseriesSeries } from '../models/timeseries'
 import { isDepthVariable, panelNoDataText } from '../models/timeseries'
-import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, variableStyle, withAlpha } from '../palette'
+import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, depthStyle, previewColor, variableStyle, withAlpha } from '../palette'
 import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
 import { WIND_DIRECTION } from '../variables/direction'
@@ -187,7 +187,14 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
         return
       }
       const dots = p.variable === WIND_DIRECTION
-      const dash = dots ? undefined : p.legend ? DASHES[j % DASHES.length] : variableStyle(p.variable, ctx.theme.name)?.dash
+      // A soil depth's dash is its own (neighbouring depths alternate), as its color.
+      const dash = dots
+        ? undefined
+        : s.depth
+          ? depthStyle(Number.parseInt(s.depth, 10), ctx.theme.name).dash
+          : p.legend
+            ? DASHES[j % DASHES.length]
+            : variableStyle(p.variable, ctx.theme.name)?.dash
       const shape = DIRECTION_SHAPES[p.legend ? j % DIRECTION_SHAPES.length : 0]
       const style = { color, dash, yAxisIndex: i, id: `p${i}:${s.name}` }
       push({ ...(dots ? directionDots(s.name, pts(s.values), { ...style, symbol: shape.symbol }) : lineSeries(s.name, pts(s.values), style)), xAxisIndex: i }, {
@@ -195,7 +202,7 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
         label,
         unit,
       })
-      if (s.depth) keys.push({ label: s.depth, color })
+      if (s.depth) keys.push({ label: s.depth, color, dash })
       else if (p.legend) keys.push({ label: columnKey(p.variable, s.name), color, dash, ...(dots ? { glyph: shape.glyph } : {}) })
       // The variable page's Daily band (core/variables/band; drawn by variable.ts) and the mean it surrounds.
       else if (s.band) keys.push({ label: 'Daily mean', color }, { label: DAILY_RANGE.label, color: withAlpha(color, DAILY_RANGE.alpha), block: true })

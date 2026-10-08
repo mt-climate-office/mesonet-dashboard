@@ -7,19 +7,19 @@
 import type { EChartsOption, HeatmapSeriesOption, LineSeriesOption } from 'echarts'
 import type { LocalDate, LocalDateTime, Nullable, PercentSaturationSeries, SwpSeries } from '../ag/contract'
 import { PROFILE_META, SWP_CAP_BAR, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, type SoilProfileVar, depthLabel, swpBar, swpText } from '../ag/view/labels'
-import { HEATMAP, SWP_BANDS, depthColor } from '../palette'
+import { HEATMAP, SWP_BANDS, depthStyle } from '../palette'
 import { grid, logAxis, logExtent, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtNum, fmtWall, isoWall, wallMs, type Period } from './format'
 import { colorBar, frozenSeries } from './heatmap'
 import { hBandGutter, hBandSeries } from './overlays'
 import { lineSeries } from './series'
 import { LEGEND_PX, bottomLayout, plotExtent, points, showsSlider, stepMs, timeFrame, timeZoom, valued, zoomTrace, type Point } from './style'
-import { agLegend, liftForLegend } from './agLegend'
+import { type AgLegendItem, DASH_ICON, LINE_ICON, agLegend, liftForLegend } from './agLegend'
 import { axisTooltip, tipText, tooltipBase } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
 import { axisTitle } from '../variables/labels'
 
-/** Nominal inches of a sensor depth (91 cm → 36), for depthColor. */
+/** Nominal inches of a sensor depth (91 cm → 36), for depthStyle. */
 const depthInches = (cm: number) => Number.parseInt(depthLabel(cm), 10)
 
 /* ------------------------------------------------------- Soil profile */
@@ -189,12 +189,16 @@ export function soilProfileTable(m: SoilProfileModel): ChartTable {
 
 /* ------------------------------------------------------- depth lines */
 
-/** One line per depth, shallow → deep, in the depth's own color (style LINE_WIDTH, gaps at `step`). */
+/** One line per depth, shallow → deep, in the depth's own color and dash (style LINE_WIDTH, gaps at `step`). */
 function depthLines(ctx: ChartContext, xs: number[], depthsCm: number[], values: Nullable[][], step: number): LineSeriesOption[] {
   return depthsCm.map((cm, d) =>
-    lineSeries(depthLabel(cm), points(xs, values[d], step), { color: depthColor(depthInches(cm), ctx.theme.name) }),
+    lineSeries(depthLabel(cm), points(xs, values[d], step), depthStyle(depthInches(cm), ctx.theme.name)),
   )
 }
+
+/** The legend items of the depth lines: a bare line in each depth's dash (the default dot hid it). */
+const depthKey = (ctx: ChartContext, depthsCm: number[]): AgLegendItem[] =>
+  depthsCm.map((cm) => ({ name: depthLabel(cm), icon: depthStyle(depthInches(cm), ctx.theme.name).dash ? DASH_ICON : LINE_ICON }))
 
 /** The index of the shallowest depth (the slider's trace). */
 const shallowest = (depthsCm: number[]) => depthsCm.indexOf(Math.min(...depthsCm))
@@ -219,21 +223,21 @@ const DRY = 'dry'
 const JOINT = 'joint'
 
 /**
- * Per depth, the solid line (lower bounds nulled) and, when there are any, a
- * dashed companion in the same color and name (one legend entry) through the
+ * Per depth, its line (lower bounds nulled) and, when there are any, a
+ * dotted companion in the same color and name (one legend entry) through the
  * lower bounds, joined to the solid line's neighbouring points. Full opacity:
  * a depth that is capped all season must still read as that depth's data.
  */
 function swpLines(ctx: ChartContext, xs: number[], depthsCm: number[], bar: Nullable[][], dry: boolean[][], step: number): LineSeriesOption[] {
   return depthsCm.flatMap((cm, d) => {
-    const color = depthColor(depthInches(cm), ctx.theme.name)
+    const style = depthStyle(depthInches(cm), ctx.theme.name)
     const name = depthLabel(cm)
-    const solid = lineSeries(name, points(xs, bar[d].map((v, i) => (dry[d][i] ? null : v)), step), { color })
+    const solid = lineSeries(name, points(xs, bar[d].map((v, i) => (dry[d][i] ? null : v)), step), style)
     if (!dry[d].some(Boolean)) return [solid]
     const near = (i: number) => dry[d][i] || !!dry[d][i - 1] || !!dry[d][i + 1]
     const ys = bar[d].map((v, i) => (near(i) ? v : null))
     const notes = dry[d].map((x) => (x ? DRY : JOINT))
-    return [solid, lineSeries(name, points(xs, ys, step, notes), { color, dash: 'dashed' })]
+    return [solid, lineSeries(name, points(xs, ys, step, notes), { color: style.color, dash: 'dotted' })]
   })
 }
 
@@ -254,7 +258,7 @@ function swpBandLines(ctx: ChartContext): { y: number; label: string }[] {
  * top; ticks read negative ("-15", "-10,000"). Bands shade saturated → field
  * capacity and beyond the wilting point, each boundary labelled beside the plot. Lower
  * bounds (dry-end clips and anything drier than `SWP_CAP_BAR`; labels
- * `swpBar`) sit at most on the cap and are drawn dashed.
+ * `swpBar`) sit at most on the cap and are drawn dotted.
  */
 export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
   const xs = m.series.time.map(wallMs)
@@ -263,7 +267,7 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
   const [min, decade] = logExtent(Math.min(...flat), Math.max(...flat), [SWP_FIELD_CAPACITY, SWP_WILTING_POINT])
   // Capped dry-end points sit on SWP_CAP_BAR: one more decade keeps them off the frame, ticks on decades.
   const max = dry.some((col) => col.some(Boolean)) && decade <= SWP_CAP_BAR ? SWP_CAP_BAR * 10 : decade
-  const lg = agLegend(ctx, m.series.depthsCm.map((cm) => ({ name: depthLabel(cm) })))
+  const lg = agLegend(ctx, depthKey(ctx, m.series.depthsCm))
   const step = stepMs(m.period)
   // The slider traces the shallowest depth, wet up as the inverted log axis draws it.
   const top = bar[shallowest(m.series.depthsCm)] ?? []
@@ -317,7 +321,7 @@ export interface PercentSaturationModel {
 
 export const percentSaturationChart: ChartBuilder<PercentSaturationModel> = (m, ctx) => {
   const xs = m.series.time.map(wallMs)
-  const lg = agLegend(ctx, m.series.depthsCm.map((cm) => ({ name: depthLabel(cm) })))
+  const lg = agLegend(ctx, depthKey(ctx, m.series.depthsCm))
   const step = stepMs(m.period)
   const trace = points(xs, m.series.pct[shallowest(m.series.depthsCm)] ?? [], step)
   const f = timeFrame(ctx, { extent: plotExtent(xs, step, false), trace, yAxisIndex: 1, legendPx: LEGEND_PX })

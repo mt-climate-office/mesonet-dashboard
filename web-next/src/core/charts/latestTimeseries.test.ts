@@ -115,12 +115,13 @@ describe('latestTimeseriesChart', () => {
     }
   })
 
-  it('soil depths shallow → deep, colored by depth, labelled in the key row', () => {
+  it('soil depths shallow → deep, colored and dashed by depth, labelled in the key row', () => {
     for (const theme of THEMES) {
       const o = build(model(hourRows(6, soil), ['Soil VWC']), theme)
       const s = dataSeries(o)
       expect(s.map((x) => x.name)).toEqual(['Soil VWC @ 2 in [%]', 'Soil VWC @ 4 in [%]', 'Soil VWC @ 20 in [%]'])
       expect(s.map((x) => x.color)).toEqual([2, 4, 20].map((d) => depthColor(d, theme)))
+      expect(s.map((x) => x.lineStyle?.type)).toEqual(['solid', 'dashed', 'dashed'])
       expect(texts(o)).toEqual(expect.arrayContaining(['2 in', '4 in', '20 in']))
     }
   })
