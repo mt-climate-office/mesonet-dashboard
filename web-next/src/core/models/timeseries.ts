@@ -41,6 +41,9 @@ export const NO_DATA_HINT = 'Either change the date range or select a new statio
 
 const SOIL_VARS = new Set(['Soil Temperature', 'Soil VWC', 'Bulk EC'])
 
+/** True for a variable drawn one line per soil depth (its panel carries a key row of depths). */
+export const isDepthVariable = (variable: string): boolean => SOIL_VARS.has(variable)
+
 /** "YYYY-MM-DD" that parses; malformed ?from/?to are treated as no data. */
 export const isIsoDate = (v: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(v) && dayjs(v).isValid()
 

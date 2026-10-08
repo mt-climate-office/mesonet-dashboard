@@ -3,9 +3,9 @@
  * growth-stage markLines, and an optional projection (NWS forecast segment,
  * then normals median with a q25–q75 band) continuing from the last
  * observed day. With a stage table, the bars are colored by the growth stage
- * reached that day (a hidden piecewise visualMap on x) and each stage line by
- * its stage; the cumulative line and the projection stay in the text color, so
- * they never vanish into same-colored bars.
+ * reached that day (a hidden piecewise visualMap on x); the stage lines are one
+ * neutral stroke above the bars, and the cumulative line and the projection stay
+ * in the text color on a surface-colored halo, so none vanish into the bars.
  * GDD values are already °F·day (contract), so no conversion.
  */
 import type { EChartsOption, LineSeriesOption, VisualMapComponentOption } from 'echarts'
@@ -15,8 +15,8 @@ import { CUMULATIVE_LINE, GDD, GDD_STAGE_LINE, gddStageColors } from '../palette
 import { dualAxis, niceCeil } from './axes'
 import { fmtNum, fmtWall, wallMs } from './format'
 import { bandSeries, labelledLines } from './overlays'
-import { barSeries, lineSeries } from './series'
-import { DAY, LEGEND_PX, plotExtent, points, timeFrame } from './style'
+import { AUX, barSeries, lineSeries } from './series'
+import { DAY, LEGEND_PX, LINE_WIDTH, plotExtent, points, timeFrame } from './style'
 import { paint } from './theme'
 import { agLegend, liftForLegend } from './agLegend'
 import { axisTooltip, tipText } from './tooltip'
@@ -202,6 +202,24 @@ export function stagePieces(
   return out.map(({ gte, lt, color }) => ({ gte, lt, color }))
 }
 
+/** A line's halo: the same points, wider, in `color` (the surface), drawn under it; a drawing aid (AUX). */
+export function halo(line: LineSeriesOption, color: string): LineSeriesOption {
+  return {
+    type: 'line',
+    id: `${AUX}halo-${String(line.id ?? line.name)}`,
+    name: `${AUX}halo`,
+    data: line.data,
+    yAxisIndex: line.yAxisIndex,
+    smooth: false,
+    showSymbol: false,
+    connectNulls: false,
+    silent: true,
+    lineStyle: { color, width: (line.lineStyle?.width ?? LINE_WIDTH) + 3, type: 'solid' },
+    emphasis: { disabled: true },
+    sampling: line.sampling,
+  }
+}
+
 /** Upper bound of the cumulative axis: covers observed, projected and the q75 envelope. */
 export function gddAxisMax(m: GddModel): number {
   const p = m.projection
@@ -229,12 +247,8 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
   })
   const { lines, gutter } = fittedStageLabels(stageLines(table, y2max, soFar), ctx.width)
   if (lines.length > 0) {
-    const ml = labelledLines(paint(ctx.theme, GDD_STAGE_LINE), lines, ctx, { labels: gutter > 0, fontSize: STAGE_FONT })
-    // Each stage line in its stage's color (the labels stay muted text).
-    if (stageColors.length > 0) {
-      ml.data = lines.map((l) => ({ yAxis: l.y, name: l.label, lineStyle: { color: stageColors[stageIndex(table, l.y) ?? 0] } }))
-    }
-    cumulative.markLine = ml
+    // One neutral stroke, above the bars: a stage-colored line vanished across bars of its own stage.
+    cumulative.markLine = { ...labelledLines(paint(ctx.theme, GDD_STAGE_LINE), lines, ctx, { labels: gutter > 0, fontSize: STAGE_FONT }), z: 4 }
   }
   const proj =
     m.projection && m.projection.date.length > 0
@@ -252,7 +266,15 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
   // The slider traces the cumulative GDDs, over the observed days and any projection.
   const allXs = [...xs, ...(m.projection?.date.map(wallMs) ?? [])]
   const f = timeFrame(ctx, { extent: plotExtent(allXs, DAY, true), trace: cumPoints, yAxisIndex: 2, legendPx: LEGEND_PX, right: 64 + gutter })
-  const series = [...(f.trace ? [f.trace.series] : []), barSeries(barName, points(xs, m.series.daily, DAY), barColor), cumulative, ...proj]
+  // Each cumulative and projected line rides on a wider surface-colored halo, so it reads over the
+  // pale late-stage bars in every theme.
+  const lined = [cumulative, ...proj].flatMap((s) => (s.lineStyle?.opacity === 0 ? [s] : [halo(s, ctx.theme.surface), s]))
+  // The stage lines get a solid surface-colored underlay too (on the cumulative halo, drawn first),
+  // so the dashed stroke reads across bars of any stage color.
+  if (lines.length > 0) {
+    lined[0] = { ...lined[0], markLine: { silent: true, symbol: 'none', z: 3, label: { show: false }, lineStyle: { color: ctx.theme.surface, width: 3, type: 'solid' }, data: lines.map((l) => ({ yAxis: l.y })) } }
+  }
+  const series = [...(f.trace ? [f.trace.series] : []), barSeries(barName, points(xs, m.series.daily, DAY), barColor), ...lined]
   let visualMap: VisualMapComponentOption | undefined
   if (stageColors.length > 0) {
     visualMap = {

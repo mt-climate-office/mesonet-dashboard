@@ -11,7 +11,7 @@ import { HEATMAP, SWP_BANDS, depthColor } from '../palette'
 import { grid, logAxis, logExtent, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtNum, fmtWall, isoWall, wallMs, type Period } from './format'
 import { colorBar, frozenSeries } from './heatmap'
-import { hBandSeries } from './overlays'
+import { hBandGutter, hBandSeries } from './overlays'
 import { lineSeries } from './series'
 import { LEGEND_PX, bottomLayout, plotExtent, points, showsSlider, stepMs, timeFrame, timeZoom, valued, zoomTrace, type Point } from './style'
 import { agLegend, liftForLegend } from './agLegend'
@@ -73,12 +73,26 @@ const monthLabel = (v: string | number) => {
   return d.getUTCMonth() === 0 ? String(d.getUTCFullYear()) : MONTHS[d.getUTCMonth()]
 }
 
-/** The time (category) axis: month ticks on long windows, else day labels thinned where they overlap. */
-function categoryAxis(xMs: number[], period: Period) {
+/**
+ * Month labels on a compact axis: every `n`th month start, so "Nov Dec 2026 Feb" never runs
+ * together. January (the year) is always labelled; others count from it.
+ */
+export function labelledMonths(xMs: readonly number[], months: Set<number>, every: number): Set<number> {
+  const monthIndex = (i: number) => new Date(xMs[i]).getUTCMonth()
+  return new Set([...months].filter((i) => monthIndex(i) % every === 0))
+}
+
+/**
+ * The time (category) axis: month ticks on long windows (on compact screens labelled every 2nd
+ * month, every 3rd over 8 months), else day labels thinned where they overlap.
+ */
+function categoryAxis(xMs: number[], period: Period, compact: boolean) {
   const months = monthStarts(xMs)
   if (!months) return { type: 'category' as const, data: xMs, axisLabel: { formatter: categoryLabel(period), hideOverlap: true }, axisTick: { alignWithLabel: true } }
-  const at = (i: number) => months.has(i)
-  return { type: 'category' as const, data: xMs, axisLabel: { formatter: monthLabel, interval: at }, axisTick: { interval: at } }
+  const every = !compact ? 1 : months.size > 8 ? 3 : 2
+  const named = every > 1 ? labelledMonths(xMs, months, every) : months
+  const tick = (i: number) => months.has(i)
+  return { type: 'category' as const, data: xMs, axisLabel: { formatter: monthLabel, interval: (i: number) => named.has(i), hideOverlap: true }, axisTick: { interval: tick } }
 }
 
 export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
@@ -134,7 +148,7 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
   const lg = agLegend(ctx, [{ name: FROZEN_NAME }])
   return {
     grid: g,
-    xAxis: categoryAxis(xMs, m.period),
+    xAxis: categoryAxis(xMs, m.period, ctx.compact),
     yAxis: [{ type: 'category', data: y, inverse: true, name: 'Soil depth', nameLocation: 'middle', nameGap: 44, nameRotate: 90 }, ...(trace ? [trace.yAxis] : [])],
     visualMap: cb.visualMap,
     graphic: cb.graphic,
@@ -224,9 +238,21 @@ function swpLines(ctx: ChartContext, xs: number[], depthsCm: number[], bar: Null
 }
 
 /**
+ * The SWP band lines and their gutter labels: "Field capacity" over "-0.33 bar"; on compact
+ * screens the name breaks too, so the gutter stays narrow.
+ */
+function swpBandLines(ctx: ChartContext): { y: number; label: string }[] {
+  const label = (name: string, bar: number) => `${ctx.compact ? name.replace(' ', '\n') : name}\n-${bar} bar`
+  return [
+    { y: SWP_FIELD_CAPACITY, label: label(SWP_BANDS.labels.fieldCapacity, SWP_FIELD_CAPACITY) },
+    { y: SWP_WILTING_POINT, label: label(SWP_BANDS.labels.wiltingPoint, SWP_WILTING_POINT) },
+  ]
+}
+
+/**
  * SWP in bar, one line per depth, on a log axis inverted so wet is at the
- * top; ticks read negative ("-15"). Bands shade saturated → field capacity
- * and beyond the wilting point, each boundary labelled on its line. Lower
+ * top; ticks read negative ("-15", "-10,000"). Bands shade saturated → field
+ * capacity and beyond the wilting point, each boundary labelled beside the plot. Lower
  * bounds (dry-end clips and anything drier than `SWP_CAP_BAR`; labels
  * `swpBar`) sit at most on the cap and are drawn dashed.
  */
@@ -242,7 +268,9 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
   // The slider traces the shallowest depth, wet up as the inverted log axis draws it.
   const top = bar[shallowest(m.series.depthsCm)] ?? []
   const trace = points(xs, top.map((v) => (v != null && v > 0 ? -Math.log10(v) : null)), step)
-  const f = timeFrame(ctx, { extent: plotExtent(xs, step, false), trace, yAxisIndex: 1, legendPx: LEGEND_PX })
+  // The band lines' labels sit in a gutter right of the plot, so no depth line covers them.
+  const lines = swpBandLines(ctx)
+  const f = timeFrame(ctx, { extent: plotExtent(xs, step, false), trace, yAxisIndex: 1, legendPx: LEGEND_PX, right: hBandGutter(ctx, lines.map((l) => l.label)) })
   const bands =
     xs.length > 0
       ? [
@@ -250,14 +278,10 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
             ctx,
             [xs[0], xs[xs.length - 1]],
             [
-              // Each label sits on its band's edge at the boundary line (the axis is inverted: wet at the top).
-              { from: min, to: SWP_FIELD_CAPACITY, label: `${SWP_BANDS.labels.fieldCapacity} (-${SWP_FIELD_CAPACITY} bar)`, labelAt: 'insideBottomLeft' },
-              { from: SWP_WILTING_POINT, to: max, label: `${SWP_BANDS.labels.wiltingPoint} (-${SWP_WILTING_POINT} bar)`, labelAt: 'insideTopLeft' },
+              { from: min, to: SWP_FIELD_CAPACITY },
+              { from: SWP_WILTING_POINT, to: max },
             ],
-            [
-              { y: SWP_FIELD_CAPACITY, label: `Field capacity (-${SWP_FIELD_CAPACITY} bar)` },
-              { y: SWP_WILTING_POINT, label: `Wilting point (-${SWP_WILTING_POINT} bar)` },
-            ],
+            lines,
           ),
         ]
       : []

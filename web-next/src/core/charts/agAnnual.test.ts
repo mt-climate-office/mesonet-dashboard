@@ -44,11 +44,25 @@ describe('annualChart', () => {
     expect((o.legend as { bottom?: number }).bottom).toBeUndefined()
     expect(g.top).toBeGreaterThan(24)
   })
-  it('wind direction: compass ticks and a line broken at the north wrap', () => {
-    const wind = groupByYear(['2025-01-01', '2025-01-02', '2025-01-03'], [350, 10, 20])
+  it('the years key is a plain legend that wraps (no pages), the current year first', () => {
+    const many = Array.from({ length: 12 }, (_, i) => 2015 + i).flatMap((y) => groupByYear([`${y}-01-01`], [1]))
+    const wide = annualChart({ ...model, traces: many }, testCtx('light', 1200))
+    const phone = annualChart({ ...model, traces: many }, testCtx('light', 358, true))
+    const lg = phone.legend as { type: string; data: string[] }
+    expect(lg.type).toBe('plain')
+    expect(lg.data[0]).toBe('2026')
+    expect(lg.data.slice(1)).toEqual(Array.from({ length: 11 }, (_, i) => String(2015 + i)))
+    // The wrapped rows push the plot down.
+    expect((phone.grid as { top: number }).top).toBeGreaterThan((wide.grid as { top: number }).top)
+  })
+  it('wind direction: compass ticks and small dots per year (the current year a little larger)', () => {
+    const wind = groupByYear(['2025-01-01', '2025-01-02', '2026-01-03'], [350, 10, 20])
     const o = annualChart({ traces: wind, yLabel: 'Wind direction (°)', currentYear: 2026, variable: 'Wind Direction' }, testCtx())
     expect((o.yAxis as { axisLabel: { formatter: (v: number) => string } }).axisLabel.formatter(90)).toBe('E')
-    expect((o.series as S[])[0].data.filter((p) => p[1] === null)).toHaveLength(1)
+    const s = o.series as (S & { type: string; symbolSize: number })[]
+    expect(s.map((x) => x.type)).toEqual(['scatter', 'scatter'])
+    expect(s[0].data.map((p) => p[1])).toEqual([350, 10])
+    expect(s[1].symbolSize).toBeGreaterThan(s[0].symbolSize)
   })
   it('tooltip: DOY-only header; each year shows its own (leap-aware) date', () => {
     const leap = groupByYear(['2024-02-29', '2024-03-01'], [1, 2])

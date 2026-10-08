@@ -4,6 +4,7 @@ import type { AnnualDaily } from '../data'
 import { swp } from '../compute'
 import { dailyMet, hourlyMet, soilParams, soilSeries, stageTable, stationMeta } from '../__tests__/adapters'
 import { parseGddCutoffs } from './gddCutoffs'
+import { depthLabel } from './labels'
 import { HttpError } from '../../api/http'
 import { DAILY_RANGE_NOTE, annualView, annualYears, elementsGate, gate, gddView, metView, soilView, viewAnnouncement, type Loaded } from './results'
 
@@ -97,6 +98,15 @@ describe('soilView', () => {
     expect(s.notes.join(' ')).toMatch(/Dashed lines: the soil is drier than the driest lab sample/)
     const wet = { ...daily, vwcPct: daily.vwcPct.map((col) => col.map((v) => (v == null ? v : Math.max(v, 30)))) }
     expect(soilView({ variable: 'swp', soilVar: 'soil_vwc', period: 'daily', soil: wet, params }).notes.join(' ')).not.toMatch(/Dashed/)
+    // A depth bone dry all season is left out of the line chart, with a note; the profile keeps it.
+    const last = daily.depthsCm.length - 1
+    const parched = { ...daily, vwcPct: daily.vwcPct.map((col, d) => (d === last ? col.map((v) => (v == null ? v : 0.1)) : col)) }
+    const dry = soilView({ variable: 'swp', soilVar: 'soil_vwc', period: 'daily', soil: parched, params })
+    if (dry.model?.kind !== 'swp') throw new Error('expected swp')
+    expect(dry.model.model.series.depthsCm).toEqual(daily.depthsCm.slice(0, last))
+    expect(dry.notes).toContain(`${depthLabel(daily.depthsCm[last])}: drier than -1,000 bar for the whole period, so it is not drawn.`)
+    const profile = soilView({ variable: 'soil_temp,soil_ec_blk', soilVar: 'swp', period: 'daily', soil: parched, params })
+    expect(profile.notes.join(' ')).not.toMatch(/not drawn/)
     expect(soilView({ variable: 'swp', soilVar: 'soil_vwc', period: 'daily', soil: daily }).status).toBe('loading')
     const p = soilView({ variable: 'percent_saturation', soilVar: 'soil_vwc', period: 'daily', soil: daily, params })
     expect(p.model?.kind).toBe('percent_saturation')

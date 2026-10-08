@@ -7,7 +7,7 @@ import { FROZEN, HEATMAP, THEMES, depthColor } from '../palette'
 import { FROZEN_NAME, monthStarts, percentSaturationChart, percentSaturationTable, soilProfileChart, soilProfileTable, swpChart, swpTable, type SoilProfileModel } from './agSoil'
 import { drawn, shownY, testCtx } from './testing'
 
-type S = { type: string; name: string; id?: string; data: unknown[]; color: string; lineStyle?: { type: string; opacity?: number }; markArea?: { data: [{ yAxis: number; name: string; label: { position: string } }, { yAxis: number }][] }; markLine?: { data: { yAxis: number }[] } }
+type S = { type: string; name: string; id?: string; data: unknown[]; color: string; lineStyle?: { type: string; opacity?: number }; markArea?: { data: [{ yAxis: number }, { yAxis: number }][] }; markLine?: { data: { yAxis: number; name?: string }[] } }
 const series = (o: { series?: unknown }) => drawn<S>(o)
 const texts = (o: { graphic?: unknown }) =>
   ((o.graphic ?? []) as { type: string; style?: { text?: string } }[]).filter((g) => g.type === 'text').map((g) => g.style!.text)
@@ -24,15 +24,25 @@ describe('swpChart', () => {
     expect(y.min).toBeLessThanOrEqual(SWP_FIELD_CAPACITY)
     expect(y.max).toBeGreaterThanOrEqual(SWP_WILTING_POINT)
     expect(y.axisLabel.formatter(10)).toBe('-10')
+    expect(y.axisLabel.formatter(10000)).toBe('-10,000')
+    expect(y.axisLabel.formatter(0.1)).toBe('-0.1')
     const [bands, ...all] = series(o)
     const lines = all.filter((l) => l.lineStyle?.type === 'solid')
     expect(bands.id).toBe('aux:bands')
-    expect(bands.markArea!.data.map((b) => [b[0].name, b[0].label.position])).toEqual([
-      // Inverted axis: the wet band's bottom edge and the dry band's top edge are the lines.
-      ['Field capacity (-0.33 bar)', 'insideBottomLeft'],
-      ['Wilting point (-15 bar)', 'insideTopLeft'],
+    // Inverted axis: wet band from the top to field capacity, dry band from the wilting point down.
+    expect(bands.markArea!.data.map((b) => [b[0].yAxis, b[1].yAxis])).toEqual([
+      [y.min, SWP_FIELD_CAPACITY],
+      [SWP_WILTING_POINT, y.max],
     ])
-    expect(bands.markLine!.data.map((l) => l.yAxis)).toEqual([SWP_FIELD_CAPACITY, SWP_WILTING_POINT])
+    // The line labels sit right of the plot, in a gutter the grid leaves for them.
+    expect(bands.markLine!.data).toEqual([
+      { yAxis: SWP_FIELD_CAPACITY, name: 'Field capacity\n-0.33 bar' },
+      { yAxis: SWP_WILTING_POINT, name: 'Wilting point\n-15 bar' },
+    ])
+    expect((o.grid as { right: number }).right).toBeGreaterThanOrEqual(90)
+    const phone = swpChart({ series: s, period: 'daily' }, testCtx('light', 390, true))
+    expect(series(phone)[0].markLine!.data.map((l) => l.name)).toEqual(['Field\ncapacity\n-0.33 bar', 'Wilting\npoint\n-15 bar'])
+    expect((phone.grid as { right: number }).right).toBeLessThan((o.grid as { right: number }).right)
     expect(lines.map((l) => l.name)).toEqual(s.depthsCm.map(depthLabel))
     const i = s.kPa[1].findIndex((v) => v != null)
     expect((lines[1].data[i] as number[])[1]).toBeCloseTo(s.kPa[1][i]! / 100, 10)
@@ -112,6 +122,15 @@ describe('soilProfileChart', () => {
     const o = soilProfileChart({ variable: 'soil_vwc', time, depthsCm: [5], values: [xs.map(() => 20)], period: 'daily' }, testCtx())
     const ax = o.xAxis as { axisLabel: { interval: (i: number) => boolean; formatter: (v: number) => string } }
     expect(xs.filter((_, i) => ax.axisLabel.interval(i)).map((x) => ax.axisLabel.formatter(x))).toEqual(['Nov', 'Dec', '2026', 'Feb'])
+    // Phones: every 2nd month (every 3rd over 8 months), the year always; every month keeps its tick.
+    const labels = (x: number[], t: string[]) => {
+      const p = soilProfileChart({ variable: 'soil_vwc', time: t, depthsCm: [5], values: [x.map(() => 20)], period: 'daily' }, testCtx('light', 390, true))
+      const a = p.xAxis as { axisLabel: { interval: (i: number) => boolean; formatter: (v: number) => string }; axisTick: { interval: (i: number) => boolean } }
+      return { names: x.filter((_, i) => a.axisLabel.interval(i)).map((v) => a.axisLabel.formatter(v)), ticks: x.filter((_, i) => a.axisTick.interval(i)).length }
+    }
+    expect(labels(xs, time)).toEqual({ names: ['Nov', '2026'], ticks: 4 })
+    const yearTime = year.map((x) => new Date(x).toISOString().slice(0, 10))
+    expect(labels(year, yearTime)).toEqual({ names: ['2026', 'Apr', 'Jul', 'Oct'], ticks: 12 })
   })
   const base: SoilProfileModel = {
     variable: 'soil_vwc',

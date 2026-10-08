@@ -55,6 +55,33 @@ export function swpBar(s: Pick<SwpSeries, 'kPa' | 'clipped'>): SwpBar {
   return { bar, dry }
 }
 
+/** Share of a depth's readings on the cap at or above which the SWP chart leaves the depth out. */
+export const SWP_CAPPED_SHARE = 0.9
+
+/**
+ * Depths drier than `SWP_CAP_BAR` for (nearly) the whole window: at least `SWP_CAPPED_SHARE` of
+ * their readings sit on the cap, so the chart would draw a flat dashed line at the cap that reads
+ * as a reference line. Returns the series without them and one note per depth dropped
+ * ("40 in: drier than -1,000 bar for the whole period, so it is not drawn.").
+ */
+export function dropCappedDepths(s: SwpSeries): { series: SwpSeries; notes: string[] } {
+  const { bar } = swpBar(s)
+  const notes: string[] = []
+  const keep = s.depthsCm.flatMap((cm, d) => {
+    const valued = bar[d].filter((v) => v != null).length
+    const capped = bar[d].filter((v) => v != null && v >= SWP_CAP_BAR).length
+    if (valued === 0 || capped / valued < SWP_CAPPED_SHARE) return [d]
+    const when = capped === valued ? 'the whole period' : 'nearly the whole period'
+    notes.push(`${depthLabel(cm)}: drier than -${SWP_CAP_BAR.toLocaleString('en-US')} bar for ${when}, so it is not drawn.`)
+    return []
+  })
+  if (keep.length === s.depthsCm.length) return { series: s, notes }
+  return {
+    series: { ...s, depthsCm: keep.map((d) => s.depthsCm[d]), kPa: keep.map((d) => s.kPa[d]), clipped: keep.map((d) => s.clipped[d]) },
+    notes,
+  }
+}
+
 /** "-12.34 bar", or "≤ -1000.00 bar (drier than the lab range)" for a dry-end clip. */
 export function swpText(bar: number, dry: boolean): string {
   return dry ? `≤ -${bar.toFixed(2)} bar (drier than the lab range)` : `-${bar.toFixed(2)} bar`

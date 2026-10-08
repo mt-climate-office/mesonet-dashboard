@@ -156,16 +156,18 @@ describe('cciChart', () => {
     expect(line('adult')).toEqual([77, 33])
     expect(line('newborn')).toEqual([77, 42])
   })
-  it('onset labels sit right of the plot, off the markers; inside on a surface box on phones', () => {
+  it('onset labels sit right of the plot, off the markers; short ones in a narrow gutter on phones', () => {
     type Ml = { markLine: { label: { position: string; backgroundColor?: string }; data: { name: string }[] } }
     const desk = cciChart({ series: cciDaily(winter, 'adult'), period: 'daily' }, testCtx('light', 1200))
     const ml = (series(desk)[0] as unknown as Ml).markLine
     expect(ml.label.position).toBe('end')
     expect(ml.data[0].name).toBe('Heat stress\nfrom 77 °F')
     expect((desk.grid as { right: number }).right).toBe(96)
-    const phone = (series(cciChart({ series: cciDaily(winter, 'adult'), period: 'daily' }, testCtx('light', 390, true)))[0] as unknown as Ml).markLine
-    expect(phone.label).toMatchObject({ position: 'insideEndTop', backgroundColor: testCtx('light').theme.surface })
-    expect(phone.data[1].name).toBe('Cold stress below 33 °F')
+    const phoneChart = cciChart({ series: cciDaily(winter, 'adult'), period: 'daily' }, testCtx('light', 390, true))
+    const phone = (series(phoneChart)[0] as unknown as Ml).markLine
+    expect(phone.label.position).toBe('end')
+    expect(phone.data.map((d) => d.name)).toEqual(['77 °F\nheat', '33 °F\ncold'])
+    expect((phoneChart.grid as { right: number }).right).toBe(48)
   })
   it('table names the side', () => {
     const s = cciDaily(winter, 'adult')

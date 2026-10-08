@@ -5,12 +5,12 @@
  * or percentile markers), hatched sensor-change spans and per-panel
  * "not available" notes, in the house chart style (style.ts: gaps, y-axis
  * rule, slider and its trace). Every key sits in one place: a row at the top
- * left of its panel. Wind direction breaks at the north wrap and has compass
- * ticks (windDirection.ts). Input is core/models/timeseries (display units).
+ * left of its panel. Wind direction is drawn as small dots with compass ticks
+ * (windDirection.ts). Input is core/models/timeseries (display units).
  */
 import type { EChartsOption, GraphicComponentOption, SeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { TimeseriesModel, TimeseriesPanel, TimeseriesSeries } from '../models/timeseries'
-import { panelNoDataText } from '../models/timeseries'
+import { isDepthVariable, panelNoDataText } from '../models/timeseries'
 import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, variableStyle, withAlpha } from '../palette'
 import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
@@ -24,7 +24,7 @@ import { REF_WIDTH, extentOf, isAccumulation, points, runningTotal, showsSlider,
 import { paint } from './theme'
 import { tipText, tooltipBase, type TipParam } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
-import { breakWraps, compassTick } from './windDirection'
+import { DIRECTION_SHAPES, compassTick, directionDots } from './windDirection'
 
 export interface LatestTimeseriesModel {
   ts: TimeseriesModel
@@ -35,22 +35,36 @@ export interface LatestTimeseriesModel {
 
 /**
  * Layout in CSS px. Each panel has a key row (depths, columns) in the gap above it; the first
- * panel's also carries the chart-wide keys, on a row of their own above it when one row is too
- * long. Under the last
- * panel: the x labels and the slider (style `bottomLayout(true)`: 56), or the labels alone on phones.
+ * panel's also carries the chart-wide keys, on a row of their own under the station's keys when
+ * one row is too long. A gap above a panel with keys is `keyPad` taller, so the row clears the
+ * panel above. Under the last panel: the x labels and the slider (style `bottomLayout(true)`: 56),
+ * or the labels alone on phones.
  */
-export const LAYOUT = { panel: 190, single: 340, compactPanel: 160, gap: 34, top: 30, bottom: 56, compactBottom: 30 } as const
+export const LAYOUT = { panel: 190, single: 340, compactPanel: 160, gap: 34, keyPad: 10, top: 30, bottom: 56, compactBottom: 30 } as const
 
 const panelPx = (n: number, compact: boolean) => (n === 1 ? LAYOUT.single : compact ? LAYOUT.compactPanel : LAYOUT.panel)
 
-/** Canvas height for `n` panels; the component sets it as `--chart-height`. */
-export function latestTimeseriesHeight(n: number, compact: boolean): number {
+/** True when a panel draws a key row (soil depths, several sensors, the Daily band); bars never do. */
+export const panelHasKeys = (p: TimeseriesPanel): boolean => !isBar(p) && p.series.some((s) => !!s.depth || p.legend || !!s.band)
+
+/**
+ * Gaps that get `keyPad` (panels after the first with keys): from the panels once loaded, else
+ * predicted from the variable names (soil depths; core/models/timeseries `isDepthVariable`).
+ */
+export function keyedGaps(panels: readonly TimeseriesPanel[] | readonly string[]): number {
+  return panels.slice(1).filter((p) => (typeof p === 'string' ? isDepthVariable(p) : panelHasKeys(p))).length
+}
+
+/** Canvas height for `n` panels, `keyed` of them past the first with keys; the component sets it as `--chart-height`. */
+export function latestTimeseriesHeight(n: number, compact: boolean, keyed = 0): number {
   const k = Math.max(1, n)
-  return LAYOUT.top + k * panelPx(k, compact) + (k - 1) * LAYOUT.gap + (compact ? LAYOUT.compactBottom : LAYOUT.bottom)
+  return LAYOUT.top + k * panelPx(k, compact) + (k - 1) * LAYOUT.gap + keyed * LAYOUT.keyPad + (compact ? LAYOUT.compactBottom : LAYOUT.bottom)
 }
 
 const DASHES = [undefined, 'dashed', 'dotted'] as const
-const isBar = (p: TimeseriesPanel) => isAccumulation(p.variable)
+function isBar(p: TimeseriesPanel): boolean {
+  return isAccumulation(p.variable)
+}
 
 /** Line/bar color of one column (palette roles only). */
 export function seriesColor(ctx: ChartContext, p: TimeseriesPanel, s: TimeseriesSeries, panelIndex: number): string {
@@ -136,7 +150,9 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
   const left = ctx.compact ? 56 : 72
   const right = 16
   const plotW = Math.max(40, ctx.width - left - right)
-  const topOf = (i: number) => LAYOUT.top + i * (h + LAYOUT.gap)
+  // Panel tops: each gap above a panel with keys is LAYOUT.keyPad taller.
+  const tops = panels.reduce<number[]>((t, p, i) => [...t, i === 0 ? LAYOUT.top : t[i - 1] + h + LAYOUT.gap + (panelHasKeys(p) ? LAYOUT.keyPad : 0)], [])
+  const topOf = (i: number) => tops[i] ?? LAYOUT.top
   const ok = m.ts.x.map(Number.isFinite)
   // Daily rows sit at local noon so a bar fills its own day (as the Ag charts, format.ts wallMs).
   const shift = m.period === 'daily' ? 12 * 3_600_000 : 0
@@ -170,15 +186,17 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
         push({ ...barSeries(s.name, pts(s.values), color, i), ...axes, barMinWidth: 2, id: `p${i}:${s.name}` }, { panel: i, label, unit })
         return
       }
-      const dash = p.legend ? DASHES[j % DASHES.length] : variableStyle(p.variable, ctx.theme.name)?.dash
-      const line = p.variable === WIND_DIRECTION ? breakWraps(pts(s.values)) : pts(s.values)
-      push({ ...lineSeries(s.name, line, { color, dash, yAxisIndex: i, id: `p${i}:${s.name}` }), xAxisIndex: i }, {
+      const dots = p.variable === WIND_DIRECTION
+      const dash = dots ? undefined : p.legend ? DASHES[j % DASHES.length] : variableStyle(p.variable, ctx.theme.name)?.dash
+      const shape = DIRECTION_SHAPES[p.legend ? j % DIRECTION_SHAPES.length : 0]
+      const style = { color, dash, yAxisIndex: i, id: `p${i}:${s.name}` }
+      push({ ...(dots ? directionDots(s.name, pts(s.values), { ...style, symbol: shape.symbol }) : lineSeries(s.name, pts(s.values), style)), xAxisIndex: i }, {
         panel: i,
         label,
         unit,
       })
       if (s.depth) keys.push({ label: s.depth, color })
-      else if (p.legend) keys.push({ label: columnKey(p.variable, s.name), color, dash })
+      else if (p.legend) keys.push({ label: columnKey(p.variable, s.name), color, dash, ...(dots ? { glyph: shape.glyph } : {}) })
       // The variable page's Daily band (core/variables/band; drawn by variable.ts) and the mean it surrounds.
       else if (s.band) keys.push({ label: 'Daily mean', color }, { label: DAILY_RANGE.label, color: withAlpha(color, DAILY_RANGE.alpha), block: true })
     })
@@ -250,12 +268,12 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
   if (global.sensor) globalKeys.push({ label: SENSOR_EVENT.label, color: paint(ctx.theme, SENSOR_EVENT.fill), block: true })
   panelKeys.forEach((keys, i) => {
     const first = i === 0 ? [...keys, ...globalKeys] : keys
-    if (i > 0 || rowWidth(ctx, first) <= plotW) {
+    if (i > 0 || !keys.length || rowWidth(ctx, first) <= plotW) {
       if (first.length) graphic.push(...keyRow(ctx, first, left, topOf(i) - 12))
       return
     }
-    // Too long for one row: the chart-wide keys go on a row of their own above.
-    graphic.push(...keyRow(ctx, globalKeys, left, topOf(0) - 23), ...keyRow(ctx, keys, left, topOf(0) - 9))
+    // Too long for one row: the station's own keys first, the chart-wide keys on a row under them.
+    graphic.push(...keyRow(ctx, keys, left, topOf(0) - 23), ...keyRow(ctx, globalKeys, left, topOf(0) - 9))
   })
 
   const xIdx = panels.map((_, i) => i)
@@ -311,7 +329,7 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
   }
 
   // Compact touch pins the tooltip under the tapped panel (the stack is taller than the screen).
-  const underPanel = (y: number) => topOf(Math.min(n - 1, Math.max(0, Math.floor((y - LAYOUT.top) / (h + LAYOUT.gap))))) + h
+  const underPanel = (y: number) => topOf(tops.filter((t, i) => i > 0 && t <= y).length) + h
 
   // The slider (style `showsSlider`) spans the window and traces the first panel (`panelTrace`).
   const trace = panels[0] ? panelTrace(panels[0], pts) : []
