@@ -13,6 +13,7 @@ import type { SelectOption } from '../controls/timeSelect'
 import { component } from '../component'
 import { initCarousel, type Carousel } from '../layout/carousel'
 import { initScrollFade } from '../layout/scrollFade'
+import { countEvent } from '../shell/analytics'
 import { confirmedDay, latestFrames, monthFrames, photoSchedule } from '../station/resources'
 
 type Source = { status: 'loading' | 'success' | 'error'; data: PhotoFrame[] | undefined }
@@ -193,6 +194,7 @@ export function photoCard() {
       this.direction = direction ?? null
       this.open = true
       modal.open()
+      countEvent('photos/open', 'Photos opened')
     },
     /** The dialog's `close` event (Esc, ×, backdrop): it reopens on the tile's frame. */
     closed(): void {
@@ -221,6 +223,7 @@ export function photoCard() {
       a.click()
       a.remove()
       setTimeout(() => URL.revokeObjectURL(href), 5_000)
+      countEvent('download/photo', 'Photo downloaded')
     },
   })
 }

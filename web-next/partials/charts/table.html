@@ -1,7 +1,14 @@
 <!-- A chart shown as a table (tbl=1): the body of x-data="chartTable({ table: () => … })"
      (ui/charts/chartTable.ts), which the including page puts on the wrapper. A real <table> in a
      focusable, labelled scroll region (it scrolls sideways inside itself, never the page),
-     newest rows first, Newer / Older. -->
+     newest rows first, Newer / Older. Above it, Show as chart: the same action as the page's
+     ⋮ → Show as chart (the including page's toggleTable(): variablePage or agTab). -->
+<div class="var-table-bar">
+  <button type="button" class="nav-btn" @click="toggleTable(); focusHeading()" data-testid="table-show-chart">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v16h16M7 15l4-5 3 3 5-6"/></svg>
+    Show as chart
+  </button>
+</div>
 <template x-if="!table">
   <span class="dash-skel dash-skel--table" aria-hidden="true"></span>
 </template>

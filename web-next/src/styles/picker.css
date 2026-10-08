@@ -94,6 +94,18 @@
    WebKit otherwise derives it from that min-height (320 px) and runs past the drawer's padding. */
 .picker-map { width: 100%; min-width: 0; max-width: 100%; aspect-ratio: 4 / 3; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
 
+/* Short drawer with the map open (a landscape phone or tablet, 844 × 390, 1024 × 600): the map fits
+   without scrolling. Recents and Near me step aside, and under 560 px the search too ("Browse on the
+   map" stays as the way back); the 4:3 frame shrinks to the room left, down to 10 rem. */
+@media (max-height: 720px) {
+  .dash-drawer.map-open :is([data-testid="recent-list"], [data-testid="near-results"]) { display: none; }
+  .dash-drawer.map-open :is(.picker-browse, .picker-map-region) { flex: 0 1 auto; min-height: 0; }
+  .dash-drawer.map-open .picker-map { flex: 0 1 auto; min-height: 10rem; }
+}
+@media (max-height: 560px) {
+  .dash-drawer.map-open .picker-search { display: none; }
+}
+
 /* Phone sheet with the map open (stationPicker goes full): a fixed height, the recents and Near me
    step aside, and the map takes the space left under the search and the networks. */
 .dash-sheet.map-open[data-state="full"] { height: calc(100dvh - var(--chrome-h, 52px) - var(--tabbar-h, 0px) - 0.5rem); }

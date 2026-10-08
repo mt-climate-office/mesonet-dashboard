@@ -11,7 +11,7 @@
 import type { EChartsOption, GraphicComponentOption, SeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { TimeseriesModel, TimeseriesPanel, TimeseriesSeries } from '../models/timeseries'
 import { isDepthVariable, panelNoDataText } from '../models/timeseries'
-import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, variableStyle, withAlpha } from '../palette'
+import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, depthStyle, previewColor, variableStyle, withAlpha } from '../palette'
 import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
 import { WIND_DIRECTION } from '../variables/direction'
@@ -23,14 +23,21 @@ import { AUX, barSeries, lineSeries, markerSeries } from './series'
 import { REF_WIDTH, extentOf, isAccumulation, points, runningTotal, showsSlider, stepMs, timeZoom, valued, yAxisRange, zoomTrace, type Point } from './style'
 import { paint } from './theme'
 import { tipText, tooltipBase, type TipParam } from './tooltip'
+import { PARTIAL_DAY_LABEL } from '../latest/view'
+import { keyRow, rowWidth, type KeyEntry } from './keys'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
 import { DIRECTION_SHAPES, compassTick, directionDots } from './windDirection'
 
 export interface LatestTimeseriesModel {
   ts: TimeseriesModel
   period: LatestAgg
-  /** Visible window (the URL dates), wall-clock ms. */
+  /** Visible window (the URL dates, ending at the next hour when that is sooner: core/latest `untilNow`), wall-clock ms. */
   view: [number, number]
+  /**
+   * Daily only: today's row (x, wall-clock ms at 00:00) while the day is in progress (core/latest
+   * `partialDay`), drawn as a hollow ring or a lighter bar and labelled "Today (so far)".
+   */
+  partial?: number | null
 }
 
 /**
@@ -98,50 +105,10 @@ export function fmtValue(v: number): string {
   return String(Number(v.toFixed(v !== 0 && Math.abs(v) < 0.1 ? 3 : 2)))
 }
 
-interface KeyEntry {
-  label: string
-  color: string
-  dash?: 'dashed' | 'dotted'
-  /** Text glyph instead of a line swatch (normals markers). */
-  glyph?: string
-  /** Filled block (sensor change, normals band). */
-  block?: boolean
-}
-
-/** Space between two keys in a row (px). */
-const KEY_GAP = 12
-
-/** One key's width in px: its swatch, 4 px, and its text (estimated from the label's length). */
-function keyWidth(ctx: ChartContext, e: KeyEntry): number {
-  return (e.glyph ? 10 : 14) + 4 + Math.ceil(e.label.length * (ctx.compact ? 5.6 : 6.2))
-}
-
-/** A row's width in px. */
-const rowWidth = (ctx: ChartContext, entries: KeyEntry[]) => entries.reduce((w, e, i) => w + keyWidth(ctx, e) + (i ? KEY_GAP : 0), 0)
-
-/** A row of keys, left-aligned from `left` px with its middle at `y`. */
-function keyRow(ctx: ChartContext, entries: KeyEntry[], left: number, y: number): GraphicComponentOption[] {
-  const font = `${ctx.compact ? 10 : 11}px ${ctx.theme.fontUi}`
-  let x = left
-  const out: GraphicComponentOption[] = []
-  for (const e of entries) {
-    const swatchW = e.glyph ? 10 : 14
-    const swatch = e.glyph
-      ? { type: 'text' as const, x: 0, y: 0, style: { text: e.glyph, fill: e.color, font, verticalAlign: 'middle' as const } }
-      : e.block
-        ? { type: 'rect' as const, shape: { x: 0, y: -5, width: 12, height: 10 }, style: { fill: e.color, stroke: ctx.theme.textMuted, lineWidth: 1 } }
-        : { type: 'line' as const, shape: { x1: 0, y1: 0, x2: 14, y2: 0 }, style: { stroke: e.color, lineWidth: 2, lineDash: e.dash === 'dashed' ? [5, 3] : e.dash === 'dotted' ? [1.5, 2.5] : undefined } }
-    out.push({
-      type: 'group',
-      x,
-      y,
-      silent: true,
-      children: [swatch, { type: 'text', x: swatchW + 4, y: 0, style: { text: e.label, fill: ctx.theme.textMuted, font, verticalAlign: 'middle' } }],
-    } as GraphicComponentOption)
-    x += keyWidth(ctx, e) + KEY_GAP
-  }
-  return out
-}
+/** Today's partial daily bar: its color at this alpha, outlined in the full color. */
+const PARTIAL_BAR_ALPHA = 0.35
+/** Today's partial daily point: a hollow ring this wide (px), over the line or dots. */
+const PARTIAL_RING = 8
 
 export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ctx) => {
   const { panels } = m.ts
@@ -162,6 +129,10 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
   const step = stepMs(m.period, xs)
   const pts = (ys: readonly (number | null)[]) => points(xs, pick(ys), step)
   const normalColor = paint(ctx.theme, NORMALS.line)
+  // Today's daily row while the day is in progress, as drawn (at noon), and its index in `m.ts.x`.
+  const partialX = m.partial != null ? m.partial + shift : null
+  const partialAt = m.partial != null ? m.ts.x.indexOf(m.partial) : -1
+  const hasPartial = (s: TimeseriesSeries) => partialAt >= 0 && s.values[partialAt] != null
 
   const series: SeriesOption[] = []
   /** Per series id: its panel and how the tooltip labels it (absent = skip). */
@@ -171,7 +142,7 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
     if (meta) tipMeta.set(String(s.id), meta)
   }
   const graphic: GraphicComponentOption[] = []
-  const global = { normals: false, markers: false, sensor: false }
+  const global = { normals: false, markers: false, sensor: false, partialLine: false, partialBar: null as string | null }
   const panelKeys: KeyEntry[][] = []
 
   panels.forEach((p, i) => {
@@ -183,11 +154,22 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
       if (isBar(p)) {
         // barMinWidth: hourly bars over two weeks on a phone (or raw ones over a week) are under a
         // pixel apart; 2 px keeps a shower visible, and neighbours merge into one wet spell.
-        push({ ...barSeries(s.name, pts(s.values), color, i), ...axes, barMinWidth: 2, id: `p${i}:${s.name}` }, { panel: i, label, unit })
+        // Today's partial bar is lighter, outlined in the full color.
+        const partialStyle = { color: withAlpha(color, PARTIAL_BAR_ALPHA), borderColor: color, borderWidth: 1 }
+        const data = pts(s.values).map((pt) => (hasPartial(s) && pt[0] === partialX ? { value: pt, itemStyle: partialStyle } : pt))
+        if (hasPartial(s)) global.partialBar = withAlpha(color, PARTIAL_BAR_ALPHA)
+        push({ ...barSeries(s.name, data as Point[], color, i), ...axes, barMinWidth: 2, id: `p${i}:${s.name}` }, { panel: i, label, unit })
         return
       }
       const dots = p.variable === WIND_DIRECTION
-      const dash = dots ? undefined : p.legend ? DASHES[j % DASHES.length] : variableStyle(p.variable, ctx.theme.name)?.dash
+      // A soil depth's dash is its own (neighbouring depths alternate), as its color.
+      const dash = dots
+        ? undefined
+        : s.depth
+          ? depthStyle(Number.parseInt(s.depth, 10), ctx.theme.name).dash
+          : p.legend
+            ? DASHES[j % DASHES.length]
+            : variableStyle(p.variable, ctx.theme.name)?.dash
       const shape = DIRECTION_SHAPES[p.legend ? j % DIRECTION_SHAPES.length : 0]
       const style = { color, dash, yAxisIndex: i, id: `p${i}:${s.name}` }
       push({ ...(dots ? directionDots(s.name, pts(s.values), { ...style, symbol: shape.symbol }) : lineSeries(s.name, pts(s.values), style)), xAxisIndex: i }, {
@@ -195,7 +177,13 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
         label,
         unit,
       })
-      if (s.depth) keys.push({ label: s.depth, color })
+      // Today's partial point: a hollow ring over the line's (or the dots') last point.
+      if (hasPartial(s) && partialX !== null) {
+        global.partialLine = true
+        const ring = markerSeries(`${AUX}partial`, [[partialX, s.values[partialAt]]], { color, size: PARTIAL_RING })
+        push({ ...ring, ...axes, id: `${AUX}p${i}-partial-${j}`, itemStyle: { color: ctx.theme.surface, borderColor: color, borderWidth: 2 }, z: 4, silent: true, large: false }, null)
+      }
+      if (s.depth) keys.push({ label: s.depth, color, dash })
       else if (p.legend) keys.push({ label: columnKey(p.variable, s.name), color, dash, ...(dots ? { glyph: shape.glyph } : {}) })
       // The variable page's Daily band (core/variables/band; drawn by variable.ts) and the mean it surrounds.
       else if (s.band) keys.push({ label: 'Daily mean', color }, { label: DAILY_RANGE.label, color: withAlpha(color, DAILY_RANGE.alpha), block: true })
@@ -266,6 +254,8 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
     globalKeys.push({ label: '75th', color: normalColor, glyph: '▼' }, { label: 'median', color: normalColor, glyph: '●' }, { label: '25th pct. normal', color: normalColor, glyph: '▲' })
   }
   if (global.sensor) globalKeys.push({ label: SENSOR_EVENT.label, color: paint(ctx.theme, SENSOR_EVENT.fill), block: true })
+  if (global.partialLine) globalKeys.push({ label: PARTIAL_DAY_LABEL, color: ctx.theme.textMuted, glyph: '○' })
+  else if (global.partialBar) globalKeys.push({ label: PARTIAL_DAY_LABEL, color: global.partialBar, block: true })
   panelKeys.forEach((keys, i) => {
     const first = i === 0 ? [...keys, ...globalKeys] : keys
     if (i > 0 || !keys.length || rowWidth(ctx, first) <= plotW) {
@@ -325,7 +315,8 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
       const head = n > 1 ? `<div class="tooltip-sub">${escapeHtml(pn.variable)}</div>` : ''
       return `${head}${r.join('')}${notes.join('')}`
     })
-    return `<div class="tooltip-name">${escapeHtml(fmtWall(x, tipPeriod))}</div>${parts.join('')}`
+    const when = x === partialX ? `${PARTIAL_DAY_LABEL}, ${fmtWall(x, tipPeriod)}` : fmtWall(x, tipPeriod)
+    return `<div class="tooltip-name">${escapeHtml(when)}</div>${parts.join('')}`
   }
 
   // Compact touch pins the tooltip under the tapped panel (the stack is taller than the screen).
@@ -386,7 +377,8 @@ export function latestTimeseriesTable(m: LatestTimeseriesModel, limit = TABLE_RO
   m.ts.x.forEach((x, j) => {
     if (!Number.isFinite(x) || cols.every((c) => c.values[j] == null)) return
     if (++total > limit) return
-    rows.push([isoWall(x, period), ...cols.map((c) => (c.values[j] == null ? MISSING : formatValue(c.id, c.values[j], 'table')))])
+    // Today's partial daily row keeps its date, so the column stays a date column.
+    rows.push([x === m.partial ? `${isoWall(x, period)} (so far)` : isoWall(x, period), ...cols.map((c) => (c.values[j] == null ? MISSING : formatValue(c.id, c.values[j], 'table')))])
   })
   if (total > limit) {
     rows.push([`Showing first ${limit} of ${total} rows; use the Data Downloader for the full record.`])

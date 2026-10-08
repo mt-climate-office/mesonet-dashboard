@@ -15,7 +15,7 @@
 import Alpine from 'alpinejs'
 import type * as MapLibre from 'maplibre-gl'
 import type { Station } from '../../core/api'
-import { locatorFrame } from '../../core/about'
+import { locatorFrame, locatorZoom } from '../../core/about'
 import { legendRows, selectionAnnouncement, stationRows, visibleStations } from '../../core/map'
 import { component } from '../component'
 import { announce } from '../shell/live'
@@ -43,8 +43,9 @@ interface Preset {
   /** Centre on the selected station when it changes. */
   fly: boolean
   /**
-   * With `fly`: frame the selected station and its neighbours within 50 km (core/about `locatorFrame`)
-   * inside the space clear of the legend (top-left), the zoom buttons and the attribution (right).
+   * With `fly`: frame the selected station and its nearest neighbour (core/about `locatorFrame`, at a
+   * zoom held to 7–8 by `locatorZoom`) inside the space clear of the legend (top-left), the zoom buttons
+   * and the attribution (right).
    */
   frame?: boolean
   /** Map gestures need two fingers or Ctrl/⌘ (ui/map/map.ts `cooperativeGestures`). */
@@ -110,7 +111,7 @@ function mapView(opts: StationMapOptions, preset: Preset) {
         const legendBottom = legend.element.offsetTop + legend.element.offsetHeight
         if (!preset.fly || !s) return
         const box = preset.frame ? locatorFrame(stations, s.station) : null
-        if (box && host.fitTo(box, { padding: clearOfOverlays(legendBottom), maxZoom: 10, animate: !first })) return
+        if (box && host.fitTo(box, { padding: clearOfOverlays(legendBottom), zoom: locatorZoom, animate: !first })) return
         host.flyTo([s.longitude, s.latitude], { animate: !first, offset: [0, legendBottom / 2] })
       })
     },

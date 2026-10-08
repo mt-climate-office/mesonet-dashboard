@@ -46,7 +46,7 @@ export interface NowTileView {
   unit: string
   /** Wind only: "now · SE" after the unit, beside the 24 h peak gust sub-line; else "". */
   note: string
-  /** One secondary line ("Peak gust 43 mph (24 h)", "SSE · gusts 12", "Dew point 38°", "Last 7 days"), or "". */
+  /** One secondary line ("Peak gust 43 mph (24 h)", "SSE · gusts 12", "Dew point 38°", "Last 7 days · dry now"), or "". */
   sub: string
   /** Rain only: the year to date against normal ("This year: 87% of normal"), on its own line so it is not read as the value's; else "". */
   detail: string
@@ -73,10 +73,21 @@ function reading(id: TileId, c: Conditions, p: PrecipSummary): number | null {
   return m[id]
 }
 
-/** The line under the value: "SSE · gusts 12" (wind without a 24 h peak gust), "Last 7 days" (the rain window), "Dew point 49°", "2 in deep", or "". */
+/**
+ * Rain now, from the latest report: "0.12 in/h now" (its peak rate, HydroMet), "raining now"
+ * (a rate under 0.01 in/h, or no rate column but rain in the interval), "dry now", or "" when
+ * the row has neither column.
+ */
+export function rainNow(c: Pick<Conditions, 'pptIn' | 'pptRateInH'>): string {
+  if (c.pptRateInH === null && c.pptIn === null) return ''
+  if (c.pptRateInH !== null && c.pptRateInH >= 0.005) return `${formatReading('ppt_max_rate', c.pptRateInH)} now`
+  return (c.pptRateInH ?? 0) > 0 || (c.pptIn ?? 0) > 0 ? 'raining now' : 'dry now'
+}
+
+/** The line under the value: "SSE · gusts 12" (wind without a 24 h peak gust), "Last 7 days · dry now" (the rain window and `rainNow`), "Dew point 49°", "2 in deep", or "". */
 function sub(id: TileId, c: Conditions, p: PrecipSummary): string {
   if (id === 'wind') return [c.windDeg === null ? null : compassWord(c.windDeg), c.gustMph === null ? null : `gusts ${formatValue('windgust', c.gustMph)}`].filter(Boolean).join(' · ')
-  if (id === 'precip') return p.last7d !== null ? 'Last 7 days' : 'Last 24 hours'
+  if (id === 'precip') return [p.last7d !== null ? 'Last 7 days' : 'Last 24 hours', rainNow(c)].filter(Boolean).join(' · ')
   if (id === 'rh') {
     const dp = dewPointF(c.airF, c.rh)
     return dp === null ? '' : `Dew point ${formatValue('air_temp', dp)}°`

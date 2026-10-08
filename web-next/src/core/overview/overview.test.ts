@@ -70,6 +70,8 @@ describe('readConditions', () => {
     expect(c.windDeg).toBe(111.6)
     expect(c.pressureMb).toBe(848.93)
     expect(c.snowIn).toBe(0.018)
+    expect(c.pptIn).toBe(0)
+    expect(c.pptRateInH).toBe(0)
     expect(c.vpdMb).toBeNull()
     expect(c.provisional).toBe(true)
     expect(c.soil).toEqual([
@@ -82,6 +84,8 @@ describe('readConditions', () => {
     expect(c.airF).toBe(48.2)
     expect(c.vpdMb).toBe(4.1)
     expect(c.pressureMb).toBeNull()
+    expect(c.pptIn).toBe(0)
+    expect(c.pptRateInH).toBeNull()
     expect(c.provisional).toBe(false)
     expect(c.soil).toEqual([{ depthIn: 4, tempF: null, vwc: 25.7 }])
   })

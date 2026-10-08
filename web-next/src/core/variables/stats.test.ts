@@ -36,6 +36,18 @@ describe('panelStats', () => {
       { label: 'Average', value: '45 °F' },
     ])
   })
+  it('today’s partial daily row: left out of Average and Prevailing, kept in the Total and the band’s Low / High', () => {
+    const band = { lo: [30, 41, null, 1], hi: [55, 62, null, 120] }
+    // x = 20 is today, in progress (its mean 10 °F would be the window's "low").
+    const temp = panelStats(panel([{ name: 'Air Temperature [°F]', values: [40, 50, 10, 99] }]), x, [0, 30], false, undefined, 20)
+    expect(temp[0].items.map((i) => i.value)).toEqual(['40 °F', '50 °F', '45 °F'])
+    const banded = panelStats(panel([{ name: 'Air Temperature [°F]', values: [40, 50, 10, 99], band: { lo: [30, 41, 5, 1], hi: band.hi } }]), x, [0, 30], false, undefined, 20)
+    expect(banded[0].items.map((i) => i.value)).toEqual(['5 °F', '62 °F', '45 °F'])
+    const rain = panelStats(panel([{ name: 'Precipitation [in]', values: [0.1, 0.25, 0.5, 1] }]), x, [0, 30], true, undefined, 20)
+    expect(rain[0].items).toEqual([{ label: 'Total', value: '0.85 in' }])
+    const wind = panelStats(panel([{ name: 'Wind Direction [deg]', values: [90, 90, 270, 0] }], 'Wind Direction'), x, [0, 30], false, 'wind_dir', 20)
+    expect(wind[0].items[0].value).toMatch(/^E /)
+  })
   it('a total for summed variables', () => {
     const [row] = panelStats(panel([{ name: 'Precipitation [in]', values: [0.1, 0.25, 0, 1] }]), x, [0, 25], true)
     expect(row.items).toEqual([{ label: 'Total', value: '0.35 in' }])

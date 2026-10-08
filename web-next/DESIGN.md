@@ -65,7 +65,9 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
   closes the picker.
 - **Browse on the map** on a phone opens the sheet full; recents and Near me step aside and the map takes the
   rest of the sheet (in landscape, the whole sheet); two fingers move it. Closing the sheet resets it to the
-  search. In the drawer the map is a 4:3 frame.
+  search. In the drawer the map is a 4:3 frame; on a short screen (≤ 720 px tall: a landscape phone or
+  tablet) recents and Near me step aside, and under 560 px the search too, so the map shows without
+  scrolling (it shrinks to fit, down to 10 rem); "Browse on the map" brings them back.
 - **History:** a section change or a drill-down (a Charts variable, Ag tool or sub-view) is `pushState`,
   so Back returns; other changes inside a section (dates, toggles, opening the Download sheet) replace the
   entry. Section links are real `<a href>`s: they open in a new tab and work before the JS runs.
@@ -157,7 +159,7 @@ tiles, rows at every width.
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
 | Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table; a "Loading the 48-hour strip…" status while tier 2 loads and a short note in its place when there is nothing to draw. Below it the forecast periods as an icon row (api.weather.gov only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
 | Media | Latest camera frame of the default direction (opens the photo dialog; its caption bottom right, clear of the camera's own label), or the wind rose without a camera (a fixed 20 rem card) | photo schedule, latest listings (1) |
-| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page, whose heading takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
+| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary, then what is falling now from `/latest`, `rainNow`: "0.12 in/h now" (the peak rate), "raining now", "dry now"; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page, whose heading takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
 | Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens About's readings sheet (`target: 'about-readings'`, the row's `data-sheet`; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
@@ -189,7 +191,7 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
 #charts&v=air_temp                   variable page, 14 d, Auto interval (no keys)
 #charts&v=air_temp&from=…&to=…       another window (a range chip or Custom dates…)
 #charts&v=air_temp&agg=daily         Interval: absent = Auto · raw (5-min) · hourly · daily
-#charts&v=air_temp&view=history      All years: one line per year (daily)
+#charts&v=air_temp&view=history      All years: each year in its own color (daily)
 #charts&v=air_temp&tbl=1             the chart as a table (newest first, 50 per page)
 #charts&v=gdd&crop=corn              an Ag tool with its keys (core/ag/view/tab)
 #charts&cmp=1                        Compare: stacked panels + options (legacy #latest lands here)
@@ -214,7 +216,7 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
   - **Range chips** (`RANGE_CHIPS`, `.dash-chip` pills, one scrolling row): 24 h · 7 d · 14 d · 30 d · 1 y over
     `from`/`to` (14 d = no keys; 24 h shows the 24 hours up to the newest reading) and **All years**
     (`view=history`, the progressive years-overlaid chart: one calendar year per request, newest first, at most
-    10). A window from Custom dates… presses no chip. Chips replace the history entry.
+    10; its note says how a year is drawn, `historyNote`: a line, a running total, or dots for wind direction). A window from Custom dates… presses no chip. Chips replace the history entry.
   - **Interval row** (`intervalChips`, quiet chips over `agg`): **Auto** (key absent; hourly up to 30 days,
     daily beyond and for All years; its label says which, "Auto (hourly)") · **5-min** (`raw`; only for windows
     of 7 days or less, disabled with the reason otherwise) · Hourly · Daily. A range chip drops 5-min where the
@@ -222,11 +224,14 @@ Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|d
     daily request with `agg_func=min,max` (`recordRequest({ extremes })`, `core/variables/band.ts`), drawn for a
     one-column variable (the band, in the line's color, is in the tooltip and the table's Low/High columns).
   - **Stats card:** Low · High · Average per sensor over the visible range (Total for precipitation and ETr), in
-    the variable's plain unit (`panelStats(…, id)`); on Daily, Low and High are the band's true extremes. One
+    the variable's plain unit (`panelStats(…, id)`); on Daily, Low and High are the band's true extremes, and
+    today's partial day counts as "Today, so far" above says. One
     line per sensor at every width (equal columns up to 7 rem; a text value such as a growth stage takes two on phones); values in the UI font with `tabular-nums`.
   - **⋯ menu:** Download data (the sheet prefilled: `core/downloader/fromChart`, the variable's element codes,
     the window (All years: install date … today) and the interval, 5-min as hourly) · Show as table / Show as
-    chart (`tbl`, pushed, so Back returns; replaces the chart in place; All years tables its years) · Custom
+    chart (`tbl`, pushed, so Back returns; replaces the chart in place; All years tables its years; the table
+    also has a visible **Show as chart** button above it, right-aligned, which returns focus to the heading;
+    partials/charts/table.html, so Ag tools' tables have it too) · Custom
     dates… (the `dates` modal sheet, `partials/sheets/dates.html`: `dateRange` over `from`/`to`, install date …
     today; a valid range applies at once) · Share this chart (`shareView`) · Previous / Next variable.
   - **Swipe:** on touch, a sideways swipe on the page (`ui/layout/swipe.ts`, `core/swipe.ts`: ≥ 60 px and
@@ -267,8 +272,8 @@ All years, every Ag tool, the Download preview and the Now strip.
 
 - **Lines:** one width, `LINE_WIDTH` 1.5 px (reference lines under data, such as the normals' edges and the
   feels-like index, `REF_WIDTH` 1 px; the current year in All years is the one highlight, `ANNUAL_CURRENT`).
-  Straight segments (no smoothing), no symbols (the Now strip's "now" dot is the one last-point marker),
-  `sampling: 'lttb'` over 2,000 points (LTTB keeps the gap nulls).
+  Straight segments (no smoothing), no symbols (the Now strip's "now" dot is the one last-point marker, and
+  today's partial daily point the one hollow ring, below), `sampling: 'lttb'` over 2,000 points (LTTB keeps the gap nulls).
 - **Gaps are breaks:** a step longer than 1.5 × the expected interval gets a null midway, and lines never
   connect nulls (`points(xs, ys, stepMs(interval))`). The interval is known: hourly 1 h, daily 1 day, monthly
   31 days, day of year 1; 5-min is the station's own logging interval (the median step, 5 min, or 15 at some
@@ -279,16 +284,31 @@ All years, every Ag tool, the Download preview and the Now strip.
 - **The daily band** (the Daily interval's low–high) is one style, `bandSeries`: the line's own color at
   `DAILY_RANGE` alpha, no outline, under its mean line. The gridMET normals band and the GDD projection range
   use the same series with their palette roles.
-- **Soil depths:** shallow → deep, each in `depthColor` (a depth keeps its color whatever else is drawn),
-  one line width.
+- **Today, so far** (Daily interval, `core/latest` `partialDay`): today's row is kept but marked as the day in
+  progress: a hollow ring (surface fill, the line's color) on its point, or a lighter bar outlined in the full
+  color; the key adds "Today (so far)", the tooltip header reads "Today (so far), <date>" and the table's date
+  "2026-10-08 (so far)". The stats card leaves it out of what averages whole days (Average, Prevailing, and Low /
+  High of daily means without a band) and keeps it where it is real (Total so far; the band's Low / High, true readings).
+- **Keys** (`core/charts/keys.ts`): one style for every station chart and the years charts (All years, Ag
+  Annual): a row of swatches (a 14 px line, a block or a glyph such as ● for dots) with `--text-secondary`
+  labels at the top left of the plot, drawn as graphics, wrapping onto more rows when long (the plot moves down).
+  The current year leads the years' key and is its one strong entry: a 3 px swatch and a bold `--text-primary`
+  label. Ag tools keep their bottom legends (`agLegend`).
+- **Soil depths:** shallow → deep, each in `depthStyle` (a depth keeps its color and dash whatever else is
+  drawn): batlow spaced as far apart as 3:1 allows, and every other sensor depth (4, 20, 36 in) dashed, since
+  neighbouring batlow colors alone stay close; one line width. SWP's lower bounds are dotted.
+- **Past years** (All years, Annual; `yearColors`): the current year in the text color at width 3, last year and
+  the year before in their own batlow colors, older years grey and fainter with age, so the newest stand out.
+  Reference ET bars are BrBG teal (`ETR`), apart from the Blues rain bars.
 - **Y axis, by variable family** (`axisFamily`, `yBounds`): *zero* (precipitation, ETr, wind and gusts,
-  solar radiation, snow depth) runs from 0 to the max + 2 %, never under a small floor (0.05 in, 5 mph,
+  solar radiation, snow depth) runs from 0 to the max + 2 %, never under a small floor (0.05 in of rain, 0.01 in of ETr, 5 mph,
   100 W/m², 1 in) so a calm or dry window is not drawn as a full-height wiggle; *fixed* is relative humidity
   0–100 % and wind direction 0–360° (soil saturation 0–100 % too); *free* (temperature, pressure, soil
   moisture and temperature, VPD …) is the data ± 2 %, never pulled to zero, but it stops at 0 for a never-negative variable (soil moisture, EC, pressure, VPD) whose data does. Every axis is rounded out to a
   nice step (1, 2, 2.5 or 5 × 10ⁿ): of the steps giving 4–7 intervals, the one with the least padding (−15–100 °F is −20–120 by 20), over everything the panel draws (band and normals included).
 - **X axis:** spans exactly what is plotted: the requested window on the variable page and Compare (whole
-  local days; 24 h zooms to the last 24 hours), else the first to the last point, plus half a step each side
+  local days; 24 h zooms to the last 24 hours; a window reaching today ends at the next whole hour, never at
+  tonight's midnight, except on Daily, where today's slot holds its partial point: `core/latest` `untilNow`), else the first to the last point, plus half a step each side
   where bars are drawn so the end bars are whole.
 - **Zoom slider:** wide screens only (phones zoom with the range chips and date fields), and only where it adds
   something: a plotted extent over 2 days and at least 30 points (`showsSlider`: not 24 h, not a short daily
@@ -402,7 +422,7 @@ an sr-only heading).
 | Slot | Content | Data |
 |---|---|---|
 | Details | Station (name, id in mono), Network, Location (county · coordinates), Elevation (ft and m), Record (install date – "today", or the newest report's date; "Since …" until `/latest` answers): `core/about/details.ts`. Then a **Station one-pager (PDF)** row when one is listed. This is where the old "network · county · elevation" meta line lives now. | `/stations`, `/latest`, one-pagers.json |
-| Map | `locatorMap` (ui/map/presets) in a flat frame with the card radius: the station map flown to the station, legend collapsed, **cooperative gestures** (one finger and a plain wheel scroll the page; two fingers or Ctrl/⌘ move the map) | `/stations` |
+| Map | `locatorMap` (ui/map/presets) in a flat frame with the card radius: the station map framed on the station and its nearest neighbour (`locatorFrame`) at zoom 7–8 (`locatorZoom`: never closer than the former fixed zoom 8, at most one level further out), legend collapsed, **cooperative gestures** (one finger and a plain wheel scroll the page; two fingers or Ctrl/⌘ move the map) | `/stations` |
 | Rows | **All current readings · N** (N readings now, Observed not counted) and **Sensor changes · latest date**: `<button class="about-row" aria-haspopup="dialog" data-sheet="…">`, each opening a modal sheet | as the sheets |
 | About the data | QC level 2, provisional data (the corrected wording), time and units; links to the API docs and this station's requests (`core/about/apiLinks.ts`) | — |
 
@@ -468,7 +488,9 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
   rest of the page is `inert`, the body scrolls with `overscroll-behavior: contain`. Sits on the tab bar.
 - **Drawer** (`drawer.ts`/`.css`) — inline (in the flex row, margin slide, content reflows, not modal)
   or overlay (fixed, scrim, modal). Closed = `visibility: hidden` + `inert`. Esc, focus in/out as the sheet.
-- **Focus scope** (`focusScope.ts`) — the shared focus-in / inert / Esc / focus-return logic.
+- **Focus scope** (`focusScope.ts`) — the shared focus-in / inert / Esc / focus-return logic. Esc is heard on
+  the document: inside the panel, or anywhere while modal with focus lost to `<body>` (Safari does not focus a
+  clicked button, so a click in the panel can leave focus there).
 - **Section nav** (`sectionNav.ts`/`.css`) — the tab bar (three items on a solid `--bg-surface`, icon + label,
   ≥ 56 px, safe-area padding; the current one has a pill behind its icon and a bold label) and the header's
   segmented control (a `--bg-raised` track; the current one a raised `--bg-surface` pill, bold), `aria-current`.

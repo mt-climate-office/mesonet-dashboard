@@ -1,6 +1,6 @@
 /**
- * The variable page's History view: an annual comparison, one line per year
- * on a day-of-year axis (core/charts/agAnnual). Daily data is requested one
+ * The variable page's History view: an annual comparison, each year in its own
+ * color on a day-of-year axis (lines; wind direction, dots) (core/charts/agAnnual). Daily data is requested one
  * calendar year per request, so each year caches on its own and the chart
  * fills in as years arrive; never a long hourly window. The install year
  * rides with the year after it (`requestGroups`; the Ag Annual tool too).
@@ -11,10 +11,20 @@ import { groupByYear } from '../ag/compute/annual'
 import { HttpError, type ObservationRow } from '../api'
 import { recordRequest, type RecordRequest } from '../latest/requests'
 import type { Variable } from './catalog'
+import { WIND_DIRECTION } from './direction'
 import { axisTitle, cumulativeTitle } from './labels'
 import { primaryColumn } from './summary'
 
 type ElementRow = { element: string; description_short: string }
+
+/**
+ * The note above the All years chart: how each year is drawn (a line, or dots for wind
+ * direction) and, for a total, that it runs within each year.
+ */
+export function historyNote(v: Pick<Variable, 'name' | 'sum'> | undefined): string {
+  if (v?.name === WIND_DIRECTION) return 'Daily values, each year as its own set of dots.'
+  return v?.sum ? 'Daily values, one line per year, as a running total within each year.' : 'Daily values, one line per year.'
+}
 
 /** Years drawn at most (newest first); older years stay in Download. */
 export const HISTORY_MAX_YEARS = 10

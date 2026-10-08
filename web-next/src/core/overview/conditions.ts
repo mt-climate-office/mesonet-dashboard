@@ -3,7 +3,7 @@
  * typed current conditions for the Now overview, plus the NWS feels-like
  * (core/ag/compute/feelsLike: heat index ≥ 80 °F, wind chill ≤ 50 °F and
  * > 3 mph, else the air temperature), which replaces legacy "Real Feel".
- * US units as the API sends them: °F, %, mph, deg, mbar, W/m², in.
+ * US units as the API sends them: °F, %, mph, deg, mbar, W/m², in, in/h.
  */
 import { feelsLikeValue } from '../ag/compute/feelsLike'
 import { cToF, fToC, mphToMs } from '../ag/compute/units'
@@ -30,6 +30,10 @@ export interface Conditions {
   pressureMb: number | null
   solar: number | null
   snowIn: number | null
+  /** Precipitation in the latest report's interval (5 min at HydroMet stations, longer elsewhere), in. */
+  pptIn: number | null
+  /** The interval's peak rain rate (in/h); HydroMet stations only. */
+  pptRateInH: number | null
   vpdMb: number | null
   /** Soil sensors, shallowest first; only depths reporting temperature or VWC. */
   soil: SoilDepth[]
@@ -70,6 +74,8 @@ export function readConditions(row: Record<string, unknown>): Conditions {
     pressureMb: pick(row, (k) => k.startsWith('Atmospheric Pressure')),
     solar: pick(row, (k) => k.startsWith('Solar Radiation')),
     snowIn: pick(row, (k) => k.startsWith('Snow Depth')),
+    pptIn: pick(row, (k) => k === 'Precipitation [in]'),
+    pptRateInH: pick(row, (k) => k.startsWith('Max Precip Rate')),
     vpdMb: pick(row, (k) => k.startsWith('VPD')),
     soil: [...depths.values()].filter((d) => d.tempF !== null || d.vwc !== null).sort((a, b) => a.depthIn - b.depthIn),
   }

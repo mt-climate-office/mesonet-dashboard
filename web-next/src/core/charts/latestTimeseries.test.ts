@@ -115,12 +115,13 @@ describe('latestTimeseriesChart', () => {
     }
   })
 
-  it('soil depths shallow → deep, colored by depth, labelled in the key row', () => {
+  it('soil depths shallow → deep, colored and dashed by depth, labelled in the key row', () => {
     for (const theme of THEMES) {
       const o = build(model(hourRows(6, soil), ['Soil VWC']), theme)
       const s = dataSeries(o)
       expect(s.map((x) => x.name)).toEqual(['Soil VWC @ 2 in [%]', 'Soil VWC @ 4 in [%]', 'Soil VWC @ 20 in [%]'])
       expect(s.map((x) => x.color)).toEqual([2, 4, 20].map((d) => depthColor(d, theme)))
+      expect(s.map((x) => x.lineStyle?.type)).toEqual(['solid', 'dashed', 'dashed'])
       expect(texts(o)).toEqual(expect.arrayContaining(['2 in', '4 in', '20 in']))
     }
   })
@@ -186,6 +187,28 @@ describe('latestTimeseriesChart', () => {
     const rows = [1, 2, 3].map((d) => ({ station: 'x', datetime: `2026-07-0${d}`, 'Air Temperature @ 2 m [°F]': 60 })) as ObservationRow[]
     const line = dataSeries(build(model(rows, ['Air Temperature'], {}, 'daily')))[0]
     expect((line.data as [number, number][])[0][0]).toBe(Date.UTC(2026, 6, 1, 12))
+  })
+
+  it('today’s partial daily row: a hollow ring on a line, a lighter bar, keyed and labelled "Today (so far)"', () => {
+    const rows = [1, 2, 3].map((d) => ({ station: 'x', datetime: `2026-07-0${d}`, 'Air Temperature @ 2 m [°F]': 60 + d, 'Precipitation [in]': 0.1 })) as ObservationRow[]
+    const today = Date.UTC(2026, 6, 3)
+    const daily = (vars: string[]) => ({ ...model(rows, vars, {}, 'daily'), partial: today })
+    const ctx = testCtx('dark', 900)
+    const temp = latestTimeseriesChart(daily(['Air Temperature']), ctx) as unknown as Opt
+    const ring = temp.series.find((s) => String(s.id).includes('partial')) as S & { itemStyle: { color: string; borderColor: string } }
+    expect(ring.data).toEqual([[today + 12 * 3_600_000, 63]])
+    expect(ring.itemStyle.color).toBe(ctx.theme.surface)
+    expect(texts(temp)).toContain('Today (so far)')
+    const html = temp.tooltip.formatter([{ seriesId: 'p0:Air Temperature @ 2 m [°F]', value: [today + 12 * 3_600_000, 63], axisValue: today + 12 * 3_600_000 }])
+    expect(html).toContain('Today (so far)')
+    const rain = latestTimeseriesChart(daily(['Precipitation']), ctx) as unknown as Opt
+    const bars = (rain.series.find((s) => s.type === 'bar')!.data as unknown[]).filter((p) => !Array.isArray(p)) as { value: number[]; itemStyle: { color: string } }[]
+    expect(bars).toHaveLength(1)
+    expect(bars[0].value[0]).toBe(today + 12 * 3_600_000)
+    expect(bars[0].itemStyle.color).toMatch(/^rgba\(.*,0\.35\)$/)
+    // The table keeps the date and says so; without `partial` nothing is marked.
+    expect(latestTimeseriesTable(daily(['Air Temperature'])).rows.map((r) => r[0])).toEqual(['2026-07-01', '2026-07-02', '2026-07-03 (so far)'])
+    expect(texts(build(model(rows, ['Air Temperature'], {}, 'daily')))).not.toContain('Today (so far)')
   })
 
   it('heights follow the panel count', () => {

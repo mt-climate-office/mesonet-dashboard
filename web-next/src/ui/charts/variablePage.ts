@@ -11,7 +11,7 @@
 import Alpine from 'alpinejs'
 import { variableChart, variableTable, variableTableAll, type ChartTable, type LatestTimeseriesModel } from '../../core/charts'
 import { fromChart, prefillsFromChart, variableElements } from '../../core/downloader/fromChart'
-import { POR_FALLBACK_START, dataSettled, installDate, plotStatus, todayIso, viewAnnouncement, type PlotStatus } from '../../core/latest'
+import { POR_FALLBACK_START, dataSettled, installDate, plotStatus, todayIso, untilNow, viewAnnouncement, type PlotStatus } from '../../core/latest'
 import { chartWindow } from '../../core/models/timeseries'
 import {
   RANGE_CHIPS,
@@ -37,11 +37,13 @@ import {
   type Variable,
 } from '../../core/variables'
 import { loadErrorText } from '../../core/loadError'
+import { denverWallMs } from '../../core/today'
 import type { LatestAgg } from '../../core/url-schema'
 import { component } from '../component'
 import { initSwipe } from '../layout/swipe'
 import { announce } from '../shell/live'
 import { stepChart } from '../shell/navigate'
+import { countEvent } from '../shell/analytics'
 import { shareView } from '../shell/share'
 import { openSheet } from '../shell/sheet'
 import { latestObs } from '../station/resources'
@@ -147,7 +149,9 @@ export function variablePage() {
       url().set(rangeChipPatch(id, url().state.agg))
     },
     setInterval(c: IntervalChip): void {
-      if (!c.disabled) url().set(intervalPatch(c.id))
+      if (c.disabled) return
+      url().set(intervalPatch(c.id))
+      countEvent(`interval/${c.id}`, 'Interval chosen')
     },
     toggleTable(): void {
       url().go('charts', { tbl: !this.tableMode(), view: this.all() ? 'history' : 'recent' }, true)
@@ -211,18 +215,18 @@ export function variablePage() {
       // Low/High come from the band on the Daily interval: wait for it (or its failure).
       return dataSettled({ record: this.record(), hasModel: !!this.model() }) && (!ext || ext.status !== 'loading' || !!ext.data)
     },
-    /** Visible range: the window, or the last 24 h for the 24 h preset. */
+    /** Visible range: the window up to now (core/latest untilNow), or the last 24 h for the 24 h preset. */
     viewRange(): [number, number] | null {
       const w = this.window()
       const r = this.range()
       if (!w.valid || r === 'all') return null
       const xs = this.model()?.ts.x.filter(Number.isFinite) ?? []
-      return rangeView(r, w.start, w.end, xs.length ? xs[xs.length - 1] : null)
+      return untilNow(rangeView(r, w.start, w.end, xs.length ? xs[xs.length - 1] : null), this.agg(), denverWallMs())
     },
     stats(): StatRow[] {
       const m = this.model()
       const r = this.viewRange()
-      return m && r && this.variable && this.settled() ? panelStats(m.ts.panels[0], m.ts.x, r, this.variable.sum, this.variable.id) : []
+      return m && r && this.variable && this.settled() ? panelStats(m.ts.panels[0], m.ts.x, r, this.variable.sum, this.variable.id, m.partial) : []
     },
     table(): ChartTable | null {
       const m = this.model()

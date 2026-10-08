@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getStationRecord, type ObservationRow } from '../api'
 import { stationVariables } from './catalog'
-import { HISTORY_MAX_YEARS, historyModel, historyRequest, historyRows, historyYears, requestGroups } from './history'
+import { HISTORY_MAX_YEARS, historyModel, historyNote, historyRequest, historyRows, historyYears, requestGroups } from './history'
 
 const ELEMENTS = [
   ['air_temp_0200', 'Air Temperature @ 2 m'],
@@ -83,5 +83,14 @@ describe('historyRows', () => {
     stub(503, 'busy')
     await expect(historyRows(() => getStationRecord(year(2025)))).rejects.toMatchObject({ status: 503 })
     await expect(historyRows(() => Promise.reject(new TypeError('Failed to fetch')))).rejects.toThrow('Failed to fetch')
+  })
+})
+
+describe('historyNote', () => {
+  it('says how each year is drawn: dots for wind direction, a running total for a sum, else a line', () => {
+    expect(historyNote({ name: 'Wind Direction', sum: false })).toBe('Daily values, each year as its own set of dots.')
+    expect(historyNote({ name: 'Precipitation', sum: true })).toBe('Daily values, one line per year, as a running total within each year.')
+    expect(historyNote({ name: 'Air Temperature', sum: false })).toBe('Daily values, one line per year.')
+    expect(historyNote(undefined)).toBe('Daily values, one line per year.')
   })
 })

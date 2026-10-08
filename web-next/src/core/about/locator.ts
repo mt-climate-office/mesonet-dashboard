@@ -1,6 +1,7 @@
 /**
  * The About locator map's camera frame: a box centred on the selected station that reaches its nearest
- * neighbour, so ui/map can fit it inside the space clear of the map's overlays (legend, controls).
+ * neighbour, so ui/map can fit it inside the space clear of the map's overlays (legend, controls), at a
+ * zoom held within `LOCATOR_ZOOM` (`locatorZoom`).
  */
 import type { Station } from '../api'
 import { haversineKm } from '../stations/nearest'
@@ -36,4 +37,17 @@ export function locatorFrame(
     halfLon = Math.max(halfLon, Math.abs(n.longitude - s.longitude))
   }
   return [[s.longitude - halfLon, s.latitude - halfLat], [s.longitude + halfLon, s.latitude + halfLat]]
+}
+
+/**
+ * Zoom limits for the fit. 8 is the locator's former fixed zoom (a town and its valley): a dense area
+ * (Bozeman) fits closer than that and stays at 8; an isolated station's neighbour may be 100 km off, so
+ * the frame zooms out at most one level (the neighbour may then fall outside it).
+ */
+export const LOCATOR_ZOOM = { min: 7, max: 8 } as const
+
+/** The zoom to show a frame that fits at zoom `fit`: `fit` held within `LOCATOR_ZOOM`; the maximum when not finite. */
+export function locatorZoom(fit: number): number {
+  if (!Number.isFinite(fit)) return LOCATOR_ZOOM.max
+  return Math.min(LOCATOR_ZOOM.max, Math.max(LOCATOR_ZOOM.min, fit))
 }

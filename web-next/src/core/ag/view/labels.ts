@@ -22,7 +22,7 @@ export const SWP_WILTING_POINT = 15
  * driest lab point, `swp()` clips it to the lab range, so its value is only a
  * lower bound on suction; the curve's dry tail also runs to ~10⁴ bar before
  * any clip. Every value drier than this, and every dry-end clip, is a lower
- * bound: it draws at min(value, cap), dashed, and reads "≤ −… bar".
+ * bound: it draws at min(value, cap), dotted, and reads "≤ −… bar".
  */
 export const SWP_CAP_BAR = 1000
 
@@ -60,7 +60,7 @@ export const SWP_CAPPED_SHARE = 0.9
 
 /**
  * Depths drier than `SWP_CAP_BAR` for (nearly) the whole window: at least `SWP_CAPPED_SHARE` of
- * their readings sit on the cap, so the chart would draw a flat dashed line at the cap that reads
+ * their readings sit on the cap, so the chart would draw a flat dotted line at the cap that reads
  * as a reference line. Returns the series without them and one note per depth dropped
  * ("40 in: drier than -1,000 bar for the whole period, so it is not drawn.").
  */

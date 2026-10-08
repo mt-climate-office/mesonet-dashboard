@@ -4,7 +4,7 @@
  *  - readings:      every current reading and the precipitation summary, with plain labels
  *  - sensorHistory: sensor installs and removals by day, from `/config/{station}/`
  *  - apiLinks:      API docs and this station's requests on the public API
- *  - locator:       the locator map's camera frame (the station and its near neighbours)
+ *  - locator:       the locator map's camera frame (the station and its near neighbours) and its zoom limits
  * The raw current-readings rows are core/cards/currentConditions.
  */
 export * from './details'

@@ -386,13 +386,13 @@ mco-web-style#37). The behaviour changes:
   strip, and the GDD lines carry a surface halo, so both stay visible over the stage-colored bars. Bands read "Air temperature (daily low–high)" / "Livestock risk (daily low–high)".
 - **Y axes** allow up to 8 steps (−24…113 °F → −40…120). Reference ET's running total uses the text color and its
   own axis steps.
-- **Soil water potential:** every value drier than 1,000 bar is drawn capped and dashed, flagged clipped or not
+- **Soil water potential:** every value drier than 1,000 bar is drawn capped and dotted, flagged clipped or not
   (dry-end values are lower bounds); the axis stops at 10⁴ bar; band labels sit at their lines with values
   ("Wilting point (-15 bar)") in a right gutter beside the plot; a depth on the cap for ≥ 90% of the window is left
   out with a note; log ticks have thousands separators. The Now soil chip uses the same cap. **Soil profile:** month
   ticks over 60 days (every 2nd/3rd month on phones), a hatched frozen swatch.
-- **Palette:** light soil depths spread out (`DEPTH_GAMMA`), past years start at batlow 0.2, wider dark/high-contrast
-  stress spans (all ≥ 3:1).
+- **Palette:** light soil depths spread out (`DEPTH_GAMMA`; since replaced, "UX audit leftovers"), past years start
+  at batlow 0.2 (since replaced), wider dark/high-contrast stress spans (all ≥ 3:1).
 - **Wind direction:** the stats card shows a prevailing direction from a vector mean ("Prevailing SSE (156°)",
   "Variable" when bearings cancel) instead of low/high/average; it is drawn as small dots (no 360→0 strokes) on the
   variable page, Compare and All years; ticks read N/E/S/W/N; the axis title keeps "(°)".
@@ -403,8 +403,8 @@ mco-web-style#37). The behaviour changes:
   header's stays ⋯); the table view is full width; on phones the station's own keys come before chart-wide ones. All years and Annual fetch the install year
   together with the next (no 404 for an empty first year).
 - **Now:** desktop tiles are one per row with the sparkline on the right; a dry week draws a bare baseline; copy
-  "High 73° · Low 38° (24 h)", "Normal 63° · 35°", "Peak gust 14 mph (24 h)", Rain "Last 7 days" + "This year:
-  81% of normal"; strip ticks every 6 h (12 h on phones, never dropping "Now"); forecast icons outlined.
+  "High 73° · Low 38° (24 h)", "Normal 63° · 35°", "Peak gust 14 mph (24 h)", Rain "Last 7 days · dry now" (or the
+  rain rate now) + "This year: 81% of normal"; strip ticks every 6 h (12 h on phones, never dropping "Now"); forecast icons outlined.
 - **Picker:** the drawer placeholder is "Station, town or ZIP"; search results show the station's network (IDs
   stay searchable).
 - **Controls:** one control height token (`--ctl-h`: 34 px, 40 px on touch, 44 in the photo dialog); every select
@@ -427,6 +427,37 @@ mco-web-style#37). The behaviour changes:
 - **Short wide screens** (landscape phones) keep the header sections, attached popovers and the overlay picker drawer
   instead of the tab bar and bottom sheets; menus scroll when taller than the room below.
 - **Why:** user review of the audit (2026-10-07): fix every finding in this repo.
+
+### UX audit leftovers (2026-10-08)
+- **Legacy / web/:** a window ending today ran its x axis to tonight's midnight (just after midnight, a whole
+  empty day ahead), and the Daily interval drew today's few hours as a full day, in the stats too. All years and
+  Annual used the ECharts legend; a table view could only go back to the chart from the ⋯ menu; All years said
+  "one line per year" for wind direction too.
+- **New:** hourly and 5-min views of a window reaching today end at the next whole hour (`core/latest`
+  `untilNow`); Daily keeps today, marked "Today (so far)" (a hollow ring or a lighter bar, the key, the tooltip,
+  the table), left out of Average / Prevailing (and Low / High without the band) but kept in a Total and the
+  band's Low / High (`partialDay`, `panelStats`). All years and Ag Annual draw the station charts' key row
+  (`core/charts/keys.ts`; the current year first, bold, a heavier swatch), so a year can no longer be hidden by
+  clicking its legend entry. Every table view has a **Show as chart** button above it. The All years note is
+  per variable (`historyNote`: "each year as its own set of dots" for wind direction).
+- **Why:** the audit's leftovers (PR #90 comment).
+
+### UX audit leftovers: close colors, ETr (2026-10-08)
+- **Soil depths:** batlow positions per theme spaced so the closest neighbours sit furthest apart at 3:1
+  (`DEPTH_T`, replacing `DEPTH_GAMMA`), and every other sensor depth (4, 20, 36 in) is **dashed**
+  (`depthStyle`), on the variable page, Compare and the Ag SWP and soil-saturation charts, keys included.
+  Batlow's 3:1 band only allows ~0.11–0.13 OKLab between five neighbours (no approved sequential does better), and
+  light 4/8 in and dark 2/4 and 8/20 in still read alike, so color alone could not do it; with alternating dashes,
+  depths that share a dash are two color steps (≥ 0.2) apart. SWP's lower-bound companion lines are **dotted**
+  (they were dashed, which a dashed depth would now hide); the chart note reads "Dotted lines: …".
+- **Past years** (All years, Ag Annual): last year and the year before get their own batlow colors, picked ≥ 0.14
+  OKLab from each other, the current year and the greys (light ochre / blue-teal, dark orange / salmon, HC ochre /
+  teal); older years are grey, fainter with age (`yearColors`). A batlow ramp over every year left neighbouring
+  years ~0.03 apart, and in dark the newest past year was the near-white of the current year.
+- **Reference ET:** bars are BrBG teal `#35978f` in every theme (was YlOrRd red / orange, which read as an alarm),
+  apart from the Blues rain bars. Its zero-based axis floor is 0.01 in (was 0.05, rain's), so hourly ETr on Compare
+  (peaks near 0.03 in) fills its panel.
+- **Why:** leftovers of the 2026-10-07 audit.
 
 ### About replaces the metadata and current-conditions cards
 - **Legacy / web/:** Station Metadata and Current Conditions were bottom-card tabs beside the locator map.
@@ -541,8 +572,8 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 |---|---|---|
 | LDP-007 | `COLOR_MAPPER`: Air Temp / Well Temp `#c42217`, Solar `#c15366`, RH `#a16a5c`, Snow Depth / Pressure `#A020F0`, Wind Speed `#ec6607`, Gust `#FEC20C`, Well Level `#0000FF`, Well EC `#AEF359`, Max Precip Rate `#000080`, VPD `#32612D`, Wind Dir `#607D3B` | `variableStyle()` by family. Temperature `#CC6677`; moisture (RH, VPD, well level, well EC) `#3388BB`; radiation `#998833`; wind (speed, gust, direction) `#117733`, gust dashed; pressure/snow `#AA4499`; precip rate `#332288`. Light = Tol muted, dark = Tol bright, HC = Tol high-contrast, darkened or lightened where needed for 3:1 |
 | LDP-009 | Precip bars Plotly default `#636efa` | `PRECIP`: Blues bars `#2171b5` + cumulative `#08306b` |
-| LDP-010 | ETr bars `#FF0000` | `ETR`: YlOrRd bars `#e31a1c` + cumulative `#800026` |
-| LDP-011 | Depth colors: Plotly qualitative (legacy); Viridis sample (web/) | `depthColor(in, theme)`: batlow at fixed depth positions (2, 4, 8, 20, 40 in evenly spaced; 28 and 36 between 20 and 40). Light uses 0–0.55, dark 0.42–1, HC 0.35–1 |
+| LDP-010 | ETr bars `#FF0000` | `ETR`: BrBG teal bars `#35978f` (every theme) + cumulative `CUMULATIVE_LINE` (`--text-primary`) |
+| LDP-011 | Depth colors: Plotly qualitative (legacy); Viridis sample (web/) | `depthStyle(in, theme)`: `depthColor`, batlow at fixed per-theme positions for 2, 4, 8, 20, 40 in (28 and 36 between 20 and 40), spaced for the widest closest pair at 3:1 (light 0–0.6, dark 0.41–1, HC 0.28–1); 4, 20 and 36 in dashed |
 | LDP-013 | Depth legend chips filled with the depth color, white text | A key row above the panel: a `depthColor()` line swatch plus "2 in" in kit text (white on the light depth colors failed 4.5:1) |
 | LDP-018 | Normals band `rgba(107,107,107,0.4)` between dashed black q25/q75 lines | `NORMALS`: band `--text-dim` at 18% + dashed `--text-dim` median line |
 | LDP-019 | Precip/ETr normals markers black | `NORMALS.line` (`--text-dim`); marker shapes unchanged |
@@ -554,11 +585,11 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 | AG-CCI-003 | Extreme Danger `#843094`, Extreme `#CC0606`, Severe `#FF4400`, Moderate `#FFAD00`, Mild `#FFFF00`, No Stress `#A5A5A5`; black line (legacy). YlOrRd + `#BBBBBB` (web/) | `cciStyle()`: No Stress grey ●; cold stress 5 samples of RdBu's blue half ◆, heat stress 5 of its red half ▲, using the part that clears 3:1 on each surface (light 0.6–1); line `INDEX_LINE` |
 | AG-GDD-005 | Orange bars + orange line, markers in a 24-color stage palette (legacy); Tol sand/indigo + Tol stage colors (web/) | `GDD`: YlOrRd bars `#fc4e2a` + cumulative `#bd0026`; projection band = cumulative at 15%; with a stage table, bars and stage lines take `gddStageColors` (batlow) by the stage reached, the running total and projection `CUMULATIVE_LINE` (`--text-primary`); stage labels stay `--text-muted` |
 | AG-SOIL-004 | soil_temp `RdBu_r` mid 32; swp `BrBG_r`; others `BrBG` (legacy). Viridis / custom diverging (web/) | `HEATMAP`: soil_temp RdBu reversed, midpoint 32 °F; VWC YlGnBu; EC batlow; SWP BrBG reversed (wet teal → dry brown); percent saturation Blues. Frozen cells `FROZEN` grey (`#d9d9d9` light) + hatch |
-| AG-SWP-001 | Depth colors as LDP-011 | `depthColor()` (cm ÷ 2.54) |
+| AG-SWP-001 | Depth colors as LDP-011 | `depthStyle()` (cm ÷ 2.54); lower bounds dotted |
 | AG-SWP-002 | FC/WP bands `rgba(128,128,128,0.2)` (legacy), `rgba(150,150,150,0.18)` + `#444` dashed lines (web/) | `SWP_BANDS`: `--text-dim` at 12% + dashed `--text-dim` lines, labelled "Field Capacity" / "Wilting Point" |
 | AG-SWP-003 | Annotation boxes: black border 2, white 0.8 background | Boxed labels from kit tokens: `--text-primary` 2 px border and text, `--bg-surface` at 0.8 fill, 14 px (`core/charts/overlays.ts#hBandSeries`); not a palette role |
-| AG-PS-001 | Depth colors as LDP-011 | `depthColor()` |
-| AG-ANN-003 | Past years YlGnBu 0.15–0.75 (legacy), Viridis (web/); current year black, width 3 | `yearColors(n, theme)`: batlow old → new; current year `ANNUAL_CURRENT` = `--text-primary`, width 3 |
+| AG-PS-001 | Depth colors as LDP-011 | `depthStyle()` |
+| AG-ANN-003 | Past years YlGnBu 0.15–0.75 (legacy), Viridis (web/); current year black, width 3 | `yearColors(n, theme)`: last year and the year before in their own batlow colors, older years grey, fainter with age; current year `ANNUAL_CURRENT` = `--text-primary`, width 3 |
 | DL-017 | Preview lines black | `previewColor(i, theme)`: Tol bright cycle (light keeps blue, green, red, purple) |
 | DL-018 | AgriMet `#00cc96`, HydroMet `#7A7AFB`, co-located `#FB7A7A`, selected `#FFD700` | `NETWORK_COLOR`: HydroMet `#4477AA` circle, AgriMet `#CC6622` (light; `#EE7733` dark/HC) hollow circle, Cooperator `#009988` ring; selected `SELECTION_RING` = `--selection-ring`. A co-located site is one marker, inner dot the first network and outer ring the second ("Maps") |
 | (Latest map, `web/src/lib/networks.ts`) | HydroMet `#7A7AFB`, AgriMet `#00cc96`, Cooperator `#FB7A7A`, selected `#FFD700` | Same as DL-018 |
@@ -741,7 +772,7 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 
 #### Soil depth colours (LDP-011)
 - **Legacy:** the Plotly default colours per depth (2 in `#636efa`, 4 in `#EF553B`, …).
-- **New:** batlow depth colours (`core/palette` `depthColor`, "House style › Data colors"; web/ used Viridis). The hover covers every panel, not just soil ("Latest Data › Hover").
+- **New:** batlow depth colours, every other depth dashed (`core/palette` `depthStyle`, "House style › Data colors"; web/ used Viridis). The hover covers every panel, not just soil ("Latest Data › Hover").
 
 #### "Not available" panels (LDP-014, LDP-015)
 - **Same as legacy:** a selected variable with no data in the window keeps an empty panel with "**{Variable} data are not available for this time period.**" (`add_nodata_lab`).
@@ -925,10 +956,10 @@ to the lab range, and the FX tail there gives very large suctions (acebozem
 391 and 778). mesonet-soils does not cap these; the dashboard decides how to
 show them (`ag/view/labels` `swpBar`):
 
-- Ag SWP chart: those points are **lower bounds**, drawn on a dashed, faded
+- Ag SWP chart: those points are **lower bounds**, drawn on a dotted
   line in the depth's color, capped at `SWP_CAP_BAR` (1,000 bar). The tooltip
   and table read "≤ -1000.00 bar (drier than the lab range)", and a note
-  explains the dashes. The Soil Profile heatmap uses the same cap.
+  explains the dots. The Soil Profile heatmap uses the same cap.
 - Now soil chip: the capped value, which is past the wilting point ("Dry").
   Frozen hours are skipped, as on the Ag tab.
 - Data Downloader: the uncapped value, plus a
@@ -1289,8 +1320,8 @@ and the preview on small screens. It wraps to two lines at 375px.
 
 ### Page counts (GoatCounter)
 - **Legacy / web/:** no analytics in web/.
-- **New:** one GoatCounter beacon (`navigator.sendBeacon` to `mt-climate-office.goatcounter.com/count`) per section view, carrying only the path plus section (`/mesonet-dashboard/next/#charts`) and the section label. The station, query string and referrer are never sent, and there are no cookies or third-party script. It is skipped under Do Not Track or Global Privacy Control and on local hosts (dev, verify). The CSP `connect-src` allows that one host. The code is `core/analytics.ts` and `ui/shell/analytics.ts`.
-- **Why:** user decision (2026-10-02): privacy-friendly counts instead of no analytics or GA4.
+- **New:** one GoatCounter beacon (`navigator.sendBeacon` to `mt-climate-office.goatcounter.com/count`) per view: the path plus the section, and on Charts the open chart or Ag tool (`/mesonet-dashboard/next/#charts/air_temp`, `#charts/compare`). Every count carries the screen size (`width,height,dpr`); the landing view also carries the referring site's host only (`google.com`, never the full URL; none for the app itself) and any `utm_*` tags as the campaign. Events (`e=true`) count actions: `station/<id>` per station viewed, `share`, `download/csv/<period>`, `download/photo`, `photos/open` and `interval/<id>`. Other query keys (the station, dates) and the full referrer are never sent, and there are no cookies or third-party script. It is skipped under Do Not Track or Global Privacy Control and on local hosts (dev, verify). The CSP `connect-src` allows that one host. The code is `core/analytics.ts` and `ui/shell/analytics.ts`.
+- **Why:** user decision (2026-10-02): privacy-friendly counts instead of no analytics or GA4. Screen size, referrer host, campaign, per-chart paths and events added 2026-10-08 (user) to fill GoatCounter's "unknown" panels without cookies.
 
 ### Legacy `?state=` links and `#satellite`
 - **web/:** a Mantine notification, open until closed, with a link to the previous dashboard.
@@ -1468,7 +1499,7 @@ Plotted values were checked against web/ point for point: acebozem hourly, mdama
 
 ### Panel styling (LDP-007, LDP-009, LDP-010, LDP-011, LDP-013, LDP-016)
 - **New:**
-  - Colors come from `core/palette` ("House style"): variable families, Blues precipitation bars, YlOrRd ETr bars and batlow soil depths.
+  - Colors come from `core/palette` ("House style"): variable families, Blues precipitation bars, BrBG teal ETr bars and batlow soil depths (every other one dashed).
   - The soil depth labels (LDP-013) are a key row above the panel (a line swatch plus "2 in") instead of white text on colored chips. White text failed contrast on the light depth colors.
   - A panel with several columns of one variable (for example Air Temperature at 2 m and 8 ft) gives each column its own dash and a key row. Legacy colored them identically.
   - Bars are at least 1 px wide, so raw 5–15 minute precipitation stays visible over a week.
