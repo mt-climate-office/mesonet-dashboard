@@ -16,11 +16,14 @@ import { stationElements } from './resources'
 const url = () => Alpine.store('url')
 const stations = () => Alpine.store('station')
 
+/** When the options sit beside the plot (styles/charts.css `.cmp-layout`); below it they would push the plot down. */
+const SIDE_BY_SIDE = '(min-width: 1060px) and (min-height: 561px)'
+
 export function compareControls() {
   return component({
-    /** The `<details>` starts open beside the plot, closed above it on phones. */
+    /** The `<details>` starts open beside the plot, closed above it (phones and tablets). */
     init() {
-      ;(this.$el as HTMLDetailsElement).open = !MCO.viewport.isCompact()
+      ;(this.$el as HTMLDetailsElement).open = window.matchMedia(SIDE_BY_SIDE).matches
     },
 
     /** The interval chips, named as on the variable page. */

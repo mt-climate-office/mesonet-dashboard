@@ -1,7 +1,8 @@
 <!-- Compare (cmp=1; legacy #latest links land here; "Compare variables" in the list): back · title,
      the stacked station plot, one panel per variable (x-data="compare", ui/charts/compare.ts) and its
-     options (x-data="compareControls", ui/charts/compareControls.ts) in a disclosure: beside the plot
-     on desktop, above it on phones. Flat surfaces, as the chart pages. -->
+     options (x-data="compareControls", ui/charts/compareControls.ts) in a disclosure (its chevron turns
+     when open): beside the plot and open on desktop, above it and closed otherwise. Flat surfaces, as
+     the chart pages. -->
 <div class="cmp" data-testid="compare">
   <div class="chart-head">
     <a class="dash-icon-btn var-back" :href="listHref()" @click="toList($event)" aria-label="All variables" data-testid="cmp-back">
@@ -17,7 +18,10 @@
   <template x-if="compareReady()">
   <div class="cmp-layout">
     <details class="dash-card cmp-options" x-data="compareControls" data-testid="compare-options">
-      <summary class="cmp-summary">Options</summary>
+      <summary class="cmp-summary">
+        Options
+        <svg class="cmp-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </summary>
       <div class="cmp-group">
         <fieldset class="ctl-fieldset" data-testid="date-range"
                   x-data="dateRange({ value: () => dates(), onChange: (r) => setDates(r), min: () => installed(), max: () => dateMax(), label: 'Date range' })">

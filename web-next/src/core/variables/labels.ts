@@ -82,13 +82,13 @@ export function formatReading(id: string, value: number | null | undefined, wher
 
 /**
  * A chart's y-axis title: the plain name and unit ("Air temperature (°F)",
- * "Soil moisture (%)", "Wind gusts (mph)"); the name alone for degrees or no
- * unit ("Wind direction"). An id the map does not know keeps `fallback`.
+ * "Soil moisture (%)", "Wind direction (°)"); the name alone without a unit.
+ * An id the map does not know keeps `fallback`.
  */
 export function axisTitle(id: string, fallback: string): string {
   const l = LABELS[id]
   if (!l) return fallback
-  return l.unit && l.unit !== '°' ? `${l.name} (${l.unit})` : l.name
+  return l.unit ? `${l.name} (${l.unit})` : l.name
 }
 
 /** The running-total form of an axis title: "Rain (in)" → "Cumulative rain (in)". */

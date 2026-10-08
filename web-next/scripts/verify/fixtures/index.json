@@ -395,6 +395,21 @@
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-observations_daily-77f93fc704.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2020-10-30&end_time=2022-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-d0a0e41c2d.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2020-01-01&end_time=2022-01-01&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-0273bda49e.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2020-10-30&end_time=2022-01-01&level=2&rm_na=false&na_info=false&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_daily-15964ab684.csv"
   }
  }
 }

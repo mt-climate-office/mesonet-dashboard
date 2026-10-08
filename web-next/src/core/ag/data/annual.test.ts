@@ -40,4 +40,18 @@ describe('getAnnualDaily', () => {
     expect(r.years[1].date).toHaveLength(365)
     expect(r.years[1].value.every((v) => v === null)).toBe(true)
   })
+  it('together: one request for every year, split by year', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', async (u: string) => {
+      calls.push(u)
+      return new Response('station,datetime,Average Air Temperature @ 2 m [°F],provisional\nx,2021-09-03 00:00:00-06:00,50,False\n', { status: 200 })
+    })
+    const r = await getAnnualDaily('acebozem', 'air_temp', [2021, 2020], { today: '2026-10-01', together: true })
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toContain('start_time=2020-01-01')
+    expect(calls[0]).toContain('end_time=2022-01-01')
+    expect(r.years.map((y) => y.year)).toEqual([2020, 2021])
+    expect(r.years[0].value.every((v) => v === null)).toBe(true)
+    expect(r.years[1].value.filter((v) => v !== null)).toHaveLength(1)
+  })
 })

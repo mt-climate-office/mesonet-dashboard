@@ -1,5 +1,6 @@
 <!-- Charts list (x-data="variableList", ui/charts/variableList.ts): a search field that filters the
-     rows, then the station's variables by group (Weather · Rain and evaporation · Soil · …), each row
+     rows (the field itself is the pill, so the kit's focus ring follows its shape; one app clear
+     button replaces each engine's own), then the station's variables by group (Weather · Rain and evaporation · Soil · …), each row
      a link to its page: plain name over a sub-label, the current value, a 48 h sparkline. Then Ag
      tools (#charts-ag-tools; a bare legacy #ag link scrolls here) and More (Compare variables).
      A row's name carries [data-vt-source]: it morphs into the page heading. -->
@@ -32,11 +33,13 @@
 
   <template x-if="state === 'ready'">
     <div class="charts-ready">
-      <label class="charts-search" data-testid="charts-search">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-        <span class="sr-only">Find a chart</span>
-        <input type="search" placeholder="Find a chart" autocomplete="off" spellcheck="false" x-model="query" aria-controls="charts-groups">
-      </label>
+      <div class="charts-search" data-testid="charts-search">
+        <svg class="charts-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input type="search" placeholder="Find a chart" aria-label="Find a chart" autocomplete="off" spellcheck="false" x-model="query" x-ref="search" aria-controls="charts-groups">
+        <button type="button" class="dash-icon-btn charts-search-clear" x-show="query" @click="clearQuery()" aria-label="Clear search" data-testid="charts-search-clear">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>
+        </button>
+      </div>
       <p class="sr-only" role="status" x-text="noMatch() ? 'No charts match.' : ''"></p>
 
       <div class="charts-groups" id="charts-groups">

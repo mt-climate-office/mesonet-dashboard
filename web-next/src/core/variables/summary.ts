@@ -3,18 +3,22 @@
  * sparkline. Values come from the `/latest` row (the Now section's request);
  * sparklines and the 24 h totals of summed variables from one 72 h hourly
  * request for every listed variable (`listRequest`). Columns are LAB_SWAP-renamed
- * (core/csv); a multi-depth variable shows its shallowest column.
+ * (core/csv); a multi-depth variable shows its shallowest column. A sparkline is
+ * scaled as its chart's y axis where that axis is fixed or starts at zero
+ * (core/charts/style `yBounds`), so a calm, dry or snowless day stays a low line.
  */
 import { denverDay } from '../today'
 import type { ObservationRow } from '../api'
 import { sparkline, type Sparkline } from '../charts/sparkline'
+import { axisFamily, yBounds } from '../charts/style'
 import { recordRequest, type RecordRequest } from '../latest/requests'
 import { depthLabelFromColumn, latestVariableForColumn } from '../params'
 import { parseWallClock } from '../sensorEvents'
 import type { Variable } from './catalog'
 import { last24h } from './range'
+import { WIND_DIRECTION, WRAP_DEGREES } from './direction'
 import { LABELS, compassWord, formatReading, plainName } from './labels'
-import { fmtStat } from './stats'
+import { fmtStat, prevailing } from './stats'
 
 type ElementRow = { element: string; description_short: string }
 
@@ -46,9 +50,6 @@ export function listRequest(station: string, vars: readonly Variable[], elements
   return recordRequest({ station, window, agg: 'hourly', vars: vars.map((v) => v.name), stationElements: elements })
 }
 
-/** Rain and its rate draw no sparkline when every value is zero (as Now's Rain tile after a dry week). */
-const HIDE_WHEN_DRY = new Set(['ppt', 'ppt_max_rate'])
-
 const unitOf = (col: string) => /\[([^\]]+)\]\s*$/.exec(col)?.[1] ?? ''
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 
@@ -66,8 +67,7 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
     const col = primaryColumn(hourlyCols, v.name)
     const series = col ? { t: last48.map((x) => x.t), v: last48.map((x) => num(x.r[col])) } : null
     const vals = series ? series.v.filter((x): x is number => x !== null) : []
-    const dry = HIDE_WHEN_DRY.has(v.id) && !vals.some((x) => x > 0)
-    const spark = series && !dry ? sparkline(series, { kind: v.sum ? 'bars' : 'line' }) : null
+    const spark = series ? sparkline(series, sparkOptions(v, vals)) : null
     const unit = col ? unitOf(col) : ''
     const fmt = (x: number, u: string) => `${fmtStat(x)}${u ? ` ${u}` : ''}`
     // The plain unit and precision where labels.ts knows the variable (totals at table precision, as the stats).
@@ -75,7 +75,9 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
       v.id === 'wind_dir' ? compassWord(x) : v.id in LABELS ? formatReading(v.id, x, where) : fmt(x, u)
     const sparkLabel = !spark
       ? ''
-      : v.sum
+      : v.name === WIND_DIRECTION
+        ? `Last 48 hours: ${prevailing(vals) === 'Variable' ? 'no prevailing direction' : `mostly ${prevailing(vals)}`}.`
+        : v.sum
         ? `Last 48 hours: ${show(vals.reduce((a, b) => a + b, 0), unit, 'table')} in total.`
         : `Last 48 hours: from ${show(vals.reduce((a, b) => Math.min(a, b)), unit)} to ${show(vals.reduce((a, b) => Math.max(a, b)), unit)}.`
 
@@ -93,6 +95,18 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
     const depth = valueCol ? depthLabelFromColumn(valueCol) : null
     return { id: v.id, name: plainName(v.id, v.name), value: value === null ? '—' : show(value, unitOf(valueCol ?? '')), note: depth ? `at ${depth}` : '', spark, sparkLabel }
   })
+}
+
+/** A row's sparkline: bars for a total; the chart's fixed or zero-based y range; wind direction breaks at north. */
+function sparkOptions(v: Variable, vals: readonly number[]): Parameters<typeof sparkline>[1] {
+  const lo = vals.length ? vals.reduce((a, b) => Math.min(a, b)) : null
+  const hi = vals.length ? vals.reduce((a, b) => Math.max(a, b)) : null
+  const b = axisFamily(v.name) === 'free' ? null : yBounds(v.name, lo, hi)
+  return {
+    kind: v.sum ? 'bars' : 'line',
+    range: b ? [b.min, b.max] : undefined,
+    breakAbove: v.name === WIND_DIRECTION ? WRAP_DEGREES : undefined,
+  }
 }
 
 /**

@@ -121,7 +121,8 @@ describe('cache keys', () => {
     const q = { station: 'acebozem', start: '2026-09-01', end: '2026-10-01' }
     expect(agKeys.dailyMet(q)).toBe('ag:dailyMet:acebozem:2026-09-01:2026-10-01:L2')
     expect(agKeys.soil(q, 'hourly')).toBe('ag:soil:hourly:acebozem:2026-09-01:2026-10-01:L2')
-    expect(agKeys.annual('acebozem', 'ppt', 2024)).toBe('ag:annual:acebozem:ppt:L2:2024')
+    expect(agKeys.annual('acebozem', 'ppt', [2024])).toBe('ag:annual:acebozem:ppt:L2:2024')
+    expect(agKeys.annual('acebozem', 'ppt', [2021, 2020])).toBe('ag:annual:acebozem:ppt:L2:2021+2020')
     expect(agKeys.forecast(45.66, -111.05)).toBe('ag:forecast:45.6600:-111.0500')
   })
   it('a degraded forecast is retried after 5 minutes', () => {

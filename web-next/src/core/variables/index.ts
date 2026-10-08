@@ -9,7 +9,7 @@
  *  - interval: intervalChips, effectiveAgg, intervalPatch, spanDays (Auto · 5-min · Hourly · Daily)
  *  - stats:   panelStats (low/high/average or total)
  *  - band:    hasBand, withBand, extremeColumn (the Daily interval's low–high band)
- *  - history: historyYears, historyRequest, historyModel (one year per request)
+ *  - history: historyYears, requestGroups, historyRequest, historyRows, historyModel (one year per request)
  *  - table:   tablePage (the Table view's paging)
  */
 export * from './catalog'

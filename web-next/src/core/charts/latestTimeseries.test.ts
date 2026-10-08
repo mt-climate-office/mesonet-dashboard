@@ -34,6 +34,46 @@ const soil = (i: number) => ({ 'Soil VWC @ 2 in [%]': 10 + i, 'Soil VWC @ 20 in 
 const met = (i: number) => ({ 'Air Temperature @ 2 m [°F]': 60 + i, 'Precipitation [in]': i === 2 ? 0.1 : 0, 'Reference ET (a=0.23) [in]': 0.01 })
 
 describe('latestTimeseriesChart', () => {
+  type G = { x: number; y: number; children?: { style?: { text?: string } }[] }
+  const keys = (o: Opt) => (o.graphic as G[]).filter((g) => g.children).map((g) => ({ text: g.children![1].style?.text, x: g.x, y: g.y }))
+
+  it('keys: one left-aligned row above each panel, from the plot edge; chart-wide keys join the first row', () => {
+    const m = model(hourRows(6, soil), ['Soil VWC'])
+    m.ts.panels[0].sensorSpans = [{ x0: view[0], x1: view[0] + 3_600_000, text: 'x' }]
+    const o = build(m)
+    const row = keys(o)
+    expect(row.map((k) => k.text)).toEqual(['2 in', '4 in', '20 in', 'Sensor change'])
+    expect(new Set(row.map((k) => k.y)).size).toBe(1)
+    expect(row[0].x).toBe(72)
+    expect(row.every((k, i) => i === 0 || k.x > row[i - 1].x)).toBe(true)
+  })
+  it('keys: chart-wide keys take a row of their own above when the first row is too long', () => {
+    const m = model(hourRows(6, soil), ['Soil VWC'])
+    m.ts.panels[0].sensorSpans = [{ x0: view[0], x1: view[0] + 3_600_000, text: 'x' }]
+    const row = keys(latestTimeseriesChart(m, testCtx('dark', 200, true)) as unknown as Opt)
+    expect(row.find((k) => k.text === 'Sensor change')!.y).toBeLessThan(row.find((k) => k.text === '2 in')!.y)
+  })
+  it('a daily band (the variable page) keys the mean and the band', () => {
+    const m = model(hourRows(3, (i) => ({ 'Air Temperature @ 2 m [°F]': 60 + i })), ['Air Temperature'])
+    const s = m.ts.panels[0].series[0]
+    m.ts.panels[0].series[0] = { ...s, band: { lo: s.values.map((v) => (v ?? 0) - 5), hi: s.values.map((v) => (v ?? 0) + 5) } }
+    expect(keys(build(m)).map((k) => k.text)).toEqual(['Daily mean', 'Daily low–high'])
+    expect(keys(build(model(hourRows(3, (i) => ({ 'Air Temperature @ 2 m [°F]': 60 + i })), ['Air Temperature'])))).toEqual([])
+  })
+  it('wind direction: compass ticks, a line broken at the north wrap', () => {
+    const o = latestTimeseriesChart(model(hourRows(4, (i) => ({ 'Wind Direction @ 10 m [deg]': [350, 10, 20, 30][i] })), ['Wind Direction']), testCtx()) as unknown as {
+      yAxis: { axisLabel: { formatter: (v: number) => string } }[]
+      series: S[]
+    }
+    expect([0, 90, 360].map(o.yAxis[0].axisLabel.formatter)).toEqual(['N', 'E', 'N'])
+    const line = o.series.find((x) => x.type === 'line' && !String(x.id).startsWith('aux:'))!
+    expect((line.data as [number, number | null][]).filter((p) => p[1] === null)).toHaveLength(1)
+  })
+  it('rain bars are at least 2 px wide', () => {
+    const bar = build(model(hourRows(6, met), ['Precipitation'])).series.find((x) => x.type === 'bar') as { barMinWidth?: number }
+    expect(bar.barMinWidth).toBe(2)
+  })
+
   it('one grid per panel, stacked, sharing one zoom over every x axis', () => {
     const o = build(model(hourRows(6, met), ['Precipitation', 'Reference ET', 'Air Temperature']))
     expect(o.useUTC).toBe(true)
