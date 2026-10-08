@@ -3,7 +3,7 @@ import type { ObservationRow } from '../api'
 import { buildTimeseriesModel } from '../models/timeseries'
 import type { StationNormals } from '../normals'
 import { ETR, NORMALS, PRECIP, THEMES, depthColor, variableStyle } from '../palette'
-import { TABLE_ROW_LIMIT, latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, fmtValue, type LatestTimeseriesModel } from './latestTimeseries'
+import { LAYOUT, TABLE_ROW_LIMIT, keyedGaps, latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, fmtValue, type LatestTimeseriesModel } from './latestTimeseries'
 import { LTTB_THRESHOLD } from './series'
 import { testCtx } from './testing'
 import { paint } from './theme'
@@ -47,11 +47,20 @@ describe('latestTimeseriesChart', () => {
     expect(row[0].x).toBe(72)
     expect(row.every((k, i) => i === 0 || k.x > row[i - 1].x)).toBe(true)
   })
-  it('keys: chart-wide keys take a row of their own above when the first row is too long', () => {
+  it("keys: when the first row is too long, the station's keys stay first and the chart-wide keys take a row under them", () => {
     const m = model(hourRows(6, soil), ['Soil VWC'])
     m.ts.panels[0].sensorSpans = [{ x0: view[0], x1: view[0] + 3_600_000, text: 'x' }]
     const row = keys(latestTimeseriesChart(m, testCtx('dark', 200, true)) as unknown as Opt)
-    expect(row.find((k) => k.text === 'Sensor change')!.y).toBeLessThan(row.find((k) => k.text === '2 in')!.y)
+    expect(row.find((k) => k.text === 'Sensor change')!.y).toBeGreaterThan(row.find((k) => k.text === '2 in')!.y)
+  })
+  it('a panel with keys gets a taller gap above it, so its key row clears the panel above', () => {
+    const m = model(hourRows(6, (i) => ({ 'Air Temperature @ 2 m [°F]': 60 + i, ...soil(i) })), ['Air Temperature', 'Soil VWC'])
+    const o = build(m) as unknown as { grid: { top: number; height: number }[] }
+    expect(o.grid[1].top - (o.grid[0].top + o.grid[0].height)).toBe(LAYOUT.gap + LAYOUT.keyPad)
+    expect(keyedGaps(m.ts.panels)).toBe(1)
+    expect(keyedGaps(['Air Temperature', 'Soil VWC', 'Relative Humidity'])).toBe(1)
+    const flip = build(model(hourRows(6, (i) => ({ 'Air Temperature @ 2 m [°F]': 60 + i, ...soil(i) })), ['Soil VWC', 'Air Temperature'])) as unknown as { grid: { top: number; height: number }[] }
+    expect(flip.grid[1].top - (flip.grid[0].top + flip.grid[0].height)).toBe(LAYOUT.gap)
   })
   it('a daily band (the variable page) keys the mean and the band', () => {
     const m = model(hourRows(3, (i) => ({ 'Air Temperature @ 2 m [°F]': 60 + i })), ['Air Temperature'])
@@ -60,14 +69,16 @@ describe('latestTimeseriesChart', () => {
     expect(keys(build(m)).map((k) => k.text)).toEqual(['Daily mean', 'Daily low–high'])
     expect(keys(build(model(hourRows(3, (i) => ({ 'Air Temperature @ 2 m [°F]': 60 + i })), ['Air Temperature'])))).toEqual([])
   })
-  it('wind direction: compass ticks, a line broken at the north wrap', () => {
+  it('wind direction: compass ticks, small dots instead of a line', () => {
     const o = latestTimeseriesChart(model(hourRows(4, (i) => ({ 'Wind Direction @ 10 m [deg]': [350, 10, 20, 30][i] })), ['Wind Direction']), testCtx()) as unknown as {
       yAxis: { axisLabel: { formatter: (v: number) => string } }[]
       series: S[]
     }
     expect([0, 90, 360].map(o.yAxis[0].axisLabel.formatter)).toEqual(['N', 'E', 'N'])
-    const line = o.series.find((x) => x.type === 'line' && !String(x.id).startsWith('aux:'))!
-    expect((line.data as [number, number | null][]).filter((p) => p[1] === null)).toHaveLength(1)
+    expect(o.series.some((x) => x.type === 'line' && !String(x.id).startsWith('aux:'))).toBe(false)
+    const dots = o.series.find((x) => x.type === 'scatter')!
+    expect(dots).toMatchObject({ id: 'p0:Wind Direction @ 10 m [deg]', symbolSize: 3 })
+    expect((dots.data as [number, number][]).map((p) => p[1])).toEqual([350, 10, 20, 30])
   })
   it('rain bars are at least 2 px wide', () => {
     const bar = build(model(hourRows(6, met), ['Precipitation'])).series.find((x) => x.type === 'bar') as { barMinWidth?: number }
@@ -180,6 +191,7 @@ describe('latestTimeseriesChart', () => {
   it('heights follow the panel count', () => {
     expect(latestTimeseriesHeight(3, false)).toBeGreaterThan(latestTimeseriesHeight(2, false))
     expect(latestTimeseriesHeight(3, true)).toBeLessThan(latestTimeseriesHeight(3, false))
+    expect(latestTimeseriesHeight(3, false, 2) - latestTimeseriesHeight(3, false)).toBe(2 * LAYOUT.keyPad)
   })
 })
 

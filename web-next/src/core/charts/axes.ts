@@ -125,7 +125,8 @@ export function logAxis(name: string, min: number, max: number, opts: { inverse?
     min,
     max,
     inverse: opts.inverse ?? false,
-    axisLabel: { formatter: (v: number) => `${opts.prefix ?? ''}${v}` },
+    // Thousands separators: "-10,000", not "-10000".
+    axisLabel: { formatter: (v: number) => `${opts.prefix ?? ''}${v.toLocaleString('en-US', { maximumFractionDigits: 6 })}` },
   }
 }
 

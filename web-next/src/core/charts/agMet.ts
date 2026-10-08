@@ -107,8 +107,8 @@ interface MarkerOpts<K extends string> {
   legendItem?: (group: string, classes: MarkerClass[]) => AgLegendItem
   yName: string
   legendTitle?: string
-  /** Dashed lines where something starts (CCI stress onsets), labelled at their right end. */
-  refLines?: { y: number; label: string }[]
+  /** Dashed lines where something starts (CCI stress onsets), labelled right of the plot; `short` on compact screens. */
+  refLines?: { y: number; label: string; short: string }[]
   /** Tooltip row for a series name, its y (°F) and the point's note (a marker's class text). */
   tip: TipRow
 }
@@ -237,35 +237,35 @@ function rangeChart<K extends string>(
   }
 }
 
-/** Reference-line label font (px); the labels are two short lines ("Heat stress" / "from 77 °F"). */
-const REF_FONT = 11
+/**
+ * Reference-line label font (px); the labels are two short lines ("Heat stress" / "from 77 °F"),
+ * or on compact screens "77 °F" / "heat".
+ */
+const refFont = (ctx: ChartContext) => (ctx.compact ? 10 : 11)
 
 /**
  * Grid right margin (px) for the reference-line labels beside the plot, so they never sit on the
- * markers; on compact screens they go inside the plot on a surface-colored box instead (undefined).
+ * markers (the newest ones are at the right end); a narrow one for the short labels on compact screens.
  */
-const refGutter = (ctx: ChartContext): number | undefined => (ctx.compact ? undefined : 96)
+const refGutter = (ctx: ChartContext): number => (ctx.compact ? 48 : 96)
 
-/** Dashed reference lines, labelled right of the plot (or inside its right end on compact screens). */
-function refMarkLine(ctx: ChartContext, lines: { y: number; label: string }[]) {
-  const inside = refGutter(ctx) === undefined
+/** Dashed reference lines, labelled right of the plot (short labels on compact screens). */
+function refMarkLine(ctx: ChartContext, lines: { y: number; label: string; short: string }[]) {
+  const font = refFont(ctx)
   return {
     silent: true,
     symbol: 'none',
     lineStyle: { color: paint(ctx.theme, INDEX_LINE), type: 'dashed' as const, width: 1 },
     label: {
-      position: inside ? ('insideEndTop' as const) : ('end' as const),
-      distance: inside ? 2 : 6,
+      position: 'end' as const,
+      distance: ctx.compact ? 4 : 6,
       formatter: '{b}',
       color: ctx.theme.textMuted,
       fontFamily: ctx.theme.fontUi,
-      fontSize: REF_FONT,
-      lineHeight: REF_FONT + 2,
-      ...(inside ? { backgroundColor: ctx.theme.surface, padding: [1, 3] } : {}),
+      fontSize: font,
+      lineHeight: font + 2,
     },
-    // Above the markers, so an inside label stays readable.
-    z: 5,
-    data: lines.map((l) => ({ yAxis: l.y, name: inside ? l.label.replace('\n', ' ') : l.label })),
+    data: lines.map((l) => ({ yAxis: l.y, name: ctx.compact ? l.short : l.label })),
   }
 }
 
@@ -451,8 +451,8 @@ export const cciChart: ChartBuilder<CciModel> = (m, ctx) => {
     return { group: CCI_GROUPS[side], id: cciId(c, side), text: `${sentenceCase(c)} (${side})`, ...cciStyle(c, side, ctx.theme.name) }
   }
   const refLines = [
-    { y: CCI_HEAT_ONSET_F, label: `Heat stress\nfrom ${CCI_HEAT_ONSET_F} °F` },
-    { y: cciColdOnsetF(lt), label: `Cold stress\nbelow ${cciColdOnsetF(lt)} °F` },
+    { y: CCI_HEAT_ONSET_F, label: `Heat stress\nfrom ${CCI_HEAT_ONSET_F} °F`, short: `${CCI_HEAT_ONSET_F} °F\nheat` },
+    { y: cciColdOnsetF(lt), label: `Cold stress\nbelow ${cciColdOnsetF(lt)} °F`, short: `${cciColdOnsetF(lt)} °F\ncold` },
   ]
   if ('range' in m) {
     // Daily: the band is the day's range; only a stressed end gets a marker.

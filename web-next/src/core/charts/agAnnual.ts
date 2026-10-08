@@ -3,7 +3,9 @@
  * Prior years from batlow (old → new), the current year in --text-primary
  * at width 3. Axes as every time chart's (mono labels, 10 px on phones, the
  * x axis at the bottom); the years' key at the top left, where the station
- * charts put theirs. Traces arrive in display units (core/ag/view/derive#annualTraces).
+ * charts put theirs: a plain legend that wraps (never paged), the current year
+ * first. Wind direction draws dots (windDirection.ts). Traces arrive in display
+ * units (core/ag/view/derive#annualTraces).
  */
 import type { EChartsOption, YAXisComponentOption } from 'echarts'
 import type { AnnualTrace } from '../ag/compute'
@@ -13,10 +15,11 @@ import { WIND_DIRECTION } from '../variables/direction'
 import { MISSING, fmtNum } from './format'
 import { lineSeries } from './series'
 import { LINE_WIDTH, bottomLayout, extentOf, points, stepMs, yAxisRange } from './style'
+import { LEGEND_ROW, legendRows } from './agLegend'
 import { paint } from './theme'
-import { axisTooltip, legend, tipText } from './tooltip'
+import { axisTooltip, tipText } from './tooltip'
 import type { ChartBuilder, ChartTable } from './types'
-import { breakWraps, compassTick } from './windDirection'
+import { DIRECTION_DOT, compassTick, directionDots } from './windDirection'
 
 export interface AnnualModel {
   traces: AnnualTrace[]
@@ -27,8 +30,11 @@ export interface AnnualModel {
   variable?: string
 }
 
-/** The scroll legend's row above the plot (px). */
+/** The legend's first row above the plot (px); each wrapped row adds agLegend LEGEND_ROW. */
 const LEGEND_ROW_PX = 26
+/** Legend marks (px) and the gap between items. */
+const ITEM_W = 16
+const ITEM_GAP = 10
 
 const sortedTraces = (m: AnnualModel) => [...m.traces].sort((a, b) => a.year - b.year)
 
@@ -59,11 +65,20 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
     const color = isCurrent ? current : colors[prior.indexOf(t)]
     // One line width; the current year is the design's one highlight (ANNUAL_CURRENT).
     const pts = points(t.doy, t.values, stepMs('doy'), t.date.map(monthDay))
-    const s = lineSeries(String(t.year), m.variable === WIND_DIRECTION ? breakWraps(pts) : pts, { color, width: isCurrent ? ANNUAL_CURRENT.width : LINE_WIDTH })
+    const s =
+      m.variable === WIND_DIRECTION
+        ? directionDots(String(t.year), pts, { color, size: isCurrent ? DIRECTION_DOT + 2 : DIRECTION_DOT })
+        : lineSeries(String(t.year), pts, { color, width: isCurrent ? ANNUAL_CURRENT.width : LINE_WIDTH })
     return isCurrent ? { ...s, z: 3 } : s
   })
-  const g = grid(ctx, { top: LEGEND_ROW_PX + 6, bottom: bottomLayout(false).grid })
   const fontSize = ctx.compact ? 10 : 11
+  // The current year leads the key, so it is on the first row however many years wrap below it.
+  const keyed = [...traces.filter((t) => t.year === m.currentYear), ...prior].map((t) => String(t.year))
+  const base = grid(ctx, { bottom: bottomLayout(false).grid })
+  // ECharts pads the legend 5 px a side.
+  const avail = ctx.width - (base.left as number) - (base.right as number) - 10
+  const rows = legendRows(keyed.map((y) => ITEM_W + 5 + Math.ceil(y.length * fontSize * 0.6)), avail, ITEM_GAP)
+  const g = { ...base, top: LEGEND_ROW_PX + 6 + Math.max(0, rows - 1) * LEGEND_ROW }
   // Phones label every other month.
   const labelled = MONTH_MID_DOY.filter((_, i) => !ctx.compact || i % 2 === 0)
   return {
@@ -92,7 +107,7 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
       axisLabel: { fontSize, ...(m.variable === WIND_DIRECTION ? { formatter: compassTick } : {}) },
     } as YAXisComponentOption,
     // The years' key: a row at the top left, as the station charts' keys.
-    legend: { ...legend(ctx).legend, bottom: undefined, top: 0, left: g.left as number, right: g.right as number, textStyle: { fontSize } },
+    legend: { type: 'plain', top: 0, left: g.left as number, right: g.right as number, data: keyed, itemWidth: ITEM_W, itemHeight: 10, itemGap: ITEM_GAP, textStyle: { fontSize } },
     tooltip: axisTooltip(ctx, doyHeader, (name, y, date) => tipText(date ? `${name} (${date})` : name, y.toFixed(2))),
     series,
   } satisfies EChartsOption

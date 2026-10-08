@@ -134,8 +134,6 @@
 .var-table-grid th, .var-table-grid td { padding: 0.35rem 0.6rem; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
 /* The time column, left. :first-of-type, not :first-child: each row's first child is its <template x-for>. */
 .var-table-grid th:first-of-type, .var-table-grid td:first-of-type { text-align: left; }
-/* Desktop: the columns sit together at the left, not spread across a wide card. */
-@media (min-width: 1060px) and (min-height: 561px) { .var-table-grid { width: auto; min-width: 50%; } }
 .var-table-grid thead th { font-weight: 600; color: var(--text-secondary); }
 .var-table-grid td { font-family: var(--font-mono); color: var(--text-primary); }
 .var-pager { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); padding: calc(2 * var(--gap-tight)); font-size: var(--fs-sm); color: var(--text-secondary); }

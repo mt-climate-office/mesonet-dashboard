@@ -8,7 +8,8 @@ import { drawn, shownY, testCtx } from './testing'
 import { paint } from './theme'
 
 type S = { type: string; name: string; id?: string; data: unknown[][]; yAxisIndex?: number; color: string; markLine?: { data: { yAxis: number; name: string }[] }; lineStyle?: { type: string } }
-const series = (o: { series?: unknown }) => drawn<S>(o)
+/** The drawn series without the lines' surface halos (tested on their own). */
+const series = (o: { series?: unknown }) => drawn<S>(o).filter((x) => !String(x.id).startsWith('aux:halo'))
 const met = dailyMet('acebozem', 'season2025')
 
 function withProjection() {
@@ -73,7 +74,7 @@ describe('gddChart stage labels', () => {
 })
 
 describe('gddChart', () => {
-  it('bars + cumulative on y2 with stage lines from the table, colored by growth stage', () => {
+  it('bars + cumulative on y2 with stage lines from the table; bars colored by growth stage, stage lines neutral', () => {
     const s = gdd(met, { crop: 'wheat', stages: stageTable('wheat') })
     const stages = stageTable('wheat').stages
     for (const t of THEMES) {
@@ -87,14 +88,41 @@ describe('gddChart', () => {
       const now = stageIndex([...stages].sort((a, b) => a.gdd - b.gdd), s.cumulative.filter((v) => v != null).at(-1)!)!
       expect([bars.color, cum.color]).toEqual([colors[now], paint(ctx.theme, CUMULATIVE_LINE)])
       expect(bars.name).toBe('Daily GDDs (32–70 °F)')
-      const ml = cum.markLine as unknown as { data: { yAxis: number; lineStyle: { color: string } }[] }
+      // One neutral stroke above the bars: a stage-colored line vanished across bars of its stage.
+      const ml = cum.markLine as unknown as { z: number; lineStyle: { color: string }; data: { yAxis: number; lineStyle?: unknown }[] }
       expect(ml.data.length).toBeGreaterThan(0)
-      for (const d of ml.data) expect(colors).toContain(d.lineStyle.color)
+      expect(ml.lineStyle.color).toBe(paint(ctx.theme, GDD_STAGE_LINE))
+      expect(ml.z).toBeGreaterThan(2)
+      for (const d of ml.data) expect(d.lineStyle).toBeUndefined()
       const vm = o.visualMap as { type: string; dimension: number; seriesIndex: number[]; pieces: { color: string }[] }
       expect(vm).toMatchObject({ type: 'piecewise', dimension: 0 })
       const all = o.series as S[]
       expect(vm.seriesIndex.map((i) => all[i].name)).toEqual([bars.name])
       expect(new Set(vm.pieces.map((p) => p.color)).size).toBeGreaterThan(3)
+    }
+  })
+
+  it('the cumulative and projected lines each ride on a wider surface-colored halo drawn just before them', () => {
+    const { s, p } = withProjection()
+    for (const t of THEMES) {
+      const ctx = testCtx(t)
+      const all = drawn<S & { lineStyle: { color: string; width: number }; silent?: boolean }>(gddChart({ series: s, cutoffsF: [32, Infinity], stageMode: 'table', stages: stageTable('hemp').stages, projection: p }, ctx))
+      for (const name of [GDD_NAMES.cumulative, GDD_NAMES.forecast, GDD_NAMES.normals]) {
+        const i = all.findIndex((x) => x.name === name)
+        const h = all[i - 1]
+        expect(h.id).toMatch(/^aux:halo/)
+        expect(h.lineStyle.color).toBe(ctx.theme.surface)
+        expect(h.lineStyle.width).toBeGreaterThan(all[i].lineStyle.width ?? 1.5)
+        expect(h.data).toEqual(all[i].data)
+        expect(h.silent).toBe(true)
+      }
+      // The cumulative halo also carries a solid surface underlay under each stage line.
+      const under = all.find((x) => x.id === `aux:halo-${GDD_NAMES.cumulative}`)!.markLine as unknown as { lineStyle: { color: string; type: string }; data: { yAxis: number }[] }
+      const stage = all.find((x) => x.name === GDD_NAMES.cumulative)!.markLine!
+      expect(under.lineStyle).toMatchObject({ color: ctx.theme.surface, type: 'solid' })
+      expect(under.data.map((d) => d.yAxis)).toEqual(stage.data.map((d) => d.yAxis))
+      // The band has no line, so no halo.
+      expect(all.filter((x) => String(x.id).startsWith('aux:halo'))).toHaveLength(3)
     }
   })
 
