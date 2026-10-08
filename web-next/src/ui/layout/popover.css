@@ -1,7 +1,9 @@
 /* Popover (ui/layout/popover.ts; kit candidate .mco-popover, KIT-NOTES.md).
      .dash-popover         the positioned wrapper around the button and the panel
      .dash-popover-panel   role="dialog": a surface under the button, left-aligned, at --z-flyout;
-                           on phones docked at the bottom, full width, like a small sheet
+                           on narrow phones docked at the bottom, full width, like a small sheet
+                           (a short, wide landscape phone keeps it anchored: a sheet there would
+                           cover the whole chart it changes)
    Kit tokens only. */
 
 .dash-popover { position: relative; display: inline-flex; }
@@ -18,7 +20,7 @@
 }
 .dash-popover-panel[hidden] { display: none; }
 
-@media (max-width: 640px), (max-height: 560px) {
+@media (max-width: 640px) {
   .dash-popover { position: static; }
   .dash-popover-panel {
     /* Above the tab bar, or above an on-screen keyboard when one is open (ui/layout/keyboard.ts). */

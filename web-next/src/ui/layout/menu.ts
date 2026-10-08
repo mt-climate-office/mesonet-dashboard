@@ -8,7 +8,9 @@
  * focus closes. Choosing an item closes the menu, focus back on the button,
  * BEFORE the item's own click handler runs, so a dialog it opens returns
  * focus to the button. Mark an item `data-keep-open` to keep the menu open
- * (the Theme cycle). CSS: ui/layout/menu.css. Alpine wrapper: ui/shell/menu.ts.
+ * (the Theme cycle). The open panel is never taller than the room below it, above the tab bar
+ * (it scrolls instead), so no item hides under the bar on a short screen.
+ * CSS: ui/layout/menu.css. Alpine wrapper: ui/shell/menu.ts.
  */
 
 export interface MenuOptions {
@@ -43,6 +45,14 @@ export function initMenu(o: MenuOptions): Menu {
   const paint = () => {
     panel.hidden = !open
     button.setAttribute('aria-expanded', String(open))
+    if (open) fitToViewport()
+  }
+  // Room from the panel's top to the tab bar (or the screen's bottom), 8 px clear; at least 3 items.
+  const fitToViewport = () => {
+    panel.style.maxHeight = ''
+    const tabbar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar-h')) || 0
+    const room = window.innerHeight - tabbar - panel.getBoundingClientRect().top - 8
+    panel.style.maxHeight = `${Math.max(144, Math.floor(room))}px`
   }
   const move = (to: number) => {
     const list = items()

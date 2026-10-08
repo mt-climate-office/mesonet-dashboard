@@ -1,7 +1,8 @@
 /* Menu button + menu (ui/layout/menu.ts; kit candidate .mco-menu, KIT-NOTES.md).
      .dash-menu         the positioned wrapper around the button and the panel
      .dash-icon-btn     a round, borderless 40 px icon button (the ⋯ trigger)
-     .dash-menu-panel   role="menu": a surface below the button, right-aligned, at --z-flyout
+     .dash-menu-panel   role="menu": a surface below the button, right-aligned, at --z-flyout;
+                        it scrolls when taller than the room below (menu.ts sets max-height)
      .dash-menu-item    role="menuitem" (button or link); .dash-menu-state is a muted value on
                         its right ("Dark"); .dash-menu-sep a divider
    Kit tokens only; the kit focus ring marks the active item. */
@@ -22,6 +23,7 @@
   position: absolute; top: calc(100% + 0.4rem); right: 0; z-index: var(--z-flyout);
   min-width: 14rem; max-width: calc(100vw - 1.5rem);
   display: flex; flex-direction: column;
+  overflow-y: auto; overscroll-behavior: contain;
   padding: 0.375rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -36,7 +38,7 @@
   border: 0; border-radius: var(--radius-md);
   background: none; color: var(--text-primary);
   font: inherit; font-size: var(--fs-sm); text-align: left; text-decoration: none;
-  cursor: pointer; white-space: nowrap;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
 }
 .dash-menu-item:hover { background: var(--accent-hover); }
 .dash-menu-item svg { flex-shrink: 0; stroke: var(--text-muted); }
