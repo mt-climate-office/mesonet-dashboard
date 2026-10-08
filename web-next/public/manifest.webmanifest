@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "Montana Mesonet Dashboard",
+  "short_name": "MT Mesonet",
+  "description": "Current conditions, trends and forecasts from Montana Mesonet weather and soil stations.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#1a6faf",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

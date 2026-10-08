@@ -85,6 +85,10 @@ a.nav-btn { text-decoration: none; }
 .notice-banner > svg { flex-shrink: 0; margin-top: 0.2rem; stroke: var(--accent-line); }
 .notice-banner p { flex: 1; min-width: 0; }
 .notice-banner a { color: var(--accent-line); text-decoration: underline; text-underline-offset: 2px; }
+/* Install tip (ui/shell/install.ts): the same banner, centred on its Install and × buttons. */
+.install-tip { align-items: center; }
+.install-tip > svg { margin-top: 0; }
+.install-tip p { margin: 0; }
 
 /* Outage dialog (partials/outage.html): kit info modal + a tone line. */
 .outage-tone {

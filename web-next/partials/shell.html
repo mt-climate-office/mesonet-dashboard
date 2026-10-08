@@ -45,6 +45,10 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
           Share this view
         </button>
+        <button type="button" class="dash-menu-item" role="menuitem" x-show="canInstall" @click="install()" data-testid="menu-install">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3M10 18h4" stroke-linecap="round"/></svg>
+          Install app
+        </button>
         <!-- Stays open: each press cycles dark → light → high contrast; the state shows on the right. -->
         <button type="button" class="dash-menu-item" role="menuitem" data-keep-open @click="cycleTheme()"
                 :aria-label="'Theme: ' + $store.theme.name + '. ' + $store.theme.label" data-testid="menu-theme">
@@ -72,6 +76,16 @@
   <!-- Cloaked until Alpine runs, so it first paints beside the picker in its final place (no load shift). -->
   <div class="dash-content" x-data x-cloak>
     <main id="main" tabindex="-1">
+      <!-- Install the app: a one-time tip on phones once a station is open (ui/shell/install.ts). -->
+      <div class="notice-stack" x-data="installTip" x-show="shown" x-cloak role="region" aria-label="Install the app" data-testid="install-tip">
+      <div class="notice-banner install-tip">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M12 7v7M9 11l3 3 3-3M10 18h4" stroke-linecap="round"/></svg>
+        <p><span x-text="text"></span></p>
+        <button type="button" class="nav-btn install-tip-btn" x-show="canPrompt" @click="install()" data-testid="install-tip-install">Install</button>
+        <button type="button" class="modal-close" aria-label="Dismiss" @click="dismiss()" data-testid="install-tip-dismiss">×</button>
+      </div>
+      </div>
+
       <!-- Dismissible notices (legacy ?state= links, #satellite): ui/shell/globalNotices.ts. -->
       <section class="notice-stack" aria-label="Notices" x-data="globalNotices" x-show="notices.length" x-cloak data-testid="notices">
         <template x-for="n in notices" :key="n.id">
