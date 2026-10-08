@@ -967,7 +967,7 @@ These are one consumer each (dash) today. Propose them as **kit-ready but held u
   - photos' `updateSocialMeta` (kit-deferred today) now has a second consumer (snow), so it qualifies.
 - **Head checklist** in `snippets/head.html`:
   - canonical on the production host
-  - `og:image` = the kit `og-card.png` with width, height and alt
+  - `og:image` = the app's own 1200 × 630 card with width, height and alt. The kit `og-card.png` is a Station Status screenshot, so it misleads as a default: the dashboard ships its own (`web-next/public/og-card.png`). The kit could instead ship a neutral brand card as the fallback.
   - `twitter:card` = `summary_large_image`
   - `theme-color` as two `media`-qualified metas whose values the snippet documents as `--bg-deep`
 - **Favicons:** the kit should pick **one** way. Recommendation: hot-link from the pinned tag, which is already CSP-allowed for the CSS, versions with the kit, and stops copies drifting. The navbar logo stays vendored as today. That needs a decision.
