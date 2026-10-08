@@ -1,10 +1,11 @@
 <!-- Photo dialog (inside an x-data="photoCard" element; ui/now/photoCard.ts `enlarge()`), opened from the
      Now photo tile: direction, day and time pickers over the data2 archive, the webp_large frame and
-     "Download original". Its content mounts only while open; closing drops the picks (`closed()`). -->
+     "Download original". Its content mounts only while open; closing drops the picks (`closed()`).
+     Focus opens on the title (`autofocus`, no ring), not the ×. -->
 <dialog class="mco-modal lc-photo-modal" x-ref="dialog" aria-labelledby="photo-modal-title" data-testid="photo-modal" @close="closed()">
   <div class="info-modal-box lc-photo-modal-box">
     <div class="info-modal-header">
-      <h2 class="info-modal-title" id="photo-modal-title" x-text="title() || 'Station photos'"></h2>
+      <h2 class="info-modal-title" id="photo-modal-title" tabindex="-1" autofocus x-text="title() || 'Station photos'"></h2>
       <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
     </div>
     <template x-if="open">

@@ -4,12 +4,14 @@
  * links that live in core/config.ts, this app's own example address and the
  * network's station count (from the station catalog). Backdrop click, `[data-close-modal]`,
  * Esc and focus return (to whatever was focused when it opened: the ⋯
- * button, since the menu closes first) come from `MCO.initInfoModal`.
+ * button, since the menu closes first) come from `MCO.initInfoModal`. Focus opens on the title
+ * (`autofocus`, no ring); the box fades at the bottom while it has more to scroll.
  */
 import { API_DOCS_URL, FEEDBACK_URL } from '../../core/config'
 import { LEGACY_SATELLITE_URL } from '../../core/notices'
 import Alpine from 'alpinejs'
 import { component } from '../component'
+import { initScrollFade } from '../layout/scrollFade'
 
 const EVENT = 'dash:help'
 
@@ -29,10 +31,15 @@ export function helpDialog() {
 
     init() {
       // No first-visit auto-open: web/ never auto-opened Help (DIVERGENCES "Global UI").
-      const modal = MCO.initInfoModal({ dialog: this.$el as HTMLDialogElement, trigger: null })
+      const dialog = this.$el as HTMLDialogElement
+      const modal = MCO.initInfoModal({ dialog, trigger: null })
       const onOpen = () => modal.open()
       window.addEventListener(EVENT, onOpen)
-      off = () => window.removeEventListener(EVENT, onOpen)
+      const unfade = initScrollFade(dialog.querySelector<HTMLElement>('.info-modal-box')!)
+      off = () => {
+        window.removeEventListener(EVENT, onOpen)
+        unfade()
+      }
     },
     destroy() {
       off?.()

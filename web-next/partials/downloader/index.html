@@ -6,7 +6,8 @@
 <div class="dl-tab" x-data="downloader" data-testid="downloader">
   <form class="dl-form" aria-label="Download request" novalidate @submit.prevent="act()">
     <div class="dl-rows">
-      <!-- Variables: chips for the selection; "+ Add variables" opens the grouped checklist. -->
+      <!-- Variables: chips for the selection over the grouped checklist. The row is the disclosure, so
+           the multiselect is inline (no second button). -->
       <div class="dl-row" data-testid="dl-row-vars">
         <h3 class="dl-row-head">
           <button type="button" class="dl-row-btn" id="dl-row-vars-btn" aria-controls="dl-row-vars-panel"
@@ -21,7 +22,7 @@
         </h3>
         <div class="dl-row-panel" id="dl-row-vars-panel" role="region" aria-labelledby="dl-row-vars-btn" x-show="isOpen('vars')">
           <div class="ctl-multiselect" x-show="stationId" x-data="multiselect({ groups: () => groups,
-               value: () => pruned.selected, onChange: (v) => setElements(v), label: 'Variables' })"
+               value: () => pruned.selected, onChange: (v) => setElements(v), label: 'Variables', inline: true })"
                data-testid="dl-elements">
             <ul x-ref="chips" class="ctl-chip-list" :aria-label="'Selected ' + label" x-show="labelsReady && selected().length > 0">
               <template x-for="v in selected()" :key="v">
@@ -30,12 +31,8 @@
                     <span aria-hidden="true">&times;</span></button></li>
               </template>
             </ul>
-            <button type="button" class="nav-btn ctl-disclosure" :id="ids.button"
-                    :aria-expanded="open" :aria-controls="ids.panel" @click="toggle()">
-              <span>+ Add variables</span><span class="ctl-count" x-text="countText()"></span>
-            </button>
             <div class="ctl-multiselect-panel" role="group" :id="ids.panel"
-                 :aria-labelledby="ids.button" x-show="open" @keydown.escape.prevent.stop="escape()">
+                 :aria-label="label" @keydown.escape="escape($event)">
               <label class="ctl-label" :for="ids.filter">Filter</label>
               <input type="search" class="ctl-input" :id="ids.filter" x-model="query" autocomplete="off">
               <p class="ctl-note" x-show="!labelsReady && elements?.status !== 'error'">Loading variables…</p>
@@ -127,7 +124,6 @@
             </div>
           </fieldset>
           <p class="ctl-note" x-show="url.period === 'monthly'" x-text="monthlyNote"></p>
-          <p class="ctl-note" x-show="meansNote" x-text="meansNote" data-testid="dl-means-note"></p>
         </div>
       </div>
 
@@ -167,6 +163,7 @@
     </div>
 
     <p class="dl-msg" x-show="droppedNotice" x-text="droppedNotice" data-testid="dl-dropped-swp"></p>
+    <p class="dl-msg" x-show="meansNote" x-text="meansNote" data-testid="dl-means-note"></p>
     <template x-if="elements?.status === 'error'">
       <div data-testid="dl-elements-error"><!-- @include partials/load-error.html --></div>
     </template>

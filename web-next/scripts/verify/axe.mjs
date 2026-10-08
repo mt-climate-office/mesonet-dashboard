@@ -66,7 +66,6 @@ const aboutSheet = (row, filled) => async (page) => {
 /** The Download sheet with its Variables row expanded and the checklist open (no variables yet: the button's reason shows). */
 const dlVariables = async (page) => {
   await page.locator('#dl-row-vars-btn').click()
-  await page.getByTestId('dl-elements').locator('.ctl-disclosure').click()
   await page.waitForFunction(() => document.querySelectorAll('[data-testid="dl-elements"] .ctl-check').length > 3, null, { timeout: 30000 })
 }
 /** The Download sheet with its Dates row expanded. */

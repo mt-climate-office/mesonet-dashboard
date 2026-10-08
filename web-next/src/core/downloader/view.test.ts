@@ -58,7 +58,11 @@ describe('standardOptions / elementGroups', () => {
     el('etr', 'Reference ET'),
   ])
   it('dedupes, drops derived codes, swaps units and sorts naturally', () => {
-    expect(opts.map((o) => o.label)).toEqual(['Air temperature at 6.6 ft', 'Soil moisture at 4 in', 'Soil moisture at 40 in'])
+    expect(opts.map((o) => o.label)).toEqual(['Air temperature', 'Soil moisture at 4 in', 'Soil moisture at 40 in'])
+  })
+  it('names the height only when a station has several sensors of that variable', () => {
+    const two = standardOptions([el('air_temp_0200', 'Air Temperature @ 2 m'), el('air_temp_0244', 'Air Temperature @ 8 ft'), el('ppt', 'Precipitation')])
+    expect(two.map((o) => o.label)).toEqual(['Air temperature at 6.6 ft', 'Air temperature at 8 ft', 'Rain'])
   })
   it('groups standard and derived; SWP options only at has_swp stations', () => {
     expect(elementGroups(opts, false).map((g) => [g.label, g.options.length])).toEqual([
@@ -154,10 +158,14 @@ describe('announcement', () => {
 })
 
 describe('dailyMeansNote', () => {
-  it('only for daily or monthly feels like / livestock risk', () => {
-    expect(dailyMeansNote('daily', ['air_temp_0200', 'cci'])).toMatch(/daily means/)
-    expect(dailyMeansNote('monthly', ['feels_like'])).toMatch(/choose Hourly/)
+  it('only for daily or monthly Feels like / Livestock risk', () => {
     expect(dailyMeansNote('hourly', ['cci'])).toBe('')
     expect(dailyMeansNote('daily', ['etr'])).toBe('')
+  })
+  it('names only the selected charts', () => {
+    expect(dailyMeansNote('daily', ['air_temp_0200', 'cci'])).toBe(
+      'Livestock risk is computed from daily means at this interval; its chart shows each day’s highest and lowest hourly value instead. Choose Hourly to download the values behind the chart.',
+    )
+    expect(dailyMeansNote('monthly', ['cci', 'feels_like'])).toMatch(/^Feels like and Livestock risk are computed from daily means .* their charts show .* behind those charts\.$/)
   })
 })

@@ -18,8 +18,9 @@
 
 /* Photo dialog: pickers over the frame. 92vw wide; the box scrolls, never sideways. */
 .lc-photo-modal-box { width: min(92vw, 1600px); max-width: 100%; max-height: calc(100dvh - 2rem); overflow-x: hidden; }
-.lc-photo-modal-body { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; min-width: 0; }
-.lc-photo-controls { align-self: stretch; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.5rem 1rem; }
+/* The controls span the photo's width (--photo-w), so their left edge lines up with the photo's. */
+.lc-photo-modal-body { --photo-w: min(100%, calc(70dvh * 16 / 9)); display: flex; flex-direction: column; align-items: center; gap: 0.75rem; min-width: 0; }
+.lc-photo-controls { width: var(--photo-w); display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.5rem 1rem; }
 /* Top-aligned rows: the legend sits as far above its buttons as a field's label above its input (the
    fields' 0.25 rem gap), so labels and controls line up across Direction, Day and Time. */
 .lc-photo-controls .ctl-legend { margin-bottom: 0.25rem; }
@@ -27,29 +28,22 @@
 .lc-photo-controls .ctl-error:empty { margin-top: -0.25rem; }
 .lc-photo-controls .ctl-seg { margin: 0; padding: 0; }
 .lc-photo-controls .seg-btns { flex-wrap: wrap; } /* kit-override: four or more directions wrap at 390 px */
+/* Phones: Direction spans the row in equal segments, like Day and Time below it. */
+@media (max-width: 640px) {
+  .lc-photo-controls .ctl-seg { flex: 1 1 100%; }
+  .lc-photo-controls .seg-btn { flex: 1 1 0; justify-content: center; padding-inline: 4px; }
+}
 .lc-photo-pickers { flex: 1 1 18rem; min-width: 0; max-width: 30rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.5rem; }
 .lc-photo-pickers > * { min-width: 0; }
 .lc-photo-pickers .ctl-input { width: 100%; min-width: 0; }
 /* The frame area keeps the camera's 16:9 box while a day loads, so nothing jumps. */
-.lc-photo-view { width: min(100%, calc(70dvh * 16 / 9)); aspect-ratio: 16 / 9; display: flex; background: var(--bg-raised); border-radius: var(--radius-md); }
+.lc-photo-view { width: var(--photo-w); aspect-ratio: 16 / 9; display: flex; background: var(--bg-raised); border-radius: var(--radius-md); }
 .lc-photo-view > * { flex: 1; min-width: 0; }
 .lc-photo-view img { width: 100%; height: 100%; object-fit: contain; border-radius: var(--radius-md); }
 .lc-photo-view .lc-message { align-self: center; }
 .lc-download { text-decoration: none; }
-/* Direction, Day and Time share one height (--ctl-h): 34 px, 44 px targets on touch. kit-override: the
-   kit's .seg-btn is 30 px; a native select ignores height in WebKit (it drew 25 px on iOS), so the Time
-   select drops its native look and takes a CSS chevron on its field. */
-.lc-photo-controls { --ctl-h: 34px; }
-.lc-photo-controls .seg-btn,
-.lc-photo-controls .ctl-input { box-sizing: border-box; height: var(--ctl-h); min-height: var(--ctl-h); }
-.lc-photo-controls .ctl-select { -webkit-appearance: none; appearance: none; padding-right: 2rem; }
-.lc-photo-controls .ctl-field:has(> .ctl-select) { position: relative; }
-.lc-photo-controls .ctl-field:has(> .ctl-select)::after {
-  content: ''; position: absolute; right: 0.85rem; bottom: calc(var(--ctl-h) / 2 + 2px);
-  width: 0.45rem; height: 0.45rem; border: solid var(--text-secondary); border-width: 0 2px 2px 0;
-  transform: rotate(45deg); pointer-events: none;
-}
-.lc-photo-controls .ctl-field:has(> .ctl-select:disabled)::after { opacity: 0.5; }
+/* Direction, Day and Time share the controls' height (--ctl-h, controls.css); 44 px on touch here, to
+   match the dialog's 44 px × and Download. */
 @media (hover: none) {
   .lc-photo-controls { --ctl-h: 44px; }
   /* 44 px targets on touch (the shared controls give 40); kit-override: the modal's × too. */

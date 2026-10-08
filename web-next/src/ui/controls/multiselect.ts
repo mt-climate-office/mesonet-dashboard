@@ -38,6 +38,11 @@
 //       <p class="ctl-note" x-show="visibleGroups.length === 0">No matches</p>
 //     </div>
 //   </div>
+//
+// With `inline: true` the checklist is always shown (no disclosure button: drop it from the markup and
+// label the panel with `:aria-label="label"`), for a place that is itself a disclosure (the Download
+// sheet's Variables row). Bind Esc as `@keydown.escape="escape($event)"` there: the first Esc clears
+// the filter, the next goes on to the enclosing dialog.
 
 import { component } from '../component'
 import { uniqueId } from './ids'
@@ -54,6 +59,8 @@ export interface MultiselectOptions {
   onChange: (values: string[]) => void
   /** Disclosure button text, e.g. "Elements". */
   label: string
+  /** Always open, with no disclosure button (see the header). */
+  inline?: boolean
 }
 
 /** Alpine.data factory for the multiselect; see the markup in the file header. */
@@ -62,7 +69,7 @@ export function multiselect(opts: MultiselectOptions) {
   return component({
     label: opts.label,
     ids: { button: `${base}-button`, panel: `${base}-panel`, filter: `${base}-filter` },
-    open: false,
+    open: !!opts.inline,
     query: '',
 
     get visibleGroups(): MultiselectGroup[] {
@@ -96,14 +103,21 @@ export function multiselect(opts: MultiselectOptions) {
     },
     /** Closes the checklist with an empty filter and returns focus to the disclosure button. */
     close(): void {
+      if (opts.inline) return
       this.open = false
       this.query = ''
       document.getElementById(this.ids.button)?.focus()
     },
-    /** Esc: the first press clears the filter text (focus stays), the next closes. */
-    escape(): void {
+    /**
+     * Esc: the first press clears the filter text (focus stays), the next closes. Inline, the next
+     * press is not handled, so it reaches the enclosing dialog. With `e`, a handled press stops there.
+     */
+    escape(e?: KeyboardEvent): void {
       if (this.query) this.query = ''
-      else this.close()
+      else if (!opts.inline) this.close()
+      else return
+      e?.preventDefault()
+      e?.stopPropagation()
     },
     toggleValue(value: string): void {
       opts.onChange(toggleIn(opts.value(), value, optionValues(opts.groups())))
@@ -112,14 +126,14 @@ export function multiselect(opts: MultiselectOptions) {
       const on = (event.target as HTMLInputElement).checked
       opts.onChange(setIn(opts.value(), group.options.map((o) => o.value), on, optionValues(opts.groups())))
     },
-    /** Removes a chip and moves focus to the chip now in its place, else the disclosure button. */
+    /** Removes a chip and moves focus to the chip now in its place, else the disclosure button (inline: the filter). */
     remove(value: string, event: Event): void {
       const chips = [...this.$refs.chips.querySelectorAll<HTMLElement>('.ctl-chip')]
       const index = chips.indexOf(event.currentTarget as HTMLElement)
       this.toggleValue(value)
       void this.$nextTick(() => {
         const next = this.$refs.chips.querySelectorAll<HTMLElement>('.ctl-chip')
-        const target = next[Math.min(index, next.length - 1)] ?? document.getElementById(this.ids.button)
+        const target = next[Math.min(index, next.length - 1)] ?? document.getElementById(opts.inline ? this.ids.filter : this.ids.button)
         target?.focus()
       })
     },
