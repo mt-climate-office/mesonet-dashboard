@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ObservationRow } from '../api'
-import { buildWindRoseModel, quantileEdges, roundHalfEven, speedBins, windDateSpan } from './windRose'
+import { buildWindRoseModel, directionTotals, newestStamp, quantileEdges, roundHalfEven, rowsWithin, shareText, speedBins, windDateSpan, windRoseStats } from './windRose'
 
 describe('roundHalfEven', () => {
   it('rounds like numpy', () => {
@@ -79,5 +79,62 @@ describe('buildWindRoseModel', () => {
   })
   it('null when no row has both values', () => {
     expect(buildWindRoseModel([])).toBeNull()
+  })
+  it('counts calm readings (under 1 mph) apart: not drawn, in the mean speed', () => {
+    const rows = [
+      [0, 0.4],
+      [90, 0.9],
+      [90, 1],
+      [180, 6.1],
+    ].map(([d, s], i) => ({ datetime: `2026-07-0${i + 1} 01:00:00-06:00`, 'Wind Direction [deg]': d, 'Wind Speed [mi/hr]': s })) as unknown as ObservationRow[]
+    const m = buildWindRoseModel(rows)!
+    expect(m).toMatchObject({ n: 2, calm: 2 })
+    expect(m.meanSpeed).toBeCloseTo(2.1)
+    expect(m.bins.flatMap((b) => b.counts).reduce((a, b) => a + b, 0)).toBe(2)
+    expect(directionTotals(m)[0]).toBe(0) // the calm N reading is not drawn
+  })
+  it('drops a bin between two whole speeds (it can hold no reading), so no "(6, 6.25]" key entry', () => {
+    const few = [2, 6, 6, 6, 6, 6, 6, 6, 7, 9].map((s, i) => ({ datetime: `2026-07-01 ${String(i).padStart(2, '0')}:00:00-06:00`, 'Wind Direction [deg]': 90, 'Wind Speed [mi/hr]': s }))
+    const labels = speedBins(few.map((r) => r['Wind Speed [mi/hr]'])).labels
+    expect(labels.some((l) => l.startsWith('('))).toBe(true)
+    const m = buildWindRoseModel(few as unknown as ObservationRow[])!
+    expect(m.bins.map((b) => b.label).some((l) => l.startsWith('('))).toBe(false)
+    expect(m.bins.every((b) => b.counts.some((c) => c > 0))).toBe(true)
+  })
+  it('every reading calm: no bins, still a model', () => {
+    const m = buildWindRoseModel([{ datetime: '2026-07-01 01:00:00-06:00', 'Wind Direction [deg]': 10, 'Wind Speed [mi/hr]': 0.2 }] as unknown as ObservationRow[])!
+    expect(m).toMatchObject({ n: 0, calm: 1, bins: [] })
+    expect(windRoseStats(m)[0]).toEqual({ label: 'Most often from', value: 'Calm' })
+    expect(windRoseStats(m)[1]).toEqual({ label: 'Calm', value: '100%' })
+  })
+})
+
+describe('windRoseStats', () => {
+  const row = (d: number, s: number, h: number) => ({ datetime: `2026-07-01 ${String(h).padStart(2, '0')}:00:00-06:00`, 'Wind Direction [deg]': d, 'Wind Speed [mi/hr]': s })
+  // 5 from SW, 2 from N, 1 from E, 2 calm.
+  const rows = [225, 225, 225, 225, 225, 0, 0, 90].map((d, i) => row(d, 4 + i, i)).concat([row(0, 0, 8), row(10, 0.5, 9)]) as unknown as ObservationRow[]
+  const m = buildWindRoseModel(rows)!
+  it('most often from (share of every reading), calm share, average speed (calm included), readings', () => {
+    expect(windRoseStats(m)).toEqual([
+      { label: 'Most often from', value: 'SW · 50%' },
+      { label: 'Calm', value: '20%' },
+      { label: 'Average speed', value: '6.1 mph' },
+      { label: 'Readings', value: '10' },
+    ])
+  })
+  it('shares: "<1%" for a few, "0%" for none', () => {
+    expect(shareText(1, { n: 300, calm: 0 })).toBe('<1%')
+    expect(shareText(0, m)).toBe('0%')
+    expect(shareText(1, { n: 0, calm: 0 })).toBe('0%')
+  })
+})
+
+describe('rowsWithin / newestStamp', () => {
+  const rows = ['2026-07-01 00:00:00-06:00', '2026-07-01 12:00:00-06:00', '2026-07-02 00:00:00-06:00', 'bad'].map((datetime) => ({ datetime })) as unknown as ObservationRow[]
+  it('keeps rows stamped in [from, to) (Denver wall clock) and finds the newest stamp', () => {
+    const newest = newestStamp(rows)!
+    expect(newest).toBe(Date.UTC(2026, 6, 2))
+    expect(rowsWithin(rows, [Date.UTC(2026, 6, 1, 0, 0, 1), newest + 1]).map((r) => r.datetime)).toEqual(['2026-07-01 12:00:00-06:00', '2026-07-02 00:00:00-06:00'])
+    expect(newestStamp([])).toBeNull()
   })
 })

@@ -98,7 +98,7 @@ describe('chartHeading', () => {
 
 describe('chartPatch', () => {
   it('opens a variable on its chart, an Ag tool through its reset patch', () => {
-    expect(chartPatch('air_temp')).toEqual({ v: 'air_temp', view: 'recent', tbl: false, cmp: false })
+    expect(chartPatch('air_temp')).toEqual({ v: 'air_temp', view: 'recent', tbl: false, wd: null, cmp: false })
     expect(chartPatch('etr')).toMatchObject({ v: 'etr', view: 'recent', tbl: false, crop: 'wheat', ag_time: 'daily' })
   })
 })

@@ -59,6 +59,12 @@ export function variableElements(name: string, elements: readonly ElementRow[]):
   return [...new Set(out)]
 }
 
+/** The element codes behind a wind rose: wind direction, then wind speed (the rose needs both). */
+export const windRoseElements = (elements: readonly ElementRow[]): string[] => [
+  ...variableElements('Wind Direction', elements),
+  ...variableElements('Wind Speed', elements),
+]
+
 /** Soil profile sub-variable (`soilv`) → its display variable, or the derived code it is. */
 const SOIL_VARS: Record<string, string> = { soil_vwc: 'Soil VWC', soil_temp: 'Soil Temperature', soil_blk_ec: 'Bulk EC' }
 

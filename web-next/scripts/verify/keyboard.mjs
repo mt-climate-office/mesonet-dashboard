@@ -8,6 +8,7 @@
  * (focus, Esc, inert, dl key), its form (rows, reason, Preview → Download CSV), About's readings and
  * sensor-change sheets (focus in and back), the picker drawer and sheet (focus, Esc, inert), the tab
  * bar and history, the variable page (⋯ Show as table, Previous / Next, range and interval chips,
+ * Wind direction’s Time series | Rose switch and the rose’s table and Download, AgriMet’s 15-min,
  * Custom dates), focus after Charts drill-downs (variables and Ag tools), Ag option chips and their
  * popovers, Download prefilled from a chart's ⋯, chart table twins, map sr-table selection, reduced motion.
  * Run via `npm run verify`.
@@ -699,6 +700,96 @@ for (const vp of VIEWPORTS) {
   const p = await problems()
   check('variable keyboard: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
+}
+
+/* ── Wind direction: Time series | Rose from the keyboard; the rose's table, Download, and back ── */
+{
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem&v=wind_dir&theme=light#charts')
+  await rendered({ charts: 1 })
+  const at = () => page.evaluate(() => Object.fromEntries(new URLSearchParams(location.search)))
+  const roseShown = { charts: 1, filled: ['[data-testid="rose-stats"] dl'] }
+  await page.getByTestId('wind-view-rose').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => new URLSearchParams(location.search).get('wd') === 'rose', null, { timeout: 5000 }).catch(() => {})
+  await rendered(roseShown)
+  const rose = await page.evaluate(() => ({
+    pressed: document.querySelector('[data-testid="wind-view-rose"]')?.getAttribute('aria-pressed'),
+    focus: document.activeElement?.dataset.testid,
+    title: document.querySelector('[data-testid="variable-rose-title"]')?.textContent,
+    series: !!document.querySelector('[data-testid="variable-chart"]'),
+    all: document.querySelector('[data-testid="range-all"]')?.getAttribute('aria-disabled'),
+    daily: document.querySelector('[data-testid="interval-daily"]')?.getAttribute('aria-disabled'),
+    stats: [...document.querySelectorAll('[data-testid="rose-stats"] dt')].map((d) => d.textContent),
+  }))
+  check('rose: Enter on View → Rose shows the rose (wd=rose) in place of the time series; focus stays on the chip',
+    (await at()).wd === 'rose' && rose.pressed === 'true' && rose.focus === 'wind-view-rose' && /^Wind, /.test(rose.title ?? '') && !rose.series, JSON.stringify(rose))
+  check('rose: All years and Daily are off beside it (aria-disabled, with their reasons); its stats are in',
+    rose.all === 'true' && rose.daily === 'true' && rose.stats.join('|') === 'Most often from|Calm|Average speed|Readings', JSON.stringify(rose))
+  await page.getByTestId('range-all').focus()
+  await page.keyboard.press('Enter')
+  check('rose: Enter on the off All years chip changes nothing', (await at()).view === undefined && (await at()).wd === 'rose', JSON.stringify(await at()))
+  /** Open the ⋯ menu from the keyboard and choose the item with `testid`. */
+  const choose = async (testid) => {
+    await page.getByTestId('var-menu-button').focus()
+    await page.keyboard.press('Enter')
+    for (let i = 0; i < 8 && (await page.evaluate(() => document.activeElement?.dataset.testid)) !== testid; i++) await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
+  }
+  await choose('var-menu-table')
+  await page.waitForFunction(() => document.querySelectorAll('.var-table-grid tbody tr').length > 0, null, { timeout: 15000 }).catch(() => {})
+  const table = await page.evaluate(() => ({
+    rows: [...document.querySelectorAll('.var-table-grid tbody tr')].map((r) => r.querySelector('td')?.textContent),
+    head: [...document.querySelectorAll('.var-table-grid thead th')].map((t) => t.textContent),
+    caption: document.querySelector('.var-table-grid caption')?.textContent,
+  }))
+  check('rose: ⋯ → Show as table gives the rose’s table (16 directions, N first; speed bins, then Share)',
+    (await at()).tbl === '1' && table.rows.length === 16 && table.rows[0] === 'N' && table.head[0] === 'Direction' && table.head.at(-1) === 'Share' && !/newest first/.test(table.caption ?? ''), JSON.stringify(table))
+  await page.getByTestId('table-show-chart').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => document.activeElement?.id === 'var-title' && !!document.querySelector('[data-testid="rose-chart"]'), null, { timeout: 10000 }).catch(() => {})
+  await rendered(roseShown)
+  const shown = await page.evaluate(() => ({ focus: document.activeElement?.id, rose: !!document.querySelector('[data-testid="rose-chart"] canvas'), tbl: new URLSearchParams(location.search).get('tbl') }))
+  check('rose: the table’s Show as chart returns to the rose and focuses the heading', shown.tbl === null && shown.rose && shown.focus === 'var-title', JSON.stringify(shown))
+  await choose('var-menu-download')
+  await page.waitForFunction(() => new URLSearchParams(location.search).get('dl') === '1', null, { timeout: 5000 }).catch(() => {})
+  const dl = await at()
+  check('rose: ⋯ → Download data prefills wind direction and wind speed for the window', /^wind_dir[^,]*,wind_spd/.test(dl.els ?? '') && !!dl.dl_from && dl.period === 'hourly', JSON.stringify(dl))
+  await animationsDone(page)
+  await page.keyboard.press('Escape')
+  await page.waitForFunction(() => !new URLSearchParams(location.search).get('dl') && document.activeElement?.dataset.testid === 'var-menu-button', null, { timeout: 5000 }).catch(() => {})
+  await page.getByTestId('wind-view-series').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => !new URLSearchParams(location.search).get('wd') && !!document.querySelector('[data-testid="variable-chart"]'), null, { timeout: 5000 }).catch(() => {})
+  await rendered({ charts: 1, filled: ['[data-testid="variable-stats"] dl'] })
+  const series = await page.evaluate(() => ({ wd: new URLSearchParams(location.search).get('wd'), rose: !!document.querySelector('[data-testid="variable-rose"]'), focus: document.activeElement?.dataset.testid, all: document.querySelector('[data-testid="range-all"]')?.getAttribute('aria-disabled') }))
+  check('rose: Enter on View → Time series returns to the chart (wd cleared; All years offered again)', series.wd === null && !series.rose && series.focus === 'wind-view-series' && series.all === null, JSON.stringify(series))
+  const p = await problems()
+  check('rose keyboard: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+}
+
+/* ── AgriMet: the raw interval is 15-min (HydroMet's is 5-min); Now's AgriMet rose is the last 24 hours ── */
+{
+  const { page, problems, close, rendered } = await open(env, '?s=arskeogh&v=air_temp&from=2026-09-24&to=2026-10-01&theme=dark#charts')
+  await rendered({ charts: 1 })
+  const raw = await page.evaluate(() => ({ text: document.querySelector('[data-testid="interval-raw"]')?.textContent?.trim(), off: document.querySelector('[data-testid="interval-raw"]')?.getAttribute('aria-disabled') }))
+  check('AgriMet: the raw interval chip reads "15-min" (offered for 7 d)', raw.text === '15-min' && raw.off === null, JSON.stringify(raw))
+  await page.getByTestId('range-30d').focus()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => document.querySelector('[data-testid="interval-raw"]')?.getAttribute('aria-disabled') === 'true', null, { timeout: 5000 }).catch(() => {})
+  await rendered({ charts: 1 })
+  const note = await page.evaluate(() => document.getElementById('var-interval-note')?.textContent)
+  check('AgriMet: past 7 days its reason says 15-minute data', note === '15-minute data is offered for 7 days or less.', note)
+  const p = await problems()
+  check('AgriMet: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  await close()
+  const now = await open(env, '?s=arskeogh&theme=dark')
+  await now.rendered({ charts: 2, filled: ['[data-testid="now-tiles"]', '[data-testid="wind-rose-chart"] .chart-table tbody'] })
+  const title = await now.page.evaluate(() => document.querySelector('[data-testid="wind-rose-title"]')?.textContent)
+  check('AgriMet Now: the wind rose card (no camera) shows the last 24 hours', title === 'Wind, last 24 hours', title)
+  const p2 = await now.problems()
+  check('AgriMet Now: console + CSP clean', p2.length === 0, p2.slice(0, 4).join(' | '))
+  await now.close()
 }
 
 /* ── Charts drill-downs: focus moves to the new view's heading ─────────── */

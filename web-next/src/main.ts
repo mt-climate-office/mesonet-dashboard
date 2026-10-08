@@ -18,6 +18,7 @@ import { compare } from './ui/charts/compare'
 import { compareControls } from './ui/charts/compareControls'
 import { customDates } from './ui/charts/customDates'
 import { variableHistory } from './ui/charts/variableHistory'
+import { variableRose } from './ui/charts/variableRose'
 import { variableList } from './ui/charts/variableList'
 import { variablePage } from './ui/charts/variablePage'
 import { chips } from './ui/controls/chips'
@@ -167,6 +168,7 @@ Alpine.data('chartsView', chartsView)
 Alpine.data('variableList', variableList)
 Alpine.data('variablePage', variablePage)
 Alpine.data('variableHistory', variableHistory)
+Alpine.data('variableRose', variableRose)
 Alpine.data('chartTable', chartTable)
 Alpine.data('customDates', customDates)
 Alpine.data('compare', compare)

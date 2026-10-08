@@ -458,6 +458,39 @@ mco-web-style#37). The behaviour changes:
 - **Why:** user request (2026-10-08): "On first load, the dashboard should be dominated by choosing a station
   and the map. Currently, it is barren."
 
+### Wind direction: a Rose view (2026-10-08)
+- **Before:** the only wind rose was Now's media card, shown only at stations without a camera; every HydroMet
+  station has one, so HydroMet stations never showed a rose.
+- **New:** the Wind direction page has a **View** row, Time series | Rose, under the range chips; Rose is the URL
+  key `wd=rose` (absent = the time series; pushed like Show as table, so Back returns; dropped when another
+  variable, the list or another section opens). The rose (`core/charts` `windRoseLargeChart`, the card's builder
+  with a larger layout: the key beside the rose on a wide card, under it on a phone, where the rose spans the card)
+  follows the page's window: the range chips and Custom dates (24 h: the 24 hours up to the newest reading, as the
+  time series zooms). **All years** is a time series only: its chip is off beside the rose (aria-disabled, the
+  reason under the row) rather than silently switching back, so a press never changes the view under the user. The
+  **Interval** row stays, reflecting what the rose draws: Auto (hourly) · 5-min (15-min at AgriMet; up to 7 days)
+  · Hourly, and **Daily off** with its reason ("The rose uses hourly or 5-minute readings"); a URL `agg=daily`
+  draws hourly. A stats card under the chips: most often from (the compass point with the most readings and its
+  share), calm share, average speed and the number of readings (`windRoseStats`). ⋯ → Show as table gives the
+  rose's table in its place (16 directions, N first, one column per speed bin and a Share column; not newest
+  first, unpaged); Download data prefills wind direction **and** wind speed; Share carries `wd=rose`. AgriMet
+  stations get the same view. The rose fetches wind speed + direction only (`core/variables/rose`
+  `roseRequest`), not the time series.
+- **Calm readings** (under 1 mph, `CALM_MPH`, the Now tile's threshold) have no meaningful direction: the one rose
+  model now counts them apart and does not draw them, on Now's card too (legacy drew them in the slowest bin from
+  wherever the vane pointed). The table caption and the stats give their share. A speed bin between two whole
+  speeds (qcut's "(6, 6.25]", which can hold no rounded reading) is dropped from the key and the table instead
+  of showing empty.
+- **Why:** user request — HydroMet stations had no way to see a wind rose.
+
+### AgriMet's raw interval is 15-min (2026-10-08)
+- **Before:** the raw interval was "5-min" everywhere (the variable page's Interval row and its reason, Compare's
+  chips and load note).
+- **New:** it is named for the station's network (`core/variables/interval` `rawMinutes`, `intervalWord`,
+  `compareAggOptions`, `compareLoadNote`): **15-min** at AgriMet stations (their loggers record every 15
+  minutes), 5-min elsewhere. Announcements say "raw data" as before; the rose's says "15-minute readings".
+- **Why:** user request (2026-10-08): AgriMet records are 15-minute resolution, so "5-min" was wrong there.
+
 ### UX audit leftovers: close colors, ETr (2026-10-08)
 - **Soil depths:** batlow positions per theme spaced so the closest neighbours sit furthest apart at 3:1
   (`DEPTH_T`, replacing `DEPTH_GAMMA`), and every other sensor depth (4, 20, 36 in) is **dashed**
@@ -560,9 +593,16 @@ Data requests are unchanged
 
 ### Now's wind rose has its own window
 - **Legacy / web/:** the Latest wind rose followed the plot's dates and aggregation (`from`/`to`/`agg`).
-- **New:** Now's wind rose always shows the 14 days to today, hourly (legacy's default Latest window),
-  whatever range the variable page or Compare last wrote (`core/cards/windRose.ts`).
-- **Why:** Now is an overview; its rose should not change because a Charts preset was picked.
+- **New:** Now's wind rose always shows the **last 24 hours** (since 2026-10-08; before, the 14 days to today,
+  hourly, legacy's default Latest window), whatever range the variable page or Compare last wrote
+  (`core/cards/windRose.ts` `nowWindRoseRequest`): the raw readings of yesterday and today, kept to the 24 hours up
+  to the newest (`roseRows`). Raw, not hourly: 24 hourly readings make a thin rose, the logger's own readings (288
+  at 5-min, 96 at AgriMet's 15-min) a full one. Its title reads "Wind, last 24 hours"; with no data, "No wind
+  data in the last 24 hours."; with only calm readings, "Calm for the last 24 hours (under 1 mph)."; it is
+  re-read on the freshness tick like the other last-24-hours views.
+- **Why:** Now is an overview; its rose should not change because a Charts preset was picked. 24 hours (user
+  request, 2026-10-08) matches Now's other "now" views (the strip, the high and low, the peak gust); longer
+  windows are the Wind direction page's Rose view.
 
 ### Now tiles open the variable page
 - **P0:** a tile opened Compare with its variables.

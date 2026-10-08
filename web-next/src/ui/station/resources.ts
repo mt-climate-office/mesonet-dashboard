@@ -59,5 +59,6 @@ export const onePagers = () => cached('one-pagers', fetchOnePagers, ONE_PAGERS_S
 /** `/config/{station}/` (instruments): About's sensor history; same key and TTL as Compare's sensor overlays. */
 export const stationConfig = (station: string) => cached(configKey(station), () => getStationConfig(station), TTL.config)
 
-/** Wind speed/direction over the plotted window. */
-export const windObs = (r: WindRoseRequest): Resource<ObservationRow[]> => cached(r.key, () => getStationRecord(r.query), 5 * MIN)
+/** Now's wind rose rows (core/cards `nowWindRoseRequest`): live, slotted, so the midnight key change keeps the rose. */
+export const windObs = (station: string, r: WindRoseRequest): Resource<ObservationRow[]> =>
+  Alpine.store('data').cached(r.key, () => getStationRecord(r.query), { ttl: 5 * MIN, live: true, slot: `wind:${station}` })

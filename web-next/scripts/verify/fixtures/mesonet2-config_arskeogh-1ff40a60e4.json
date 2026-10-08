@@ -1,0 +1,191 @@
+{
+    "station": "arskeogh", 
+    "name": "Fort Keogh N", 
+    "date_installed": "2017-06-26", 
+    "latitude": 46.41, 
+    "longitude": -105.95, 
+    "gwic_id": null, 
+    "mesowest_id": "MTM23", 
+    "elevation": 818.85, 
+    "sub_network": "AgriMet", 
+    "status": "active", 
+    "nwsli_id": null, 
+    "report_mesowest": null, 
+    "ace_grid": null, 
+    "budget_om": null, 
+    "budget_siting": null, 
+    "budget_install": null, 
+    "report_mco": true, 
+    "funded": true, 
+    "county": "Custer", 
+    "instruments": [
+        {
+            "serial_number": "06-00761", 
+            "date_start": "2017-06-26", 
+            "date_end": "2024-08-14", 
+            "elements": [
+                "batt_per", 
+                "batt_vol"
+            ], 
+            "type": "Logger", 
+            "manufacturer": "METER", 
+            "model": "Em60G", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "A41G2S0001559", 
+            "date_start": "2025-09-20", 
+            "date_end": "None", 
+            "elements": [
+                "air_temp_0244", 
+                "air_temp_logger_0244", 
+                "air_temp_max_0244", 
+                "air_temp_min_0244", 
+                "bp", 
+                "bp_logger_0244", 
+                "drop_counts", 
+                "lightning_count", 
+                "lightning_dist", 
+                "ppt", 
+                "ppt_ec", 
+                "ppt_max_rate", 
+                "rh", 
+                "rhs_temp", 
+                "sol_rad", 
+                "spoon_tips", 
+                "tilt_angle", 
+                "vpd_atmo", 
+                "wind_dir_0244", 
+                "windgust_0244", 
+                "wind_spd_0244"
+            ], 
+            "type": "Atmospheric", 
+            "manufacturer": "METER", 
+            "model": "ATMOS 41 G2", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "ATM-410002849", 
+            "date_start": "2017-06-26", 
+            "date_end": "None", 
+            "elements": [
+                "air_temp_0244", 
+                "air_temp_logger_0244", 
+                "bp", 
+                "bp_logger_0244", 
+                "lightning_count", 
+                "lightning_dist", 
+                "ppt", 
+                "ppt_max_rate", 
+                "rh", 
+                "rhs_temp", 
+                "sol_rad", 
+                "vpd_atmo", 
+                "wind_dir_0244", 
+                "windgust_0244", 
+                "wind_spd_0244", 
+                "x_lvl_at", 
+                "y_lvl_at"
+            ], 
+            "type": "Atmospheric", 
+            "manufacturer": "METER", 
+            "model": "ATMOS 41", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "NI2046503428", 
+            "date_start": "2017-06-26", 
+            "date_end": "2021-07-19", 
+            "elements": [
+                "irra_ni", 
+                "irra_red"
+            ], 
+            "type": "Vegetation", 
+            "manufacturer": "Decagon", 
+            "model": "SRS-Ni", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "NR1072503879", 
+            "date_start": "2017-06-26", 
+            "date_end": "2021-07-19", 
+            "elements": [
+                "radi_ni", 
+                "radi_red"
+            ], 
+            "type": "Vegetation", 
+            "manufacturer": "Decagon", 
+            "model": "SRS-Nr", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "T12-00003479", 
+            "date_start": "2017-06-26", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0010", 
+                "soil_temp_0010", 
+                "soil_vwc_0010"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "METER", 
+            "model": "TEROS 12", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "T12-00012442", 
+            "date_start": "2017-06-26", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0050", 
+                "soil_temp_0050", 
+                "soil_vwc_0050"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "METER", 
+            "model": "TEROS 12", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "T12-00107354", 
+            "date_start": "2017-06-26", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0020", 
+                "soil_temp_0020", 
+                "soil_vwc_0020"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "METER", 
+            "model": "TEROS 12", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "T12-00107882", 
+            "date_start": "2021-07-19", 
+            "date_end": "None", 
+            "elements": [
+                "soil_ec_blk_0091", 
+                "soil_temp_0091", 
+                "soil_vwc_0091"
+            ], 
+            "type": "Soil", 
+            "manufacturer": "METER", 
+            "model": "TEROS 12", 
+            "outage_ranges": null
+        }, 
+        {
+            "serial_number": "z6-28003", 
+            "date_start": "2024-08-14", 
+            "date_end": "None", 
+            "elements": [
+                "batt_per", 
+                "batt_vol"
+            ], 
+            "type": "Logger", 
+            "manufacturer": "METER", 
+            "model": "ZL6", 
+            "outage_ranges": null
+        }
+    ]
+}

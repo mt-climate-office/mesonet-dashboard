@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { autoAgg, effectiveAgg, intervalChips, intervalPatch, spanDays } from './interval'
+import { autoAgg, compareAggOptions, compareLoadNote, effectiveAgg, intervalChips, intervalNote, intervalPatch, intervalWord, rawMinutes, roseAgg, spanDays } from './interval'
 
 const pressed = (c: ReturnType<typeof intervalChips>) => c.find((x) => x.pressed)?.id
 const disabled = (c: ReturnType<typeof intervalChips>) => c.filter((x) => x.disabled).map((x) => x.id)
@@ -32,11 +32,45 @@ describe('interval', () => {
     expect(disabled(month)).toEqual(['raw'])
     expect(month.find((c) => c.id === 'raw')?.reason).toMatch(/7 days/)
     expect(pressed(intervalChips('daily', 14))).toBe('daily')
-    const all = intervalChips('daily', 0, true)
+    const all = intervalChips('daily', 0, { all: true })
     expect(pressed(all)).toBe('auto')
     expect(all[0].label).toBe('Auto (daily)')
     expect(disabled(all)).toEqual(['raw', 'hourly', 'daily'])
     expect(all[1].reason).toBe('All years shows daily values')
+    expect(intervalNote(all)).toBe('All years shows daily values.')
+    expect(intervalNote(week)).toBe('')
+  })
+  it('names the raw interval by network: 5-min at HydroMet (and by default), 15-min at AgriMet', () => {
+    expect(rawMinutes('HydroMet')).toBe(5)
+    expect(rawMinutes(null)).toBe(5)
+    expect(rawMinutes('AgriMet')).toBe(15)
+    expect(intervalChips(null, 7, { network: 'HydroMet' })[1].label).toBe('5-min')
+    expect(intervalChips(null, 7, { network: 'AgriMet' })[1].label).toBe('15-min')
+    expect(intervalChips(null, 30, { network: 'AgriMet' })[1].reason).toBe('15-minute data is offered for 7 days or less')
+    expect(intervalChips(null, 30, { network: 'HydroMet' })[1].reason).toBe('5-minute data is offered for 7 days or less')
+    expect(intervalWord('raw', 'AgriMet')).toBe('15-min')
+    expect(intervalWord('raw')).toBe('5-min')
+    expect(intervalWord('hourly', 'AgriMet')).toBe('Hourly')
+    expect(compareAggOptions('AgriMet').map((o) => o.label)).toEqual(['15-min', 'Hourly', 'Daily'])
+    expect(compareAggOptions('HydroMet')[0]).toEqual({ value: 'raw', label: '5-min' })
+    expect(compareLoadNote('AgriMet')).toMatch(/2 weeks of 15-minute data\.$/)
+    expect(compareLoadNote('HydroMet')).toMatch(/2 weeks of 5-minute data\.$/)
+  })
+  it('the Rose view: hourly or raw only (Daily off, with its reason); Auto is hourly at any window', () => {
+    expect(roseAgg(null, 365)).toBe('hourly')
+    expect(roseAgg('daily', 7)).toBe('hourly')
+    expect(roseAgg('raw', 7)).toBe('raw')
+    expect(roseAgg('raw', 14)).toBe('hourly')
+    const year = intervalChips('daily', 365, { rose: true })
+    expect(year[0].label).toBe('Auto (hourly)')
+    expect(pressed(year)).toBe('auto')
+    expect(disabled(year)).toEqual(['raw', 'daily'])
+    expect(intervalNote(year)).toBe('5-minute data is offered for 7 days or less. The rose uses hourly or 5-minute readings.')
+    const week = intervalChips('raw', 7, { rose: true, network: 'AgriMet' })
+    expect(pressed(week)).toBe('raw')
+    expect(disabled(week)).toEqual(['daily'])
+    expect(week.find((c) => c.id === 'daily')?.reason).toBe('The rose uses hourly or 15-minute readings')
+    expect(pressed(intervalChips('hourly', 30, { rose: true }))).toBe('hourly')
   })
   it('Auto clears the key', () => {
     expect(intervalPatch('auto')).toEqual({ agg: null })

@@ -80,6 +80,8 @@ for (const [name, query, evidence] of [
   ['variable', '?s=acebozem&v=air_temp#charts', { charts: 1 }],
   ['variable-history', '?s=acebozem&v=air_temp&view=history#charts', { charts: 1 }],
   ['variable-table', '?s=acebozem&v=air_temp&tbl=1#charts', { filled: ['.var-table-grid tbody'] }],
+  ['variable-rose', '?s=acebozem&v=wind_dir&wd=rose#charts', { charts: 1, filled: ['[data-testid="rose-stats"] dl'] }],
+  ['variable-rose-table', '?s=acebozem&v=wind_dir&wd=rose&tbl=1#charts', { filled: ['.var-table-grid tbody'] }],
   ['compare', '?s=acebozem#latest', { charts: 1 }],
   ['legacy-ag', '?s=acebozem#ag', { filled: ['[data-testid="charts-ag-tools"] ul'] }],
   ['ag-gdd', '?s=acebozem&v=gdd#charts', { charts: 1 }],
@@ -97,6 +99,15 @@ for (const [name, query, evidence] of [
     return { scroll: document.documentElement.scrollWidth, vw, wide }
   })
   check(`[${name} 390] no horizontal overflow`, o.scroll <= o.vw, JSON.stringify(o))
+  if (name === 'variable-rose') {
+    // Large on a phone: the canvas spans the card and is taller than wide (the key under the rose).
+    const r = await page.evaluate(() => {
+      const c = document.querySelector('[data-testid="rose-chart"] .chart-canvas').getBoundingClientRect()
+      const card = document.querySelector('[data-testid="variable-rose"]').getBoundingClientRect()
+      return { w: Math.round(c.width), h: Math.round(c.height), card: Math.round(card.width) }
+    })
+    check('[variable-rose 390] the rose spans the card and leaves room for its key under it', r.w >= r.card - 16 && r.h > r.w, JSON.stringify(r))
+  }
   if (name === 'now') {
     const fold = await page.evaluate(() => {
       const strip = document.querySelector('[data-testid="now-strip"]').getBoundingClientRect()

@@ -38,7 +38,7 @@ export const LIST_AG_TOOLS: readonly string[] = AG_TOOL_IDS.filter((id) => id !=
  * or a table).
  */
 export function chartPatch(id: string): Partial<UrlState> {
-  return isAgTool(id) ? variablePatch(id) : { v: id, view: 'recent', tbl: false, cmp: false }
+  return isAgTool(id) ? variablePatch(id) : { v: id, view: 'recent', tbl: false, wd: null, cmp: false }
 }
 
 /** Id of the heading a Charts entry's page focuses on arrival: an Ag tool's (Reference ET too) or a variable page's. */

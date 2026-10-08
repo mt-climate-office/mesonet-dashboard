@@ -90,10 +90,12 @@
 .chart-interval { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-tight) 0.35rem; }
 .chart-interval-label { margin-right: 0.35rem; font-size: var(--fs-sm); color: var(--text-muted); }
 .chart-interval .dash-chip { padding-inline: 0.65rem; }
-/* A chip not offered here stays focusable (aria-disabled); the note beside the row says why. */
-.chart-interval .dash-chip[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
-.chart-interval .dash-chip[aria-disabled="true"]:hover { background: none; color: var(--text-secondary); }
+/* A chip not offered here stays focusable (aria-disabled); the note under the row says why
+   (All years beside the wind rose, too). */
+:is(.chart-interval, .chart-chips) .dash-chip[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+:is(.chart-interval, .chart-chips) .dash-chip[aria-disabled="true"]:hover { background: none; color: var(--text-secondary); }
 .chart-interval-note { flex-basis: 100%; font-size: var(--fs-xs); color: var(--text-muted); }
+.chart-range-note { margin: calc(-1 * var(--gap-tight)) 0 0; }
 @media (max-width: 640px), (max-height: 560px) { .chart-chips .dash-chip { padding-inline: 0.75rem; } }
 /* "1 y" is narrower than a 40 px touch target (HOUSE-STYLE §5.5). */
 @media (hover: none) { .chart-chips .dash-chip { min-width: 44px; } }
@@ -127,6 +129,21 @@
 .var-chart { --chart-height: var(--var-h); --chart-height-compact: var(--var-h-compact); }
 .var-skel { --chart-height: var(--var-h); }
 @media (max-width: 640px), (max-height: 560px) { .var-skel { --chart-height: var(--var-h-compact); } }
+
+/* Wind direction's Rose view (partials/charts/rose.html): its title as on Now's rose card, then the
+   rose as large as the card allows. A wide card (core/charts ROSE_SIDE_KEY_MIN_WIDTH, 560 px, and up)
+   puts the key beside the rose at 30 rem tall (a short screen: the height under the header); a
+   narrower one (a phone) is as tall as it is wide plus 5.5 rem for the key under the rose (two or
+   three rows). Its stats card is two by two on compact screens ("SSE · 16%" on one line). */
+.var-rose-title { margin: 0; padding: var(--gap-tight) 0.5rem 0; text-align: center; font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary); }
+.var-rose .var-canvas { container-type: inline-size; }
+.var-rose .var-canvas > * { --rose-h: 30rem; }
+@media (max-height: 560px) { .var-rose .var-canvas > * { --rose-h: max(16rem, calc(100dvh - 5rem)); } }
+@container (max-width: 559px) { .var-rose .var-canvas > * { --rose-h: calc(100cqw + 5.5rem); } }
+.var-rose-chart, .var-rose .var-skel { --chart-height: var(--rose-h); --chart-height-compact: var(--rose-h); }
+@media (max-width: 640px) {
+  .chart-stat-row.is-rose { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 /* A chart as a table (partials/charts/table.html): scrolls sideways inside its box, never the page. */
 .var-table-bar { display: flex; justify-content: flex-end; padding-bottom: var(--gap-tight); }

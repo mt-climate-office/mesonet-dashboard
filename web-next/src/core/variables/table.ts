@@ -1,6 +1,7 @@
 /**
  * Paging for the variable page's Table view (the chart's table twin, made
- * visible). Newest rows first, so page 1 is the latest readings.
+ * visible). Newest rows first, so page 1 is the latest readings; a table in a
+ * fixed order (the wind rose's compass points) keeps its order.
  */
 
 export const PAGE_SIZE = 50
@@ -14,12 +15,12 @@ export interface TablePage {
   summary: string
 }
 
-/** Page `page` (1-based) of `rows` (oldest first, as the twin builds them), newest first. */
-export function tablePage(rows: readonly string[][], page: number, size = PAGE_SIZE): TablePage {
+/** Page `page` (1-based) of `rows` (oldest first, as the twin builds them), newest first unless `fixedOrder`. */
+export function tablePage(rows: readonly string[][], page: number, size = PAGE_SIZE, fixedOrder = false): TablePage {
   const pages = Math.max(1, Math.ceil(rows.length / size))
   const p = Math.min(pages, Math.max(1, Math.floor(page) || 1))
-  const newest = [...rows].reverse()
+  const ordered = fixedOrder ? [...rows] : [...rows].reverse()
   const from = (p - 1) * size
-  const out = newest.slice(from, from + size)
+  const out = ordered.slice(from, from + size)
   return { rows: out, page: p, pages, summary: rows.length ? `Rows ${from + 1}–${from + out.length} of ${rows.length}` : 'No rows' }
 }

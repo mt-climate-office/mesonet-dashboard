@@ -1,18 +1,25 @@
 /**
- * Wind rose (Latest top card): stacked polar bars of observation counts per
- * 16-point compass direction × speed bin (core/models/windRose), legacy
- * `plot_wind` / px.bar_polar. Bin colors are batlow via `binColors`, slow → fast.
+ * The one wind rose: stacked polar bars of readings per 16-point compass
+ * direction × speed bin (core/models/windRose), legacy `plot_wind` /
+ * px.bar_polar. Bin colors are batlow via `binColors`, slow → fast. Two
+ * layouts of the same option: `windRoseChart` (Now's 17 rem media card) and
+ * `windRoseLargeChart` (the Wind direction page's Rose view, as large as the card allows).
  */
 import type { EChartsOption } from 'echarts'
-import type { WindRoseModel } from '../models/windRose'
+import { directionTotals, shareText, type WindRoseModel } from '../models/windRose'
+import { CALM_MPH } from '../overview/summary'
 import { binColors } from '../palette'
 import { dateRangeText } from '../ag/view/summary'
 import { escapeHtml } from './format'
 import { tooltipBase } from './tooltip'
-import type { ChartBuilder, ChartTable } from './types'
+import type { ChartBuilder, ChartContext, ChartTable } from './types'
 
-/** "Wind, Sep 19 – Oct 2" over the data's local dates (with the years when they differ), or null without dates. */
-export function windRoseTitle(m: WindRoseModel): string | null {
+/**
+ * "Wind, Sep 19 – Oct 2" over the data's local dates (with the years when they differ), or
+ * "Wind, last 24 hours" for a rose of the last 24 hours (`last24h`); null without dates.
+ */
+export function windRoseTitle(m: WindRoseModel, last24h = false): string | null {
+  if (last24h) return 'Wind, last 24 hours'
   if (!m.span) return null
   const [a, b] = m.span
   const range = dateRangeText(a, b)
@@ -25,6 +32,9 @@ export const binName = (label: string): string => `${label} mph`
 /** Only the 8 principal points are labelled (legacy tickvals 0, 45, … 315). */
 const PRINCIPAL = new Set(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'])
 
+/** The large layout puts the key beside the rose from this canvas width (px); narrower, under it. */
+export const ROSE_SIDE_KEY_MIN_WIDTH = 560
+
 interface ItemParam {
   seriesName?: string
   name?: string
@@ -32,15 +42,14 @@ interface ItemParam {
   marker?: unknown
 }
 
-export const windRoseChart: ChartBuilder<WindRoseModel> = (m, ctx) => {
+/** The shared option; `layout` places the rose and its key. */
+function roseOption(m: WindRoseModel, ctx: ChartContext, layout: { polar: object; legend: object }): EChartsOption {
   const colors = binColors(m.bins.length, ctx.theme.name)
   const names = m.bins.map((b) => binName(b.label))
   // One category spans 22.5°; start half a band past 12 o'clock so N is centred at the top.
   const startAngle = 90 + 360 / m.directions.length / 2
   return {
-    // Room above for the "N" label under the card's title (it touched it at 390 px), and the bottom
-    // ~quarter for the legend, which wraps to two rows in a narrow card.
-    polar: { center: ['50%', '44%'], radius: '64%' },
+    polar: layout.polar,
     angleAxis: {
       type: 'category',
       data: [...m.directions],
@@ -60,14 +69,16 @@ export const windRoseChart: ChartBuilder<WindRoseModel> = (m, ctx) => {
       axisTick: { show: false },
     },
     // Plain (wrapping) legend, not the shared scroll legend: all 8 bins stay visible without paging.
-    legend: { type: 'plain', data: names, bottom: 4, left: 'center', itemWidth: 12, itemHeight: 10, itemGap: 8, textStyle: { fontSize: ctx.compact ? 11 : 12 } },
+    legend: { type: 'plain', data: names, itemWidth: 12, itemHeight: 10, itemGap: 8, textStyle: { fontSize: ctx.compact ? 11 : 12 }, ...layout.legend },
     tooltip: {
       ...tooltipBase(ctx),
       trigger: 'item',
       formatter: ((p: ItemParam) =>
         `<div class="tooltip-name">${escapeHtml(p.seriesName ?? '')}</div>` +
         `<div>${typeof p.marker === 'string' ? p.marker : ''}${escapeHtml(p.name ?? '')}: ` +
-        `<span style="font-family:var(--font-mono)">${escapeHtml(String(p.value ?? ''))}</span></div>`) as never,
+        `<span style="font-family:var(--font-mono)">${escapeHtml(String(p.value ?? ''))}</span>` +
+        (typeof p.value === 'number' ? ` (${shareText(p.value, m)})` : '') +
+        `</div>`) as never,
     },
     series: m.bins.map((b, i) => ({
       type: 'bar',
@@ -84,11 +95,33 @@ export const windRoseChart: ChartBuilder<WindRoseModel> = (m, ctx) => {
   } satisfies EChartsOption
 }
 
-/** Table twin: one row per direction, one column per speed bin. */
-export function windRoseTable(m: WindRoseModel): ChartTable {
+/** Now's media card (17 rem tall, any width): the rose above, the key wrapping under it. */
+export const windRoseChart: ChartBuilder<WindRoseModel> = (m, ctx) =>
+  // Room above for the "N" label under the card's title (it touched it at 390 px), and the bottom
+  // ~quarter for the legend, which wraps to two rows in a narrow card.
+  roseOption(m, ctx, { polar: { center: ['50%', '44%'], radius: '64%' }, legend: { bottom: 4, left: 'center' } })
+
+/**
+ * The Rose view: from ROSE_SIDE_KEY_MIN_WIDTH the rose fills the height with the key in a column at
+ * the right; narrower (a phone) it spans the width, its centre `width / 2 + 16` px down, so the
+ * canvas must be about `width + 7 rem` tall (charts.css `.var-rose`) for the key's rows under it.
+ */
+export const windRoseLargeChart: ChartBuilder<WindRoseModel> = (m, ctx) =>
+  ctx.width >= ROSE_SIDE_KEY_MIN_WIDTH
+    ? roseOption(m, ctx, { polar: { center: ['50%', '50%'], radius: '80%' }, legend: { orient: 'vertical', right: 8, top: 'middle' } })
+    : roseOption(m, ctx, { polar: { center: ['50%', Math.round(ctx.width / 2) + 16], radius: '86%' }, legend: { bottom: 4, left: 'center' } })
+
+/**
+ * Table twin: one row per direction (N first, not by time), one column per speed bin (readings),
+ * then the direction's share of every reading; the caption names the calm readings left out.
+ */
+export function windRoseTable(m: WindRoseModel, last24h = false): ChartTable {
+  const totals = directionTotals(m)
+  const calm = m.calm ? `; ${m.calm.toLocaleString('en-US')} calm readings (under ${CALM_MPH} mph, ${shareText(m.calm, m)}) are not drawn` : ''
   return {
-    caption: `${windRoseTitle(m) ?? 'Wind data'}: observation counts by direction and speed`,
-    columns: ['Direction', ...m.bins.map((b) => binName(b.label))],
-    rows: m.directions.map((d, i) => [d, ...m.bins.map((b) => String(b.counts[i]))]),
+    caption: `${windRoseTitle(m, last24h) ?? 'Wind data'}: readings by direction and speed${calm}`,
+    columns: ['Direction', ...m.bins.map((b) => binName(b.label)), 'Share'],
+    rows: m.directions.map((d, i) => [d, ...m.bins.map((b) => String(b.counts[i])), shareText(totals[i], m)]),
+    fixedOrder: true,
   }
 }

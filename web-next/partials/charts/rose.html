@@ -1,0 +1,29 @@
+<!-- Wind direction's Rose view (wd=rose; x-data="variableRose({ part: 'chart' })",
+     ui/charts/variableRose.ts): the wind rose of the page's window under its title ("Wind, Oct 1 –
+     Oct 8"), drawn by the chart host with its sr-only table twin; or, in table mode (the
+     including page's tableMode(), tbl=1), its table in the rose's place (16 rows, N first). Its
+     stats card is the page's (variable.html, part: 'stats'). -->
+<section class="dash-card chart-card var-rose" aria-labelledby="var-rose-title" x-data="variableRose({ part: 'chart' })" data-testid="variable-rose">
+  <h3 class="var-rose-title" id="var-rose-title" x-text="title() || 'Wind rose'" data-testid="variable-rose-title"></h3>
+  <template x-if="!tableMode()">
+    <div class="var-canvas">
+      <div class="var-status" x-show="status().kind !== 'ready'">
+        <template x-if="status().kind === 'loading'">
+          <div><p class="sr-only" role="status">Loading the wind rose…</p><span class="dash-skel dash-skel--chart var-skel" aria-hidden="true"></span></div>
+        </template>
+        <template x-if="status().kind === 'empty'">
+          <p class="charts-empty" role="status" x-text="status().title"></p>
+        </template>
+        <template x-if="status().kind === 'error'">
+          <!-- @include partials/load-error.html -->
+        </template>
+      </div>
+      <div class="chart var-rose-chart" :aria-hidden="status().kind !== 'ready'" data-testid="rose-chart" x-data="chart(roseChart())"></div>
+    </div>
+  </template>
+  <template x-if="tableMode()">
+    <div class="var-table" x-data="chartTable({ table: () => table() })" data-testid="variable-table">
+      <!-- @include partials/charts/table.html -->
+    </div>
+  </template>
+</section>

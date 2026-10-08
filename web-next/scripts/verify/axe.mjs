@@ -96,6 +96,9 @@ const SCENARIOS = [
   { name: 'variable-table', query: '?s=acebozem&v=air_temp&tbl=1#charts', evidence: { filled: ['.var-table-grid tbody'] } },
   { name: 'variable-daily', query: '?s=acebozem&v=air_temp&agg=daily#charts', evidence: { charts: 1, filled: ['[data-testid="variable-stats"] dl'] } },
   { name: 'dates-sheet', query: '?s=acebozem&v=air_temp#charts', evidence: { charts: 1 }, after: datesSheet },
+  // Wind direction's Rose view (wd=rose): the rose with All years and Daily off, its stats; and its table.
+  { name: 'variable-rose', query: '?s=acebozem&v=wind_dir&wd=rose#charts', evidence: { charts: 1, filled: ['[data-testid="rose-stats"] dl'] } },
+  { name: 'variable-rose-table', query: '?s=acebozem&v=wind_dir&wd=rose&tbl=1#charts', evidence: { filled: ['.var-table-grid tbody', '[data-testid="rose-stats"] dl'] } },
   { name: 'compare', query: '?s=acebozem#latest', evidence: { charts: 1 } },
   // Ag tools inside Charts (v = an Ag tool id); a bare legacy #ag lands on the list's Ag tools group.
   { name: 'legacy-ag', query: '?s=acebozem#ag', evidence: { filled: ['[data-testid="charts-ag-tools"] ul'] } },
