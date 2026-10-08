@@ -25,7 +25,12 @@ export function chartTable(o: { table: () => ChartTable | null }) {
       return t ? `${t.caption}|${t.columns.join(',')}|${t.rows.length}` : ''
     },
     get view(): TablePage {
-      return tablePage(this.table?.rows ?? [], this.page)
+      return tablePage(this.table?.rows ?? [], this.page, undefined, this.table?.fixedOrder)
+    },
+    /** The sr-only caption: the table's own, plus its order. */
+    get caption(): string {
+      const t = this.table
+      return t ? (t.fixedOrder ? t.caption : `${t.caption}, newest first`) : ''
     },
     /** After Show as chart, whose button unmounts with the table: focus the page's heading, never <body>. */
     focusHeading(): void {

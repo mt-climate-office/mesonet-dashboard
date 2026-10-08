@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readUrlState } from '../url-schema'
-import { agDownloadInterval, PREFILL_RESET, agToolElements, fromChart, prefillsFromChart, variableElements } from './fromChart'
+import { agDownloadInterval, PREFILL_RESET, agToolElements, fromChart, prefillsFromChart, variableElements, windRoseElements } from './fromChart'
 
 const els = [
   { element: 'air_temp_0200', description_short: 'Air Temperature @ 2 m' },
@@ -40,6 +40,14 @@ describe('variableElements', () => {
     expect(variableElements('Precipitation', els)).toEqual(['ppt'])
     expect(variableElements('Reference ET', els)).toEqual(['etr'])
     expect(variableElements('Snow Depth', els)).toEqual([])
+  })
+})
+
+describe('windRoseElements', () => {
+  it('wind direction and wind speed, the two a rose is drawn from', () => {
+    const wind = [...els, { element: 'wind_spd', description_short: 'Wind Speed @ 10 m' }, { element: 'wind_dir', description_short: 'Wind Direction @ 10 m' }]
+    expect(windRoseElements(wind)).toEqual(['wind_dir', 'wind_spd'])
+    expect(windRoseElements(els)).toEqual([])
   })
 })
 

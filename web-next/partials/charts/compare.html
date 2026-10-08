@@ -44,11 +44,11 @@
       <div class="cmp-group">
         <span class="cmp-legend" id="cmp-interval-label">Interval</span>
         <div class="cmp-chips" role="group" aria-labelledby="cmp-interval-label" data-testid="agg-select">
-          <template x-for="opt in aggOptions" :key="opt.value">
+          <template x-for="opt in aggOptions()" :key="opt.value">
             <button type="button" class="dash-chip dash-chip--quiet" :aria-pressed="agg() === opt.value" @click="setAgg(opt.value)" :data-testid="'cmp-agg-' + opt.value" x-text="opt.label"></button>
           </template>
         </div>
-        <p class="ctl-note">Hourly and daily averages load faster. Avoid more than 1 year of daily, 3 months of hourly or 2 weeks of 5-minute data.</p>
+        <p class="ctl-note" x-text="loadNote()">Hourly and daily averages load faster.</p>
         <label class="ctl-check" data-testid="gridmet-switch">
           <input type="checkbox" role="switch" aria-describedby="cmp-gridmet-help" :checked="gridmet()" :disabled="gridmetDisabled()" @change="setGridmet($event)">
           <span>Show normals</span>

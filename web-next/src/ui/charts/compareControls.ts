@@ -9,7 +9,7 @@ import Alpine from 'alpinejs'
 import { datesPatch, installDate, periodOfRecordPatch, showingPeriodOfRecord, todayIso, variableOptions, varsValue } from '../../core/latest'
 import { availableVars, chartWindow, isIsoDate } from '../../core/models/timeseries'
 import { latestAgg, latestVars, type LatestAgg } from '../../core/url-schema'
-import { plainVariableOptions } from '../../core/variables'
+import { compareAggOptions, compareLoadNote, plainVariableOptions } from '../../core/variables'
 import { component } from '../component'
 import { stationElements } from './resources'
 
@@ -26,12 +26,14 @@ export function compareControls() {
       ;(this.$el as HTMLDetailsElement).open = window.matchMedia(SIDE_BY_SIDE).matches
     },
 
-    /** The interval chips, named as on the variable page. */
-    aggOptions: [
-      { value: 'raw', label: '5-min' },
-      { value: 'hourly', label: 'Hourly' },
-      { value: 'daily', label: 'Daily' },
-    ] as const,
+    /** The interval chips, named as on the variable page (raw: 5-min, 15-min at AgriMet). */
+    aggOptions(): { value: LatestAgg; label: string }[] {
+      return compareAggOptions(stations().current?.sub_network)
+    },
+    /** The note under them, in the station's raw interval. */
+    loadNote(): string {
+      return compareLoadNote(stations().current?.sub_network)
+    },
 
     /* Dates */
     installed(): string | null {

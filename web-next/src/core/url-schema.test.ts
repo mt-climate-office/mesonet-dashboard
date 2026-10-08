@@ -201,6 +201,13 @@ describe('v / view (Charts → variable page)', () => {
     expect(readUrlState('').tbl).toBe(false)
     expect(writeUrlSearch({ ...readUrlState('?s=a'), tbl: true })).toBe('?s=a&tbl=1')
   })
+  it('wd=rose is the Wind direction page’s Rose view; absent (or anything else) = the time series', () => {
+    expect(readUrlState('?v=wind_dir&wd=rose').wd).toBe('rose')
+    expect(readUrlState('').wd).toBeNull()
+    expect(readUrlState('?wd=pie').wd).toBeNull()
+    expect(writeUrlSearch({ ...readUrlState('?s=a&v=wind_dir'), wd: 'rose' })).toBe('?s=a&v=wind_dir&wd=rose')
+    expect(writeUrlSearch({ ...readUrlState('?s=a&v=wind_dir&wd=rose'), wd: null })).toBe('?s=a&v=wind_dir')
+  })
 })
 
 describe('agg (interval)', () => {

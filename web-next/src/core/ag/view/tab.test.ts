@@ -58,7 +58,7 @@ describe('resolveAgTab', () => {
 
 describe('patches', () => {
   it('a variable change resets crop, cutoffs, time agg and soil var', () => {
-    expect(variablePatch('etr')).toEqual({ v: 'etr', view: 'recent', tbl: false, cmp: false, crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' })
+    expect(variablePatch('etr')).toEqual({ v: 'etr', view: 'recent', tbl: false, wd: null, cmp: false, crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' })
     expect(cropPatch('corn')).toEqual({ crop: 'corn', gdd_lo: null, gdd_hi: null })
   })
   it('slider: crop cutoffs ↔ value; only a moved thumb is written; open cap = null', () => {

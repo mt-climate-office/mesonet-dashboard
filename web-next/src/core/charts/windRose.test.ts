@@ -3,7 +3,7 @@ import type { ObservationRow } from '../api'
 import { buildWindRoseModel } from '../models/windRose'
 import { THEMES, binColors } from '../palette'
 import { testCtx } from './testing'
-import { binName, windRoseChart, windRoseTable, windRoseTitle } from './windRose'
+import { ROSE_SIDE_KEY_MIN_WIDTH, binName, windRoseChart, windRoseLargeChart, windRoseTable, windRoseTitle } from './windRose'
 
 const rows = [
   [0, 1.2],
@@ -61,24 +61,53 @@ describe('windRoseChart', () => {
     expect(a.clockwise).toBe(true)
     expect(a.data.map(a.axisLabel.formatter).filter(Boolean)).toEqual(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'])
   })
-  it('item tooltip escapes text', () => {
+  it('item tooltip escapes text and gives the share of every reading', () => {
     const tip = windRoseChart(model, testCtx()).tooltip as { trigger: string; formatter: (p: unknown) => string }
     expect(tip.trigger).toBe('item')
     expect(tip.formatter({ seriesName: '<b>', name: 'N', value: 3 })).toContain('&lt;b&gt;')
+    expect(tip.formatter({ seriesName: 'x', name: 'N', value: 3 })).toContain('(30%)')
+  })
+})
+
+describe('windRoseLargeChart (the Rose view)', () => {
+  it('is the same rose as the card (series, axes); only the layout differs', () => {
+    const card = windRoseChart(model, testCtx('light'))
+    const large = windRoseLargeChart(model, testCtx('light'))
+    expect(large.series).toEqual(card.series)
+    expect((large.angleAxis as { data: string[] }).data).toEqual((card.angleAxis as { data: string[] }).data)
+  })
+  it('wide: the key in a column at the right; narrow: the rose spans the width, the key under it', () => {
+    const wide = windRoseLargeChart(model, testCtx('dark', ROSE_SIDE_KEY_MIN_WIDTH))
+    expect(wide.legend).toMatchObject({ orient: 'vertical', right: 8 })
+    const narrow = windRoseLargeChart(model, testCtx('dark', 342, true, true))
+    expect(narrow.legend).toMatchObject({ bottom: 4, left: 'center' })
+    expect((narrow.polar as { center: unknown[] }).center).toEqual(['50%', 187])
+  })
+  it('every reading calm: no series', () => {
+    expect(windRoseLargeChart({ ...model, bins: [], n: 0, calm: 3 }, testCtx()).series).toEqual([])
   })
 })
 
 describe('title + table', () => {
-  it('plain title from the data span; the years only when they differ', () => {
+  it('plain title from the data span; the years only when they differ; "last 24 hours" for that window', () => {
     expect(windRoseTitle(model)).toBe('Wind, Sep 17 – Sep 19')
     expect(windRoseTitle({ ...model, span: ['2025-12-25', '2026-01-07'] })).toBe('Wind, Dec 25, 2025 – Jan 7, 2026')
     expect(windRoseTitle({ ...model, span: null })).toBeNull()
+    expect(windRoseTitle(model, true)).toBe('Wind, last 24 hours')
   })
-  it('one row per direction, one column per bin', () => {
+  it('one row per direction (fixed order, N first), one column per bin, then the share', () => {
     const t = windRoseTable(model)
-    expect(t.columns).toEqual(['Direction', ...model.bins.map((b) => `${b.label} mph`)])
+    expect(t.columns).toEqual(['Direction', ...model.bins.map((b) => `${b.label} mph`), 'Share'])
     expect(t.rows).toHaveLength(16)
     expect(t.rows[0][0]).toBe('N')
-    expect(t.caption).toContain('Wind, Sep 17 – Sep 19')
+    expect(t.rows[0].at(-1)).toBe('30%') // 0°, 10° and 355°: 3 of 10
+    expect(t.fixedOrder).toBe(true)
+    expect(t.caption).toBe('Wind, Sep 17 – Sep 19: readings by direction and speed')
+    expect(windRoseTable(model, true).caption).toMatch(/^Wind, last 24 hours/)
+  })
+  it('the caption names the calm readings left out', () => {
+    expect(windRoseTable({ ...model, calm: 10 }).caption).toBe(
+      'Wind, Sep 17 – Sep 19: readings by direction and speed; 10 calm readings (under 1 mph, 50%) are not drawn',
+    )
   })
 })

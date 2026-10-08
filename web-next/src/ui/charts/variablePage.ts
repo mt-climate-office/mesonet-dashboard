@@ -3,38 +3,48 @@
  * Header (back, title, ⋯ menu), "value now · range", the chart (core/charts
  * variableChart; the Daily interval adds the low–high band) or, with `tbl`,
  * its table; range chips over from/to (All years = `view=history`, its own
- * component), the Interval row over `agg`, and the stats card. A sideways
- * swipe on touch, or ⋯ → Previous / Next, walks the list. A Download sheet
- * opened by the URL with nothing to download is prefilled from this chart.
- * Logic is in core/variables.
+ * component), the Interval row over `agg`, and the stats card. On Wind
+ * direction a View row switches to the wind rose of the window (`wd=rose`;
+ * its own component, variableRose). A sideways swipe on touch, or ⋯ →
+ * Previous / Next, walks the list. A Download sheet opened by the URL with
+ * nothing to download is prefilled from this chart. Logic is in core/variables.
  */
 import Alpine from 'alpinejs'
 import { variableChart, variableTable, variableTableAll, type ChartTable, type LatestTimeseriesModel } from '../../core/charts'
-import { fromChart, prefillsFromChart, variableElements } from '../../core/downloader/fromChart'
+import { fromChart, prefillsFromChart, variableElements, windRoseElements } from '../../core/downloader/fromChart'
 import { POR_FALLBACK_START, dataSettled, installDate, plotStatus, todayIso, untilNow, viewAnnouncement, type PlotStatus } from '../../core/latest'
 import { chartWindow } from '../../core/models/timeseries'
 import {
   RANGE_CHIPS,
+  ROSE_ALL_YEARS_REASON,
+  WIND_VIEW_CHIPS,
   currentReading,
   effectiveAgg,
   findVariable,
   hasBand,
   intervalChips,
+  intervalNote,
   intervalPatch,
   neighbors,
+  offersRose,
   pageRange,
   panelStats,
   plainName,
   rangeChipPatch,
   rangeLabel,
   rangeView,
+  roseAgg,
+  roseOffersRange,
   showsNormals,
+  showsRose,
   spanDays,
+  windViewPatch,
   withBand,
   type IntervalChip,
   type PageRange,
   type StatRow,
   type Variable,
+  type WindViewChip,
 } from '../../core/variables'
 import { loadErrorText } from '../../core/loadError'
 import { denverWallMs } from '../../core/today'
@@ -122,16 +132,35 @@ export function variablePage() {
       const w = this.window()
       return spanDays(w.start, w.end)
     },
-    /** The interval drawn (Auto resolved; 5-min only where offered). */
+    /** The interval drawn (Auto resolved; raw only where offered; the rose: hourly or raw). */
     agg(): LatestAgg {
-      return effectiveAgg(url().state.agg, this.days(), this.all())
+      return this.rose() ? roseAgg(url().state.agg, this.days()) : effectiveAgg(url().state.agg, this.days(), this.all())
     },
     intervals(): IntervalChip[] {
-      return intervalChips(url().state.agg, this.days(), this.all())
+      return intervalChips(url().state.agg, this.days(), { all: this.all(), network: stations().current?.sub_network, rose: this.rose() })
     },
-    /** Why an interval chip is not offered here ('' when every one is), shown beside the row. */
+    /** Why the interval chips not offered here are off ('' when every one is), shown under the row. */
     intervalNote(): string {
-      return this.intervals().find((c) => c.disabled)?.reason ?? ''
+      return intervalNote(this.intervals())
+    },
+    /** This page offers the Time series | Rose switch (Wind direction). */
+    offersRose(): boolean {
+      return offersRose(this.variable?.id)
+    },
+    /** The page shows the wind rose (`wd=rose`), not the time series. */
+    rose(): boolean {
+      return showsRose(url().state, this.variable?.id)
+    },
+    windViews: WIND_VIEW_CHIPS,
+    windView(): WindViewChip {
+      return this.rose() ? 'rose' : 'series'
+    },
+    /** A range chip the view does not offer (All years beside the rose), and why. */
+    rangeOff(id: (typeof RANGE_CHIPS)[number]['id']): boolean {
+      return this.rose() && !roseOffersRange(id)
+    },
+    rangeNote(): string {
+      return this.rose() ? ROSE_ALL_YEARS_REASON : ''
     },
     /** "57 °F now · Last 14 days". */
     subline(): string {
@@ -146,7 +175,14 @@ export function variablePage() {
 
     /* Changes: range and interval replace the history entry; table/chart and prev/next push it */
     setRange(id: (typeof RANGE_CHIPS)[number]['id']): void {
+      if (this.rangeOff(id)) return
       url().set(rangeChipPatch(id, url().state.agg))
+    },
+    /** Time series | Rose: pushed, like Show as table, so Back returns. */
+    setWindView(id: WindViewChip): void {
+      if (id === this.windView()) return
+      url().go('charts', windViewPatch(id), true)
+      countEvent(`wind-view/${id}`, 'Wind view chosen')
     },
     setInterval(c: IntervalChip): void {
       if (c.disabled) return
@@ -176,15 +212,18 @@ export function variablePage() {
       const w = this.window()
       const all = this.all()
       const start = all ? (installDate(stations().current) ?? POR_FALLBACK_START) : w.start
-      url().set(fromChart({ elements: variableElements(v.name, stationElements(id) ?? []), start, end: all ? todayIso() : w.end, interval: this.agg() }))
+      const els = stationElements(id) ?? []
+      // The rose is drawn from wind direction and wind speed: both download.
+      const elements = this.rose() ? windRoseElements(els) : variableElements(v.name, els)
+      url().set(fromChart({ elements, start, end: all ? todayIso() : w.end, interval: this.agg() }))
       return true
     },
 
-    /* Chart */
+    /* Chart (the time series; the rose is variableRose's) */
     query(): SeriesQuery | null {
       const id = stations().id
       const v = this.variable
-      if (!id || !v || !this.window().valid || this.all()) return null
+      if (!id || !v || !this.window().valid || this.all() || this.rose()) return null
       const agg = this.agg()
       return { station: id, window: this.window(), agg, vars: [v.name], gridmet: showsNormals(v, agg) }
     },
@@ -234,6 +273,7 @@ export function variablePage() {
     },
     get announceKey(): string {
       // All years has its own data and announcement; reading the model here would fetch a window.
+      // (The rose announces itself; with it shown, query() is null and so is the model.)
       if (this.all()) return ''
       const m = this.model()
       const w = this.window()

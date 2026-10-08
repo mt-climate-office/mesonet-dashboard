@@ -145,8 +145,10 @@ Router helpers for components: `$store.url.go(section, patch, drillDown)` (or, f
 patch)` for the real href, `CHARTS_LIST_PATCH` for "back to the list", `chartPatch(id)` (core/variables) to
 open any Charts entry (a variable on its chart, an Ag tool through its reset `variablePatch`), `chartsMode(state)`
 for what Charts shows, `isAgTool(v)` for the namespace. On a chart page, `view=history` is All years, `tbl=1`
-shows the chart as a table (pushed, so Back returns), and `agg` absent is the Auto interval
-(core/variables/interval; Compare reads it as hourly, `latestAgg`). A chart page's back arrow returns to where it was opened from when a
+shows the chart as a table (pushed, so Back returns), `wd=rose` shows Wind direction's wind rose of the window
+(core/variables/rose; pushed; dropped with `v` by `chartPatch`, `CHARTS_LIST_PATCH`), and `agg` absent is the Auto interval
+(core/variables/interval; Compare reads it as hourly, `latestAgg`; the raw interval is named per network, 5-min or
+AgriMet's 15-min, `rawMinutes`). A chart page's back arrow returns to where it was opened from when a
 link says so (`follow(…, { from: 'now' })` on Now's tiles): `$store.url.backTo` (section and history depth,
 kept in `history.state`; core/router `nextBackTo` carries it through Charts drill-downs and drops it at the
 list), else it goes to the list.
@@ -175,9 +177,10 @@ in the same getter pick up a new date after midnight. A new key with a `slot` st
 last data, so that midnight key change shows no skeleton.
 
 Live: `/latest`, the ppt summary, the NWS forecast and hourly forecast, the latest photo listings (`ui/station/resources.ts`);
-Now's 72 h hourly rows, 7-day rain and the soil VWC behind its SWP chip (`ui/now/resources.ts`, slotted); and `recordResource`
+Now's 72 h hourly rows, 7-day rain and the soil VWC behind its SWP chip (`ui/now/resources.ts`, slotted); Now's 24 h wind rose
+(`windObs`, slotted); and `recordResource`
 windows that reach today (`core/latest` `endsToday`: the Charts list's 48 h rows, slotted; the
-variable page; Compare). Not live: normals, stations/elements/config, past photo days, the wind rose, Ag, and
+variable page and its Rose view; Compare). Not live: normals, stations/elements/config, past photo days, Ag, and
 All years (`live: false`). Now's "Updated N min ago" uses the current time on each recompute; if
 refetches fail, its "No report for over 2 hours" warning still comes from the last row's stamp.
 To make a new time-sensitive fetch live, pass `live: true` (and a `slot` if its key carries today).
@@ -370,7 +373,7 @@ focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
 `npm run verify` runs axe on its scenarios (Now, the header ⋯ menu, the photo dialog, the no-station landing, the picker
 opened with a station, the Charts list, the legacy `#ag` landing, a variable page in each view (⋯ menu, All
-years, table, the Daily band, the Custom dates sheet), Compare, 4 Ag tools (two option popovers, a ⋯ menu), the
+years, table, the Daily band, the Custom dates sheet, Wind direction's rose and its table), Compare, 4 Ag tools (two option popovers, a ⋯ menu), the
 Download sheet (a row open, after Preview), About and its two sheets, Help) × 1440/390 px × 3 themes
 (`scripts/verify/axe.mjs`).
 

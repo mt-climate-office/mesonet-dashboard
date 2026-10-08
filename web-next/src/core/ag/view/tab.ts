@@ -111,7 +111,7 @@ export function resolveAgTab(url: AgUrl, station: Station | undefined, today: Lo
  * the initial load.
  */
 export function variablePatch(v: string): Partial<UrlState> {
-  return { v, view: 'recent', tbl: false, cmp: false, crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' }
+  return { v, view: 'recent', tbl: false, wd: null, cmp: false, crop: 'wheat', gdd_lo: null, gdd_hi: null, ag_time: 'daily', soilv: 'soil_vwc' }
 }
 
 /** Ag keys other than the tool itself: every option a tool reads (old `#ag` links carry them; core/router). */

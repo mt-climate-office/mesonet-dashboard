@@ -25,7 +25,7 @@ The decisions:
 4. **Display numerals:** readings at ≥ 1.75 rem use Outfit with `tabular-nums` (`.num-display`;
    mco-web-style#36). Space Mono stays for tables, ids, timestamps and axes.
 5. **Interval** on every variable page: Auto · 5-min · Hourly · Daily (Auto: hourly up to 30 d, daily beyond;
-   5-min only up to 7 d; Daily draws the mean inside a low–high band, and the stats' Low/High are the true
+   5-min (15-min at AgriMet, named per network) only up to 7 d; Daily draws the mean inside a low–high band, and the stats' Low/High are the true
    extremes).
 
 Unchanged rules: logic in pure, tested `core/`; mesonet2 v2 at QC level 2, no `premade`, `end_time`
@@ -159,7 +159,7 @@ tiles, rows at every width.
 | Hero | Air temperature (`.num-display`, `--fs-display-hero`: 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("High 74° · Low 41° (24 h)", so the two agree; normal "Normal 67° · 38°"), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain; "calm after gusts to 43 mph earlier" when the 24 h peak gust is ≥ 25 mph) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
 | Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table; a "Loading the 48-hour strip…" status while tier 2 loads and a short note in its place when there is nothing to draw. Below it the forecast periods as an icon row (api.weather.gov only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
-| Media | Latest camera frame of the default direction (opens the photo dialog; its caption bottom right, clear of the camera's own label), or the wind rose without a camera (a fixed 20 rem card) | photo schedule, latest listings (1) |
+| Media | Latest camera frame of the default direction (opens the photo dialog; its caption bottom right, clear of the camera's own label), or the wind rose without a camera (a fixed 20 rem card): the last 24 hours of raw readings (5-min, AgriMet 15-min; `nowWindRoseRequest`), "Wind, last 24 hours", calm readings counted apart (see the Rose view) | photo schedule, latest listings (1) |
 | Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary, then what is falling now from `/latest`, `rainNow`: "0.12 in/h now" (the peak rate), "raining now", "dry now"; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page, whose heading takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
 | Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens About's readings sheet (`target: 'about-readings'`, the row's `data-sheet`; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
@@ -219,6 +219,7 @@ under an auto-opened picker drawer or sheet, which left the page barren (DIVERGE
 #charts&v=air_temp&agg=daily         Interval: absent = Auto · raw (5-min) · hourly · daily
 #charts&v=air_temp&view=history      All years: each year in its own color (daily)
 #charts&v=air_temp&tbl=1             the chart as a table (newest first, 50 per page)
+#charts&v=wind_dir&wd=rose           Wind direction's Rose view: the wind rose of the window (tbl=1: its table)
 #charts&v=gdd&crop=corn              an Ag tool with its keys (core/ag/view/tab)
 #charts&cmp=1                        Compare: stacked panels + options (legacy #latest lands here)
 ```
@@ -244,8 +245,10 @@ under an auto-opened picker drawer or sheet, which left the page barren (DIVERGE
     (`view=history`, the progressive years-overlaid chart: one calendar year per request, newest first, at most
     10; its note says how a year is drawn, `historyNote`: a line, a running total, or dots for wind direction). A window from Custom dates… presses no chip. Chips replace the history entry.
   - **Interval row** (`intervalChips`, quiet chips over `agg`): **Auto** (key absent; hourly up to 30 days,
-    daily beyond and for All years; its label says which, "Auto (hourly)") · **5-min** (`raw`; only for windows
-    of 7 days or less, disabled with the reason otherwise) · Hourly · Daily. A range chip drops 5-min where the
+    daily beyond and for All years; its label says which, "Auto (hourly)") · **5-min** (`raw`, named for the
+    station's network: **15-min** at AgriMet, whose loggers record every 15 minutes, `rawMinutes`; only for windows
+    of 7 days or less, disabled with the reason otherwise; the reasons of every chip that is off show in one note
+    under the row, `intervalNote`) · Hourly · Daily. A range chip drops 5-min where the
     new window does not offer it. **Daily** draws the daily mean as a line inside a **low–high band**: one more
     daily request with `agg_func=min,max` (`recordRequest({ extremes })`, `core/variables/band.ts`), drawn for a
     one-column variable (the band, in the line's color, is in the tooltip and the table's Low/High columns).
@@ -260,6 +263,27 @@ under an auto-opened picker drawer or sheet, which left the page barren (DIVERGE
     partials/charts/table.html, so Ag tools' tables have it too) · Custom
     dates… (the `dates` modal sheet, `partials/sheets/dates.html`: `dateRange` over `from`/`to`, install date …
     today; a valid range applies at once) · Share this chart (`shareView`) · Previous / Next variable.
+  - **Rose view (Wind direction only;** `wd=rose`, `core/variables/rose`, `partials/charts/rose.html`,
+    `ui/charts/variableRose.ts`): a **View** row (Time series | Rose, quiet chips like the Interval row) sits
+    between the range chips and the Interval row; a press pushes the history entry (like Show as table). The rose
+    replaces the time series in its card under a title in the Now card's style ("Wind, Oct 1 – Oct 8"; "Wind, last
+    24 hours" for 24 h): the one rose builder (`windRoseLargeChart`, sharing `windRoseChart`'s option: 16 compass
+    points, stacked speed bins in batlow slow → fast, an item tooltip with the count and its share). On a card
+    560 px wide and up the key is a column at the right and the rose fills a 30 rem canvas (the height under the
+    header on a short screen); narrower (a phone) the rose spans the card and the canvas is as tall as it is wide
+    plus 5.5 rem for the key's rows under it (a container query). It follows the range chips and Custom dates (24 h:
+    the 24 hours up to the newest reading); **All years** is off beside it (aria-disabled, "All years is a time
+    series only; the rose shows one date window." under the chips; a press does nothing, so the view never
+    changes under the user). The Interval row shows what the rose draws: Auto (hourly) · 5-min / 15-min (up to
+    7 days) · Hourly, and Daily off ("The rose uses hourly or 5-minute readings"). **Calm** readings (under 1 mph,
+    `CALM_MPH`) are counted, not drawn (their direction means nothing); all calm draws a note instead. The
+    **stats card** under the chips: Most often from ("SE · 22%"), Calm, Average speed (calm included), Readings,
+    two by two on phones. ⋯: Show as table puts the rose's table in its place (16 directions, N first, one column
+    per bin, then Share; not paged); its Show as chart returns to the rose; Download data prefills wind direction
+    and wind speed for the window at the rose's interval (5-min as hourly); Share keeps `wd=rose`. The rose has
+    its own request (wind speed + direction, `rm_na`; live while the window reaches today) and announces each new
+    window in the live region ("Wind rose updated: Bozeman, Wind, Oct 1 – Oct 8, 180 hourly readings, most often
+    from SE · 22%."); the chart host renders its sr-only table twin. AgriMet stations get the same view.
   - **Swipe:** on touch, a sideways swipe on the page (`ui/layout/swipe.ts`, `core/swipe.ts`: ≥ 60 px and
     twice as sideways as vertical) opens the previous or next variable in list order; the page is
     `touch-action: pan-y pinch-zoom`, so vertical scrolling is untouched. ⋯ → Previous / Next is its keyboard twin.
@@ -560,16 +584,17 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
 - Every new surface is in the axe matrix (`scripts/verify/axe.mjs`: `now`, `header-menu`, `photo-dialog`, `about`,
   `about-readings`, `about-history` (each sheet open), `landing` (the no-station landing, its map drawn),
   `picker-open` (the map revealed),
-  `charts-list`, `variable` + `-menu` + `-history` + `-table` + `-daily` (the band), `dates-sheet`, `compare`,
+  `charts-list`, `variable` + `-menu` + `-history` + `-table` + `-daily` (the band) + `-rose` + `-rose-table`, `dates-sheet`, `compare`,
   `legacy-ag`, four Ag tools, the GDD crop and cutoff popovers, the Reference ET ⋯ menu, `download-variables`,
   `download-dates`, `downloader` (after Preview), `help-dialog`) × 3 themes × 1440/390.
   `keyboard.mjs` walks the header and its ⋯ menu (Help, Theme), the landing's search (a place, a station) and
   its map's table twin, the picker, the Download sheet and its form, tab bar,
   photo dialog, About's two sheets (and Now's "All readings" opening the readings sheet), the variable page (⋯ Show
-  as table / Previous / Next / Custom dates, range and interval chips), Download prefilled from ⋯, Ag option chips
+  as table / Previous / Next / Custom dates, range and interval chips; Wind direction's Time series | Rose and back, the
+  rose's table, Show as chart and Download; AgriMet's 15-min chip and Now rose), Download prefilled from ⋯, Ag option chips
   (Enter opens, a pick applies, Esc returns focus) and the legacy links; `layout.mjs` checks touch swipes over
   charts (vertical scrolls, sideways walks the list),
-  sideways scroll at 390, the fold, the one-row header, the solid tab bar, the sheet's fit and reduced motion.
+  sideways scroll at 390 (the rose and its table too; the rose spans the card), the fold, the one-row header, the solid tab bar, the sheet's fit and reduced motion.
 - Charts: a chart as a table is a real `<table>` (caption, scoped headers) in a focusable, labelled scroll
   region; range and interval chips are `aria-pressed` buttons in labelled groups; option chips name their option
   ("Crop: Wheat"); stats are a `<dl>`.

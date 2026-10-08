@@ -19,6 +19,8 @@
  *                         history (All years); `table` is the legacy Table
  *                         view, read as recent + tbl
  *              tbl        1 = the page shows its chart as a table (Back or ⋯ returns)
+ *              wd         rose = the Wind direction page shows the wind rose of
+ *                         its window (core/variables/rose); absent = the time series
  *              cmp        1 = the Compare (stacked) chart; `#latest` links map
  *                         here (core/router.ts). It reads the Latest keys.
  *              dl         1 = the Download sheet is open over Charts; old
@@ -76,6 +78,10 @@ export type LatestAgg = (typeof LATEST_AGG_OPTIONS)[number]
 
 export const CHART_VIEWS = ['recent', 'history', 'table'] as const
 export type ChartView = (typeof CHART_VIEWS)[number]
+
+/** The Wind direction page's views besides the time series (the key absent). */
+export const WIND_VIEWS = ['rose'] as const
+export type WindView = (typeof WIND_VIEWS)[number]
 
 export const NETWORK_OPTIONS = ['HydroMet', 'AgriMet', 'Cooperator'] as const
 
@@ -174,6 +180,7 @@ export const URL_SCHEMA = {
   v: str(),
   view: oneOf(CHART_VIEWS, 'recent'),
   tbl: flag(),
+  wd: oneOf(WIND_VIEWS, null),
   cmp: flag(),
   dl: flag(),
   // Latest (Compare)

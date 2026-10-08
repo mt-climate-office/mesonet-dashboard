@@ -11,6 +11,11 @@ describe('tablePage', () => {
     expect(tablePage(rows, 3)).toMatchObject({ summary: 'Rows 101–120 of 120' })
     expect(tablePage(rows, 3).rows.at(-1)).toEqual(['0'])
   })
+  it('keeps a fixed-order table (a wind rose) as it is', () => {
+    const p = tablePage(rows.slice(0, 16), 1, undefined, true)
+    expect(p.rows[0]).toEqual(['0'])
+    expect(p).toMatchObject({ pages: 1, summary: 'Rows 1–16 of 16' })
+  })
   it('clamps the page and handles no rows', () => {
     expect(tablePage(rows, 9).page).toBe(3)
     expect(tablePage(rows, 0).page).toBe(1)

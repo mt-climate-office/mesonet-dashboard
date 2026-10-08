@@ -62,4 +62,6 @@ export interface ChartTable {
   columns: string[]
   /** Cell text, already formatted ("—" for missing). */
   rows: string[][]
+  /** Rows in their own order, not by time (a wind rose's compass points): shown as they are, not newest first. */
+  fixedOrder?: boolean
 }

@@ -2,9 +2,11 @@
      back (to the list) · title (takes focus when a tile or list row opens the page) · ⋮
      menu (vertical, so it never reads as the header's ⋯ just above it on a phone; its glyphs share one
      16-unit footprint and stroke: Download data, Show as table / chart, Custom dates…, Share this chart, Previous / Next);
-     "value now · range"; the chart (All years: partials/charts/history.html);
-     range chips; the Interval row (a chip not offered says why beside it); the stats card; with
-     tbl=1 the table after them. A sideways swipe on touch walks the list. -->
+     "value now · range"; the chart (All years: partials/charts/history.html; Wind direction's
+     Rose view, wd=rose: partials/charts/rose.html, its table in place of the rose);
+     range chips; on Wind direction the View row (Time series | Rose); the Interval row (a chip
+     not offered says why under it); the stats card; with tbl=1 the table after them. A sideways
+     swipe on touch walks the list. -->
 <div class="var-page chart-page" x-data="variablePage" data-testid="variable-page">
   <template x-if="state === 'loading'">
     <div aria-busy="true"><p class="sr-only" role="status">Loading…</p><span class="dash-skel dash-skel--line" style="width: 40%" aria-hidden="true"></span></div>
@@ -69,7 +71,7 @@
       </div>
       <p class="chart-sub" x-text="subline()" data-testid="variable-sub"></p>
 
-      <template x-if="!all() && !tableMode()">
+      <template x-if="!all() && !rose() && !tableMode()">
         <section class="dash-card chart-card" aria-label="Chart">
           <!-- The chart stays laid out under the loading/empty overlay, so ECharts always starts at its real size. -->
           <div class="var-canvas">
@@ -94,12 +96,28 @@
           <!-- @include partials/charts/history.html -->
         </section>
       </template>
+      <template x-if="rose()">
+        <!-- @include partials/charts/rose.html -->
+      </template>
 
       <div class="chart-chips" role="group" aria-label="Range" data-no-swipe data-testid="range-chips">
         <template x-for="c in rangeChips" :key="c.id">
-          <button type="button" class="dash-chip" :aria-pressed="range() === c.id" @click="setRange(c.id)" :data-testid="'range-' + c.id" x-text="c.label"></button>
+          <button type="button" class="dash-chip" :aria-pressed="range() === c.id" :aria-disabled="rangeOff(c.id) ? 'true' : null"
+                  :aria-describedby="rangeOff(c.id) ? 'var-range-note' : null"
+                  @click="setRange(c.id)" :data-testid="'range-' + c.id" x-text="c.label"></button>
         </template>
       </div>
+      <p class="chart-interval-note chart-range-note" id="var-range-note" x-show="rangeNote()" x-text="rangeNote()"></p>
+      <!-- Wind direction only: Time series | Rose (wd=rose), pushed like Show as table. -->
+      <template x-if="offersRose()">
+        <div class="chart-interval" role="group" aria-labelledby="var-view-label" data-no-swipe data-testid="wind-view-chips">
+          <span class="chart-interval-label" id="var-view-label">View</span>
+          <template x-for="c in windViews" :key="c.id">
+            <button type="button" class="dash-chip dash-chip--quiet" :aria-pressed="windView() === c.id" @click="setWindView(c.id)"
+                    :data-testid="'wind-view-' + c.id" x-text="c.label"></button>
+          </template>
+        </div>
+      </template>
       <div class="chart-interval" role="group" aria-labelledby="var-interval-label" data-no-swipe data-testid="interval-chips">
         <span class="chart-interval-label" id="var-interval-label">Interval</span>
         <template x-for="c in intervals()" :key="c.id">
@@ -110,7 +128,17 @@
         <p class="chart-interval-note" id="var-interval-note" x-show="intervalNote()" x-text="intervalNote()"></p>
       </div>
 
-      <template x-if="!all()">
+      <template x-if="rose()">
+        <section class="dash-card chart-stats" aria-label="Summary" x-data="variableRose({ part: 'stats' })" x-show="status().kind === 'ready'" data-testid="rose-stats">
+          <span class="dash-skel dash-skel--line" style="width: 50%" x-show="!settled()" aria-hidden="true"></span>
+          <dl class="chart-stat-row is-rose" x-show="stats().length">
+            <template x-for="it in stats()" :key="it.label">
+              <div class="chart-stat"><dt x-text="it.label"></dt><dd x-text="it.value"></dd></div>
+            </template>
+          </dl>
+        </section>
+      </template>
+      <template x-if="!all() && !rose()">
         <section class="dash-card chart-stats" aria-label="Summary" x-show="status().kind === 'ready'" data-testid="variable-stats">
           <span class="dash-skel dash-skel--line" style="width: 50%" x-show="!settled()" aria-hidden="true"></span>
           <template x-for="row in stats()" :key="row.label">
@@ -124,7 +152,7 @@
         </section>
       </template>
       <!-- The table comes after the chips and stats, so they stay near the top of a long table. -->
-      <template x-if="!all() && tableMode()">
+      <template x-if="!all() && !rose() && tableMode()">
         <section class="dash-card chart-card var-table" aria-label="Table" x-data="chartTable({ table: () => table() })" data-testid="variable-table">
           <!-- @include partials/charts/table.html -->
         </section>
