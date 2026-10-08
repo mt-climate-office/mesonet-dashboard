@@ -40,11 +40,15 @@ export interface MapHost {
    */
   flyTo(lngLat: [number, number], opts?: { minZoom?: number; animate?: boolean; offset?: [number, number] }): void
   /**
-   * Fit `bounds` ([[w, s], [e, n]]) inside the frame less `padding` (px, for overlays), zoomed in no
-   * further than `maxZoom`; animates unless `animate` is false or motion is reduced. Returns false (and
-   * does nothing) when the frame is too small for the padding.
+   * Centre `bounds` ([[w, s], [e, n]]) in the frame less `padding` (px, for overlays), at `zoom(fit)`
+   * where `fit` is the zoom that just fits it (e.g. core/about `locatorZoom`, which clamps it); animates
+   * unless `animate` is false or motion is reduced. Returns false (and does nothing) when the frame is
+   * too small for the padding.
    */
-  fitTo(bounds: [[number, number], [number, number]], opts: { padding: Required<MapLibre.PaddingOptions>; maxZoom: number; animate?: boolean }): boolean
+  fitTo(
+    bounds: [[number, number], [number, number]],
+    opts: { padding: Required<MapLibre.PaddingOptions>; zoom: (fit: number) => number; animate?: boolean },
+  ): boolean
   /** Remove listeners and the map (call from Alpine `destroy`). */
   dispose(): void
 }
@@ -135,10 +139,15 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
     flyTo(lngLat, { minZoom = 8, animate = true, offset = [0, 0] as [number, number] } = {}) {
       map.flyTo({ center: lngLat, zoom: Math.max(map.getZoom(), minZoom), offset, animate: animate && !MCO.reducedMotion() })
     },
-    fitTo(bounds, { padding, maxZoom, animate = true }) {
+    fitTo(bounds, { padding, zoom, animate = true }) {
       const { width, height } = map.getContainer().getBoundingClientRect()
       if (width <= padding.left + padding.right || height <= padding.top + padding.bottom) return false
-      map.fitBounds(bounds, { padding, maxZoom, animate: animate && !MCO.reducedMotion() })
+      const fit = map.cameraForBounds(bounds, { padding })?.zoom
+      if (fit === undefined) return false
+      // fitBounds has no minimum zoom, so fly to the box's centre, offset into the padded area's centre.
+      const [[w, s], [e, n]] = bounds
+      const offset: [number, number] = [(padding.left - padding.right) / 2, (padding.top - padding.bottom) / 2]
+      map.flyTo({ center: [(w + e) / 2, (s + n) / 2], zoom: zoom(fit), bearing: 0, offset, animate: animate && !MCO.reducedMotion() })
       return true
     },
     dispose() {

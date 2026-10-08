@@ -403,8 +403,8 @@ mco-web-style#37). The behaviour changes:
   header's stays ⋯); the table view is full width; on phones the station's own keys come before chart-wide ones. All years and Annual fetch the install year
   together with the next (no 404 for an empty first year).
 - **Now:** desktop tiles are one per row with the sparkline on the right; a dry week draws a bare baseline; copy
-  "High 73° · Low 38° (24 h)", "Normal 63° · 35°", "Peak gust 14 mph (24 h)", Rain "Last 7 days" + "This year:
-  81% of normal"; strip ticks every 6 h (12 h on phones, never dropping "Now"); forecast icons outlined.
+  "High 73° · Low 38° (24 h)", "Normal 63° · 35°", "Peak gust 14 mph (24 h)", Rain "Last 7 days · dry now" (or the
+  rain rate now) + "This year: 81% of normal"; strip ticks every 6 h (12 h on phones, never dropping "Now"); forecast icons outlined.
 - **Picker:** the drawer placeholder is "Station, town or ZIP"; search results show the station's network (IDs
   stay searchable).
 - **Controls:** one control height token (`--ctl-h`: 34 px, 40 px on touch, 44 in the photo dialog); every select

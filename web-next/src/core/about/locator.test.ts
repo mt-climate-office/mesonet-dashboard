@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { locatorFrame } from './locator'
+import { LOCATOR_ZOOM, locatorFrame, locatorZoom } from './locator'
 
 const at = (station: string, latitude: number, longitude: number) => ({ station, latitude, longitude })
 const bozeman = at('acebozem', 45.66, -111.07)
@@ -33,5 +33,15 @@ describe('locatorFrame', () => {
     const [[w, s], [e, n]] = locatorFrame([bozeman, at('near', 45.661, -111.071)], 'acebozem')!
     expect(n - s).toBeCloseTo(30 / 111.2, 6)
     expect(e - w).toBeGreaterThan(n - s) // a degree of longitude is shorter at 45° N
+  })
+})
+
+describe('locatorZoom', () => {
+  it('holds the fit between one level out from the former fixed zoom (8) and that zoom', () => {
+    expect(LOCATOR_ZOOM).toEqual({ min: 7, max: 8 })
+    expect(locatorZoom(9.6)).toBe(8) // a dense area fits closer: no closer than before
+    expect(locatorZoom(7.4)).toBe(7.4)
+    expect(locatorZoom(5.2)).toBe(7) // an isolated station: at most one level out
+    expect(locatorZoom(Number.NaN)).toBe(8)
   })
 })

@@ -65,7 +65,9 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
   closes the picker.
 - **Browse on the map** on a phone opens the sheet full; recents and Near me step aside and the map takes the
   rest of the sheet (in landscape, the whole sheet); two fingers move it. Closing the sheet resets it to the
-  search. In the drawer the map is a 4:3 frame.
+  search. In the drawer the map is a 4:3 frame; on a short screen (≤ 720 px tall: a landscape phone or
+  tablet) recents and Near me step aside, and under 560 px the search too, so the map shows without
+  scrolling (it shrinks to fit, down to 10 rem); "Browse on the map" brings them back.
 - **History:** a section change or a drill-down (a Charts variable, Ag tool or sub-view) is `pushState`,
   so Back returns; other changes inside a section (dates, toggles, opening the Download sheet) replace the
   entry. Section links are real `<a href>`s: they open in a new tab and work before the JS runs.
@@ -157,7 +159,7 @@ tiles, rows at every width.
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
 | Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table; a "Loading the 48-hour strip…" status while tier 2 loads and a short note in its place when there is nothing to draw. Below it the forecast periods as an icon row (api.weather.gov only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
 | Media | Latest camera frame of the default direction (opens the photo dialog; its caption bottom right, clear of the camera's own label), or the wind rose without a camera (a fixed 20 rem card) | photo schedule, latest listings (1) |
-| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page, whose heading takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
+| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary, then what is falling now from `/latest`, `rainNow`: "0.12 in/h now" (the peak rate), "raining now", "dry now"; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page, whose heading takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
 | Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens About's readings sheet (`target: 'about-readings'`, the row's `data-sheet`; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
@@ -402,7 +404,7 @@ an sr-only heading).
 | Slot | Content | Data |
 |---|---|---|
 | Details | Station (name, id in mono), Network, Location (county · coordinates), Elevation (ft and m), Record (install date – "today", or the newest report's date; "Since …" until `/latest` answers): `core/about/details.ts`. Then a **Station one-pager (PDF)** row when one is listed. This is where the old "network · county · elevation" meta line lives now. | `/stations`, `/latest`, one-pagers.json |
-| Map | `locatorMap` (ui/map/presets) in a flat frame with the card radius: the station map flown to the station, legend collapsed, **cooperative gestures** (one finger and a plain wheel scroll the page; two fingers or Ctrl/⌘ move the map) | `/stations` |
+| Map | `locatorMap` (ui/map/presets) in a flat frame with the card radius: the station map framed on the station and its nearest neighbour (`locatorFrame`) at zoom 7–8 (`locatorZoom`: never closer than the former fixed zoom 8, at most one level further out), legend collapsed, **cooperative gestures** (one finger and a plain wheel scroll the page; two fingers or Ctrl/⌘ move the map) | `/stations` |
 | Rows | **All current readings · N** (N readings now, Observed not counted) and **Sensor changes · latest date**: `<button class="about-row" aria-haspopup="dialog" data-sheet="…">`, each opening a modal sheet | as the sheets |
 | About the data | QC level 2, provisional data (the corrected wording), time and units; links to the API docs and this station's requests (`core/about/apiLinks.ts`) | — |
 
@@ -468,7 +470,9 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
   rest of the page is `inert`, the body scrolls with `overscroll-behavior: contain`. Sits on the tab bar.
 - **Drawer** (`drawer.ts`/`.css`) — inline (in the flex row, margin slide, content reflows, not modal)
   or overlay (fixed, scrim, modal). Closed = `visibility: hidden` + `inert`. Esc, focus in/out as the sheet.
-- **Focus scope** (`focusScope.ts`) — the shared focus-in / inert / Esc / focus-return logic.
+- **Focus scope** (`focusScope.ts`) — the shared focus-in / inert / Esc / focus-return logic. Esc is heard on
+  the document: inside the panel, or anywhere while modal with focus lost to `<body>` (Safari does not focus a
+  clicked button, so a click in the panel can leave focus there).
 - **Section nav** (`sectionNav.ts`/`.css`) — the tab bar (three items on a solid `--bg-surface`, icon + label,
   ≥ 56 px, safe-area padding; the current one has a pill behind its icon and a bold label) and the header's
   segmented control (a `--bg-raised` track; the current one a raised `--bg-surface` pill, bold), `aria-current`.
