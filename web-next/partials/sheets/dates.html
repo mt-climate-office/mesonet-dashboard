@@ -1,6 +1,7 @@
 <!-- Custom dates sheet (x-data="sheet", ui/shell/sheet.ts): a variable page's ⋯ → Custom dates….
      The date range control over the chart window (x-data="customDates", ui/charts/customDates.ts);
      a valid range applies at once, Done (or ×, Esc, the scrim) closes and focus returns to ⋯.
+     The sheet's title names the fields, so their legend is for screen readers only.
      The form mounts only while open. Its scrim is #sheet-dates-scrim. -->
 <div class="mco-scrim dash-scrim dash-sheet-scrim" id="sheet-dates-scrim" hidden></div>
 <section id="sheet-dates" class="dash-sheet dash-sheet--modal dates-sheet" role="dialog" aria-modal="true"
@@ -17,7 +18,7 @@
       <div class="dates-form" x-data="customDates">
         <fieldset class="ctl-fieldset" data-testid="custom-dates"
                   x-data="dateRange({ value: () => dates(), onChange: (r) => setDates(r), min: () => minDate(), max: () => maxDate(), label: 'Chart dates' })">
-          <legend class="ctl-legend" x-text="label"></legend>
+          <legend class="sr-only" x-text="label"></legend>
           <div class="ctl-row">
             <div class="ctl-field">
               <label class="ctl-label" :for="ids.start">Start</label>

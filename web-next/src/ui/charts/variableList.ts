@@ -42,6 +42,11 @@ export function variableList() {
       const rows = variableRows(vars, latest ? Alpine.raw(latest) : undefined, hourly ? Alpine.raw(hourly) : undefined)
       return variableGroups(vars).map((g) => ({ group: g.group, rows: g.items.map((v) => rows.find((r) => r.id === v.id)!) }))
     },
+    /** Clear the search and keep typing in it. */
+    clearQuery(): void {
+      this.query = ''
+      ;(this.$refs.search as HTMLInputElement | undefined)?.focus()
+    },
     /** `rows` matching the search (name, sub-label or group). */
     filter(group: string, rows: Row[]): Row[] {
       return rows.filter((r) => matchesQuery(this.query, r.name, r.note, group))

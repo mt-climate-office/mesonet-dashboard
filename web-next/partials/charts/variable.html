@@ -1,6 +1,7 @@
 <!-- Variable page (x-data="variablePage", ui/charts/variablePage.ts; DESIGN.md "Charts"):
-     back (to the list) · title (the shared-element target a tapped tile or list row morphs into) · ⋯
-     menu (Download data, Show as table / chart, Custom dates…, Share this chart, Previous / Next);
+     back (to the list) · title (the shared-element target a tapped tile or list row morphs into) · ⋮
+     menu (vertical, so it never reads as the header's ⋯ just above it on a phone; its glyphs share one
+     16-unit footprint and stroke: Download data, Show as table / chart, Custom dates…, Share this chart, Previous / Next);
      "value now · range"; the chart (All years: partials/charts/history.html);
      range chips; the Interval row (a chip not offered says why beside it); the stats card; with
      tbl=1 the table after them. A sideways swipe on touch walks the list. -->
@@ -31,35 +32,35 @@
         <h2 class="chart-title" id="var-title" tabindex="-1" data-vt-target x-text="title()" data-testid="variable-title"></h2>
         <div class="dash-menu" x-data="menu" data-testid="var-menu">
           <button type="button" class="dash-icon-btn" data-menu-button aria-expanded="false" aria-label="More for this chart" data-testid="var-menu-button">
-            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
           <div class="dash-menu-panel" id="var-menu" role="menu" aria-label="More for this chart" hidden>
             <button type="button" class="dash-menu-item" role="menuitem" aria-haspopup="dialog" @click="download()" data-testid="var-menu-download">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10M7.5 9.5L12 14l4.5-4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
               Download data
             </button>
             <button type="button" class="dash-menu-item" role="menuitem" @click="toggleTable()" data-testid="var-menu-table">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M3 5h18v14H3zM3 10h18M3 15h18M9 5v14"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM4 10h16M10 10v9"/></svg>
               <span x-text="tableMode() ? 'Show as chart' : 'Show as table'"></span>
             </button>
             <button type="button" class="dash-menu-item" role="menuitem" aria-haspopup="dialog" @click="openDates()" data-testid="var-menu-dates">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zM4 11h16M8 4v4M16 4v4"/></svg>
               Custom dates…
             </button>
             <button type="button" class="dash-menu-item" role="menuitem" @click="share()" data-testid="var-menu-share">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 14V4M7.5 8.5L12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
               Share this chart
             </button>
             <template x-if="near.prev || near.next"><hr class="dash-menu-sep"></template>
             <template x-if="near.prev">
               <button type="button" class="dash-menu-item" role="menuitem" @click="step(-1)" data-testid="var-prev">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 6l-6 6 6 6"/></svg>
                 <span x-text="'Previous: ' + nameOf(near.prev)"></span>
               </button>
             </template>
             <template x-if="near.next">
               <button type="button" class="dash-menu-item" role="menuitem" @click="step(1)" data-testid="var-next">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6l6 6-6 6"/></svg>
                 <span x-text="'Next: ' + nameOf(near.next)"></span>
               </button>
             </template>

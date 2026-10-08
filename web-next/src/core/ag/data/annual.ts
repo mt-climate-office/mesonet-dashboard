@@ -3,7 +3,8 @@
  *
  * Source: `/observations/daily`, one request per calendar year (bounded
  * concurrency), so each year is cached and retried independently and the
- * API's ~6 s/year latency overlaps.
+ * API's ~6 s/year latency overlaps; or, with `together`, one request for all
+ * the years (the install year with the next, core/variables `requestGroups`).
  *
  * The data2 Parquet archive (`daily/wide/level=2/year=YYYY/part-*.parquet`)
  * was prototyped as a primary source and is NOT wired in yet:
@@ -55,6 +56,8 @@ export interface AnnualOptions {
   concurrency?: number
   /** Years starting after this date are not requested (default: today, Denver). */
   today?: LocalDate
+  /** One request from the first year's Jan 1 to the last year's Dec 31, split by year here. */
+  together?: boolean
 }
 
 /**
@@ -107,20 +110,27 @@ export async function getAnnualDaily(
   const level = opts.level ?? DEFAULT_AG_LEVEL
   const today = opts.today ?? denverToday()
   const sorted = [...new Set(years)].sort((a, b) => a - b)
-  const out = await pool(sorted, opts.concurrency ?? 3, async (year) => {
-    if (`${year}-01-01` > today) return parseAnnualYear([], year)
-    const rows = await fetchRows({
+  const fetchYears = (first: number, last: number) =>
+    fetchRows({
       path: 'observations/daily/',
       query: {
         stations: station,
         elements: element,
         agg_func: agg,
         level,
-        start_time: `${year}-01-01`,
-        end_time: `${year + 1}-01-01`, // exclusive
+        start_time: `${first}-01-01`,
+        end_time: `${last + 1}-01-01`, // exclusive
       },
     })
-    return parseAnnualYear(rows, year)
+  if (opts.together) {
+    const asked = sorted.filter((year) => `${year}-01-01` <= today)
+    // parseAnnualYear keeps only its own year's rows.
+    const rows = asked.length ? await fetchYears(asked[0], asked[asked.length - 1]) : []
+    return { station, element, agg, level, source: 'api', years: sorted.map((year) => parseAnnualYear(rows, year)) }
+  }
+  const out = await pool(sorted, opts.concurrency ?? 3, async (year) => {
+    if (`${year}-01-01` > today) return parseAnnualYear([], year)
+    return parseAnnualYear(await fetchYears(year, year), year)
   })
   return { station, element, agg, level, source: 'api', years: out }
 }

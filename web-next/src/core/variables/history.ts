@@ -2,8 +2,9 @@
  * The variable page's History view: an annual comparison, one line per year
  * on a day-of-year axis (core/charts/agAnnual). Daily data is requested one
  * calendar year per request, so each year caches on its own and the chart
- * fills in as years arrive; never a long hourly window. Summed variables
- * (precipitation, reference ET) show the running total within each year.
+ * fills in as years arrive; never a long hourly window. The install year
+ * rides with the year after it (`requestGroups`; the Ag Annual tool too).
+ * Summed variables (precipitation, reference ET) show the running total within each year.
  */
 import type { AnnualModel } from '../charts/agAnnual'
 import { groupByYear } from '../ag/compute/annual'
@@ -27,18 +28,38 @@ export function historyYears(installed: string | null, today: string, max = HIST
   return out
 }
 
-/** One year's daily request: Jan 1 (or the install date) to Dec 31, or to today for this year. */
-export function historyRequest(station: string, year: number, v: Variable, elements: readonly ElementRow[], today: string, installed: string | null): RecordRequest | null {
-  const jan1 = `${year}-01-01`
+/**
+ * `years` (newest first) as request groups: one year each, except that the install year (when it is
+ * the oldest and not the only one) is fetched with the year after it. A station often logs nothing
+ * at level 2 for weeks or months after its catalog install date (Bozeman: installed 2020-10-30,
+ * first data 2021-08), and the API answers a window without data with a 404 that every browser
+ * logs as a failed resource. Folded into the next year, the window has data. Unknown install: one
+ * year each.
+ */
+export function requestGroups(years: readonly number[], installed: string | null | undefined): number[][] {
+  const first = Number(String(installed ?? '').slice(0, 4))
+  const groups = years.map((y) => [y])
+  if (groups.length > 1 && years[years.length - 1] === first) groups.splice(-2, 2, [years[years.length - 2], first])
+  return groups
+}
+
+/**
+ * One request group's daily request (`years` newest first, `requestGroups`): Jan 1 of its oldest
+ * year (or the install date) to Dec 31 of its newest, or to today for this year.
+ */
+export function historyRequest(station: string, years: readonly number[], v: Variable, elements: readonly ElementRow[], today: string, installed: string | null): RecordRequest | null {
+  const oldest = Math.min(...years)
+  const newest = Math.max(...years)
+  const jan1 = `${oldest}-01-01`
   const start = installed && installed > jan1 ? installed : jan1
-  const end = String(year) === today.slice(0, 4) ? today : `${year}-12-31`
+  const end = String(newest) === today.slice(0, 4) ? today : `${newest}-12-31`
   return recordRequest({ station, window: { start, end, valid: start <= end }, agg: 'daily', vars: [v.name], stationElements: elements })
 }
 
 /**
- * One year's rows from `fetch` (the `historyRequest` query). The API answers a year without
- * data (often the install year) with 404 "No data available": that is an empty year, not a
- * failure, so the chart and its progress line carry on. Other errors propagate.
+ * One group's rows from `fetch` (the `historyRequest` query). The API answers a window without
+ * data with 404 "No data available": that is an empty group, not a failure, so the chart and its
+ * progress line carry on (`requestGroups` keeps that rare). Other errors propagate.
  */
 export async function historyRows(fetch: () => Promise<ObservationRow[]>): Promise<ObservationRow[]> {
   try {
