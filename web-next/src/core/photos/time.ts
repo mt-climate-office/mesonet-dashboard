@@ -28,12 +28,21 @@ const LOCAL_YMD_FMT = new Intl.DateTimeFormat('en-CA', {
 
 const LOCAL_LABEL_FMT = new Intl.DateTimeFormat('en-US', {
   timeZone: PHOTO_ZONE,
+  hourCycle: 'h12',
   year: 'numeric',
   month: 'short',
   day: 'numeric',
   hour: 'numeric',
   minute: '2-digit',
 })
+
+/** The label's parts by type. Built from parts, not format(): engines join date and time differently
+ *  (WebKit's ICU writes "Oct 1, 2026 at 3:00 PM", V8 "Oct 1, 2026, 3:00 PM"). */
+function labelParts(ms: number): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const p of LOCAL_LABEL_FMT.formatToParts(new Date(ms))) if (p.type !== 'literal') out[p.type] = p.value
+  return out
+}
 
 /** Zone offset (ms, local − UTC) in effect at instant `ms`. */
 function offsetAt(ms: number): number {
@@ -101,7 +110,14 @@ export function utcDaysOfLocalDay(ymd: string): string[] {
   return a === b ? [a] : [a, b]
 }
 
-/** "Oct 1, 2026 3:00 PM" in America/Denver. */
+/** "3:00 PM" in America/Denver (the same in every engine). */
+export function formatLocalTime(ms: number): string {
+  const p = labelParts(ms)
+  return `${p.hour}:${p.minute} ${p.dayPeriod.toUpperCase()}`
+}
+
+/** "Oct 1, 2026 3:00 PM" in America/Denver (the same in every engine). */
 export function formatLocal(ms: number): string {
-  return LOCAL_LABEL_FMT.format(new Date(ms)).replace(/, (\d{1,2}:\d{2})/, ' $1').replace(/\s/g, ' ')
+  const p = labelParts(ms)
+  return `${p.month} ${p.day}, ${p.year} ${formatLocalTime(ms)}`
 }

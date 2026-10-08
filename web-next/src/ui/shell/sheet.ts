@@ -7,12 +7,14 @@
  * `urlKey` (the Download sheet's `dl`), the URL key is the open state: opening
  * sets it, closing clears it, and a URL that has it opens the sheet on load.
  * Content inside `<template x-if="isOpen">` mounts (and fetches) only while
- * open, and stays until the close slide ends. Closing the Download sheet also
+ * open, and stays until the close slide ends. The body fades at the bottom while it has more to
+ * scroll (ui/layout/scrollFade). Closing the Download sheet also
  * resets the keys a chart prefilled (core/downloader `PREFILL_RESET`).
  */
 import Alpine from 'alpinejs'
 import { PREFILL_RESET } from '../../core/downloader/fromChart'
 import type { UrlState } from '../../core/url-schema'
+import { initScrollFade } from '../layout/scrollFade'
 import { initSheet, type Sheet } from '../layout/sheet'
 import { component } from '../component'
 
@@ -62,6 +64,8 @@ export function sheet(cfg: { id: string; urlKey?: SheetKey }) {
         },
       })
       panel.hidden = true
+      const body = panel.querySelector<HTMLElement>('.dash-panel-body')
+      if (body) cleanups.push(initScrollFade(body))
 
       const onEvent = (e: Event) => {
         const d = (e as CustomEvent<Detail>).detail

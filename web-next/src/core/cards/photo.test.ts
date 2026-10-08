@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { framesFromListing, parseSchedule, type PhotoFrame, type RawSchedule } from '../photos'
-import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoLabel, photoMessage, photoMinDay, photoPick, photoSlides, photoState, photoTimeOptions } from './photo'
+import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoLabel, photoMessage, photoMinDay, photoPick, photoSlides, photoState, photoTimeOptions, photoTitle } from './photo'
 
 const B = 'https://data2.climate.umt.edu/mesonet/'
 const RAW: RawSchedule = {
@@ -90,9 +90,14 @@ describe('photoPick', () => {
   })
   it('time options are local labels keyed by slot ms', () => {
     expect(photoTimeOptions(photoPick(base).frames)).toEqual([
-      { value: String(Date.UTC(2026, 9, 1, 21)), label: 'Oct 1, 2026 3:00 PM' },
-      { value: String(Date.UTC(2026, 9, 1, 15)), label: 'Oct 1, 2026 9:00 AM' },
+      { value: String(Date.UTC(2026, 9, 1, 21)), label: '3:00 PM' },
+      { value: String(Date.UTC(2026, 9, 1, 15)), label: '9:00 AM' },
     ])
+  })
+  it('the dialog title names the station, direction and stamp', () => {
+    expect(photoTitle('Bozeman', photoPick({ ...base, station: 'Bozeman' }))).toBe('Bozeman · North · Oct 1, 2026 3:00 PM')
+    expect(photoTitle('Bozeman', photoPick({ ...base, frames: [] }))).toBe('Bozeman · North')
+    expect(photoTitle('Bozeman', null)).toBe('')
   })
 })
 

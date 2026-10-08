@@ -8,6 +8,7 @@ import {
   basename,
   directionLabel,
   formatLocal,
+  formatLocalTime,
   framesFor,
   localToUtcMs,
   localYmd,
@@ -75,12 +76,13 @@ export interface PhotoPick {
   frames: PhotoFrame[]
   /** The chosen frame: the picked slot if present, else the newest; undefined = none that day. */
   active: PhotoFrame | undefined
-  /** "acebozem North camera Oct 1, 2026 3:00 PM" ('' stamp without a frame). */
+  /** "Bozeman North camera Oct 1, 2026 3:00 PM" ('' stamp without a frame). */
   alt: string
   stamp: string
 }
 
 export interface PhotoPickInput {
+  /** The station's display name ("Bozeman"; its id while the catalog loads), for the alt text. */
   station: string
   cam: StationCamera
   day: string
@@ -124,9 +126,14 @@ export function photoSlides(i: PhotoPickInput): PhotoPick[] {
   return order.map((t) => (t === first.direction ? first : photoPick({ ...i, direction: t, slotUtcMs: null }))).filter((p) => p.active)
 }
 
-/** Time-select options for a direction's frames: value = slot ms, label = local time. */
+/** Time-select options for a direction's frames: value = slot ms, label = local time only ("3:00 PM";
+ *  the Day field beside it holds the date). */
 export const photoTimeOptions = (frames: readonly PhotoFrame[]): { value: string; label: string }[] =>
-  frames.map((f) => ({ value: String(f.slotUtcMs), label: formatLocal(f.slotUtcMs) }))
+  frames.map((f) => ({ value: String(f.slotUtcMs), label: formatLocalTime(f.slotUtcMs) }))
+
+/** The photo dialog's title: "Bozeman · North · Oct 1, 2026 3:00 PM" ('' without a pick). */
+export const photoTitle = (name: string, p: PhotoPick | null): string =>
+  p ? [name, p.label, p.stamp].filter(Boolean).join(' · ') : ''
 
 type Status = 'loading' | 'success' | 'error'
 

@@ -9,6 +9,7 @@ import {
   fetchMonthFrames,
   fillPattern,
   formatLocal,
+  formatLocalTime,
   framesFor,
   framesFromListing,
   hasCamera,
@@ -83,6 +84,9 @@ describe('time', () => {
     expect(addDays('2026-03-01', -1)).toBe('2026-02-28')
     expect(utcDaysOfLocalDay('2026-10-01')).toEqual(['20261001', '20261002'])
     expect(formatLocal(Date.UTC(2026, 9, 1, 21))).toBe('Oct 1, 2026 3:00 PM')
+    expect(formatLocal(Date.UTC(2026, 0, 15, 7, 5))).toBe('Jan 15, 2026 12:05 AM')
+    expect(formatLocalTime(Date.UTC(2026, 9, 1, 15))).toBe('9:00 AM')
+
   })
 })
 

@@ -5,13 +5,14 @@
  * pickers over the webp_large frames and "Download original". Closing the dialog drops the picks.
  */
 import Alpine from 'alpinejs'
-import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoMessage, photoMinDay, photoPick, photoSlides, photoState, photoTimeOptions, type PhotoPick, type PhotoStateInput } from '../../core/cards'
+import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoMessage, photoMinDay, photoPick, photoSlides, photoState, photoTimeOptions, photoTitle, type PhotoPick, type PhotoStateInput } from '../../core/cards'
 import { denverToday } from '../../core/today'
 import { basename, framesFor, type PhotoFrame, type StationCamera } from '../../core/photos'
 import type { SegmentedOption } from '../controls/segmented'
 import type { SelectOption } from '../controls/timeSelect'
 import { component } from '../component'
 import { initCarousel, type Carousel } from '../layout/carousel'
+import { initScrollFade } from '../layout/scrollFade'
 import { confirmedDay, latestFrames, monthFrames, photoSchedule } from '../station/resources'
 
 type Source = { status: 'loading' | 'success' | 'error'; data: PhotoFrame[] | undefined }
@@ -19,6 +20,7 @@ type Source = { status: 'loading' | 'success' | 'error'; data: PhotoFrame[] | un
 export function photoCard() {
   let modal: { open(): void } | null = null
   let carousel: Carousel | null = null
+  let unfade: (() => void) | null = null
   // The dialog's WebP, fetched as a blob while it is shown (see download()).
   let blob: { url: string; data: Blob | null } | null = null
   return component({
@@ -46,6 +48,10 @@ export function photoCard() {
 
     get station(): string | null {
       return Alpine.store('station').id
+    },
+    /** The station's name for titles and alt text (its id until the catalog confirms it). */
+    get stationName(): string {
+      return Alpine.store('station').current?.name ?? this.station ?? ''
     },
     get cam(): StationCamera | undefined {
       return this.station ? photoSchedule().data?.stations.get(this.station) : undefined
@@ -83,14 +89,14 @@ export function photoCard() {
       const cam = this.cam
       if (!cam || !this.station) return null
       const day = photoDay(null, this.latest?.data, this.today)
-      return photoPick({ station: this.station, cam, day, recent: isRecentDay(day, this.today), frames: this.latest?.data, direction: null, slotUtcMs: null })
+      return photoPick({ station: this.stationName, cam, day, recent: isRecentDay(day, this.today), frames: this.latest?.data, direction: null, slotUtcMs: null })
     },
     /** The dialog's frame. */
     get pick(): PhotoPick | null {
       const cam = this.cam
       if (!cam || !this.station) return null
       const recent = isRecentDay(this.day, this.today)
-      return photoPick({ station: this.station, cam, day: this.day, recent, frames: this.source?.data, direction: this.direction, slotUtcMs: this.slot })
+      return photoPick({ station: this.stationName, cam, day: this.day, recent, frames: this.source?.data, direction: this.direction, slotUtcMs: this.slot })
     },
 
     /** The carousel: the newest frame of each direction, the default first. */
@@ -98,7 +104,7 @@ export function photoCard() {
       const cam = this.cam
       if (!cam || !this.station) return []
       const day = photoDay(null, this.latest?.data, this.today)
-      return photoSlides({ station: this.station, cam, day, recent: isRecentDay(day, this.today), frames: this.latest?.data, direction: null, slotUtcMs: null })
+      return photoSlides({ station: this.stationName, cam, day, recent: isRecentDay(day, this.today), frames: this.latest?.data, direction: null, slotUtcMs: null })
     },
     /** `x-init` on the carousel track (it mounts once the photos are ready). */
     mountCarousel(track: HTMLElement): void {
@@ -111,6 +117,7 @@ export function photoCard() {
     destroy() {
       carousel?.destroy()
       carousel = null
+      unfade?.()
     },
 
     tileView(): PhotoStateInput {
@@ -158,8 +165,7 @@ export function photoCard() {
       return this.pick?.active ? String(this.pick.active.slotUtcMs) : ''
     },
     title(): string {
-      const p = this.pick
-      return p ? `${this.station} · ${p.label}${p.stamp ? ` · ${p.stamp}` : ''}` : ''
+      return photoTitle(this.stationName, this.pick)
     },
 
     selectDay(d: string): void {
@@ -179,7 +185,11 @@ export function photoCard() {
     /** Open the dialog on `direction` (a carousel slide), else the default. */
     enlarge(direction?: string): void {
       // Wired on first use: x-ref children are not registered yet during init().
-      modal ??= MCO.initInfoModal({ dialog: this.$refs.dialog as HTMLDialogElement })
+      if (!modal) {
+        const dialog = this.$refs.dialog as HTMLDialogElement
+        modal = MCO.initInfoModal({ dialog })
+        unfade = initScrollFade(dialog.querySelector<HTMLElement>('.info-modal-box')!)
+      }
       this.direction = direction ?? null
       this.open = true
       modal.open()

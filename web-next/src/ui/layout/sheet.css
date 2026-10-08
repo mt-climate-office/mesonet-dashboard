@@ -73,3 +73,17 @@
   .dash-sheet--modal.enter, .dash-sheet--modal.leaving { transform: translate(-50%, 1rem); opacity: 0; }
   .dash-sheet--modal .dash-sheet-handle { display: none; }
 }
+
+/* Scroll fade (ui/layout/scrollFade.ts): while a scroller has more below, its bottom edge fades into the
+   surface, a cue that it scrolls. The fade sticks to the bottom of the scrollport (--fade-pad cancels the
+   scroller's bottom padding) and takes no room (its negative margin cancels its height and any gap).
+   Modal sheet bodies and the kit dialogs (Help, photo) use it. */
+[data-scroll-more]::after {
+  content: ''; display: block; flex: none;
+  position: sticky; bottom: calc(-1 * var(--fade-pad, 0px));
+  height: 2.5rem; margin-top: calc(-2.5rem - var(--fade-gap, 0px));
+  background: linear-gradient(to bottom, transparent, var(--bg-surface));
+  pointer-events: none;
+}
+.dash-panel-body { --fade-pad: calc(var(--gutter) + var(--gap-tight)); --fade-gap: var(--gap); }
+.info-modal-box { --fade-pad: 1.5rem; } /* the kit box's bottom padding */
