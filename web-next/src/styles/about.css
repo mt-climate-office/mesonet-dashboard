@@ -50,23 +50,40 @@
 .about-sheet .dash-panel-body { overflow: hidden; }
 .about-sheet-content { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 .about-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; border-radius: var(--radius-md); }
+/* Scroll hint: a fade over the last rows while there is more below ([data-more], ui/about/scrollHint.ts).
+   A sticky overlay at the region's bottom, not a mask, which would clip the region's focus ring. */
+.about-scroll::after {
+  content: ''; display: block; position: sticky; bottom: 0; height: 40px; margin-top: -40px;
+  background: linear-gradient(to bottom, transparent, var(--bg-surface)); pointer-events: none;
+  opacity: 0; transition: opacity var(--transition);
+}
+.about-scroll[data-more]::after { opacity: 1; }
 
 /* Current readings. */
 .about-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .about-table + .about-table { margin-top: var(--card-pad, 16px); }
 .about-table caption { text-align: left; padding: 0 0 var(--gap-tight, 4px); font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); }
 .about-table thead th { position: sticky; top: 0; background: var(--bg-surface); font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); text-align: left; padding: var(--gap-tight, 4px) 8px; border-bottom: 1px solid var(--border); }
+.about-table thead th:last-child { text-align: right; }
 .about-table tbody th { font-weight: 400; color: var(--text-secondary); text-align: left; padding: 8px; overflow-wrap: anywhere; }
 .about-table td { font-family: var(--font-mono); color: var(--text-primary); text-align: right; padding: 8px; white-space: nowrap; }
+/* The unit in a fixed-width box after the number (mono, so 5ch fits "mS/cm"): every number ends on
+   one line and same-precision decimals line up; text values (Observed, wind direction) run to the edge. */
+.about-unit { display: inline-block; min-width: 5ch; margin-left: 1ch; text-align: left; color: var(--text-secondary); }
 .about-table tbody tr + tr { border-top: 1px solid var(--border); }
 
-/* Sensor changes. */
+/* Sensor changes: a badge column of one width (the wider "Installed"), the sensor beside it and what it
+   measures under the sensor; rows inset 8 px like the readings table. */
 .about-days, .about-changes { list-style: none; margin: 0; padding: 0; }
 .about-days > li + li { margin-top: var(--gap, 12px); }
-.about-day { margin: 0 0 var(--gap-tight, 4px); font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary); }
-.about-changes li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--gap-tight, 4px) 8px; padding: var(--gap-tight, 4px) 0; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
-.about-sensor { color: var(--text-primary); }
-.about-measures { flex-basis: 100%; font-size: var(--fs-xs); color: var(--text-secondary); }
+.about-day { margin: 0 0 var(--gap-tight, 4px); padding: 0 8px; font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary); }
+.about-changes li {
+  display: grid; grid-template-columns: 5rem minmax(0, 1fr); align-items: baseline; gap: 2px var(--gap, 12px);
+  padding: 8px; border-top: 1px solid var(--border); font-size: var(--fs-sm);
+}
+.about-changes .dash-badge { justify-content: center; }
+.about-sensor { color: var(--text-primary); text-wrap: pretty; }
+.about-measures { grid-column: 2; font-size: var(--fs-xs); color: var(--text-secondary); text-wrap: pretty; }
 
 /* About the data: prose. */
 .about-notes .dash-card-title { font-size: var(--fs-md); color: var(--text-primary); }
@@ -75,3 +92,5 @@
 .about-notes-list dd { margin: var(--gap-tight, 4px) 0 var(--gap, 12px); color: var(--text-secondary); line-height: 1.5; max-width: 65ch; }
 .about-subtitle { margin: var(--gap-tight, 4px) 0 8px; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
 .about-api { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-tight, 4px) var(--card-pad, 16px); }
+/* On touch each link is a 40 px row (card.css), so wrapped rows would sit far apart: list them one per row. */
+@media (hover: none) { .about-api { flex-direction: column; align-items: flex-start; gap: 0; } }

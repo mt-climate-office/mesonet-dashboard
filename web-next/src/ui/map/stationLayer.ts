@@ -19,6 +19,8 @@ import { cssVar } from './map'
 const SRC = 'stations'
 /** Invisible, larger hit target over every marker (touch-friendly). */
 const HIT = 'stations-hit'
+/** A blank 28 px image: the selected marker's footprint in symbol collision. */
+const OBSTACLE = 'station-obstacle'
 
 export interface StationLayerInput {
   stations: readonly Station[]
@@ -137,6 +139,13 @@ export function createStationLayer(map: MapLibre.Map, onSelect: (id: string) => 
           'circle-radius': radius(11), 'circle-color': 'rgba(0,0,0,0)',
           'circle-stroke-width': 2, 'circle-stroke-color': cssVar('--accent-line'),
         },
+      })
+      // An invisible collision box over the selected marker: basemap labels (placed after it) step
+      // aside instead of running under the ring (map.ts letPlaceLabelsMove).
+      if (!m.hasImage(OBSTACLE)) m.addImage(OBSTACLE, { width: 28, height: 28, data: new Uint8Array(28 * 28 * 4) })
+      m.addLayer({
+        id: 'stations-selected-obstacle', type: 'symbol', source: SRC, filter: ['==', ['get', 'selected'], 1],
+        layout: { 'icon-image': OBSTACLE, 'icon-allow-overlap': true, 'icon-ignore-placement': false },
       })
       m.addLayer({
         id: HIT, type: 'circle', source: SRC,

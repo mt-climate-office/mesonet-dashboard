@@ -26,7 +26,7 @@ describe('details', () => {
     expect(formatDay('2020-10-30')).toBe('Oct 30, 2020')
     expect(formatDay('2026-10-01 13:15:00-06:00')).toBe('Oct 1, 2026')
     expect(formatDay('None')).toBeNull()
-    expect(formatCoordinates(45.66, -111.07)).toBe('45.66°\u00a0N, 111.07°\u00a0W')
+    expect(formatCoordinates(45.66, -111.07)).toBe('45.66°\u00a0N,\u00a0111.07°\u00a0W')
     expect(formatElevation(1495.09)).toBe('4,905\u00a0ft (1,495\u00a0m)')
     expect(formatElevation(Number.NaN)).toBe('—')
     expect(metersToFeet(1000)).toBe(3281)
@@ -43,11 +43,11 @@ describe('details', () => {
     expect(stationDetails(bozeman, '2026-10-01 13:15:00-06:00', '2026-10-02')).toEqual([
       { label: 'Station', value: 'Bozeman', id: 'acebozem' },
       { label: 'Network', value: 'HydroMet' },
-      { label: 'Location', value: 'Gallatin County · 45.66°\u00a0N, 111.07°\u00a0W' },
+      { label: 'Location', value: 'Gallatin County · 45.66°\u00a0N,\u00a0111.07°\u00a0W' },
       { label: 'Elevation', value: '4,905\u00a0ft (1,495\u00a0m)' },
       { label: 'Record', value: 'Oct 30, 2020 – Oct 1, 2026' },
     ])
-    expect(formatLocation({ ...bozeman, county: '' })).toBe('45.66°\u00a0N, 111.07°\u00a0W')
+    expect(formatLocation({ ...bozeman, county: '' })).toBe('45.66°\u00a0N,\u00a0111.07°\u00a0W')
   })
 })
 
@@ -64,25 +64,30 @@ describe('readings', () => {
     expect(readingLabel('Mystery Thing [zz]')).toBe('Mystery Thing')
   })
 
-  it('puts units on values at table precision, leaving text alone', () => {
-    expect(readingValue('Air Temperature [°F]', '56.984')).toBe('57.0 °F')
+  it('splits values into a number at table precision and its unit, leaving text alone', () => {
+    const v = (value: string, unit = '', note = '') => ({ value, unit, note })
+    expect(readingValue('Air Temperature [°F]', '56.984')).toEqual(v('57.0', '°F'))
     // One precision per variable (LABELS digits.table): a whole number keeps its decimal, never "56" beside "70.4".
-    expect(readingValue('Air Temperature [°F]', '56')).toBe('56.0 °F')
-    expect(readingValue('Bulk EC @ 2 in [mS/cm]', '0.01')).toBe('0.010 mS/cm')
-    expect(readingValue('Relative Humidity [%]', '60.38')).toBe('60.4%')
-    expect(readingValue('Atmospheric Pressure [mbar]', '848.93')).toBe('848.9 mb')
-    expect(readingValue('Feels like [°F]', '41.23 (wind chill)')).toBe('41.2 °F (wind chill)')
-    expect(readingValue('Wind Direction [deg]', 'ESE (111.6 deg)')).toBe('ESE (111.6 deg)')
-    expect(readingValue('Mystery Thing [zz]', '3.5')).toBe('3.5 zz')
-    expect(readingValue('Timestamp', 'Oct 1, 2026 1:15 PM')).toBe('Oct 1, 2026 1:15 PM')
+    expect(readingValue('Air Temperature [°F]', '56')).toEqual(v('56.0', '°F'))
+    expect(readingValue('Bulk EC @ 2 in [mS/cm]', '0.01')).toEqual(v('0.010', 'mS/cm'))
+    expect(readingValue('Relative Humidity [%]', '60.38')).toEqual(v('60.4', '%'))
+    expect(readingValue('Atmospheric Pressure [mbar]', '848.93')).toEqual(v('848.9', 'mb'))
+    expect(readingValue('Feels like [°F]', '41.23 (wind chill)')).toEqual(v('41.2', '°F', '(wind chill)'))
+    expect(readingValue('Wind Direction [deg]', 'ESE (111.6 deg)')).toEqual(v('ESE (111.6 deg)'))
+    expect(readingValue('Mystery Thing [zz]', '3.5')).toEqual(v('3.5', 'zz'))
+    expect(readingValue('Mystery Thing', '3.5')).toEqual(v('3.5'))
+    expect(readingValue('Timestamp', 'Oct 1, 2026 1:15 PM')).toEqual(v('Oct 1, 2026 1:15 PM'))
   })
 
-  it('builds the rows, Observed first, keeping each API column', () => {
+  it('builds the rows, Observed first, keeping each API column; a value note joins the label', () => {
     const rows = readingRows({ datetime: '2026-10-01 13:15:00-06:00', 'Soil VWC @ 4 in [%]': 13.35 })
     expect(rows).toEqual([
-      { col: 'Timestamp', label: 'Observed', value: 'Oct 1, 2026 1:15 PM' },
-      { col: 'Soil VWC @ 4 in [%]', label: 'Soil moisture at 4 in', value: '13.4%' },
+      { col: 'Timestamp', label: 'Observed', value: 'Oct 1, 2026 1:15 PM', unit: '' },
+      { col: 'Soil VWC @ 4 in [%]', label: 'Soil moisture at 4 in', value: '13.4', unit: '%' },
     ])
+    const feels = readingRows({ datetime: '2026-01-01 08:00:00-07:00', 'Air Temperature [°F]': 10, 'Wind Speed [mi/hr]': 15 }).find((r) => r.col === 'Feels like [°F]')
+    expect(feels?.label).toMatch(/^Feels like \(wind chill\)$/)
+    expect(feels?.unit).toBe('°F')
   })
 
   it('names the precipitation periods plainly, newest window first', () => {
@@ -91,9 +96,9 @@ describe('readings', () => {
     expect(pptLabel('24-hour Precipitation [in]')).toBe('Last 24 hours')
     expect(pptLabel('Precipitation Since Midnight [in]')).toBe('Since midnight')
     const rows = pptRows({ station: 'acebozem', 'Year to Date Precipitation [in]': 13.119, 'Precipitation Since Midnight [in]': 0 })
-    expect(rows.map((r) => [r.label, r.value])).toEqual([
-      ['Since midnight', '0.00 in'],
-      ['Year to date', '13.12 in'],
+    expect(rows.map((r) => [r.label, r.value, r.unit])).toEqual([
+      ['Since midnight', '0.00', 'in'],
+      ['Year to date', '13.12', 'in'],
     ])
   })
 })
@@ -104,7 +109,7 @@ describe('sensorHistory', () => {
     expect(sensorName({})).toBe('Unknown sensor')
     expect(measuresText(['air_temp_0200', 'rh'])).toBe('Air temperature, Humidity')
     expect(measuresText('door')).toBe('')
-    expect(measuresText(['soil_vwc_0005', 'soil_ec_perm_0005'])).toBe('Soil moisture at 2 in')
+    expect(measuresText(['soil_vwc_0005', 'soil_ec_perm_0005'])).toBe('Soil moisture at\u00a02\u00a0in')
   })
 
   it('groups installs and removals by day, newest first, skipping "None" and duplicates', () => {
@@ -117,6 +122,12 @@ describe('sensorHistory', () => {
       { kind: 'removed', sensor: 'Vaisala HMP155A (RH/T)', measures: 'Air temperature, Humidity' },
     ])
     expect(days[1].changes.map((c) => c.kind)).toEqual(['installed'])
+  })
+
+  it('lists one model at several depths shallowest first', () => {
+    const tdr = (depth: string) => ({ date_start: '2024-08-02', elements: [`soil_vwc_${depth}`], manufacturer: 'Acclima', model: 'TDR-310N', type: 'Soil' })
+    const days = sensorHistory(['0100', '0050', '0005', '0010', '0020'].map(tdr))
+    expect(days[0].changes.map((c) => c.measures)).toEqual(['2', '4', '8', '20', '40'].map((d) => `Soil moisture at\u00a0${d}\u00a0in`))
   })
 
   it('reads parallel date arrays as one deployment each', () => {

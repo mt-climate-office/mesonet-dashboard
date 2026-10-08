@@ -22,10 +22,10 @@ export function formatDay(value: string | null | undefined): string | null {
 /** No-break space: keeps a number with its unit or hemisphere, so a narrow line never strands "W" or "ft". */
 const NBSP = '\u00a0'
 
-/** "45.66° N, 111.07° W" (each coordinate joined by NBSP), as the catalog sends the degrees. */
+/** "45.66° N, 111.07° W" as the catalog sends the degrees, all NBSP-joined: the pair never wraps inside. */
 export function formatCoordinates(lat: number, lon: number): string {
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return MISSING
-  return `${Math.abs(lat)}°${NBSP}${lat < 0 ? 'S' : 'N'}, ${Math.abs(lon)}°${NBSP}${lon < 0 ? 'W' : 'E'}`
+  return `${Math.abs(lat)}°${NBSP}${lat < 0 ? 'S' : 'N'},${NBSP}${Math.abs(lon)}°${NBSP}${lon < 0 ? 'W' : 'E'}`
 }
 
 /** Elevation in feet from metres, as legacy: round(m × 3.281). */
