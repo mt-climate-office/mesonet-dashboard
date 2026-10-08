@@ -21,10 +21,15 @@ const DIST_SWAP: Readonly<Record<string, string>> = {
   '2 m': '6.6 ft',
 }
 
+/** The plain name of an element's `description_short`, without its height or depth ("Air temperature"). */
+export function elementName(descriptionShort: string): string {
+  const api = latestVarName(descriptionShort)
+  return plainName(ELEM_MAP[api]?.[0] ?? '', api)
+}
+
 /** The picker label for an element's `description_short` (see the header); unknown names keep the API's. */
 export function elementLabel(descriptionShort: string): string {
-  const api = latestVarName(descriptionShort)
-  const name = plainName(ELEM_MAP[api]?.[0] ?? '', api)
+  const name = elementName(descriptionShort)
   const at = /@\s*(.+)$/.exec(descriptionShort)?.[1].trim()
   return at ? `${name} at ${at.replace(/(-?\d+ (?:cm|m))(?![\w/])/g, (m) => DIST_SWAP[m] ?? m)}` : name
 }

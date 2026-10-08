@@ -7,7 +7,7 @@
 import type { Station, StationElement } from '../api'
 import type { MultiselectGroup, MultiselectOption } from '../controls/multiselectModel'
 import type { DlPeriod } from '../url-schema'
-import { elementLabel } from './labels'
+import { elementLabel, elementName } from './labels'
 import {
   clampStart,
   dateRangeError,
@@ -30,19 +30,23 @@ export const PERIOD_OPTIONS: ReadonlyArray<{ value: DlPeriod; label: string }> =
 ]
 
 export const MONTHLY_NOTE =
-  'Monthly values are computed from daily data: precipitation and Reference ET are summed, other variables averaged. "Days With Data" shows how many days each month includes. Totals are left blank for any month missing a day (including months only partly inside the date range).'
+  'Monthly values are computed from daily data: precipitation and Reference ET are summed, other variables averaged. The "Days With Data" column counts each month’s days of data. Totals are left blank for any month missing a day (including months only partly inside the date range).'
 
-/** Derived codes whose daily chart is each day's hourly high and low, not the API's daily mean. */
-const HIGH_LOW_CHARTS = new Set(['feels_like', 'cci'])
+/** Derived codes whose daily chart is each day's hourly high and low, not the API's daily mean, in picker order. */
+const HIGH_LOW_CHARTS = DERIVED_OPTIONS.filter((o) => o.value === 'feels_like' || o.value === 'cci')
 
 /**
- * The note under Interval when daily or monthly feels like / livestock risk is selected: the API's
- * values come from daily means, while those charts show each day's highest and lowest hourly value
+ * The notice under the rows when daily or monthly Feels like and/or Livestock risk is selected, naming
+ * only the selected ones (chart names, capitalised as their charts are): the API's values come from
+ * daily means, while those charts show each day's highest and lowest hourly value
  * (core/ag/compute/dailyRange). '' otherwise.
  */
 export function dailyMeansNote(period: DlPeriod, elements: readonly string[]): string {
-  if (period === 'hourly' || !elements.some((e) => HIGH_LOW_CHARTS.has(e))) return ''
-  return 'Daily and monthly feels like and livestock risk are computed from daily means. The Feels like and Livestock risk charts use each day’s highest and lowest hourly value instead: choose Hourly to download the values behind them.'
+  const picked = period === 'hourly' ? [] : HIGH_LOW_CHARTS.filter((o) => elements.includes(o.value))
+  if (!picked.length) return ''
+  const many = picked.length > 1
+  const names = picked.map((o) => o.label).join(' and ')
+  return `${names} ${many ? 'are' : 'is'} computed from daily means at this interval; ${many ? 'their charts show' : 'its chart shows'} each day’s highest and lowest hourly value instead. Choose Hourly to download the values behind ${many ? 'those charts' : 'the chart'}.`
 }
 
 /** Station install date as YYYY-MM-DD, or null. */
@@ -50,15 +54,24 @@ export function installDateOf(s: Station | undefined): string | null {
   return s?.date_installed ? String(s.date_installed).slice(0, 10) : null
 }
 
-/** Measured-variable options (the API's standard elements): unique, derived codes excluded, US-unit labels, natural sort. */
+/**
+ * Measured-variable options (the API's standard elements): unique, derived codes excluded, natural sort.
+ * A label names the height or depth (US units) only when the station has more than one sensor of that
+ * variable ("Soil moisture at 4 in", but "Air temperature", as the rest of the app says it).
+ */
 export function standardOptions(elements: readonly StationElement[]): MultiselectOption[] {
   const seen = new Set<string>()
-  const out: MultiselectOption[] = []
+  const unique: StationElement[] = []
   for (const e of elements) {
     if (seen.has(e.element) || DERIVED_CODES.has(e.element)) continue
     seen.add(e.element)
-    out.push({ value: e.element, label: elementLabel(e.description_short) })
+    unique.push(e)
   }
+  const names = unique.map((e) => elementName(e.description_short))
+  const out = unique.map((e, i): MultiselectOption => {
+    const several = names.filter((n) => n === names[i]).length > 1
+    return { value: e.element, label: several ? elementLabel(e.description_short) : names[i] }
+  })
   return out.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: 'base' }))
 }
 
