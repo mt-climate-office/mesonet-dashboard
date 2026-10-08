@@ -42,6 +42,7 @@ import { component } from '../component'
 import { initSwipe } from '../layout/swipe'
 import { announce } from '../shell/live'
 import { stepChart } from '../shell/navigate'
+import { countEvent } from '../shell/analytics'
 import { shareView } from '../shell/share'
 import { openSheet } from '../shell/sheet'
 import { latestObs } from '../station/resources'
@@ -147,7 +148,9 @@ export function variablePage() {
       url().set(rangeChipPatch(id, url().state.agg))
     },
     setInterval(c: IntervalChip): void {
-      if (!c.disabled) url().set(intervalPatch(c.id))
+      if (c.disabled) return
+      url().set(intervalPatch(c.id))
+      countEvent(`interval/${c.id}`, 'Interval chosen')
     },
     toggleTable(): void {
       url().go('charts', { tbl: !this.tableMode(), view: this.all() ? 'history' : 'recent' }, true)

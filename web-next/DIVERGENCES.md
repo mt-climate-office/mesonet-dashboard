@@ -1289,8 +1289,8 @@ and the preview on small screens. It wraps to two lines at 375px.
 
 ### Page counts (GoatCounter)
 - **Legacy / web/:** no analytics in web/.
-- **New:** one GoatCounter beacon (`navigator.sendBeacon` to `mt-climate-office.goatcounter.com/count`) per section view, carrying only the path plus section (`/mesonet-dashboard/next/#charts`) and the section label. The station, query string and referrer are never sent, and there are no cookies or third-party script. It is skipped under Do Not Track or Global Privacy Control and on local hosts (dev, verify). The CSP `connect-src` allows that one host. The code is `core/analytics.ts` and `ui/shell/analytics.ts`.
-- **Why:** user decision (2026-10-02): privacy-friendly counts instead of no analytics or GA4.
+- **New:** one GoatCounter beacon (`navigator.sendBeacon` to `mt-climate-office.goatcounter.com/count`) per view: the path plus the section, and on Charts the open chart or Ag tool (`/mesonet-dashboard/next/#charts/air_temp`, `#charts/compare`). Every count carries the screen size (`width,height,dpr`); the landing view also carries the referring site's host only (`google.com`, never the full URL; none for the app itself) and any `utm_*` tags as the campaign. Events (`e=true`) count actions: `station/<id>` per station viewed, `share`, `download/csv/<period>`, `download/photo`, `photos/open` and `interval/<id>`. Other query keys (the station, dates) and the full referrer are never sent, and there are no cookies or third-party script. It is skipped under Do Not Track or Global Privacy Control and on local hosts (dev, verify). The CSP `connect-src` allows that one host. The code is `core/analytics.ts` and `ui/shell/analytics.ts`.
+- **Why:** user decision (2026-10-02): privacy-friendly counts instead of no analytics or GA4. Screen size, referrer host, campaign, per-chart paths and events added 2026-10-08 (user) to fill GoatCounter's "unknown" panels without cookies.
 
 ### Legacy `?state=` links and `#satellite`
 - **web/:** a Mantine notification, open until closed, with a link to the previous dashboard.

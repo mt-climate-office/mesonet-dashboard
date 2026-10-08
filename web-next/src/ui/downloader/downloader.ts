@@ -23,6 +23,7 @@ import type { DlPeriod, UrlState } from '../../core/url-schema'
 import { elementsResource } from '../charts/resources'
 import { component } from '../component'
 import { initScrollFade } from '../layout/scrollFade'
+import { countEvent } from '../shell/analytics'
 import { announce } from '../shell/live'
 
 const HOUR = 60 * 60 * 1000
@@ -218,6 +219,7 @@ export function downloader() {
       a.remove()
       // Some browsers start reading the blob after click() returns; keep the URL alive a while.
       setTimeout(() => URL.revokeObjectURL(href), 10_000)
+      countEvent(`download/csv/${q.period}`, 'Data downloaded')
     },
 
     /** Preview model for the chart host (null clears it). */
