@@ -202,6 +202,8 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('s') === 'acebozem', null, { timeout: 10000 }).catch(() => {})
   check('combobox: Enter selects the station (?s=acebozem)', (await urlParam(page, 's')) === 'acebozem')
+  // The section renders and focus moves a tick or two after the URL; wait for that, then read it.
+  await page.waitForFunction(() => !document.querySelector('[data-testid="landing"]') && document.activeElement?.id === 'main', null, { timeout: 5000 }).catch(() => {})
   const picked = await page.evaluate(() => ({
     landing: !!document.querySelector('[data-testid="landing"]'),
     now: !!document.querySelector('[data-testid="now"]') && getComputedStyle(document.querySelector('.dash-section-host')).display !== 'none',
@@ -387,6 +389,8 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await page.getByTestId('table-show-chart').focus()
   await page.keyboard.press('Enter')
   await page.waitForSelector('[data-testid="variable-chart"]', { timeout: 10000 }).catch(() => {})
+  // Focus moves on the next tick after the chart remounts; wait for it rather than racing it.
+  await page.waitForFunction(() => document.activeElement?.id === 'var-title', null, { timeout: 5000 }).catch(() => {})
   const shown = await page.evaluate(() => ({ tbl: new URLSearchParams(location.search).get('tbl'), focus: document.activeElement?.id }))
   check('charts: the table’s Show as chart button returns to the chart and focuses the heading', shown.tbl === null && shown.focus === 'var-title', JSON.stringify(shown))
   await page.goBack()
