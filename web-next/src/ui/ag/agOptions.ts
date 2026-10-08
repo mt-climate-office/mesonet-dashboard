@@ -11,7 +11,7 @@
 import Alpine from 'alpinejs'
 import type { RangeValue } from '../../core/controls/rangeModel'
 import { GDD_CROPS } from '../../core/params/ag'
-import { PROJECTION_OPTIONS } from '../../core/ag/view/projection'
+import { NOT_PROJECTABLE, PROJECTION_OPTIONS, projectable } from '../../core/ag/view/projection'
 import { SLIDER_MAX, SLIDER_MIN } from '../../core/ag/view/gddCutoffs'
 import { denverToday } from '../../core/today'
 import { optionChips, type OptionChip, type OptionId } from '../../core/ag/view/summary'
@@ -39,6 +39,7 @@ export function agOptions() {
   return component({
     crops: GDD_CROPS,
     projections: PROJECTION_OPTIONS,
+    notProjectable: NOT_PROJECTABLE,
     times: [
       { value: 'hourly', label: 'Hourly' },
       { value: 'daily', label: 'Daily' },
@@ -109,6 +110,13 @@ export function agOptions() {
     },
     resetCutoffs: () => set({ gdd_lo: null, gdd_hi: null }),
     setProjection: (v: string) => set({ gdd_proj: v as UrlState['gdd_proj'] }),
+    /** The projection needs dates that end today (or within a few days). */
+    canProject(): boolean {
+      return projectable(this.tab.end, denverToday())
+    },
+    endDatesToday() {
+      set({ ag_from: this.tab.start, ag_to: denverToday() })
+    },
     setSoil(values: string[]) {
       set({ soilv: pickOne(values, this.tab.soilVar) })
     },

@@ -140,19 +140,26 @@ export const PRECIP: Record<Theme, BarLine> = {
   'high-contrast': { bar: BLUES[3], cumulative: BLUES[1] },
 }
 
-// YlOrRd. light bar 4.74 / cum 10.8; dark 6.64 / 13.1; HC 9.05 / 20.4.
-export const ETR: Record<Theme, BarLine> = {
-  light: { bar: YL_OR_RD[6], cumulative: YL_OR_RD[8] },
-  dark: { bar: YL_OR_RD[4], cumulative: YL_OR_RD[1] },
-  'high-contrast': { bar: YL_OR_RD[4], cumulative: YL_OR_RD[0] },
+/**
+ * The running total over the Ag tools' daily bars (reference ET, GDD): the text color, so it reads
+ * over bars of any hue (a same-ramp line vanished where it crossed the bars). light 17.1, dark 13.0,
+ * HC 21.0 on the surface.
+ */
+export const CUMULATIVE_LINE: TokenRef = { token: '--text-primary' }
+
+// YlOrRd bars (the running total is CUMULATIVE_LINE). light 4.74, dark 6.64, HC 9.05.
+export const ETR: Record<Theme, { bar: string }> = {
+  light: { bar: YL_OR_RD[6] },
+  dark: { bar: YL_OR_RD[4] },
+  'high-contrast': { bar: YL_OR_RD[4] },
 }
 
-// YlOrRd; the projection band is the cumulative hue at low alpha.
-// light bar 3.35 / cum 6.58; dark 8.58 / 13.1; HC 11.7 / 20.4.
-export const GDD: Record<Theme, BarLine & { bandAlpha: number }> = {
-  light: { bar: YL_OR_RD[5], cumulative: YL_OR_RD[7], bandAlpha: 0.15 },
-  dark: { bar: YL_OR_RD[3], cumulative: YL_OR_RD[1], bandAlpha: 0.2 },
-  'high-contrast': { bar: YL_OR_RD[3], cumulative: YL_OR_RD[0], bandAlpha: 0.25 },
+// YlOrRd bars when there is no stage table (light 3.35, dark 8.58, HC 11.7); the running total and
+// its projection are CUMULATIVE_LINE, the projection band that color at `bandAlpha` (a fill).
+export const GDD: Record<Theme, { bar: string; bandAlpha: number }> = {
+  light: { bar: YL_OR_RD[5], bandAlpha: 0.15 },
+  dark: { bar: YL_OR_RD[3], bandAlpha: 0.2 },
+  'high-contrast': { bar: YL_OR_RD[3], bandAlpha: 0.25 },
 }
 /**
  * n growth-stage colors for the GDD chart, first stage → last (batlow, the house sequential:
@@ -168,6 +175,9 @@ export const GDD_STAGE_LINE: TokenRef = { token: '--text-dim' }
 /** Line under the colored markers of the feels-like and CCI charts. */
 export const INDEX_LINE: TokenRef = { token: '--text-dim' }
 
+/** The feels-like line (the plotted quantity; the air temperature beside it is INDEX_LINE, dashed). Same contrast as CUMULATIVE_LINE. */
+export const FEELS_LIKE_LINE: TokenRef = { token: '--text-primary' }
+
 /* ------------------------------------------------------------ CCI classes */
 
 /** Livestock CCI classes, mild → worst (No Stress is the grey class). */
@@ -178,12 +188,14 @@ export type StressSide = 'cold' | 'heat'
 
 // Cold stress is the blue half of RdBu, heat stress the red half, each run light → dark from
 // Mild to Extreme Danger (5 OKLab samples); No Stress is grey. The span is the part of each half
-// that clears 3:1 on the surface: light 0.6–1 (cold ≥3.39, heat ≥3.72); dark 0.3–0.7 (cold ≥3.46,
-// heat ≥3.06) and HC 0.2–0.75 (≥4.10 / ≥3.57) skip the near-white end, so the mild classes keep
-// their hue and mild cold stays apart from mild heat.
+// that clears 3:1 on the surface, as wide as it can be so neighbouring classes stay apart:
+// light 0.6–1 (cold ≥3.39, heat ≥3.72); dark 0.2–0.7 (cold ≥3.46, heat ≥3.06; 0.3–0.7 left Mild
+// and Moderate near-identical); HC 0.3–0.8 (cold ≥3.56, heat ≥3.06; from 0.2 Mild cold read grey).
+// Dark and HC skip the near-white end, so the mild classes keep their hue and mild cold stays
+// apart from mild heat.
 const RD_BU_COLD = RD_BU.slice(5)
 const RD_BU_HEAT = reversed(RD_BU.slice(0, 6))
-const STRESS_SPAN: Record<Theme, [number, number]> = { light: [0.6, 1], dark: [0.3, 0.7], 'high-contrast': [0.2, 0.75] }
+const STRESS_SPAN: Record<Theme, [number, number]> = { light: [0.6, 1], dark: [0.2, 0.7], 'high-contrast': [0.3, 0.8] }
 
 /**
  * Marker for a CCI class on the cold or heat side: blues for cold, reds for heat, grey for No
@@ -237,9 +249,12 @@ const BATLOW_SPAN: Record<Theme, [number, number]> = { light: [0, 0.55], dark: [
 const SOIL_DEPTHS_IN = [2, 4, 8, 20, 28, 36, 40]
 const DEPTH_POS = [0, 0.25, 0.5, 0.75, 5 / 6, 11 / 12, 1]
 
-// Depth lines use a wider dark span than bins/years: 0.42 is 3.13:1 on the dark surface.
-// light 0–0.55 (≥3.52), dark 0.42–1 (≥3.13), HC 0.35–1 (≥3.65).
-const DEPTH_SPAN: Record<Theme, [number, number]> = { light: [0, 0.55], dark: [0.42, 1], 'high-contrast': [0.35, 1] }
+// Depth lines use a wider dark span than bins/years: 0.42 is 3.13:1 on the dark surface; light runs
+// to 0.58 (3.26:1). light 0–0.58 (≥3.26), dark 0.42–1 (≥3.13), HC 0.35–1 (≥3.65).
+const DEPTH_SPAN: Record<Theme, [number, number]> = { light: [0, 0.58], dark: [0.42, 1], 'high-contrast': [0.35, 1] }
+// Batlow's dark end changes slowly, so in light the shallow depths get more of the span
+// (position ** 0.7): 2 in navy, 4 in teal, 8 in green (evenly spaced, 2 and 4 in were both navy).
+const DEPTH_GAMMA: Record<Theme, number> = { light: 0.7, dark: 1, 'high-contrast': 1 }
 
 /**
  * Line color for a soil depth in inches (cm callers divide by 2.54). Depends only on depth and theme,
@@ -254,7 +269,7 @@ export function depthColor(depthInches: number, theme: Theme): string {
     pos = DEPTH_POS[i - 1] + ((DEPTH_POS[i] - DEPTH_POS[i - 1]) * (depthInches - d[i - 1])) / (d[i] - d[i - 1])
   }
   const [from, to] = DEPTH_SPAN[theme]
-  return colorAt(BATLOW, from + (to - from) * pos)
+  return colorAt(BATLOW, from + (to - from) * pos ** DEPTH_GAMMA[theme])
 }
 
 function batlowSamples(n: number, theme: Theme): string[] {
@@ -267,9 +282,14 @@ export function binColors(n: number, theme: Theme): string[] {
   return batlowSamples(n, theme)
 }
 
+// Past years in light start at teal, not navy: navy matched the current year (ANNUAL_CURRENT, the
+// near-black text color). light 0.2–0.58 (≥3.26); dark and HC as BATLOW_SPAN.
+const YEAR_SPAN: Record<Theme, [number, number]> = { ...BATLOW_SPAN, light: [0.2, 0.58] }
+
 /** n colors for past years in the annual chart, oldest → newest. The current year uses ANNUAL_CURRENT. */
 export function yearColors(n: number, theme: Theme): string[] {
-  return batlowSamples(n, theme)
+  const [from, to] = YEAR_SPAN[theme]
+  return sample(BATLOW, n, { from, to })
 }
 /** Current-year line in the annual chart. */
 export const ANNUAL_CURRENT: { color: TokenRef; width: number } = { color: { token: '--text-primary' }, width: 3 }
@@ -341,7 +361,7 @@ export const SWP_BANDS = {
   fill: { token: '--text-dim', alpha: 0.12 } as TokenRef,
   line: { token: '--text-dim' } as TokenRef,
   dash: 'dashed' as const,
-  labels: { fieldCapacity: 'Field Capacity', wiltingPoint: 'Wilting Point' },
+  labels: { fieldCapacity: 'Field capacity', wiltingPoint: 'Wilting point' },
 }
 
 /* ------------------------------------------------------- downloader preview */

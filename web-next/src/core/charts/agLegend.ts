@@ -16,7 +16,17 @@ export interface AgLegendItem {
   /** What it shows on compact screens (default: `text`). */
   short?: string
   icon?: string
+  /** The icon's fill when it is not the series color (e.g. a class ramp as a gradient). */
+  color?: LegendFill
 }
+
+/** A legend icon fill: a color, or a left-to-right gradient through `stops`. */
+export type LegendFill = string | { stops: readonly string[] }
+
+const fill = (c: LegendFill) =>
+  typeof c === 'string'
+    ? c
+    : { type: 'linear' as const, x: 0, y: 0, x2: 1, y2: 0, colorStops: c.stops.map((color, i) => ({ offset: i / Math.max(1, c.stops.length - 1), color })) }
 
 /** Height of one more legend row (10 px marks, 11–12 px text, the row gap). */
 export const LEGEND_ROW = 22
@@ -59,7 +69,9 @@ export function agLegend(
   const legend: LegendComponentOption = {
     type: 'plain',
     bottom: 4,
-    data: items.map((i) => (i.icon ? { name: i.name, icon: i.icon } : i.name)),
+    data: items.map((i) =>
+      i.icon || i.color ? { name: i.name, ...(i.icon ? { icon: i.icon } : {}), ...(i.color ? { itemStyle: { color: fill(i.color) } } : {}) } : i.name,
+    ),
     itemWidth,
     itemHeight: 10,
     itemGap,
@@ -67,10 +79,12 @@ export function agLegend(
     formatter: (n: string) => textOf.get(n) ?? n,
     ...(title ? { left: 8 + titleW, right: 8 } : { left: 'center' }),
   }
+  const extra = Math.max(0, rows - 1) * LEGEND_ROW
+  // The title sits beside the legend's first (top) row.
   const graphic: GraphicComponentOption[] = title
-    ? [{ type: 'text', left: 8, bottom: 7, silent: true, style: { text: title, fill: ctx.theme.text, font: `600 12px ${ctx.theme.fontUi}` } }]
+    ? [{ type: 'text', left: 8, bottom: 7 + extra, silent: true, style: { text: title, fill: ctx.theme.text, font: `600 12px ${ctx.theme.fontUi}` } }]
     : []
-  return { legend, graphic, extra: Math.max(0, rows - 1) * LEGEND_ROW }
+  return { legend, graphic, extra }
 }
 
 /** Raise the plot (grid bottom) and the zoom slider by `extra` px for a wrapped legend. */

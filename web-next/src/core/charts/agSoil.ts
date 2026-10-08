@@ -54,6 +54,33 @@ const categoryLabel = (period: Period) => (v: string | number) => {
   return period === 'hourly' ? `${day}\n${String(d.getUTCHours()).padStart(2, '0')}:00` : day
 }
 
+/** A window longer than this (days) gets month ticks, as the time axes elsewhere. */
+const MONTH_TICKS_DAYS = 60
+
+/**
+ * Indices of the cells (wall-clock ms) that start a month, when the window spans more than
+ * MONTH_TICKS_DAYS; null for a shorter window (day labels, thinned where they overlap).
+ */
+export function monthStarts(xMs: readonly number[]): Set<number> | null {
+  if (xMs.length < 2 || xMs[xMs.length - 1] - xMs[0] <= MONTH_TICKS_DAYS * 86_400_000) return null
+  const month = (x: number) => new Date(x).getUTCMonth()
+  return new Set(xMs.flatMap((x, i) => (i > 0 && month(x) !== month(xMs[i - 1]) ? [i] : [])))
+}
+
+/** Month tick text: "Jul", or the year at January ("2026"), as the time axes. */
+const monthLabel = (v: string | number) => {
+  const d = new Date(Number(v))
+  return d.getUTCMonth() === 0 ? String(d.getUTCFullYear()) : MONTHS[d.getUTCMonth()]
+}
+
+/** The time (category) axis: month ticks on long windows, else day labels thinned where they overlap. */
+function categoryAxis(xMs: number[], period: Period) {
+  const months = monthStarts(xMs)
+  if (!months) return { type: 'category' as const, data: xMs, axisLabel: { formatter: categoryLabel(period), hideOverlap: true }, axisTick: { alignWithLabel: true } }
+  const at = (i: number) => months.has(i)
+  return { type: 'category' as const, data: xMs, axisLabel: { formatter: monthLabel, interval: at }, axisTick: { interval: at } }
+}
+
 export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
   const keep = keptDepths(m)
   if (keep.length === 0 || m.time.length === 0) return { series: [] }
@@ -103,11 +130,11 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
   }
   // Hourly cells have two-line labels ("Jul 1" over "14:00").
   const b = bottomLayout(slider, cells.length ? LEGEND_PX : 0, m.period === 'hourly' ? 42 : 30)
-  const g = grid(ctx, { right: cb.gridRight, bottom: ctx.compact ? cb.gridBottom : b.grid })
+  const g = grid(ctx, { right: cb.gridRight, bottom: ctx.compact ? cb.gridBottom : b.grid, top: cb.gridTop })
   const lg = agLegend(ctx, [{ name: FROZEN_NAME }])
   return {
     grid: g,
-    xAxis: { type: 'category', data: xMs, axisLabel: { formatter: categoryLabel(m.period), hideOverlap: true }, axisTick: { alignWithLabel: true } },
+    xAxis: categoryAxis(xMs, m.period),
     yAxis: [{ type: 'category', data: y, inverse: true, name: 'Soil depth', nameLocation: 'middle', nameGap: 44, nameRotate: 90 }, ...(trace ? [trace.yAxis] : [])],
     visualMap: cb.visualMap,
     graphic: cb.graphic,
@@ -178,9 +205,10 @@ const DRY = 'dry'
 const JOINT = 'joint'
 
 /**
- * Per depth, the solid line (dry-end clips nulled) and, when there are any,
- * a dashed, faded companion in the same color and name (one legend entry)
- * through the dry-end clips, joined to the solid line's neighbouring points.
+ * Per depth, the solid line (lower bounds nulled) and, when there are any, a
+ * dashed companion in the same color and name (one legend entry) through the
+ * lower bounds, joined to the solid line's neighbouring points. Full opacity:
+ * a depth that is capped all season must still read as that depth's data.
  */
 function swpLines(ctx: ChartContext, xs: number[], depthsCm: number[], bar: Nullable[][], dry: boolean[][], step: number): LineSeriesOption[] {
   return depthsCm.flatMap((cm, d) => {
@@ -191,16 +219,16 @@ function swpLines(ctx: ChartContext, xs: number[], depthsCm: number[], bar: Null
     const near = (i: number) => dry[d][i] || !!dry[d][i - 1] || !!dry[d][i + 1]
     const ys = bar[d].map((v, i) => (near(i) ? v : null))
     const notes = dry[d].map((x) => (x ? DRY : JOINT))
-    const faded = lineSeries(name, points(xs, ys, step, notes), { color, dash: 'dashed' })
-    return [solid, { ...faded, lineStyle: { ...faded.lineStyle, opacity: 0.55 } }]
+    return [solid, lineSeries(name, points(xs, ys, step, notes), { color, dash: 'dashed' })]
   })
 }
 
 /**
  * SWP in bar, one line per depth, on a log axis inverted so wet is at the
  * top; ticks read negative ("-15"). Bands shade saturated → field capacity
- * and beyond the wilting point, with corner labels. Dry-end clips (VWC below
- * the lab range) are capped (labels `SWP_CAP_BAR`) and drawn dashed and faded.
+ * and beyond the wilting point, each boundary labelled on its line. Lower
+ * bounds (dry-end clips and anything drier than `SWP_CAP_BAR`; labels
+ * `swpBar`) sit at most on the cap and are drawn dashed.
  */
 export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
   const xs = m.series.time.map(wallMs)
@@ -222,12 +250,13 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
             ctx,
             [xs[0], xs[xs.length - 1]],
             [
-              { from: min, to: SWP_FIELD_CAPACITY, label: SWP_BANDS.labels.fieldCapacity, labelAt: 'insideTopLeft' },
-              { from: SWP_WILTING_POINT, to: max, label: SWP_BANDS.labels.wiltingPoint, labelAt: 'insideBottomLeft' },
+              // Each label sits on its band's edge at the boundary line (the axis is inverted: wet at the top).
+              { from: min, to: SWP_FIELD_CAPACITY, label: `${SWP_BANDS.labels.fieldCapacity} (-${SWP_FIELD_CAPACITY} bar)`, labelAt: 'insideBottomLeft' },
+              { from: SWP_WILTING_POINT, to: max, label: `${SWP_BANDS.labels.wiltingPoint} (-${SWP_WILTING_POINT} bar)`, labelAt: 'insideTopLeft' },
             ],
             [
-              { y: SWP_FIELD_CAPACITY, label: `Field Capacity (${SWP_FIELD_CAPACITY} bar)` },
-              { y: SWP_WILTING_POINT, label: `Wilting Point (${SWP_WILTING_POINT} bar)` },
+              { y: SWP_FIELD_CAPACITY, label: `Field capacity (-${SWP_FIELD_CAPACITY} bar)` },
+              { y: SWP_WILTING_POINT, label: `Wilting point (-${SWP_WILTING_POINT} bar)` },
             ],
           ),
         ]

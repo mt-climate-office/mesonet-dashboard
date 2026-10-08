@@ -3,7 +3,7 @@ import { percentSaturation, swp } from '../compute'
 import { dailyMet, soilParams, soilSeries } from '../__tests__/adapters'
 import { annualTraces, coverage, partialNote, profileValues, unavailableMessage } from './derive'
 import { LEARN_MORE_BASE, learnMoreUrl } from './learnMore'
-import { projectionThrough } from './projection'
+import { projectable, projectionThrough } from './projection'
 import { HI_NONE, SLIDER_NONE, parseGddCutoffs, sliderWrites, toSlider } from './gddCutoffs'
 
 describe('learnMoreUrl (legacy slugs, app.py ~686-717)', () => {
@@ -32,6 +32,11 @@ describe('projectionThrough', () => {
     expect(projectionThrough('2026-07-01', 'off', '2026-07-01')).toBeNull()
     expect(projectionThrough('2026-06-01', 'season', '2026-07-01')).toBeNull()
     expect(projectionThrough(undefined, 'season', '2026-07-01')).toBeNull()
+  })
+  it('projectable: dates that end today or within 3 days of it', () => {
+    expect(projectable('2026-10-07', '2026-10-07')).toBe(true)
+    expect(projectable('2026-10-04', '2026-10-07')).toBe(true)
+    expect(projectable('2026-09-30', '2026-10-07')).toBe(false)
   })
 })
 

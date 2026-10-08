@@ -1,11 +1,12 @@
 /**
  * The option chips above an Ag tool's chart (partials/ag/options.html): which
  * options the open tool has, in order, and each one's summary text, e.g.
- * `Wheat` · `32–70 °F` · `Since Oct 2, 2025` · `Projected to Oct 31`. A chip
+ * `Wheat` · `32–70/95 °F` · `Since Oct 2, 2025` · `Projected to Oct 31`. A chip
  * names its option's current value, so the row says what is drawn. Pure.
  */
 import type { LocalDate } from '../contract'
 import { GDD_CUTOFFS_F } from '../compute/gdd'
+import { projectable } from './projection'
 import { intervalWord } from '../../variables/interval'
 import type { AgTab } from './tab'
 
@@ -28,12 +29,21 @@ const PROJECTION_TEXT: Record<AgTab['gddProj'], string> = {
   off: 'No projection',
 }
 
-/** "32–70 °F", or "from 44 °F" without an upper cutoff; custom cutoffs win over the crop's. */
+/**
+ * "32–70 °F", or "from 44 °F" without an upper cutoff; custom cutoffs win over the crop's. Wheat
+ * and barley read "32–70/95 °F": the upper cutoff switches at Haun stage 2 (NDAWN).
+ */
 function cutoffText(t: Pick<AgTab, 'crop' | 'cut'>): string {
   const [cl, ch] = GDD_CUTOFFS_F[t.crop]
   const lo = t.cut.loF ?? cl
   const hi = t.cut.hiF ?? ch
-  return Number.isFinite(hi) ? `${lo}–${hi} °F` : `from ${lo} °F`
+  const sw = !t.cut.custom && (t.crop === 'wheat' || t.crop === 'barley') ? `/${GDD_CUTOFFS_F[`${t.crop}2`][1]}` : ''
+  return Number.isFinite(hi) ? `${lo}–${hi}${sw} °F` : `from ${lo} °F`
+}
+
+/** The projection chip: its setting, or "No projection" when the dates end in the past (projection `projectable`). */
+function projectionText(t: Pick<AgTab, 'gddProj' | 'end'>, today: LocalDate): string {
+  return t.gddProj !== 'off' && !projectable(t.end, today) ? 'No projection (past dates)' : PROJECTION_TEXT[t.gddProj]
 }
 
 /** An option of the open tool: `id` picks its control (partials/ag/options.html), `name` labels it. */
@@ -84,7 +94,7 @@ export function optionChips(t: AgTab, annualLabel: string | null, today: LocalDa
       case 'dates':
         return t.end === today ? `Since ${monthDay(t.start)}, ${t.start.slice(0, 4)}` : dateRangeText(t.start, t.end)
       case 'projection':
-        return PROJECTION_TEXT[t.gddProj]
+        return projectionText(t, today)
       case 'interval':
         return intervalWord(t.period)
       case 'livestock':

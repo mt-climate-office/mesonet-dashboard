@@ -20,26 +20,31 @@ export const SWP_WILTING_POINT = 15
 /**
  * Display ceiling (bar) for dry-end SWP. Where observed VWC is drier than the
  * driest lab point, `swp()` clips it to the lab range, so its value is only a
- * lower bound on suction, and the FX tail there runs to ~10⁴ bar. Those
- * points draw at min(value, cap), muted, and read "≤ −… bar".
+ * lower bound on suction; the curve's dry tail also runs to ~10⁴ bar before
+ * any clip. Every value drier than this, and every dry-end clip, is a lower
+ * bound: it draws at min(value, cap), dashed, and reads "≤ −… bar".
  */
 export const SWP_CAP_BAR = 1000
 
 export interface SwpBar {
-  /** Positive bar magnitudes; dry-end clipped values capped at `SWP_CAP_BAR`. */
+  /** Positive bar magnitudes, never past `SWP_CAP_BAR`. */
   bar: Nullable[][]
-  /** `dry[d][i]`: VWC was below the lab range, so `bar` is a lower bound. */
+  /** `dry[d][i]`: a dry-end clip or past the cap, so `bar` is a lower bound. */
   dry: boolean[][]
 }
 
 /**
- * `SwpSeries` (kPa) → display bar. A clipped value past the wilting point is
- * a dry-end clip (VWC below the lab range); wet-end clips sit at the wettest
- * lab point, near saturation, and stay as they are.
+ * `SwpSeries` (kPa) → display bar. A value past the cap, or a clipped value
+ * past the wilting point (a dry-end clip: VWC below the lab range), is a lower
+ * bound, capped at `SWP_CAP_BAR`; wet-end clips sit at the wettest lab point,
+ * near saturation, and stay as they are.
  */
 export function swpBar(s: Pick<SwpSeries, 'kPa' | 'clipped'>): SwpBar {
   const dry = s.kPa.map((col, d) =>
-    col.map((v, i) => !!s.clipped[d]?.[i] && v != null && kPaToBar(v)! >= SWP_WILTING_POINT),
+    col.map((v, i) => {
+      const b = kPaToBar(v)
+      return b != null && (b > SWP_CAP_BAR || (!!s.clipped[d]?.[i] && b >= SWP_WILTING_POINT))
+    }),
   )
   const bar = s.kPa.map((col, d) =>
     col.map((v, i) => {
