@@ -140,7 +140,7 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
 {
   const { page, problems, close } = await open(env, '?theme=light#now')
   const input = page.getByTestId('picker-search').getByRole('combobox')
-  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town, county or ZIP')
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town or ZIP')
   await input.focus()
   // The places load when the list opens.
   await page.keyboard.type('bozeman')
@@ -175,7 +175,7 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await page.evaluate(() => localStorage.setItem('mco-dashboard-recent', 'mdaglasw'))
   await page.reload({ waitUntil: 'load' })
   const input = page.getByTestId('picker-search').getByRole('combobox')
-  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town, county or ZIP')
+  await page.waitForFunction(() => document.querySelector('[data-testid="picker-search"] input')?.getAttribute('placeholder') === 'Station, town or ZIP')
   await input.focus()
   await page.keyboard.type('acebozem')
   await page.keyboard.press('ArrowDown')
@@ -183,7 +183,8 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
     const id = document.querySelector('[data-testid="picker-search"] input')?.getAttribute('aria-activedescendant')
     return id ? document.getElementById(id)?.textContent?.replace(/\s+/g, ' ').trim() : null
   })
-  check('combobox: typing + ArrowDown sets aria-activedescendant on the match', /acebozem/.test(active ?? ''), String(active))
+  // The option shows the station's name and network ("Bozeman HydroMet"), as the Recent rows do.
+  check('combobox: typing + ArrowDown sets aria-activedescendant on the match', /^Bozeman\b/.test(active ?? ''), String(active))
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('s') === 'acebozem', null, { timeout: 10000 }).catch(() => {})
   check('combobox: Enter selects the station (?s=acebozem)', (await urlParam(page, 's')) === 'acebozem')
