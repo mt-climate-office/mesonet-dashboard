@@ -15,6 +15,7 @@
  *    A 404 "No data available" (nothing at all) → an empty series.
  */
 import { HttpError, fetchText } from '../../api/http'
+import { qcLevel } from '../../api/qcLevel'
 import { exclusiveEnd } from '../../api/record'
 import type { Station, StationElement } from '../../api/types'
 import type {
@@ -60,7 +61,8 @@ export interface ApiRequest {
   query: Record<string, string | number | boolean>
 }
 
-export const DEFAULT_AG_LEVEL: QcLevel = 2
+/** Ag Tools' QC level: 2, or the hidden `?level=` override (core/api qcLevel). */
+export const agLevel = (): QcLevel => qcLevel()
 
 /** `/observations/daily` inputs for ETo/GDD/CCI/feels-like (fixture-identical). */
 export const DAILY_MET_ELEMENTS = {
@@ -91,7 +93,7 @@ function obsRequest(
       stations: q.station,
       start_time: q.start,
       end_time: exclusiveEnd(q.end),
-      level: q.level ?? DEFAULT_AG_LEVEL,
+      level: q.level ?? agLevel(),
       elements: spec.elements.join(','),
       agg_func: spec.agg_func.join(','),
     },
@@ -326,7 +328,7 @@ export async function fetchRows(req: ApiRequest): Promise<RawRow[]> {
   }
 }
 
-const levelOf = (q: ObsQuery) => q.level ?? DEFAULT_AG_LEVEL
+const levelOf = (q: ObsQuery) => q.level ?? agLevel()
 
 export async function fetchDailyMet(q: ObsQuery): Promise<DailyMet> {
   return parseDailyMet(await fetchRows(dailyMetRequest(q)), {

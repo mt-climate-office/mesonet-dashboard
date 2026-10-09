@@ -4,7 +4,7 @@
  * ARCHITECTURE.md requires; TTLs are the former TanStack staleTimes.
  */
 import type { LocalDate } from '../contract'
-import { DEFAULT_AG_LEVEL } from '../data/observations'
+import { agLevel } from '../data/observations'
 
 const MIN = 60 * 1000
 const HOUR = 60 * MIN
@@ -27,7 +27,7 @@ export interface WindowKey {
   end: LocalDate
 }
 
-const win = (q: WindowKey) => `${q.station}:${q.start}:${q.end}:L${DEFAULT_AG_LEVEL}`
+const win = (q: WindowKey) => `${q.station}:${q.start}:${q.end}:L${agLevel()}`
 
 export const agKeys = {
   dailyMet: (q: WindowKey) => `ag:dailyMet:${win(q)}`,
@@ -40,7 +40,7 @@ export const agKeys = {
   normals: (station: string) => `ag:normals:${station}`,
   forecast: (lat: number, lon: number) => `ag:forecast:${lat.toFixed(4)}:${lon.toFixed(4)}`,
   /** One request group's years (core/variables `requestGroups`): "2025", or "2021+2020" for the install year with the next. */
-  annual: (station: string, element: string, years: readonly number[]) => `ag:annual:${station}:${element}:L${DEFAULT_AG_LEVEL}:${years.join('+')}`,
+  annual: (station: string, element: string, years: readonly number[]) => `ag:annual:${station}:${element}:L${agLevel()}:${years.join('+')}`,
 }
 
 /** True when a degraded forecast fetched at `fetchedAt` should be retried now. */

@@ -146,7 +146,9 @@ replaces. `main.ts` runs `migrateLegacySearch` then `legacyRedirect` before any 
 `#latest` → `#charts&cmp=1`; `#ag&var=<tool>` → `#charts&v=<tool>` (Ag keys kept; no `var` but Ag keys →
 GDD); `var=annual` → `v=<annv's family>&view=history`; a bare `#ag` → `#charts` plus an `anchor`
 (`revealWhenReady` scrolls the list's Ag tools group into view); `#download` / `#downloader` → `#charts&dl=1`.
-Every other key is kept byte for byte.
+Every other key is kept byte for byte. A hidden debugging key, `level=0|1|2`, sets the API QC level of every
+default-QC request (charts, Now, `/latest`, Ag; not the Download sheet, which has `qc`): main.ts reads it once at
+boot into core/api `qcLevel.ts`, so it applies after a reload and cache keys need not carry it.
 
 Router helpers for components: `$store.url.go(section, patch, drillDown)` (or, from a link,
 `follow(event, section, { patch, drillDown, target })` in `ui/shell/navigate.ts`), `$store.url.hrefFor(section,

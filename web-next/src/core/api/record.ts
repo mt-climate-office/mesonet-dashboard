@@ -2,6 +2,7 @@
 import type { AggPeriod } from '../params'
 import { DERIVED_ENDPOINTS, ENDPOINTS } from '../params'
 import { fetchCsv, mergeOn } from './http'
+import { qcLevel } from './qcLevel'
 import type { ObservationRow } from './types'
 
 export interface RecordQuery {
@@ -55,7 +56,7 @@ export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]
   const start = fmtDate(q.start)
   const end = q.end ? exclusiveEnd(q.end) : undefined
 
-  // Quality-controlled (level 2) by default. The legacy dashboard used
+  // Quality-controlled (level 2) by default (`?level=` overrides it, qcLevel.ts). The legacy dashboard used
   // level 1, which passes through flatlined sensors and false precip spikes
   // (see mesonet-db-rds#189).
   const derivedQuery = {
@@ -63,7 +64,7 @@ export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]
     elements: q.elements ?? '',
     start_time: start,
     end_time: end,
-    level: q.level ?? 2,
+    level: q.level ?? qcLevel(),
     rm_na: q.rmNa ?? true,
     na_info: q.naInfo ?? false,
   }

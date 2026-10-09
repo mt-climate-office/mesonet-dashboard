@@ -63,6 +63,10 @@
  *   Satellite  mode, pct, sat_vars, cmpx, cmpy, sat_from, sat_to
  *              (tab hidden; keys kept so old links round-trip untouched)
  *
+ * Hidden     level      0 | 1 | 2: the API QC level for every default-QC request, for
+ *                         debugging; read once at boot by main.ts (core/api/qcLevel),
+ *                         not in the schema, so it rides along like any unknown key.
+ *
  * Keys not in this schema (e.g. legacy `state`, `kbd`, and the old Latest
  * cards' `card`/`info`) are preserved as-is, so old links round-trip.
  */

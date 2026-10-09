@@ -10,7 +10,7 @@ import type { AnnualModel, ChartTable } from '../../core/charts'
 import { type AgView, annualView, annualYears, elementsGate } from '../../core/ag/view/results'
 import { AG_TTL, agKeys } from '../../core/ag/view/keys'
 import { annualElement, annualOptions } from '../../core/ag/view/tab'
-import { type AnnualDaily, DEFAULT_AG_LEVEL, getAnnualDaily } from '../../core/ag/data'
+import { type AnnualDaily, agLevel, getAnnualDaily } from '../../core/ag/data'
 import { denverToday } from '../../core/today'
 import { requestGroups } from '../../core/variables'
 import { component } from '../component'
@@ -56,7 +56,7 @@ function compute(): AgView<AnnualModel> {
         const group = groups.find((g) => g.includes(year)) ?? [year]
         const r = Alpine.store('data').cached<AnnualDaily>(
           agKeys.annual(station, element, group),
-          () => getAnnualDaily(station, element, group, { level: DEFAULT_AG_LEVEL, together: true }),
+          () => getAnnualDaily(station, element, group, { level: agLevel(), together: true }),
           { ttl: AG_TTL.series },
         )
         const data = raw(r.data)
