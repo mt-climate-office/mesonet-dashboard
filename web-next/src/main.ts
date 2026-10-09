@@ -34,6 +34,7 @@ import { landingMap, locatorMap, pickerMap, stationMap } from './ui/map/presets'
 import { photoCard } from './ui/now/photoCard'
 import { windRoseCard } from './ui/now/windRoseCard'
 import { nowView } from './ui/now/nowView'
+import { chartWall } from './ui/now/chartWall'
 import { aboutView } from './ui/about/aboutView'
 import { aboutDetails } from './ui/about/details'
 import { aboutHistory } from './ui/about/history'
@@ -176,6 +177,8 @@ Alpine.data('compareControls', compareControls)
 
 // Now (ui/now): the overview section.
 Alpine.data('nowView', nowView)
+// Now's chart wall (wide screens): the last 7 days of six variables, then About's details and map.
+Alpine.data('chartWall', chartWall)
 // Now's panes (ui/now): the latest photo + its dialog, the wind rose (no camera).
 Alpine.data('photoCard', photoCard)
 Alpine.data('windRoseCard', windRoseCard)

@@ -56,6 +56,12 @@ export const variableChart: ChartBuilder<VariableModel> = (m, ctx) => {
   }
 }
 
+/**
+ * Now's chart wall (core/overview/wall): the variable chart small, as on a phone (no zoom slider,
+ * sparser labels) whatever the screen; the card opens the full page for zooming.
+ */
+export const variableWallChart: ChartBuilder<VariableModel> = (m, ctx) => variableChart(m, { ...ctx, compact: true })
+
 /** The sr-only twin (first 500 rows), as Compare's; daily low and high columns with a band. */
 export const variableTable = (m: VariableModel): ChartTable => latestTimeseriesTable(m)
 

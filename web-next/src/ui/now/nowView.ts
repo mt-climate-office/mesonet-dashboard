@@ -5,13 +5,15 @@
  * rows, normals, the NWS hourly forecast, SWP, 7 daily rain totals) fills the strip, sparklines,
  * high/low and the soil chip. The model is core/overview `buildNowPage`,
  * computed once per change in an effect (the partial reads `page` many times).
+ * With room beside it (core/overview `showsWall`: the width the section host has, so an open
+ * station drawer counts), `wide` mounts the chart wall (ui/now/chartWall.ts).
  */
 import Alpine from 'alpinejs'
 import { soilParamsFor } from '../../core/ag/data'
 import type { Station } from '../../core/api'
 import { forecastDetailUrl } from '../../core/cards'
 import { heroStripChart, heroStripTable, type HeroStripModel } from '../../core/charts'
-import { buildNowPage, latestSwpBar, type NowPage } from '../../core/overview'
+import { buildNowPage, latestSwpBar, showsWall, type NowPage } from '../../core/overview'
 import { hasCamera } from '../../core/photos'
 import { stationHasSwp } from '../../core/stations'
 import { loadErrorText } from '../../core/loadError'
@@ -86,7 +88,10 @@ function compute(nowMs: number): View {
 export function nowView() {
   let timer = 0
   let effect: ReturnType<typeof Alpine.effect> | null = null
+  let stopWide = () => {}
   return component({
+    /** Room for the chart wall beside Now (styles/now.css `.now.is-wide`). */
+    wide: false,
     /** Bumped every minute while visible so "Updated N min ago" stays current; the freshness tick (live reads) also recomputes. */
     nowMs: Date.now(),
     page: null as NowPage | null,
@@ -102,8 +107,22 @@ export function nowView() {
         Object.assign(this, compute(Date.now()))
       })
       timer = window.setInterval(() => document.hidden || (this.nowMs = Date.now()), 60_000)
+      // The section host, not the panel: the panel's width is capped until the wall widens it.
+      const host = (this.$el as HTMLElement).closest('.tab-panel')?.parentElement
+      if (host) {
+        const measure = () => (this.wide = showsWall(host.clientWidth, window.innerHeight))
+        const ro = new ResizeObserver(measure)
+        ro.observe(host)
+        window.addEventListener('resize', measure)
+        measure()
+        stopWide = () => {
+          ro.disconnect()
+          window.removeEventListener('resize', measure)
+        }
+      }
     },
     destroy() {
+      stopWide()
       clearInterval(timer)
       if (effect) Alpine.release(effect)
     },

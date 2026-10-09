@@ -5,7 +5,7 @@ import { THEMES, variableStyle } from '../palette'
 import { LAYOUT, latestTimeseriesChart } from './latestTimeseries'
 import { DAY, ZOOM_TRACE_ID, bottomLayout } from './style'
 import { drawn, testCtx } from './testing'
-import { variableChart, variableTable, variableTableAll, type VariableModel } from './variable'
+import { variableChart, variableTable, variableTableAll, variableWallChart, type VariableModel } from './variable'
 
 const view: [number, number] = [Date.UTC(2026, 6, 1), Date.UTC(2026, 6, 2)]
 const rows = (n: number): ObservationRow[] =>
@@ -108,5 +108,14 @@ describe('latestTimeseriesChart on a compact touch screen', () => {
     const second = pos([10, LAYOUT.top + LAYOUT.compactPanel + LAYOUT.gap + 10], null, null, null, size)[1]
     expect(first).toBe(LAYOUT.top + LAYOUT.compactPanel + 4)
     expect(second).toBe(first + LAYOUT.compactPanel + LAYOUT.gap)
+  })
+})
+
+describe('variableWallChart', () => {
+  it('is the variable chart drawn compact on any screen: no zoom slider, even over a week', () => {
+    const o = variableWallChart(week, testCtx('dark')) as unknown as Opt
+    expect(o.dataZoom.some((z) => z.type === 'slider')).toBe(false)
+    // Formatters are new closures each build, so compare the serialized option.
+    expect(JSON.stringify(o)).toBe(JSON.stringify(variableChart(week, { ...testCtx('dark'), compact: true })))
   })
 })

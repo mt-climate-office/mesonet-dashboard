@@ -178,7 +178,7 @@ last data, so that midnight key change shows no skeleton.
 
 Live: `/latest`, the ppt summary, the NWS forecast and hourly forecast, the latest photo listings (`ui/station/resources.ts`);
 Now's 72 h hourly rows, 7-day rain and the soil VWC behind its SWP chip (`ui/now/resources.ts`, slotted); Now's 24 h wind rose
-(`windObs`, slotted); and `recordResource`
+(`windObs`, slotted); Now's chart wall on wide screens (its one 7-day `recordResource`); and `recordResource`
 windows that reach today (`core/latest` `endsToday`: the Charts list's 48 h rows, slotted; the
 variable page and its Rose view; Compare). Not live: normals, stations/elements/config, past photo days, Ag, and
 All years (`live: false`). Now's "Updated N min ago" uses the current time on each recompute; if
@@ -371,7 +371,7 @@ with `tabindex="-1"`, are focus targets, not controls: no ring); ≥ 40 px touch
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
-`npm run verify` runs axe on its scenarios (Now, the header ⋯ menu, the photo dialog, the no-station landing, the picker
+`npm run verify` runs axe on its scenarios (Now, Now's chart wall at 2560 px, the header ⋯ menu, the photo dialog, the no-station landing, the picker
 opened with a station, the Charts list, the legacy `#ag` landing, a variable page in each view (⋯ menu, All
 years, table, the Daily band, the Custom dates sheet, Wind direction's rose and its table), Compare, 4 Ag tools (two option popovers, a ⋯ menu), the
 Download sheet (a row open, after Preview), About and its two sheets, Help) × 1440/390 px × 3 themes

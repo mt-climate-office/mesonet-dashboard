@@ -1,0 +1,31 @@
+<!-- Now's chart wall (x-data="chartWall", ui/now/chartWall.ts; core/overview/wall): wide screens only,
+     beside the hero and tiles. The last 7 days of up to six variables, one small chart each (its title
+     opens the variable page on that window), then About's station details and locator map. -->
+<section class="now-wall" x-data="chartWall" aria-labelledby="now-wall-title" data-testid="now-wall">
+  <h2 class="sr-only" id="now-wall-title">The last 7 days</h2>
+  <template x-if="loadError()">
+    <div class="dash-card now-wall-error"><!-- @include partials/load-error.html --></div>
+  </template>
+  <ul class="now-wall-grid">
+    <template x-for="v in variables" :key="v.id">
+      <li class="dash-card now-wall-card" :data-testid="'wall-' + v.id">
+        <a class="now-wall-head" :href="cardHref(v)" @click="openCard($event, v)">
+          <span class="now-wall-name" x-text="name(v)"></span>
+          <span class="now-wall-range">Last 7 days<span aria-hidden="true"> ›</span></span>
+        </a>
+        <div class="now-wall-plot">
+          <template x-if="loading()"><span class="dash-skel now-wall-skel" aria-hidden="true"></span></template>
+          <div class="chart now-wall-chart" x-data="chart(cardChart(v))"></div>
+        </div>
+      </li>
+    </template>
+    <li class="now-wall-about">
+      <!-- @include partials/about/details.html -->
+    </li>
+    <li class="dash-card about-map now-wall-map">
+      <div class="about-map-frame" data-testid="now-wall-map"
+           x-data="locatorMap({ stations: () => $store.station.list, selected: () => $store.station.id,
+                    onSelect: (id) => $store.station.select(id) })"></div>
+    </li>
+  </ul>
+</section>

@@ -1,11 +1,14 @@
 /* Now (partials/now/index.html; DESIGN.md "Now"). Phones and tablets: one column, hero → photo →
    tiles (2-up) → rows, in DOM order. Desktop (≥ 1060 px): two columns, hero over the photo | tiles
    (one per row: text left, sparkline right) over the rows, ending level: the photo and the tiles
-   grow to fill. Readings in
+   grow to fill. Wide screens (nowView `wide`, core/overview showsWall) add the chart wall beside
+   those two columns (see the end). Readings in
    .num-display (Outfit, tabular); every slot keeps its size while loading (skeletons). Kit tokens
    only; spacing from the app scale (--gap, --gap-tight, --card-pad) with fallbacks. */
 
 .now-grid { display: grid; gap: var(--gap, 12px); grid-template-columns: minmax(0, 1fr); }
+/* The two Now columns' wrapper: transparent (its columns are .now-grid's items) except beside the wall. */
+.now-main { display: contents; }
 .now-col { display: grid; gap: var(--gap, 12px); align-content: start; min-width: 0; }
 @media (min-width: 1060px) and (min-height: 561px) {
   /* The grid stretches both columns to the taller one; in each, one slot takes the rest (the photo
@@ -146,3 +149,29 @@
   .now-tile-head { justify-content: flex-start; }
   .now-tile .dash-spark { grid-column: 2; grid-row: 1 / -1; align-self: center; height: 3.5rem; margin: 0; padding: 0; }
 }
+
+/* Chart wall (partials/now/wall.html), wide screens only. The panel drops its 75 rem cap (to 180 rem,
+   centred on an ultrawide); Now's two columns keep their desktop grid in the left 2.35 parts and the
+   wall takes the right 3. Both align to the top: the wall's height is its own, so the hero and tiles
+   do not stretch to it. Its cards fill columns of at least 26 rem: two on a 1920 px screen, three at
+   2560; About's details and map end it. */
+.tab-panel:has(> .now.is-wide) { max-width: 180rem; }
+.now.is-wide .now-grid { grid-template-columns: minmax(0, 2.35fr) minmax(0, 3fr); align-items: start; }
+.now.is-wide .now-main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: var(--gap, 12px); }
+.now-wall-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap, 12px); grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr)); }
+.dash-card.now-wall-card { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.now-wall-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; color: var(--text-primary); font-weight: 500; text-decoration: none; }
+.now-wall-head:hover .now-wall-name { text-decoration: underline; text-underline-offset: 3px; }
+.now-wall-range { font-size: var(--fs-sm); font-weight: 400; color: var(--text-muted); white-space: nowrap; }
+/* Plots grow with the screen's height: on a three-column wall two rows of charts and About fill it. */
+.now-wall { --wall-plot-h: clamp(13rem, calc((100dvh - 17rem) / 3), 22rem); container-type: inline-size; }
+.now-wall-plot { position: relative; height: var(--wall-plot-h); margin-inline: -0.375rem; }
+.now-wall-chart { --chart-height: var(--wall-plot-h); --chart-height-compact: var(--wall-plot-h); }
+.now-wall-skel { position: absolute; inset: 0 0.375rem; z-index: 1; border-radius: var(--radius-md); }
+.now-wall-about { display: flex; min-width: 0; }
+.now-wall-about > .about-details { flex: 1; }
+.now-wall-map { display: flex; flex-direction: column; min-height: 16rem; }
+.now-wall-map .about-map-frame { flex: 1; height: auto; }
+.now-wall-error { margin-bottom: var(--gap, 12px); }
+/* Three columns (3 × 26 rem + 2 gaps): the map takes two, so the last row has no empty cell. */
+@container (min-width: 79.5rem) { .now-wall-map { grid-column: span 2; } }

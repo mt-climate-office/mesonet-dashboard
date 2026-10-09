@@ -25,6 +25,8 @@ export const VIEWPORTS = [
   { name: '1440', width: 1440, height: 900 },
   { name: '390', width: 390, height: 844, touch: true },
 ]
+/** A large desktop screen: Now's chart wall shows (core/overview `showsWall`). Only the scenarios that name it run here. */
+export const WIDE = { name: '2560', width: 2560, height: 1440 }
 
 /* ── Network: what may go live, what is stubbed, what comes from fixtures ── */
 

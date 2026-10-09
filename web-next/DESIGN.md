@@ -126,6 +126,7 @@ drawer) reads `MCO.viewport` and the desktop query in JS.
 | compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) on narrow screens (≤ 640 px); a short, wide screen (landscape phone) keeps the header sections | bottom sheet (peek / full) on narrow screens; the overlay drawer on short, wide ones | one column, tiles 2-up |
 | tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | one column, tiles 2-up |
 | desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero + tiles (4-up) beside photo + rows |
+| wide | ≥ 1760 px beside the drawer and ≥ 561 px tall (JS: core/overview `showsWall`) | as desktop | as desktop | desktop's two columns + the chart wall (6 charts, About's details and map) |
 
 The brand shows only on desktop (visually hidden below 1060 px; the kit's own step is 750 px).
 
@@ -153,6 +154,20 @@ tiles (2-up) → rows. **Desktop (≥ 1060 px):** two columns (1.35 : 1), hero o
 the rows. The columns end level: the photo (from 20 rem, cropped to fit) takes up the difference, so there is no dead area for 4–6 tiles. With an odd
 tile count the last tile spans its row at every width. The DOM, reading and Tab order stays hero, photo,
 tiles, rows at every width.
+
+**Wide screens: the chart wall** (`partials/now/wall.html`, `ui/now/chartWall.ts`, model `core/overview/wall`).
+With at least 1760 px beside the station drawer and a screen at least 561 px tall (`showsWall`; `nowView`
+measures the section host, so opening the in-flow drawer at 1920 px takes the wall away), the panel's 75 rem
+cap rises to 180 rem: Now's two desktop columns take the left 2.35 parts, the wall the right 3, both
+top-aligned (the hero and tiles never stretch to the wall). The wall: up to six variables (`wallVariables`:
+air temperature, rain, wind, humidity, soil moisture, soil temperature, then sunlight and pressure for a
+station without some), the last 7 days at the 7 d chip's Auto interval (hourly), from **one** request sliced
+per variable (`wallPanel`), each drawn by `variableWallChart` (the variable chart, compact: no slider) in a
+card whose title row ("Air temperature · Last 7 days ›") opens that variable on the 7 d window (Back returns
+to Now). Cards fill columns of at least 26 rem (two at 1920, three at 2560); plot height follows the screen
+(`clamp(13rem, (100dvh − 17rem) / 3, 22rem)`). About's station details card and locator map end the wall (the
+map spans two columns on a three-column wall). DOM and Tab order: hero, photo, tiles, rows, then the wall.
+One skeleton per chart while the request loads; one error state above the cards if it fails.
 
 | Slot | Content | Data (tier) |
 |---|---|---|

@@ -44,7 +44,7 @@ export const RANGE_CHIPS: readonly { id: RangePreset['id'] | 'all'; label: strin
 const HOUR = 3_600_000
 
 /** A preset's window, `start`/`end` (YYYY-MM-DD, `today` injectable for tests). */
-function presetWindow(id: RangePreset['id'], today = denverDay()): { start: string; end: string } {
+export function presetWindow(id: RangePreset['id'], today = denverDay()): { start: string; end: string } {
   const p = RANGE_PRESETS.find((x) => x.id === id) ?? RANGE_PRESETS[2]
   return { start: today.subtract(p.days, 'day').format('YYYY-MM-DD'), end: todayIso(today) }
 }

@@ -1,10 +1,11 @@
 <!-- Now (x-data="nowView", ui/now/nowView.ts; model core/overview buildNowPage): the hero (temperature,
      high/low against normal, the summary, freshness, the 48 h strip with forecast icons), the latest
      photo (the wind rose without a camera), the relevant tiles (each a link to its variable in Charts)
-     and two rows to About. Phones: one column; desktop: hero + photo | tiles + rows. Skeletons hold
-     every slot's size while tier 1 / tier 2 load. Mounted only while the section is open. -->
+     and two rows to About. Phones: one column; desktop: hero + photo | tiles + rows; wide screens
+     (`wide`, core/overview `showsWall`) add the chart wall beside them (partials/now/wall.html).
+     Skeletons hold every slot's size while tier 1 / tier 2 load. Mounted only while the section is open. -->
 <template x-if="$store.url.section === 'now'">
-<div class="now" x-data="nowView" data-testid="now">
+<div class="now" x-data="nowView" :class="wide && 'is-wide'" data-testid="now">
   <!-- 'none' (no station) draws nothing: the landing (partials/landing.html) stands in for the section. -->
   <template x-if="state === 'error'">
     <div class="dash-card now-empty"><!-- @include partials/load-error.html --></div>
@@ -40,6 +41,8 @@
 
   <template x-if="state === 'ready'">
     <div class="now-grid">
+      <!-- The two Now columns; display: contents except beside the wall, where they keep their own grid. -->
+      <div class="now-main">
       <div class="now-col">
         <section class="dash-card now-hero" aria-labelledby="now-hero-title" data-testid="now-hero">
           <h2 class="sr-only" id="now-hero-title">Current conditions</h2>
@@ -184,6 +187,10 @@
           </a>
         </div>
       </div>
+      </div>
+      <template x-if="wide">
+        <!-- @include partials/now/wall.html -->
+      </template>
     </div>
   </template>
 </div>

@@ -7,9 +7,10 @@
  * on a solid surface; the Download sheet fits the screen; the picker sheet's map is in view after
  * "Browse on the map" and a short handle drag never closes it; the no-station landing fills the screen
  * with its map (no picker over it) on every section; with reduced motion a section change
- * starts no view transition. Run via `npm run verify`.
+ * starts no view transition; Now's chart wall shows only with room for it (2560, 1920 without the
+ * station drawer; not 1440), in three columns at 2560, and a card opens its chart on the 7 d window. Run via `npm run verify`.
  */
-import { DL_QUERY, VIEWPORTS, check, finish, open, start } from './lib.mjs'
+import { DL_QUERY, VIEWPORTS, WIDE, check, finish, open, start } from './lib.mjs'
 
 const PHONE = VIEWPORTS[1]
 const env = await start()
@@ -143,6 +144,56 @@ for (const vp of VIEWPORTS) {
   check(`[header ${vp.name}] ${desk ? 'sections and brand in the header, no tab bar' : 'no sections or brand in the header; the tab bar instead'}`,
     desk ? h.sections && h.brand && !h.tabbar : !h.sections && !h.brand && h.tabbar, JSON.stringify(h))
   await close()
+}
+
+/* ── Now's chart wall: only with room beside Now; three columns at 2560; a card opens its 7 d chart ── */
+{
+  const wall = (page) => page.evaluate(() => {
+    const cards = [...document.querySelectorAll('.now-wall-card')].map((c) => c.getBoundingClientRect())
+    const hero = document.querySelector('[data-testid="now-hero"]')?.getBoundingClientRect()
+    return {
+      cards: cards.length,
+      columns: new Set(cards.map((r) => Math.round(r.left))).size,
+      topAligned: !!hero && cards.length > 0 && Math.abs(cards[0].top - hero.top) < 2,
+      overflow: document.documentElement.scrollWidth - innerWidth,
+    }
+  })
+  {
+    const { page, problems, close, rendered } = await open(env, '?s=acebozem', { viewport: WIDE })
+    await rendered({ charts: 7, filled: ['[data-testid="now-tiles"]'] })
+    const w = await wall(page)
+    check('[wall 2560] six charts in three columns, level with the hero; no sideways scroll', w.cards === 6 && w.columns === 3 && w.topAligned && w.overflow <= 0, JSON.stringify(w))
+    await page.locator('[data-testid="wall-air_temp"] .now-wall-head').click()
+    await page.waitForFunction(() => document.activeElement?.id === 'var-title', null, { timeout: 10000 }).catch(() => {})
+    const opened = await page.evaluate(() => {
+      const q = new URLSearchParams(location.search)
+      return { hash: location.hash, v: q.get('v'), days: (Date.parse(q.get('to')) - Date.parse(q.get('from'))) / 864e5, focus: document.activeElement?.id, chip: document.querySelector('.chart-chips [aria-pressed="true"]')?.textContent.trim() }
+    })
+    check('[wall 2560] a card opens its variable on the 7 d window, the heading focused', opened.hash === '#charts' && opened.v === 'air_temp' && opened.days === 7 && opened.focus === 'var-title' && opened.chip === '7 d', JSON.stringify(opened))
+    await page.goBack()
+    await page.waitForFunction(() => document.querySelectorAll('.now-wall-card').length === 6, null, { timeout: 10000 }).catch(() => {})
+    check('[wall 2560] Back returns to Now with its wall', (await wall(page)).cards === 6)
+    const p = await problems()
+    check('[wall 2560] console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+    await close()
+  }
+  {
+    const { page, close, rendered } = await open(env, '?s=acebozem', { viewport: { name: '1920', width: 1920, height: 1080 } })
+    await rendered({ charts: 7, filled: ['[data-testid="now-tiles"]'] })
+    const before = await wall(page)
+    await page.getByTestId('station-switcher').click()
+    await page.waitForFunction(() => document.getElementById('station-picker')?.classList.contains('is-open'), null, { timeout: 5000 }).catch(() => {})
+    await page.waitForFunction(() => !document.querySelector('.now-wall'), null, { timeout: 5000 }).catch(() => {})
+    const after = await wall(page)
+    check('[wall 1920] the wall shows in two columns, and gives way to the open station drawer', before.cards === 6 && before.columns === 2 && after.cards === 0 && after.overflow <= 0, JSON.stringify({ before, after }))
+    await close()
+  }
+  {
+    const { page, close, rendered } = await open(env, '?s=acebozem', { viewport: VIEWPORTS[0] })
+    await rendered({ charts: 1, filled: ['[data-testid="now-tiles"]'] })
+    check('[wall 1440] no wall at 1440', (await wall(page)).cards === 0)
+    await close()
+  }
 }
 
 /* ── Tab bar (390): three items on a solid surface ──────────────────────── */

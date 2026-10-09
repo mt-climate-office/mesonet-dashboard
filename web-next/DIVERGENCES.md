@@ -127,6 +127,15 @@ below, which stay for the record and name what replaced them.
   rows), which is also the reading and Tab order at every width.
 - **Why:** the user's review of the phase B preview.
 
+### Now: the chart wall on wide screens
+- **P1 / before:** content stopped at 75 rem at every width, so a 2560 px screen showed Now in its middle
+  ~1200 px with ~680 px empty on each side; charts and station details were a section change away.
+- **New:** with ≥ 1760 px beside the station drawer, Now adds a wall of six 7-day charts (one request) and
+  About's details and map beside its two columns (DESIGN.md "Now", "Wide screens: the chart wall"). Narrower
+  screens are unchanged.
+- **Why:** the user asked for very large viewports to merge Now and Charts (and About if it fits); chosen
+  over a list/detail pane and over only widening the content.
+
 ### Now: tiles only where they mean something
 - **P1:** a tile for every reading the station reports: Wind (with a compass glyph), Precipitation today (24 h,
   7 d and YTD lines), Humidity, Solar radiation (0 W/m² all night), Pressure, Soil (a depth profile table), Snow
