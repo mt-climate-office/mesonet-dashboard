@@ -10,7 +10,7 @@
  */
 import type { EChartsOption, GraphicComponentOption, SeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { TimeseriesModel, TimeseriesPanel, TimeseriesSeries } from '../models/timeseries'
-import { isDepthVariable, panelNoDataText } from '../models/timeseries'
+import { arrayLabel, isDepthVariable, panelNoDataText } from '../models/timeseries'
 import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, sensorColor, variableStyle, withAlpha } from '../palette'
 import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
@@ -118,8 +118,13 @@ const unitOf = (col: string) => /\[([^\]]+)\]\s*$/.exec(col)?.[1] ?? ''
 function plainSeries(p: TimeseriesPanel, s: TimeseriesSeries): { label: string; full: string; unit: string } {
   const name = plainName(ELEM_MAP[p.variable]?.[0] ?? '', p.variable)
   const key = s.depth ?? (p.legend ? columnKey(p.variable, s.name) : null)
-  return { label: key ?? name, full: key ? `${name} at ${key}` : name, unit: plainUnit(unitOf(s.name)) }
+  const unit = plainUnit(unitOf(s.name))
+  if (s.depth && s.probe) return { label: arrayLabel(s.depth, s.probe), full: `${name} at ${s.depth}, array ${s.probe}`, unit }
+  return { label: key ?? name, full: key ? `${name} at ${key}` : name, unit }
 }
+
+/** Sensor arrays past the first are dashed (the depth's color stays; core/models/timeseries `splitArrays`). */
+const arrayDash = (probe: string | null | undefined): 'dashed' | undefined => (probe && probe !== 'A' ? 'dashed' : undefined)
 
 /** Tooltip/table number: 3 decimals under 0.1 (precip, ETr), else 2; trailing zeros dropped. */
 export function fmtValue(v: number): string {
@@ -184,9 +189,10 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
         return
       }
       const dots = p.variable === WIND_DIRECTION
-      // Every line is solid: depths and sensors are told apart by color (core/palette roma), and in the key and tooltip by name.
+      // Depths and sensors are told apart by color (core/palette roma), and in the key and tooltip by name;
+      // a soil depth drawn per array is solid on array A and dashed on B.
       const shape = DIRECTION_SHAPES[p.legend ? j % DIRECTION_SHAPES.length : 0]
-      const style = { color, yAxisIndex: i, id: `p${i}:${s.name}` }
+      const style = { color, yAxisIndex: i, id: `p${i}:${s.name}`, dash: arrayDash(s.probe) }
       push({ ...(dots ? directionDots(s.name, pts(s.values), { ...style, symbol: shape.symbol }) : lineSeries(s.name, pts(s.values), style)), xAxisIndex: i }, {
         panel: i,
         label,
@@ -198,11 +204,17 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
         const ring = markerSeries(`${AUX}partial`, [[partialX, s.values[partialAt]]], { color, size: PARTIAL_RING })
         push({ ...ring, ...axes, id: `${AUX}p${i}-partial-${j}`, itemStyle: { color: ctx.theme.surface, borderColor: color, borderWidth: 2 }, z: 4, silent: true, large: false }, null)
       }
-      if (s.depth) keys.push({ label: s.depth, color })
+      // One key per depth (its arrays share the color); the arrays' line styles are keyed after the depths.
+      if (s.depth) {
+        if (!keys.some((k) => k.label === s.depth)) keys.push({ label: s.depth, color })
+      }
       else if (p.legend) keys.push({ label: columnKey(p.variable, s.name), color, ...(dots ? { glyph: shape.glyph } : {}) })
       // The variable page's Daily band (core/variables/band; drawn by variable.ts) and the mean it surrounds.
       else if (s.band) keys.push({ label: 'Daily mean', color }, { label: DAILY_RANGE.label, color: withAlpha(color, DAILY_RANGE.alpha), block: true })
     })
+
+    const probes = [...new Set(p.series.flatMap((s) => (s.probe ? [s.probe] : [])))].sort()
+    for (const probe of probes) keys.push({ label: `Array ${probe}`, color: ctx.theme.textMuted, dash: arrayDash(probe) })
 
     const nm = p.normals
     if (nm?.kind === 'band') {

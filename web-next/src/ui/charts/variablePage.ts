@@ -5,7 +5,8 @@
  * its table; range chips over from/to (All years = `view=history`, its own
  * component), the Interval row over `agg`, and the stats card. On Wind
  * direction a View row switches to the wind rose of the window (`wd=rose`;
- * its own component, variableRose). A sideways swipe on touch, or ⋯ →
+ * its own component, variableRose). On a soil variable an Arrays row draws
+ * each sensor array (`arrays=1`; array B dashed). A sideways swipe on touch, or ⋯ →
  * Previous / Next, walks the list. A Download sheet opened by the URL with
  * nothing to download is prefilled from this chart. Logic is in core/variables.
  */
@@ -15,9 +16,12 @@ import { fromChart, prefillsFromChart, variableElements, windRoseElements } from
 import { POR_FALLBACK_START, dataSettled, installDate, plotStatus, todayIso, untilNow, viewAnnouncement, type PlotStatus } from '../../core/latest'
 import { chartWindow } from '../../core/models/timeseries'
 import {
+  ARRAY_CHIPS,
   RANGE_CHIPS,
   ROSE_ALL_YEARS_REASON,
   WIND_VIEW_CHIPS,
+  arraysNote,
+  arraysPatch,
   currentReading,
   effectiveAgg,
   findVariable,
@@ -26,6 +30,7 @@ import {
   intervalNote,
   intervalPatch,
   neighbors,
+  offersArrays,
   offersRose,
   pageRange,
   panelStats,
@@ -38,8 +43,10 @@ import {
   showsNormals,
   showsRose,
   spanDays,
+  splitsArrays,
   windViewPatch,
   withBand,
+  type ArrayChip,
   type IntervalChip,
   type PageRange,
   type StatRow,
@@ -155,6 +162,23 @@ export function variablePage() {
     windView(): WindViewChip {
       return this.rose() ? 'rose' : 'series'
     },
+    /** This page offers the Combined | Separate arrays row (soil depths, as a time series or its table). */
+    offersArrays(): boolean {
+      return offersArrays(this.variable) && !this.all() && !this.rose()
+    },
+    arrayChips: ARRAY_CHIPS,
+    arrayView(): ArrayChip {
+      return splitsArrays(url().state, this.variable) ? 'split' : 'combined'
+    },
+    /** Why Separate shows no array lines ('' otherwise), shown under the row. */
+    arraysNote(): string {
+      return this.settled() ? arraysNote(this.arrayView() === 'split', this.model()?.ts.panels[0]) : ''
+    },
+    setArrays(id: ArrayChip): void {
+      if (id === this.arrayView()) return
+      url().set(arraysPatch(id))
+      countEvent(`arrays/${id}`, 'Soil arrays chosen')
+    },
     /** A range chip the view does not offer (All years beside the rose), and why. */
     rangeOff(id: (typeof RANGE_CHIPS)[number]['id']): boolean {
       return this.rose() && !roseOffersRange(id)
@@ -225,7 +249,7 @@ export function variablePage() {
       const v = this.variable
       if (!id || !v || !this.window().valid || this.all() || this.rose()) return null
       const agg = this.agg()
-      return { station: id, window: this.window(), agg, vars: [v.name], gridmet: showsNormals(v, agg) }
+      return { station: id, window: this.window(), agg, vars: [v.name], gridmet: showsNormals(v, agg), splitArrays: splitsArrays(url().state, v) }
     },
     /** The daily min/max request for the band (Daily interval, banded variables only). */
     extremes() {

@@ -154,7 +154,9 @@ patch)` for the real href, `CHARTS_LIST_PATCH` for "back to the list", `chartPat
 open any Charts entry (a variable on its chart, an Ag tool through its reset `variablePatch`), `chartsMode(state)`
 for what Charts shows, `isAgTool(v)` for the namespace. On a chart page, `view=history` is All years, `tbl=1`
 shows the chart as a table (pushed, so Back returns), `wd=rose` shows Wind direction's wind rose of the window
-(core/variables/rose; pushed; dropped with `v` by `chartPatch`, `CHARTS_LIST_PATCH`), and `agg` absent is the Auto interval
+(core/variables/rose; pushed; dropped with `v` by `chartPatch`, `CHARTS_LIST_PATCH`), `arrays=1` draws a soil
+variable's depths per sensor array (the API's `split_arrays`; array B dashed; core/variables/arrays; replaced, kept
+through Previous / Next, dropped at the list), and `agg` absent is the Auto interval
 (core/variables/interval; Compare reads it as hourly, `latestAgg`; the raw interval is named per network, 5-min or
 AgriMet's 15-min, `rawMinutes`). A chart page's back arrow returns to where it was opened from when a
 link says so (`follow(…, { from: 'now' })` on Now's tiles): `$store.url.backTo` (section and history depth,

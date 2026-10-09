@@ -131,6 +131,24 @@ describe('latestTimeseriesChart', () => {
     }
   })
 
+  it('soil arrays: each depth\'s color on both, B dashed; one key per depth, then the arrays', () => {
+    const rows = hourRows(4, (i) => ({
+      'Soil VWC @ 2 in (probe A) [%]': 10 + i,
+      'Soil VWC @ 2 in (probe B) [%]': 11 + i,
+      'Soil VWC @ 20 in (probe A) [%]': 20,
+      'Soil VWC @ 20 in (probe B) [%]': 21,
+    }))
+    const m = model(rows, ['Soil VWC'], { splitArrays: true })
+    const o = build(m)
+    const s = dataSeries(o)
+    expect(s.map((x) => x.color)).toEqual([2, 2, 20, 20].map((d) => depthColor(d, 'dark')))
+    expect(s.map((x) => x.lineStyle?.type)).toEqual(['solid', 'dashed', 'solid', 'dashed'])
+    const keys = texts(o)
+    expect(keys.filter((t) => t === '2 in')).toHaveLength(1)
+    expect(keys).toEqual(expect.arrayContaining(['2 in', '20 in', 'Array A', 'Array B']))
+    expect(latestTimeseriesTable(m).columns).toEqual(['Time (MT)', 'Soil moisture at 2 in, array A (%)', 'Soil moisture at 2 in, array B (%)', 'Soil moisture at 20 in, array A (%)', 'Soil moisture at 20 in, array B (%)'])
+  })
+
   it('multi-column line panels: a color per column (sensorColor), all solid, and a key', () => {
     const rows = hourRows(4, (i) => ({ 'Air Temperature @ 2 m [°F]': 60 + i, 'Air Temperature @ 8 ft [°F]': 61 + i }))
     const o = build(model(rows, ['Air Temperature']))

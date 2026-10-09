@@ -24,6 +24,8 @@ export interface RecordQuery {
    * `agg_func` entry with the `elements` entry at the same position.
    */
   aggFunc?: readonly ('min' | 'max')[]
+  /** Soil depths also as one series per sensor array (`split_arrays`; "… (probe A) …" columns beside the combined one). */
+  splitArrays?: boolean
 }
 
 /** `elements` and `agg_func` for `aggFunc` over comma-separated `elements` (each code once per function). */
@@ -72,6 +74,7 @@ export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]
     ...(q.period === 'raw' ? noNaInfo : { ...noNaInfo, na_info }),
     public: q.publicOnly ?? true,
     ...(q.aggFunc?.length && q.elements ? aggFuncQuery(q.elements, q.aggFunc) : {}),
+    ...(q.splitArrays ? { split_arrays: true } : {}),
   }
 
   const observations =

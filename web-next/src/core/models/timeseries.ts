@@ -18,6 +18,7 @@ import {
   latestElementCodes,
   latestVariableForColumn,
   latestVarsFromElements,
+  probeFromColumn,
 } from '../params'
 import {
   parseWallClock,
@@ -141,6 +142,8 @@ export interface TimeseriesSeries {
   type: 'line' | 'bar'
   /** Soil depth label ("4 in") for soil panels, else null. Palette key. */
   depth: string | null
+  /** The depth's sensor array ("A", "B") when drawn per array (`splitArrays`), else null (the combined series). */
+  probe?: string | null
   /** Aligned with `TimeseriesModel.x`; null = gap or missing. */
   values: (number | null)[]
   /** Legacy hover label ("Precipitation Total", the variable, or the column). */
@@ -197,6 +200,12 @@ export interface TimeseriesInput {
   sensorConfig?: readonly ConfigRow[]
   /** Wall-clock "now" for open-ended outages (tests). */
   now?: number
+  /**
+   * Soil depths per sensor array (rows from a `split_arrays` request): a depth with array
+   * columns draws them in place of its combined series, which stays only where no array
+   * reports (before the station's arrays were split). Without it, array columns are dropped.
+   */
+  splitArrays?: boolean
 }
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
@@ -212,6 +221,7 @@ export function buildTimeseriesModel(input: TimeseriesInput): TimeseriesModel | 
     if (col === 'station' || col === 'datetime') continue
     const v = latestVariableForColumn(col)
     if (!v || !vars.includes(v)) continue
+    if (probeFromColumn(col) && !(input.splitArrays && SOIL_VARS.has(v))) continue
     if (!rows.some((r) => isNum((r as Record<string, unknown>)[col]))) continue
     const list = columnsByVar.get(v) ?? []
     if (!list.includes(col)) list.push(col)
@@ -238,21 +248,24 @@ function buildPanel(
   const isPpt = variable === 'Precipitation'
   const isEtr = variable === 'Reference ET'
   const noData = cols.length === 0
-  // Soil columns shallow → deep.
+  // Soil columns shallow → deep; at one depth the combined series, then array A, B.
+  const depthOf = (c: string) => parseInt(depthLabelFromColumn(c) ?? '0', 10)
   const sorted = isSoil
-    ? [...cols].sort((a, b) => parseInt(depthLabelFromColumn(a) ?? '0', 10) - parseInt(depthLabelFromColumn(b) ?? '0', 10))
+    ? [...cols].sort((a, b) => depthOf(a) - depthOf(b) || (probeFromColumn(a) ?? '').localeCompare(probeFromColumn(b) ?? ''))
     : cols
   const valuesOf = (col: string) => rows.map((r) => {
     const v = (r as Record<string, unknown>)[col]
     return typeof v === 'number' ? v : null
   })
-  const series: TimeseriesSeries[] = sorted.map((col) => ({
+  const all: TimeseriesSeries[] = sorted.map((col) => ({
     name: col,
     type: isPpt || isEtr ? 'bar' : 'line',
     depth: isSoil ? depthLabelFromColumn(col) : null,
+    ...(isSoil ? { probe: probeFromColumn(col) } : {}),
     values: valuesOf(col),
     hoverLabel: isPpt ? 'Precipitation Total' : isEtr ? 'Reference ET Total' : isSoil ? variable : col,
   }))
+  const series = isSoil ? withoutCombined(all) : all
 
   let normals: NormalsOverlay | null = null
   const norms = input.normalsByVar?.[variable]
@@ -289,6 +302,22 @@ function buildPanel(
     sensorSpans,
   }
 }
+
+/**
+ * A soil panel drawn per array: each depth's combined series keeps only the rows where none of
+ * its arrays has a value (a window from before the split), and goes when that leaves nothing.
+ */
+function withoutCombined(series: TimeseriesSeries[]): TimeseriesSeries[] {
+  return series.flatMap((s) => {
+    const arrays = series.filter((o) => o.probe && o.depth === s.depth)
+    if (s.probe || arrays.length === 0) return [s]
+    const values = s.values.map((v, j) => (arrays.some((o) => o.values[j] != null) ? null : v))
+    return values.some((v) => v != null) ? [{ ...s, values }] : []
+  })
+}
+
+/** A depth's series on one sensor array, in tooltips and stats: "2 in · B". */
+export const arrayLabel = (depth: string, probe: string): string => `${depth} · ${probe}`
 
 /** Legacy empty-panel note: "<variable> data are not available for this time period." */
 export const panelNoDataText = (variable: string): string =>

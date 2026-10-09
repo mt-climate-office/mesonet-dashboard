@@ -153,7 +153,7 @@ export function legacyRedirect(search: string, hash: string): { search: string; 
 }
 
 /** The Charts variable list: no variable or Ag tool, no Compare, the default sub-view. */
-export const CHARTS_LIST_PATCH: Partial<UrlState> = { v: null, view: 'recent', tbl: false, wd: null, cmp: false }
+export const CHARTS_LIST_PATCH: Partial<UrlState> = { v: null, view: 'recent', tbl: false, wd: null, arrays: false, cmp: false }
 
 /**
  * A section-nav link from `from` to `to`: the URL patch and whether it adds a

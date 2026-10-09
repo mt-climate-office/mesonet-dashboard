@@ -76,11 +76,13 @@ export interface SeriesQuery {
   agg: LatestAgg
   vars: readonly string[]
   gridmet: boolean
+  /** Soil depths drawn per sensor array (`arrays=1`; core/models/timeseries `splitArrays`). */
+  splitArrays?: boolean
 }
 
 /** The request for a series query (null: nothing to ask for); `extremes`: its daily min/max instead (core/latest `recordRequest`). */
 export function seriesRequest(q: SeriesQuery, extremes = false): RecordRequest | null {
-  return recordRequest({ station: q.station, window: q.window, agg: q.agg, vars: q.vars, stationElements: stationElements(q.station), extremes })
+  return recordRequest({ station: q.station, window: q.window, agg: q.agg, vars: q.vars, stationElements: stationElements(q.station), extremes, splitArrays: q.splitArrays })
 }
 
 /**
@@ -93,7 +95,7 @@ export function seriesModel(): (q: SeriesQuery) => LatestTimeseriesModel | null 
   let memo: { inputs: unknown[]; model: LatestTimeseriesModel | null; scope: string } | null = null
   return (q) => {
     const res = recordResource(seriesRequest(q))
-    const scope = `${q.station}|${q.agg}|${q.vars.join(',')}`
+    const scope = `${q.station}|${q.agg}|${q.vars.join(',')}|${q.splitArrays ? 'arrays' : ''}`
     if (!res || res.status === 'error') return null
     if (!res.data) return memo?.scope === scope ? memo.model : null
     const rows = raw(res.data)
@@ -105,7 +107,7 @@ export function seriesModel(): (q: SeriesQuery) => LatestTimeseriesModel | null 
     const today = denverToday()
     const inputs = [rows, config, ...(normals ? Object.values(normals) : []), w.start, w.end, scope, view[1], today]
     if (memo && memo.inputs.length === inputs.length && memo.inputs.every((v, i) => v === inputs[i])) return memo.model
-    const ts = buildTimeseriesModel({ rows, vars: q.vars, period: q.agg, normalsByVar: normals, sensorConfig: config })
+    const ts = buildTimeseriesModel({ rows, vars: q.vars, period: q.agg, normalsByVar: normals, sensorConfig: config, splitArrays: q.splitArrays })
     const model = ts ? { ts, period: q.agg, view, partial: partialDay(q.agg, ts.x, today) } : null
     memo = { inputs, model, scope }
     return model

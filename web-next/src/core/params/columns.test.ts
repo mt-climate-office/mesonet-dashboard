@@ -4,8 +4,26 @@ import {
   depthLabelFromCol,
   depthLabelFromColumn,
   depthOrder,
+  labSwapHeader,
+  probeFromColumn,
   variableForColumn,
 } from './columns'
+
+describe('labSwapHeader / probeFromColumn (split_arrays columns)', () => {
+  it('renames as LAB_SWAP does, keeping the array suffix before the unit', () => {
+    expect(labSwapHeader('Soil VWC @ -5 cm [%]')).toBe('Soil VWC @ 2 in [%]')
+    expect(labSwapHeader('Soil VWC @ -5 cm (probe A) [%]')).toBe('Soil VWC @ 2 in (probe A) [%]')
+    expect(labSwapHeader('Soil Temperature @ -100 cm (probe B) [°F]')).toBe('Soil Temperature @ 40 in (probe B) [°F]')
+    expect(labSwapHeader('Rel. Permittivity @ -5 cm (probe A)')).toBe('Rel. Permittivity @ -5 cm (probe A)')
+    expect(labSwapHeader('Relative Humidity [%]')).toBe('Relative Humidity [%]')
+  })
+  it('reads the array, null for the combined series', () => {
+    expect(probeFromColumn('Soil VWC @ 2 in (probe B) [%]')).toBe('B')
+    expect(probeFromColumn('Soil VWC @ 2 in [%]')).toBeNull()
+    expect(variableForColumn('Soil VWC @ 2 in (probe B) [%]')).toBe('Soil VWC')
+    expect(depthLabelFromColumn('Soil VWC @ 2 in (probe B) [%]')).toBe('2 in')
+  })
+})
 
 describe('variableForColumn', () => {
   it.each([

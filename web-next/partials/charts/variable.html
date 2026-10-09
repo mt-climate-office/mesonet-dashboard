@@ -4,7 +4,8 @@
      16-unit footprint and stroke: Download data, Show as table / chart, Custom dates…, Share this chart, Previous / Next);
      "value now · range"; the chart (All years: partials/charts/history.html; Wind direction's
      Rose view, wd=rose: partials/charts/rose.html, its table in place of the rose);
-     range chips; on Wind direction the View row (Time series | Rose); the Interval row (a chip
+     range chips; on Wind direction the View row (Time series | Rose); on a soil variable the Arrays
+     row (Combined | Separate); the Interval row (a chip
      not offered says why under it); the stats card; with tbl=1 the table after them. A sideways
      swipe on touch walks the list. -->
 <div class="var-page chart-page" x-data="variablePage" data-testid="variable-page">
@@ -116,6 +117,17 @@
             <button type="button" class="dash-chip dash-chip--quiet" :aria-pressed="windView() === c.id" @click="setWindView(c.id)"
                     :data-testid="'wind-view-' + c.id" x-text="c.label"></button>
           </template>
+        </div>
+      </template>
+      <!-- Soil depths only: Combined | Separate (arrays=1; array B dashed). -->
+      <template x-if="offersArrays()">
+        <div class="chart-interval" role="group" aria-labelledby="var-arrays-label" data-no-swipe data-testid="array-chips">
+          <span class="chart-interval-label" id="var-arrays-label">Arrays</span>
+          <template x-for="c in arrayChips" :key="c.id">
+            <button type="button" class="dash-chip dash-chip--quiet" :aria-pressed="arrayView() === c.id" @click="setArrays(c.id)"
+                    :data-testid="'arrays-' + c.id" x-text="c.label"></button>
+          </template>
+          <p class="chart-interval-note" role="status" x-show="arraysNote()" x-text="arraysNote()" data-testid="arrays-note"></p>
         </div>
       </template>
       <div class="chart-interval" role="group" aria-labelledby="var-interval-label" data-no-swipe data-testid="interval-chips">

@@ -135,3 +135,24 @@ export function latestVariableForColumn(col: string): string | null {
   const name = col.split('@')[0].split('[')[0].trim()
   return name || null
 }
+
+/** The API's per-array suffix on a soil column: "Soil VWC @ -5 cm (probe A) [%]". */
+const PROBE = /\s*\(probe ([A-Z])\)/
+
+/**
+ * One API header renamed as LAB_SWAP does, keeping a soil array's suffix
+ * (`split_arrays=true`): "Soil VWC @ -5 cm (probe B) [%]" → "Soil VWC @ 2 in (probe B) [%]".
+ */
+export function labSwapHeader(h: string): string {
+  if (LAB_SWAP[h]) return LAB_SWAP[h]
+  const m = PROBE.exec(h)
+  if (!m) return h
+  const base = h.replace(PROBE, '')
+  const swapped = LAB_SWAP[base]
+  return swapped ? swapped.replace(/(\s*\[[^\]]*\])?$/, (unit) => ` (probe ${m[1]})${unit}`) : h
+}
+
+/** The sensor array a soil column comes from ("A", "B"), or null for a depth's combined series. */
+export function probeFromColumn(col: string): string | null {
+  return PROBE.exec(col)?.[1] ?? null
+}

@@ -18,6 +18,33 @@ const hourly = (n: number, cols: (i: number) => Record<string, number | null>): 
     ...cols(i),
   })) as ObservationRow[]
 
+describe('soil arrays (splitArrays)', () => {
+  // Array columns from row 2 on: before that the depth had one sensor (the combined series only).
+  const rows = hourly(4, (i) => ({
+    'Soil VWC @ 2 in [%]': 10 + i,
+    'Soil VWC @ 2 in (probe B) [%]': i >= 2 ? 12 + i : null,
+    'Soil VWC @ 2 in (probe A) [%]': i >= 2 ? 8 + i : null,
+    'Soil VWC @ 4 in [%]': 20,
+  }))
+  const panel = (splitArrays: boolean) => buildTimeseriesModel({ rows, vars: ['Soil VWC'], period: 'hourly', splitArrays })!.panels[0]
+
+  it('drops array columns without it', () => {
+    expect(panel(false).series.map((s) => s.name)).toEqual(['Soil VWC @ 2 in [%]', 'Soil VWC @ 4 in [%]'])
+  })
+  it('draws each array (A, then B) beside the combined series kept only where no array reports', () => {
+    const p = panel(true)
+    expect(p.series.map((s) => [s.depth, s.probe])).toEqual([['2 in', null], ['2 in', 'A'], ['2 in', 'B'], ['4 in', null]])
+    expect(p.series[0].values).toEqual([10, 11, null, null])
+    expect(p.series[1].values).toEqual([null, null, 10, 11])
+    expect(p.series[3].values).toEqual([20, 20, 20, 20])
+  })
+  it('drops the combined series once the arrays cover it', () => {
+    const split = hourly(2, () => ({ 'Soil VWC @ 2 in [%]': 10, 'Soil VWC @ 2 in (probe A) [%]': 9, 'Soil VWC @ 2 in (probe B) [%]': 11 }))
+    const p = buildTimeseriesModel({ rows: split, vars: ['Soil VWC'], period: 'hourly', splitArrays: true })!.panels[0]
+    expect(p.series.map((s) => s.probe)).toEqual(['A', 'B'])
+  })
+})
+
 describe('request planning', () => {
   it('filters the selection to the station, keeping selection order', () => {
     const els = [

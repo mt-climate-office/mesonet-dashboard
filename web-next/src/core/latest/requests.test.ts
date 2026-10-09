@@ -18,6 +18,12 @@ describe('recordRequest', () => {
     expect(r.query).toMatchObject({ elements: 'air_temp', hasEtr: false, aggFunc: ['min', 'max'] })
     expect(recordRequest({ station: 'x', window, agg: 'daily', vars: ['Reference ET'], extremes: true })).toBeNull()
   })
+  it('splitArrays: asks for each soil array, keyed apart', () => {
+    const r = recordRequest({ station: 'acebozem', window, agg: 'hourly', vars: ['Soil VWC'], splitArrays: true })!
+    expect(r.key).toBe('obs:acebozem:hourly:2026-09-17:2026-10-01:soil_vwc::arrays')
+    expect(r.query).toMatchObject({ elements: 'soil_vwc', splitArrays: true })
+    expect(recordRequest({ station: 'acebozem', window, agg: 'hourly', vars: ['Soil VWC'] })!.query).not.toHaveProperty('splitArrays')
+  })
   it('names the metadata keys by station', () => {
     expect([elementsKey('a'), configKey('a'), normalsKey('a', 'Precipitation')]).toEqual(['elements:a', 'config:a', 'normals:a:Precipitation'])
   })
