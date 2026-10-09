@@ -10,6 +10,12 @@ import { hexToRgb } from './contrast'
  * 11 evenly spaced stops of the 256-step tables, copied from mesonet-explorer app.js RAMPS.
  */
 export const BATLOW = ['#011959', '#103d5f', '#185562', '#30685c', '#577647', '#828231', '#b38e2f', '#e09651', '#fba689', '#fdb9c2', '#faccfa'] as const
+/**
+ * Crameri roma (v8), diverging red-brown → pale yellow-green → blue: 11 evenly spaced stops of roma.txt
+ * (cmcrameri). Soil depths and a panel's sensors (roles.ts): its two ends are far apart in hue, so
+ * neighbouring depths stay apart with solid lines only. Its pale middle is under 3:1 on white.
+ */
+export const ROMA = ['#7e1700', '#984e14', '#ac7726', '#c1a343', '#d2d484', '#c0eac3', '#89dad7', '#4db3cf', '#2d88be', '#1e5fac', '#033198'] as const
 /** Crameri romaO, cyclic (first stop === last). Only for cyclic quantities such as wind direction. */
 export const ROMA_O = ['#733957', '#823c3d', '#94502e', '#aa752f', '#c3a34b', '#d5ce81', '#cbe1b3', '#a4d8cb', '#74bbcd', '#5495c0', '#516da6', '#62497d', '#733957'] as const
 

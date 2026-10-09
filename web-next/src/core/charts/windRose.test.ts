@@ -3,7 +3,7 @@ import type { ObservationRow } from '../api'
 import { buildWindRoseModel } from '../models/windRose'
 import { THEMES, binColors } from '../palette'
 import { testCtx } from './testing'
-import { ROSE_SIDE_KEY_MIN_WIDTH, binName, windRoseChart, windRoseLargeChart, windRoseTable, windRoseTitle } from './windRose'
+import { ROSE_SIDE_KEY_MIN_WIDTH, binName, windRoseChart, windRoseFitChart, windRoseLargeChart, windRoseTable, windRoseTitle } from './windRose'
 
 const rows = [
   [0, 1.2],
@@ -93,6 +93,17 @@ describe('windRoseLargeChart (the Rose view)', () => {
   })
   it('every reading calm: no series', () => {
     expect(windRoseLargeChart({ ...model, bins: [], n: 0, calm: 3 }, testCtx()).series).toEqual([])
+  })
+})
+
+describe('windRoseFitChart (the dashboard)', () => {
+  it('a wide box: the key at the right; a square or tall one: the card layout; the same rose either way', () => {
+    const wide = windRoseFitChart(model, { ...testCtx('dark', 600), height: 300 })
+    expect(wide.legend).toMatchObject({ orient: 'vertical', right: 8 })
+    const square = windRoseFitChart(model, { ...testCtx('dark', 400), height: 400 })
+    expect(square.legend).toMatchObject({ bottom: 4, left: 'center' })
+    expect(wide.series).toEqual(windRoseChart(model, testCtx('dark')).series)
+    expect(windRoseFitChart(model, testCtx('dark', 900)).legend).toMatchObject({ bottom: 4 })
   })
 })
 

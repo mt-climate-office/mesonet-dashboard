@@ -131,11 +131,21 @@ below, which stay for the record and name what replaced them.
 - **P1 / before:** content stopped at 75 rem at every width; on a 2560 px screen Now used its middle
   ~1200 px, and a station's charts and details were a tab away.
 - **New:** with ≥ 1760 px beside the station drawer and ≥ 1000 px of height, Now, About and the Charts
-  list become one full-screen dashboard: conditions and the 48 h strip, the camera, every variable's chart
-  over one window (range chips), station details, the map and all current readings, sized to the screen
-  (DESIGN.md "Dashboard"). Chart pages, and every smaller screen, are unchanged.
+  list become one full-screen dashboard: conditions and the 48 h strip, a landscape photo, wind direction as
+  a rose, every other variable in two aligned Compare-style stacks over one window and interval (range and
+  interval chips), station details, the map and all current readings, sized to the screen (DESIGN.md
+  "Dashboard"). Chart pages, and every smaller screen, are unchanged.
 - **Why:** the user asked for big screens to collapse the tabs into one dashboard of the site's data,
   without sparklines, with the chart pages kept for fine-tuning.
+
+### Charts: solid lines, roma soil depths, rain rate as bars
+- **P1 / before:** soil depths in batlow with every other depth dashed, wind gusts dashed, a panel's several
+  sensors dashed and dotted; rain rate a line.
+- **New:** every data line is solid; soil depths (and a panel's sensors) are told apart by Crameri roma
+  colors (red-brown shallow → blue deep), further apart than batlow's at 3:1; rain rate is bars, like rain
+  and reference ET. Dashes remain only for the NWS forecast, the normals median and SWP's bounds.
+- **Why:** the user's review of the big-screen dashboard: one line style reads cleaner, and roma separates
+  depths by hue where batlow needed dashes.
 
 ### Now: tiles only where they mean something
 - **P1:** a tile for every reading the station reports: Wind (with a compass glyph), Precipitation today (24 h,

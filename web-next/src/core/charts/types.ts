@@ -33,6 +33,8 @@ export interface ChartContext {
   theme: ChartTheme
   /** Container width in CSS px (for label density decisions only). */
   width: number
+  /** Canvas height in CSS px when the host knows it (panels that fill the height: the dashboard's stacks). */
+  height?: number
   /** True under `MCO.viewport.isCompact()`. */
   compact: boolean
   /**

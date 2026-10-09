@@ -8,8 +8,8 @@
  * "Browse on the map" and a short handle drag never closes it; the no-station landing fills the screen
  * with its map (no picker over it) on every section; with reduced motion a section change
  * starts no view transition; the big-screen dashboard shows only with room for it (2560 × 1440, 1920 × 1080
- * without the station drawer; not 1920 × 900 or 1440), fills the screen without scrolling, rearranges its
- * chart grid on a resize, and a card opens its chart on the same window (Back returns). Run via `npm run verify`.
+ * without the station drawer; not 1920 × 900 or 1440), fills the screen without scrolling, its two stacks'
+ * rows aligned (also after a resize), and a panel's name opens its chart on the same window and interval (Back returns). Run via `npm run verify`.
  */
 import { DL_QUERY, VIEWPORTS, WIDE, check, finish, open, start } from './lib.mjs'
 
@@ -151,48 +151,52 @@ for (const vp of VIEWPORTS) {
 {
   const dash = (page) => page.evaluate(() => {
     const el = document.querySelector('[data-testid="dashboard"]')
-    const tiles = [...document.querySelectorAll('.dash-tile')].map((c) => c.getBoundingClientRect())
-    const grid = document.querySelector('.dash-grid')
+    const stacks = [...document.querySelectorAll('.dash-stack')].filter((x) => x.getClientRects().length)
+    const plots = stacks.map((x) => x.querySelector('.dash-stack-plot').getBoundingClientRect())
+    const links = stacks.map((x) => [...x.querySelectorAll('.dash-stack-links li')].map((li) => Math.round(li.getBoundingClientRect().top)))
     return {
       shown: !!el,
       tabs: !!document.querySelector('[data-testid="section-row"]')?.getClientRects().length,
-      tiles: tiles.length,
-      drawn: document.querySelectorAll('.dash-tile canvas').length,
-      columns: new Set(tiles.map((r) => Math.round(r.left))).size,
-      minTile: tiles.length ? Math.round(Math.min(...tiles.map((r) => r.height))) : 0,
-      // The dashboard ends inside the screen (the footer may follow below it).
+      stacks: stacks.length,
+      drawn: stacks.filter((x) => x.querySelector('canvas')).length,
+      panels: links.flat().length,
+      // Rows line up across the stacks (link tops equal row for row) and both stacks' plots share a box height and left inset.
+      rowsAligned: links.length === 2 && links[1].every((t, i) => Math.abs(t - links[0][i]) <= 1),
+      plotsLevel: plots.length === 2 && Math.abs(plots[0].bottom - plots[1].bottom) <= 1 && Math.abs(plots[0].height - plots[1].height) <= 1,
+      rose: !!document.querySelector('[data-testid="dash-rose"] canvas'),
       bottom: el ? Math.round(el.getBoundingClientRect().bottom - innerHeight) : null,
-      gridScrolls: grid ? grid.scrollHeight > grid.clientHeight + 1 : null,
       overflowX: document.documentElement.scrollWidth - innerWidth,
     }
   })
   const ready = (page) => page.waitForFunction(() => {
-    const n = document.querySelectorAll('.dash-tile').length
-    return n > 0 && document.querySelectorAll('.dash-tile .chart-table tbody tr').length > 0 && !document.querySelector('.dash-grid[aria-busy="true"]')
+    const links = document.querySelectorAll('.dash-stack-links li').length
+    return links > 0 && document.querySelectorAll('.dash-stack .chart-table tbody tr').length > 0 && !document.querySelector('.dash-stacks[aria-busy="true"]')
   }, null, { timeout: 30000 }).catch(() => {})
   {
     const { page, problems, close } = await open(env, '?s=acebozem', { viewport: WIDE })
     await ready(page)
     const d = await dash(page)
-    check('[dashboard 2560] in place of the tabs: every variable charted, fits the screen, no scroll', d.shown && !d.tabs && d.tiles >= 10 && d.drawn === d.tiles && d.bottom <= 0 && !d.gridScrolls && d.overflowX <= 0 && d.minTile >= 150, JSON.stringify(d))
-    // Narrower (still wide enough): the grid rearranges to fewer columns, still filling the screen.
-    await page.setViewportSize({ width: 1900, height: 1440 })
-    await page.waitForTimeout(500)
-    const narrow = await dash(page)
-    check('[dashboard] a resize rearranges the grid and it still fits', narrow.shown && narrow.columns <= d.columns && narrow.bottom <= 0 && narrow.overflowX <= 0, JSON.stringify({ wide: d.columns, narrow }))
+    check('[dashboard 2560] in place of the tabs: two stacks (every variable but wind direction) and the rose, fits the screen, no scroll', d.shown && !d.tabs && d.stacks === 2 && d.drawn === 2 && d.panels >= 10 && d.rose && d.bottom <= 0 && d.overflowX <= 0, JSON.stringify(d))
+    check('[dashboard 2560] the stacks\' rows line up and their time axes end level', d.rowsAligned && d.plotsLevel, JSON.stringify(d))
+    // Narrower and shorter (still room): the stacks shrink to fit, rows still aligned.
+    await page.setViewportSize({ width: 1900, height: 1100 })
+    await page.waitForTimeout(800)
+    const small = await dash(page)
+    check('[dashboard] a resize refits the stacks; rows still aligned, still no scroll', small.shown && small.rowsAligned && small.plotsLevel && small.bottom <= 0 && small.overflowX <= 0, JSON.stringify(small))
     await page.setViewportSize({ width: WIDE.width, height: WIDE.height })
     await page.waitForTimeout(500)
     const before = await page.evaluate(() => location.search)
     await page.getByTestId('dash-range-7d').click()
     await page.waitForFunction(() => new URLSearchParams(location.search).get('from'), null, { timeout: 5000 }).catch(() => {})
-    await page.locator('[data-testid="dash-air_temp"] .dash-tile-head').click()
+    await page.getByTestId('dash-interval-hourly').click()
+    await page.getByTestId('dash-air_temp').click()
     await page.waitForFunction(() => document.activeElement?.id === 'var-title', null, { timeout: 10000 }).catch(() => {})
     const opened = await page.evaluate(() => {
       const q = new URLSearchParams(location.search)
       return { hash: location.hash, v: q.get('v'), days: (Date.parse(q.get('to')) - Date.parse(q.get('from'))) / 864e5, focus: document.activeElement?.id,
-        chip: document.querySelector('.chart-chips [aria-pressed="true"]')?.textContent.trim(), back: document.querySelector('[data-testid="var-back"]')?.getAttribute('aria-label') }
+        chip: document.querySelector('.chart-chips [aria-pressed="true"]')?.textContent.trim(), agg: q.get('agg'), back: document.querySelector('[data-testid="var-back"]')?.getAttribute('aria-label') }
     })
-    check('[dashboard 2560] the 7 d chip, then a card: its chart on that window, the heading focused, the back link to the dashboard', opened.hash === '#charts' && opened.v === 'air_temp' && opened.days === 7 && opened.focus === 'var-title' && opened.chip === '7 d' && opened.back === 'Dashboard', JSON.stringify({ before, opened }))
+    check('[dashboard 2560] the 7 d chip and Hourly, then a panel\'s name: its chart on that window and interval, the heading focused, the back link to the dashboard', opened.hash === '#charts' && opened.v === 'air_temp' && opened.days === 7 && opened.agg === 'hourly' && opened.focus === 'var-title' && opened.chip === '7 d' && opened.back === 'Dashboard', JSON.stringify({ before, opened }))
     await page.goBack()
     await page.waitForFunction(() => !!document.querySelector('[data-testid="dashboard"]'), null, { timeout: 10000 }).catch(() => {})
     check('[dashboard 2560] Back returns to the dashboard', (await dash(page)).shown)

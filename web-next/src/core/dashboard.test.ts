@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildTimeseriesModel } from './models/timeseries'
-import { CELL_MIN, DASHBOARD_MIN_HEIGHT, DASHBOARD_MIN_WIDTH, DASHBOARD_RANGES, dashboardGrid, pageFor, panelOf, showsDashboard } from './dashboard'
+import { DASHBOARD_MIN_HEIGHT, DASHBOARD_MIN_WIDTH, DASHBOARD_RANGES, pageFor, showsDashboard, stackColumns, stackOf } from './dashboard'
+import type { Variable } from './variables'
 
 describe('showsDashboard', () => {
   it('needs the width beside the drawer and the height', () => {
@@ -34,49 +35,39 @@ describe('DASHBOARD_RANGES', () => {
   })
 })
 
-describe('dashboardGrid', () => {
-  it('14 charts at 1080p (≈ 1000 × 950 centre): rows fill the height, cells near the target shape', () => {
-    const g = dashboardGrid(14, 1000, 950)
-    expect(g.cols * g.rows).toBeGreaterThanOrEqual(14)
-    expect(g.rowHeight).not.toBeNull()
-    expect(g.rowHeight!).toBeGreaterThanOrEqual(CELL_MIN.height)
-    expect([3, 4]).toContain(g.cols)
+describe('stackColumns', () => {
+  const v = (id: string, group: Variable['group']): Variable => ({ id, name: id, group, sum: false, normals: false })
+  const weather = ['air_temp', 'rh', 'wind_spd', 'windgust', 'wind_dir', 'sol_rad', 'bp', 'snow_depth'].map((id) => v(id, 'Weather'))
+  const rain = ['ppt', 'ppt_max_rate', 'etr'].map((id) => v(id, 'Rain and evaporation'))
+  const soil = ['soil_temp', 'soil_vwc', 'soil_ec_blk'].map((id) => v(id, 'Soil'))
+  it('Weather | Rain and soil, split at the group boundary; wind direction is left out (the rose)', () => {
+    const [a, b] = stackColumns([...weather, ...rain, ...soil])
+    expect(a.map((x) => x.id)).toEqual(['air_temp', 'rh', 'wind_spd', 'windgust', 'sol_rad', 'bp', 'snow_depth'])
+    expect(b.map((x) => x.id)).toEqual(['ppt', 'ppt_max_rate', 'etr', 'soil_temp', 'soil_vwc', 'soil_ec_blk'])
   })
-  it('14 charts at 1440p (≈ 1650 × 1300): more columns, taller cells', () => {
-    const g = dashboardGrid(14, 1650, 1300)
-    expect(g.cols).toBeGreaterThanOrEqual(3)
-    expect(g.rowHeight!).toBeGreaterThan(dashboardGrid(14, 1000, 950).rowHeight!)
+  it('one big group: split at the middle', () => {
+    const [a, b] = stackColumns(weather)
+    expect(a.length - b.length).toBeLessThanOrEqual(1)
+    expect([...a, ...b].map((x) => x.id)).toEqual(weather.filter((x) => x.id !== 'wind_dir').map((x) => x.id))
   })
-  it('rearranges with the box: a wider box takes more columns', () => {
-    expect(dashboardGrid(12, 2400, 800).cols).toBeGreaterThan(dashboardGrid(12, 900, 1200).cols)
-  })
-  it('few charts: no more columns than charts', () => {
-    expect(dashboardGrid(2, 2000, 1000).cols).toBeLessThanOrEqual(2)
-  })
-  it('too many to fit: the most columns at the minimum width, rows at the minimum height (the grid scrolls)', () => {
-    const g = dashboardGrid(40, 1000, 600)
-    expect(g.rowHeight).toBeNull()
-    expect(g.cols).toBe(3)
-    expect(g.rows).toBe(14)
-  })
-  it('empty or unmeasured', () => {
-    expect(dashboardGrid(0, 1000, 1000)).toEqual({ cols: 1, rows: 0, rowHeight: null })
-    expect(dashboardGrid(5, 0, 0).rowHeight).toBeNull()
+  it('fewer than two: one stack', () => {
+    expect(stackColumns([v('air_temp', 'Weather')])).toEqual([[v('air_temp', 'Weather')], []])
+    expect(stackColumns([])).toEqual([[], []])
   })
 })
 
-describe('panelOf', () => {
-  const rows = [{ station: 'x', datetime: '2026-10-01 00:00:00-06:00', 'Air Temperature @ 2 m [°F]': 50, 'Relative Humidity [%]': 40 }]
-  const ts = buildTimeseriesModel({ rows, vars: ['Air Temperature', 'Relative Humidity'], period: 'hourly' })!
+describe('stackOf', () => {
+  const rows = [{ station: 'x', datetime: '2026-10-01 00:00:00-06:00', 'Air Temperature @ 2 m [°F]': 50, 'Relative Humidity [%]': 40, 'Atmospheric Pressure [mb]': 850 }]
+  const ts = buildTimeseriesModel({ rows, vars: ['Air Temperature', 'Relative Humidity', 'Atmospheric Pressure'], period: 'hourly' })!
   const m = { ts, period: 'hourly' as const, view: [0, 1] as [number, number] }
-  it("one variable's panel of the shared model, the rest of the model kept", () => {
-    const one = panelOf(m, 'Relative Humidity')!
-    expect(one.ts.panels.map((p) => p.variable)).toEqual(['Relative Humidity'])
+  it("the named panels of the shared model, in the order named; the rest of the model kept", () => {
+    const one = stackOf(m, ['Atmospheric Pressure', 'Air Temperature'])!
+    expect(one.ts.panels.map((p) => p.variable)).toEqual(['Atmospheric Pressure', 'Air Temperature'])
     expect(one.ts.x).toBe(ts.x)
     expect(one.view).toBe(m.view)
   })
-  it('null without the model or the panel', () => {
-    expect(panelOf(null, 'Air Temperature')).toBeNull()
-    expect(panelOf(m, 'Soil VWC')).toBeNull()
+  it('null without the model or any of its panels', () => {
+    expect(stackOf(null, ['Air Temperature'])).toBeNull()
+    expect(stackOf(m, ['Soil VWC'])).toBeNull()
   })
 })

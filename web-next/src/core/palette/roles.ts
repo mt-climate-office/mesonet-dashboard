@@ -2,7 +2,7 @@
 // Values are hex, or TokenRef to a kit CSS variable that resolve() turns into a color at render.
 // Contrast figures are WCAG ratios against that theme's --bg-surface (tokens.snapshot.ts); palette.test.ts enforces ≥ 3:1.
 
-import { BATLOW, BLUES, BR_BG, RD_BU, TOL_BRIGHT, YL_GN_BU, YL_OR_RD, colorAt, reversed, sample } from './ramps'
+import { BATLOW, BLUES, BR_BG, RD_BU, ROMA, TOL_BRIGHT, YL_GN_BU, YL_OR_RD, colorAt, reversed, sample } from './ramps'
 import { hexToRgb } from './contrast'
 
 export type Theme = 'dark' | 'light' | 'high-contrast'
@@ -108,7 +108,6 @@ const VARIABLE_FAMILY: Record<string, Family> = {
   'Snow Depth': 'pressure',
   'Max Precip Rate': 'precipRate',
 }
-const DASHED = new Set(['Gust Speed'])
 
 /** Names variableStyle() colors (for tests and legends). */
 export const STYLED_VARIABLES: readonly string[] = Object.keys(VARIABLE_FAMILY)
@@ -123,7 +122,7 @@ export function variableStyle(variable: string, theme: Theme): LineStyle | null 
   const family = VARIABLE_FAMILY[variable]
   if (!family) return null
   const color = FAMILY_COLOR[theme][family]
-  return DASHED.has(variable) ? { color, dash: 'dashed' } : { color }
+  return { color }
 }
 
 /* ------------------------------------------------------ precip / ETr / GDD */
@@ -250,15 +249,18 @@ const BATLOW_SPAN: Record<Theme, [number, number]> = { light: [0, 0.55], dark: [
 const SOIL_DEPTHS_IN = [2, 4, 8, 20, 28, 36, 40]
 const DEPTH_STEP = [0, 1, 2, 3, 10 / 3, 11 / 3, 4]
 
-// Batlow position of each step, per theme: the spacing that keeps the closest neighbours furthest
-// apart (OKLab) inside the part of batlow that clears 3:1. light 0–0.6 (≥3.08), dark 0.41–1 (≥3.07),
-// HC 0.28–1 (≥3.08). That best is still only 0.11–0.13 OKLab between neighbours (0.137 in HC): batlow
-// can't do better at 3:1, so neighbours also differ in dash (depthStyle).
+// Roma position of each step, per theme (red-brown shallow → blue deep): the spacing that keeps the
+// closest neighbours furthest apart (OKLab) inside the part of roma that clears 3:1, so depths need no
+// dashes. light: both ends (roma's pale middle, 0.25–0.75, is under 3:1 on white; ≥ 0.14 apart on the
+// 256-step table); dark 0.16–0.84 (≥ 0.17); HC 0.08–0.9 (≥ 0.21); a little less through the 11 stops
+// (palette.test.ts). Batlow managed 0.11–0.14 at 3:1.
 const DEPTH_T: Record<Theme, readonly number[]> = {
-  light: [0, 0.12, 0.29, 0.45, 0.6], // navy, blue-teal, teal, olive, ochre
-  dark: [0.41, 0.56, 0.7, 0.85, 1], // olive, ochre, orange, salmon, pink
-  'high-contrast': [0.28, 0.47, 0.64, 0.81, 1], // teal, olive, ochre, salmon, pink
+  light: [0, 0.12, 0.76, 0.88, 1], // dark red, brown, sky, blue, navy
+  dark: [0.16, 0.32, 0.52, 0.68, 0.84], // brown, ochre, mint, sky, blue
+  'high-contrast': [0.08, 0.26, 0.44, 0.72, 0.9], // rust, ochre, pale green, sky, blue
 }
+/** Roma's span under 3:1 on white: a depth between two steps that would land in it takes the nearer edge. */
+const LIGHT_GAP: readonly [number, number] = [0.24, 0.76]
 
 /** A depth's fractional step (see DEPTH_STEP): 1 in → 0, 4 in → 1, 30 in → 3.5, ≥ 40 in → 4. */
 function depthStep(depthInches: number): number {
@@ -269,25 +271,31 @@ function depthStep(depthInches: number): number {
   return DEPTH_STEP[i - 1] + ((DEPTH_STEP[i] - DEPTH_STEP[i - 1]) * (depthInches - d[i - 1])) / (d[i] - d[i - 1])
 }
 
-/**
- * Line color for a soil depth in inches (cm callers divide by 2.54). Depends only on depth and theme,
- * so a depth keeps its color whichever other depths are present. Shallow → batlow start; ≥ 40 in → end.
- */
-export function depthColor(depthInches: number, theme: Theme): string {
-  const s = depthStep(depthInches)
+/** Roma position for a fractional step on `theme`'s DEPTH_T (light skips its low-contrast middle). */
+function romaAt(step: number, theme: Theme): number {
   const t = DEPTH_T[theme]
-  const i = Math.min(t.length - 2, Math.floor(s))
-  return colorAt(BATLOW, t[i] + (t[i + 1] - t[i]) * (s - i))
+  const i = Math.min(t.length - 2, Math.max(0, Math.floor(step)))
+  const x = t[i] + (t[i + 1] - t[i]) * (Math.min(step, t.length - 1) - i)
+  if (theme === 'light' && x > LIGHT_GAP[0] && x < LIGHT_GAP[1]) return x - LIGHT_GAP[0] < LIGHT_GAP[1] - x ? LIGHT_GAP[0] : LIGHT_GAP[1]
+  return x
 }
 
 /**
- * Line style for a soil depth: depthColor, dashed at every other sensor depth (4, 20, 36 in; other
- * depths follow the nearest), so neighbouring depths differ in dash as well as in color.
+ * Line color for a soil depth in inches (cm callers divide by 2.54). Depends only on depth and theme,
+ * so a depth keeps its color whichever other depths are present. Shallow → roma's red end; ≥ 40 in → blue.
  */
+export function depthColor(depthInches: number, theme: Theme): string {
+  return colorAt(ROMA, romaAt(depthStep(depthInches), theme))
+}
+
+/** Line style for a soil depth: depthColor, solid (every chart line is solid; color alone tells depths apart). */
 export function depthStyle(depthInches: number, theme: Theme): LineStyle {
-  const color = depthColor(depthInches, theme)
-  const near = SOIL_DEPTHS_IN.reduce((a, b) => (Math.abs(b - depthInches) < Math.abs(a - depthInches) ? b : a))
-  return SOIL_DEPTHS_IN.indexOf(near) % 2 === 1 ? { color, dash: 'dashed' } : { color }
+  return { color: depthColor(depthInches, theme) }
+}
+
+/** The `i`th of a panel's several sensors (heights, wells): the depth steps' colors in order, so no dashes. */
+export function sensorColor(i: number, theme: Theme): string {
+  return colorAt(ROMA, DEPTH_T[theme][i % DEPTH_T[theme].length])
 }
 
 function batlowSamples(n: number, theme: Theme): string[] {

@@ -113,8 +113,8 @@ const SCENARIOS = [
   { name: 'download-variables', query: '?s=acebozem&dl=1#charts', before: dlReady, evidence: {}, after: dlVariables },
   { name: 'download-dates', query: DL_QUERY, before: dlReady, evidence: {}, after: dlDates },
   { name: 'downloader', query: DL_QUERY, before: runDownload, evidence: { charts: 1 } },
-  // Big screens: the dashboard (the strip, every variable's chart, the map, the readings table).
-  { name: 'dashboard', query: '?s=acebozem', viewports: [WIDE], evidence: { charts: 10, filled: ['[data-testid="dashboard-map"] tbody', '[data-testid="about-readings-table"] tbody'] } },
+  // Big screens: the dashboard (the strip, the two stacks, the rose, the map, the readings table).
+  { name: 'dashboard', query: '?s=acebozem', viewports: [WIDE], evidence: { charts: 4, filled: ['[data-testid="dashboard-map"] tbody', '[data-testid="about-readings-table"] tbody'] } },
   { name: 'photo-dialog', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPhoto },
   { name: 'help-dialog', query: '?s=acebozem#latest', evidence: { charts: 1 }, after: openHelp },
 ]

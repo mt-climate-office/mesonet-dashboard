@@ -1,13 +1,13 @@
 /**
  * The big-screen dashboard: with room for it, Now, About and the Charts list collapse into one
- * full-screen view of the station (charts of every variable, conditions, camera, details, map,
- * readings); chart pages stay their own pages. When it shows, which page a URL renders, how its
- * chart grid fits the space, and its range chips. Pure; stores/view.ts and ui/dashboard use it.
+ * full-screen view of the station (every variable charted, conditions, camera, details, map,
+ * readings); chart pages stay their own pages. When it shows, which page a URL renders, its range
+ * chips, and how its variables split into two stacks. Pure; stores/view.ts and ui/dashboard use it.
  */
 import type { LatestTimeseriesModel } from './charts/latestTimeseries'
 import type { Section } from './router'
 import type { UrlState } from './url-schema'
-import { chartsMode } from './variables/catalog'
+import { chartsMode, type Variable } from './variables/catalog'
 import { RANGE_CHIPS, type RangePreset } from './variables/range'
 
 /** The space the dashboard needs: the content column's width (beside the station drawer) and the window's height, CSS px. */
@@ -32,41 +32,33 @@ export const DASHBOARD_RANGES: readonly { id: RangePreset['id']; label: string }
   c.id === 'all' || c.id === '1y' ? [] : [{ id: c.id, label: c.label }],
 )
 
-export interface GridFit {
-  cols: number
-  rows: number
-  /** Row height (px) when the rows fill the height, or null when they cannot and the grid scrolls at `minRow`. */
-  rowHeight: number | null
-}
-
-/** A chart cell's floor (px): below these its axes and labels stop being readable. */
-export const CELL_MIN = { width: 260, height: 150 } as const
-/** The cell shape the grid aims for (width : height), a typical small time series. */
-const TARGET_RATIO = 1.7
+/** The variable the dashboard draws as a wind rose of the window, not a time series. */
+export const ROSE_ON_DASHBOARD = 'wind_dir'
 
 /**
- * Columns and rows for `n` charts in a `width` × `height` box with `gap` px between cells: of the
- * column counts whose cells fit CELL_MIN, the one whose cell shape is nearest TARGET_RATIO (fewer
- * empty cells on a tie). When no count lets every row fit, the most columns that stay CELL_MIN wide,
- * rows at CELL_MIN height, scrolling inside the grid.
+ * The time series in two stacks (columns of panels on a shared time axis), list order: split at the
+ * group boundary nearest the middle (Weather | Rain, Soil, …), or at the middle when one group holds
+ * them all. Wind direction is left out (it is the rose).
  */
-export function dashboardGrid(n: number, width: number, height: number, gap = 12): GridFit {
-  if (n <= 0 || width <= 0 || height <= 0) return { cols: 1, rows: Math.max(n, 0), rowHeight: null }
-  const maxCols = Math.max(1, Math.min(n, Math.floor((width + gap) / (CELL_MIN.width + gap))))
-  let best: { fit: GridFit; score: number } | null = null
-  for (let cols = 1; cols <= maxCols; cols++) {
-    const rows = Math.ceil(n / cols)
-    const w = (width - (cols - 1) * gap) / cols
-    const h = (height - (rows - 1) * gap) / rows
-    if (h < CELL_MIN.height) continue
-    const score = Math.abs(Math.log(w / h / TARGET_RATIO)) + 0.02 * (rows * cols - n)
-    if (!best || score < best.score) best = { fit: { cols, rows, rowHeight: Math.floor(h) }, score }
+export function stackColumns(vars: readonly Variable[]): [Variable[], Variable[]] {
+  const list = vars.filter((v) => v.id !== ROSE_ON_DASHBOARD)
+  if (list.length < 2) return [list, []]
+  const half = list.length / 2
+  let cut = Math.ceil(half)
+  let best = Infinity
+  for (let i = 1; i < list.length; i++) {
+    if (list[i].group === list[i - 1].group) continue
+    const d = Math.abs(i - half)
+    if (d < best) [best, cut] = [d, i]
   }
-  return best?.fit ?? { cols: maxCols, rows: Math.ceil(n / maxCols), rowHeight: null }
+  // A boundary far from the middle (one big group) would leave a stack nearly empty: split evenly instead.
+  if (best > list.length / 4) cut = Math.ceil(half)
+  return [list.slice(0, cut), list.slice(cut)]
 }
 
-/** One variable's chart from the dashboard's model (one panel per variable, by display name); null without its panel. */
-export function panelOf(m: LatestTimeseriesModel | null, name: string): LatestTimeseriesModel | null {
-  const p = m?.ts.panels.find((x) => x.variable === name)
-  return m && p ? { ...m, ts: { ...m.ts, panels: [p] } } : null
+/** A stack's model: the dashboard model's panels for `names`, in that order; null when none are there. */
+export function stackOf(m: LatestTimeseriesModel | null, names: readonly string[]): LatestTimeseriesModel | null {
+  if (!m) return null
+  const panels = names.flatMap((n) => m.ts.panels.filter((p) => p.variable === n))
+  return panels.length ? { ...m, ts: { ...m.ts, panels } } : null
 }

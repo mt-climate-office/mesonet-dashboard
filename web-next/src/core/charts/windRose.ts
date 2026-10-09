@@ -123,6 +123,16 @@ export const windRoseLargeChart: ChartBuilder<WindRoseModel> = (m, ctx) =>
     : roseOption(m, ctx, { polar: { center: ['50%', Math.round(ctx.width / 2) + 16], radius: '86%' }, legend: { bottom: 4, left: 'center' } })
 
 /**
+ * The dashboard's rose, fitted to any box (it shares a rail with the photo, so its height varies): with
+ * room beside it (wider than 1.35 × its height and 420 px), the key in a column at the right and the rose
+ * filling the height; otherwise Now's card layout (the key wrapping under the rose, sized in %).
+ */
+export const windRoseFitChart: ChartBuilder<WindRoseModel> = (m, ctx) =>
+  ctx.height && ctx.width >= Math.max(420, ctx.height * 1.35)
+    ? roseOption(m, ctx, { polar: { center: ['40%', '52%'], radius: '82%' }, legend: { orient: 'vertical', right: 8, top: 'middle' } })
+    : windRoseChart(m, ctx)
+
+/**
  * Table twin: one row per direction (N first, not by time), one column per speed bin (its share of
  * every reading, as drawn), then the direction's share; the caption names the calm readings left out.
  */
