@@ -21,6 +21,8 @@
  *              tbl        1 = the page shows its chart as a table (Back or ⋯ returns)
  *              wd         rose = the Wind direction page shows the wind rose of
  *                         its window (core/variables/rose); absent = the time series
+ *              arrays     1 = a soil page draws each depth per sensor array
+ *                         (A solid, B dashed; core/variables/arrays); absent = combined
  *              cmp        1 = the Compare (stacked) chart; `#latest` links map
  *                         here (core/router.ts). It reads the Latest keys.
  *              dl         1 = the Download sheet is open over Charts; old
@@ -60,6 +62,10 @@
  *
  *   Satellite  mode, pct, sat_vars, cmpx, cmpy, sat_from, sat_to
  *              (tab hidden; keys kept so old links round-trip untouched)
+ *
+ * Hidden     level      0 | 1 | 2: the API QC level for every default-QC request, for
+ *                         debugging; read once at boot by main.ts (core/api/qcLevel),
+ *                         not in the schema, so it rides along like any unknown key.
  *
  * Keys not in this schema (e.g. legacy `state`, `kbd`, and the old Latest
  * cards' `card`/`info`) are preserved as-is, so old links round-trip.
@@ -181,6 +187,7 @@ export const URL_SCHEMA = {
   view: oneOf(CHART_VIEWS, 'recent'),
   tbl: flag(),
   wd: oneOf(WIND_VIEWS, null),
+  arrays: flag(),
   cmp: flag(),
   dl: flag(),
   // Latest (Compare)

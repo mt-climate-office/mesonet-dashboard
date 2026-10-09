@@ -3,7 +3,7 @@
  * building and CSV export for the Downloader.
  */
 import Papa from 'papaparse'
-import { LAB_SWAP } from './params'
+import { labSwapHeader } from './params'
 
 /**
  * Bookkeeping columns the API returns alongside element values (v2 adds
@@ -40,7 +40,7 @@ export function parseCsv<T extends Record<string, unknown>>(
     header: true,
     dynamicTyping: true,
     skipEmptyLines: true,
-    transformHeader: labSwap ? (h) => LAB_SWAP[h] ?? h : undefined,
+    transformHeader: labSwap ? labSwapHeader : undefined,
     // The v2 API writes Python-style `True`/`False`; papaparse's
     // dynamicTyping only recognises `true`/`TRUE`/`false`/`FALSE`, so
     // lower-case exact matches here (transform runs before dynamicTyping)

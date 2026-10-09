@@ -146,7 +146,9 @@ replaces. `main.ts` runs `migrateLegacySearch` then `legacyRedirect` before any 
 `#latest` → `#charts&cmp=1`; `#ag&var=<tool>` → `#charts&v=<tool>` (Ag keys kept; no `var` but Ag keys →
 GDD); `var=annual` → `v=<annv's family>&view=history`; a bare `#ag` → `#charts` plus an `anchor`
 (`revealWhenReady` scrolls the list's Ag tools group into view); `#download` / `#downloader` → `#charts&dl=1`.
-Every other key is kept byte for byte.
+Every other key is kept byte for byte. A hidden debugging key, `level=0|1|2`, sets the API QC level of every
+default-QC request (charts, Now, `/latest`, Ag; not the Download sheet, which has `qc`): main.ts reads it once at
+boot into core/api `qcLevel.ts`, so it applies after a reload and cache keys need not carry it.
 
 Router helpers for components: `$store.url.go(section, patch, drillDown)` (or, from a link,
 `follow(event, section, { patch, drillDown, target })` in `ui/shell/navigate.ts`), `$store.url.hrefFor(section,
@@ -154,7 +156,9 @@ patch)` for the real href, `CHARTS_LIST_PATCH` for "back to the list", `chartPat
 open any Charts entry (a variable on its chart, an Ag tool through its reset `variablePatch`), `chartsMode(state)`
 for what Charts shows, `isAgTool(v)` for the namespace. On a chart page, `view=history` is All years, `tbl=1`
 shows the chart as a table (pushed, so Back returns), `wd=rose` shows Wind direction's wind rose of the window
-(core/variables/rose; pushed; dropped with `v` by `chartPatch`, `CHARTS_LIST_PATCH`), and `agg` absent is the Auto interval
+(core/variables/rose; pushed; dropped with `v` by `chartPatch`, `CHARTS_LIST_PATCH`), `arrays=1` draws a soil
+variable's depths per sensor array (the API's `split_arrays`; array B dashed; core/variables/arrays; replaced, kept
+through Previous / Next, dropped at the list), and `agg` absent is the Auto interval
 (core/variables/interval; Compare reads it as hourly, `latestAgg`; the raw interval is named per network, 5-min or
 AgriMet's 15-min, `rawMinutes`). A chart page's back arrow returns to where it was opened from when a
 link says so (`follow(…, { from: 'now' })` on Now's tiles): `$store.url.backTo` (section and history depth,

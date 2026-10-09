@@ -196,6 +196,11 @@ describe('v / view (Charts → variable page)', () => {
     expect(writeUrlSearch({ ...readUrlState('?s=a'), v: 'ppt', view: 'recent' })).toBe('?s=a&v=ppt')
     expect(writeUrlSearch({ ...readUrlState('?s=a'), v: 'ppt', view: 'table' })).toBe('?s=a&v=ppt&view=table')
   })
+  it('arrays is a flag (soil depths per sensor array); absent = combined', () => {
+    expect(readUrlState('?arrays=1').arrays).toBe(true)
+    expect(readUrlState('').arrays).toBe(false)
+    expect(writeUrlSearch({ ...readUrlState('?s=a'), arrays: true })).toBe('?s=a&arrays=1')
+  })
   it('tbl is a flag (table in place of the chart); absent = off', () => {
     expect(readUrlState('?tbl=1').tbl).toBe(true)
     expect(readUrlState('').tbl).toBe(false)

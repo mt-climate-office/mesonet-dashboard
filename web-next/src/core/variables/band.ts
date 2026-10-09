@@ -7,7 +7,7 @@
  */
 import type { ObservationRow } from '../api'
 import type { LatestTimeseriesModel } from '../charts/latestTimeseries'
-import { LAB_SWAP } from '../params'
+import { labSwapHeader } from '../params'
 import { parseWallClock } from '../sensorEvents'
 import type { Variable } from './catalog'
 
@@ -21,7 +21,7 @@ export const hasBand = (v: Pick<Variable, 'sum' | 'name'>): boolean => !v.sum &&
  */
 export function extremeColumn(col: string): { edge: 'lo' | 'hi'; column: string } | null {
   const m = /^(Minimum|Maximum) (.+)$/.exec(col)
-  return m ? { edge: m[1] === 'Minimum' ? 'lo' : 'hi', column: LAB_SWAP[m[2]] ?? m[2] } : null
+  return m ? { edge: m[1] === 'Minimum' ? 'lo' : 'hi', column: labSwapHeader(m[2]) } : null
 }
 
 /** `m` with `band` set on every series the extreme `rows` cover (by wall-clock day); `m` itself without rows. */

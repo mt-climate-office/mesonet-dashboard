@@ -18,7 +18,7 @@
  * See the Wave 2 B report for the decision.
  */
 import type { LocalDate, Nullable, QcLevel } from '../contract'
-import { DEFAULT_AG_LEVEL, fetchRows } from './observations'
+import { agLevel, fetchRows } from './observations'
 import { denverToday } from '../../today'
 import { addDays, denverLocal, parseApiDatetime, parseHeader, toBool, toNum, toSi } from './parse'
 import type { RawRow } from './parse'
@@ -107,7 +107,7 @@ export async function getAnnualDaily(
   opts: AnnualOptions = {},
 ): Promise<AnnualDaily> {
   const agg = opts.agg ?? (element === 'ppt' ? 'sum' : 'avg')
-  const level = opts.level ?? DEFAULT_AG_LEVEL
+  const level = opts.level ?? agLevel()
   const today = opts.today ?? denverToday()
   const sorted = [...new Set(years)].sort((a, b) => a - b)
   const fetchYears = (first: number, last: number) =>

@@ -4,6 +4,7 @@
  * kit's classic scripts, so `window.MCO` and `maplibregl` already exist.
  */
 import Alpine from 'alpinejs'
+import { parseQcLevel, setQcOverride } from './core/api/qcLevel'
 import { legacyRedirect } from './core/router'
 import { readStation } from './core/stations/recent'
 import { migrateLegacySearch, stationPathRedirect } from './core/url-schema'
@@ -108,6 +109,9 @@ const routed = legacyRedirect(location.search, location.hash)
 if (routed) replaceUrl(routed.search, routed.hash)
 // A bare #ag lands on the Charts list, scrolled to its Ag tools group once that renders.
 if (routed?.anchor) revealWhenReady(routed.anchor)
+
+// Hidden debugging key: `?level=0|1|2` sets the QC level of every default-QC request (core/api qcLevel).
+setQcOverride(parseQcLevel(new URLSearchParams(location.search).get('level')))
 
 // No `?s=`: reopen the remembered station (the catalog confirms it; a stale id shows the landing).
 if (!new URLSearchParams(location.search).has('s')) {

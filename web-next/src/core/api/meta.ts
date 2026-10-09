@@ -1,5 +1,6 @@
 /** Station / element metadata and small per-station endpoints. */
 import { fetchCsv, fetchJson } from './http'
+import { qcOverride } from './qcLevel'
 import type {
   ElementMeta,
   ObservationRow,
@@ -25,8 +26,11 @@ export const getStationElements = (station: string, publicOnly?: boolean) =>
     publicOnly === undefined ? {} : { public: publicOnly },
   )
 
-export const getStationLatest = (station: string) =>
-  fetchCsv<ObservationRow>('latest', { stations: station })
+/** The newest row; `level` only under the `?level=` override (the API's default is 2). */
+export const getStationLatest = (station: string) => {
+  const level = qcOverride()
+  return fetchCsv<ObservationRow>('latest', { stations: station, ...(level === null ? {} : { level }) })
+}
 
 export const getStationConfig = (station: string) =>
   fetchJson<StationConfig>(`config/${station}/`)

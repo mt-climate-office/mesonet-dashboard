@@ -28,7 +28,8 @@ export interface RecordRequest {
  * `rm_na=false` so gaps stay null, public elements, inclusive `end` (core/api
  * sends end + 1 day). Null when there is nothing to ask for. `extremes`
  * (daily only) asks for each day's minimum and maximum instead of the mean,
- * without Reference ET (a total has no band).
+ * without Reference ET (a total has no band). `splitArrays` adds each soil
+ * depth's per-array series (core/api `splitArrays`).
  */
 export function recordRequest(i: {
   station: string
@@ -37,6 +38,7 @@ export function recordRequest(i: {
   vars: readonly string[]
   stationElements?: readonly ElementRow[]
   extremes?: boolean
+  splitArrays?: boolean
 }): RecordRequest | null {
   if (!i.window.valid || i.vars.length === 0) return null
   const req = requestElements(i.vars, i.stationElements)
@@ -45,7 +47,7 @@ export function recordRequest(i: {
   if (!elements && !hasEtr) return null
   const ext = i.extremes && i.agg === 'daily'
   return {
-    key: `obs:${i.station}:${i.agg}:${i.window.start}:${i.window.end}:${elements}:${hasEtr ? 'etr' : ''}${ext ? ':minmax' : ''}`,
+    key: `obs:${i.station}:${i.agg}:${i.window.start}:${i.window.end}:${elements}:${hasEtr ? 'etr' : ''}${ext ? ':minmax' : ''}${i.splitArrays ? ':arrays' : ''}`,
     query: {
       ...(ext ? { aggFunc: ['min', 'max'] as const } : {}),
       station: i.station,
@@ -56,6 +58,7 @@ export function recordRequest(i: {
       hasEtr,
       rmNa: false,
       publicOnly: true,
+      ...(i.splitArrays ? { splitArrays: true } : {}),
     },
   }
 }

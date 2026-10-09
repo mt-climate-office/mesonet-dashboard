@@ -7,7 +7,7 @@
  * stat, its prevailing direction (a vector mean, core/variables/direction):
  * the low, high and plain average of bearings mean nothing.
  */
-import type { TimeseriesPanel } from '../models/timeseries'
+import { arrayLabel, type TimeseriesPanel } from '../models/timeseries'
 import { PREVAILING_MIN_STRENGTH, WIND_DIRECTION, circularMean } from './direction'
 import { LABELS, compassWord, formatReading } from './labels'
 
@@ -66,7 +66,7 @@ export function panelStats(
     const unit = unitOf(s.name)
     const plain = id !== undefined && id in LABELS
     const fmt = (v: number | null) => (v === null ? '—' : plain ? formatReading(id, v, 'table') : `${fmtStat(v)}${unit ? ` ${unit}` : ''}`)
-    const label = single ? '' : (s.depth ?? s.name.replace(/\s*\[[^\]]*\]\s*$/, ''))
+    const label = single ? '' : s.depth && s.probe ? arrayLabel(s.depth, s.probe) : (s.depth ?? s.name.replace(/\s*\[[^\]]*\]\s*$/, ''))
     if (sum) return { label, items: [{ label: 'Total', value: fmt(vals.length ? vals.reduce((a, b) => a + b, 0) : null) }] }
     if (panel.variable === WIND_DIRECTION) return { label, items: [{ label: 'Prevailing', value: prevailing(vals) }] }
     // A reduce, not Math.min(...vals): a long raw window would overflow the argument list.
