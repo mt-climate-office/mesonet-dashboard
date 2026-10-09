@@ -3,7 +3,7 @@
      The rows open the readings and sensor-change sheets (partials/sheets/about-*.html); #about-readings
      is the target of Now's "All readings" link (data-sheet: navigating to it opens the sheet).
      Mounted only while the section is open. -->
-<template x-if="$store.url.section === 'about'">
+<template x-if="$store.view.page === 'about'">
 <div class="about" x-data="aboutView" data-testid="about">
   <!-- 'none' and 'missing' (no station, or one the list does not know) draw nothing: the landing
        (partials/landing.html) stands in for the section. -->

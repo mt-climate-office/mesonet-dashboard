@@ -1,7 +1,9 @@
 /* View Transitions (ui/layout/transition.ts). Only the section region
    (.dash-section-host, view-transition-name: dash-section) moves: a 180 ms
    cross-fade with a 12 px slide whose direction follows the tab order
-   (html[data-vt-dir]). The page root (navbar, tab bar) does not animate.
+   (html[data-vt-dir]). The page root does not animate, and the navbar and
+   the phone tab bar are layers of their own above the section (it scrolls
+   under them; in the root snapshot they would be painted over, a flash).
    No shared-element morph: it added little over the slide and stretched
    text in WebKit (DIVERGENCES.md).
    Reduced motion: none of this (the kit's blanket clamp, plus JS skips
@@ -9,6 +11,15 @@
 
 ::view-transition-old(root),
 ::view-transition-new(root) { animation: none; }
+
+.mco-navbar { view-transition-name: dash-navbar; }
+.dash-tabbar { view-transition-name: dash-tabbar; }
+::view-transition-group(dash-navbar),
+::view-transition-group(dash-tabbar),
+::view-transition-old(dash-navbar),
+::view-transition-new(dash-navbar),
+::view-transition-old(dash-tabbar),
+::view-transition-new(dash-tabbar) { animation: none; }
 
 ::view-transition-old(dash-section),
 ::view-transition-new(dash-section) {

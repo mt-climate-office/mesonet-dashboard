@@ -11,6 +11,7 @@ import { createDataStore } from './stores/data'
 import { browserStorage, createStationStore } from './stores/station'
 import { createThemeStore } from './stores/theme'
 import { createUrlStore } from './stores/url'
+import { createViewStore } from './stores/view'
 import { chart } from './ui/charts/chart'
 import { chartTable } from './ui/charts/chartTable'
 import { chartsView } from './ui/charts/chartsView'
@@ -34,6 +35,7 @@ import { landingMap, locatorMap, pickerMap, stationMap } from './ui/map/presets'
 import { photoCard } from './ui/now/photoCard'
 import { windRoseCard } from './ui/now/windRoseCard'
 import { nowView } from './ui/now/nowView'
+import { dashboardView } from './ui/dashboard/dashboardView'
 import { aboutView } from './ui/about/aboutView'
 import { aboutDetails } from './ui/about/details'
 import { aboutHistory } from './ui/about/history'
@@ -77,6 +79,7 @@ import './styles/now.css'
 import './styles/now-cards.css'
 import './styles/charts.css'
 import './styles/about.css'
+import './styles/dashboard.css'
 
 // Ag tools, shown inside Charts while `v` is an Ag tool id
 import { agAnnualView } from './ui/ag/agAnnualView'
@@ -117,12 +120,13 @@ if (!new URLSearchParams(location.search).has('s')) {
 }
 
 /* 2. Stores. Order matters: each store's init() runs on registration and may
-      read the stores above it (theme → url; station → url, data). ------- */
+      read the stores above it (theme → url; station → url, data; view → url). ------- */
 
 Alpine.store('url', createUrlStore())
 Alpine.store('data', createDataStore())
 Alpine.store('theme', createThemeStore())
 Alpine.store('station', createStationStore())
+Alpine.store('view', createViewStore())
 
 /* 3. Components (one line each; x-data="<name>" in the partials). -------- */
 
@@ -176,6 +180,8 @@ Alpine.data('compareControls', compareControls)
 
 // Now (ui/now): the overview section.
 Alpine.data('nowView', nowView)
+// The big-screen dashboard (ui/dashboard): every variable's chart and the range chips; its other cards reuse Now's and About's components.
+Alpine.data('dashboardView', dashboardView)
 // Now's panes (ui/now): the latest photo + its dialog, the wind rose (no camera).
 Alpine.data('photoCard', photoCard)
 Alpine.data('windRoseCard', windRoseCard)

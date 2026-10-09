@@ -1,0 +1,46 @@
+<!-- Now's media card (inside x-data="nowView"): the latest photo carousel and its dialog, or the wind rose
+     for a station without a camera. Used by Now and the dashboard. -->
+<div class="dash-card now-media" :class="media === 'wind' && 'is-rose'" data-testid="now-media">
+  <template x-if="media === 'pending'"><span class="dash-skel dash-skel--media" aria-hidden="true"></span></template>
+  <template x-if="media === 'photo'">
+    <div class="now-photo" x-data="photoCard" data-testid="now-photo">
+      <template x-if="tileState === 'loading'"><span class="dash-skel dash-skel--media" aria-hidden="true"></span></template>
+      <template x-if="tileState === 'message'"><p class="now-photo-msg" x-text="tileMessage()"></p></template>
+      <template x-if="tileState === 'ready'">
+        <div class="dash-carousel" role="group" aria-roledescription="carousel" aria-label="Latest photos" data-testid="now-photo-carousel">
+          <div class="dash-carousel-track" x-init="mountCarousel($el)">
+            <template x-for="(s, i) in slides" :key="s.direction">
+              <div class="dash-carousel-slide" role="group" aria-roledescription="slide" :aria-label="(i + 1) + ' of ' + slides.length + ': ' + s.label">
+                <button type="button" class="now-photo-frame" @click="enlarge(s.direction)" aria-haspopup="dialog"
+                        :aria-label="'Enlarge the latest ' + s.label + ' photo, with other directions, days and times'"
+                        :data-testid="i === 0 ? 'now-photo-open' : 'now-photo-open-' + i">
+                  <img :src="s.active.webpUrl" :alt="s.alt" :loading="i === 0 ? 'eager' : 'lazy'" :data-testid="i === 0 ? 'now-photo-image' : null">
+                  <span class="now-photo-cap"><span x-text="s.label"></span><span x-text="s.stamp" x-show="s.stamp"></span></span>
+                </button>
+              </div>
+            </template>
+          </div>
+          <template x-if="slides.length > 1">
+            <div>
+              <button type="button" class="dash-carousel-btn dash-carousel-prev" :disabled="slideIndex === 0" @click="step(-1)" aria-label="Previous photo" data-testid="now-photo-prev">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.5" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+              </button>
+              <button type="button" class="dash-carousel-btn dash-carousel-next" :disabled="slideIndex >= slides.length - 1" @click="step(1)" aria-label="Next photo" data-testid="now-photo-next">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.5" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+              </button>
+              <div class="dash-carousel-dots" aria-hidden="true">
+                <template x-for="(s, i) in slides" :key="s.direction"><span :data-on="i === slideIndex ? '' : null"></span></template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+      <!-- @include partials/now/photo-dialog.html -->
+    </div>
+  </template>
+  <template x-if="media === 'wind'">
+    <div class="now-rose">
+      <!-- @include partials/now/wind-rose.html -->
+    </div>
+  </template>
+</div>

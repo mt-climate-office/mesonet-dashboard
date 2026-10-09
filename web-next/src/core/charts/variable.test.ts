@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import type { ObservationRow } from '../api'
 import { buildTimeseriesModel } from '../models/timeseries'
 import { THEMES, variableStyle } from '../palette'
-import { LAYOUT, latestTimeseriesChart } from './latestTimeseries'
+import { LAYOUT, fillRows, latestTimeseriesChart } from './latestTimeseries'
 import { DAY, ZOOM_TRACE_ID, bottomLayout } from './style'
 import { drawn, testCtx } from './testing'
-import { variableChart, variableTable, variableTableAll, type VariableModel } from './variable'
+import { dashboardStackChart, variableChart, variableTable, variableTableAll, type VariableModel } from './variable'
 
 const view: [number, number] = [Date.UTC(2026, 6, 1), Date.UTC(2026, 6, 2)]
 const rows = (n: number): ObservationRow[] =>
@@ -108,5 +108,24 @@ describe('latestTimeseriesChart on a compact touch screen', () => {
     const second = pos([10, LAYOUT.top + LAYOUT.compactPanel + LAYOUT.gap + 10], null, null, null, size)[1]
     expect(first).toBe(LAYOUT.top + LAYOUT.compactPanel + 4)
     expect(second).toBe(first + LAYOUT.compactPanel + LAYOUT.gap)
+  })
+})
+
+describe('dashboardStackChart', () => {
+  const two = model(168, ['Air Temperature', 'Relative Humidity'], [view[0], view[0] + 7 * DAY])
+  type Stack = { grid: { top: number; height: number }[]; dataZoom: { type: string }[]; yAxis: { min: number; max: number; interval: number }[] }
+  it('rows from `fill`: equal, at fixed tops, so two stacks with the same rows align; compact, no slider; ≤ 3 y intervals; no y titles', () => {
+    const a = dashboardStackChart({ ...two, fill: { rows: 3 } }, { ...testCtx('dark', 800), height: 600 }) as unknown as Stack
+    const b = dashboardStackChart({ ...model(168, ['Air Temperature'], two.view), fill: { rows: 3 } }, { ...testCtx('dark', 800), height: 600 }) as unknown as Stack
+    expect(a.grid.map((g) => g.top)).toEqual(fillRows(3, 600, true).tops.slice(0, 2))
+    expect(b.grid[0].top).toBe(a.grid[0].top)
+    expect(new Set(a.grid.slice(0, -1).map((g) => g.height)).size).toBeLessThanOrEqual(1)
+    // Fewer panels than rows: the last takes the empty rows, ending where row 3 ends.
+    const r = fillRows(3, 600, true)
+    expect(a.grid[1].top + a.grid[1].height).toBe(r.tops[2] + r.height)
+    expect(b.grid[0].top + b.grid[0].height).toBe(r.tops[2] + r.height)
+    expect(a.dataZoom.some((z) => z.type === 'slider')).toBe(false)
+    for (const y of a.yAxis) expect((y.max - y.min) / y.interval).toBeLessThanOrEqual(3)
+    expect((a.yAxis as unknown as { name: string }[]).map((y) => y.name)).toEqual(['', ''])
   })
 })

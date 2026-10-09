@@ -126,8 +126,16 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   stores start; with none (or a `?s=` the catalog does not know), the no-station landing
   (`partials/landing.html`, `ui/picker/stationLanding.ts`) stands in for the sections: the picker's search
   (`partials/picker/search.html` + `ui/picker/stationSearch.ts`, shared) over the `landingMap`.
+- **`$store.view`** (`stores/view.ts`): `wide` (the content column beside the station drawer and the
+  window have room for the big-screen dashboard: core/dashboard `showsDashboard`, re-measured on every
+  resize and drawer change) and `page`, what the section host renders (core/dashboard `pageFor`). The
+  section panels and their partials mount on `$store.view.page`, never on `$store.url.section` directly.
 
 ### Routing
+
+**Big screens:** with room (`$store.view.wide`), Now, About and the Charts list render as one dashboard
+(`partials/dashboard/index.html`, `ui/dashboard/dashboardView.ts`; DESIGN.md "Dashboard"); chart pages keep
+their own page and their back link reads "Dashboard". URLs are unchanged, so every link works at every size.
 
 Three sections, `SECTIONS` in `core/router.ts`: **now** (default), **charts**, **about**. Inside Charts,
 `v` is one namespace (`core/variables` `chartsMode`): an Ag tool id (`core/params/ag` `AG_TOOL_IDS`,
@@ -178,7 +186,7 @@ last data, so that midnight key change shows no skeleton.
 
 Live: `/latest`, the ppt summary, the NWS forecast and hourly forecast, the latest photo listings (`ui/station/resources.ts`);
 Now's 72 h hourly rows, 7-day rain and the soil VWC behind its SWP chip (`ui/now/resources.ts`, slotted); Now's 24 h wind rose
-(`windObs`, slotted); and `recordResource`
+(`windObs`, slotted); the big-screen dashboard's one request for every variable; and `recordResource`
 windows that reach today (`core/latest` `endsToday`: the Charts list's 48 h rows, slotted; the
 variable page and its Rose view; Compare). Not live: normals, stations/elements/config, past photo days, Ag, and
 All years (`live: false`). Now's "Updated N min ago" uses the current time on each recompute; if
@@ -303,8 +311,8 @@ if its column name is not "<name> [unit]"; (2) its group and position in
 `LABELS` (`core/variables/labels.ts`; its test fails for an `ELEM_MAP` id
 without one). The `v=` id must not be an Ag tool id (`core/params/ag`). The
 list (search included), variable page, history, the Download prefill
-(`variableElements`: every station element with that display name) and Compare
-need no other change. Totals and wind direction get no Daily low–high band
+(`variableElements`: every station element with that display name), Compare
+and the big-screen dashboard need no other change. Totals and wind direction get no Daily low–high band
 (`hasBand`, core/variables/band.ts); normals draw by themselves only where
 `showsNormals` says (daily air temperature).
 
@@ -371,7 +379,7 @@ with `tabindex="-1"`, are focus targets, not controls: no ring); ≥ 40 px touch
 pointer gesture; decorative icons `aria-hidden`; dialogs labelled, Esc closes,
 focus returns; drawers and sheets move focus in, make the background `inert`
 while modal, close on Esc and return focus (`ui/layout/focusScope.ts`).
-`npm run verify` runs axe on its scenarios (Now, the header ⋯ menu, the photo dialog, the no-station landing, the picker
+`npm run verify` runs axe on its scenarios (Now, the big-screen dashboard at 2560 px, the header ⋯ menu, the photo dialog, the no-station landing, the picker
 opened with a station, the Charts list, the legacy `#ag` landing, a variable page in each view (⋯ menu, All
 years, table, the Daily band, the Custom dates sheet, Wind direction's rose and its table), Compare, 4 Ag tools (two option popovers, a ⋯ menu), the
 Download sheet (a row open, after Preview), About and its two sheets, Help) × 1440/390 px × 3 themes

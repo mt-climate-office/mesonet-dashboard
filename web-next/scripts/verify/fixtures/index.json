@@ -495,6 +495,26 @@
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-observations_hourly-19cd06f004.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,wind_dir,windgust,sol_rad,bp,snow_depth,ppt,ppt_max_rate,soil_temp,soil_vwc,soil_ec_blk&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-1092fc4072.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,wind_dir,windgust,sol_rad,bp,snow_depth,ppt,ppt_max_rate,soil_temp,soil_vwc,soil_ec_blk&start_time=2026-09-24&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-83a334a725.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&elements=etr&start_time=2026-09-24&end_time=2026-10-02&level=2&rm_na=false&na_info=false&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_hourly-0d2ca0c2c0.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=wind_spd,wind_dir&start_time=2026-09-24&end_time=2026-10-02&level=2&rm_na=true&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-982f44acba.csv"
   }
  }
 }

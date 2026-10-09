@@ -19,10 +19,12 @@ export interface ChartOptions<M> {
   builder: ChartBuilder<M>
   /** Its `…Table` twin; rendered as an `.sr-only` table after every render. */
   table?: (model: M) => ChartTable
-  /** Accessible name of the chart (canvas `aria-label`). */
-  label: string
+  /** Accessible name of the chart (canvas `aria-label`); a function is read again at every draw (a chart that outlives its inputs, e.g. the dashboard's stacks). */
+  label: string | (() => string)
   /** Called with the visible x range (wall-clock ms) 250 ms after the user stops zooming. */
   onZoom?: (fromMs: number, toMs: number) => void
+  /** Charts sharing a group move together: one crosshair and tooltip position, one zoom (echarts.connect; the dashboard's stacks). */
+  group?: string
 }
 
 export interface ChartBindings<M> extends ChartOptions<M> {
@@ -59,6 +61,7 @@ export class ChartHost<M> {
   private model: M | null = null
   private theme: ChartTheme
   private width = 0
+  private height = 0
   private zoomTimer = 0
   private disposed = false
   /** A model has been drawn: later draws (range, interval, data, theme, resize) never animate. */
@@ -81,7 +84,7 @@ export class ChartHost<M> {
     this.canvas = document.createElement('div')
     this.canvas.className = 'chart-canvas'
     this.canvas.setAttribute('role', 'img')
-    this.canvas.setAttribute('aria-label', opts.label)
+    this.canvas.setAttribute('aria-label', this.label())
     // The wrapper carries .sr-only: a <table> ignores height: 1px and would still add its full height to the page.
     const twin = document.createElement('div')
     twin.className = 'sr-only chart-table'
@@ -131,6 +134,10 @@ export class ChartHost<M> {
     if (this.chart || this.disposed) return
     this.chart = echarts.init(this.canvas, echartsTheme(this.theme))
     this.chart.on('datazoom', this.onZoomEvent)
+    if (this.opts.group) {
+      this.chart.group = this.opts.group
+      echarts.connect(this.opts.group)
+    }
   }
 
   /** Remember `r` and zoom to it now if the chart is drawn; null forgets it (the zoom stays). */
@@ -178,7 +185,7 @@ export class ChartHost<M> {
   }
 
   private ctx(): ChartContext {
-    return { theme: this.theme, width: this.canvas.clientWidth || 800, compact: isCompact(), touch: isTouch() }
+    return { theme: this.theme, width: this.canvas.clientWidth || 800, height: this.canvas.clientHeight || undefined, compact: isCompact(), touch: isTouch() }
   }
 
   /** What a redraw keeps: legend toggles always, the zoom window only for same-data redraws. */
@@ -209,12 +216,13 @@ export class ChartHost<M> {
     const reduced = reducedMotion()
     // Animate the first draw only (style `animates`): a range, interval, data, theme or resize redraw never replays it.
     option.animation = animates(!this.drawn, reduced)
-    option.aria = { enabled: true, label: { description: `${this.opts.label}. The data is in the table that follows.` }, decal: { show: false } }
+    option.aria = { enabled: true, label: { description: `${this.label()}. The data is in the table that follows.` }, decal: { show: false } }
     if (reduced && option.tooltip && !Array.isArray(option.tooltip)) option.tooltip.transitionDuration = 0
     this.cats = categoryMs(option)
     chart.setOption(option, { notMerge: true })
     this.drawn = true
     this.width = this.canvas.clientWidth
+    this.height = this.canvas.clientHeight
     this.markZoom()
     if (!keepZoom) this.renderTable(this.opts.table ? this.opts.table(this.model) : null)
   }
@@ -255,6 +263,11 @@ export class ChartHost<M> {
     void this.init().then(() => this.draw(true, state))
   }
 
+  private label(): string {
+    const l = this.opts.label
+    return typeof l === 'function' ? l() : l
+  }
+
   private hasSize(): boolean {
     return this.canvas.clientWidth > 0 && this.canvas.clientHeight > 0
   }
@@ -266,8 +279,8 @@ export class ChartHost<M> {
     }
     if (!this.chart) return
     this.chart.resize()
-    // Builders lay out some pieces in px (color bars, legend titles): rebuild when the width moves.
-    if (Math.abs(this.canvas.clientWidth - this.width) > 1) this.draw(true)
+    // Builders lay out some pieces in px (color bars, legend titles; panels that fill the height): rebuild when the box moves.
+    if (Math.abs(this.canvas.clientWidth - this.width) > 1 || Math.abs(this.canvas.clientHeight - this.height) > 1) this.draw(true)
   }
 
   /** A tap-triggered tooltip (touch) stays up until a tap lands outside this chart. */

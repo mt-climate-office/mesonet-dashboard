@@ -1,0 +1,118 @@
+<!-- The big-screen dashboard (core/dashboard; DESIGN.md "Dashboard"): with room for it, Now, About and the
+     Charts list collapse into this one view, sized to the screen (no page scroll). x-data="dashboardView"
+     holds the range, the two stacks of charts (panels on a shared time axis, filling their column) and the
+     wind rose; the conditions (Now's hero, photo) and About's cards are their own components, nested.
+     Three columns: conditions (hero, a landscape photo, the rose) | the range and interval over two stacks |
+     About.
+     A panel's name opens its chart page on the same window; Back returns here. Mounted only while shown. -->
+<template x-if="$store.view.page === 'dashboard'">
+<div class="dash" x-data="dashboardView" data-testid="dashboard">
+  <h2 class="sr-only" id="dashboard-title" tabindex="-1" x-text="($store.station.current?.name ?? 'Station') + ' dashboard'"></h2>
+
+  <!-- Conditions: Now's hero, the photo (landscape) or no-camera rose, and wind direction's rose of the window. -->
+  <div class="dash-now" x-data="nowView">
+    <template x-if="state === 'ready'">
+      <!-- @include partials/now/hero.html -->
+    </template>
+    <template x-if="state === 'loading'">
+      <div class="dash-card now-hero" aria-busy="true"><p class="sr-only" role="status">Loading current conditions…</p><span class="dash-skel now-skel-temp" aria-hidden="true"></span><span class="dash-skel now-strip" aria-hidden="true"></span></div>
+    </template>
+    <template x-if="state === 'error'">
+      <div class="dash-card now-hero"><!-- @include partials/load-error.html --></div>
+    </template>
+    <template x-if="state === 'empty'">
+      <div class="dash-card now-hero" role="status"><h3 class="dash-card-title">Current conditions are unavailable</h3><p class="about-message">This station has no recent observations.</p></div>
+    </template>
+    <template x-if="media === 'photo'">
+      <!-- @include partials/now/media.html -->
+    </template>
+    <template x-if="roseVar()">
+      <section class="dash-card dash-rose" aria-labelledby="dash-rose-title" data-testid="dash-rose">
+        <a class="dash-tile-head" :href="roseHref()" @click="openRose($event)">
+          <span class="dash-tile-name" id="dash-rose-title" x-text="roseTitle()"></span>
+          <template x-if="now(roseVar())"><span class="dash-tile-now"><span x-text="now(roseVar())"></span> now</span></template>
+          <span class="dash-tile-chev" aria-hidden="true">›</span>
+        </a>
+        <div class="dash-tile-plot">
+          <template x-if="!roseModel()"><span class="dash-skel dash-tile-skel" aria-hidden="true"></span></template>
+          <div class="chart dash-tile-chart" x-data="chart(roseChart())"></div>
+        </div>
+      </section>
+    </template>
+  </div>
+
+  <!-- Charts: the range, two stacks, More. -->
+  <section class="dash-charts" aria-labelledby="dash-charts-title" data-testid="dashboard-charts">
+    <div class="dash-toolbar">
+      <h3 class="dash-toolbar-title" id="dash-charts-title" x-text="rangeText()"></h3>
+      <div class="dash-toolbar-controls">
+        <div class="chart-interval" role="group" aria-labelledby="dash-interval-label" data-testid="dash-interval-chips">
+          <span class="chart-interval-label" id="dash-interval-label">Interval</span>
+          <template x-for="c in intervals()" :key="c.id">
+            <button type="button" class="dash-chip dash-chip--quiet" :aria-pressed="c.pressed" :aria-disabled="c.disabled ? 'true' : null"
+                    :aria-describedby="c.disabled ? 'dash-interval-note' : null" :title="c.reason || null"
+                    @click="setInterval(c)" :data-testid="'dash-interval-' + c.id" x-text="c.label"></button>
+          </template>
+          <p class="sr-only" id="dash-interval-note" x-text="intervalNote()"></p>
+        </div>
+        <div class="chart-chips" role="group" aria-label="Window for every chart">
+          <template x-for="r in ranges" :key="r.id">
+            <button type="button" class="dash-chip" :aria-pressed="pressed(r.id)" @click="setRange(r.id)" x-text="r.label" :data-testid="'dash-range-' + r.id"></button>
+          </template>
+        </div>
+      </div>
+    </div>
+    <template x-if="loadError()">
+      <div class="dash-card"><!-- @include partials/load-error.html --></div>
+    </template>
+    <div class="dash-stacks" x-show="!loadError()" :aria-busy="loading()">
+      <template x-for="(col, i) in stacks()" :key="i">
+        <div class="dash-card dash-stack" x-show="col.length" :data-testid="'dash-stack-' + i">
+          <div class="dash-stack-plot" x-init="measureStack($el, i)">
+            <!-- One link per panel, over its top right (its name and the reading now), placed with the chart's own layout. -->
+            <ul class="dash-stack-links" aria-label="Open a chart">
+              <template x-for="l in stackLinks(i)" :key="l.v.id">
+                <li :style="'top: ' + l.top + 'px'">
+                  <a class="dash-panel-link" :href="href(l.v.id)" @click="open($event, l.v.id)" :data-testid="'dash-' + l.v.id">
+                    <span x-text="name(l.v)"></span><template x-if="now(l.v)"><span class="dash-tile-now"><span x-text="now(l.v)"></span><span class="dash-now-word"> now</span></span></template><span aria-hidden="true">›</span>
+                  </a>
+                </li>
+              </template>
+            </ul>
+            <template x-if="loading()"><span class="dash-skel dash-tile-skel" aria-hidden="true"></span></template>
+            <div class="chart dash-tile-chart" x-data="chart(stackChart(i))"></div>
+          </div>
+        </div>
+      </template>
+    </div>
+    <nav class="dash-more" aria-label="More charts" data-testid="dashboard-more">
+      <span class="dash-more-title" aria-hidden="true">More</span>
+      <template x-for="t in agTools" :key="t.id">
+        <a class="dash-chip dash-more-link" :href="href(t.id)" @click="open($event, t.id)" :title="t.sub" x-text="t.name" :data-testid="'dash-more-' + t.id"></a>
+      </template>
+      <a class="dash-chip dash-more-link" :href="compareHref()" @click="openCompare($event)" data-testid="dash-more-compare">Compare variables</a>
+    </nav>
+  </section>
+
+  <!-- About: details, the locator map, all current readings, sensor changes (x-data="aboutView" opens its sheet). -->
+  <div class="dash-about" x-data="aboutView">
+    <!-- @include partials/about/details.html -->
+    <section class="dash-card about-map dash-map" aria-label="Location">
+      <div class="about-map-frame" data-testid="dashboard-map"
+           x-data="locatorMap({ stations: () => $store.station.list, selected: () => $store.station.id,
+                    onSelect: (id) => $store.station.select(id) })"></div>
+    </section>
+    <section class="dash-card dash-readings" aria-labelledby="dash-readings-title">
+      <h3 class="dash-card-title" id="dash-readings-title">All current readings</h3>
+      <!-- @include partials/about/readings.html -->
+    </section>
+    <section class="dash-card about-rows" aria-label="Sensors">
+      <button type="button" class="about-row" data-sheet="about-history" aria-haspopup="dialog" aria-controls="sheet-about-history"
+              @click="open($event, 'about-history')" data-testid="dashboard-history-row">
+        <span>Sensor changes</span>
+        <span class="about-row-meta"><template x-if="changesMeta"><span><span class="sr-only">, latest </span><span x-text="changesMeta"></span></span></template><span aria-hidden="true"> ›</span></span>
+      </button>
+    </section>
+  </div>
+</div>
+</template>

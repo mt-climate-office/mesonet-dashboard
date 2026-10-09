@@ -1,0 +1,70 @@
+/* The big-screen dashboard (partials/dashboard/index.html; DESIGN.md "Dashboard"). It fills the screen
+   under the header and never scrolls the page. Three columns: conditions (hero, a landscape photo, the
+   wind rose) | the range and interval over two stacks of panels that fill their height (core/charts
+   `fillRows`: equal rows, aligned across the stacks), then More | About. The rails are clamp()ed to the
+   screen and the stacks share whatever height is left, so any resize rearranges it. Kit tokens and the
+   app spacing scale only. */
+
+/* The panel: no 75 rem cap (up to 200 rem, centred on an ultrawide), exactly the height under the header. */
+.tab-panel.tab-panel--dashboard { max-width: 200rem; height: calc(100dvh - var(--chrome-h, 52px)); }
+.dash { display: grid; gap: var(--gap, 12px); height: 100%; min-height: 0; }
+.dash-now, .dash-charts, .dash-about { display: flex; flex-direction: column; gap: var(--gap, 12px); min-width: 0; min-height: 0; }
+
+/* Conditions | charts | About. Under the hero the photo (landscape, never taller than 16:9 of the rail,
+   cropped when the screen is short) and the rose share the height left. */
+.dash { --rail-w: clamp(26rem, 24vw, 40rem); grid-template-columns: var(--rail-w) minmax(0, 1fr) clamp(19rem, 15vw, 26rem); grid-template-rows: minmax(0, 1fr); }
+.dash .dash-card.now-media { flex: 1 1 0; min-height: 8rem; max-height: calc(var(--rail-w) * 9 / 16); aspect-ratio: auto; height: auto; }
+.dash-rose { flex: 1.25 1 0; min-height: 13rem; }
+
+/* Conditions. */
+.dash .now-strip, .dash .now-strip-chart { height: 10rem; --chart-height: 10rem; --chart-height-compact: 10rem; }
+.dash-card.dash-rose { display: flex; flex-direction: column; gap: 0.25rem; }
+
+/* Card title rows (the rose; the stacks' panel links reuse the reading style). */
+.dash-tile-head { display: flex; align-items: baseline; gap: 0.5rem; color: var(--text-primary); font-weight: 500; text-decoration: none; }
+.dash-tile-head:hover .dash-tile-name { text-decoration: underline; text-underline-offset: 3px; }
+.dash-tile-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-tile-now { margin-left: auto; font-size: var(--fs-sm); font-weight: 400; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dash-tile-chev { color: var(--text-muted); }
+.dash-tile-plot { position: relative; flex: 1; min-height: 0; }
+.dash-tile-chart { position: absolute; inset: 0; --chart-height: 100%; --chart-height-compact: 100%; }
+/* The sr-only table twin sits at the chart's top, not below its canvas (it would overhang the card). */
+.dash-tile-chart > .chart-table { top: 0; left: 0; }
+.dash-tile-skel { position: absolute; inset: 0; z-index: 1; border-radius: var(--radius-md); }
+
+/* Charts: the range, the two stacks (filling the height), More. */
+.dash-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--gap-tight, 4px) var(--gap, 12px); }
+.dash-toolbar-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-tight, 4px) var(--gap, 12px); }
+.dash-toolbar .chart-interval { margin: 0; }
+.dash-toolbar-title { margin: 0; font-size: var(--fs-md); font-weight: 600; color: var(--text-primary); }
+.dash-stacks { flex: 1; min-height: 0; display: grid; gap: var(--gap, 12px); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dash-card.dash-stack { display: flex; min-width: 0; min-height: 0; padding: var(--gap-tight, 4px) 0 0; container-type: inline-size; }
+.dash-stack-plot { position: relative; flex: 1; min-height: 0; }
+/* Each panel's link: its name and reading at the panel's top right, in the gap the chart leaves above it
+   (the keys sit at the top left; dashboardView `stackLinks` places them with the chart's own rows). */
+.dash-stack-links { position: absolute; inset: 0; z-index: 2; margin: 0; padding: 0; list-style: none; pointer-events: none; }
+.dash-stack-links li { position: absolute; right: var(--card-pad, 16px); pointer-events: auto; }
+.dash-panel-link {
+  display: inline-flex; align-items: baseline; gap: 0.5rem; padding: 0.125rem 0.375rem; border-radius: var(--radius-sm);
+  color: var(--text-primary); font-size: var(--fs-sm); font-weight: 600; text-decoration: none; background: var(--bg-surface);
+}
+.dash-panel-link:hover { background: var(--accent-hover); }
+.dash-panel-link:hover > span:first-child { text-decoration: underline; text-underline-offset: 3px; }
+.dash-panel-link .dash-tile-now { margin-left: 0; font-weight: 400; }
+/* A narrow stack (1080p): smaller links without "now", clear of the depth keys at the left. */
+@container (max-width: 40rem) {
+  .dash-panel-link { gap: 0.375rem; font-size: var(--fs-xs); }
+  .dash-now-word { display: none; }
+}
+
+.dash-more { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-tight, 4px) 0.5rem; }
+.dash-more-title { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+a.dash-more-link { text-decoration: none; }
+
+/* About: details, the map and the readings share the height; the readings scroll inside their card. */
+.dash-about > .about-details { flex: none; }
+.dash-map { flex: 1 1 0; min-height: 10rem; display: flex; flex-direction: column; }
+.dash-map .about-map-frame { flex: 1; height: auto; }
+.dash-readings { flex: 1.4 1 0; min-height: 10rem; display: flex; flex-direction: column; gap: var(--gap-tight, 4px); }
+.dash-readings .about-sheet-content { flex: 1; min-height: 0; }
+.dash-card-title { margin: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }

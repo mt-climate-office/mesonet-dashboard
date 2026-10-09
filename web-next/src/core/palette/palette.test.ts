@@ -26,6 +26,7 @@ import {
   cciStyle,
   depthColor,
   depthStyle,
+  sensorColor,
   gddStageColors,
   previewColor,
   resolve,
@@ -97,24 +98,35 @@ describe('depthColor', () => {
       expect(depthColor(1, t)).toBe(depthColor(2, t))
     }
   })
-  it('deeper is lighter in every theme', () => {
-    expect(toOklab(depthColor(40, 'light'))[0]).toBeGreaterThan(toOklab(depthColor(2, 'light'))[0])
-    expect(toOklab(depthColor(40, 'dark'))[0]).toBeGreaterThan(toOklab(depthColor(2, 'dark'))[0])
-  })
-  it('the common depths (2, 4, 8, 20, 40 in) stay distinguishable in every theme', () => {
+  it('shallow → deep runs from roma\'s red end to its blue end in every theme', () => {
     for (const t of THEMES) {
-      const c = [2, 4, 8, 20, 40].map((d) => depthColor(d, t))
-      // Neighbours: as far apart as batlow allows at 3:1 (was 0.089 in light, 0.109 in dark; best 0.113) …
-      for (let i = 1; i < c.length; i++) expect(oklabDist(c[i], c[i - 1]), `${t} ${i}`).toBeGreaterThan(0.11)
-      // … and they alternate solid/dashed, so depths that share a dash are two steps apart in color.
-      for (let i = 2; i < c.length; i++) expect(oklabDist(c[i], c[i - 2]), `${t} ${i}`).toBeGreaterThan(0.2)
+      // OKLab b: positive is yellow-red, negative blue.
+      expect(toOklab(depthColor(2, t))[2], t).toBeGreaterThan(0)
+      expect(toOklab(depthColor(40, t))[2], t).toBeLessThan(0)
     }
   })
-  it('depthStyle: depthColor, dashed at every other sensor depth', () => {
+  it('the common depths (2, 4, 8, 20, 40 in) stay distinguishable by color alone (lines are solid)', () => {
+    // Neighbours at least this far apart in OKLab, from roma's 11 stops (batlow managed 0.11 at 3:1, with dashes to help).
+    const floor: Record<string, number> = { light: 0.13, dark: 0.16, 'high-contrast': 0.19 }
     for (const t of THEMES) {
-      expect([2, 4, 8, 20, 28, 36, 40].map((d) => depthStyle(d, t).dash)).toEqual([undefined, 'dashed', undefined, 'dashed', undefined, 'dashed', undefined])
-      expect(depthStyle(3.9, t)).toEqual({ color: depthColor(3.9, t), dash: 'dashed' })
+      const c = [2, 4, 8, 20, 40].map((d) => depthColor(d, t))
+      for (let i = 1; i < c.length; i++) expect(oklabDist(c[i], c[i - 1]), `${t} ${i}`).toBeGreaterThan(floor[t])
+    }
+  })
+  it('light: a depth between two steps never lands in roma\'s pale middle (≥ 3:1 on white)', () => {
+    for (let d = 2; d <= 40; d += 0.5) expect(contrastRatio(depthColor(d, 'light'), '#ffffff'), `${d} in`).toBeGreaterThanOrEqual(3)
+  })
+  it('depthStyle: depthColor, solid', () => {
+    for (const t of THEMES) {
+      expect([2, 4, 8, 20, 28, 36, 40].map((d) => depthStyle(d, t))).toEqual([2, 4, 8, 20, 28, 36, 40].map((d) => ({ color: depthColor(d, t) })))
       expect(depthStyle(50, t)).toEqual(depthStyle(40, t))
+    }
+  })
+  it('sensorColor: the depth steps in order, then around again', () => {
+    for (const t of THEMES) {
+      expect(sensorColor(0, t)).toBe(depthColor(2, t))
+      expect(sensorColor(1, t)).toBe(depthColor(4, t))
+      expect(sensorColor(5, t)).toBe(sensorColor(0, t))
     }
   })
 })
@@ -174,9 +186,9 @@ describe('resolve', () => {
 })
 
 describe('roles', () => {
-  it('variableStyle covers every styled variable; gust is dashed; depth/precip vars are null', () => {
-    for (const t of THEMES) for (const v of STYLED_VARIABLES) expect(variableStyle(v, t)?.color).toMatch(HEX)
-    expect(variableStyle('Gust Speed', 'light')).toEqual({ ...variableStyle('Wind Speed', 'light'), dash: 'dashed' })
+  it('variableStyle covers every styled variable, solid; depth/precip vars are null', () => {
+    for (const t of THEMES) for (const v of STYLED_VARIABLES) expect(variableStyle(v, t)).toEqual({ color: expect.stringMatching(HEX) })
+    expect(variableStyle('Gust Speed', 'light')).toEqual(variableStyle('Wind Speed', 'light'))
     expect(variableStyle('Soil VWC', 'dark')).toBeNull()
     expect(variableStyle('Precipitation', 'dark')).toBeNull()
   })

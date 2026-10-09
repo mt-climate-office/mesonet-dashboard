@@ -11,7 +11,7 @@
 import type { EChartsOption, GraphicComponentOption, SeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { TimeseriesModel, TimeseriesPanel, TimeseriesSeries } from '../models/timeseries'
 import { isDepthVariable, panelNoDataText } from '../models/timeseries'
-import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, depthStyle, previewColor, variableStyle, withAlpha } from '../palette'
+import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, sensorColor, variableStyle, withAlpha } from '../palette'
 import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
 import { WIND_DIRECTION } from '../variables/direction'
@@ -38,6 +38,13 @@ export interface LatestTimeseriesModel {
    * `partialDay`), drawn as a hollow ring or a lighter bar and labelled "Today (so far)".
    */
   partial?: number | null
+  /**
+   * The dashboard's stacks: `rows` equal rows share the canvas height (`ctx.height`) instead of a fixed
+   * panel height, every gap the same (room for a key row), so stacks given the same `rows` put their
+   * panels at the same heights side by side; a shorter stack's last panel takes its empty rows, so both
+   * time axes end level. Without a height it falls back to the fixed layout.
+   */
+  fill?: { rows: number }
 }
 
 /**
@@ -68,9 +75,21 @@ export function latestTimeseriesHeight(n: number, compact: boolean, keyed = 0): 
   return LAYOUT.top + k * panelPx(k, compact) + (k - 1) * LAYOUT.gap + keyed * LAYOUT.keyPad + (compact ? LAYOUT.compactBottom : LAYOUT.bottom)
 }
 
-const DASHES = [undefined, 'dashed', 'dotted'] as const
+/**
+ * The rows of a filling stack (`fill`): each row's top and the panel height, from the canvas `height`
+ * shared evenly by `rows` rows after the top, uniform gaps (each with room for a key row) and the x
+ * labels; panels at least 40 px. Depends only on `rows` and `height`, so two stacks align row for row.
+ */
+export function fillRows(rows: number, height: number, compact: boolean): { height: number; tops: number[] } {
+  const n = Math.max(1, rows)
+  const gap = LAYOUT.gap + LAYOUT.keyPad
+  const h = Math.max(40, Math.floor((height - LAYOUT.top - (n - 1) * gap - (compact ? LAYOUT.compactBottom : LAYOUT.bottom)) / n))
+  return { height: h, tops: Array.from({ length: n }, (_, i) => LAYOUT.top + i * (h + gap)) }
+}
+
+/** Bars: the totals per interval (rain, reference ET) and rain rate (the interval's peak rate, beside rain's bars). */
 function isBar(p: TimeseriesPanel): boolean {
-  return isAccumulation(p.variable)
+  return isAccumulation(p.variable) || p.variable === 'Max Precip Rate'
 }
 
 /** Line/bar color of one column (palette roles only). */
@@ -79,6 +98,8 @@ export function seriesColor(ctx: ChartContext, p: TimeseriesPanel, s: Timeseries
   if (p.variable === 'Precipitation') return PRECIP[theme].bar
   if (p.variable === 'Reference ET') return ETR[theme].bar
   if (s.depth) return depthColor(Number.parseInt(s.depth, 10), theme)
+  // Several sensors in one panel (heights, wells): told apart by color alone (every line is solid).
+  if (p.legend && p.series.length > 1) return sensorColor(Math.max(0, p.series.indexOf(s)), theme)
   return variableStyle(p.variable, theme)?.color ?? previewColor(panelIndex, theme)
 }
 
@@ -113,12 +134,13 @@ const PARTIAL_RING = 8
 export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ctx) => {
   const { panels } = m.ts
   const n = panels.length
-  const h = panelPx(n, ctx.compact)
+  const filled = m.fill && ctx.height ? fillRows(m.fill.rows, ctx.height, ctx.compact) : null
+  const h = filled ? filled.height : panelPx(n, ctx.compact)
   const left = ctx.compact ? 56 : 72
   const right = 16
   const plotW = Math.max(40, ctx.width - left - right)
   // Panel tops: each gap above a panel with keys is LAYOUT.keyPad taller.
-  const tops = panels.reduce<number[]>((t, p, i) => [...t, i === 0 ? LAYOUT.top : t[i - 1] + h + LAYOUT.gap + (panelHasKeys(p) ? LAYOUT.keyPad : 0)], [])
+  const tops = filled ? filled.tops : panels.reduce<number[]>((t, p, i) => [...t, i === 0 ? LAYOUT.top : t[i - 1] + h + LAYOUT.gap + (panelHasKeys(p) ? LAYOUT.keyPad : 0)], [])
   const topOf = (i: number) => tops[i] ?? LAYOUT.top
   const ok = m.ts.x.map(Number.isFinite)
   // Daily rows sit at local noon so a bar fills its own day (as the Ag charts, format.ts wallMs).
@@ -162,16 +184,9 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
         return
       }
       const dots = p.variable === WIND_DIRECTION
-      // A soil depth's dash is its own (neighbouring depths alternate), as its color.
-      const dash = dots
-        ? undefined
-        : s.depth
-          ? depthStyle(Number.parseInt(s.depth, 10), ctx.theme.name).dash
-          : p.legend
-            ? DASHES[j % DASHES.length]
-            : variableStyle(p.variable, ctx.theme.name)?.dash
+      // Every line is solid: depths and sensors are told apart by color (core/palette roma), and in the key and tooltip by name.
       const shape = DIRECTION_SHAPES[p.legend ? j % DIRECTION_SHAPES.length : 0]
-      const style = { color, dash, yAxisIndex: i, id: `p${i}:${s.name}` }
+      const style = { color, yAxisIndex: i, id: `p${i}:${s.name}` }
       push({ ...(dots ? directionDots(s.name, pts(s.values), { ...style, symbol: shape.symbol }) : lineSeries(s.name, pts(s.values), style)), xAxisIndex: i }, {
         panel: i,
         label,
@@ -183,8 +198,8 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
         const ring = markerSeries(`${AUX}partial`, [[partialX, s.values[partialAt]]], { color, size: PARTIAL_RING })
         push({ ...ring, ...axes, id: `${AUX}p${i}-partial-${j}`, itemStyle: { color: ctx.theme.surface, borderColor: color, borderWidth: 2 }, z: 4, silent: true, large: false }, null)
       }
-      if (s.depth) keys.push({ label: s.depth, color, dash })
-      else if (p.legend) keys.push({ label: columnKey(p.variable, s.name), color, dash, ...(dots ? { glyph: shape.glyph } : {}) })
+      if (s.depth) keys.push({ label: s.depth, color })
+      else if (p.legend) keys.push({ label: columnKey(p.variable, s.name), color, ...(dots ? { glyph: shape.glyph } : {}) })
       // The variable page's Daily band (core/variables/band; drawn by variable.ts) and the mean it surrounds.
       else if (s.band) keys.push({ label: 'Daily mean', color }, { label: DAILY_RANGE.label, color: withAlpha(color, DAILY_RANGE.alpha), block: true })
     })
@@ -271,7 +286,9 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
     // The axis is the loaded window, so the slider's track is what is plotted and its window starts full.
     const base = timeAxis({ min: m.view[0], max: m.view[1], compact: ctx.compact })
     const last = i === n - 1
-    return { ...base, gridIndex: i, axisLabel: { ...(base.axisLabel as object), show: last }, axisTick: { show: last } } as XAXisComponentOption
+    // No snap: each panel's crosshair would jump to its own nearest point (bars, gaps and thinned lines
+    // differ), so the linked lines would sit a few px apart; unsnapped they are all at the cursor's time.
+    return { ...base, gridIndex: i, axisLabel: { ...(base.axisLabel as object), show: last }, axisTick: { show: last }, axisPointer: { snap: false } } as XAXisComponentOption
   })
   const yAxis: YAXisComponentOption[] = panels.map((p, i) => {
     // The variable's y-axis rule over everything the panel draws (its columns, the daily band, normals).
@@ -328,7 +345,10 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
 
   return {
     useUTC: true,
-    grid: panels.map((_, i) => ({ left, right, top: topOf(i), height: h })),
+    // A filled stack with fewer panels than rows: its last panel takes the empty rows, so its time axis
+    // ends level with the longer stack's beside it. outerBoundsMode 'none': ECharts 6 would otherwise move a
+    // panel's plot in to fit wide y labels ("852.5"), so panels (and a moment on them) would sit px apart.
+    grid: panels.map((_, i) => ({ left, right, top: topOf(i), height: filled && i === n - 1 ? filled.tops[filled.tops.length - 1] + h - topOf(i) : h, outerBoundsMode: 'none' as const })),
     xAxis,
     yAxis: slider ? [...yAxis, slider.yAxis] : yAxis,
     axisPointer: { link: [{ xAxisIndex: 'all' }] },

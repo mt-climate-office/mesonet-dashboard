@@ -126,6 +126,7 @@ drawer) reads `MCO.viewport` and the desktop query in JS.
 | compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) on narrow screens (≤ 640 px); a short, wide screen (landscape phone) keeps the header sections | bottom sheet (peek / full) on narrow screens; the overlay drawer on short, wide ones | one column, tiles 2-up |
 | tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | one column, tiles 2-up |
 | desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero + tiles (4-up) beside photo + rows |
+| dashboard | ≥ 1760 px beside the drawer **and** ≥ 1000 px tall (JS: `$store.view.wide`, core/dashboard `showsDashboard`) | none: Now, About and the Charts list are one dashboard; chart pages keep their own | as desktop (opening the drawer at 1920 px gives the space back to the tabs) | the dashboard (see "Dashboard") |
 
 The brand shows only on desktop (visually hidden below 1060 px; the kit's own step is 750 px).
 
@@ -209,6 +210,40 @@ under an auto-opened picker drawer or sheet, which left the page barren (DIVERGE
   with no station (`pickerStartsOpen`); the header's station button ("Choose a station") still opens it.
 - **Keyboard and screen readers:** the search is the primary path (Tab from the header reaches it first); the
   map is the picker map's `role="application"` with its legend and the sr-only station table after it.
+
+## Dashboard (big screens)
+
+With room for it (the dashboard row of the ladder), the three sections collapse into **one full-screen view
+of the station**: `partials/dashboard/index.html`, `ui/dashboard/dashboardView.ts`, `styles/dashboard.css`,
+model `core/dashboard`. `#now`, `#about` and the Charts list all render it (`$store.view.page`); a chart
+page (a variable, an Ag tool, Compare) is still its own page. URLs don't change, so a link shared from a
+big screen opens normally on a phone. The header's section control is hidden.
+
+- **Fits the screen, responsive:** the panel is exactly the height under the header (no page scroll; the
+  footer sits below). Three columns: `clamp(26rem, 24vw, 40rem)` | the rest | `clamp(19rem, 15vw, 26rem)`.
+- **Left:** Now's hero (temperature, high/low · normal · feels like, summary, freshness, the 48 h strip,
+  forecast icons; `partials/now/hero.html`, inside `x-data="nowView"`), the camera carousel in landscape
+  (`partials/now/media.html`; never taller than 16:9 of the rail, cropped when the screen is short), and
+  **wind direction as a wind rose** of the window (the Rose view's request; `windRoseFitChart` puts its key
+  beside it when the box is wide, under it otherwise; its title opens the Rose view). They share the height
+  under the hero. No tiles, no sparklines.
+- **Centre:** a toolbar ("Last 14 days · Hourly", the **interval** chips Auto · 5-min / 15-min · Hourly ·
+  Daily, and the range chips 24 h · 7 d · 14 d · 30 d, `DASHBOARD_RANGES`; both write the URL like a chart
+  page's chips) over **two stacks** (`stackColumns`: list order split at the group boundary nearest the
+  middle, Weather | Rain, evaporation and soil; wind direction is the rose). Each stack is Compare's chart
+  (`dashboardStackChart`: panels on one time axis, one tooltip), drawn compact with at most 3 y intervals,
+  from **one** request for every variable (`seriesModel`, sliced by `stackOf`). **The x axes align:** both
+  stacks have the same number of equal rows (`fillRows`: the canvas height shared evenly, uniform gaps), so
+  panels sit side by side row for row; a shorter stack's last panel takes its empty rows, so both time axes
+  end level; the same window, insets and width put a moment at the same x in both; and the two charts are
+  connected (`group`, echarts.connect): one crosshair, tooltip position and zoom. Over each panel, at its top
+  right in the gap above it, its name and reading now ("Air temperature 57 °F now ›"; smaller, without "now",
+  in a narrow stack) open its chart page on the same window and interval; Back, or the page's "Dashboard"
+  back link, returns. Under the stacks, **More**: the Ag tools and Compare as quiet chips.
+- **Right:** About's details card, the locator map, **all current readings** inline (`partials/about/readings.html`,
+  the readings sheet's content; it scrolls inside its own region) and Sensor changes (opens its sheet).
+- **Loading / errors:** each stack shows a skeleton until the shared request lands; one error state above
+  the stacks if it fails. Nothing mounts or fetches on smaller screens.
 
 ## Charts
 
@@ -345,9 +380,15 @@ All years, every Ag tool, the Download preview and the Now strip.
   labels at the top left of the plot, drawn as graphics, wrapping onto more rows when long (the plot moves down).
   The current year leads the years' key and is its one strong entry: a 3 px swatch and a bold `--text-primary`
   label. Ag tools keep their bottom legends (`agLegend`).
-- **Soil depths:** shallow → deep, each in `depthStyle` (a depth keeps its color and dash whatever else is
-  drawn): batlow spaced as far apart as 3:1 allows, and every other sensor depth (4, 20, 36 in) dashed, since
-  neighbouring batlow colors alone stay close; one line width. SWP's lower bounds are dotted.
+- **Every data line is solid.** Depths and sensors are told apart by color (and in the key, tooltip and
+  table by name), never by dash. Dashes stay only for what is not a reading: the strip's NWS forecast, the
+  normals median, SWP's bounds (dotted).
+- **Soil depths:** shallow → deep, each in `depthColor` (a depth keeps its color whatever else is drawn):
+  Crameri **roma**, red-brown shallow → blue deep, spaced as far apart as 3:1 allows (light uses roma's two
+  ends: its pale middle is under 3:1 on white). A panel's several sensors (heights, wells) take the same
+  steps (`sensorColor`). One line width.
+- **Bars** for the totals per interval (rain, reference ET: an amount over the hour or day, summed in the
+  stats) and for rain rate (the interval's peak, drawn like the rain beside it); every other variable is a line.
 - **Past years** (All years, Annual; `yearColors`): the current year in the text color at width 3, last year and
   the year before in their own batlow colors, older years grey and fainter with age, so the newest stand out.
   Reference ET bars are BrBG teal (`ETR`), apart from the Blues rain bars.

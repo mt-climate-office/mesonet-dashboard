@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ObservationRow } from '../api'
 import { buildTimeseriesModel } from '../models/timeseries'
 import type { StationNormals } from '../normals'
-import { ETR, NORMALS, PRECIP, THEMES, depthColor, variableStyle } from '../palette'
+import { ETR, NORMALS, PRECIP, THEMES, depthColor, sensorColor, variableStyle } from '../palette'
 import { LAYOUT, TABLE_ROW_LIMIT, keyedGaps, latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, fmtValue, type LatestTimeseriesModel } from './latestTimeseries'
 import { LTTB_THRESHOLD } from './series'
 import { testCtx } from './testing'
@@ -91,6 +91,11 @@ describe('latestTimeseriesChart', () => {
     expect(o.grid).toHaveLength(3)
     expect(o.grid[1].top).toBeGreaterThan(o.grid[0].top + o.grid[0].height)
     expect(o.xAxis.map((x) => x.axisLabel.show)).toEqual([false, false, true])
+    // Linked crosshairs sit at the cursor's time in every panel: none snaps to its own nearest point.
+    expect(o.xAxis.map((x) => (x as { axisPointer?: { snap?: boolean } }).axisPointer?.snap)).toEqual([false, false, false])
+    // … and every plot has the same edges: no grid moves in to fit its y labels.
+    const edges = (o.grid as unknown as { left: number; right: number; outerBoundsMode: string }[]).map((g) => [g.left, g.right, g.outerBoundsMode])
+    expect(edges).toEqual(Array(3).fill([edges[0][0], edges[0][1], 'none']))
     for (const z of o.dataZoom) {
       expect(z.xAxisIndex).toEqual([0, 1, 2])
       expect([z.startValue, z.endValue]).toEqual(view)
@@ -115,21 +120,22 @@ describe('latestTimeseriesChart', () => {
     }
   })
 
-  it('soil depths shallow → deep, colored and dashed by depth, labelled in the key row', () => {
+  it('soil depths shallow → deep, colored by depth, all solid, labelled in the key row', () => {
     for (const theme of THEMES) {
       const o = build(model(hourRows(6, soil), ['Soil VWC']), theme)
       const s = dataSeries(o)
       expect(s.map((x) => x.name)).toEqual(['Soil VWC @ 2 in [%]', 'Soil VWC @ 4 in [%]', 'Soil VWC @ 20 in [%]'])
       expect(s.map((x) => x.color)).toEqual([2, 4, 20].map((d) => depthColor(d, theme)))
-      expect(s.map((x) => x.lineStyle?.type)).toEqual(['solid', 'dashed', 'dashed'])
+      expect(s.map((x) => x.lineStyle?.type)).toEqual(['solid', 'solid', 'solid'])
       expect(texts(o)).toEqual(expect.arrayContaining(['2 in', '4 in', '20 in']))
     }
   })
 
-  it('multi-column line panels get a dash per column and a key', () => {
+  it('multi-column line panels: a color per column (sensorColor), all solid, and a key', () => {
     const rows = hourRows(4, (i) => ({ 'Air Temperature @ 2 m [°F]': 60 + i, 'Air Temperature @ 8 ft [°F]': 61 + i }))
     const o = build(model(rows, ['Air Temperature']))
-    expect(dataSeries(o).map((s) => s.lineStyle?.type)).toEqual(['solid', 'dashed'])
+    expect(dataSeries(o).map((s) => s.lineStyle?.type)).toEqual(['solid', 'solid'])
+    expect(dataSeries(o).map((s) => s.color)).toEqual([sensorColor(0, 'dark'), sensorColor(1, 'dark')])
     expect(texts(o)).toEqual(expect.arrayContaining(['2 m', '8 ft']))
   })
 
