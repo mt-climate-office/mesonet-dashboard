@@ -126,7 +126,7 @@ drawer) reads `MCO.viewport` and the desktop query in JS.
 | compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) on narrow screens (≤ 640 px); a short, wide screen (landscape phone) keeps the header sections | bottom sheet (peek / full) on narrow screens; the overlay drawer on short, wide ones | one column, tiles 2-up |
 | tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | one column, tiles 2-up |
 | desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero + tiles (4-up) beside photo + rows |
-| wide | ≥ 1760 px beside the drawer and ≥ 561 px tall (JS: core/overview `showsWall`) | as desktop | as desktop | desktop's two columns + the chart wall (6 charts, About's details and map) |
+| dashboard | ≥ 1760 px beside the drawer **and** ≥ 1000 px tall (JS: `$store.view.wide`, core/dashboard `showsDashboard`) | none: Now, About and the Charts list are one dashboard; chart pages keep their own | as desktop (opening the drawer at 1920 px gives the space back to the tabs) | the dashboard (see "Dashboard") |
 
 The brand shows only on desktop (visually hidden below 1060 px; the kit's own step is 750 px).
 
@@ -154,20 +154,6 @@ tiles (2-up) → rows. **Desktop (≥ 1060 px):** two columns (1.35 : 1), hero o
 the rows. The columns end level: the photo (from 20 rem, cropped to fit) takes up the difference, so there is no dead area for 4–6 tiles. With an odd
 tile count the last tile spans its row at every width. The DOM, reading and Tab order stays hero, photo,
 tiles, rows at every width.
-
-**Wide screens: the chart wall** (`partials/now/wall.html`, `ui/now/chartWall.ts`, model `core/overview/wall`).
-With at least 1760 px beside the station drawer and a screen at least 561 px tall (`showsWall`; `nowView`
-measures the section host, so opening the in-flow drawer at 1920 px takes the wall away), the panel's 75 rem
-cap rises to 180 rem: Now's two desktop columns take the left 2.35 parts, the wall the right 3, both
-top-aligned (the hero and tiles never stretch to the wall). The wall: up to six variables (`wallVariables`:
-air temperature, rain, wind, humidity, soil moisture, soil temperature, then sunlight and pressure for a
-station without some), the last 7 days at the 7 d chip's Auto interval (hourly), from **one** request sliced
-per variable (`wallPanel`), each drawn by `variableWallChart` (the variable chart, compact: no slider) in a
-card whose title row ("Air temperature · Last 7 days ›") opens that variable on the 7 d window (Back returns
-to Now). Cards fill columns of at least 26 rem (two at 1920, three at 2560); plot height follows the screen
-(`clamp(13rem, (100dvh − 17rem) / 3, 22rem)`). About's station details card and locator map end the wall (the
-map spans two columns on a three-column wall). DOM and Tab order: hero, photo, tiles, rows, then the wall.
-One skeleton per chart while the request loads; one error state above the cards if it fails.
 
 | Slot | Content | Data (tier) |
 |---|---|---|
@@ -224,6 +210,34 @@ under an auto-opened picker drawer or sheet, which left the page barren (DIVERGE
   with no station (`pickerStartsOpen`); the header's station button ("Choose a station") still opens it.
 - **Keyboard and screen readers:** the search is the primary path (Tab from the header reaches it first); the
   map is the picker map's `role="application"` with its legend and the sr-only station table after it.
+
+## Dashboard (big screens)
+
+With room for it (the dashboard row of the ladder), the three sections collapse into **one full-screen view
+of the station**: `partials/dashboard/index.html`, `ui/dashboard/dashboardView.ts`, `styles/dashboard.css`,
+model `core/dashboard`. `#now`, `#about` and the Charts list all render it (`$store.view.page`); a chart
+page (a variable, an Ag tool, Compare) is still its own page. URLs don't change, so a link shared from a
+big screen opens normally on a phone. The header's section control is hidden.
+
+- **Fits the screen, responsive:** the panel is exactly the height under the header (no page scroll; the
+  footer sits below). Three columns, each a flex column whose last card takes the height left:
+  `clamp(22rem, 21vw, 34rem)` | the rest | `clamp(19rem, 16vw, 28rem)`.
+- **Left:** Now's hero (temperature, high/low · normal · feels like, summary, freshness, the 48 h strip,
+  forecast icons; `partials/now/hero.html`) over the camera carousel or the wind rose
+  (`partials/now/media.html`, filling the column), both inside `x-data="nowView"`. No tiles, no sparklines.
+- **Centre:** a toolbar ("Last 14 days · Hourly" and the range chips 24 h · 7 d · 14 d · 30 d,
+  `DASHBOARD_RANGES`, writing `from`/`to` like a chart page's chips) over **every** station variable, list
+  order, one compact chart each (`variableCompactChart`: no slider, at most 4 y intervals) from **one**
+  request (`seriesModel` over all variables, sliced by `panelOf`). Each card's title row ("Air temperature ·
+  57 °F now ›") opens its chart page on the same window; Back, or the page's "Dashboard" back link,
+  returns. The grid's columns and row height come from its **measured** box (`dashboardGrid`: cells at
+  least 260 × 150 px, shaped nearest 1.7 : 1), so a resize, the drawer or a station with more or fewer
+  variables rearranges it; only when the floor can't fit every row does the grid itself scroll. Under it,
+  **More**: the Ag tools and Compare as quiet chips.
+- **Right:** About's details card, the locator map, **all current readings** inline (`partials/about/readings.html`,
+  the readings sheet's content; it scrolls inside its own region) and Sensor changes (opens its sheet).
+- **Loading / errors:** each chart shows a skeleton until the shared request lands; one error state above
+  the grid if it fails. Nothing mounts or fetches on smaller screens.
 
 ## Charts
 

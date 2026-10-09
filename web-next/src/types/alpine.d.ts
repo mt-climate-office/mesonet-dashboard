@@ -6,6 +6,7 @@ import type { DataStore } from '../stores/data'
 import type { StationStore } from '../stores/station'
 import type { ThemeStore } from '../stores/theme'
 import type { UrlStore } from '../stores/url'
+import type { ViewStore } from '../stores/view'
 
 declare module 'alpinejs' {
   interface Stores {
@@ -13,5 +14,6 @@ declare module 'alpinejs' {
     data: DataStore
     theme: ThemeStore
     station: StationStore
+    view: ViewStore
   }
 }

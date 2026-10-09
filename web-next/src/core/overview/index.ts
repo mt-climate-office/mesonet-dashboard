@@ -12,7 +12,6 @@
  *  - hero:       buildHero (the Now hero: temperature, 24 h high/low, normal, summary, 48 h strip model)
  *  - nowPage:    buildNowPage (the whole Now page: hero, tile views, row metas; the only formatter), the SWP chip request
  *  - rainBars:   rainDailyQuery, rainBars (the Rain tile: 7 daily bars, or nothing in a dry week)
- *  - wall:       showsWall, wallVariables, wallWindow, wallPanel (the chart wall beside Now on wide screens)
  */
 export * from './tiles'
 export * from './conditions'
@@ -26,4 +25,3 @@ export * from './relevance'
 export * from './hero'
 export * from './nowPage'
 export * from './rainBars'
-export * from './wall'

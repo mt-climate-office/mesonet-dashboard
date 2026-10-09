@@ -56,11 +56,25 @@ export const variableChart: ChartBuilder<VariableModel> = (m, ctx) => {
   }
 }
 
+/** At most `n` intervals on a fixed-interval y axis: the step grows by whole multiples, the top rounds up to a tick. */
+function sparseTicks(y: Record<string, unknown>, n: number): Record<string, unknown> {
+  const { min, max, interval } = y as { min?: unknown; max?: unknown; interval?: unknown }
+  if (typeof min !== 'number' || typeof max !== 'number' || typeof interval !== 'number' || interval <= 0) return y
+  const k = Math.ceil(Math.round((max - min) / interval) / n)
+  if (k <= 1) return y
+  const step = interval * k
+  return { ...y, interval: step, max: min + Math.ceil((max - min) / step - 1e-9) * step }
+}
+
 /**
- * Now's chart wall (core/overview/wall): the variable chart small, as on a phone (no zoom slider,
- * sparser labels) whatever the screen; the card opens the full page for zooming.
+ * The dashboard's charts (core/dashboard): the variable chart small, as on a phone (no zoom slider,
+ * sparser labels) whatever the screen, with at most 4 y intervals (a cell can be ~150 px tall); the
+ * card opens the full page for zooming.
  */
-export const variableWallChart: ChartBuilder<VariableModel> = (m, ctx) => variableChart(m, { ...ctx, compact: true })
+export const variableCompactChart: ChartBuilder<VariableModel> = (m, ctx) => {
+  const option = variableChart(m, { ...ctx, compact: true })
+  return { ...option, yAxis: (option.yAxis as Record<string, unknown>[]).map((y) => sparseTicks(y, 4)) } as EChartsOption
+}
 
 /** The sr-only twin (first 500 rows), as Compare's; daily low and high columns with a band. */
 export const variableTable = (m: VariableModel): ChartTable => latestTimeseriesTable(m)

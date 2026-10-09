@@ -1,0 +1,34 @@
+<!-- All current readings (x-data="aboutReadings", ui/about/readings.ts): every reading from /latest with
+     plain labels, then the HydroMet rain totals, in a named, focusable scroll region (WCAG 2.1.1). Used by
+     the readings sheet (partials/sheets/about-readings.html) and the dashboard's readings card. -->
+<div class="about-sheet-content" x-data="aboutReadings" data-testid="about-readings">
+  <template x-if="state === 'loading'">
+    <div aria-busy="true"><p class="sr-only" role="status">Loading current readings…</p><span class="dash-skel dash-skel--table" aria-hidden="true"></span></div>
+  </template>
+  <template x-if="state === 'error'"><!-- @include partials/load-error.html --></template>
+  <template x-if="state === 'empty'"><p class="about-message">No recent observations.</p></template>
+  <template x-if="state === 'ready'">
+    <div class="about-scroll" x-init="hint($el)" role="region" aria-label="All current readings (scrollable)" tabindex="0">
+      <table class="about-table" data-testid="about-readings-table">
+        <caption>Latest observation</caption>
+        <thead><tr><th scope="col">Reading</th><th scope="col">Value</th></tr></thead>
+        <tbody>
+          <template x-for="r in rows" :key="r.col">
+            <tr><th scope="row" :data-col="r.col" x-text="r.label"></th><td :class="{ 'about-text': !r.unit }"><span x-text="r.value"></span><template x-if="r.unit"><span class="about-unit" x-text="r.unit"></span></template></td></tr>
+          </template>
+        </tbody>
+      </table>
+      <template x-if="pptRows.length">
+        <table class="about-table" data-testid="about-ppt-table">
+          <caption>Rain totals</caption>
+          <thead><tr><th scope="col">Period</th><th scope="col">Total</th></tr></thead>
+          <tbody>
+            <template x-for="r in pptRows" :key="r.col">
+              <tr><th scope="row" :data-col="r.col" x-text="r.label"></th><td><span x-text="r.value"></span><template x-if="r.unit"><span class="about-unit" x-text="r.unit"></span></template></td></tr>
+            </template>
+          </tbody>
+        </table>
+      </template>
+    </div>
+  </template>
+</div>

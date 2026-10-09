@@ -2,7 +2,7 @@
      Ag tool id) or Compare (`cmp=1`), chosen by core/variables `chartsMode` (x-data="chartsView",
      ui/charts/chartsView.ts). Mounted only while the section is open; each view mounts only while
      shown, so it fetches only then. The Download sheet (?dl=1) opens over any of them. -->
-<template x-if="$store.url.section === 'charts'">
+<template x-if="$store.view.page === 'charts'">
 <div class="charts" x-data="chartsView" data-testid="charts">
   <template x-if="mode === 'list'">
     <!-- @include partials/charts/list.html -->

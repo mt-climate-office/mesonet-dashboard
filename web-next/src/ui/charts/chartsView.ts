@@ -27,19 +27,21 @@ export function chartsView() {
       if (st.catalog?.status === 'loading') return false
       return !st.id || elementsResource(st.id)?.status !== 'loading'
     },
-    /** The back arrow's href: where the chart was opened from (Now), else the list. */
+    /** The back arrow's href: where the chart was opened from (Now), else the list (on a big screen, the dashboard either way). */
     listHref(): string {
       const url = Alpine.store('url')
       return url.backTo ? url.hrefFor(url.backTo.section) : url.hrefFor('charts', CHARTS_LIST_PATCH)
     },
-    /** The back arrow's name: "Back to Now", else `list` ("All variables", "All charts"). */
+    /** The back arrow's name: "Back to Now", else `list` ("All variables", "All charts"); on a big screen, "Dashboard". */
     backLabel(list: string): string {
+      if (Alpine.store('view').wide) return 'Dashboard'
       const back = Alpine.store('url').backTo
       return back ? `Back to ${sectionLabel(back.section)}` : list
     },
-    /** Back: to Now through history when the chart was opened there, else the list (pushed), focusing its heading. */
+    /** Back: to Now through history when the chart was opened there, else the list (pushed; the dashboard on a big screen), focusing its heading. */
     toList(e: MouseEvent): void {
-      backFromChart(e, () => follow(e, 'charts', { patch: CHARTS_LIST_PATCH, drillDown: true, target: 'charts-list-title' }))
+      const target = Alpine.store('view').wide ? 'dashboard-title' : 'charts-list-title'
+      backFromChart(e, () => follow(e, 'charts', { patch: CHARTS_LIST_PATCH, drillDown: true, target }))
     },
   })
 }

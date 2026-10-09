@@ -7,8 +7,9 @@
  * on a solid surface; the Download sheet fits the screen; the picker sheet's map is in view after
  * "Browse on the map" and a short handle drag never closes it; the no-station landing fills the screen
  * with its map (no picker over it) on every section; with reduced motion a section change
- * starts no view transition; Now's chart wall shows only with room for it (2560, 1920 without the
- * station drawer; not 1440), in three columns at 2560, and a card opens its chart on the 7 d window. Run via `npm run verify`.
+ * starts no view transition; the big-screen dashboard shows only with room for it (2560 × 1440, 1920 × 1080
+ * without the station drawer; not 1920 × 900 or 1440), fills the screen without scrolling, rearranges its
+ * chart grid on a resize, and a card opens its chart on the same window (Back returns). Run via `npm run verify`.
  */
 import { DL_QUERY, VIEWPORTS, WIDE, check, finish, open, start } from './lib.mjs'
 
@@ -146,52 +147,82 @@ for (const vp of VIEWPORTS) {
   await close()
 }
 
-/* ── Now's chart wall: only with room beside Now; three columns at 2560; a card opens its 7 d chart ── */
+/* ── Big-screen dashboard: room for it, fits the screen, rearranges, a card opens its chart ── */
 {
-  const wall = (page) => page.evaluate(() => {
-    const cards = [...document.querySelectorAll('.now-wall-card')].map((c) => c.getBoundingClientRect())
-    const hero = document.querySelector('[data-testid="now-hero"]')?.getBoundingClientRect()
+  const dash = (page) => page.evaluate(() => {
+    const el = document.querySelector('[data-testid="dashboard"]')
+    const tiles = [...document.querySelectorAll('.dash-tile')].map((c) => c.getBoundingClientRect())
+    const grid = document.querySelector('.dash-grid')
     return {
-      cards: cards.length,
-      columns: new Set(cards.map((r) => Math.round(r.left))).size,
-      topAligned: !!hero && cards.length > 0 && Math.abs(cards[0].top - hero.top) < 2,
-      overflow: document.documentElement.scrollWidth - innerWidth,
+      shown: !!el,
+      tabs: !!document.querySelector('[data-testid="section-row"]')?.getClientRects().length,
+      tiles: tiles.length,
+      drawn: document.querySelectorAll('.dash-tile canvas').length,
+      columns: new Set(tiles.map((r) => Math.round(r.left))).size,
+      minTile: tiles.length ? Math.round(Math.min(...tiles.map((r) => r.height))) : 0,
+      // The dashboard ends inside the screen (the footer may follow below it).
+      bottom: el ? Math.round(el.getBoundingClientRect().bottom - innerHeight) : null,
+      gridScrolls: grid ? grid.scrollHeight > grid.clientHeight + 1 : null,
+      overflowX: document.documentElement.scrollWidth - innerWidth,
     }
   })
+  const ready = (page) => page.waitForFunction(() => {
+    const n = document.querySelectorAll('.dash-tile').length
+    return n > 0 && document.querySelectorAll('.dash-tile .chart-table tbody tr').length > 0 && !document.querySelector('.dash-grid[aria-busy="true"]')
+  }, null, { timeout: 30000 }).catch(() => {})
   {
-    const { page, problems, close, rendered } = await open(env, '?s=acebozem', { viewport: WIDE })
-    await rendered({ charts: 7, filled: ['[data-testid="now-tiles"]'] })
-    const w = await wall(page)
-    check('[wall 2560] six charts in three columns, level with the hero; no sideways scroll', w.cards === 6 && w.columns === 3 && w.topAligned && w.overflow <= 0, JSON.stringify(w))
-    await page.locator('[data-testid="wall-air_temp"] .now-wall-head').click()
+    const { page, problems, close } = await open(env, '?s=acebozem', { viewport: WIDE })
+    await ready(page)
+    const d = await dash(page)
+    check('[dashboard 2560] in place of the tabs: every variable charted, fits the screen, no scroll', d.shown && !d.tabs && d.tiles >= 10 && d.drawn === d.tiles && d.bottom <= 0 && !d.gridScrolls && d.overflowX <= 0 && d.minTile >= 150, JSON.stringify(d))
+    // Narrower (still wide enough): the grid rearranges to fewer columns, still filling the screen.
+    await page.setViewportSize({ width: 1900, height: 1440 })
+    await page.waitForTimeout(500)
+    const narrow = await dash(page)
+    check('[dashboard] a resize rearranges the grid and it still fits', narrow.shown && narrow.columns <= d.columns && narrow.bottom <= 0 && narrow.overflowX <= 0, JSON.stringify({ wide: d.columns, narrow }))
+    await page.setViewportSize({ width: WIDE.width, height: WIDE.height })
+    await page.waitForTimeout(500)
+    const before = await page.evaluate(() => location.search)
+    await page.getByTestId('dash-range-7d').click()
+    await page.waitForFunction(() => new URLSearchParams(location.search).get('from'), null, { timeout: 5000 }).catch(() => {})
+    await page.locator('[data-testid="dash-air_temp"] .dash-tile-head').click()
     await page.waitForFunction(() => document.activeElement?.id === 'var-title', null, { timeout: 10000 }).catch(() => {})
     const opened = await page.evaluate(() => {
       const q = new URLSearchParams(location.search)
-      return { hash: location.hash, v: q.get('v'), days: (Date.parse(q.get('to')) - Date.parse(q.get('from'))) / 864e5, focus: document.activeElement?.id, chip: document.querySelector('.chart-chips [aria-pressed="true"]')?.textContent.trim() }
+      return { hash: location.hash, v: q.get('v'), days: (Date.parse(q.get('to')) - Date.parse(q.get('from'))) / 864e5, focus: document.activeElement?.id,
+        chip: document.querySelector('.chart-chips [aria-pressed="true"]')?.textContent.trim(), back: document.querySelector('[data-testid="var-back"]')?.getAttribute('aria-label') }
     })
-    check('[wall 2560] a card opens its variable on the 7 d window, the heading focused', opened.hash === '#charts' && opened.v === 'air_temp' && opened.days === 7 && opened.focus === 'var-title' && opened.chip === '7 d', JSON.stringify(opened))
+    check('[dashboard 2560] the 7 d chip, then a card: its chart on that window, the heading focused, the back link to the dashboard', opened.hash === '#charts' && opened.v === 'air_temp' && opened.days === 7 && opened.focus === 'var-title' && opened.chip === '7 d' && opened.back === 'Dashboard', JSON.stringify({ before, opened }))
     await page.goBack()
-    await page.waitForFunction(() => document.querySelectorAll('.now-wall-card').length === 6, null, { timeout: 10000 }).catch(() => {})
-    check('[wall 2560] Back returns to Now with its wall', (await wall(page)).cards === 6)
+    await page.waitForFunction(() => !!document.querySelector('[data-testid="dashboard"]'), null, { timeout: 10000 }).catch(() => {})
+    check('[dashboard 2560] Back returns to the dashboard', (await dash(page)).shown)
     const p = await problems()
-    check('[wall 2560] console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+    check('[dashboard 2560] console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+    await close()
+  }
+  for (const hash of ['#about', '#charts']) {
+    const { page, close } = await open(env, `?s=acebozem${hash}`, { viewport: WIDE })
+    await page.waitForFunction(() => !!document.querySelector('[data-testid="dashboard"]'), null, { timeout: 10000 }).catch(() => {})
+    check(`[dashboard 2560] ${hash} is the dashboard too`, (await dash(page)).shown)
     await close()
   }
   {
-    const { page, close, rendered } = await open(env, '?s=acebozem', { viewport: { name: '1920', width: 1920, height: 1080 } })
-    await rendered({ charts: 7, filled: ['[data-testid="now-tiles"]'] })
-    const before = await wall(page)
+    const { page, close } = await open(env, '?s=acebozem', { viewport: { name: '1920', width: 1920, height: 1080 } })
+    await ready(page)
+    const before = await dash(page)
     await page.getByTestId('station-switcher').click()
     await page.waitForFunction(() => document.getElementById('station-picker')?.classList.contains('is-open'), null, { timeout: 5000 }).catch(() => {})
-    await page.waitForFunction(() => !document.querySelector('.now-wall'), null, { timeout: 5000 }).catch(() => {})
-    const after = await wall(page)
-    check('[wall 1920] the wall shows in two columns, and gives way to the open station drawer', before.cards === 6 && before.columns === 2 && after.cards === 0 && after.overflow <= 0, JSON.stringify({ before, after }))
+    // The drawer slides open; the dashboard gives way once the column is narrower, then the tabs show.
+    await page.waitForFunction(() => !document.querySelector('[data-testid="dashboard"]') && !!document.querySelector('[data-testid="section-row"]')?.getClientRects().length, null, { timeout: 5000 }).catch(() => {})
+    const after = await dash(page)
+    check('[dashboard 1920] fits 1920 × 1080, and gives way to the open station drawer (the tabs return)', before.shown && before.bottom <= 0 && !after.shown && after.tabs, JSON.stringify({ before, after }))
     await close()
   }
-  {
-    const { page, close, rendered } = await open(env, '?s=acebozem', { viewport: VIEWPORTS[0] })
+  for (const vp of [{ name: '1920×900', width: 1920, height: 900 }, VIEWPORTS[0]]) {
+    const { page, close, rendered } = await open(env, '?s=acebozem', { viewport: vp })
     await rendered({ charts: 1, filled: ['[data-testid="now-tiles"]'] })
-    check('[wall 1440] no wall at 1440', (await wall(page)).cards === 0)
+    const d = await dash(page)
+    check(`[dashboard ${vp.name}] not enough room: the tabs and Now as before`, !d.shown && d.tabs, JSON.stringify(d))
     await close()
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Axe matrix (HOUSE-STYLE §5, MIGRATING.md verification): every scenario below
- * × 3 themes × 1440/390 px (a scenario's `viewports` replaces those: Now's chart wall at 2560). Fails on any serious/critical WCAG 2.1 AA violation,
+ * × 3 themes × 1440/390 px (a scenario's `viewports` replaces those: the big-screen dashboard at 2560). Fails on any serious/critical WCAG 2.1 AA violation,
  * console error or CSP violation. Run via `npm run verify` (needs dist/).
  */
 import { AxeBuilder } from '@axe-core/playwright'
@@ -113,8 +113,8 @@ const SCENARIOS = [
   { name: 'download-variables', query: '?s=acebozem&dl=1#charts', before: dlReady, evidence: {}, after: dlVariables },
   { name: 'download-dates', query: DL_QUERY, before: dlReady, evidence: {}, after: dlDates },
   { name: 'downloader', query: DL_QUERY, before: runDownload, evidence: { charts: 1 } },
-  // Wide screens: Now with its chart wall (the strip + six charts) and About's details and map beside it.
-  { name: 'now-wide', query: '?s=acebozem', viewports: [WIDE], evidence: { charts: 7, filled: ['[data-testid="now-tiles"]', '[data-testid="now-wall-map"] tbody'] } },
+  // Big screens: the dashboard (the strip, every variable's chart, the map, the readings table).
+  { name: 'dashboard', query: '?s=acebozem', viewports: [WIDE], evidence: { charts: 10, filled: ['[data-testid="dashboard-map"] tbody', '[data-testid="about-readings-table"] tbody'] } },
   { name: 'photo-dialog', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPhoto },
   { name: 'help-dialog', query: '?s=acebozem#latest', evidence: { charts: 1 }, after: openHelp },
 ]

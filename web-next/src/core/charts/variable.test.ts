@@ -5,7 +5,7 @@ import { THEMES, variableStyle } from '../palette'
 import { LAYOUT, latestTimeseriesChart } from './latestTimeseries'
 import { DAY, ZOOM_TRACE_ID, bottomLayout } from './style'
 import { drawn, testCtx } from './testing'
-import { variableChart, variableTable, variableTableAll, variableWallChart, type VariableModel } from './variable'
+import { variableChart, variableTable, variableTableAll, variableCompactChart, type VariableModel } from './variable'
 
 const view: [number, number] = [Date.UTC(2026, 6, 1), Date.UTC(2026, 6, 2)]
 const rows = (n: number): ObservationRow[] =>
@@ -111,11 +111,15 @@ describe('latestTimeseriesChart on a compact touch screen', () => {
   })
 })
 
-describe('variableWallChart', () => {
-  it('is the variable chart drawn compact on any screen: no zoom slider, even over a week', () => {
-    const o = variableWallChart(week, testCtx('dark')) as unknown as Opt
+describe('variableCompactChart', () => {
+  it('is the variable chart drawn compact on any screen: no zoom slider, even over a week; at most 4 y intervals, ending on a tick', () => {
+    const o = variableCompactChart(week, testCtx('dark')) as unknown as Opt
     expect(o.dataZoom.some((z) => z.type === 'slider')).toBe(false)
-    // Formatters are new closures each build, so compare the serialized option.
-    expect(JSON.stringify(o)).toBe(JSON.stringify(variableChart(week, { ...testCtx('dark'), compact: true })))
+    // Formatters are new closures each build, so compare the serialized option (y ticks aside).
+    const strip = (x: unknown) => JSON.stringify({ ...(x as object), yAxis: null })
+    expect(strip(o)).toBe(strip(variableChart(week, { ...testCtx('dark'), compact: true })))
+    const [y] = (o as unknown as { yAxis: { min: number; max: number; interval: number }[] }).yAxis
+    expect((y.max - y.min) / y.interval).toBeLessThanOrEqual(4)
+    expect(Number.isInteger(Math.round(((y.max - y.min) / y.interval) * 1e6) / 1e6)).toBe(true)
   })
 })

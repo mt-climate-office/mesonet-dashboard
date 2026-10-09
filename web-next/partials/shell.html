@@ -29,7 +29,8 @@
 
   <div class="nav-meta">
     <!-- Tablet / desktop sections (hidden on compact, where the tab bar takes over). -->
-    <nav class="dash-sections" aria-label="Station sections" x-data="sections" data-testid="section-row">
+    <!-- Hidden on big screens, where the dashboard stands in for the three sections (core/dashboard). -->
+    <nav class="dash-sections" aria-label="Station sections" x-data="sections" x-show="!$store.view.wide" data-testid="section-row">
       <a class="dash-section-link" data-section="now" href="#now" :href="href('now')">Now</a>
       <a class="dash-section-link" data-section="charts" href="#charts" :href="href('charts')">Charts</a>
       <a class="dash-section-link" data-section="about" href="#about" :href="href('about')">About</a>
@@ -101,14 +102,18 @@
 
       <!-- Hidden while the no-station landing stands in for it. -->
       <div class="dash-section-host" x-data x-show="!$store.station.landing">
-        <section id="section-now" class="tab-panel" aria-label="Now" x-data x-show="$store.url.section === 'now'" x-cloak>
+        <section id="section-now" class="tab-panel" aria-label="Now" x-data x-show="$store.view.page === 'now'" x-cloak>
           <!-- @include partials/now/index.html -->
         </section>
-        <section id="section-charts" class="tab-panel" aria-label="Charts" x-data x-show="$store.url.section === 'charts'" x-cloak>
+        <section id="section-charts" class="tab-panel" aria-label="Charts" x-data x-show="$store.view.page === 'charts'" x-cloak>
           <!-- @include partials/charts/index.html -->
         </section>
-        <section id="section-about" class="tab-panel" aria-label="About this station" x-data x-show="$store.url.section === 'about'" x-cloak>
+        <section id="section-about" class="tab-panel" aria-label="About this station" x-data x-show="$store.view.page === 'about'" x-cloak>
           <!-- @include partials/about/index.html -->
+        </section>
+        <!-- Big screens (core/dashboard): Now, About and the Charts list as one full-screen dashboard. -->
+        <section id="section-dashboard" class="tab-panel tab-panel--dashboard" aria-label="Station dashboard" x-data x-show="$store.view.page === 'dashboard'" x-cloak>
+          <!-- @include partials/dashboard/index.html -->
         </section>
       </div>
     </main>
