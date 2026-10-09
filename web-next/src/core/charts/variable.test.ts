@@ -114,7 +114,7 @@ describe('latestTimeseriesChart on a compact touch screen', () => {
 describe('dashboardStackChart', () => {
   const two = model(168, ['Air Temperature', 'Relative Humidity'], [view[0], view[0] + 7 * DAY])
   type Stack = { grid: { top: number; height: number }[]; dataZoom: { type: string }[]; yAxis: { min: number; max: number; interval: number }[] }
-  it('rows from `fill`: equal, at fixed tops, so two stacks with the same rows align; compact, no slider; ≤ 3 y intervals', () => {
+  it('rows from `fill`: equal, at fixed tops, so two stacks with the same rows align; compact, no slider; ≤ 3 y intervals; no y titles', () => {
     const a = dashboardStackChart({ ...two, fill: { rows: 3 } }, { ...testCtx('dark', 800), height: 600 }) as unknown as Stack
     const b = dashboardStackChart({ ...model(168, ['Air Temperature'], two.view), fill: { rows: 3 } }, { ...testCtx('dark', 800), height: 600 }) as unknown as Stack
     expect(a.grid.map((g) => g.top)).toEqual(fillRows(3, 600, true).tops.slice(0, 2))
@@ -126,5 +126,6 @@ describe('dashboardStackChart', () => {
     expect(b.grid[0].top + b.grid[0].height).toBe(r.tops[2] + r.height)
     expect(a.dataZoom.some((z) => z.type === 'slider')).toBe(false)
     for (const y of a.yAxis) expect((y.max - y.min) / y.interval).toBeLessThanOrEqual(3)
+    expect((a.yAxis as unknown as { name: string }[]).map((y) => y.name)).toEqual(['', ''])
   })
 })

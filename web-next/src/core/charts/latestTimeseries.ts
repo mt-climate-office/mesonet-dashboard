@@ -286,7 +286,9 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
     // The axis is the loaded window, so the slider's track is what is plotted and its window starts full.
     const base = timeAxis({ min: m.view[0], max: m.view[1], compact: ctx.compact })
     const last = i === n - 1
-    return { ...base, gridIndex: i, axisLabel: { ...(base.axisLabel as object), show: last }, axisTick: { show: last } } as XAXisComponentOption
+    // No snap: each panel's crosshair would jump to its own nearest point (bars, gaps and thinned lines
+    // differ), so the linked lines would sit a few px apart; unsnapped they are all at the cursor's time.
+    return { ...base, gridIndex: i, axisLabel: { ...(base.axisLabel as object), show: last }, axisTick: { show: last }, axisPointer: { snap: false } } as XAXisComponentOption
   })
   const yAxis: YAXisComponentOption[] = panels.map((p, i) => {
     // The variable's y-axis rule over everything the panel draws (its columns, the daily band, normals).
@@ -344,8 +346,9 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
   return {
     useUTC: true,
     // A filled stack with fewer panels than rows: its last panel takes the empty rows, so its time axis
-    // ends level with the longer stack's beside it.
-    grid: panels.map((_, i) => ({ left, right, top: topOf(i), height: filled && i === n - 1 ? filled.tops[filled.tops.length - 1] + h - topOf(i) : h })),
+    // ends level with the longer stack's beside it. outerBoundsMode 'none': ECharts 6 would otherwise move a
+    // panel's plot in to fit wide y labels ("852.5"), so panels (and a moment on them) would sit px apart.
+    grid: panels.map((_, i) => ({ left, right, top: topOf(i), height: filled && i === n - 1 ? filled.tops[filled.tops.length - 1] + h - topOf(i) : h, outerBoundsMode: 'none' as const })),
     xAxis,
     yAxis: slider ? [...yAxis, slider.yAxis] : yAxis,
     axisPointer: { link: [{ xAxisIndex: 'all' }] },

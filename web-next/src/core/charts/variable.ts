@@ -69,11 +69,13 @@ function sparseTicks(y: Record<string, unknown>, n: number): Record<string, unkn
 /**
  * The dashboard's stacks (core/dashboard `stackColumns`): Compare's panels on one shared time axis
  * (one tooltip for every panel), drawn compact, in the model's `fill` rows (equal, aligned with the
- * other stack's; one row each without it), at most 3 y intervals each.
+ * other stack's; one row each without it), at most 3 y intervals each, no y titles (the panel links name them).
  */
 export const dashboardStackChart: ChartBuilder<LatestTimeseriesModel> = (m, ctx) => {
   const option = latestTimeseriesChart({ ...m, fill: m.fill ?? { rows: m.ts.panels.length } }, { ...ctx, compact: true })
-  return { ...option, yAxis: (option.yAxis as Record<string, unknown>[]).map((y) => sparseTicks(y, 3)) } as EChartsOption
+  // No y titles: each panel's link over it names it with its unit ("Pressure 846 mb"), and a title beside
+  // wide tick labels ("852.5") would crowd the card's edge.
+  return { ...option, yAxis: (option.yAxis as Record<string, unknown>[]).map((y) => ({ ...sparseTicks(y, 3), name: '' })) } as EChartsOption
 }
 
 /** The sr-only twin (first 500 rows), as Compare's; daily low and high columns with a band. */

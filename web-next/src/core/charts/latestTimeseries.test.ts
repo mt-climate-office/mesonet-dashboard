@@ -91,6 +91,11 @@ describe('latestTimeseriesChart', () => {
     expect(o.grid).toHaveLength(3)
     expect(o.grid[1].top).toBeGreaterThan(o.grid[0].top + o.grid[0].height)
     expect(o.xAxis.map((x) => x.axisLabel.show)).toEqual([false, false, true])
+    // Linked crosshairs sit at the cursor's time in every panel: none snaps to its own nearest point.
+    expect(o.xAxis.map((x) => (x as { axisPointer?: { snap?: boolean } }).axisPointer?.snap)).toEqual([false, false, false])
+    // … and every plot has the same edges: no grid moves in to fit its y labels.
+    const edges = (o.grid as unknown as { left: number; right: number; outerBoundsMode: string }[]).map((g) => [g.left, g.right, g.outerBoundsMode])
+    expect(edges).toEqual(Array(3).fill([edges[0][0], edges[0][1], 'none']))
     for (const z of o.dataZoom) {
       expect(z.xAxisIndex).toEqual([0, 1, 2])
       expect([z.startValue, z.endValue]).toEqual(view)
