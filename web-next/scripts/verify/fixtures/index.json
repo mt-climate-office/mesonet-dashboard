@@ -510,6 +510,11 @@
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-derived_hourly-0d2ca0c2c0.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=wind_spd,wind_dir&start_time=2026-09-24&end_time=2026-10-02&level=2&rm_na=true&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-982f44acba.csv"
   }
  }
 }
