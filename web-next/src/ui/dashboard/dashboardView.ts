@@ -159,7 +159,7 @@ export function dashboardView() {
       return {
         builder: dashboardStackChart,
         table: latestTimeseriesTable,
-        label: `${this.stacks()[i].map((v) => plainName(v.id, v.name)).join(', ')}: ${this.rangeText()}`,
+        label: () => `${this.stacks()[i].map((v) => plainName(v.id, v.name)).join(', ')}: ${this.rangeText()}`,
         model: () => this.stackModel(i),
         range: () => this.viewRange(),
         group: STACKS,
@@ -201,7 +201,7 @@ export function dashboardView() {
       return {
         builder: windRoseFitChart,
         table: (m) => windRoseTable(m, activePreset(url().state) === '24h'),
-        label: `Wind rose, ${this.rangeText()}`,
+        label: () => `Wind rose, ${this.rangeText()}`,
         model: () => this.roseModel(),
       }
     },

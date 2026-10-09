@@ -166,12 +166,16 @@ for (const vp of VIEWPORTS) {
       rose: !!document.querySelector('[data-testid="dash-rose"] canvas'),
       bottom: el ? Math.round(el.getBoundingClientRect().bottom - innerHeight) : null,
       overflowX: document.documentElement.scrollWidth - innerWidth,
+      // Per stack (for a failure): plot box height / panel links / ECharts canvases / chart label.
+      each: stacks.map((x) => `${x.querySelector('.dash-stack-plot').clientHeight}/${x.querySelectorAll('.dash-stack-links li').length}/${x.querySelectorAll('canvas').length}/${x.querySelector('.chart-canvas')?.getAttribute('aria-label')?.slice(0, 40)}`),
     }
   })
   const ready = (page) => page.waitForFunction(() => {
-    const links = document.querySelectorAll('.dash-stack-links li').length
-    return links > 0 && document.querySelectorAll('.dash-stack .chart-table tbody tr').length > 0 && !document.querySelector('.dash-stacks[aria-busy="true"]')
-  }, null, { timeout: 30000 }).catch(() => {})
+    // Every shown stack has its links and its canvas (on a slow runner the second stack can lag the first).
+    const stacks = [...document.querySelectorAll('.dash-stack')].filter((x) => x.getClientRects().length)
+    return stacks.length > 0 && stacks.every((x) => x.querySelector('.dash-stack-links li') && x.querySelector('canvas'))
+      && document.querySelectorAll('.dash-stack .chart-table tbody tr').length > 0 && !document.querySelector('.dash-stacks[aria-busy="true"]')
+  }, null, { timeout: 30000 }).catch((e) => console.log(`  (dashboard not ready: ${e.message.split('\n')[0]})`))
   {
     const { page, problems, close } = await open(env, '?s=acebozem', { viewport: WIDE })
     await ready(page)
