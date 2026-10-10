@@ -83,7 +83,7 @@ Settled precedents (MIGRATING.md) and pure-WCAG fixes are applied without asking
 |---|---|---|
 | 1 | Tab links with `aria-current="page"`: **app override** (tagged) | kit issue [mco-web-style#3](https://github.com/mt-climate-office/mco-web-style/issues/3) |
 | 2 | 3-state theme toggle: **app override** | kit issue [#3](https://github.com/mt-climate-office/mco-web-style/issues/3) (`cycle: true`) |
-| 3 | MapLibre: **keep kit pin 5.18.0**; popups via DOM/`setText`, never `setHTML` on API strings | kit issue [#1](https://github.com/mt-climate-office/mco-web-style/issues/1) (bump the pin) |
+| 3 | MapLibre: **keep kit pin 5.18.0**; popups via DOM/`setText`, never `setHTML` on API strings | kit issue [#1](https://github.com/mt-climate-office/mco-web-style/issues/1) (bump the pin). **Resolved 2026-10-09:** kit 0.11.2 pins MapLibre 6.11.2; web-next adopted it, and web/ moved to 6.11.2 in the same PR |
 | 4 | Sticky navbar, two-row wrap at 390 px: **app override as built** | kit issue [#4](https://github.com/mt-climate-office/mco-web-style/issues/4) |
 | — | Form errors: `--text-primary` + ⚠ + heavier edge until the kit has a token | kit issue [#2](https://github.com/mt-climate-office/mco-web-style/issues/2) |
 | — | SWP heatmap (BrBG): labelled midpoint at the **wilting point, 15 bar** | `core/palette/roles.ts` `HEATMAP.swp` |

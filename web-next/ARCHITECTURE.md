@@ -1,7 +1,7 @@
 # web-next architecture
 
 The Montana Mesonet Dashboard, rebuilt on the MCO house style
-([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.7.1)
+([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.11.2)
 with Alpine.js, Apache ECharts and TypeScript. Preview at
 `/mesonet-dashboard/next/`; it replaces `web/` at cutover.
 
@@ -47,8 +47,11 @@ vite/       the @include plugin and index.html guard tests
 
 **Imports go one way: `core` → `stores` → `ui`.** `core` imports nothing from
 `stores`/`ui`/`alpinejs`; `stores` never imports `ui`. ESLint enforces both
-(`eslint.config.js`), and bans runtime imports of `maplibre-gl` (MapLibre
-comes from the kit-pinned CDN as the `maplibregl` global; `import type` is fine).
+(`eslint.config.js`), and bans runtime imports of `maplibre-gl` (MapLibre 6
+comes from the kit-pinned CDN: `MCO.map.loadMapLibre()` imports it on first use,
+through index.html's SRI import map, and publishes the `maplibregl` global; only
+`ui/map/presets.ts` waits for it, so nothing else touches `maplibregl`; `import
+type` is fine).
 
 ## Design principles (govern every PR)
 
@@ -355,7 +358,11 @@ stores registered above it), and a line in `types/alpine.d.ts`.
 
 Version and SRI hashes live only in `index.html`; a bump follows the kit's
 MIGRATING.md and the `vite/indexHtml.test.ts` guard (pinned, SRI'd, one
-version, CSP hash matches the inline anti-flash script byte for byte).
+version, CSP hashes match the inline anti-flash script and the MapLibre import
+map byte for byte, the import map's hashes match its modulepreloads, and
+`worker-src` has both `blob:` and `https://unpkg.com`, which MapLibre 6's worker needs).
+`main.ts` calls `MCO.ready()` after `Alpine.start()` to release the snippet's
+first-paint hold.
 `'unsafe-eval'` in `script-src` is for Alpine's standard build (it compiles
 `x-*` expressions with `Function`); accepted for a static, read-only app.
 Expressions in HTML stay limited to property/method calls on typed components.

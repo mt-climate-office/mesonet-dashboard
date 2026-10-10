@@ -6,8 +6,9 @@
  *   pickerMap     — station picker: the whole state stays in view, click selects; cooperative on touch.
  *   landingMap    — the no-station landing: the picker's map, large, its legend open beside Montana.
  *
- * Markup: an empty element with a height; the component builds the map,
- * legend panel and sr-only table twin inside it.
+ * Markup: an empty element with a height; the component builds the legend panel and sr-only table
+ * twin inside it at once, and the map once MapLibre has arrived (`MCO.map.loadMapLibre()`; a failure
+ * says so in a toast and leaves the table twin working).
  *   <div class="latest-map" x-data="stationMap({ stations: () => $store.station.list,
  *        selected: () => $store.station.id, onSelect: (id) => $store.station.select(id) })"></div>
  * Optional `visible: () => Set|string[]|null` (network filter) and `label`.
@@ -64,6 +65,7 @@ function mapView(opts: StationMapOptions, preset: Preset) {
   let host: MapHost | null = null
   let layer: StationLayer | null = null
   let effect: ReturnType<typeof Alpine.effect> | null = null
+  let disposed = false
 
   return component({
     init() {
@@ -79,42 +81,58 @@ function mapView(opts: StationMapOptions, preset: Preset) {
       })
       root.append(canvas, legend.element, table.element)
 
-      host = createMap(canvas, {
-        label: opts.label ?? preset.label,
-        cooperativeGestures: preset.cooperative,
-        refit: !preset.fly,
-        fitPadding: preset.fitPadding,
-        layers: (map, theme) => {
-          const markers = layer?.add(map, theme)
-          if (markers) legend.render(legendRows(markers, theme, cssVar))
+      // (Re)start the effect: at once for the table twin, again when the map exists.
+      const start = () => {
+        if (disposed) return
+        if (effect) Alpine.release(effect)
+        let last: string | null | undefined // undefined until the first run
+        effect = Alpine.effect(() => {
+          const stations = opts.stations()
+          const selected = opts.selected()
+          const visible = toSet(opts.visible?.())
+          table.render(stationRows(visibleStations(stations, visible)), selected)
+          if (!layer || !host) return
+          const markers = layer.update({ stations, visible, selected })
+          legend.render(legendRows(markers, MCO.getTheme(), cssVar))
+
+          // Selection side effects wait for the catalog; the first one seen is the
+          // page's initial state (deep link), so it is neither announced nor animated.
+          const s = selected ? stations.find((x) => x.station === selected) : undefined
+          if (!stations.length || selected === last || (selected && !s)) return
+          const first = last === undefined
+          last = selected
+          if (!first) announce(selectionAnnouncement(s))
+          // Centre the station in the space below the legend (top-left), so the legend covers less around it.
+          const legendBottom = legend.element.offsetTop + legend.element.offsetHeight
+          if (!preset.fly || !s) return
+          const box = preset.frame ? locatorFrame(stations, s.station) : null
+          if (box && host.fitTo(box, { padding: clearOfOverlays(legendBottom), zoom: locatorZoom, animate: !first })) return
+          host.flyTo([s.longitude, s.latitude], { animate: !first, offset: [0, legendBottom / 2] })
+        })
+      }
+
+      start()
+      // MapLibre 6 is imported on first use (kit 0.8.0); the page around the map never waits for it.
+      MCO.map.loadMapLibre().then(
+        () => {
+          if (disposed) return
+          host = createMap(canvas, {
+            label: opts.label ?? preset.label,
+            cooperativeGestures: preset.cooperative,
+            refit: !preset.fly,
+            fitPadding: preset.fitPadding,
+            layers: (map, theme) => {
+              const markers = layer?.add(map, theme)
+              if (markers) legend.render(legendRows(markers, theme, cssVar))
+            },
+          })
+          layer = createStationLayer(host.map, (id) => opts.onSelect(id))
+          start()
         },
-      })
-      layer = createStationLayer(host.map, (id) => opts.onSelect(id))
-
-      let last: string | null | undefined // undefined until the first run
-      effect = Alpine.effect(() => {
-        const stations = opts.stations()
-        const selected = opts.selected()
-        const visible = toSet(opts.visible?.())
-        if (!layer || !host) return
-        const markers = layer.update({ stations, visible, selected })
-        legend.render(legendRows(markers, MCO.getTheme(), cssVar))
-        table.render(stationRows(visibleStations(stations, visible)), selected)
-
-        // Selection side effects wait for the catalog; the first one seen is the
-        // page's initial state (deep link), so it is neither announced nor animated.
-        const s = selected ? stations.find((x) => x.station === selected) : undefined
-        if (!stations.length || selected === last || (selected && !s)) return
-        const first = last === undefined
-        last = selected
-        if (!first) announce(selectionAnnouncement(s))
-        // Centre the station in the space below the legend (top-left), so the legend covers less around it.
-        const legendBottom = legend.element.offsetTop + legend.element.offsetHeight
-        if (!preset.fly || !s) return
-        const box = preset.frame ? locatorFrame(stations, s.station) : null
-        if (box && host.fitTo(box, { padding: clearOfOverlays(legendBottom), zoom: locatorZoom, animate: !first })) return
-        host.flyTo([s.longitude, s.latitude], { animate: !first, offset: [0, legendBottom / 2] })
-      })
+        () => {
+          if (!disposed) MCO.showToast('The map could not be loaded')
+        },
+      )
     },
 
     /** Select station `id` (same path as a marker click). */
@@ -123,6 +141,7 @@ function mapView(opts: StationMapOptions, preset: Preset) {
     },
 
     destroy() {
+      disposed = true
       if (effect) Alpine.release(effect)
       layer?.dispose()
       host?.dispose()

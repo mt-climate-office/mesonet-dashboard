@@ -238,7 +238,7 @@ function lineMarkerColors(t: Theme): Record<string, string> {
   return out
 }
 
-describe('contrast against --bg-surface (kit 0.7.1 snapshot)', () => {
+describe('contrast against --bg-surface (kit 0.11.2 snapshot)', () => {
   for (const t of THEMES) {
     it(`${t}: every line/marker role ≥ 3:1`, () => {
       const bg = TOKENS_SNAPSHOT[t]['--bg-surface']

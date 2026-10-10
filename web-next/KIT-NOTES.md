@@ -1,4 +1,4 @@
-# Kit notes (mco-web-style @0.7.1)
+# Kit notes (mco-web-style @0.11.2)
 
 A running log, for the kit proposal: every place the UX refactor needed something
 mco-web-style does not have, or had to override. Each entry names the local

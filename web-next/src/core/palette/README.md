@@ -7,7 +7,7 @@ The one place for data colors (HOUSE-STYLE §6). Pure TypeScript, no DOM.
 | `ramps.ts` | Approved ramps as hex stops (Crameri batlow/romaO, ColorBrewer RdBu/BrBG/YlGnBu/YlOrRd/Blues/PuRd, Tol bright/muted/high-contrast) and `sample()` / `colorAt()` (OKLab interpolation). No Spectral. |
 | `roles.ts` | Every chart/map color role → color per theme (`'dark' \| 'light' \| 'high-contrast'`), plus `resolve()` for kit tokens. |
 | `contrast.ts` | WCAG luminance and `contrastRatio()`. |
-| `tokens.snapshot.ts` | Kit 0.7.1 surface/text tokens the tests measure against. |
+| `tokens.snapshot.ts` | Kit 0.11.2 surface/text tokens the tests measure against. |
 
 Which legacy color each role replaces: `web-next/DIVERGENCES.md` "House style › Data colors" (update it with any role change).
 

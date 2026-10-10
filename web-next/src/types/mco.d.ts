@@ -1,6 +1,6 @@
 /**
  * Types for the kit globals loaded from the CDN in index.html: `window.MCO`
- * (core/mco-core.js @0.7.1), `MCO.map` (map/mco-map.js) and `maplibregl`.
+ * (core/mco-core.js @0.11.2), `MCO.map` (map/mco-map.js) and `maplibregl`.
  * Hand-written from the kit's source comments; extend as calls are added.
  */
 import type * as MapLibre from 'maplibre-gl'
@@ -14,6 +14,13 @@ interface McoToast {
 }
 
 interface McoMap {
+  /** The pinned MapLibre release ('6.11.2'). */
+  MAPLIBRE_VERSION: string
+  /**
+   * Import MapLibre 6 (ES modules only) from the kit's pin, publish it as `window.maplibregl` and resolve
+   * with it; one shared import, retried on the next call after a failure. SRI comes from index.html's import map.
+   */
+  loadMapLibre(opts?: { url?: string }): Promise<typeof MapLibre>
   MT_FIT_BOUNDS: [[number, number], [number, number]]
   FIT_OPTS: MapLibre.FitBoundsOptions
   TERRARIUM_DEM: MapLibre.RasterDEMSourceSpecification
@@ -92,6 +99,8 @@ interface Mco {
   /** Singleton toast, 2800 ms default. */
   showToast(msg: string, ms?: number): void
   getTheme(): Theme
+  /** Release the anti-flash snippet's first-paint hold (`mco-booting`, `[data-hold]`); idempotent. */
+  ready(): void
   /** Sets data-theme; persists to localStorage 'mco-theme' unless persist: false. */
   setTheme(theme: Theme, opts?: { persist?: boolean }): void
   createLiveRegion(): { element: HTMLElement; announce(text: string): void }
@@ -115,7 +124,7 @@ declare global {
     MCO: Mco
   }
   const MCO: Mco
-  /** MapLibre GL from the kit-pinned CDN (types only from the npm package). */
+  /** MapLibre GL from the kit-pinned CDN, once `MCO.map.loadMapLibre()` resolves (types only from the npm package). */
   const maplibregl: typeof MapLibre
 }
 

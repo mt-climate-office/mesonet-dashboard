@@ -1,7 +1,8 @@
 /**
  * Entry point: fix up legacy URLs, register every store and component
  * (explicit list, in dependency order), then start Alpine. Runs after the
- * kit's classic scripts, so `window.MCO` and `maplibregl` already exist.
+ * kit's classic scripts, so `window.MCO` already exists; MapLibre arrives later,
+ * on demand (`MCO.map.loadMapLibre()`, ui/map/presets.ts).
  */
 import Alpine from 'alpinejs'
 import { parseQcLevel, setQcOverride } from './core/api/qcLevel'
@@ -209,6 +210,8 @@ Alpine.data('agSoilView', agSoilView)
 Alpine.data('agAnnualView', agAnnualView)
 
 Alpine.start()
+// The anti-flash snippet's first-paint hold (kit 0.9.0): Alpine has drawn the shell.
+MCO.ready()
 
 // Bottom sheets and docked popovers stay above an on-screen keyboard (iOS Safari covers them otherwise).
 initKeyboardInset()

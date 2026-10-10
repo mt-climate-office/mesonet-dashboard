@@ -15,6 +15,7 @@ import type {
 } from 'react-map-gl/maplibre'
 import { Box, Group, Paper, Text } from '@mantine/core'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import '../../lib/maplibreWorker'
 import type { Station } from '../../lib/api'
 import { DL_MARKER_COLORS, groupStations } from './stationGroups'
 
