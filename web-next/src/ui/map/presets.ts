@@ -3,8 +3,8 @@
  *   stationMap    — Latest card: select a station, fly to it.
  *   locatorMap    — About: frames the selected station and its near neighbours clear of the overlays;
  *                   the page keeps one-finger and wheel scrolling.
- *   pickerMap     — station picker: the whole state stays in view, click selects; cooperative on touch.
- *   landingMap    — the no-station landing: the picker's map, large, its legend open beside Montana.
+ *   pickerMap     — the station picker's full-screen map: the whole state stays in view, click selects.
+ *   landingMap    — the no-station landing: the same framing in the page, its legend open beside Montana.
  *
  * Markup: an empty element with a height; the component builds the legend panel and sr-only table
  * twin inside it at once, and the map once MapLibre has arrived (`MCO.map.loadMapLibre()`; a failure
@@ -168,40 +168,37 @@ export const stationMap = (opts: StationMapOptions) =>
 export const locatorMap = (opts: StationMapOptions) =>
   mapView({ legendCollapsed: true, ...opts }, { label: 'Locator map of Montana Mesonet stations', fly: true, frame: true, cooperative: true })
 
-/**
- * Station-picker map: picking a station does not move the map (the whole network stays in view).
- * On touch, two fingers move it, so one finger still scrolls the sheet or drawer. The frame is
- * small (303 × 240 in the drawer), so Montana fits below the collapsed legend (top-left) and left
- * of the zoom controls (top-right; 40 px buttons on touch, map.css) instead of under them.
- */
-export const pickerMap = (opts: StationMapOptions) => {
-  const touch = matchMedia('(hover: none)').matches
-  return mapView(opts, {
-    label: 'Map of Montana Mesonet stations',
-    fly: false,
-    cooperative: touch,
-    fitPadding: { top: 56, right: touch ? 56 : 48, bottom: 16, left: 12 },
-  })
-}
-
 /** Montana's width over its height on the web-mercator map (about 12° of longitude by 4.6° of latitude). */
 const MT_ASPECT = 1.8
 
 /**
- * No-station landing map (partials/landing.html): the picker map at page size. The legend starts open
- * except on compact screens (ui/map/legend.ts), so on a wide frame Montana fits right of it. A phone's
+ * Fit padding for a page-size map frame (the landing, the picker's full-screen map). The legend starts
+ * open except on compact screens (ui/map/legend.ts), so on a wide frame Montana fits right of it. A phone's
  * frame is taller than Montana: the state is centred at full width when that clears the zoom buttons
- * (three, 40 px on touch: map.css), else it sits just below them. On touch two fingers move the map
- * and one scrolls the page.
+ * (three, 40 px on touch: map.css), else it sits just below them.
  */
-export const landingMap = (opts: StationMapOptions) => {
-  const touch = matchMedia('(hover: none)').matches
+function pageFit(touch: boolean) {
   const controls = 10 + 3 * (touch ? 40 : 29) + 8
-  const fitPadding = (w: number, h: number): MapLibre.PaddingOptions => {
+  return (w: number, h: number): MapLibre.PaddingOptions => {
     if (matchMedia('(min-width: 900px)').matches && !MCO.viewport.isCompact()) return { top: 24, right: 64, bottom: 24, left: 220 }
     if (!matchMedia('(max-width: 640px)').matches) return { top: touch ? 76 : 56, right: touch ? 56 : 48, bottom: 16, left: 12 }
     const centredTop = (h - (w - 24) / MT_ASPECT) / 2
     return { top: centredTop >= controls ? 12 : controls, right: 12, bottom: 12, left: 12 }
   }
-  return mapView(opts, { label: 'Map of Montana Mesonet stations', fly: false, cooperative: touch, fitPadding })
+}
+
+/**
+ * Station-picker map, full screen in its dialog (partials/picker.html): picking a station does not move
+ * the map (the whole network stays in view). Nothing scrolls under it, so one finger moves it.
+ */
+export const pickerMap = (opts: StationMapOptions) =>
+  mapView(opts, { label: 'Map of Montana Mesonet stations', fly: false, fitPadding: pageFit(matchMedia('(hover: none)').matches) })
+
+/**
+ * No-station landing map (partials/landing.html): the picker map in the page (`pageFit`). On touch two
+ * fingers move the map and one scrolls the page.
+ */
+export const landingMap = (opts: StationMapOptions) => {
+  const touch = matchMedia('(hover: none)').matches
+  return mapView(opts, { label: 'Map of Montana Mesonet stations', fly: false, cooperative: touch, fitPadding: pageFit(touch) })
 }

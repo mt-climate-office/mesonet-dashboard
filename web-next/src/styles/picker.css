@@ -63,7 +63,7 @@
 .picker-search .ctl-option { min-height: 44px; padding: 0.4rem 0.6rem; }
 .picker-search .ctl-option-meta { font-family: var(--font-ui); }
 
-/* "Browse on the map": a full-width row; the caret turns while open (aria-expanded). */
+/* "Browse on the map": a full-width row that opens the map dialog. */
 .picker-browse-toggle {
   display: flex; align-items: center; gap: 0.6rem;
   width: 100%; min-height: 44px; padding: 0.4rem 0.6rem;
@@ -75,12 +75,9 @@
 .picker-browse-toggle:hover { background: var(--accent-hover); }
 .picker-browse-toggle svg { flex-shrink: 0; stroke: currentColor; }
 .picker-browse-toggle > span { flex: 1; }
-.picker-browse-caret { transition: transform var(--transition); }
-.picker-browse-toggle[aria-expanded="true"] .picker-browse-caret { transform: rotate(180deg); }
-.picker-map-region { display: flex; flex-direction: column; gap: calc(2 * var(--gap-tight)); min-height: 0; }
 
 /* Phone sheet with search results open (stationPicker goes full): the list fills the sheet under the
-   field and scrolls on its own; recents, Near me and the map step aside until it closes. */
+   field and scrolls on its own; recents, Near me and "Browse on the map" step aside until it closes. */
 .dash-sheet.search-open[data-state="full"] { height: calc(100dvh - var(--chrome-h, 52px) - var(--tabbar-h, 0px) - 0.5rem); }
 .dash-sheet.search-open .picker-group { display: none; }
 .dash-sheet.search-open .picker-search { flex: 1 1 auto; min-height: 0; }
@@ -90,33 +87,25 @@
 /* Keyboard open (typing a search): the results fill what is visible under the header. */
 .kb-open .dash-sheet.search-open[data-state="full"] { height: calc(var(--vv-h, 100dvh) - var(--chrome-h, 52px) - 0.5rem); }
 
-/* Montana is wide: a 4:3 frame in the drawer (map.css keeps it ≥ 240 px tall). The width is pinned:
-   WebKit otherwise derives it from that min-height (320 px) and runs past the drawer's padding. */
-.picker-map { width: 100%; min-width: 0; max-width: 100%; aspect-ratio: 4 / 3; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
-
-/* Short drawer with the map open (a landscape phone or tablet, 844 × 390, 1024 × 600): the map fits
-   without scrolling. Recents and Near me step aside, and under 560 px the search too ("Browse on the
-   map" stays as the way back); the 4:3 frame shrinks to the room left, down to 10 rem. */
-@media (max-height: 720px) {
-  .dash-drawer.map-open :is([data-testid="recent-list"], [data-testid="near-results"]) { display: none; }
-  .dash-drawer.map-open :is(.picker-browse, .picker-map-region) { flex: 0 1 auto; min-height: 0; }
-  .dash-drawer.map-open .picker-map { flex: 0 1 auto; min-height: 10rem; }
+/* The map dialog fills the screen (the kit's .mco-modal box, made full-bleed): the header, the network
+   chips, then the map down to the bottom edge. Safe-area insets keep the title and × clear of a notch. */
+.picker-map-modal { padding: 0; width: 100%; height: 100%; max-width: none; max-height: none; }
+.picker-map-box {
+  display: flex; flex-direction: column; gap: var(--gap);
+  width: 100%; height: 100%; max-height: none; overflow: hidden;
+  border: 0; border-radius: 0; box-shadow: none; background-image: none;
+  padding: max(var(--gap), env(safe-area-inset-top)) max(var(--gutter), env(safe-area-inset-right))
+           max(var(--gap), env(safe-area-inset-bottom)) max(var(--gutter), env(safe-area-inset-left));
 }
-@media (max-height: 560px) {
-  .dash-drawer.map-open .picker-search { display: none; }
-}
-
-/* Phone sheet with the map open (stationPicker goes full): a fixed height, the recents and Near me
-   step aside, and the map takes the space left under the search and the networks. */
-.dash-sheet.map-open[data-state="full"] { height: calc(100dvh - var(--chrome-h, 52px) - var(--tabbar-h, 0px) - 0.5rem); }
-.dash-sheet.map-open :is([data-testid="recent-list"], [data-testid="near-results"]) { display: none; }
-.dash-sheet.map-open .picker-browse,
-.dash-sheet.map-open .picker-map-region { flex: 1 1 auto; min-height: 0; }
-.dash-sheet .picker-map { aspect-ratio: auto; height: 18rem; }
-.dash-sheet.map-open .picker-map { flex: 1 1 auto; height: auto; min-height: 10rem; }
-/* Landscape phone: the map is the whole sheet body (closing the sheet brings the search back). */
-@media (max-height: 560px) {
-  .dash-sheet.map-open :is(.picker-search, .picker-browse-toggle, [data-testid="picker-networks"]) { display: none; }
-  .dash-sheet.map-open .dash-panel-body { padding: 0 0 var(--gap-tight); }
-  .dash-sheet.map-open .picker-map { border: 0; border-radius: 0; }
+/* kit-override: the header's 1.25 rem gap and sticky offsets suit a scrolling box; this one does not scroll. */
+.picker-map-box .info-modal-header { position: static; margin: 0; padding: 0; align-items: center; border-radius: 0; }
+.picker-map { flex: 1 1 auto; min-height: 0; width: 100%; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
+/* From tablet width (and on a landscape phone): the title, the chips and × share one row, so the map gets
+   the height. The header box steps aside (display: contents) and the box lays out its children. */
+@media (min-width: 641px) {
+  .picker-map-box { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); align-items: center; column-gap: var(--gap); }
+  .picker-map-box .info-modal-header { display: contents; }
+  .picker-map-box .modal-close { grid-column: 3; grid-row: 1; }
+  .picker-map-box [data-testid="picker-networks"] { grid-column: 2; grid-row: 1; }
+  .picker-map { grid-column: 1 / -1; height: 100%; }
 }
