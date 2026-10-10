@@ -1,5 +1,5 @@
 // Snapshot of the kit tokens that palette tests measure against.
-// Copied from mco-web-style v0.11.2 tokens/tokens.json (themes.{dark,light,highContrast}).
+// Copied from mco-web-style v0.11.3 tokens/tokens.json (themes.{dark,light,highContrast}).
 // Refresh by hand when the kit is bumped; palette.test.ts fails if a role color loses contrast.
 
 import type { Theme } from './roles'

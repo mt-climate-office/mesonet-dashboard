@@ -1,7 +1,7 @@
 # web-next architecture
 
 The Montana Mesonet Dashboard, rebuilt on the MCO house style
-([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.11.2)
+([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.11.3)
 with Alpine.js, Apache ECharts and TypeScript. Preview at
 `/mesonet-dashboard/next/`; it replaces `web/` at cutover.
 

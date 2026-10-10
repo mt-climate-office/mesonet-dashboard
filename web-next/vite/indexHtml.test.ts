@@ -43,7 +43,7 @@ describe('index.html', () => {
       expect(t).not.toContain('@latest')
     }
     const versions = new Set([...html.matchAll(/mco-web-style@([\d.]+)/g)].map((m) => m[1]))
-    expect([...versions]).toEqual(['0.11.2'])
+    expect([...versions]).toEqual(['0.11.3'])
     const maplibre = new Set([...html.matchAll(/maplibre-gl@([\d.]+)/g)].map((m) => m[1]))
     expect([...maplibre]).toEqual(['6.11.2'])
   })

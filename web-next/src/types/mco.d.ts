@@ -1,6 +1,6 @@
 /**
  * Types for the kit globals loaded from the CDN in index.html: `window.MCO`
- * (core/mco-core.js @0.11.2), `MCO.map` (map/mco-map.js) and `maplibregl`.
+ * (core/mco-core.js @0.11.3), `MCO.map` (map/mco-map.js) and `maplibregl`.
  * Hand-written from the kit's source comments; extend as calls are added.
  */
 import type * as MapLibre from 'maplibre-gl'
