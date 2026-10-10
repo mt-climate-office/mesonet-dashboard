@@ -3,7 +3,7 @@
    language"): --bg-surface, radius 16 px, a soft shadow and no border, except in high contrast,
    where a border keeps the separation (a shadow is invisible on black), and dark, which adds a
    hairline. The spacing scale (--gap*, --gutter, --card-pad) and radii live here; one title style. A card may be an <a> (tiles): it then shows a hover fill and
-   keeps the kit focus ring. Badges (.dash-badge) and the display numerals (.num-display) live here. */
+   keeps the kit focus ring. Badges (.dash-badge) and the display-numeral sizes live here. */
 
 :root {
   /* Lighter than the kit's floating --shadow (24 px blur): two short layers tinted by the kit
@@ -47,19 +47,13 @@ a.dash-card:hover { background: var(--accent-hover); }
 
 .dash-card-title { margin: 0 0 0.6rem; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
 
-/* Display numerals (readings ≥ 1.75 rem: the Now hero, tiles): Outfit with tabular figures and a
-   slight negative tracking. Space Mono stays for tables, ids, timestamps and axes. The one app
-   utility for it until the kit ships one (mco-web-style#36; KIT-NOTES.md). */
+/* Display numerals (readings ≥ 1.75 rem: the Now hero, tiles) use the kit's .mco-num-display (0.10.0);
+   these are their sizes. Space Mono stays for tables, ids, timestamps and axes. */
 :root {
   --fs-display-tile: 1.9rem;  /* Now's tile values */
   --fs-display-hero: 5rem;    /* Now's temperature; 7 rem beside the tiles (desktop) */
 }
 @media (min-width: 1060px) and (min-height: 561px) { :root { --fs-display-hero: 7rem; } }
-.num-display {
-  font-family: var(--font-ui);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-}
 
 /* Underlined, not color-only (WCAG 1.4.1). */
 .dash-link { color: var(--accent-line); font-size: var(--fs-sm); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }

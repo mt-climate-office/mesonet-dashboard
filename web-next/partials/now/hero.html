@@ -7,7 +7,7 @@
   <a class="now-hero-link" :href="href('air_temp')" @click="open($event, 'air_temp')" data-testid="now-hero-link">
   <span class="sr-only">Air temperature: </span>
   <div class="now-hero-top">
-    <p class="now-temp num-display" data-testid="now-temp">
+    <p class="now-temp mco-num-display" data-testid="now-temp">
       <span x-text="page.hero.temp ?? '—'"></span><span class="now-temp-unit" x-show="page.hero.temp">F</span>
     </p>
     <p class="now-hilo">

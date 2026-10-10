@@ -2,7 +2,7 @@
    tiles (2-up) → rows, in DOM order. Desktop (≥ 1060 px): two columns, hero over the photo | tiles
    (one per row: text left, sparkline right) over the rows, ending level: the photo and the tiles
    grow to fill. Readings in
-   .num-display (Outfit, tabular); every slot keeps its size while loading (skeletons). Kit tokens
+   .mco-num-display (the kit's Outfit, tabular); every slot keeps its size while loading (skeletons). Kit tokens
    only; spacing from the app scale (--gap, --gap-tight, --card-pad) with fallbacks. */
 
 .now-grid { display: grid; gap: var(--gap, 12px); grid-template-columns: minmax(0, 1fr); }

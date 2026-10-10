@@ -175,13 +175,9 @@ falls short.
   spacing tokens and its radii stop at 12 px.
 - **Proposed:** kit `--space-*` (4 px base) and a `--radius-xl` (16 px) for in-flow cards.
 
-### Display numerals — new (mco-web-style#36)
-- **Here:** `.num-display` (`ui/layout/card.css`): Outfit (`--font-ui`), `font-variant-numeric: tabular-nums`,
-  `letter-spacing: -0.02em`. For readings at display size (≥ 1.75 rem: the Now hero, tiles).
-- **Why:** Space Mono at hero sizes reads as code (DESIGN.md "Redesign 2026-10", decision 4). Space Mono stays for tables, ids,
-  timestamps and axes. Filed as https://github.com/mt-climate-office/mco-web-style/issues/36; until the kit
-  ships a token or class, this is the one app utility. Swap it for the kit's when the pin moves.
-- **Proposed:** a kit `--font-display-num` (or `.mco-num-display`) with the same three properties.
+### Display numerals — shipped (mco-web-style#36)
+- **Done in 0.10.0:** `--font-display-num` + `.mco-num-display`. The app's `.num-display` is gone; `ui/layout/card.css`
+  keeps only the display sizes (`--fs-display-hero`, `--fs-display-tile`).
 
 ### Breakpoints — gap
 - **Here:** the desktop edge `(min-width: 1060px)` is written in JS (`ui/picker/stationPicker.ts`) and CSS.
