@@ -371,7 +371,7 @@ Use: `.mco-navbar` family (`.is-sticky`, which publishes `--chrome-h`), `.nav-bt
 (`[aria-pressed]` for toggles, `[aria-current="page"]` for section links), `.seg-btns`, `.mco-btn-info`,
 `<dialog class="mco-modal">` + `MCO.initInfoModal`, `MCO.showToast`,
 `.mco-panel` (floating over maps only; it is absolutely positioned),
-`MCO.createLiveRegion` (via `ui/shell/live.ts#announce`), `MCO.viewport`,
+`MCO.announce` (via `ui/shell/live.ts#announce`), `MCO.viewport`,
 `MCO.reducedMotion()`, `MCO.map.*`, `.mco-scrim`. localStorage keys other
 than `mco-theme` are `mco-dashboard-*` and re-validated on read:
 `mco-dashboard-station`, `mco-dashboard-recent`, `mco-dashboard-drawer`

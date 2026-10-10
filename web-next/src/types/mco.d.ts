@@ -106,6 +106,8 @@ interface Mco {
   /** dark → light → high contrast (`cycle: true`), else dark ↔ light. Applies and returns the new theme. */
   toggleTheme(opts?: { cycle?: boolean }): Theme
   THEME_CYCLE: readonly Theme[]
+  /** The page's one announcer (0.8.0): clears, then sets the text; the same text within 500 ms is dropped. */
+  announce(text: string, opts?: { politeness?: 'polite' | 'assertive' }): void
   createLiveRegion(): { element: HTMLElement; announce(text: string): void }
   initInfoModal(opts: { dialog: HTMLDialogElement; trigger?: HTMLElement | null }): { open(): void; close(): void }
   initCollapsible(opts: {

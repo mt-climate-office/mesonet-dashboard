@@ -1,15 +1,12 @@
 /**
- * The page's one polite live region (HOUSE-STYLE §5.1), created lazily via
- * `MCO.createLiveRegion`. Call `announce()` for changes a screen reader
- * cannot see (canvas re-renders, tab switches).
+ * Screen-reader announcements go through the kit's one polite announcer, `MCO.announce` (HOUSE-STYLE §5.1).
+ * Call `announce()` for changes a screen reader cannot see (canvas re-renders, tab switches).
  */
-let region: { announce(text: string): void } | null = null
 
 /**
- * Announce `text` politely; repeated identical text is re-announced (the kit clears the region and sets
- * the text after a short gap, since 0.8.0, so the text lands a moment later).
+ * Announce `text` politely. The kit clears its region and sets the text a moment later, so a repeat is
+ * re-read; the same text twice within 500 ms is heard once.
  */
 export function announce(text: string): void {
-  region ??= MCO.createLiveRegion()
-  region.announce(text)
+  MCO.announce(text)
 }
