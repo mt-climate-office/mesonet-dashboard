@@ -2,7 +2,7 @@
  * `x-data="stationPicker"` on `#station-picker` (partials/picker.html): the
  * station search (Near me inside it; places too: a picked county, reservation,
  * town or ZIP code lists its stations where Near me does), recents, and "Browse on the map"
- * (network chips + map, revealed on demand), presented as a
+ * (network chips + map in a full-screen kit dialog), presented as a
  * bottom sheet on narrow viewports (≤ 640 px) and a drawer elsewhere (inline at
  * ≥ 1060 px unless short, overlay between and on short, wide screens). The presentations are ui/layout/{sheet,drawer}.ts;
  * this wrapper picks one per viewport, decides when it starts open
@@ -54,13 +54,15 @@ export function stationPicker() {
     auto = false
   }
   const autoOpen = () => quietly(() => ctl?.open({ focus: false }))
+  const mapDialog = () => document.getElementById('picker-map-modal') as HTMLDialogElement | null
+  // Where focus returns when the map closes without a pick. Passed in, not read from activeElement:
+  // Safari does not focus a clicked button.
+  let mapOpener: HTMLElement | null = null
   return component({
     ...stationSearch(),
     open: false,
     mode: 'inline' as Mode,
-    /** "Browse on the map" is open: the network chips and the map show. */
-    mapShown: false,
-    /** The map mounts on the first reveal and then stays (MapLibre is costly to rebuild). */
+    /** The map mounts on the first open of its dialog and then stays (MapLibre is costly to rebuild). */
     mapMounted: false,
     /** The search's result list is open (the phone sheet gives it the whole sheet). */
     searchOpen: false,
@@ -85,8 +87,6 @@ export function stationPicker() {
       this.mode = modeNow()
       const onChange = (open: boolean) => {
         this.open = open
-        // The phone sheet reopens on search and recents, not on the map that filled it.
-        if (!open && this.mode === 'sheet') this.mapShown = false
         if (this.mode === 'inline' && !auto) saveDrawerOpen(browserStorage(), open)
       }
       if (this.mode === 'sheet') {
@@ -111,25 +111,26 @@ export function stationPicker() {
     get modal(): boolean {
       return this.mode !== 'inline'
     },
-    /** The panel's presentation class; `map-open` / `search-open` let the sheet give the map or the results the room left. */
+    /** The panel's presentation class; `search-open` lets the sheet give the results the room left. */
     panelClass(): string {
-      return `${this.mode === 'sheet' ? 'dash-sheet' : 'dash-drawer'}${this.mapShown ? ' map-open' : ''}${this.searchOpen ? ' search-open' : ''}`
+      return `${this.mode === 'sheet' ? 'dash-sheet' : 'dash-drawer'}${this.searchOpen ? ' search-open' : ''}`
     },
 
     toggle(opener: HTMLElement | null): void {
       if (ctl?.isOpen) return ctl.close()
       ctl?.open({ opener })
-      if (this.mapShown) ctl?.setState?.('full')
     },
     close(): void {
       ctl?.close()
     },
 
     /**
-     * A station was picked here: select it and close at every size (the inline
+     * A station was picked here: select it and close the map and the picker at every size (the inline
      * drawer saves 'closed'). Focus goes to <main>, the new station's content.
      */
     choose(id: string): void {
+      mapOpener = null
+      mapDialog()?.close()
       const st = Alpine.store('station')
       st.select(id)
       announce(`${st.byId(id)?.name ?? id} selected`)
@@ -152,14 +153,25 @@ export function stationPicker() {
       return this.mode === 'sheet' ? 'Station, town, county or ZIP' : 'Station, town or ZIP'
     },
 
-    /* Browse on the map */
-    toggleMap(): void {
-      this.mapShown = !this.mapShown
-      if (!this.mapShown) return
+    /* Browse on the map: a full-screen kit dialog over everything, the picker included */
+    openMap(opener: HTMLElement): void {
+      mapOpener = opener
       this.mapMounted = true
-      // On a phone the map needs the room: the sheet goes full and the map scrolls into view.
-      ctl?.setState?.('full')
-      void this.$nextTick(() => document.getElementById('picker-map-region')?.scrollIntoView({ block: 'nearest' }))
+      mapDialog()?.showModal()
+    },
+    /**
+     * × or Esc: back to the picker. Esc is taken here (and its default, the dialog's cancel, done by hand)
+     * so the picker's own Esc does not close it too.
+     */
+    closeMap(e?: KeyboardEvent): void {
+      e?.preventDefault()
+      e?.stopPropagation()
+      mapDialog()?.close()
+    },
+    /** The dialog closed: without a pick, focus returns to "Browse on the map". */
+    mapClosed(): void {
+      mapOpener?.focus({ preventScroll: true })
+      mapOpener = null
     },
 
     /* Networks (ui/controls/chips over ?nets=) */

@@ -1,7 +1,7 @@
 <!-- Station picker (x-data="stationPicker", ui/picker/stationPicker.ts): search first (stations, and
      places while typing; the "Near me" chip inside the field; Near me's or a picked place's stations
      below), recents, then "Browse on the map",
-     which reveals the network chips and the station map. A drawer (.dash-drawer, inline ≥ 1060 px /
+     which opens the network chips and the station map full screen (a dialog). A drawer (.dash-drawer, inline ≥ 1060 px /
      overlay, also on short, wide screens) or, ≤ 640 px wide, a bottom sheet (.dash-sheet); the class
      follows the viewport.
      The head's handle button is the sheet's drag/toggle target and is hidden in drawer mode. -->
@@ -32,28 +32,38 @@
       </ul>
     </section>
 
-    <!-- Browse on the map: reveals the network chips and the map (mounted on the first reveal, then kept). -->
+    <!-- Browse on the map: opens the full-screen map dialog below. -->
     <section class="picker-group picker-browse" aria-label="Map">
-      <button type="button" class="picker-browse-toggle" :aria-expanded="mapShown ? 'true' : 'false'" aria-controls="picker-map-region"
-              @click="toggleMap()" data-testid="picker-browse">
+      <button type="button" class="picker-browse-toggle" aria-haspopup="dialog" aria-controls="picker-map-modal"
+              @click="openMap($event.currentTarget)" data-testid="picker-browse">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>
         <span>Browse on the map</span>
-        <svg class="picker-browse-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
       </button>
-      <div class="picker-map-region" id="picker-map-region" x-show="mapShown">
-        <div class="ctl-chips" role="group" aria-label="Networks" data-testid="picker-networks"
-             x-data="chips({ options: () => networkOptions(), value: () => nets(), onChange: (v) => setNets(v), label: 'Networks' })">
-          <template x-for="opt in options()" :key="opt.value">
-            <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)"
-                    @click="toggle(opt.value)" x-text="opt.label"></button>
-          </template>
-        </div>
-        <template x-if="mapMounted">
-          <div class="picker-map" data-testid="picker-map"
-               x-data="pickerMap({ stations: () => $store.station.list, selected: () => $store.station.id,
-                        onSelect: (id) => choose(id), visible: () => visible(), legendCollapsed: true, label: 'Map of Montana Mesonet stations: pick one' })"></div>
-        </template>
-      </div>
     </section>
   </div>
+
+  <!-- The full-screen map (a kit dialog, like Help and the photos): the title and ×, the network chips, then
+       the map. Picking a station closes it and the picker; × or Esc returns to the picker. The map mounts on
+       the first open and is kept (MapLibre is costly to rebuild). -->
+  <dialog class="mco-modal picker-map-modal" id="picker-map-modal" aria-labelledby="picker-map-title" data-testid="picker-map-modal"
+          @keydown.escape="closeMap($event)" @close="mapClosed()">
+    <div class="info-modal-box picker-map-box">
+      <div class="info-modal-header">
+        <h2 class="info-modal-title" id="picker-map-title" tabindex="-1" autofocus>Choose a station on the map</h2>
+        <button type="button" class="modal-close" aria-label="Close the map" @click="closeMap()" data-testid="picker-map-close">×</button>
+      </div>
+      <div class="ctl-chips" role="group" aria-label="Networks" data-testid="picker-networks"
+           x-data="chips({ options: () => networkOptions(), value: () => nets(), onChange: (v) => setNets(v), label: 'Networks' })">
+        <template x-for="opt in options()" :key="opt.value">
+          <button type="button" class="nav-btn ctl-chip" :aria-pressed="isOn(opt.value)"
+                  @click="toggle(opt.value)" x-text="opt.label"></button>
+        </template>
+      </div>
+      <template x-if="mapMounted">
+        <div class="picker-map" data-testid="picker-map"
+             x-data="pickerMap({ stations: () => $store.station.list, selected: () => $store.station.id,
+                      onSelect: (id) => choose(id), visible: () => visible(), label: 'Map of Montana Mesonet stations: pick one' })"></div>
+      </template>
+    </div>
+  </dialog>
 </aside>

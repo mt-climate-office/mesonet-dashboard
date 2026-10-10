@@ -4,8 +4,8 @@
  * sideways swipe on a variable page walks the list; no
  * view scrolls sideways; the Now hero through its strip is above the fold at 390×844; the header is one
  * row at 390 and 1440 (sections in it only from tablet up); the phone tab bar has three items
- * on a solid surface; the Download sheet fits the screen; the picker sheet's map is in view after
- * "Browse on the map" and a short handle drag never closes it; the no-station landing fills the screen
+ * on a solid surface; the Download sheet fits the screen; the picker's map fills the screen after
+ * "Browse on the map" (× and Esc return to the picker, a pick closes both) and a short handle drag never closes the sheet; the no-station landing fills the screen
  * with its map (no picker over it) on every section; with reduced motion a section change
  * starts no view transition; the big-screen dashboard shows only with room for it (2560 × 1440, 1920 × 1080
  * without the station drawer; not 1920 × 900 or 1440), fills the screen without scrolling, its two stacks'
@@ -292,25 +292,38 @@ for (const vp of VIEWPORTS) {
   await close()
 }
 
-/* ── Picker sheet (390): "Browse on the map" opens the sheet full with the map in view ── */
+/* ── Picker map (390): "Browse on the map" fills the screen; × and Esc return to the picker; a pick closes both ── */
 {
   const { page, problems, close, rendered } = await open(env, '?s=acebozem', { viewport: PHONE })
   await rendered({ filled: ['[data-testid="now-tiles"]'] })
   await page.getByTestId('station-switcher').tap()
   await page.getByTestId('picker-browse').tap()
   await page.waitForFunction(() => document.querySelector('[data-testid="picker-map"] canvas'), null, { timeout: 30000 })
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 10000 })
   const m = await page.evaluate(() => {
-    const sheet = document.getElementById('station-picker')
-    const body = sheet.querySelector('.dash-panel-body').getBoundingClientRect()
-    const map = sheet.querySelector('[data-testid="picker-map"]').getBoundingClientRect()
-    const bar = document.querySelector('.dash-tabbar').getBoundingClientRect()
-    return { state: sheet.dataset.state, top: Math.round(map.top), bottom: Math.round(map.bottom), h: Math.round(map.height), bodyTop: Math.round(body.top), bodyBottom: Math.round(body.bottom), barTop: Math.round(bar.top) }
+    const d = document.getElementById('picker-map-modal').getBoundingClientRect()
+    const map = document.querySelector('[data-testid="picker-map"]').getBoundingClientRect()
+    return { open: document.getElementById('picker-map-modal').open, w: Math.round(d.width), h: Math.round(d.height), vw: innerWidth, vh: innerHeight,
+      mapH: Math.round(map.height), mapBottom: Math.round(map.bottom), focus: document.activeElement?.id }
   })
-  check('[picker sheet 390] after "Browse on the map": sheet full, map ≥ 240 px tall and wholly in view above the tab bar',
-    m.state === 'full' && m.h >= 240 && m.top >= m.bodyTop && m.bottom <= m.bodyBottom + 1 && m.bottom <= m.barTop, JSON.stringify(m))
+  check('[picker map 390] "Browse on the map" opens the map full screen (≥ 70% of the height), focus on its title',
+    m.open && m.w === m.vw && m.h === m.vh && m.mapH >= 0.7 * m.vh && m.mapBottom <= m.vh && m.focus === 'picker-map-title', JSON.stringify(m))
+  const pickerOpen = () => page.evaluate(() => { const e = document.getElementById('station-picker'); return !e.hidden && getComputedStyle(e).visibility === 'visible' })
+  const state = async () => ({ map: await page.evaluate(() => document.getElementById('picker-map-modal').open), picker: await pickerOpen(), focus: await page.evaluate(() => document.activeElement?.dataset.testid) })
+  await page.keyboard.press('Escape')
+  const esc = await state()
+  check('[picker map 390] Esc closes the map, not the picker; focus back on "Browse on the map"', !esc.map && esc.picker && esc.focus === 'picker-browse', JSON.stringify(esc))
+  await page.getByTestId('picker-browse').tap()
+  await page.getByTestId('picker-map-close').tap()
+  const x = await state()
+  check('[picker map 390] × closes the map, not the picker; focus back on "Browse on the map"', !x.map && x.picker && x.focus === 'picker-browse', JSON.stringify(x))
+  await page.getByTestId('picker-browse').tap()
+  // The fixtured station (another would need its data recorded); a pick closes everything all the same.
+  await page.locator('[data-testid="picker-map"] .sr-only button[data-id="acebozem"]').evaluate((b) => b.click())
+  await page.waitForFunction(() => document.getElementById('station-picker').hidden, null, { timeout: 5000 }).catch(() => {})
+  const pick = { ...(await state()), s: await page.evaluate(() => new URLSearchParams(location.search).get('s')), main: await page.evaluate(() => document.activeElement?.id === 'main') }
+  check('[picker map 390] a pick on the map selects it and closes the map and the picker; focus to <main>', pick.s === 'acebozem' && !pick.map && !pick.picker && pick.main, JSON.stringify(pick))
   const p = await problems()
-  check('[picker sheet 390] console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  check('[picker map 390] console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
 }
 

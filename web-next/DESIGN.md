@@ -47,7 +47,7 @@ Station view (?s=<id>; remembered in localStorage mco-dashboard-station)
 └─ About     #about          metadata, all current readings, locator map
 Header ⋯ menu: Share this view · Install app (where it can be installed) · Theme · Help · Send feedback
 Station picker: drawer (desktop/tablet) or bottom sheet (phones):
-                search (Near me inside) · recents · Browse on the map (network chips + map)
+                search (Near me inside) · recents · Browse on the map (full screen: network chips + map)
 ```
 
 - **Entry:** `?s=` opens that station; otherwise the last one; otherwise the **landing** (first visit; "No
@@ -64,11 +64,12 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
   5 nearest; distances are from the place's centre. × shows whenever there is
   text: it clears it, keeps focus and shows the full list. Esc clears the text, then closes the list, then
   closes the picker.
-- **Browse on the map** on a phone opens the sheet full; recents and Near me step aside and the map takes the
-  rest of the sheet (in landscape, the whole sheet); two fingers move it. Closing the sheet resets it to the
-  search. In the drawer the map is a 4:3 frame; on a short screen (≤ 720 px tall: a landscape phone or
-  tablet) recents and Near me step aside, and under 560 px the search too, so the map shows without
-  scrolling (it shrinks to fit, down to 10 rem); "Browse on the map" brings them back.
+- **Browse on the map** opens the map full screen over everything, the picker included: a kit dialog
+  (`.mco-modal`, like Help and the photos) with the title "Choose a station on the map", the network chips and
+  ×, then the map to the bottom edge (title, chips and × share one row from 641 px; on a phone the chips sit
+  under the title). One finger moves it. Picking a station on it closes the map and the picker (focus to
+  `<main>`); × or Esc closes only the map, back to the picker with focus on "Browse on the map". The map
+  mounts on the first open and is kept.
 - **History:** a section change or a drill-down (a Charts variable, Ag tool or sub-view) is `pushState`,
   so Back returns; other changes inside a section (dates, toggles, opening the Download sheet) replace the
   entry. Section links are real `<a href>`s: they open in a new tab and work before the JS runs.

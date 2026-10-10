@@ -515,6 +515,11 @@
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-observations_hourly-982f44acba.csv"
+  },
+  "https://tiles.basemaps.cartocdn.com/fonts/Open%20Sans%20Semibold,Arial%20Unicode%20MS%20Bold/0-255.pbf": {
+   "status": 200,
+   "type": "application/x-protobuf-gzipped",
+   "file": "tiles-Open_20Sans_20Semibold_Arial_20Unicode_2-e925ee9f6b"
   }
  }
 }
