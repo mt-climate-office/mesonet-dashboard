@@ -1,7 +1,7 @@
 # web-next architecture
 
 The Montana Mesonet Dashboard, rebuilt on the MCO house style
-([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.11.2)
+([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.11.3)
 with Alpine.js, Apache ECharts and TypeScript. Preview at
 `/mesonet-dashboard/next/`; it replaces `web/` at cutover.
 
@@ -118,8 +118,8 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `obs:acebozem:hourly:2026-09-17:2026-10-01:air_temp`). `live` and `slot`:
   "Data freshness" below.
 - **`$store.theme`** (`stores/theme.ts`): `current`, `label`, `cycle()`
-  (dark → light → high-contrast), `set(t)`. Each change calls `MCO.setTheme`
-  and fires one `window` event `mco-theme-change` (`detail.theme`).
+  (`MCO.toggleTheme({ cycle: true })`: dark → light → high contrast), `set(t)`. Each change calls `MCO.setTheme`
+  and the kit fires `mco:themechange` on `document` (`detail.theme`).
 - **`$store.station`** (`stores/station.ts`): `catalog` (a Resource), `list`,
   `id` (the `?s=` value once confirmed against the catalog; null while
   loading), `current` (its row), `byId(id)`, `select(id)` (sets `s`), `recent` (last 5), `landing` (no station to
@@ -229,9 +229,9 @@ cannot read them, so:
 - **Charts:** `ui/charts/chart.ts` resolves the tokens it needs with
   `getComputedStyle(document.documentElement)` into a `ChartTheme`
   (`core/charts/types.ts`), passes it in the builder `ctx`, and on
-  `mco-theme-change` rebuilds the option and calls `setOption`. Data colors
+  `mco:themechange` rebuilds the option and calls `setOption`. Data colors
   come from `core/palette` for the current theme.
-- **Maps:** `ui/map/map.ts` on `mco-theme-change` calls
+- **Maps:** `ui/map/map.ts` on `mco:themechange` calls
   `map.setStyle(MCO.map.cartoStyleUrl())` and re-adds its sources/layers in
   `map.once('style.load', …)` (hillshade first, then boundaries, then data).
 
@@ -367,11 +367,11 @@ first-paint hold.
 `x-*` expressions with `Function`); accepted for a static, read-only app.
 Expressions in HTML stay limited to property/method calls on typed components.
 
-Use: `.mco-navbar` family, `.nav-btn` (`[aria-pressed]` for toggles,
-`[aria-current]` for section links — app CSS), `.seg-btns`, `.mco-btn-info`,
+Use: `.mco-navbar` family (`.is-sticky`, which publishes `--chrome-h`), `.nav-btn`
+(`[aria-pressed]` for toggles, `[aria-current="page"]` for section links), `.seg-btns`, `.mco-btn-info`,
 `<dialog class="mco-modal">` + `MCO.initInfoModal`, `MCO.showToast`,
 `.mco-panel` (floating over maps only; it is absolutely positioned),
-`MCO.createLiveRegion` (via `ui/shell/live.ts#announce`), `MCO.viewport`,
+`MCO.announce` (via `ui/shell/live.ts#announce`), `MCO.viewport`,
 `MCO.reducedMotion()`, `MCO.map.*`, `.mco-scrim`. localStorage keys other
 than `mco-theme` are `mco-dashboard-*` and re-validated on read:
 `mco-dashboard-station`, `mco-dashboard-recent`, `mco-dashboard-drawer`

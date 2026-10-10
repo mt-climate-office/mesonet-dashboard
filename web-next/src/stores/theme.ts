@@ -1,10 +1,10 @@
 /**
- * `$store.theme`: wraps the kit's `MCO.getTheme/setTheme` with the 3-state
- * cycle (core/theme.ts). Every change fires one `mco-theme-change` window
- * event (`detail.theme`) that chart and map hosts listen for.
+ * `$store.theme`: the kit's theme (`MCO.getTheme`, the 3-state `MCO.toggleTheme({ cycle: true })`,
+ * `MCO.setTheme`) as reactive state, with the menu item's names (core/theme.ts). `MCO.setTheme` fires
+ * the kit's `mco:themechange` on `document` (`detail.theme`), which chart and map hosts listen for.
  */
 import Alpine from 'alpinejs'
-import { THEME_EVENT, nextTheme, themeName, themeToggleLabel, type Theme } from '../core/theme'
+import { themeName, themeToggleLabel, type Theme } from '../core/theme'
 
 export interface ThemeStore {
   current: Theme
@@ -36,7 +36,7 @@ export function createThemeStore(): ThemeStore {
     },
 
     cycle() {
-      this.set(nextTheme(this.current))
+      this.set(MCO.toggleTheme({ cycle: true }))
     },
 
     set(theme) {
@@ -45,7 +45,6 @@ export function createThemeStore(): ThemeStore {
       // A ?theme= in the address bar would win on reload; keep it truthful.
       const url = Alpine.store('url')
       if (url.state.theme !== null) url.set({ theme })
-      window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: { theme } }))
     },
   }
 }

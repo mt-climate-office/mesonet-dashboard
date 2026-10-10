@@ -115,7 +115,7 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
     clearTimeout(retryTimer)
     loadStyle()
   }
-  window.addEventListener(THEME_EVENT, onTheme)
+  document.addEventListener(THEME_EVENT, onTheme)
 
   // Basemap style fetch failed: tell the user, retry once after 5 s (no loop;
   // a successful style.load re-arms the retry for the next failure).
@@ -161,7 +161,7 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
     },
     dispose() {
       clearTimeout(retryTimer)
-      window.removeEventListener(THEME_EVENT, onTheme)
+      document.removeEventListener(THEME_EVENT, onTheme)
       resize.disconnect()
       floor.dispose()
       map.remove()

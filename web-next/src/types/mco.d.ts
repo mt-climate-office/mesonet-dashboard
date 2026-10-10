@@ -1,6 +1,6 @@
 /**
  * Types for the kit globals loaded from the CDN in index.html: `window.MCO`
- * (core/mco-core.js @0.11.2), `MCO.map` (map/mco-map.js) and `maplibregl`.
+ * (core/mco-core.js @0.11.3), `MCO.map` (map/mco-map.js) and `maplibregl`.
  * Hand-written from the kit's source comments; extend as calls are added.
  */
 import type * as MapLibre from 'maplibre-gl'
@@ -101,8 +101,13 @@ interface Mco {
   getTheme(): Theme
   /** Release the anti-flash snippet's first-paint hold (`mco-booting`, `[data-hold]`); idempotent. */
   ready(): void
-  /** Sets data-theme; persists to localStorage 'mco-theme' unless persist: false. */
+  /** Sets data-theme; persists to localStorage 'mco-theme' unless persist: false. Fires `mco:themechange` on document when it changes. */
   setTheme(theme: Theme, opts?: { persist?: boolean }): void
+  /** dark → light → high contrast (`cycle: true`), else dark ↔ light. Applies and returns the new theme. */
+  toggleTheme(opts?: { cycle?: boolean }): Theme
+  THEME_CYCLE: readonly Theme[]
+  /** The page's one announcer (0.8.0): clears, then sets the text; the same text within 500 ms is dropped. */
+  announce(text: string, opts?: { politeness?: 'polite' | 'assertive' }): void
   createLiveRegion(): { element: HTMLElement; announce(text: string): void }
   initInfoModal(opts: { dialog: HTMLDialogElement; trigger?: HTMLElement | null }): { open(): void; close(): void }
   initCollapsible(opts: {

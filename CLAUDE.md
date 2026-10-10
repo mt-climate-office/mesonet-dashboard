@@ -12,4 +12,4 @@ hexes), --accent is fill-only, aria-pressed drives toggle styling, canvas
 data needs a live region + sr-only table twin. To change shared styling,
 change the kit and bump the pinned version here; never patch a local copy.
 
-Kit version pinned: **@0.11.2** (`web-next/index.html`; MapLibre 6.11.2 through the kit's import map).
+Kit version pinned: **@0.11.3** (`web-next/index.html`; MapLibre 6.11.2 through the kit's import map).

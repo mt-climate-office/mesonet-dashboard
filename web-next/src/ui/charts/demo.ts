@@ -12,7 +12,7 @@ import { profileValues } from '../../core/ag/view/derive'
 import { annualAxisLabel, type SoilProfileVar } from '../../core/ag/view/labels'
 import { dailyMet, hourlyMet, soilParams, soilSeries, stageTable, stationMeta } from '../../core/ag/__tests__/adapters'
 import * as C from '../../core/charts'
-import { THEME_EVENT, isTheme } from '../../core/theme'
+import { isTheme } from '../../core/theme'
 import { chart, type ChartBindings } from './chart'
 import './chart.css'
 
@@ -132,7 +132,6 @@ Alpine.data('demoPage', () => ({
     const u = new URL(location.href)
     u.searchParams.set('theme', t)
     history.replaceState(null, '', u)
-    window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: { theme: t } }))
   },
 }))
 Alpine.start()

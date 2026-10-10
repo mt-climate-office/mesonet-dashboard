@@ -22,7 +22,7 @@ The decisions:
    segmented control in the header. No separate section row.
 3. **Now hero:** a large temperature, high/low against normal, a one-line plain summary, then one **48 h
    strip**: the last 24 h observed (solid) into the next 24 h of NWS hourly forecast (dashed).
-4. **Display numerals:** readings at ≥ 1.75 rem use Outfit with `tabular-nums` (`.num-display`;
+4. **Display numerals:** readings at ≥ 1.75 rem use Outfit with `tabular-nums` (the kit's `.mco-num-display`;
    mco-web-style#36). Space Mono stays for tables, ids, timestamps and axes.
 5. **Interval** on every variable page: Auto · 5-min · Hourly · Daily (Auto: hourly up to 30 d, daily beyond;
    5-min (15-min at AgriMet, named per network) only up to 7 d; Daily draws the mean inside a low–high band, and the stats' Low/High are the true
@@ -112,7 +112,7 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
 - **Hide what means nothing on Now** (pure, tested rules in `core/overview`): sunlight at night; rain draws
   no graphic after a dry week; snow per the snow rule; pressure is a text trend ("steady", "rising",
   "falling" over 3 h), not a tile.
-- **Numerals:** `.num-display` only at display sizes (the hero, the tiles); smaller readings (list values,
+- **Numerals:** `.mco-num-display` (kit) only at display sizes (the hero, the tiles); smaller readings (list values,
   stats) use the UI font with `tabular-nums`.
 - **Motion:** View Transitions and the reduced-motion rules (see "Motion").
 
@@ -132,8 +132,8 @@ The brand shows only on desktop (visually hidden below 1060 px; the kit's own st
 
 **Page frame** (`partials/shell.html`, `ui/layout/shell.css`): the sticky one-row header; below it one flex
 row, `.dash-shell` = picker drawer + content column (notices, the section, footer); the phone tab bar is
-fixed at the bottom; modal sheets come last. `--chrome-h` (header) and `--tabbar-h` (tab bar) are
-published on `<html>` and used for the drawer/sheet offsets, the body's bottom padding (the tab bar never
+fixed at the bottom; modal sheets come last. `--chrome-h` (header, published by the kit for
+`.mco-navbar.is-sticky`) and `--tabbar-h` (tab bar) are published on `<html>` and used for the drawer/sheet offsets, the body's bottom padding (the tab bar never
 covers content) and the toast. There is no station meta line above the sections.
 
 **Header:** logo · brand (desktop) · **station button** ("Bozeman ▾", large, borderless, truncates, opens the
@@ -157,11 +157,11 @@ tiles, rows at every width.
 
 | Slot | Content | Data (tier) |
 |---|---|---|
-| Hero | Air temperature (`.num-display`, `--fs-display-hero`: 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("High 74° · Low 41° (24 h)", so the two agree; normal "Normal 67° · 38°"), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain; "calm after gusts to 43 mph earlier" when the 24 h peak gust is ≥ 25 mph) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
+| Hero | Air temperature (`.mco-num-display`, `--fs-display-hero`: 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("High 74° · Low 41° (24 h)", so the two agree; normal "Normal 67° · 38°"), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain; "calm after gusts to 43 mph earlier" when the 24 h peak gust is ≥ 25 mph) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
 | Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table; a "Loading the 48-hour strip…" status while tier 2 loads and a short note in its place when there is nothing to draw. Below it the forecast periods as an icon row (api.weather.gov only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
 | Media | Latest camera frames, West first (W · E · N · S · Snow; `core/photos` `DIRECTION_ORDER`), in the carousel (opens the photo dialog; its caption bottom right, clear of the camera's own label), or the wind rose without a camera (a fixed 20 rem card): the last 24 hours of raw readings (5-min, AgriMet 15-min; `nowWindRoseRequest`), "Wind, last 24 hours", calm readings counted apart (see the Rose view) | photo schedule, latest listings (1) |
-| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary, then what is falling now from `/latest`, `rainNow`: "0.12 in/h now" (the peak rate), "raining now", "dry now"; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page, whose heading takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
+| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary, then what is falling now from `/latest`, `rainNow`: "0.12 in/h now" (the peak rate), "raining now", "dry now"; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.mco-num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page, whose heading takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
 | Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens About's readings sheet (`target: 'about-readings'`, the row's `data-sheet`; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
@@ -181,7 +181,7 @@ pressure trend; the normals CSVs; the NWS hourly forecast from the periods' `for
 30 min; hourly soil VWC for SWP at stations with soil parameters, `nowSwpQuery`) starts once `/latest` is in and fills the strip,
 sparklines and chip. The Rain tile's bars come from one small daily request (`rainDailyQuery`: `ppt`, the 7 days
 ending today, 30 min). Every slot holds its size with a skeleton (the strip a fixed 9.5 / 11 rem box), so
-nothing shifts. Labels are sentence case in `--text-muted`; readings are `.num-display`.
+nothing shifts. Labels are sentence case in `--text-muted`; readings are `.mco-num-display`.
 
 Screenshots (phase B, in the session scratchpad `rd-now/`): `<390|1440>-<light|dark|high-contrast>-<acebozem|arskeogh>.png`
 (arskeogh: AgriMet, wind rose, VPD).
@@ -562,8 +562,9 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 - **Pill chips** (`card.css`) — `<button class="dash-chip" aria-pressed>`: a raised pill; pressed is filled
   with high contrast (`--text-primary` fill, `--bg-deep` text) for the active range. `.dash-chip--quiet` for
   the interval row: pressed is the accent tint with `--accent-line` text (at least 5.1:1 in every theme: 5.1 light on `--bg-deep`, 5.8 dark, 10.6 high contrast; axe checks it on `variable` and `variable-daily`). `aria-pressed` alone drives the style.
-- **Display numerals** (`card.css`) — `.num-display`: Outfit, `tabular-nums`, −0.02 em tracking, for readings
-  at ≥ 1.75 rem (hero, tiles). Space Mono stays for tables, ids, timestamps and axes (mco-web-style#36).
+- **Display numerals** — the kit's `.mco-num-display` (0.10.0): Outfit, `tabular-nums`, semibold, for readings
+  at ≥ 1.75 rem (hero, tiles); `card.css` holds their sizes, and the hero keeps its light 300 weight. Space Mono
+  stays for tables, ids, timestamps and axes (mco-web-style#36).
 - **Plain labels** (`core/variables/labels.ts`, not a layout primitive but used by every surface) — `LABELS[v]`
   (name, unit, `digits.display` / `digits.table`, an optional `sub`), `plainName(v, fallback)`,
   `formatReading(v, value, 'display' | 'table')` ("54 °F", "8%", "0.05 in"), `compassWord(deg)` ("SSE").

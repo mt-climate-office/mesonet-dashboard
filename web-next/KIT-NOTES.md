@@ -1,4 +1,4 @@
-# Kit notes (mco-web-style @0.11.2)
+# Kit notes (mco-web-style @0.11.3)
 
 A running log, for the kit proposal: every place the UX refactor needed something
 mco-web-style does not have, or had to override. Each entry names the local
@@ -56,18 +56,19 @@ falls short.
 - **Why:** the kit's chrome is the top navbar only. A phone app with several sections needs a bottom bar
   (56 px targets, safe-area padding, `--z-chrome`), and the links must stay real `<a href>` (new tab, copy,
   no-JS) while a plain click goes through the app's router and view transition.
-- **Also:** current = `aria-current="page"`. The kit styles toggles by `[aria-pressed]` only, so app.css
-  already mirrors that for `a.nav-btn[aria-current]` (W1). Not colour alone: the current tab has a pill
+- **Also:** current = `aria-current="page"`. The kit styles `.nav-btn[aria-current="page"]` like a pressed toggle
+  since 0.10.0, so app.css no longer mirrors it. Not colour alone: the current tab has a pill
   behind its icon and a bold label; the current segment is a raised pill, bold.
-- **Proposed:** `.mco-tabbar` / `.mco-tab`, `.mco-section-nav` / `.mco-section-link`, kit styling for
-  `.nav-btn[aria-current="page"]`, and `MCO.initSectionNav({ root, onNavigate }) → { setCurrent, destroy }`.
+- **Proposed:** `.mco-tabbar` / `.mco-tab`, `.mco-section-nav` / `.mco-section-link`, and `MCO.initSectionNav({ root, onNavigate }) → { setCurrent, destroy }`.
 
 ### Height custom properties — new
-- **Here:** `publishHeight(el, '--tabbar-h')`, `publishHeight(navbar, '--chrome-h')` (`ui/layout/sectionNav.ts`).
+- **Here:** `publishHeight(el, '--tabbar-h')` (`ui/layout/sectionNav.ts`).
 - **Why:** explorer's `syncOverlayMetrics()` (`app.js:2914-2920`) does the same by hand for `--chrome-h` and
   `--sheet-h`. Any app with fixed chrome needs it.
 - **Proposed:** `MCO.publishHeight(el, prop) → dispose` (ResizeObserver + resize; 0 while not rendered),
   with the kit documenting `--chrome-h`, `--tabbar-h`, `--sheet-h` as the shared names.
+- **Since 0.9.0:** the kit has `MCO.metrics`, and since 0.10.0 `.mco-navbar.is-sticky` publishes `--chrome-h`
+  itself; the header uses it. `publishHeight` stays for `--tabbar-h`, which must read 0 while the tab bar is hidden.
 
 ### In-flow card — new
 - **Here:** `.dash-card`, `.dash-card-title`, `--card-pad`, `--card-radius` (16 px),
@@ -174,13 +175,9 @@ falls short.
   spacing tokens and its radii stop at 12 px.
 - **Proposed:** kit `--space-*` (4 px base) and a `--radius-xl` (16 px) for in-flow cards.
 
-### Display numerals — new (mco-web-style#36)
-- **Here:** `.num-display` (`ui/layout/card.css`): Outfit (`--font-ui`), `font-variant-numeric: tabular-nums`,
-  `letter-spacing: -0.02em`. For readings at display size (≥ 1.75 rem: the Now hero, tiles).
-- **Why:** Space Mono at hero sizes reads as code (DESIGN.md "Redesign 2026-10", decision 4). Space Mono stays for tables, ids,
-  timestamps and axes. Filed as https://github.com/mt-climate-office/mco-web-style/issues/36; until the kit
-  ships a token or class, this is the one app utility. Swap it for the kit's when the pin moves.
-- **Proposed:** a kit `--font-display-num` (or `.mco-num-display`) with the same three properties.
+### Display numerals — shipped (mco-web-style#36)
+- **Done in 0.10.0:** `--font-display-num` + `.mco-num-display`. The app's `.num-display` is gone; `ui/layout/card.css`
+  keeps only the display sizes (`--fs-display-hero`, `--fs-display-tile`).
 
 ### Breakpoints — gap
 - **Here:** the desktop edge `(min-width: 1060px)` is written in JS (`ui/picker/stationPicker.ts`) and CSS.

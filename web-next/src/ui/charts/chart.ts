@@ -1,6 +1,6 @@
 /**
  * The one ECharts host. `ChartHost` owns everything stateful about a chart:
- * lazy ECharts load, init, kit theme (re-read on `mco-theme-change`), resize,
+ * lazy ECharts load, init, kit theme (re-read on the kit's `mco:themechange`), resize,
  * reduced motion, touch mode (tap tooltips, hidden on a tap outside), zoom in
  * wall-clock ms both ways, the `.sr-only` table twin, dispose. Components use the `chart` Alpine wrapper (usage: core/charts/README.md).
  */
@@ -91,7 +91,7 @@ export class ChartHost<M> {
     this.tableEl = document.createElement('table')
     twin.append(this.tableEl)
     el.append(this.canvas, twin)
-    window.addEventListener(THEME_EVENT, this.onTheme)
+    document.addEventListener(THEME_EVENT, this.onTheme)
     document.addEventListener('pointerdown', this.onPointerDown, { passive: true })
     this.ro = new ResizeObserver(() => this.onResize())
     this.ro.observe(this.canvas)
@@ -172,7 +172,7 @@ export class ChartHost<M> {
   dispose(): void {
     this.disposed = true
     clearTimeout(this.zoomTimer)
-    window.removeEventListener(THEME_EVENT, this.onTheme)
+    document.removeEventListener(THEME_EVENT, this.onTheme)
     document.removeEventListener('pointerdown', this.onPointerDown)
     this.ro.disconnect()
     this.chart?.dispose()
