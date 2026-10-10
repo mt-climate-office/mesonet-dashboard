@@ -19,18 +19,6 @@ main:focus { outline: none; } /* focus target for the skip link only */
    drew round them. Screen readers still read the heading; keyboard targets keep the kit ring. */
 :is(h1, h2, h3)[tabindex="-1"]:focus { outline: none; }
 
-/* Navbar stays visible while the page scrolls. */
-.mco-navbar { position: sticky; top: 0; } /* kit-override: kit is relative; this app scrolls under it */
-
-/* kit-override: tab links are anchors styled as kit buttons. The kit styles toggles via
-   [aria-pressed]; a navigation link's state is aria-current, so mirror it. */
-a.nav-btn { text-decoration: none; }
-.nav-btn[aria-current="page"] {
-  background: var(--accent-hover);
-  border-color: var(--accent-line);
-  color: var(--text-primary);
-}
-
 /* The spacing scale is in ui/layout/card.css. Content stops at ~75 rem, centred (wide screens). */
 .tab-panel {
   width: 100%; max-width: 75rem; margin-inline: auto;

@@ -132,8 +132,8 @@ The brand shows only on desktop (visually hidden below 1060 px; the kit's own st
 
 **Page frame** (`partials/shell.html`, `ui/layout/shell.css`): the sticky one-row header; below it one flex
 row, `.dash-shell` = picker drawer + content column (notices, the section, footer); the phone tab bar is
-fixed at the bottom; modal sheets come last. `--chrome-h` (header) and `--tabbar-h` (tab bar) are
-published on `<html>` and used for the drawer/sheet offsets, the body's bottom padding (the tab bar never
+fixed at the bottom; modal sheets come last. `--chrome-h` (header, published by the kit for
+`.mco-navbar.is-sticky`) and `--tabbar-h` (tab bar) are published on `<html>` and used for the drawer/sheet offsets, the body's bottom padding (the tab bar never
 covers content) and the toast. There is no station meta line above the sections.
 
 **Header:** logo · brand (desktop) · **station button** ("Bozeman ▾", large, borderless, truncates, opens the

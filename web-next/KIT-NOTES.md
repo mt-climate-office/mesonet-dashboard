@@ -56,18 +56,19 @@ falls short.
 - **Why:** the kit's chrome is the top navbar only. A phone app with several sections needs a bottom bar
   (56 px targets, safe-area padding, `--z-chrome`), and the links must stay real `<a href>` (new tab, copy,
   no-JS) while a plain click goes through the app's router and view transition.
-- **Also:** current = `aria-current="page"`. The kit styles toggles by `[aria-pressed]` only, so app.css
-  already mirrors that for `a.nav-btn[aria-current]` (W1). Not colour alone: the current tab has a pill
+- **Also:** current = `aria-current="page"`. The kit styles `.nav-btn[aria-current="page"]` like a pressed toggle
+  since 0.10.0, so app.css no longer mirrors it. Not colour alone: the current tab has a pill
   behind its icon and a bold label; the current segment is a raised pill, bold.
-- **Proposed:** `.mco-tabbar` / `.mco-tab`, `.mco-section-nav` / `.mco-section-link`, kit styling for
-  `.nav-btn[aria-current="page"]`, and `MCO.initSectionNav({ root, onNavigate }) → { setCurrent, destroy }`.
+- **Proposed:** `.mco-tabbar` / `.mco-tab`, `.mco-section-nav` / `.mco-section-link`, and `MCO.initSectionNav({ root, onNavigate }) → { setCurrent, destroy }`.
 
 ### Height custom properties — new
-- **Here:** `publishHeight(el, '--tabbar-h')`, `publishHeight(navbar, '--chrome-h')` (`ui/layout/sectionNav.ts`).
+- **Here:** `publishHeight(el, '--tabbar-h')` (`ui/layout/sectionNav.ts`).
 - **Why:** explorer's `syncOverlayMetrics()` (`app.js:2914-2920`) does the same by hand for `--chrome-h` and
   `--sheet-h`. Any app with fixed chrome needs it.
 - **Proposed:** `MCO.publishHeight(el, prop) → dispose` (ResizeObserver + resize; 0 while not rendered),
   with the kit documenting `--chrome-h`, `--tabbar-h`, `--sheet-h` as the shared names.
+- **Since 0.9.0:** the kit has `MCO.metrics`, and since 0.10.0 `.mco-navbar.is-sticky` publishes `--chrome-h`
+  itself; the header uses it. `publishHeight` stays for `--tabbar-h`, which must read 0 while the tab bar is hidden.
 
 ### In-flow card — new
 - **Here:** `.dash-card`, `.dash-card-title`, `--card-pad`, `--card-radius` (16 px),
