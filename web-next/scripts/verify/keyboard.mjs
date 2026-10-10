@@ -204,8 +204,10 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('s') === 'acebozem', null, { timeout: 10000 }).catch(() => {})
   check('combobox: Enter selects the station (?s=acebozem)', (await urlParam(page, 's')) === 'acebozem')
-  // The section renders and focus moves a tick or two after the URL; wait for that, then read it.
-  await page.waitForFunction(() => !document.querySelector('[data-testid="landing"]') && document.activeElement?.id === 'main', null, { timeout: 5000 }).catch(() => {})
+  // The section renders and focus moves a tick or two after the URL (focus first; the host's x-show a frame
+  // later); wait for both, then read them.
+  await page.waitForFunction(() => !document.querySelector('[data-testid="landing"]') && document.activeElement?.id === 'main' &&
+    getComputedStyle(document.querySelector('.dash-section-host')).display !== 'none', null, { timeout: 5000 }).catch(() => {})
   const picked = await page.evaluate(() => ({
     landing: !!document.querySelector('[data-testid="landing"]'),
     now: !!document.querySelector('[data-testid="now"]') && getComputedStyle(document.querySelector('.dash-section-host')).display !== 'none',
@@ -489,6 +491,8 @@ for (const [name, query, charts] of [['ag', '?s=acebozem&v=gdd#charts', 1]]) {
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => document.querySelector('[data-testid="dl-download"]')?.getAttribute('aria-disabled') === 'false', null, { timeout: 30000 })
   const label = await page.getByTestId('dl-download').innerText()
+  // The kit sets a live region's text a moment after clearing it (mco-core clearThenSet).
+  await page.waitForFunction(() => /Request finished: [\d,]+ rows/.test([...document.querySelectorAll('[aria-live]')].map((e) => e.textContent).join(' ')), null, { timeout: 5000 }).catch(() => {})
   check('download run: Enter on Preview → "Download CSV · N rows", focus kept on the button, the row count announced',
     /^Download CSV · [\d,]+ rows$/.test(label.trim()) && (await page.evaluate(() => document.activeElement?.dataset.testid)) === 'dl-download' &&
       /Request finished: [\d,]+ rows/.test(await live()), `${label} | ${await live()}`)

@@ -42,7 +42,7 @@ const CATALOG: Station[] = [
   st('nocoords', { latitude: Number.NaN }),
 ]
 
-// Kit v0.7.1 --dot-stroke per theme (not in the palette snapshot).
+// Kit v0.11.2 --dot-stroke per theme (not in the palette snapshot).
 const DOT_STROKE: Record<Theme, string> = { dark: '#ffffff', light: '#2a2a3a', 'high-contrast': '#ffffff' }
 const getVar = (theme: Theme) => (name: string) =>
   name === '--dot-stroke' ? DOT_STROKE[theme] : (TOKENS_SNAPSHOT[theme][name] ?? '')

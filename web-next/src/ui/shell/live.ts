@@ -5,9 +5,11 @@
  */
 let region: { announce(text: string): void } | null = null
 
-/** Announce `text` politely; repeated identical text is re-announced. */
+/**
+ * Announce `text` politely; repeated identical text is re-announced (the kit clears the region and sets
+ * the text after a short gap, since 0.8.0, so the text lands a moment later).
+ */
 export function announce(text: string): void {
   region ??= MCO.createLiveRegion()
-  region.announce('')
-  queueMicrotask(() => region?.announce(text))
+  region.announce(text)
 }

@@ -63,16 +63,17 @@ getStations()
     live.status = `error: ${String(e)}`
   })
 
-// Test hooks: record each map so Playwright can read layer ids and project points.
+// Test hooks: record each map so Playwright can read layer ids and project points. MapLibre 6's module
+// namespace is read-only, so the page's `maplibregl` global becomes a copy with a recording Map.
 const maps: InstanceType<typeof maplibregl.Map>[] = []
-const Base = maplibregl.Map
-class RecordedMap extends Base {
-  constructor(options: ConstructorParameters<typeof Base>[0]) {
+const ns = await MCO.map.loadMapLibre()
+class RecordedMap extends ns.Map {
+  constructor(options: ConstructorParameters<typeof ns.Map>[0]) {
     super(options)
     maps.push(this)
   }
 }
-Object.assign(maplibregl, { Map: RecordedMap })
+Object.assign(window, { maplibregl: { ...ns, Map: RecordedMap } })
 Object.assign(window, {
   Alpine,
   __mapLayers: () => maps.map((m) => (m.getStyle()?.layers ?? []).map((l) => l.id)),

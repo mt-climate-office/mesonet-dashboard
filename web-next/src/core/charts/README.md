@@ -29,7 +29,7 @@ family, each with a sibling `*.test.ts`. The one host that renders them is
 - `overlays.ts`: `bandSeries` (the one band style: stacked base + fill, under its line), `hBandSeries` (horizontal bands + boxed labels + dashed lines, e.g. SWP FC/WP, each labelled at its line), `sensorEventSeries` (hatched spans), `labelledLines` (markLines, e.g. GDD stages), `hatchDecal`.
 - `heatmap.ts`: `colorBar(ctx, scale, extent, {midpoint, ticks})` (hidden visualMap + bar drawn as graphics with min/max and the palette `midpointLabel`; vertical at the right with `gridTop` keeping its title off the plot, horizontal under the plot when `ctx.compact`), `frozenSeries` (hatched mask cells).
 - `zoom.ts` (used by the host): wall-clock ms ↔ category index (`categoryMs`, `toAxisRange`, `fromAxisRange`), `sameRange`, `carryState` (zoom + legend toggles across redraws).
-- `testing.ts`: `testCtx(theme)` for tests (kit 0.7.1 token values).
+- `testing.ts`: `testCtx(theme)` for tests (kit 0.11.2 token values).
 
 ## Contract
 

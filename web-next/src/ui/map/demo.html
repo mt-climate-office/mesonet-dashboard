@@ -2,7 +2,7 @@
 <!-- Manual / Playwright review page for ui/map: both station-map presets on
      the live /stations API (dev proxy /_api), with theme, network-filter and
      keyboard-picker controls. Same CSP as index.html (minus the anti-flash
-     hash: this page has no inline script). ?theme=dark|light|high-contrast;
+     hash: this page's only inline script is the MapLibre import map). ?theme=dark|light|high-contrast;
      ?fixture=xss renames a station to markup to prove popups render text.
      Not part of the app build; serve with Vite at /src/ui/map/demo.html. -->
 <html lang="en" data-theme="dark">
@@ -10,8 +10,8 @@
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'none';
-    script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com;
-    worker-src 'self' blob:;
+    script-src 'self' 'sha256-NgHBdw+Nl6S2kTHNyvv5uFwHfytmfDJR39Y9qVPt/UI=' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com;
+    worker-src 'self' blob: https://unpkg.com;
     style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com;
     font-src https://cdn.jsdelivr.net;
     img-src 'self' data: blob: https://cdn.jsdelivr.net https://data2.climate.umt.edu https://api.weather.gov;
@@ -21,11 +21,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Maps · MT Mesonet</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.css"
-        integrity="sha384-q7EDwLXBfakVimqzBJqFCTxpgy7B18buhebV158qkVMCEVAaUnU3fQTEfWgYz+7g"
+  <script type="importmap">{"integrity":{"https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.mjs":"sha384-KQzExYlfg1SnYNpLaXHTnaCTjr5wmiZ6X3sasvPb94caZfH+3+T1Sl4eJziXUtmN","https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl-shared.mjs":"sha384-V59ofCEPEqpSk5Mswc19DtDYbZWJtne210dFzS328Il6O31eLwTV7v57+Z3NjW/7"}}</script>
+  <link rel="modulepreload" href="https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.mjs"
+        integrity="sha384-KQzExYlfg1SnYNpLaXHTnaCTjr5wmiZ6X3sasvPb94caZfH+3+T1Sl4eJziXUtmN"
         crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.7.1/theme/mco-theme.css"
-        integrity="sha384-dktZyfU+lLz1JEFe+npkBVrH8FsSdtYYOPC7bJQtZwEJnvD3IiENV+UUgyXeFpnl"
+  <link rel="modulepreload" href="https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl-shared.mjs"
+        integrity="sha384-V59ofCEPEqpSk5Mswc19DtDYbZWJtne210dFzS328Il6O31eLwTV7v57+Z3NjW/7"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.css"
+        integrity="sha384-ntw3zEt6rcVML7jDK0ULmHa5hxLB23afsPqzqfY+gLgMfAkbFCnCgPpkZvV5mmZX"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.11.2/theme/mco-theme.css"
+        integrity="sha384-22H/4uZb4dmkrTZlLp4NJ4J+Wg39RNRIVIKO0x1HPYfyUWj81FA0fyM/uoRqbqme"
         crossorigin="anonymous">
   <link rel="stylesheet" href="./demo.css">
   <script type="module" src="./demo.ts"></script>
@@ -67,14 +74,11 @@
   </section>
 </main>
 
-  <script src="https://unpkg.com/maplibre-gl@5.18.0/dist/maplibre-gl.js"
-          integrity="sha384-MYTfGytf3SxNyO7ZAu/U0wHCcs3NpqE92Q3wBz5PQhat8kEA/wbwb9qY6H/JLyuR"
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.11.2/core/mco-core.js"
+          integrity="sha384-b4r3+tK/yiZ4TNEllSsbDX3qW0NhcHDsF2iPzUWunUc2vNf1qlq9t9qo2YWgoZiK"
           crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.7.1/core/mco-core.js"
-          integrity="sha384-ZOGCREEJsO8sY1wJ7eS/Q7K7NdZAHF+LxSMoO3ZGqBtEVISX3616cGomCW418hXH"
-          crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.7.1/map/mco-map.js"
-          integrity="sha384-0aF67+MSXmcocGs8r3qiehgDNzgXo9F48olS5OX575wO2llw2cuGcqLpd6+L7D76"
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.11.2/map/mco-map.js"
+          integrity="sha384-tmDqtqi4yYiDHOxkZikwzXF3Lpkb63b0Tu6K7jeCpU9gJkPB2GbpFHLasGHka6zP"
           crossorigin="anonymous"></script>
 </body>
 </html>
