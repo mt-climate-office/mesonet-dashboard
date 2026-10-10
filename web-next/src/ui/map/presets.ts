@@ -152,7 +152,7 @@ function mapView(opts: StationMapOptions, preset: Preset) {
 
 /**
  * Fit padding (px) that keeps markers 8 px clear of the frame's overlays: the legend (top-left, measured)
- * and the zoom buttons and attribution ⓘ down the right edge (10 px in, 31 px wide, 42 px on touch:
+ * and the zoom buttons and the kit's round attribution ⓘ down the right edge (10 px in, at most 31 px wide, 42 px on touch:
  * map.css). Those are sizes, not measurements: the controls are not in the DOM at the first fit.
  */
 function clearOfOverlays(legendBottom: number): Required<MapLibre.PaddingOptions> {
