@@ -35,33 +35,9 @@
 .map-popup-detail { margin: 0 0 0.2rem; font-size: var(--fs-xs); color: var(--text-secondary); }
 .map-popup-detail:last-child { margin-bottom: 0; }
 
-/* kit-override: MapLibre's compact attribution ⓘ is a 24 px black disc, unlike every other control. Draw
-   it as one of the zoom group's buttons (kit glass, --ctrl-border, --radius-md, same size) with an
-   outlined "i" in a text token; the mask's colour is unused, only its alpha. */
-.map-frame .maplibregl-ctrl-attrib.maplibregl-compact {
-  --attrib-btn: 29px;
-  min-height: var(--attrib-btn); padding: 0 var(--attrib-btn) 0 0; box-sizing: border-box;
-  border: 1px solid var(--ctrl-border); border-radius: var(--radius-md); box-shadow: var(--shadow);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-}
-.map-frame .maplibregl-ctrl-attrib.maplibregl-compact-show {
-  padding: 4px calc(var(--attrib-btn) + 4px) 4px 8px; font-size: var(--fs-xs); line-height: 1.4;
-}
-.map-frame .maplibregl-ctrl-attrib-button {
-  top: -1px; right: -1px; width: var(--attrib-btn); height: var(--attrib-btn);
-  background: transparent !important; border-radius: var(--radius-md); filter: none;
-}
-.map-frame .maplibregl-ctrl-attrib-button:hover { background: var(--accent-hover) !important; }
-.map-frame .maplibregl-ctrl-attrib-button::before {
-  content: ''; position: absolute; inset: 0; background: var(--text-secondary);
-  -webkit-mask: var(--attrib-icon) center / 18px 18px no-repeat; mask: var(--attrib-icon) center / 18px 18px no-repeat;
-}
-.map-frame { --attrib-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='12' r='9'/><path d='M12 11v5'/><circle cx='12' cy='7.5' r='0.6' fill='black'/></svg>"); }
-
 /* kit-override: ≥ 40 px touch targets (HOUSE-STYLE §5.5; KIT-NOTES "Overrides"): MapLibre's zoom / fit
-   buttons are 29 px, its attribution button 24 px, the kit's panel toggle 36 px. */
+   buttons are 29 px and the kit's panel toggle 36 px. The kit already makes the attribution ⓘ 40 px. */
 @media (hover: none) {
   .maplibregl-ctrl-group button { width: 40px; height: 40px; }
-  .map-frame .maplibregl-ctrl-attrib.maplibregl-compact { --attrib-btn: 40px; }
   .map-frame .mco-panel-toggle { width: 40px; height: 40px; }
 }

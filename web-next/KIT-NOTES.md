@@ -228,5 +228,6 @@ the keyboard's height from `visualViewport`; sheets and phone popovers sit at
   a kit token.
 - **Disabled `.ctl-check`:** the app dims it only in Compare; a kit style would cover every checklist.
 - **Panel toggle direction:** `.mco-panel-toggle`'s chevron assumes a bottom-docked panel; a top-docked option.
-- **Map attribution:** a compact attribution button matching the zoom controls, 40 px on touch (app override).
+- **Map attribution:** the app uses the kit's round ⓘ (40 px on touch). A square one matching the zoom controls was
+  proposed as mco-web-style#49 and declined: the round button is the house look.
 - **Brand text and glass/scrims without blur:** mco-web-style#37.
