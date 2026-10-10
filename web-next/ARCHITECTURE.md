@@ -118,8 +118,8 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `obs:acebozem:hourly:2026-09-17:2026-10-01:air_temp`). `live` and `slot`:
   "Data freshness" below.
 - **`$store.theme`** (`stores/theme.ts`): `current`, `label`, `cycle()`
-  (dark → light → high-contrast), `set(t)`. Each change calls `MCO.setTheme`
-  and fires one `window` event `mco-theme-change` (`detail.theme`).
+  (`MCO.toggleTheme({ cycle: true })`: dark → light → high contrast), `set(t)`. Each change calls `MCO.setTheme`
+  and the kit fires `mco:themechange` on `document` (`detail.theme`).
 - **`$store.station`** (`stores/station.ts`): `catalog` (a Resource), `list`,
   `id` (the `?s=` value once confirmed against the catalog; null while
   loading), `current` (its row), `byId(id)`, `select(id)` (sets `s`), `recent` (last 5), `landing` (no station to
@@ -229,9 +229,9 @@ cannot read them, so:
 - **Charts:** `ui/charts/chart.ts` resolves the tokens it needs with
   `getComputedStyle(document.documentElement)` into a `ChartTheme`
   (`core/charts/types.ts`), passes it in the builder `ctx`, and on
-  `mco-theme-change` rebuilds the option and calls `setOption`. Data colors
+  `mco:themechange` rebuilds the option and calls `setOption`. Data colors
   come from `core/palette` for the current theme.
-- **Maps:** `ui/map/map.ts` on `mco-theme-change` calls
+- **Maps:** `ui/map/map.ts` on `mco:themechange` calls
   `map.setStyle(MCO.map.cartoStyleUrl())` and re-adds its sources/layers in
   `map.once('style.load', …)` (hillshade first, then boundaries, then data).
 

@@ -1,9 +1,9 @@
 // Boot for the map demo page (demo.html, not in the app build): a tiny demo
 // store over the live /stations API, the two map presets, and a theme switch
-// that fires the same mco-theme-change event as $store.theme.
+// through MCO.setTheme, which fires the kit's mco:themechange as $store.theme does.
 import Alpine from 'alpinejs'
 import { getStations, type Station } from '../../core/api'
-import { THEME_EVENT, isTheme, type Theme } from '../../core/theme'
+import { isTheme, type Theme } from '../../core/theme'
 import { stationMap } from './presets'
 import './map.css'
 
@@ -43,7 +43,6 @@ const demo = {
   setTheme(t: Theme) {
     MCO.setTheme(t, { persist: false })
     this.theme = t
-    window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: { theme: t } }))
   },
 }
 Alpine.store('demo', demo)

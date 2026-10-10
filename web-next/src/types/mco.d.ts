@@ -101,8 +101,11 @@ interface Mco {
   getTheme(): Theme
   /** Release the anti-flash snippet's first-paint hold (`mco-booting`, `[data-hold]`); idempotent. */
   ready(): void
-  /** Sets data-theme; persists to localStorage 'mco-theme' unless persist: false. */
+  /** Sets data-theme; persists to localStorage 'mco-theme' unless persist: false. Fires `mco:themechange` on document when it changes. */
   setTheme(theme: Theme, opts?: { persist?: boolean }): void
+  /** dark → light → high contrast (`cycle: true`), else dark ↔ light. Applies and returns the new theme. */
+  toggleTheme(opts?: { cycle?: boolean }): Theme
+  THEME_CYCLE: readonly Theme[]
   createLiveRegion(): { element: HTMLElement; announce(text: string): void }
   initInfoModal(opts: { dialog: HTMLDialogElement; trigger?: HTMLElement | null }): { open(): void; close(): void }
   initCollapsible(opts: {
