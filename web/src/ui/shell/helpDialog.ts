@@ -24,7 +24,7 @@ export function helpDialog() {
     apiDocsUrl: API_DOCS_URL,
     feedbackUrl: FEEDBACK_URL,
     satelliteUrl: LEGACY_SATELLITE_URL,
-    /** This app's address with a station, wherever it is served (the Pages root, or `/next/` behind the proxy). */
+    /** This app's address with a station, wherever it is served (the Pages root, or `/dash/next/` behind the proxy). */
     exampleUrl: new URL(`${import.meta.env.BASE_URL}?s=crowagen`, location.origin).href,
     /** Stations in the catalog; 0 while it loads (the sentence then hides). */
     stationCount: (): number => Alpine.store('station').list.length,

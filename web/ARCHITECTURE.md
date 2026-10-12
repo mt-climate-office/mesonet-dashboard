@@ -3,9 +3,9 @@
 The Montana Mesonet Dashboard, rebuilt on the MCO house style
 ([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.11.3)
 with Alpine.js, Apache ECharts and TypeScript. Served at
-`/mesonet-dashboard/` on GitHub Pages; a second build at
-`/mesonet-dashboard/next/` backs `mesonet.climate.umt.edu/dash/next/` (the
-Caddy proxy and the install address) until the proxy points at the root.
+`/mesonet-dashboard/` on GitHub Pages, and through the Caddy proxy
+(mt-climate-office/mesonet_app) as `mesonet.climate.umt.edu/dash/next/`, the
+install address.
 
 Read this file first. It is short on purpose: if something here is unclear,
 fix this file in the same PR. Layout, components, motion and type are in
@@ -26,9 +26,8 @@ npm run verify     # build + Playwright: kit-consumer checks, axe matrix, keyboa
 ```
 
 CI (`.github/workflows/web-check.yml`) runs all of these on every PR
-touching `web/`. `deploy-web.yml` builds the app twice (base
-`/mesonet-dashboard/` and `/mesonet-dashboard/next/`) into one Pages artifact;
-`public/404.html` turns `<base>/<station>` deep links into `?s=<station>`.
+touching `web/`. `deploy-web.yml` builds it for Pages on every push to `main`;
+`public/404.html` turns `<root>/<station>` deep links into `?s=<station>`.
 
 ## Layers
 

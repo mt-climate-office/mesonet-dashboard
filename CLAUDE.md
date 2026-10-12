@@ -1,7 +1,7 @@
 # mesonet-dashboard
 
 - `app/` — the legacy Dash dashboard (served at mesonet.climate.umt.edu/dash).
-- `web/` — the dashboard (Alpine + ECharts, house style), on GitHub Pages at `/mesonet-dashboard/`, with a second build at `/mesonet-dashboard/next/` that the Caddy proxy serves as `mesonet.climate.umt.edu/dash/next/` (the install address). **Start with [`web/ARCHITECTURE.md`](web/ARCHITECTURE.md)** (layers, conventions, how to add a chart/card/tab/URL key/color). The earlier React app was retired 2026-10-12 (in git history).
+- `web/` — the dashboard (Alpine + ECharts, house style), on GitHub Pages at `/mesonet-dashboard/`, which the Caddy proxy (mesonet_app) also serves as `mesonet.climate.umt.edu/dash/next/` (the install address). **Start with [`web/ARCHITECTURE.md`](web/ARCHITECTURE.md)** (layers, conventions, how to add a chart/card/tab/URL key/color). The earlier React app was retired 2026-10-12 (in git history).
 
 ## House style
 This app consumes mco-web-style (pinned + SRI in index.html). Design tokens,
