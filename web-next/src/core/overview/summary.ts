@@ -1,16 +1,16 @@
 /**
- * The Now hero's one-line summary ("Clear tonight, light SSE wind, no rain
- * in 5 days."), built from the NWS current period (sky), the latest wind and
- * the rain record. Pure and deterministic: the time of day comes in as
+ * The Now hero's one-line summary ("Clear tonight, light SSE wind, no
+ * precipitation in 5 days."), built from the NWS current period (sky), the latest wind and
+ * the precipitation record. Pure and deterministic: the time of day comes in as
  * `nowWallMs` (Denver wall clock), never from the system clock.
  */
 import type { ObservationRow } from '../api'
 import { compassWord, formatReading } from '../variables/labels'
 import type { PrecipSummary } from './precip'
 
-/** Smallest amount (in) counted as rain; the gauges resolve 0.01 in. */
-export const RAIN_MIN_IN = 0.01
-/** Dry spells longer than this read "no rain in over a week". */
+/** Smallest amount (in) counted as precipitation; the gauges resolve 0.01 in. */
+export const PRECIP_MIN_IN = 0.01
+/** Dry spells longer than this read "no precipitation in over a week". */
 export const DRY_CAP_DAYS = 7
 
 /** A calm reading after a 24 h peak gust at least this strong (mph) says so. */
@@ -71,35 +71,35 @@ export function windPhrase(mph: number, deg: number | null): string {
 const dayNumber = (date: string) => Date.UTC(+date.slice(0, 4), +date.slice(5, 7) - 1, +date.slice(8, 10)) / 86_400_000
 
 /**
- * Whole days since the last day with ≥ RAIN_MIN_IN (0 = rain today), as a
+ * Whole days since the last day with ≥ PRECIP_MIN_IN (0 = precipitation today), as a
  * lower bound; Infinity for none in the last week; null when unknown.
  * Sources, best first: today's total (`p.sinceMidnight`), the daily totals of
- * the hourly rows (local dates ≤ `today`), then the 7 d total. With no rain
+ * the hourly rows (local dates ≤ `today`), then the 7 d total. With no precipitation
  * in the hourly rows but some in the 7 d total, the answer is the number of
  * dry days the rows cover (true, if conservative).
  */
-export function daysSinceRain(p: PrecipSummary, hourly: readonly ObservationRow[] | undefined, today: string): number | null {
-  if (p.sinceMidnight !== null && p.sinceMidnight >= RAIN_MIN_IN) return 0
+export function daysSincePrecip(p: PrecipSummary, hourly: readonly ObservationRow[] | undefined, today: string): number | null {
+  if (p.sinceMidnight !== null && p.sinceMidnight >= PRECIP_MIN_IN) return 0
   const totals = new Map<string, number>()
   for (const r of hourly ?? []) {
     const v = r['Precipitation [in]']
     const date = String(r.datetime).slice(0, 10)
     if (typeof v === 'number' && Number.isFinite(v) && date <= today) totals.set(date, (totals.get(date) ?? 0) + v)
   }
-  const wet = [...totals].filter(([, v]) => v >= RAIN_MIN_IN).map(([d]) => d).sort()
+  const wet = [...totals].filter(([, v]) => v >= PRECIP_MIN_IN).map(([d]) => d).sort()
   if (wet.length) return dayNumber(today) - dayNumber(wet[wet.length - 1])
-  if (p.last7d !== null && p.last7d < RAIN_MIN_IN) return Infinity
+  if (p.last7d !== null && p.last7d < PRECIP_MIN_IN) return Infinity
   if (totals.size) return dayNumber(today) - dayNumber([...totals.keys()].sort()[0]) + 1
-  if (p.last24h !== null && p.last24h >= RAIN_MIN_IN) return 1
+  if (p.last24h !== null && p.last24h >= PRECIP_MIN_IN) return 1
   return null
 }
 
-/** "0.12 in of rain today" ("rain today" without an amount), "no rain since yesterday", "no rain in 4 days", "no rain in over a week", or null. */
-export function rainPhrase(todayIn: number | null, days: number | null): string | null {
+/** "0.12 in of precipitation today" ("precipitation today" without an amount), "no precipitation since yesterday", "no precipitation in 4 days", "no precipitation in over a week", or null. */
+export function precipPhrase(todayIn: number | null, days: number | null): string | null {
   if (days === null) return null
-  if (days === 0) return todayIn !== null && todayIn >= RAIN_MIN_IN ? `${todayIn.toFixed(2)} in of rain today` : 'rain today'
-  if (days > DRY_CAP_DAYS) return 'no rain in over a week'
-  return days === 1 ? 'no rain since yesterday' : `no rain in ${days} days`
+  if (days === 0) return todayIn !== null && todayIn >= PRECIP_MIN_IN ? `${todayIn.toFixed(2)} in of precipitation today` : 'precipitation today'
+  if (days > DRY_CAP_DAYS) return 'no precipitation in over a week'
+  return days === 1 ? 'no precipitation since yesterday' : `no precipitation in ${days} days`
 }
 
 export interface SummaryInput {
@@ -110,10 +110,10 @@ export interface SummaryInput {
   windDeg: number | null
   /** 24 h peak gust, mph (`peakGust`). */
   peakGustMph?: number | null
-  /** Rain since local midnight, in. */
-  rainTodayIn: number | null
-  /** From `daysSinceRain`. */
-  daysSinceRain: number | null
+  /** Precipitation since local midnight, in. */
+  precipTodayIn: number | null
+  /** From `daysSincePrecip`. */
+  daysSincePrecip: number | null
   /** Now, Denver wall-clock ms (for "tonight"). */
   nowWallMs: number
 }
@@ -133,7 +133,7 @@ export function summarize(input: SummaryInput): string {
     sky && (isEvening(input.nowWallMs) ? `${sky} tonight` : sky),
     // A calm reading after a windy day says so: "calm after gusts to 43 mph earlier".
     wind === 'calm' && gust !== null && gust >= NOTABLE_GUST_MPH ? `calm after gusts to ${formatReading('windgust', gust)} earlier` : wind,
-    rainPhrase(input.rainTodayIn, input.daysSinceRain),
+    precipPhrase(input.precipTodayIn, input.daysSincePrecip),
   ].filter((x): x is string => !!x)
   if (!parts.length) return ''
   const s = parts.join(', ')

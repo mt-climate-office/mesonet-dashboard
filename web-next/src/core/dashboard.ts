@@ -37,7 +37,7 @@ export const ROSE_ON_DASHBOARD = 'wind_dir'
 
 /**
  * The time series in two stacks (columns of panels on a shared time axis), list order: split at the
- * group boundary nearest the middle (Weather | Rain, Soil, …), or at the middle when one group holds
+ * group boundary nearest the middle (Weather | Precipitation, Soil, …), or at the middle when one group holds
  * them all. Wind direction is left out (it is the rose).
  */
 export function stackColumns(vars: readonly Variable[]): [Variable[], Variable[]] {

@@ -109,7 +109,7 @@ describe('annualTraces', () => {
     expect(a.traces.map((t) => t.year)).toEqual([2025, 2026])
     expect(a.traces[1].values).toEqual([1, 1, 2, null, null])
     expect(a.traces[0].values.at(-1)).toBe(5)
-    expect(a.yLabel).toBe('Cumulative rain (in)')
+    expect(a.yLabel).toBe('Cumulative precipitation (in)')
   })
 
   it('non-cumulative values convert SI → US; empty years are dropped', () => {

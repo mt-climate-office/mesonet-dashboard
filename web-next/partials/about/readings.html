@@ -1,5 +1,5 @@
 <!-- All current readings (x-data="aboutReadings", ui/about/readings.ts): every reading from /latest with
-     plain labels, then the HydroMet rain totals, in a named, focusable scroll region (WCAG 2.1.1). Used by
+     plain labels, then the HydroMet precipitation totals, in a named, focusable scroll region (WCAG 2.1.1). Used by
      the readings sheet (partials/sheets/about-readings.html) and the dashboard's readings card. -->
 <div class="about-sheet-content" x-data="aboutReadings" data-testid="about-readings">
   <template x-if="state === 'loading'">
@@ -20,7 +20,7 @@
       </table>
       <template x-if="pptRows.length">
         <table class="about-table" data-testid="about-ppt-table">
-          <caption>Rain totals</caption>
+          <caption>Precipitation totals</caption>
           <thead><tr><th scope="col">Period</th><th scope="col">Total</th></tr></thead>
           <tbody>
             <template x-for="r in pptRows" :key="r.col">

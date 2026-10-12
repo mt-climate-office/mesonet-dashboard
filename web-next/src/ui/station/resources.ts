@@ -5,7 +5,7 @@
  * Components call these from getters; the cache dedupes repeated reads.
  */
 import Alpine from 'alpinejs'
-import { fetchNwsForecast, getPptSummary, getStationConfig, getStationLatest, getStationRecord, type ObservationRow } from '../../core/api'
+import { fetchNwsAlerts, fetchNwsForecast, getPptSummary, getStationConfig, getStationLatest, getStationRecord, type ObservationRow } from '../../core/api'
 import type { Resource } from '../../core/cache'
 import { fetchOnePagers, ONE_PAGERS_STALE_MS, type WindRoseRequest } from '../../core/cards'
 import { configKey, TTL } from '../../core/latest'
@@ -52,6 +52,9 @@ export const pptSummary = (station: string) => cached(`ppt:${station}`, () => ge
 
 /** NWS text forecast for a point. */
 export const nwsForecast = (lat: number, lon: number) => cached(`nws:${lat},${lon}`, () => fetchNwsForecast(lat, lon), 30 * MIN, true)
+
+/** Active NWS hazard alerts for a point (Now's banners); live, re-read every 5 min. */
+export const nwsAlerts = (lat: number, lon: number) => cached(`nwsa:${lat},${lon}`, () => fetchNwsAlerts(lat, lon), 5 * MIN, true)
 
 /** Station one-pager links (expiring URLs: short TTL, memory only). */
 export const onePagers = () => cached('one-pagers', fetchOnePagers, ONE_PAGERS_STALE_MS)

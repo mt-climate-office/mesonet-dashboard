@@ -18,7 +18,7 @@ describe('Ag display helpers', () => {
   })
 
   it('annual axis labels in plain words and units', () => {
-    expect(annualAxisLabel('Total Precipitation [in]', true)).toBe('Cumulative rain (in)')
+    expect(annualAxisLabel('Total Precipitation [in]', true)).toBe('Cumulative precipitation (in)')
     expect(annualAxisLabel('Average Air Temperature @ 2 m [°F]', false)).toBe('Air temperature at 6.6 ft (°F)')
     expect(annualAxisLabel('Average Wind Speed @ 10 m [mi/hr]', false)).toBe('Wind at 33 ft (mph)')
   })

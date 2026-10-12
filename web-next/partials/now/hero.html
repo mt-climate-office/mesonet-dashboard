@@ -1,5 +1,5 @@
 <!-- Now's hero (inside x-data="nowView", ui/now/nowView.ts): temperature, high/low against normal, the
-     summary, freshness, the 48 h strip with forecast icons. Used by Now and the dashboard's conditions card. -->
+     summary, freshness, the 48 h strip, the forecast icons that fit. Used by Now and the dashboard's conditions card. -->
 <section class="dash-card now-hero" aria-labelledby="now-hero-title" data-testid="now-hero">
   <h2 class="sr-only" id="now-hero-title">Current conditions</h2>
   <!-- The temperature and summary open the Air temperature page, as a tile opens its own; the link's
@@ -48,9 +48,12 @@
       <p class="now-strip-empty" role="status" data-testid="now-strip-empty">No hourly temperatures or forecast to draw for the last and next 24 hours.</p>
     </template>
   </div>
-  <ul class="now-icons" x-show="page.icons.length || tier2" aria-label="Forecast periods" data-testid="now-icons">
+  <!-- Every upcoming NWS period (about 7 days); fitRow hides those that would wrap, so the row shows as
+       many as the card is wide. Each opens the NWS forecast page (it has no per-period anchor), as
+       "Full forecast" does; the visible name is short ("Wed night 40°"), the accessible one full. -->
+  <ul class="now-icons" x-data="fitRow" x-show="page.icons.length || tier2" aria-label="Forecast periods" data-testid="now-icons">
     <template x-for="p in page.icons" :key="p.t">
-      <li><img :src="p.icon" :alt="p.short" width="32" height="32" loading="lazy"><span x-text="p.label"></span></li>
+      <li><a class="now-icon-link" :href="forecastUrl" target="_blank" rel="noopener noreferrer"><img :src="p.icon" :alt="p.short" width="32" height="32" loading="lazy"><span aria-hidden="true" x-text="p.abbr"></span><span class="sr-only" x-text="p.label + ' (NWS forecast, opens in a new tab)'"></span></a></li>
     </template>
   </ul>
   <div class="now-strip-foot">

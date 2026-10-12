@@ -11,6 +11,7 @@
 
   <!-- Conditions: Now's hero, the photo (landscape) or no-camera rose, and wind direction's rose of the window. -->
   <div class="dash-now" x-data="nowView">
+    <!-- @include partials/now/alerts.html -->
     <template x-if="state === 'ready'">
       <!-- @include partials/now/hero.html -->
     </template>
@@ -107,7 +108,7 @@
       <!-- @include partials/about/readings.html -->
     </section>
     <section class="dash-card about-rows" aria-label="Sensors">
-      <button type="button" class="about-row" data-sheet="about-history" aria-haspopup="dialog" aria-controls="sheet-about-history"
+      <button type="button" class="about-row" aria-haspopup="dialog" aria-controls="sheet-about-history"
               @click="open($event, 'about-history')" data-testid="dashboard-history-row">
         <span>Sensor changes</span>
         <span class="about-row-meta"><template x-if="changesMeta"><span><span class="sr-only">, latest </span><span x-text="changesMeta"></span></span></template><span aria-hidden="true"> ›</span></span>

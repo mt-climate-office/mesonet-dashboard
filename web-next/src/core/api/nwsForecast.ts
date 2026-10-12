@@ -39,13 +39,13 @@ interface ForecastResponse {
   properties?: { periods?: ForecastPeriod[] }
 }
 
-const NWS = 'https://api.weather.gov'
+export const NWS = 'https://api.weather.gov'
 
 /** True for an https://api.weather.gov/ URL: the only NWS host fetched or shown (the CSP allows no other). */
 export const isNwsUrl = (url: unknown): url is string => typeof url === 'string' && url.startsWith(`${NWS}/`)
 
 /** GET GeoJSON from api.weather.gov; any other URL (one a response pointed to) throws before fetching. */
-async function getGeoJson<T>(url: string): Promise<T> {
+export async function getGeoJson<T>(url: string): Promise<T> {
   if (!isNwsUrl(url)) throw new Error(`NWS URL is not on api.weather.gov: ${url}`)
   return timedFetch(url, { headers: { Accept: 'application/geo+json' } }, async (r) => {
     if (!r.ok) throw new HttpError(r.status, url, await r.text().catch(() => ''))

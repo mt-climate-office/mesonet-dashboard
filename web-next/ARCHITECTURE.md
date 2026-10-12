@@ -103,9 +103,9 @@ URL ──► $store.url.state ──► component getters ──► core fetche
   `follow(event, section, opts)` on click (a plain click navigates, a modified
   or middle click follows the href); when the clicked link unmounts, pass
   `target:` (an id with `tabindex="-1"`, usually the new view's heading) so
-  focus never falls to `<body>`. A target with `data-sheet="<id>"` also opens
-  that sheet with the target as opener (Now's "All readings" → About's
-  readings sheet).
+  focus never falls to `<body>`. A row that opens a sheet calls
+  `openSheet(id, opener)` (`ui/shell/sheet.ts`) where it is: Now's "All
+  readings" opens the readings sheet over Now.
 - **`$store.data`** (`stores/data.ts` → `core/cache.ts`):
   `cached(key, fetcher, {ttl, retry, live, slot})` returns one reactive
   `{status: 'loading'|'success'|'error', data, error, refresh()}` per key.

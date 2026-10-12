@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { SoilParams, SoilSeries } from '../ag/contract'
 import { SWP_CAP_BAR } from '../ag/view/labels'
 import type { ObservationRow } from '../api'
-import { buildNowPage, latestSwpBar, nowSwpQuery, rainNow, stationMeta, type NowPageInput } from './nowPage'
+import { buildNowPage, latestSwpBar, nowSwpQuery, precipNow, stationMeta, type NowPageInput } from './nowPage'
 import { CALM_MPH } from './summary'
 
 const LATEST = {
@@ -42,7 +42,7 @@ describe('buildNowPage tiles', () => {
   it('plain names, the Charts id, display precision and units from core/variables/labels', () => {
     expect(page.tiles.map((t) => [t.id, t.v, t.name])).toEqual([
       ['wind', 'wind_spd', 'Wind'],
-      ['precip', 'ppt', 'Rain'],
+      ['precip', 'ppt', 'Precipitation'],
       ['rh', 'rh', 'Humidity'],
       ['solar', 'sol_rad', 'Sunlight'],
       ['soil', 'soil_vwc', 'Soil moisture'],
@@ -72,11 +72,11 @@ describe('buildNowPage tiles', () => {
     expect(at.hero.summary).toMatch(/light SSE wind/i)
   })
   it('rain now, after the window: the latest rate, or whether any fell in the latest interval', () => {
-    expect(rainNow({ pptIn: 0.01, pptRateInH: 0.123 })).toBe('0.12 in/h now')
-    expect(rainNow({ pptIn: 0, pptRateInH: 0.002 })).toBe('raining now')
-    expect(rainNow({ pptIn: 0.01, pptRateInH: null })).toBe('raining now') // AgriMet: no rate column
-    expect(rainNow({ pptIn: 0, pptRateInH: 0 })).toBe('dry now')
-    expect(rainNow({ pptIn: null, pptRateInH: null })).toBe('')
+    expect(precipNow({ pptIn: 0.01, pptRateInH: 0.123 })).toBe('0.12 in/h now')
+    expect(precipNow({ pptIn: 0, pptRateInH: 0.002 })).toBe('precipitating now')
+    expect(precipNow({ pptIn: 0.01, pptRateInH: null })).toBe('precipitating now') // AgriMet: no rate column
+    expect(precipNow({ pptIn: 0, pptRateInH: 0 })).toBe('dry now')
+    expect(precipNow({ pptIn: null, pptRateInH: null })).toBe('')
     const page = buildNowPage({ ...BASE, latest: { ...LATEST, 'Precipitation [in]': 0, 'Max Precip Rate [in/h]': 0 } })
     expect(page.tiles.find((t) => t.id === 'precip')?.sub).toBe('Last 7 days · dry now')
   })
@@ -86,10 +86,10 @@ describe('buildNowPage tiles', () => {
   })
   it('rain: 7 daily bars when it rained this week, a bare zero baseline in a dry week, nothing before the rows load', () => {
     const daily = (vals: number[]): ObservationRow[] => vals.map((v, i) => ({ station: 'x', datetime: ['2026-09-25', '2026-09-26', '2026-09-27', '2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01'][i], 'Precipitation [in]': v }))
-    const rain = (rainDaily?: ObservationRow[]) => buildNowPage({ ...BASE, rainDaily }).tiles.find((t) => t.id === 'precip')!
+    const rain = (precipDaily?: ObservationRow[]) => buildNowPage({ ...BASE, precipDaily }).tiles.find((t) => t.id === 'precip')!
     expect(rain(daily([0, 0, 0.3, 0, 0, 0, 0])).spark).toMatchObject({ kind: 'bars', points: 7 })
     expect(rain(daily([0, 0, 0.3, 0, 0, 0, 0])).spark?.bars).toHaveLength(1)
-    expect(rain(daily([0, 0, 0, 0, 0, 0, 0]))).toMatchObject({ spark: { kind: 'bars', bars: [] }, sparkLabel: 'Last 7 days: no rain.' })
+    expect(rain(daily([0, 0, 0, 0, 0, 0, 0]))).toMatchObject({ spark: { kind: 'bars', bars: [] }, sparkLabel: 'Last 7 days: no precipitation.' })
     expect(rain(undefined).spark).toBeNull()
   })
   it('sparkline sentences in the plain unit and display precision (mb, not mbar)', () => {
@@ -126,16 +126,21 @@ describe('buildNowPage rows', () => {
 })
 
 describe('icons', () => {
-  it('only strip periods with an api.weather.gov icon', () => {
+  it('every upcoming period with an api.weather.gov icon, past the strip\'s 24 h, day names shortened', () => {
     const period = (n: number, name: string, start: string, end: string, icon: string) => ({
       number: n, name, startTime: start, endTime: end, isDaytime: false, temperature: 45, temperatureUnit: 'F', windSpeed: '', windDirection: '', icon, shortForecast: 'Clear', detailedForecast: '',
     })
     const forecast = { location: null, hourlyUrl: null, periods: [
       period(1, 'Tonight', '2026-10-01T18:00:00-06:00', '2026-10-02T06:00:00-06:00', 'https://api.weather.gov/icons/land/night/skc'),
       period(2, 'Thursday', '2026-10-02T06:00:00-06:00', '2026-10-02T18:00:00-06:00', 'https://example.com/sun.png'),
+      period(3, 'Saturday Night', '2026-10-04T18:00:00-06:00', '2026-10-05T06:00:00-06:00', 'https://api.weather.gov/icons/land/night/sct'),
     ] }
     const p = buildNowPage({ ...BASE, forecast })
-    expect(p.icons.map((i) => [i.label, i.icon, i.short])).toEqual([['Tonight 45°', 'https://api.weather.gov/icons/land/night/skc', 'Clear']])
+    expect(p.icons.map((i) => [i.label, i.abbr, i.icon, i.short])).toEqual([
+      ['Tonight 45°', 'Tonight 45°', 'https://api.weather.gov/icons/land/night/skc', 'Clear'],
+      ['Saturday Night 45°', 'Sat night 45°', 'https://api.weather.gov/icons/land/night/sct', 'Clear'],
+    ])
+    expect(p.hero.strip?.periods.map((x) => x.label)).toEqual(['Tonight 45°', 'Thursday 45°'])
   })
 })
 

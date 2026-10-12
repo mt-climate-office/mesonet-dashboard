@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ObservationRow } from '../api'
-import { daysSinceRain, isEvening, rainPhrase, skyPhrase, summarize, windClass, windPhrase, type SummaryInput } from './summary'
+import { daysSincePrecip, isEvening, precipPhrase, skyPhrase, summarize, windClass, windPhrase, type SummaryInput } from './summary'
 
 const P = { sinceMidnight: null, last24h: null, last7d: null, ytd: null }
 const NOON = Date.UTC(2026, 9, 2, 12)
@@ -52,7 +52,7 @@ describe('wind', () => {
   ] as const)('%s mph from %s → %s', (mph, deg, out) => expect(windPhrase(mph, deg)).toBe(out))
 })
 
-describe('daysSinceRain', () => {
+describe('daysSincePrecip', () => {
   const rows = (byDate: Record<string, number>): ObservationRow[] =>
     Object.entries(byDate).map(([d, v]) => ({ station: 'x', datetime: `${d} 12:00:00-06:00`, 'Precipitation [in]': v }))
   const DRY = rows({ '2026-09-30': 0, '2026-10-01': 0, '2026-10-02': 0 })
@@ -68,33 +68,33 @@ describe('daysSinceRain', () => {
     ['24 h only (rain before midnight)', { ...P, sinceMidnight: 0, last24h: 0.1 }, undefined, 1],
     ['nothing known', P, undefined, null],
     ['rows after today are ignored', P, rows({ '2026-10-01': 0, '2026-10-03': 1 }), 2],
-  ] as const)('%s', (_name, p, hourly, days) => expect(daysSinceRain(p, hourly, '2026-10-02')).toBe(days))
+  ] as const)('%s', (_name, p, hourly, days) => expect(daysSincePrecip(p, hourly, '2026-10-02')).toBe(days))
 })
 
-describe('rainPhrase', () => {
+describe('precipPhrase', () => {
   it.each([
-    [0.123, 0, '0.12 in of rain today'],
-    [null, 0, 'rain today'],
-    [0, 1, 'no rain since yesterday'],
-    [0, 5, 'no rain in 5 days'],
-    [0, 7, 'no rain in 7 days'],
-    [0, 8, 'no rain in over a week'],
-    [0, Infinity, 'no rain in over a week'],
+    [0.123, 0, '0.12 in of precipitation today'],
+    [null, 0, 'precipitation today'],
+    [0, 1, 'no precipitation since yesterday'],
+    [0, 5, 'no precipitation in 5 days'],
+    [0, 7, 'no precipitation in 7 days'],
+    [0, 8, 'no precipitation in over a week'],
+    [0, Infinity, 'no precipitation in over a week'],
     [null, null, null],
-  ] as const)('%s in, %s days → %s', (today, days, out) => expect(rainPhrase(today, days)).toBe(out))
+  ] as const)('%s in, %s days → %s', (today, days, out) => expect(precipPhrase(today, days)).toBe(out))
 })
 
 describe('summarize', () => {
-  const base: SummaryInput = { shortForecast: 'Partly Cloudy', windMph: 6, windDeg: 157.5, rainTodayIn: 0, daysSinceRain: 5, nowWallMs: NOON }
+  const base: SummaryInput = { shortForecast: 'Partly Cloudy', windMph: 6, windDeg: 157.5, precipTodayIn: 0, daysSincePrecip: 5, nowWallMs: NOON }
   it.each([
-    ['all parts by day', base, 'Partly cloudy, light SSE wind, no rain in 5 days.'],
-    ['tonight', { ...base, shortForecast: 'Mostly Clear', nowWallMs: NIGHT }, 'Mostly clear tonight, light SSE wind, no rain in 5 days.'],
-    ['no forecast', { ...base, shortForecast: null }, 'Light SSE wind, no rain in 5 days.'],
-    ['raining, windy', { ...base, shortForecast: 'Rain', windMph: 24, windDeg: 270, rainTodayIn: 0.42, daysSinceRain: 0 }, 'Rain, strong W wind, 0.42 in of rain today.'],
-    ['calm, dry week', { ...base, windMph: 0.5, daysSinceRain: Infinity }, 'Partly cloudy, calm, no rain in over a week.'],
-    ['calm after a windy day', { ...base, windMph: 0.4, peakGustMph: 43.24 }, 'Partly cloudy, calm after gusts to 43 mph earlier, no rain in 5 days.'],
-    ['calm after light gusts', { ...base, windMph: 0.4, peakGustMph: 24 }, 'Partly cloudy, calm, no rain in 5 days.'],
-    ['nothing known', { ...base, shortForecast: null, windMph: null, daysSinceRain: null }, ''],
+    ['all parts by day', base, 'Partly cloudy, light SSE wind, no precipitation in 5 days.'],
+    ['tonight', { ...base, shortForecast: 'Mostly Clear', nowWallMs: NIGHT }, 'Mostly clear tonight, light SSE wind, no precipitation in 5 days.'],
+    ['no forecast', { ...base, shortForecast: null }, 'Light SSE wind, no precipitation in 5 days.'],
+    ['raining, windy', { ...base, shortForecast: 'Rain', windMph: 24, windDeg: 270, precipTodayIn: 0.42, daysSincePrecip: 0 }, 'Rain, strong W wind, 0.42 in of precipitation today.'],
+    ['calm, dry week', { ...base, windMph: 0.5, daysSincePrecip: Infinity }, 'Partly cloudy, calm, no precipitation in over a week.'],
+    ['calm after a windy day', { ...base, windMph: 0.4, peakGustMph: 43.24 }, 'Partly cloudy, calm after gusts to 43 mph earlier, no precipitation in 5 days.'],
+    ['calm after light gusts', { ...base, windMph: 0.4, peakGustMph: 24 }, 'Partly cloudy, calm, no precipitation in 5 days.'],
+    ['nothing known', { ...base, shortForecast: null, windMph: null, daysSincePrecip: null }, ''],
   ] as const)('%s', (_name, input, out) => expect(summarize(input)).toBe(out))
   it('evening is 18:00–05:59 wall clock', () => {
     expect(isEvening(Date.UTC(2026, 9, 2, 17, 59))).toBe(false)

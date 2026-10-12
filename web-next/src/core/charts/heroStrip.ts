@@ -17,12 +17,14 @@ import { paint } from './theme'
 import { axisTooltip, tipText } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
 
-/** A forecast period in the strip's next 24 h (the icon row and the table caption). */
+/** An upcoming NWS forecast period: the strip's next 24 h name theirs in the table caption; Now's icon row shows as many as fit. */
 export interface StripPeriod {
   /** The period's midpoint, wall-clock ms. */
   t: number
-  /** "Tonight 45°". */
+  /** "Tonight 45°", "Wednesday Night 40°". */
   label: string
+  /** The icon row's shorter form: "Tonight 45°", "Wed night 40°". */
+  abbr: string
   /** NWS icon URL (api.weather.gov only) for the icon row, or null. */
   icon: string | null
   /** The period's short forecast (icon alt text). */

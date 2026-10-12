@@ -87,7 +87,7 @@ export function fillRows(rows: number, height: number, compact: boolean): { heig
   return { height: h, tops: Array.from({ length: n }, (_, i) => LAYOUT.top + i * (h + gap)) }
 }
 
-/** Bars: the totals per interval (rain, reference ET) and rain rate (the interval's peak rate, beside rain's bars). */
+/** Bars: the totals per interval (precipitation, reference ET) and precipitation rate (the interval's peak rate, beside precipitation's bars). */
 function isBar(p: TimeseriesPanel): boolean {
   return isAccumulation(p.variable) || p.variable === 'Max Precip Rate'
 }

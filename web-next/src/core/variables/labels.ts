@@ -31,9 +31,9 @@ export const LABELS: Readonly<Record<string, PlainLabel>> = {
   sol_rad: { name: 'Sunlight', unit: 'W/m²', digits: d(0, 0) },
   bp: { name: 'Pressure', unit: 'mb', digits: d(0, 1) },
   snow_depth: { name: 'Snow depth', unit: 'in', digits: d(1, 1) },
-  // Rain and evaporation (etr is also the Reference ET Ag tool: one id, one label)
-  ppt: { name: 'Rain', unit: 'in', digits: d(2, 2) },
-  ppt_max_rate: { name: 'Rain rate', unit: 'in/h', digits: d(2, 2) },
+  // Precipitation and evaporation (etr is also the Reference ET Ag tool: one id, one label)
+  ppt: { name: 'Precipitation', unit: 'in', digits: d(2, 2) },
+  ppt_max_rate: { name: 'Precipitation rate', unit: 'in/h', digits: d(2, 2) },
   etr: { name: 'Reference ET', unit: 'in', digits: d(2, 3), sub: 'Water use of a reference grass crop' },
   // Soil
   soil_vwc: { name: 'Soil moisture', unit: '%', digits: d(0, 1) },
@@ -91,7 +91,7 @@ export function axisTitle(id: string, fallback: string): string {
   return l.unit ? `${l.name} (${l.unit})` : l.name
 }
 
-/** The running-total form of an axis title: "Rain (in)" → "Cumulative rain (in)". */
+/** The running-total form of an axis title: "Precipitation (in)" → "Cumulative precipitation (in)". */
 export const cumulativeTitle = (title: string): string => `Cumulative ${title.charAt(0).toLowerCase()}${title.slice(1)}`
 
 /** API units in plain form ("mi/hr" → "mph", "mbar" → "mb", "deg" → "°", "inches" → "in"); others unchanged. */

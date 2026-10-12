@@ -11,7 +11,7 @@ const MODEL: HeroStripModel = {
   observed: { t: obsT, v: obsT.map((_, i) => (i === 5 ? 38 : i === 20 ? 66 : 50)) },
   forecast: { t: [NOW + H, NOW + 2 * H, NOW + 10 * H], v: [60, 58, 45] },
   now: { t: NOW, v: 62 },
-  periods: [{ t: NOW + 10 * H, label: 'Tonight 45°', icon: null, short: 'Clear' }],
+  periods: [{ t: NOW + 10 * H, label: 'Tonight 45°', abbr: 'Tonight 45°', icon: null, short: 'Clear' }],
 }
 
 type S = {

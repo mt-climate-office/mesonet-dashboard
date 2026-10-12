@@ -302,7 +302,7 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await close()
 }
 
-/* ── Now: a tile focuses its variable's heading; "All readings" opens About's readings sheet ── */
+/* ── Now: a tile focuses its variable's heading; "All readings" opens the readings sheet in place ── */
 {
   const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=dark')
   await rendered({ charts: 1, filled: ['[data-testid="now-tiles"]'] })
@@ -317,11 +317,11 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => document.getElementById('sheet-about-readings')?.contains(document.activeElement), null, { timeout: 10000 }).catch(() => {})
   const rows = await page.evaluate(() => ({ hash: location.hash, open: !document.getElementById('sheet-about-readings').hidden, inside: document.getElementById('sheet-about-readings').contains(document.activeElement) }))
-  check('Now: Enter on "All readings" opens About with its readings sheet open, focus inside', rows.hash === '#about' && rows.open && rows.inside, JSON.stringify(rows))
+  check('Now: Enter on "All readings" opens the readings sheet over Now, focus inside', rows.hash !== '#about' && rows.open && rows.inside, JSON.stringify(rows))
   await page.keyboard.press('Escape')
   await page.waitForFunction(() => document.getElementById('sheet-about-readings').hidden, null, { timeout: 5000 }).catch(() => {})
-  const back = await page.evaluate(() => document.activeElement?.id)
-  check('Now: Esc closes the readings sheet and focus returns to its row (#about-readings)', back === 'about-readings', back)
+  const back = await page.evaluate(() => document.activeElement?.dataset.testid)
+  check('Now: Esc closes the readings sheet and focus returns to "All readings"', back === 'now-all-readings', back)
   const p = await problems()
   check('Now tiles and rows: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()
@@ -902,7 +902,7 @@ for (const vp of VIEWPORTS) {
 }
 
 /* ── About sheets (1440 centred, 390 bottom): a row opens its sheet, focus in, Esc / × close, focus back;
-      Now's "All readings" (navigate target #about-readings) opens the readings sheet ── */
+      the same readings sheet opens over Now from its "All readings" row ── */
 for (const vp of VIEWPORTS) {
   const label = `About sheets (${vp.name})`
   const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=dark#about', { viewport: vp })
@@ -939,7 +939,7 @@ for (const vp of VIEWPORTS) {
   await shut('about-history')
   const h2 = await state('about-history')
   check(`${label}: × closes it, focus returns to the row`, !h2.shown && h2.focus === 'about-history-row', JSON.stringify(h2))
-  // Now's "All readings" link: About with the readings sheet open; closing it leaves focus on the row.
+  // Now's "All readings" row: the same sheet over Now (no navigation); closing it leaves focus on the row.
   await page.locator(vp.touch ? '.dash-tabbar a[data-section="now"]' : 'a.dash-section-link[data-section="now"]').click()
   await page.waitForFunction(() => location.hash === '#now' && document.querySelector('[data-testid="now-all-readings"]'), null, { timeout: 10000 }).catch(() => {})
   await page.getByTestId('now-all-readings').focus()
@@ -948,11 +948,11 @@ for (const vp of VIEWPORTS) {
   await animationsDone(page)
   const n1 = await state('about-readings')
   const hash = await page.evaluate(() => location.hash)
-  check(`${label}: Now's "All readings" lands on About with the readings sheet open, focus inside`, hash === '#about' && n1.shown && n1.inside, JSON.stringify({ hash, ...n1 }))
+  check(`${label}: Now's "All readings" opens the readings sheet over Now, focus inside`, hash === '#now' && n1.shown && n1.inside, JSON.stringify({ hash, ...n1 }))
   await page.keyboard.press('Escape')
   await shut('about-readings')
   const n2 = await state('about-readings')
-  check(`${label}: closing it leaves focus on the readings row`, !n2.shown && n2.focus === 'about-readings-row', JSON.stringify(n2))
+  check(`${label}: closing it leaves focus on "All readings"`, !n2.shown && n2.focus === 'now-all-readings', JSON.stringify(n2))
   const p = await problems()
   check(`${label}: console + CSP clean`, p.length === 0, p.slice(0, 4).join(' | '))
   await close()

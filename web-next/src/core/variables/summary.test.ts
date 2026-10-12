@@ -51,7 +51,7 @@ describe('variableRows', () => {
   it('names rows plainly (core/variables/labels)', () => {
     expect(byId.air_temp.name).toBe('Air temperature')
     expect(byId.soil_vwc.name).toBe('Soil moisture')
-    expect(byId.ppt.name).toBe('Rain')
+    expect(byId.ppt.name).toBe('Precipitation')
   })
   it('takes current values from /latest, with the depth for soil', () => {
     expect(byId.air_temp).toMatchObject({ value: '57 °F', note: '' })

@@ -106,7 +106,7 @@ describe('latestTimeseriesChart', () => {
     const o = build(model(hourRows(6, met), ['Precipitation', 'Air Temperature']))
     for (const x of o.xAxis) expect([x.min, x.max]).toEqual(view)
     for (const z of o.dataZoom) expect([z.startValue, z.endValue]).toEqual([o.xAxis[0].min, o.xAxis[0].max])
-    expect(o.yAxis[0].name).toBe('Rain (in)')
+    expect(o.yAxis[0].name).toBe('Precipitation (in)')
     expect(o.yAxis[0].min).toBe(0)
   })
 
@@ -309,7 +309,7 @@ describe('latestTimeseriesChart: the house chart style (style.ts)', () => {
 describe('latestTimeseriesTable', () => {
   it('a row per time step with data and a column per plotted column', () => {
     const t = latestTimeseriesTable(model(hourRows(3, met), ['Precipitation', 'Air Temperature']))
-    expect(t.columns).toEqual(['Time (MT)', 'Rain (in)', 'Air temperature (°F)'])
+    expect(t.columns).toEqual(['Time (MT)', 'Precipitation (in)', 'Air temperature (°F)'])
     expect(t.rows[0]).toEqual(['2026-07-01 00:00', '0.00', '60.0']) // LABELS digits.table: one precision per variable
     expect(t.rows).toHaveLength(3)
   })

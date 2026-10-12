@@ -20,7 +20,7 @@ import { buildHero, type HeroInput, type HeroView } from './hero'
 import { nowPrecip, type PrecipSummary } from './precip'
 import { ytdNormal } from './normals'
 import { dewPointF, nowTiles, pressureChange3h, pressureTrend, soilState, type SoilState } from './relevance'
-import { rainBars } from './rainBars'
+import { precipBars } from './precipBars'
 import { peakGust, sparkSeries, type SeriesKey } from './series'
 import { hasSnow } from './snow'
 import { CALM_MPH } from './summary'
@@ -29,8 +29,8 @@ import type { Tile, TileId } from './tiles'
 export interface NowPageInput extends HeroInput {
   /** Shallowest soil water potential (bar, `latestSwpBar`), when computed; else no Dry/Wet chip. */
   swpBar?: number | null
-  /** Daily precipitation for the last 7 days (`rainDailyQuery`), or undefined until loaded: the Rain tile's bars. */
-  rainDaily?: readonly ObservationRow[]
+  /** Daily precipitation for the last 7 days (`precipDailyQuery`), or undefined until loaded: the Precipitation tile's bars. */
+  precipDaily?: readonly ObservationRow[]
   /** The station row, for the "Station details" meta. */
   station: Pick<Station, 'sub_network' | 'elevation'>
 }
@@ -39,7 +39,7 @@ export interface NowTileView {
   id: TileId
   /** Charts `v=` id the tile opens. */
   v: string
-  /** Plain name ("Wind", "Humidity", "Rain"). */
+  /** Plain name ("Wind", "Humidity", "Precipitation"). */
   name: string
   /** The number at the variable's display precision ("7", "0.05"), '—' when missing. */
   value: string
@@ -48,7 +48,7 @@ export interface NowTileView {
   note: string
   /** One secondary line ("Peak gust 43 mph (24 h)", "SSE · gusts 12", "Dew point 38°", "Last 7 days · dry now"), or "". */
   sub: string
-  /** Rain only: the year to date against normal ("This year: 87% of normal"), on its own line so it is not read as the value's; else "". */
+  /** Precipitation only: the year to date against normal ("This year: 87% of normal"), on its own line so it is not read as the value's; else "". */
   detail: string
   /** Soil only: "Dry"/"Wet" from soil water potential, else null. */
   chip: SoilState | null
@@ -59,7 +59,7 @@ export interface NowTileView {
 export interface NowPage {
   hero: HeroView
   tiles: NowTileView[]
-  /** Strip periods with an api.weather.gov icon, for the row under the strip. */
+  /** Upcoming periods with an api.weather.gov icon, for the row under the strip (it shows as many as fit). */
   icons: StripPeriod[]
   /** "Pressure 847 mb, steady · Snow none" ("" when neither is reported). */
   readingsMeta: string
@@ -67,27 +67,27 @@ export interface NowPage {
   stationMeta: string
 }
 
-/** The tile's number: `/latest`, or for Rain the 7 d total with the ppt summary, else 24 h. */
+/** The tile's number: `/latest`, or for Precipitation the 7 d total with the ppt summary, else 24 h. */
 function reading(id: TileId, c: Conditions, p: PrecipSummary): number | null {
   const m: Record<TileId, number | null> = { wind: c.windMph, precip: p.last7d ?? p.last24h, rh: c.rh, solar: c.solar, soil: c.soil[0]?.vwc ?? null, snow: c.snowIn, vpd: c.vpdMb }
   return m[id]
 }
 
 /**
- * Rain now, from the latest report: "0.12 in/h now" (its peak rate, HydroMet), "raining now"
- * (a rate under 0.01 in/h, or no rate column but rain in the interval), "dry now", or "" when
+ * Precipitation now, from the latest report: "0.12 in/h now" (its peak rate, HydroMet), "precipitating now"
+ * (a rate under 0.01 in/h, or no rate column but precipitation in the interval), "dry now", or "" when
  * the row has neither column.
  */
-export function rainNow(c: Pick<Conditions, 'pptIn' | 'pptRateInH'>): string {
+export function precipNow(c: Pick<Conditions, 'pptIn' | 'pptRateInH'>): string {
   if (c.pptRateInH === null && c.pptIn === null) return ''
   if (c.pptRateInH !== null && c.pptRateInH >= 0.005) return `${formatReading('ppt_max_rate', c.pptRateInH)} now`
-  return (c.pptRateInH ?? 0) > 0 || (c.pptIn ?? 0) > 0 ? 'raining now' : 'dry now'
+  return (c.pptRateInH ?? 0) > 0 || (c.pptIn ?? 0) > 0 ? 'precipitating now' : 'dry now'
 }
 
-/** The line under the value: "SSE · gusts 12" (wind without a 24 h peak gust), "Last 7 days · dry now" (the rain window and `rainNow`), "Dew point 49°", "2 in deep", or "". */
+/** The line under the value: "SSE · gusts 12" (wind without a 24 h peak gust), "Last 7 days · dry now" (the precipitation window and `precipNow`), "Dew point 49°", "2 in deep", or "". */
 function sub(id: TileId, c: Conditions, p: PrecipSummary): string {
   if (id === 'wind') return [c.windDeg === null ? null : compassWord(c.windDeg), c.gustMph === null ? null : `gusts ${formatValue('windgust', c.gustMph)}`].filter(Boolean).join(' · ')
-  if (id === 'precip') return [p.last7d !== null ? 'Last 7 days' : 'Last 24 hours', rainNow(c)].filter(Boolean).join(' · ')
+  if (id === 'precip') return [p.last7d !== null ? 'Last 7 days' : 'Last 24 hours', precipNow(c)].filter(Boolean).join(' · ')
   if (id === 'rh') {
     const dp = dewPointF(c.airF, c.rh)
     return dp === null ? '' : `Dew point ${formatValue('air_temp', dp)}°`
@@ -96,8 +96,8 @@ function sub(id: TileId, c: Conditions, p: PrecipSummary): string {
   return ''
 }
 
-/** Rain's second line, "This year: 87% of normal" (precipitation since Jan 1 against the normal to date), or "" without either. */
-function rainDetail(input: NowPageInput, p: PrecipSummary): string {
+/** Precipitation's second line, "This year: 87% of normal" (precipitation since Jan 1 against the normal to date), or "" without either. */
+function precipDetail(input: NowPageInput, p: PrecipSummary): string {
   const normal = input.normals.pr ? ytdNormal(input.normals.pr, input.today) : null
   return p.ytd !== null && normal ? `This year: ${Math.round((p.ytd / normal) * 100)}% of normal` : ''
 }
@@ -119,8 +119,8 @@ function windView(c: Conditions, gust: number | null): Pick<NowTileView, 'value'
 }
 
 function tileView(t: Tile, c: Conditions, input: NowPageInput, p: PrecipSummary, series: Partial<Record<SeriesKey, SparkSeries>>, gust: number | null): NowTileView {
-  // Rain draws 7 daily bars (a bare baseline in a dry week, rainBars), not the 48 h hourly line.
-  const g = t.id === 'precip' ? (rainBars(input.rainDaily, input.today) ?? { spark: null, sparkLabel: '' }) : spark(series[t.series], t.v)
+  // Precipitation draws 7 daily bars (a bare baseline in a dry week, precipBars), not the 48 h hourly line.
+  const g = t.id === 'precip' ? (precipBars(input.precipDaily, input.today) ?? { spark: null, sparkLabel: '' }) : spark(series[t.series], t.v)
   return {
     id: t.id,
     v: t.v,
@@ -129,7 +129,7 @@ function tileView(t: Tile, c: Conditions, input: NowPageInput, p: PrecipSummary,
     unit: LABELS[t.v].unit,
     note: '',
     sub: sub(t.id, c, p),
-    detail: t.id === 'precip' ? rainDetail(input, p) : '',
+    detail: t.id === 'precip' ? precipDetail(input, p) : '',
     chip: t.id === 'soil' ? soilState(input.swpBar) : null,
     spark: g.spark,
     sparkLabel: g.sparkLabel,
@@ -158,7 +158,7 @@ export function stationMeta(s: Pick<Station, 'sub_network' | 'elevation'>): stri
 export function buildNowPage(input: NowPageInput): NowPage {
   const p = nowPrecip(input)
   const hero = buildHero(input, p)
-  const icons = (hero.strip?.periods ?? []).filter((x) => x.icon !== null)
+  const icons = hero.periods.filter((x) => x.icon !== null)
   const base = { hero, icons, stationMeta: stationMeta(input.station) }
   if (!input.latest) return { ...base, tiles: [], readingsMeta: '' }
   const c = readConditions(input.latest)
