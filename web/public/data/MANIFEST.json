@@ -1,22 +1,18 @@
 {
-  "generated_by": "web/src/features/ag/data/vendor-static.mjs",
-  "captured_at": "2026-10-01",
+  "generated_by": "web/src/core/ag/data/vendor-static.mjs",
+  "captured_at": "2026-10-04",
   "files": {
     "soil_params.json": {
       "source_repo": "mt-climate-office/mesonet-soils",
       "source_paths": [
-        "build/processed/2026-09-25/compat/soil_parameters.csv",
-        "build/processed/2026-09-25/compat/soil_porosity.csv",
-        "build/processed/2026-09-25/compat/soil_raw_data.csv"
+        "soil_params.json"
       ],
-      "source_commit": "18672c337fdb44c84de049be18aeafa94b2cd9e8",
-      "build_generator_sha": "18672c337fdb44c84de049be18aeafa94b2cd9e8",
-      "build_generator_dirty": true,
-      "release": "2026-09-25",
-      "build_generated_at": "2026-09-26T00:03:07Z",
+      "source_commit": "0474b94d4d35e0dd86a34fa7d601b15476ef79d6",
+      "source_dirty": false,
+      "release": "2026-10-04T17:21:00Z",
       "rows": 507,
-      "transform": "One row per (station, depth). depthCm = -depth/10. fx = FX params[0] (r,s,n,m,h; h kPa), vg = VG params[0] (r,s,a,n; a 1/kPa), porosityPct = HYPROP initial water content (Vol%), labVwcMin/MaxPct = min/max of soil_raw_data.vwc × 100 for that (station, depth).",
-      "data2_url": "https://data2.climate.umt.edu/mesonet/soils/processed/latest/compat/",
+      "transform": "None (copied verbatim). One row per primary core (station, depthCm); see the mesonet-soils README.",
+      "data2_url": "https://data2.climate.umt.edu/mesonet/soils/soil_params.json",
       "license": "Montana Climate Office / Montana Mesonet soil laboratory data; public, see https://climate.umt.edu/about/agreement/"
     },
     "gdd_stages.json": {
@@ -31,6 +27,20 @@
       "known_differences": "Deployed derived.stages labels hemp stage 1 \"BBCH Stage 11\"; write_hemp_table.sql says \"BBCH Stages 0-11\". Vendored from the SQL.",
       "data2_url": "https://data2.climate.umt.edu/mesonet/derived/gdd_stages.json (planned)",
       "license": "Montana Climate Office; stage tables compiled from NDAWN / extension publications."
+    },
+    "places.json": {
+      "source": "US Census Bureau 2026 Gazetteer Files (public domain)",
+      "source_url": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2026_Gazetteer/",
+      "source_paths": [
+        "2026_Gaz_counties_national.txt",
+        "2026_Gaz_aiannh_national.txt",
+        "2026_gaz_place_30.txt",
+        "2026_Gaz_zcta_national.txt"
+      ],
+      "captured_at": "2026-10-05",
+      "rows": 930,
+      "transform": "Montana only (counties USPS=MT; places file 30; ZCTAs 59xxx; reservations by GEOID; tribes with no Census reservation added by hand at their headquarters town, \"at\"). One row per place: id (c/r/p/z + GEOID), kind, display name (\" city\"/\" town\"/\" CDP\" dropped; consolidated city-counties renamed), Census internal point (4 dp), search keywords (county bare name, nations, former names).",
+      "generated_by": "web/src/core/places/vendor-places.mjs"
     }
   }
 }

@@ -1,17 +1,116 @@
-<!doctype html>
+<!DOCTYPE html>
+<!-- Montana Mesonet Dashboard. Head follows mco-web-style
+     snippets/head.html @0.11.3; body markup lives in partials/ (inlined at
+     build by vite/include.ts). The kit version + SRI hashes live ONLY here. -->
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./MCO_logo.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Interactive dashboard for the Montana Mesonet — current conditions, time series, and climate data from weather stations across Montana."
-    />
-    <title>Montana Mesonet Dashboard</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <!-- Meta CSP (Pages cannot set headers). 'unsafe-eval': Alpine's standard
+       build compiles x-* expressions with Function(); acceptable for a static,
+       read-only app (ARCHITECTURE.md). The sha256 pins the inline anti-flash
+       script below; vite/indexHtml.test.ts fails if they drift apart. -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'none';
+    script-src 'self' 'sha256-v3il6Uh82ESNrvf3ERc536SXE1pi2Le5vlV0TpFWJyU=' 'sha256-NgHBdw+Nl6S2kTHNyvv5uFwHfytmfDJR39Y9qVPt/UI=' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com;
+    worker-src 'self' blob: https://unpkg.com;
+    manifest-src 'self';
+    style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com;
+    font-src https://cdn.jsdelivr.net;
+    img-src 'self' data: blob: https://cdn.jsdelivr.net https://data2.climate.umt.edu https://api.weather.gov;
+    connect-src 'self' https://mt-climate-office.goatcounter.com https://mesonet2.climate.umt.edu https://data2.climate.umt.edu https://api.weather.gov https://raw.githubusercontent.com https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://s3.amazonaws.com https://cdn.jsdelivr.net https://unpkg.com;
+    base-uri 'self';
+    form-action 'none'">
+  <!-- viewport-fit=cover makes the kit's env(safe-area-inset-*) padding live. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="author" content="Montana Climate Office">
+  <!-- Home-screen app (ui/shell/install.ts links the manifest on the install address only). iOS reads these
+       when "Add to Home Screen" is used from any address. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MT Mesonet">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#1a6faf" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#161b22" media="(prefers-color-scheme: dark)">
+
+  <!-- Anti-flash theme boot: kit snippets/anti-flash.html, inline, verbatim. -->
+  <script>
+    (function () {
+      const raw = new URLSearchParams(location.search).get('theme');
+      const url = raw == null ? null : raw.toLowerCase();
+      let saved = null;
+      try { saved = localStorage.getItem('mco-theme'); } catch (e) {}
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const valid = ['dark', 'light', 'high-contrast'];
+      const t = valid.includes(url) ? url
+              : valid.includes(saved) ? saved
+              : (prefersDark ? 'dark' : 'light');
+      const root = document.documentElement;
+      root.setAttribute('data-theme', t);
+      root.classList.toggle('is-compact', window.matchMedia('(max-width: 640px), (max-height: 560px)').matches);
+      root.classList.toggle('is-touch', window.matchMedia('(hover: none)').matches);
+      // First-paint hold (0.9.0): [data-hold] stays invisible until MCO.ready();
+      // this timeout releases it anyway, so a failed script never strands a page.
+      root.classList.add('mco-booting');
+      setTimeout(function () { root.classList.remove('mco-booting'); }, 3000);
+    })();
+  </script>
+
+  <title>Dashboard · MT Mesonet</title>
+  <meta name="description" content="Live and historical weather, soil and agricultural data from every Montana Mesonet station.">
+  <link rel="canonical" href="https://mt-climate-office.github.io/mesonet-dashboard/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Montana Mesonet">
+  <meta property="og:title" content="Dashboard · Montana Mesonet">
+  <meta property="og:description" content="Live and historical weather, soil and agricultural data from every Montana Mesonet station.">
+  <meta property="og:url" content="https://mt-climate-office.github.io/mesonet-dashboard/">
+  <!-- The dashboard's own card (public/og-card.png, `npm run og-card`), not the kit's Station Status default.
+       Absolute, on the Pages root build. -->
+  <meta property="og:image" content="https://mt-climate-office.github.io/mesonet-dashboard/og-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Mesonet Dashboard's station chooser: a search box above a map of Montana Mesonet stations">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Dashboard · Montana Mesonet">
+  <meta name="twitter:description" content="Live and historical weather, soil and agricultural data from every Montana Mesonet station.">
+  <meta name="twitter:image" content="https://mt-climate-office.github.io/mesonet-dashboard/og-card.png">
+  <meta name="twitter:image:alt" content="The Mesonet Dashboard's station chooser: a search box above a map of Montana Mesonet stations">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.11.3/assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.11.3/assets/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.11.3/assets/apple-touch-icon.png">
+
+  <!-- House fonts (same @version as the theme CSS; crossorigin required, no integrity). -->
+  <link rel="preload" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.11.3/fonts/outfit-latin.woff2"
+        as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.11.3/fonts/space-mono-latin.woff2"
+        as="font" type="font/woff2" crossorigin>
+
+  <!-- MapLibre 6 (kit snippets/head.html): ES modules only, imported by MCO.map.loadMapLibre(); the one-line
+       import map carries the SRI hashes and must precede every module script (main.ts below). -->
+  <script type="importmap">{"integrity":{"https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.mjs":"sha384-KQzExYlfg1SnYNpLaXHTnaCTjr5wmiZ6X3sasvPb94caZfH+3+T1Sl4eJziXUtmN","https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl-shared.mjs":"sha384-V59ofCEPEqpSk5Mswc19DtDYbZWJtne210dFzS328Il6O31eLwTV7v57+Z3NjW/7"}}</script>
+  <link rel="modulepreload" href="https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.mjs"
+        integrity="sha384-KQzExYlfg1SnYNpLaXHTnaCTjr5wmiZ6X3sasvPb94caZfH+3+T1Sl4eJziXUtmN"
+        crossorigin="anonymous">
+  <link rel="modulepreload" href="https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl-shared.mjs"
+        integrity="sha384-V59ofCEPEqpSk5Mswc19DtDYbZWJtne210dFzS328Il6O31eLwTV7v57+Z3NjW/7"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.css"
+        integrity="sha384-ntw3zEt6rcVML7jDK0ULmHa5hxLB23afsPqzqfY+gLgMfAkbFCnCgPpkZvV5mmZX"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.11.3/theme/mco-theme.css"
+        integrity="sha384-SVU0zinE4kdg7DL79mgXmebk2GD/Gy4cnCeu/hn3eZSxgg3X+g4Fr4qC0Ou1bE20"
+        crossorigin="anonymous">
+  <script type="module" src="/src/main.ts"></script>
+</head>
+<body>
+  <!-- @include partials/shell.html -->
+
+  <!-- Kit: classic scripts, before the (deferred) app module runs. MapLibre comes later, on demand (ui/map/presets.ts). -->
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.11.3/core/mco-core.js"
+          integrity="sha384-hwEGm+GrEB8L4Msos8t4L3tzlXRPiHR11CFgFn1jYSvD4izhSHQJIodHgm4ZuRf8"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.11.3/map/mco-map.js"
+          integrity="sha384-tmDqtqi4yYiDHOxkZikwzXF3Lpkb63b0Tu6K7jeCpU9gJkPB2GbpFHLasGHka6zP"
+          crossorigin="anonymous"></script>
+</body>
 </html>
