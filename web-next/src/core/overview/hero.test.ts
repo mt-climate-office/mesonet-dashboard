@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ForecastPeriod, ObservationRow } from '../api'
-import { buildHero, type HeroInput } from './hero'
+import { abbrPeriod, buildHero, type HeroInput } from './hero'
 
 const H = 3_600_000
 const LATEST = {
@@ -44,7 +44,7 @@ describe('buildHero', () => {
     const h = buildHero(BASE)
     expect(h.temp).toBe('57°')
     expect(h.highLow).toBe('High 63° · Low 40° (24 h)')
-    expect(h.summary).toBe('Mostly clear tonight, breezy ESE wind, no rain in 2 days.')
+    expect(h.summary).toBe('Mostly clear tonight, breezy ESE wind, no precipitation in 2 days.')
     expect(h.freshness).toEqual({ updated: 'Updated 5 min ago', stale: false, provisional: true })
   })
   it('high/low is the strip observed 24 h (it crosses midnight); normal is today in Denver', () => {
@@ -73,7 +73,7 @@ describe('buildHero', () => {
   })
   it('without the forecast: no sky in the summary, observed-only strip', () => {
     const h = buildHero({ ...BASE, forecast: undefined, forecastHourly: undefined })
-    expect(h.summary).toBe('Breezy ESE wind, no rain in 2 days.')
+    expect(h.summary).toBe('Breezy ESE wind, no precipitation in 2 days.')
     expect(h.strip?.forecast).toEqual({ t: [], v: [] })
     expect(h.strip?.periods).toEqual([])
   })
@@ -82,6 +82,18 @@ describe('buildHero', () => {
     expect(buildHero({ ...BASE, forecast: { location: null, periods, hourlyUrl: null } }).strip?.periods[0].icon).toBeNull()
   })
   it('empty until /latest arrives', () => {
-    expect(buildHero({ ...BASE, latest: undefined })).toEqual({ temp: null, feels: null, feelsKind: null, highLow: null, normal: null, summary: '', strip: null, freshness: null })
+    expect(buildHero({ ...BASE, latest: undefined })).toEqual({ temp: null, feels: null, feelsKind: null, highLow: null, normal: null, summary: '', strip: null, periods: [], freshness: null })
+  })
+})
+
+describe('abbrPeriod', () => {
+  it('shortens weekday names and lowercases night; other names unchanged', () => {
+    expect(abbrPeriod('Wednesday Night')).toBe('Wed night')
+    expect(abbrPeriod('Tuesday')).toBe('Tue')
+    expect(abbrPeriod('Thursday')).toBe('Thu')
+    expect(abbrPeriod('Saturday')).toBe('Sat')
+    expect(abbrPeriod('Tonight')).toBe('Tonight')
+    expect(abbrPeriod('This Afternoon')).toBe('This Afternoon')
+    expect(abbrPeriod('Columbus Day')).toBe('Columbus Day')
   })
 })

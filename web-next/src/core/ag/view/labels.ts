@@ -151,7 +151,7 @@ export function parseLabel(header: string | null | undefined): { name: string; u
 /**
  * Annual comparison y label in plain words (core/downloader `elementLabel`,
  * `plainUnit`): "Average Air Temperature @ 2 m [°F]" → "Air temperature at
- * 6.6 ft (°F)"; cumulative "Total Precipitation [in]" → "Cumulative rain (in)".
+ * 6.6 ft (°F)"; cumulative "Total Precipitation [in]" → "Cumulative precipitation (in)".
  */
 export function annualAxisLabel(header: string | null | undefined, cumulative: boolean): string {
   const { name, unit } = parseLabel(header)

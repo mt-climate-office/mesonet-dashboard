@@ -55,12 +55,12 @@ describe('stationVariables', () => {
     expect(opts.find((o) => o.label === 'Pressure')?.value).toBe('Atmospheric Pressure')
   })
   it('flags summed and normals variables', () => {
-    expect(findVariable(vars, 'ppt')).toMatchObject({ sum: true, normals: true, group: 'Rain and evaporation' })
+    expect(findVariable(vars, 'ppt')).toMatchObject({ sum: true, normals: true, group: 'Precipitation and evaporation' })
     expect(findVariable(vars, 'air_temp')).toMatchObject({ sum: false, normals: true })
     expect(findVariable(vars, 'bp')).toMatchObject({ sum: false, normals: false })
   })
   it('groups, skipping empty groups (no Well here)', () => {
-    expect(variableGroups(vars).map((g) => g.group)).toEqual(['Weather', 'Rain and evaporation', 'Soil', 'Other'])
+    expect(variableGroups(vars).map((g) => g.group)).toEqual(['Weather', 'Precipitation and evaporation', 'Soil', 'Other'])
   })
   it('gives prev/next in list order', () => {
     expect(neighbors(vars, 'air_temp')).toEqual({ prev: null, next: vars[1] })
@@ -83,7 +83,7 @@ describe('chartsMode', () => {
 })
 
 describe('LIST_AG_TOOLS', () => {
-  it('lists every Ag tool but Annual comparison and Reference ET (listed under Rain and evaporation), in tool order', () => {
+  it('lists every Ag tool but Annual comparison and Reference ET (listed under Precipitation and evaporation), in tool order', () => {
     expect(LIST_AG_TOOLS).toEqual(['gdd', 'feels_like', 'cci', 'soil_temp,soil_ec_blk', 'swp', 'percent_saturation'])
   })
 })

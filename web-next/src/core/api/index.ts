@@ -6,6 +6,7 @@
  *  - record:      getStationRecord (+ fmtDate, exclusiveEnd, aggFuncQuery)
  *  - derived:     Ag Tools /derived + soil fetchers
  *  - nwsForecast: api.weather.gov text forecast (Forecast card) and hourly forecast (Now strip)
+ *  - nwsAlerts:   api.weather.gov active hazard alerts for a point (Now's banners)
  *  - retry:       which failures are worth retrying
  *  - qcLevel:     the hidden `?level=` QC override (qcLevel, qcOverride, setQcOverride, parseQcLevel)
  */
@@ -14,5 +15,6 @@ export * from './types'
 export * from './meta'
 export * from './record'
 export * from './nwsForecast'
+export * from './nwsAlerts'
 export * from './retry'
 export * from './qcLevel'

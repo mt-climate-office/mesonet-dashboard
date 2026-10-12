@@ -11,7 +11,8 @@
  *  - relevance:  nowTiles (the tiles Now shows), pressure trend, dew point, soil state
  *  - hero:       buildHero (the Now hero: temperature, 24 h high/low, normal, summary, 48 h strip model)
  *  - nowPage:    buildNowPage (the whole Now page: hero, tile views, row metas; the only formatter), the SWP chip request
- *  - rainBars:   rainDailyQuery, rainBars (the Rain tile: 7 daily bars, or nothing in a dry week)
+ *  - alerts:     alertBanners (the NWS hazard banners above the hero), alertTone, alertWhen
+ *  - precipBars: precipDailyQuery, precipBars (the Precipitation tile: 7 daily bars, or nothing in a dry week)
  */
 export * from './tiles'
 export * from './conditions'
@@ -24,4 +25,5 @@ export * from './summary'
 export * from './relevance'
 export * from './hero'
 export * from './nowPage'
-export * from './rainBars'
+export * from './precipBars'
+export * from './alerts'

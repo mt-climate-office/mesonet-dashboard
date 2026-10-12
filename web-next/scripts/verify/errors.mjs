@@ -39,7 +39,7 @@ for (const sc of SCENARIOS) {
   check(`${sc.name}: Retry recovers once the API answers`, recovered && (await err.count()) === 0)
   if (sc.name === 'Download') {
     const t = await varsText(page)
-    check('Download: the variables read as names once loaded', /Rain/.test(t) && !/\b[a-z]+_[a-z0-9_]+\b/.test(t), t)
+    check('Download: the variables read as names once loaded', /Precipitation/.test(t) && !/\b[a-z]+_[a-z0-9_]+\b/.test(t), t)
   }
   await close()
 }

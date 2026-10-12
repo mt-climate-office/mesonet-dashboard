@@ -37,7 +37,7 @@ export interface Tile {
   id: TileId
   /** Charts `v=` id the tile opens; its `LABELS` entry names and formats it. */
   v: string
-  /** The 48 h sparkline series (Rain draws its daily bars instead). */
+  /** The 48 h sparkline series (Precipitation draws its daily bars instead). */
   series: SeriesKey
 }
 
@@ -58,7 +58,7 @@ export function freshness(c: Conditions, nowMs: number): Freshness | null {
   return { updated: updatedText(c.stamp, c.stampMs, nowMs), stale: isStale(c.stampMs, nowMs), provisional: c.provisional }
 }
 
-/** The tiles the station reports now, in page order: Rain with any precipitation source (`p`), snow by `hasSnow`. */
+/** The tiles the station reports now, in page order: Precipitation with any precipitation source (`p`), snow by `hasSnow`. */
 export function reportedTiles(c: Conditions, hourly: readonly ObservationRow[] | undefined, p: PrecipSummary): Tile[] {
   const has: Record<TileId, boolean> = {
     wind: c.windMph !== null,

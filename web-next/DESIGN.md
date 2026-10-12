@@ -160,10 +160,10 @@ tiles, rows at every width.
 |---|---|---|
 | Hero | Air temperature (`.mco-num-display`, `--fs-display-hero`: 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("High 74° · Low 41° (24 h)", so the two agree; normal "Normal 67° · 38°"), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain; "calm after gusts to 43 mph earlier" when the 24 h peak gust is ≥ 25 mph) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
-| Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table; a "Loading the 48-hour strip…" status while tier 2 loads and a short note in its place when there is nothing to draw. Below it the forecast periods as an icon row (api.weather.gov only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
+| Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table; a "Loading the 48-hour strip…" status while tier 2 loads and a short note in its place when there is nothing to draw. Below it the forecast periods as an icon row: every upcoming NWS period (about 7 days), as many as fit on one line (`ui/layout/fitRow`), short names ("Wed night 40°"), each a link to the NWS forecast (api.weather.gov icons only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
 | Media | Latest camera frames, West first (W · E · N · S · Snow; `core/photos` `DIRECTION_ORDER`), in the carousel (opens the photo dialog; its caption bottom right, clear of the camera's own label), or the wind rose without a camera (a fixed 20 rem card): the last 24 hours of raw readings (5-min, AgriMet 15-min; `nowWindRoseRequest`), "Wind, last 24 hours", calm readings counted apart (see the Rose view) | photo schedule, latest listings (1) |
 | Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary, then what is falling now from `/latest`, `rainNow`: "0.12 in/h now" (the peak rate), "raining now", "dry now"; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (AgriMet). Plain name, value (`.mco-num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page, whose heading takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
-| Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens About's readings sheet (`target: 'about-readings'`, the row's `data-sheet`; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
+| Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens the readings sheet over Now (`openSheet`, no navigation; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
 `<dialog class="mco-modal">` with a **Direction** segmented control (the directions with frames that day, legacy
@@ -516,7 +516,7 @@ an sr-only heading).
 |---|---|---|
 | Details | Station (name, id in mono), Network, Location (county · coordinates), Elevation (ft and m), Record (install date – "today", or the newest report's date; "Since …" until `/latest` answers): `core/about/details.ts`. Then a **Station one-pager (PDF)** row when one is listed. This is where the old "network · county · elevation" meta line lives now. | `/stations`, `/latest`, one-pagers.json |
 | Map | `locatorMap` (ui/map/presets) in a flat frame with the card radius: the station map framed on the station and its nearest neighbour (`locatorFrame`) at zoom 7–8 (`locatorZoom`: never closer than the former fixed zoom 8, at most one level further out), legend collapsed, **cooperative gestures** (one finger and a plain wheel scroll the page; two fingers or Ctrl/⌘ move the map) | `/stations` |
-| Rows | **All current readings · N** (N readings now, Observed not counted) and **Sensor changes · latest date**: `<button class="about-row" aria-haspopup="dialog" data-sheet="…">`, each opening a modal sheet | as the sheets |
+| Rows | **All current readings · N** (N readings now, Observed not counted) and **Sensor changes · latest date**: `<button class="about-row" aria-haspopup="dialog">`, each opening a modal sheet | as the sheets |
 | About the data | QC level 2, provisional data (the corrected wording), time and units; links to the API docs and this station's requests (`core/about/apiLinks.ts`) | — |
 
 **Sheets** (`partials/sheets/about-readings.html`, `about-history.html`; the modal sheet primitive, `--sheet-w`
@@ -525,16 +525,14 @@ with a label (the sheet body itself does not scroll, so the table head stays put
 - **All current readings** (`ui/about/readings.ts`): the readings table, plain labels from
   `core/variables/labels.ts` with depths ("Soil moisture at 4 in"), values with units at table precision
   ("57.0 °F"; wind direction as "ESE (111.6 deg)"; **Feels like** by the NWS method), `core/about/readings.ts`.
-  For HydroMet, the rain totals ("Last 7 days", "Year to date"). Each row header carries its API column in
+  For HydroMet, the precipitation totals ("Last 7 days", "Year to date"). Each row header carries its API column in
   `data-col` (the fidelity harness keys rows by it).
 - **Sensor changes** (`ui/about/history.ts`): installs and removals by day, newest first, with what each sensor measures in plain words ("Soil moisture at 2 in")
   (`core/about/sensorHistory`), from `/config/{station}/` (the response Compare's overlays use).
 
-**The readings target (contract with Now):** the readings row is `#about-readings` with
-`data-sheet="about-readings"`. `navigate('about', { target: 'about-readings' })` (Now's "All readings")
-focuses it and, because of `data-sheet`, opens that sheet with the row as opener (`ui/shell/navigate.ts`), so
-closing the sheet leaves focus on the row. Any `target` with `data-sheet="<id>"` works the same way. Leaving
-About closes its sheets. Every fetch is in `ui/station/resources.ts`, shared with Now.
+**The readings sheet is shared with Now:** the sheets live in the shell (partials/sheets/), so Now's
+"All readings" opens the same sheet in place with `openSheet('about-readings', row)`; closing it returns
+focus to that row. Leaving About or Now closes the sheets they opened. Every fetch is in `ui/station/resources.ts`, shared with Now.
 
 ## Components (`src/ui/layout/`; kit candidates, see KIT-NOTES.md)
 

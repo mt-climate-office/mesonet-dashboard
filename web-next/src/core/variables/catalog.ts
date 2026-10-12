@@ -14,13 +14,13 @@ import { plainName } from './labels'
 
 type ElementRow = { element: string; description_short: string }
 
-export const VARIABLE_GROUPS = ['Weather', 'Rain and evaporation', 'Soil', 'Well', 'Other'] as const
+export const VARIABLE_GROUPS = ['Weather', 'Precipitation and evaporation', 'Soil', 'Well', 'Other'] as const
 export type VariableGroup = (typeof VARIABLE_GROUPS)[number]
 
 /** Known variables in list order, by group. Anything else (a new API element) goes to Other. */
 const GROUPED: Record<Exclude<VariableGroup, 'Other'>, readonly string[]> = {
   Weather: ['Air Temperature', 'Relative Humidity', 'VPD', 'Wind Speed', 'Gust Speed', 'Wind Direction', 'Solar Radiation', 'Atmospheric Pressure', 'Snow Depth'],
-  'Rain and evaporation': ['Precipitation', 'Max Precip Rate', 'Reference ET'],
+  'Precipitation and evaporation': ['Precipitation', 'Max Precip Rate', 'Reference ET'],
   Soil: ['Soil Temperature', 'Soil VWC', 'Bulk EC'],
   Well: ['Well Water Level', 'Well Water Temperature', 'Well EC'],
 }
@@ -28,7 +28,7 @@ const GROUPED: Record<Exclude<VariableGroup, 'Other'>, readonly string[]> = {
 /**
  * The Charts list's "Ag tools" group, in tool order: every Ag tool except
  * Annual comparison (any variable's All-years view) and Reference ET, which
- * is listed once, under Rain and evaporation (its `etr` row opens the tool).
+ * is listed once, under Precipitation and evaporation (its `etr` row opens the tool).
  */
 export const LIST_AG_TOOLS: readonly string[] = AG_TOOL_IDS.filter((id) => id !== 'annual' && id !== 'etr')
 

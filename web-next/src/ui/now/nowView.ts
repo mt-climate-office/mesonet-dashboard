@@ -1,9 +1,9 @@
 /**
  * `x-data="nowView"` on the Now section (partials/now/index.html). Tier 1
- * (`/latest`, the ppt summary, the NWS periods, the photo schedule) starts in
- * parallel on mount and renders the hero and tiles; tier 2 (the 72 h hourly
- * rows, normals, the NWS hourly forecast, SWP, 7 daily rain totals) fills the strip, sparklines,
- * high/low and the soil chip. The model is core/overview `buildNowPage`,
+ * (`/latest`, the ppt summary, the NWS periods and hazard alerts, the photo
+ * schedule) starts in parallel on mount and renders the alerts, hero and tiles;
+ * tier 2 (the 72 h hourly rows, normals, the NWS hourly forecast, SWP, 7 daily
+ * precipitation totals) fills the strip, sparklines, high/low and the soil chip. The model is core/overview `buildNowPage`,
  * computed once per change in an effect (the partial reads `page` many times).
  */
 import Alpine from 'alpinejs'
@@ -11,16 +11,17 @@ import { soilParamsFor } from '../../core/ag/data'
 import type { Station } from '../../core/api'
 import { forecastDetailUrl } from '../../core/cards'
 import { heroStripChart, heroStripTable, type HeroStripModel } from '../../core/charts'
-import { buildNowPage, latestSwpBar, type NowPage } from '../../core/overview'
+import { alertBanners, buildNowPage, latestSwpBar, type AlertBanner, type NowPage } from '../../core/overview'
 import { hasCamera } from '../../core/photos'
 import { stationHasSwp } from '../../core/stations'
 import { loadErrorText } from '../../core/loadError'
-import { denverToday } from '../../core/today'
+import { denverToday, denverWallMs } from '../../core/today'
 import type { ChartBindings } from '../charts/chart'
 import { component } from '../component'
 import { follow } from '../shell/navigate'
-import { latestObs, nwsForecast, photoSchedule, pptSummary } from '../station/resources'
-import { normals, nwsHourly, rainDaily, sparkRows, swpSoil } from './resources'
+import { closeSheet, openSheet } from '../shell/sheet'
+import { latestObs, nwsAlerts, nwsForecast, photoSchedule, pptSummary } from '../station/resources'
+import { normals, nwsHourly, precipDaily, sparkRows, swpSoil } from './resources'
 
 type State = 'none' | 'loading' | 'error' | 'empty' | 'ready'
 interface View {
@@ -31,6 +32,8 @@ interface View {
   /** Tier 2 still loading: the strip, sparklines and high/low show skeletons. */
   tier2: boolean
   forecastUrl: string
+  /** NWS hazard banners above the conditions; shown whatever the station's own data does. */
+  alerts: AlertBanner[]
 }
 
 const raw = <T>(x: T): T => (x ? Alpine.raw(x) : x)
@@ -40,7 +43,7 @@ const loading = (r: { status: string; data?: unknown } | null) => !!r && r.statu
 function compute(nowMs: number): View {
   const st = Alpine.store('station')
   const s: Station | undefined = st.current
-  const none = { page: null, tier2: false, forecastUrl: '', error: '' }
+  const none = { page: null, tier2: false, forecastUrl: '', error: '', alerts: [] }
   if (!s) {
     if (st.catalog?.status === 'error') return { ...none, state: 'error', error: loadErrorText('The station list', st.catalog.error) }
     const waiting = !!Alpine.store('url').state.s && st.catalog?.status !== 'success'
@@ -51,11 +54,14 @@ function compute(nowMs: number): View {
   const latestRes = latestObs(s.station)
   const ppt = s.sub_network === 'HydroMet' ? pptSummary(s.station).data?.[0] : undefined
   const fc = nwsForecast(s.latitude, s.longitude)
+  // A failed alerts fetch shows no banners (the forecast link still leads to NWS hazards).
+  const alerts = alertBanners(raw(nwsAlerts(s.latitude, s.longitude).data), denverWallMs(nowMs))
+  const forecastUrl = forecastDetailUrl(s.latitude, s.longitude)
   photoSchedule()
   const latest = latestRes.data?.[0] as Record<string, unknown> | undefined
   if (!latest) {
-    if (latestRes.status === 'error') return { ...none, state: 'error', error: loadErrorText('Current conditions', latestRes.error) }
-    return { ...none, state: latestRes.status === 'loading' ? 'loading' : 'empty' }
+    if (latestRes.status === 'error') return { ...none, alerts, forecastUrl, state: 'error', error: loadErrorText('Current conditions', latestRes.error) }
+    return { ...none, alerts, forecastUrl, state: latestRes.status === 'loading' ? 'loading' : 'empty' }
   }
   // Tier 2 waits for /latest: it picks the elements and keeps tier 1 first on the wire.
   const spark = sparkRows(s.station, today, latest)
@@ -65,7 +71,7 @@ function compute(nowMs: number): View {
   const swp = stationHasSwp(s) ? swpSoil(s.station, today) : null
   // Loaded by the station store (it decides has_swp), so this is already in hand.
   const params = Alpine.store('station').soil?.data
-  const rain = rainDaily(s.station, today)
+  const precip = precipDaily(s.station, today)
   const page = buildNowPage({
     latest: raw(latest),
     hourly: raw(spark.data),
@@ -76,11 +82,11 @@ function compute(nowMs: number): View {
     forecast: raw(fc.data),
     forecastHourly: raw(fcHourly?.data),
     swpBar: latestSwpBar(raw(swp?.data), params && soilParamsFor(raw(params), s.station)),
-    rainDaily: raw(rain.data),
+    precipDaily: raw(precip.data),
     station: s,
   })
   const error = spark.status === 'error' ? loadErrorText('The last 72 hours', spark.error) : ''
-  return { page, state: 'ready', error, tier2: loading(spark) || loading(fc) || loading(fcHourly) || loading(rain), forecastUrl: forecastDetailUrl(s.latitude, s.longitude) }
+  return { page, state: 'ready', error, tier2: loading(spark) || loading(fc) || loading(fcHourly) || loading(precip), forecastUrl, alerts }
 }
 
 export function nowView() {
@@ -94,6 +100,7 @@ export function nowView() {
     tier2: true,
     forecastUrl: '',
     error: '',
+    alerts: [] as AlertBanner[],
 
     init() {
       effect = Alpine.effect(() => {
@@ -106,6 +113,7 @@ export function nowView() {
     destroy() {
       clearInterval(timer)
       if (effect) Alpine.release(effect)
+      closeSheet('about-readings')
     },
 
     /** The error state's text (partials/load-error.html). */
@@ -136,6 +144,10 @@ export function nowView() {
     /** A tile: push its variable page; the page heading takes focus. */
     open(e: MouseEvent, v: string): void {
       follow(e, 'charts', { patch: { v, view: 'recent', cmp: false }, target: 'var-title', from: 'now' })
+    },
+    /** "All readings": the readings sheet over Now (no navigation); closing it returns focus to the row. */
+    openReadings(e: MouseEvent): void {
+      openSheet('about-readings', e.currentTarget as HTMLElement)
     },
     /** A row to About, through the same pushState + transition as the section nav; `target` takes focus. */
     toAbout(e: MouseEvent, target?: string): void {

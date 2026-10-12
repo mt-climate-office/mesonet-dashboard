@@ -45,7 +45,7 @@
 }
 .now-skel-temp { width: 9rem; height: 4.75rem; margin-bottom: 0.4rem; }
 .now-summary { margin: 0.4rem 0 0; font-size: var(--fs-lg); line-height: 1.35; color: var(--text-primary); text-wrap: pretty; }
-/* Phones: two lines reserved, so the clauses tier 2 adds (rain today, gusts earlier) don't move the
+/* Phones: two lines reserved, so the clauses tier 2 adds (precipitation today, gusts earlier) don't move the
    page below. */
 @media (max-width: 640px) { .now-summary { min-height: calc(2 * 1.35em); } }
 /* Positioned so the Provisional note can use the row's width. */
@@ -67,7 +67,8 @@
 .now-strip-empty { display: grid; place-items: center; height: 100%; margin: 0; padding: 0 1rem; text-align: center; font-size: var(--fs-sm); color: var(--text-secondary); }
 /* Shown (one icon high) while the forecast loads, so its arrival doesn't push the page down. */
 .now-icons { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; min-height: 32px; margin: 0; padding: 0; list-style: none; font-size: var(--fs-xs); color: var(--text-secondary); }
-.now-icons li { display: inline-flex; align-items: center; gap: 0.4rem; }
+.now-icon-link { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; color: inherit; text-decoration: none; border-radius: var(--radius-sm); }
+.now-icon-link:hover span { text-decoration: underline; }
 /* The NWS icons are opaque photos (night ones near black): a hairline keeps them on dark surfaces. */
 .now-icons img { width: 32px; height: 32px; border-radius: var(--radius-sm); outline: 1px solid var(--border); outline-offset: -1px; }
 .now-strip-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; font-size: var(--fs-xs); color: var(--text-muted); }
@@ -116,10 +117,12 @@
 .dash-spark path { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .dash-spark svg.is-bars path { fill: currentColor; stroke: none; }
 
-/* Rows to About: name, meta, chevron. */
+/* Rows: name, meta, chevron. "All readings" is a button (it opens the readings sheet in place),
+   "Station details" a link to About; both look the same. */
 .dash-card.now-rows { padding: 0; overflow: hidden; }
 .now-row {
-  display: flex; align-items: center; gap: 0.75rem; min-height: 3.25rem; padding: 0.75rem var(--card-pad, 16px);
+  display: flex; align-items: center; gap: 0.75rem; width: 100%; min-height: 3.25rem; padding: 0.75rem var(--card-pad, 16px);
+  background: none; border: 0; font: inherit; text-align: left; cursor: pointer;
   color: var(--text-primary); text-decoration: none; font-weight: 500;
 }
 .now-row + .now-row { border-top: 1px solid var(--border); }
@@ -145,4 +148,20 @@
   /* The soil "Dry" chip sits right after its label, not at column 1's far edge mid-tile. */
   .now-tile-head { justify-content: flex-start; }
   .now-tile .dash-spark { grid-column: 2; grid-row: 1 / -1; align-self: center; height: 3.5rem; margin: 0; padding: 0; }
+}
+
+/* NWS hazard banners (partials/now/alerts.html): kit notices, stacked above the conditions. */
+.now-alerts { display: grid; gap: 0.5rem; }
+.now > .now-alerts { margin-bottom: var(--gap, 12px); }
+.now-alert { align-items: flex-start; } /* kit-override: the details open below the first line, so the icon stays beside it */
+.now-alert .mco-notice-icon { margin-top: 0.2rem; }
+.now-alert .mco-notice-text p { margin: 0; }
+.now-alert-details summary { cursor: pointer; width: fit-content; text-decoration: underline; text-underline-offset: 2px; }
+.now-alert-details[open] summary { margin-bottom: 0.4rem; }
+.now-alert-details p + p { margin-top: 0.5rem; }
+.now-alert-body { white-space: pre-line; }
+/* Touch: the forecast periods and "Details" are tap targets (≥ 40 px). */
+@media (hover: none) {
+  .now-icon-link { min-height: 40px; }
+  .now-alert-details summary { padding-block: 0.65rem; } /* stays a list item, so WebKit keeps the triangle */
 }

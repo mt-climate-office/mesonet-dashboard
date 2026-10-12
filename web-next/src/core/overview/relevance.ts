@@ -79,7 +79,7 @@ export function soilState(swpBar: number | null | undefined): SoilState | null {
 
 /**
  * The Now tiles, in page order: what the station reports (`reportedTiles`;
- * Rain whenever there is a source, even in a dry week, for its YTD line),
+ * Precipitation whenever there is a source, even in a dry week, for its YTD line),
  * minus Sunlight at night (`sunUp`). Pressure is never a tile (its 3 h trend
  * is text). `p` is the page's one precipitation summary.
  */

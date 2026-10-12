@@ -1,0 +1,28 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "urn:oid:2.49.0.1.840.0.verify-freeze",
+    "areaDesc": "Gallatin Valley",
+    "sent": "2026-10-01T14:12:00-06:00",
+    "effective": "2026-10-01T14:12:00-06:00",
+    "onset": "2026-10-02T00:00:00-06:00",
+    "expires": "2026-10-02T09:00:00-06:00",
+    "ends": "2026-10-02T09:00:00-06:00",
+    "status": "Actual",
+    "messageType": "Alert",
+    "category": "Met",
+    "severity": "Moderate",
+    "certainty": "Likely",
+    "urgency": "Expected",
+    "event": "Freeze Warning",
+    "senderName": "NWS Great Falls MT",
+    "headline": "Freeze Warning issued October 1 at 2:12PM MDT until October 2 at 9:00AM MDT by NWS Great Falls MT",
+    "description": "* WHAT...Sub-freezing temperatures as low as 24 expected.\n\n* WHERE...Gallatin Valley.\n\n* WHEN...From midnight tonight to 9 AM MDT\nThursday.\n\n* IMPACTS...Frost and freeze conditions will kill crops, other\nsensitive vegetation and possibly damage unprotected outdoor\nplumbing.",
+    "instruction": "Take steps now to protect tender plants from the cold. To prevent\nfreezing and possible bursting of outdoor water pipes they should\nbe wrapped, drained, or allowed to drip slowly."
+   }
+  }
+ ]
+}

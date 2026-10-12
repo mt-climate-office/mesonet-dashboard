@@ -38,7 +38,7 @@ describe('DASHBOARD_RANGES', () => {
 describe('stackColumns', () => {
   const v = (id: string, group: Variable['group']): Variable => ({ id, name: id, group, sum: false, normals: false })
   const weather = ['air_temp', 'rh', 'wind_spd', 'windgust', 'wind_dir', 'sol_rad', 'bp', 'snow_depth'].map((id) => v(id, 'Weather'))
-  const rain = ['ppt', 'ppt_max_rate', 'etr'].map((id) => v(id, 'Rain and evaporation'))
+  const rain = ['ppt', 'ppt_max_rate', 'etr'].map((id) => v(id, 'Precipitation and evaporation'))
   const soil = ['soil_temp', 'soil_vwc', 'soil_ec_blk'].map((id) => v(id, 'Soil'))
   it('Weather | Rain and soil, split at the group boundary; wind direction is left out (the rose)', () => {
     const [a, b] = stackColumns([...weather, ...rain, ...soil])

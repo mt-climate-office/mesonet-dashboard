@@ -1,10 +1,12 @@
 <!-- Now (x-data="nowView", ui/now/nowView.ts; model core/overview buildNowPage): the hero (temperature,
      high/low against normal, the summary, freshness, the 48 h strip with forecast icons), the latest
      photo (the wind rose without a camera), the relevant tiles (each a link to its variable in Charts)
-     and two rows to About. Phones: one column; desktop: hero + photo | tiles + rows. Skeletons hold
-     every slot's size while tier 1 / tier 2 load. Mounted only while the section is open. -->
+     and two rows (All readings opens the readings sheet in place; Station details goes to About).
+     Phones: one column; desktop: hero + photo | tiles + rows. Skeletons hold every slot's size while
+     tier 1 / tier 2 load. Mounted only while the section is open. -->
 <template x-if="$store.view.page === 'now'">
 <div class="now" x-data="nowView" data-testid="now">
+  <!-- @include partials/now/alerts.html -->
   <!-- 'none' (no station) draws nothing: the landing (partials/landing.html) stands in for the section. -->
   <template x-if="state === 'error'">
     <div class="dash-card now-empty"><!-- @include partials/load-error.html --></div>
@@ -70,11 +72,11 @@
         </ul>
 
         <div class="dash-card now-rows">
-          <a class="now-row" :href="$store.url.hrefFor('about')" @click="toAbout($event, 'about-readings')" data-testid="now-all-readings">
+          <button type="button" class="now-row" aria-haspopup="dialog" aria-controls="sheet-about-readings" @click="openReadings($event)" data-testid="now-all-readings">
             <span class="now-row-name">All readings</span>
             <span class="now-row-meta" x-text="page.readingsMeta"></span>
             <span class="now-row-chev" aria-hidden="true">›</span>
-          </a>
+          </button>
           <a class="now-row" :href="$store.url.hrefFor('about')" @click="toAbout($event, 'main')" data-testid="now-station-details">
             <span class="now-row-name">Station details</span>
             <span class="now-row-meta" x-text="page.stationMeta"></span>

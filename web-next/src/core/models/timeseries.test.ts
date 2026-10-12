@@ -89,7 +89,7 @@ describe('buildTimeseriesModel', () => {
     expect(m.panels[0].series[0]).toMatchObject({ type: 'bar', hoverLabel: 'Precipitation Total' })
     expect(m.panels[1].series[0]).toMatchObject({ type: 'line', values: [60, 61, 62, 63] })
     expect(m.panels[2]).toMatchObject({ noData: true, series: [] })
-    expect(m.panels[0].axisTitle).toBe('Rain (in)')
+    expect(m.panels[0].axisTitle).toBe('Precipitation (in)')
   })
 
   it('x is wall-clock ms, one value per row (the chart breaks the gaps), and the x range pads a day each side', () => {

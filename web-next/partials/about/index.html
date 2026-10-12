@@ -1,7 +1,7 @@
 <!-- About (x-data="aboutView", ui/about/aboutView.ts): details that stay reachable but not front and
      center. One column on phones; from tablet up two: details + locator map | the rows + the data notes.
-     The rows open the readings and sensor-change sheets (partials/sheets/about-*.html); #about-readings
-     is the target of Now's "All readings" link (data-sheet: navigating to it opens the sheet).
+     The rows open the readings and sensor-change sheets (partials/sheets/about-*.html), which Now's
+     "All readings" row also opens in place.
      Mounted only while the section is open. -->
 <template x-if="$store.view.page === 'about'">
 <div class="about" x-data="aboutView" data-testid="about">
@@ -32,12 +32,12 @@
       <div class="about-col">
         <section class="dash-card about-rows" aria-labelledby="about-rows-title">
           <h3 class="sr-only" id="about-rows-title">Readings and sensors</h3>
-          <button type="button" class="about-row" id="about-readings" data-sheet="about-readings" aria-haspopup="dialog"
+          <button type="button" class="about-row" id="about-readings" aria-haspopup="dialog"
                   aria-controls="sheet-about-readings" @click="open($event, 'about-readings')" data-testid="about-readings-row">
             <span>All current readings</span>
             <span class="about-row-meta"><template x-if="readingsMeta"><span><span class="sr-only">, </span><span x-text="readingsMeta"></span></span></template><span aria-hidden="true"> ›</span></span>
           </button>
-          <button type="button" class="about-row" data-sheet="about-history" aria-haspopup="dialog"
+          <button type="button" class="about-row" aria-haspopup="dialog"
                   aria-controls="sheet-about-history" @click="open($event, 'about-history')" data-testid="about-history-row">
             <span>Sensor changes</span>
             <span class="about-row-meta"><template x-if="changesMeta"><span><span class="sr-only">, latest </span><span x-text="changesMeta"></span></span></template><span aria-hidden="true"> ›</span></span>

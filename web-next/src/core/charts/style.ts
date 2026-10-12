@@ -79,7 +79,7 @@ export type AxisFamily = 'zero' | 'fixed' | 'free'
 const ZERO: Record<string, number> = {
   // The smallest max each zero-based axis shows, so a calm or dry window is not drawn as a full-height wiggle.
   Precipitation: 0.05,
-  // Lower than rain's: hourly ETr peaks near 0.03 in, which a 0.05 floor left in the bottom half.
+  // Lower than precipitation's: hourly ETr peaks near 0.03 in, which a 0.05 floor left in the bottom half.
   'Reference ET': 0.01,
   'Max Precip Rate': 0.05,
   'Wind Speed': 5,

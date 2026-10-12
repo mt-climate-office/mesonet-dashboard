@@ -105,7 +105,7 @@ describe('elementLabel', () => {
     expect(elementLabel('Air Temperature @ 2 m')).toBe('Air temperature at 6.6 ft')
     expect(elementLabel('Wind Speed @ 10 m')).toBe('Wind at 33 ft')
     expect(elementLabel('Air Temperature @ 8 ft')).toBe('Air temperature at 8 ft')
-    expect(elementLabel('Precipitation')).toBe('Rain')
+    expect(elementLabel('Precipitation')).toBe('Precipitation')
     expect(elementLabel('Battery Voltage')).toBe('Battery Voltage')
   })
 })

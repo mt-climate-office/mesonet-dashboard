@@ -37,6 +37,7 @@ import { landingMap, locatorMap, pickerMap, stationMap } from './ui/map/presets'
 import { photoCard } from './ui/now/photoCard'
 import { windRoseCard } from './ui/now/windRoseCard'
 import { nowView } from './ui/now/nowView'
+import { fitRow } from './ui/now/fitRow'
 import { dashboardView } from './ui/dashboard/dashboardView'
 import { aboutView } from './ui/about/aboutView'
 import { aboutDetails } from './ui/about/details'
@@ -185,6 +186,7 @@ Alpine.data('compareControls', compareControls)
 
 // Now (ui/now): the overview section.
 Alpine.data('nowView', nowView)
+Alpine.data('fitRow', fitRow)
 // The big-screen dashboard (ui/dashboard): every variable's chart and the range chips; its other cards reuse Now's and About's components.
 Alpine.data('dashboardView', dashboardView)
 // Now's panes (ui/now): the latest photo + its dialog, the wind rose (no camera).

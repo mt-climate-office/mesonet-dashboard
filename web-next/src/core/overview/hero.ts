@@ -13,7 +13,7 @@ import { feelsLikeF, readConditions } from './conditions'
 import { normalMedianOn } from './normals'
 import { nowPrecip, type PrecipSummary } from './precip'
 import { peakGust } from './series'
-import { daysSinceRain, summarize } from './summary'
+import { daysSincePrecip, summarize } from './summary'
 import { freshness, type Freshness, type OverviewInput } from './tiles'
 
 export interface HeroInput extends OverviewInput {
@@ -33,10 +33,12 @@ export interface HeroView {
   highLow: string | null
   /** "Normal 67° · 38°" (high · low) for today's Denver date, or null without normals. */
   normal: string | null
-  /** One sentence ("Clear tonight, light SSE wind, no rain in 5 days."), "" when nothing is known. */
+  /** One sentence ("Clear tonight, light SSE wind, no precipitation in 5 days."), "" when nothing is known. */
   summary: string
   /** The 48 h strip, or null with neither observed nor forecast hours. */
   strip: HeroStripModel | null
+  /** Every NWS period still ahead (about 7 days): Now's icon row, which shows as many as fit. */
+  periods: StripPeriod[]
   freshness: Freshness | null
 }
 
@@ -55,14 +57,19 @@ function currentPeriod(periods: readonly ForecastPeriod[], t: number): ForecastP
   return periods.find(covers) ?? periods[0] ?? null
 }
 
-/** Periods whose midpoint falls in the next 24 h, labelled "Tonight 45°". */
-function stripPeriods(periods: readonly ForecastPeriod[], now: number): StripPeriod[] {
+/** "Wednesday Night" → "Wed night", "Thanksgiving Day" unchanged: NWS period names, shortened for the icon row. */
+export const abbrPeriod = (name: string): string =>
+  name.replace(/\b(Sun|Mon|Tues|Wednes|Thurs|Fri|Satur)day\b/g, (_, d: string) => d.slice(0, 3)).replace(/ Night\b/, ' night')
+
+/** Periods whose midpoint is still ahead of `now`, labelled "Tonight 45°", in NWS order. */
+function upcomingPeriods(periods: readonly ForecastPeriod[], now: number): StripPeriod[] {
   return periods.flatMap((p) => {
     const [s, e] = [parseWallClock(p.startTime), parseWallClock(p.endTime)]
     if (s === null || e === null || !Number.isFinite(p.temperature)) return []
     const t = (s + e) / 2
-    if (t <= now || t > now + H24) return []
-    return [{ t, label: `${p.name} ${Math.round(periodF(p))}°`, icon: isNwsUrl(p.icon) ? p.icon : null, short: p.shortForecast }]
+    if (t <= now) return []
+    const temp = ` ${Math.round(periodF(p))}°`
+    return [{ t, label: `${p.name}${temp}`, abbr: `${abbrPeriod(p.name)}${temp}`, icon: isNwsUrl(p.icon) ? p.icon : null, short: p.shortForecast }]
   })
 }
 
@@ -91,7 +98,7 @@ function highLow(v: readonly (number | null)[]): string | null {
  * summary (nowPage.ts passes it).
  */
 export function buildHero(input: HeroInput, p: PrecipSummary = nowPrecip(input)): HeroView {
-  const empty: HeroView = { temp: null, feels: null, feelsKind: null, highLow: null, normal: null, summary: '', strip: null, freshness: null }
+  const empty: HeroView = { temp: null, feels: null, feelsKind: null, highLow: null, normal: null, summary: '', strip: null, periods: [], freshness: null }
   if (!input.latest) return empty
   const c = readConditions(input.latest)
   const fl = feelsLikeF(c.airF, c.rh, c.windMph)
@@ -114,17 +121,18 @@ export function buildHero(input: HeroInput, p: PrecipSummary = nowPrecip(input))
     windMph: c.windMph,
     windDeg: c.windDeg,
     peakGustMph: peakGust(input.hourly, c.gustMph, now),
-    rainTodayIn: p.sinceMidnight,
-    daysSinceRain: daysSinceRain(p, input.hourly, input.today),
+    precipTodayIn: p.sinceMidnight,
+    daysSincePrecip: daysSincePrecip(p, input.hourly, input.today),
     nowWallMs: now,
   })
 
+  const upcoming = upcomingPeriods(periods, now)
   const fc = (input.forecastHourly ?? []).filter((h) => h.t > now && h.t <= now + H24)
   const obs = observed(input, now, c.airF)
   const strip: HeroStripModel | null =
     obs.t.length || fc.length
-      ? { observed: obs, forecast: { t: fc.map((h) => h.t), v: fc.map((h) => h.tempF) }, now: { t: now, v: c.airF }, periods: stripPeriods(periods, now) }
+      ? { observed: obs, forecast: { t: fc.map((h) => h.t), v: fc.map((h) => h.tempF) }, now: { t: now, v: c.airF }, periods: upcoming.filter((x) => x.t <= now + H24) }
       : null
 
-  return { ...view, highLow: input.hourly && c.airF !== null ? highLow(obs.v) : null, summary, strip }
+  return { ...view, highLow: input.hourly && c.airF !== null ? highLow(obs.v) : null, summary, strip, periods: upcoming }
 }

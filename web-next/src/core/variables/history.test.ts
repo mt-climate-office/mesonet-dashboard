@@ -56,7 +56,7 @@ describe('historyModel', () => {
   it('summed variables accumulate within each year', () => {
     const m = historyModel(PPT, [daily(2026, 3, 'Precipitation [in]', (i) => (i === 1 ? null : 0.5))], 2026)!
     expect(m.traces[0].values).toEqual([0.5, 0.5, 1])
-    expect(m.yLabel).toBe('Cumulative rain (in)')
+    expect(m.yLabel).toBe('Cumulative precipitation (in)')
   })
   it('null until a year has a value', () => {
     expect(historyModel(AIR, [], 2026)).toBeNull()

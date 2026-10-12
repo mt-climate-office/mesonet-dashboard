@@ -32,7 +32,7 @@ export interface Conditions {
   snowIn: number | null
   /** Precipitation in the latest report's interval (5 min at HydroMet stations, longer elsewhere), in. */
   pptIn: number | null
-  /** The interval's peak rain rate (in/h); HydroMet stations only. */
+  /** The interval's peak precipitation rate (in/h); HydroMet stations only. */
   pptRateInH: number | null
   vpdMb: number | null
   /** Soil sensors, shallowest first; only depths reporting temperature or VWC. */

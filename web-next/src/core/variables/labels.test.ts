@@ -16,7 +16,7 @@ describe('LABELS', () => {
     }
     expect(LABELS.sol_rad.name).toBe('Sunlight')
     expect(LABELS.rh.name).toBe('Humidity')
-    expect(LABELS.ppt.name).toBe('Rain')
+    expect(LABELS.ppt.name).toBe('Precipitation')
     expect(LABELS.soil_ec_blk.name).toBe('Soil salinity (EC)')
   })
   it('plainName falls back to the API name for an unknown element', () => {
