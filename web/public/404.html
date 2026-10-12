@@ -1,8 +1,9 @@
 <!doctype html>
-<!-- GitHub Pages serves this (status 404) for any path with no file. It sends `<base>/<station>` to
-     `<base>/?s=<station>` (deep links from the legacy app) and anything else under the site to its
-     index, keeping query and hash. Two builds share the site: the root and `/next/` (the proxy's), so
-     a path under `<base>/next/` stays there. `<base>` is the first path segment (the Pages project). -->
+<!-- GitHub Pages serves this (status 404) for any path with no file. It sends `<root>/<station>` to
+     `<root>/?s=<station>` (deep links from the legacy app) and anything else to `<root>/`, keeping
+     query and hash. `<root>` is the Pages project (`/mesonet-dashboard`), or `/dash/next` behind the
+     Caddy proxy on mesonet.climate.umt.edu. Links to the retired `/mesonet-dashboard/next/` copy land
+     on the root. -->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -11,9 +12,11 @@
     <script>
       (function () {
         var path = window.location.pathname
-        var base = '/' + (path.split('/')[1] || '')
-        var root = path === base + '/next' || path.indexOf(base + '/next/') === 0 ? base + '/next' : base
-        var sub = path.slice(root.length + 1).replace(/\/+$/, '')
+        var proxied = path === '/dash/next' || path.indexOf('/dash/next/') === 0
+        var root = proxied ? '/dash/next' : '/' + (path.split('/')[1] || '')
+        var rest = path.slice(root.length + 1)
+        if (!proxied) rest = rest.replace(/^next(\/|$)/, '')
+        var sub = rest.replace(/\/+$/, '')
         var search = window.location.search
         if (sub && /^[a-z0-9_-]+$/i.test(sub) && !/(^\?|&)s=/.test(search)) {
           search = search ? search + '&s=' + sub : '?s=' + sub

@@ -1,6 +1,6 @@
 /**
  * Vite config for the dashboard. Served under VITE_BASE (default: the Pages
- * path /mesonet-dashboard/; CI also builds /mesonet-dashboard/next/ for the proxy). index.html pulls in partials/ via
+ * path /mesonet-dashboard/, also proxied as mesonet.climate.umt.edu/dash/next/). index.html pulls in partials/ via
  * the @include plugin; the dev server proxies the API to dodge CORS.
  */
 import { defineConfig } from 'vite'

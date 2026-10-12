@@ -1,10 +1,9 @@
 name: Build & deploy web/
 
-# One Pages artifact, two builds of web/: the dashboard at /mesonet-dashboard/
-# and a copy at /mesonet-dashboard/next/, which the Caddy proxy serves as
-# mesonet.climate.umt.edu/dash/next/ (the install address) until it points at
-# the root. Pages serves only the root 404.html (web/public/404.html), which
-# routes <base>/<station> and <base>/next/<station> deep links.
+# web/ at /mesonet-dashboard/ (the Caddy proxy also serves it as
+# mesonet.climate.umt.edu/dash/next/, the install address). Pages serves only
+# the root 404.html (web/public/404.html), which routes <root>/<station> deep
+# links and old /mesonet-dashboard/next/ links.
 on:
   push:
     branches: [main]
@@ -40,17 +39,14 @@ jobs:
           npm run lint
           npm test
 
-      - name: Build /mesonet-dashboard/ and /mesonet-dashboard/next/
+      - name: Build
         run: |
-          VITE_BASE=/mesonet-dashboard/ npm run build
+          npm run build
           npm run size
-          mv dist ../site
-          VITE_BASE=/mesonet-dashboard/next/ npm run build
-          mv dist ../site/next
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: web/dist
 
   deploy:
     needs: build
