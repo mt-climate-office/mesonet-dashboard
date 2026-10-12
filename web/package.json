@@ -1,57 +1,36 @@
 {
   "name": "mesonet-dashboard-web",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "typecheck": "tsc -b --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "lint": "eslint .",
+    "build": "vite build",
     "preview": "vite preview",
-    "gen:api": "openapi-typescript https://mesonet2.climate.umt.edu/api/openapi.json -o src/lib/api/openapi.d.ts && node scripts/api-contract-smoke.mjs --emit-allowlist"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "size": "node scripts/check-size.mjs",
+    "verify": "vite build && node scripts/verify/consumer.mjs && node scripts/verify/axe.mjs && node scripts/verify/keyboard.mjs && node scripts/verify/layout.mjs && node scripts/verify/freshness.mjs && node scripts/verify/errors.mjs",
+    "og-card": "node scripts/og-card.mjs"
   },
   "dependencies": {
-    "@mantine/core": "^8.3.18",
-    "@mantine/dates": "^8.3.18",
-    "@mantine/hooks": "^8.3.18",
-    "@mantine/notifications": "^8.3.18",
-    "@tabler/icons-react": "^3.41.1",
-    "@tanstack/react-query": "^5.100.9",
-    "dayjs": "^1.11.20",
-    "maplibre-gl": "6.11.2",
-    "nuqs": "^2.8.9",
-    "papaparse": "^5.5.3",
-    "plotly.js-dist-min": "^3.5.1",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "react-map-gl": "^8.1.3",
-    "react-markdown": "^10.1.0"
+    "alpinejs": "^3.17.4",
+    "dayjs": "^1.11.23",
+    "echarts": "^6.1.0",
+    "papaparse": "^5.7.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^24.12.2",
+    "@axe-core/playwright": "^4.13.0",
+    "@types/alpinejs": "^3.17.0",
+    "@types/node": "^24.19.1",
     "@types/papaparse": "^5.5.2",
-    "@types/plotly.js": "^3.0.10",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^10.2.1",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.5.0",
-    "openapi-typescript": "^7.13.0",
-    "playwright": "^1.59.1",
+    "eslint": "^10.11.0",
+    "maplibre-gl": "6.11.2",
+    "playwright": "^1.63.0",
     "typescript": "~6.0.2",
-    "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.10",
+    "typescript-eslint": "^8.71.0",
+    "vite": "^8.3.2",
     "vitest": "^5.0.3"
-  },
-  "overrides": {
-    "openapi-typescript": {
-      "typescript": "$typescript"
-    }
   }
 }

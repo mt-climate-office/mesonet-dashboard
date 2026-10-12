@@ -1,51 +1,30 @@
 <!doctype html>
+<!-- GitHub Pages serves this (status 404) for any path with no file. It sends `<base>/<station>` to
+     `<base>/?s=<station>` (deep links from the legacy app) and anything else under the site to its
+     index, keeping query and hash. Two builds share the site: the root and `/next/` (the proxy's), so
+     a path under `<base>/next/` stays there. `<base>` is the first path segment (the Pages project). -->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Montana Mesonet Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
-      // GitHub Pages serves this file with a 404 status when no static asset
-      // matches the requested path. We translate `<base>/<id>` into
-      // `<base>/?s=<id>` so deep links from the legacy app resolve to the
-      // rebuilt dashboard. `__BASE__` is filled in at build (vite.config.ts).
       (function () {
-        var base = '__BASE__'
         var path = window.location.pathname
-        // web-next preview (`<base>/next/`, its own build in the same Pages
-        // artifact): `<base>/next/<id>` → `<base>/next/?s=<id>`; any other
-        // missing path under it goes to its index.
-        var next = base + '/next'
-        if (path === next || path.indexOf(next + '/') === 0) {
-          var nsub = path.slice(next.length + 1).replace(/\/+$/, '')
-          var nsearch = window.location.search
-          if (nsub && nsub.indexOf('/') === -1 && /^[a-z0-9_-]+$/i.test(nsub) && !/(^\?|&)s=/.test(nsearch)) {
-            nsearch = nsearch ? nsearch + '&s=' + nsub : '?s=' + nsub
-          }
-          window.location.replace(next + '/' + nsearch + window.location.hash)
-          return
-        }
-        if (path.indexOf(base + '/') !== 0) {
-          window.location.replace(base + '/' + window.location.search + window.location.hash)
-          return
-        }
-        var sub = path.slice(base.length + 1).replace(/\/+$/, '')
-        if (!sub || sub.indexOf('/') !== -1 || !/^[a-z0-9_-]+$/i.test(sub)) {
-          window.location.replace(base + '/' + window.location.search + window.location.hash)
-          return
-        }
+        var base = '/' + (path.split('/')[1] || '')
+        var root = path === base + '/next' || path.indexOf(base + '/next/') === 0 ? base + '/next' : base
+        var sub = path.slice(root.length + 1).replace(/\/+$/, '')
         var search = window.location.search
-        if (search.indexOf('s=') === -1) {
+        if (sub && /^[a-z0-9_-]+$/i.test(sub) && !/(^\?|&)s=/.test(search)) {
           search = search ? search + '&s=' + sub : '?s=' + sub
         }
-        window.location.replace(base + '/' + search + window.location.hash)
+        window.location.replace(root + '/' + search + window.location.hash)
       })()
     </script>
   </head>
   <body>
     <noscript>
-      JavaScript is required to load the Montana Mesonet Dashboard. Please
-      enable it or visit the
+      JavaScript is required to load the Montana Mesonet Dashboard. Please enable it or visit the
       <a href="https://mesonet.climate.umt.edu/dash/">legacy dashboard</a>.
     </noscript>
   </body>

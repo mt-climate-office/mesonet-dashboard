@@ -1,14 +1,15 @@
 name: Build & deploy web/
 
-# One Pages artifact: web/ at /mesonet-dashboard/ and the web-next/ preview
-# at /mesonet-dashboard/next/ (Pages serves only the root 404.html, which
-# routes /next/<station> deep links into web-next).
+# One Pages artifact, two builds of web/: the dashboard at /mesonet-dashboard/
+# and a copy at /mesonet-dashboard/next/, which the Caddy proxy serves as
+# mesonet.climate.umt.edu/dash/next/ (the install address) until it points at
+# the root. Pages serves only the root 404.html (web/public/404.html), which
+# routes <base>/<station> and <base>/next/<station> deep links.
 on:
   push:
     branches: [main]
     paths:
       - 'web/**'
-      - 'web-next/**'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
@@ -20,6 +21,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
     steps:
       - uses: actions/checkout@v4
 
@@ -27,37 +31,22 @@ jobs:
         with:
           node-version: '20'
           cache: npm
-          cache-dependency-path: |
-            web/package-lock.json
-            web-next/package-lock.json
+          cache-dependency-path: web/package-lock.json
 
-      - name: web/ — check + build
-        working-directory: web
-        run: |
-          npm ci
-          npm run typecheck
-          npm run lint
-          npm test --if-present
-          npm run build
-
-      - name: web-next/ — check + build (base /mesonet-dashboard/next/)
-        working-directory: web-next
-        env:
-          VITE_BASE: /mesonet-dashboard/next/
+      - name: Check
         run: |
           npm ci
           npm run typecheck
           npm run lint
           npm test
-          npm run build
-          npm run size
 
-      - name: Assemble the site
+      - name: Build /mesonet-dashboard/ and /mesonet-dashboard/next/
         run: |
-          mkdir -p site
-          cp -R web/dist/. site/
-          mkdir -p site/next
-          cp -R web-next/dist/. site/next/
+          VITE_BASE=/mesonet-dashboard/ npm run build
+          npm run size
+          mv dist ../site
+          VITE_BASE=/mesonet-dashboard/next/ npm run build
+          mv dist ../site/next
 
       - uses: actions/upload-pages-artifact@v3
         with:
