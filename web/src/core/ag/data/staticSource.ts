@@ -7,7 +7,8 @@
  * therefore validated by content type and shape, never by status alone.
  */
 
-export const DATA2_BASE = 'https://data2.climate.umt.edu/mesonet/'
+// TEMP: data2.climate.umt.edu's certificate expired (2026-10-18); use its CloudFront origin directly. Revert once renewed.
+export const DATA2_BASE = 'https://d1s8jav5n0eyyf.cloudfront.net/mesonet/'
 /** mesonet-soils' single published contract (same shape as the vendored `soil_params.json`). */
 export const DATA2_SOIL_PARAMS = `${DATA2_BASE}soils/soil_params.json`
 export const DATA2_GDD_STAGES = `${DATA2_BASE}derived/gdd_stages.json`

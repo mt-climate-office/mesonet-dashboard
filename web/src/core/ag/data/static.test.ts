@@ -98,7 +98,7 @@ describe('loadSoilParams source selection', () => {
   ]
 
   it('reads data2 soils/soil_params.json', () => {
-    expect(DATA2_SOIL_PARAMS).toBe('https://data2.climate.umt.edu/mesonet/soils/soil_params.json')
+    expect(DATA2_SOIL_PARAMS).toBe('https://d1s8jav5n0eyyf.cloudfront.net/mesonet/soils/soil_params.json')
   })
 
   it('falls back to vendored when data2 is missing (404 / SPA HTML 200)', async () => {
@@ -204,7 +204,7 @@ describe('GDD stage tables', () => {
       data2Enabled: true,
       fetchImpl: stubFetch({
         ...vendoredRoutes,
-        'https://data2.climate.umt.edu/mesonet/derived/gdd_stages.json': [
+        'https://d1s8jav5n0eyyf.cloudfront.net/mesonet/derived/gdd_stages.json': [
           200,
           'application/json',
           JSON.stringify({ ...stagesJson, release: '2026-11-01' }),
