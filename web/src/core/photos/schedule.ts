@@ -4,8 +4,9 @@
  * at which local slots, and since when.
  */
 
-// TEMP: data2.climate.umt.edu's certificate expired (2026-10-18); use its CloudFront origin directly. Revert once renewed.
-export const PHOTO_BASE = 'https://d1s8jav5n0eyyf.cloudfront.net/mesonet/'
+export const PHOTO_BASE = 'https://data2.climate.umt.edu/mesonet/'
+// Backup: if data2's certificate lapses again, use its CloudFront default domain (same paths; the CSP allows both).
+// export const PHOTO_BASE = 'https://d1s8jav5n0eyyf.cloudfront.net/mesonet/'
 
 export interface PhotoPatterns {
   jpg: string

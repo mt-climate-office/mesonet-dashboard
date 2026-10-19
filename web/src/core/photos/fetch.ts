@@ -18,7 +18,7 @@ export async function fetchArchiveText(url: string, timeoutMs = 20_000): Promise
 export async function fetchSchedule(base = PHOTO_BASE): Promise<PhotoSchedule> {
   const text = await fetchArchiveText(`${base.replace(/\/+$/, '')}/photos/schedule/schedule.json`)
   if (text == null) throw new Error('photo schedule not found')
-  // TEMP: schedule.json's patterns.base still names data2.climate.umt.edu (expired cert); keep the host we fetched from.
+  // schedule.json's patterns.base hardcodes data2; keep the host we fetched from so a PHOTO_BASE swap carries through.
   return { ...parseSchedule(JSON.parse(text) as RawSchedule), base }
 }
 
