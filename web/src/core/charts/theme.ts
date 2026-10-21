@@ -45,6 +45,10 @@ export function paint(theme: ChartTheme, c: ColorOrToken): string {
   return resolve(c, (name) => theme.vars[name] ?? '')
 }
 
+/** A value-axis tick as text: float noise rounded off, thousands grouped ("0.3", "1,200"). */
+export const tickNumber = (v: number): string =>
+  Number(v.toPrecision(12)).toLocaleString('en-US', { maximumFractionDigits: 10 })
+
 /**
  * The ECharts theme object (`chart.setTheme` / `echarts.init(el, theme)`):
  * chrome only — text, axes, legend, tooltip, dataZoom, visualMap. Labels use
@@ -64,7 +68,8 @@ export function echartsTheme(t: ChartTheme): Record<string, unknown> {
     backgroundColor: 'transparent',
     textStyle: { color: t.text, fontFamily: t.fontUi },
     categoryAxis: { ...axis, axisLabel: { ...label, fontFamily: t.fontUi } },
-    valueAxis: axis,
+    // Ticks are min + i × interval: drop float noise (0.1 × 3 = 0.30000000000000004) that would overrun the axis.
+    valueAxis: { ...axis, axisLabel: { ...label, formatter: tickNumber } },
     logAxis: axis,
     timeAxis: axis,
     legend: {
