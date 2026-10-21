@@ -2,12 +2,14 @@
  * Ag Tools met charts: reference ET (bars + cumulative), feels-like and
  * livestock risk (CCI): hourly as an index line + classed markers, daily as
  * each day's low–high range + markers at the stressed ends. Input is the SI
- * contract series; °C → °F and mm → in happen here.
+ * contract series; °C → °F and mm → in happen here in US (ag/view/labels
+ * `tempOut`/`mmOut`; SI passes through). CCI classes are read from °F.
  */
 import type { EChartsOption } from 'echarts'
 import type { CciClass, CciRangeSeries, CciSeries, EtoSeries, FeelsLikeRangeSeries, FeelsLikeSeries } from '../ag/contract'
-import { CCI_HEAT_ONSET_F, cToF, cciColdOnsetF, cciSide, cumulativeSum, mmToIn } from '../ag/compute'
-import { CCI_CLASSES, FEELS_LIKE_LABELS, finiteMax } from '../ag/view/labels'
+import { CCI_HEAT_ONSET_F, cToF, cciColdOnsetF, cciSide, cumulativeSum } from '../ag/compute'
+import { CCI_CLASSES, FEELS_LIKE_LABELS, amountUnit, fOut, fText, finiteMax, mmOut, tempOut, tempUnit } from '../ag/view/labels'
+import { isSi } from '../units'
 import { CUMULATIVE_LINE, DAILY_RANGE, ETR, FEELS_LIKE, FEELS_LIKE_LINE, INDEX_LINE, type StressSide, cciStyle } from '../palette'
 import { dualAxis, valueAxis } from './axes'
 import { fmtNum, fmtWall, isoWall, wallMs, type Period } from './format'
@@ -27,18 +29,21 @@ export interface EtrModel {
   period: Period
 }
 
-export const ETR_AXIS = axisTitle('etr', 'Reference ET')
-export const ETR_CUM_AXIS = cumulativeTitle(ETR_AXIS)
-/** The CCI is a temperature-equivalent index, so its axis carries °F. */
-const CCI_AXIS = `${axisTitle('cci', 'Livestock risk')} (°F)`
+/** "Reference ET (in)" / "Reference ET (mm)". */
+export const etrAxis = () => axisTitle('etr', 'Reference ET')
+export const etrCumAxis = () => cumulativeTitle(etrAxis())
+/** The CCI is a temperature-equivalent index, so its axis carries °F (°C in SI). */
+const cciAxis = () => `${axisTitle('cci', 'Livestock risk')} (${tempUnit()})`
+/** ET decimals: inches to 0.001, mm to 0.01. */
+const etDigits = () => (isSi() ? 2 : 3)
 
 function etrValues(m: EtrModel) {
   const xs = m.series.time.map(wallMs)
-  const inches = m.series.etoMm.map((v) => mmToIn(v))
+  const inches = m.series.etoMm.map((v) => mmOut(v))
   return { xs, inches, cumulative: cumulativeSum(inches) }
 }
 
-/** Daily/hourly reference ET in inches (bars, y1) + cumulative inches (line, y2); the slider traces the cumulative. */
+/** Daily/hourly reference ET in inches (mm in SI; bars, y1) + cumulative (line, y2); the slider traces the cumulative. */
 export const etrChart: ChartBuilder<EtrModel> = (m, ctx) => {
   const { xs, inches, cumulative } = etrValues(m)
   const c = ETR[ctx.theme.name]
@@ -52,7 +57,7 @@ export const etrChart: ChartBuilder<EtrModel> = (m, ctx) => {
   const f = timeFrame(ctx, { extent: plotExtent(xs, step, true), trace: cum, yAxisIndex: 2, legendPx: LEGEND_PX, right: 64 })
   // The running total's axis ends just past the total on its own nice steps: aligned to the bars'
   // ticks it ran to 0–70 for a 43 in total. It draws no grid lines, so nothing misreads.
-  const [y1, dual] = dualAxis(ETR_AXIS, ETR_CUM_AXIS)
+  const [y1, dual] = dualAxis(etrAxis(), etrCumAxis())
   const y2 = { ...dual, ...yBounds('Reference ET', 0, finiteMax(cumulative)), alignTicks: false }
   return {
     useUTC: true,
@@ -61,7 +66,7 @@ export const etrChart: ChartBuilder<EtrModel> = (m, ctx) => {
     yAxis: [y1, y2, ...(f.trace ? [f.trace.yAxis] : [])],
     legend: lg.legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y) =>
-      tipText(name === 'ETr' ? 'Reference ET' : 'Cumulative', `${y.toFixed(3)} in`),
+      tipText(name === 'ETr' ? 'Reference ET' : 'Cumulative', `${y.toFixed(etDigits())} ${amountUnit()}`),
     ),
     series: [
       ...(f.trace ? [f.trace.series] : []),
@@ -74,9 +79,9 @@ export const etrChart: ChartBuilder<EtrModel> = (m, ctx) => {
 export function etrTable(m: EtrModel): ChartTable {
   const { xs, inches, cumulative } = etrValues(m)
   return {
-    caption: 'Reference ET (a=0.23), inches',
-    columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', ETR_AXIS, ETR_CUM_AXIS],
-    rows: xs.map((x, i) => [isoWall(x, m.period), fmtNum(inches[i], 3), fmtNum(cumulative[i], 3)]),
+    caption: `Reference ET (a=0.23), ${isSi() ? 'millimeters' : 'inches'}`,
+    columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', etrAxis(), etrCumAxis()],
+    rows: xs.map((x, i) => [isoWall(x, m.period), fmtNum(inches[i], etDigits()), fmtNum(cumulative[i], etDigits())]),
   }
 }
 
@@ -106,7 +111,7 @@ interface MarkerOpts<K extends string> {
   legendTitle?: string
   /** Dashed lines where something starts (CCI stress onsets), labelled right of the plot; `short` on compact screens. */
   refLines?: { y: number; label: string; short: string }[]
-  /** Tooltip row for a series name, its y (°F) and the point's note (a marker's class text). */
+  /** Tooltip row for a series name, its y (display units) and the point's note (a marker's class text). */
   tip: TipRow
 }
 
@@ -142,7 +147,7 @@ function indexChart<K extends string>(
   ctx: ChartContext,
   o: MarkerOpts<K> & {
     xs: number[]
-    /** Index values (°F): the line and the marker heights. */
+    /** Index values (display units): the line and the marker heights. */
     yF: Ys
     /** Name and color of the index line when it is the plotted quantity (feels like). */
     line?: { name: string; color: string }
@@ -196,7 +201,7 @@ function rangeChart<K extends string>(
   o: MarkerOpts<K> & {
     dates: readonly string[]
     band: { name: string; lo: Ys; hi: Ys }
-    /** The ends to mark (°F), each with its class per day (null: no marker) and its tooltip note. */
+    /** The ends to mark (display units), each with its class per day (null: no marker) and its tooltip note. */
     ends: { yF: Ys; classOf: (K | null)[]; note: string }[]
   },
 ): EChartsOption {
@@ -295,8 +300,8 @@ export const airTempName = (period: Period) => (period === 'daily' ? 'Average te
 export const AIR_RANGE_NAME = `Air temperature (${DAILY_RANGE.label.toLowerCase()})`
 const END_NOTE = { high: 'Daily high', low: 'Daily low' } as const
 
-/** A tooltip row for a point: its note (what the value is) or the series name, and the value in °F. */
-const noteTip = (name: string, y: number, note: string | undefined) => tipText(note || name, `${y.toFixed(1)} °F`)
+/** A tooltip row for a point: its note (what the value is) or the series name, and the value in °F (°C in SI). */
+const noteTip = (name: string, y: number, note: string | undefined) => tipText(note || name, `${y.toFixed(1)} ${tempUnit()}`)
 
 /**
  * Feels-like °F against the air temperature: the feels-like line (named, in the legend), the air
@@ -312,9 +317,9 @@ export const feelsLikeChart: ChartBuilder<FeelsLikeModel> = (m, ctx) => {
   const air = airTempName(m.period)
   return indexChart(ctx, {
     xs: m.series.time.map(wallMs),
-    yF: m.series.valueC.map((v) => cToF(v)),
+    yF: m.series.valueC.map((v) => tempOut(v)),
     line: { name: FEELS_LIKE_LINE_NAME, color: paint(ctx.theme, FEELS_LIKE_LINE) },
-    compare: { name: air, yF: m.series.airC.map((v) => cToF(v)), id: AIR_TEMP_ID },
+    compare: { name: air, yF: m.series.airC.map((v) => tempOut(v)), id: AIR_TEMP_ID },
     classOf: m.series.regime.map((r) => (r === 'wind_chill' || r === 'heat_index' ? r : null)),
     order: MARKED,
     cls,
@@ -330,7 +335,7 @@ export const feelsLikeChart: ChartBuilder<FeelsLikeModel> = (m, ctx) => {
  * (red ▲) and a wind chill at its low (blue ◆) show what it felt like against that range.
  */
 function feelsLikeRangeChart(r: FeelsLikeRangeSeries, ctx: ChartContext, cls: (k: (typeof MARKED)[number]) => MarkerClass): EChartsOption {
-  const f = (xs: readonly (number | null)[]) => xs.map((v) => cToF(v))
+  const f = (xs: readonly (number | null)[]) => xs.map((v) => tempOut(v))
   return rangeChart(ctx, {
     dates: r.date,
     band: { name: AIR_RANGE_NAME, lo: f(r.airLowC), hi: f(r.airHighC) },
@@ -342,42 +347,43 @@ function feelsLikeRangeChart(r: FeelsLikeRangeSeries, ctx: ChartContext, cls: (k
     cls,
     yName: axisTitle('feels_like', 'Feels like'),
     tip: (name, y, note) => {
-      if (name === AIR_RANGE_NAME) return note ? tipText('Air temperature', `${note} °F`) : null
+      if (name === AIR_RANGE_NAME) return note ? tipText('Air temperature', `${note} ${tempUnit()}`) : null
       return noteTip(name, y, note)
     },
   })
 }
 
 export function feelsLikeTable(m: FeelsLikeModel): ChartTable {
+  const u = tempUnit()
   if ('range' in m) {
     const r = m.range
     const regime = (g: FeelsLikeRangeSeries['highRegime'][number]) => (g ? FEELS_LIKE_LABELS[g] : '—')
     return {
-      caption: 'Daily feels-like high and low (the day’s highest and lowest hourly value), °F, the index used, and the air temperature range',
-      columns: ['Date', 'Feels like high (°F)', 'Index at high', 'Feels like low (°F)', 'Index at low', 'Air temperature high (°F)', 'Air temperature low (°F)'],
+      caption: `Daily feels-like high and low (the day’s highest and lowest hourly value), ${u}, the index used, and the air temperature range`,
+      columns: ['Date', `Feels like high (${u})`, 'Index at high', `Feels like low (${u})`, 'Index at low', `Air temperature high (${u})`, `Air temperature low (${u})`],
       rows: r.date.map((d, i) => [
         d,
-        fmtNum(cToF(r.highC[i]), 1),
+        fmtNum(tempOut(r.highC[i]), 1),
         regime(r.highRegime[i]),
-        fmtNum(cToF(r.lowC[i]), 1),
+        fmtNum(tempOut(r.lowC[i]), 1),
         regime(r.lowRegime[i]),
-        fmtNum(cToF(r.airHighC[i]), 1),
-        fmtNum(cToF(r.airLowC[i]), 1),
+        fmtNum(tempOut(r.airHighC[i]), 1),
+        fmtNum(tempOut(r.airLowC[i]), 1),
       ]),
     }
   }
   return {
-    caption: 'Feels-like temperature and air temperature, °F, and the index used',
+    caption: `Feels-like temperature and air temperature, ${u}, and the index used`,
     columns: [
       m.period === 'hourly' ? 'Time (MT)' : 'Date',
       axisTitle('feels_like', 'Feels like'),
-      `${airTempName(m.period)} (°F)`,
+      `${airTempName(m.period)} (${u})`,
       'Index used',
     ],
     rows: m.series.time.map((t, i) => [
       isoWall(wallMs(t), m.period),
-      fmtNum(cToF(m.series.valueC[i]), 1),
-      fmtNum(cToF(m.series.airC[i]), 1),
+      fmtNum(tempOut(m.series.valueC[i]), 1),
+      fmtNum(tempOut(m.series.airC[i]), 1),
       m.series.regime[i] ? FEELS_LIKE_LABELS[m.series.regime[i]!] : '—',
     ]),
   }
@@ -435,7 +441,7 @@ function cciLegendItem(group: string, classes: MarkerClass[]): AgLegendItem {
 }
 
 /**
- * Livestock risk index °F: grey line + markers by class, blues for cold stress and reds for heat
+ * Livestock risk index °F (°C in SI; classes always from °F): grey line + markers by class, blues for cold stress and reds for heat
  * stress (palette `cciStyle`), and dashed lines where cold and heat stress start for the animal.
  * The legend has one ramp entry per side; the tooltip and table name each point's class.
  */
@@ -448,30 +454,33 @@ export const cciChart: ChartBuilder<CciModel> = (m, ctx) => {
     return { group: CCI_GROUPS[side], id: cciId(c, side), text: `${sentenceCase(c)} (${side})`, ...cciStyle(c, side, ctx.theme.name) }
   }
   const refLines = [
-    { y: CCI_HEAT_ONSET_F, label: `Heat stress\nfrom ${CCI_HEAT_ONSET_F} °F`, short: `${CCI_HEAT_ONSET_F} °F\nheat` },
-    { y: cciColdOnsetF(lt), label: `Cold stress\nbelow ${cciColdOnsetF(lt)} °F`, short: `${cciColdOnsetF(lt)} °F\ncold` },
+    { y: fOut(CCI_HEAT_ONSET_F), label: `Heat stress\nfrom ${fText(CCI_HEAT_ONSET_F)}`, short: `${fText(CCI_HEAT_ONSET_F)}\nheat` },
+    { y: fOut(cciColdOnsetF(lt)), label: `Cold stress\nbelow ${fText(cciColdOnsetF(lt))}`, short: `${fText(cciColdOnsetF(lt))}\ncold` },
   ]
   if ('range' in m) {
     // Daily: the band is the day's range; only a stressed end gets a marker.
     const r = m.range
-    const hi = r.highC.map((v) => cToF(v))
-    const lo = r.lowC.map((v) => cToF(v))
+    // Classes from °F (the published thresholds); drawn in the display units.
+    const hiF = r.highC.map((v) => cToF(v))
+    const loF = r.lowC.map((v) => cToF(v))
+    const hi = r.highC.map((v) => tempOut(v))
+    const lo = r.lowC.map((v) => tempOut(v))
     const stressed = (c: CciClass | null, f: number | null) => (c === 'No Stress' ? null : keyOf(c, f))
     return rangeChart(ctx, {
       dates: r.date,
       band: { name: CCI_RANGE_NAME, lo, hi },
       ends: [
-        { yF: hi, classOf: r.highClass.map((c, i) => stressed(c, hi[i])), note: END_NOTE.high },
-        { yF: lo, classOf: r.lowClass.map((c, i) => stressed(c, lo[i])), note: END_NOTE.low },
+        { yF: hi, classOf: r.highClass.map((c, i) => stressed(c, hiF[i])), note: END_NOTE.high },
+        { yF: lo, classOf: r.lowClass.map((c, i) => stressed(c, loF[i])), note: END_NOTE.low },
       ],
       order: CCI_KEYS.filter((k) => k !== 'none'),
       cls,
       legendItem: cciLegendItem,
-      yName: CCI_AXIS,
+      yName: cciAxis(),
       legendTitle: cciLegendTitle(lt),
       refLines,
       tip: (name, y, note) => {
-        if (name === CCI_RANGE_NAME) return note ? tipText('Livestock risk', `${note} °F`) : null
+        if (name === CCI_RANGE_NAME) return note ? tipText('Livestock risk', `${note} ${tempUnit()}`) : null
         return noteTip(name, y, note)
       },
     })
@@ -479,13 +488,13 @@ export const cciChart: ChartBuilder<CciModel> = (m, ctx) => {
   const yF = m.series.valueC.map((v) => cToF(v))
   return indexChart(ctx, {
     xs: m.series.time.map(wallMs),
-    yF,
+    yF: m.series.valueC.map((v) => tempOut(v)),
     classOf: m.series.class.map((c, i) => keyOf(c, yF[i])),
     order: CCI_KEYS,
     cls,
     legendItem: cciLegendItem,
     period: m.period,
-    yName: CCI_AXIS,
+    yName: cciAxis(),
     legendTitle: cciLegendTitle(lt),
     refLines,
     tip: noteTip,
@@ -496,21 +505,21 @@ export function cciTable(m: CciModel): ChartTable {
   if ('range' in m) {
     const r = m.range
     return {
-      caption: `Daily livestock risk (Comprehensive Climate Index) high and low (the day’s highest and lowest hourly value), °F, ${r.livestock} risk class`,
-      columns: ['Date', 'High (°F)', 'Risk class at high', 'Low (°F)', 'Risk class at low'],
+      caption: `Daily livestock risk (Comprehensive Climate Index) high and low (the day’s highest and lowest hourly value), ${tempUnit()}, ${r.livestock} risk class`,
+      columns: ['Date', `High (${tempUnit()})`, 'Risk class at high', `Low (${tempUnit()})`, 'Risk class at low'],
       rows: r.date.map((d, i) => {
         const hi = cToF(r.highC[i])
         const lo = cToF(r.lowC[i])
-        return [d, fmtNum(hi, 1), cciClassText(r.highClass[i], hi) ?? '—', fmtNum(lo, 1), cciClassText(r.lowClass[i], lo) ?? '—']
+        return [d, fmtNum(tempOut(r.highC[i]), 1), cciClassText(r.highClass[i], hi) ?? '—', fmtNum(tempOut(r.lowC[i]), 1), cciClassText(r.lowClass[i], lo) ?? '—']
       }),
     }
   }
   return {
-    caption: `Comprehensive Climate Index, °F, ${m.series.livestock} livestock risk class`,
-    columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', CCI_AXIS, 'Risk class'],
+    caption: `Comprehensive Climate Index, ${tempUnit()}, ${m.series.livestock} livestock risk class`,
+    columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', cciAxis(), 'Risk class'],
     rows: m.series.time.map((t, i) => {
       const f = cToF(m.series.valueC[i])
-      return [isoWall(wallMs(t), m.period), fmtNum(f, 1), cciClassText(m.series.class[i], f) ?? '—']
+      return [isoWall(wallMs(t), m.period), fmtNum(tempOut(m.series.valueC[i]), 1), cciClassText(m.series.class[i], f) ?? '—']
     }),
   }
 }
