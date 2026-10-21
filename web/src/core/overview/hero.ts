@@ -4,11 +4,13 @@
  * 48 h strip model and the freshness line. Inputs are the overview's data
  * (`/latest`, 72 h hourly rows, `/derived/ppt/`, normals) plus the NWS period
  * and hourly forecasts. "Now" on the strip is the newest observation's
- * wall-clock time.
+ * wall-clock time. Temperatures are °F in; the text shows the display units
+ * (core/units), the strip model stays °F (its builder converts).
  */
 import { isNwsUrl, type ForecastPeriod, type HourlyForecastPoint, type NwsForecast } from '../api'
 import type { HeroStripModel, StripPeriod } from '../charts/heroStrip'
 import { parseWallClock } from '../sensorEvents'
+import { fromUs, isSi } from '../units'
 import { feelsLikeF, readConditions } from './conditions'
 import { normalMedianOn } from './normals'
 import { nowPrecip, type PrecipSummary } from './precip'
@@ -26,6 +28,8 @@ export interface HeroInput extends OverviewInput {
 export interface HeroView {
   /** "57°", or null without an air temperature. */
   temp: string | null
+  /** The letter after the temperature: "F", or "C" in SI. */
+  tempUnit: string
   /** "Feels like 49°" and "Wind chill"/"Heat index" (null when it is the air temperature). */
   feels: string | null
   feelsKind: string | null
@@ -43,7 +47,8 @@ export interface HeroView {
 }
 
 const H24 = 24 * 3_600_000
-const deg = (v: number) => `${Math.round(v)}°`
+/** A °F temperature as the hero shows it, in the display units: "57°" (°F) / "14°" (°C). */
+const deg = (f: number) => `${Math.round(fromUs('temp', f))}°`
 
 /** A period's temperature in °F (NWS sends F for US points; C converts). */
 const periodF = (p: ForecastPeriod) => (p.temperatureUnit === 'C' ? (p.temperature * 9) / 5 + 32 : p.temperature)
@@ -68,7 +73,7 @@ function upcomingPeriods(periods: readonly ForecastPeriod[], now: number): Strip
     if (s === null || e === null || !Number.isFinite(p.temperature)) return []
     const t = (s + e) / 2
     if (t <= now) return []
-    const temp = ` ${Math.round(periodF(p))}°`
+    const temp = ` ${deg(periodF(p))}`
     return [{ t, label: `${p.name}${temp}`, abbr: `${abbrPeriod(p.name)}${temp}`, icon: isNwsUrl(p.icon) ? p.icon : null, short: p.shortForecast }]
   })
 }
@@ -98,7 +103,7 @@ function highLow(v: readonly (number | null)[]): string | null {
  * summary (nowPage.ts passes it).
  */
 export function buildHero(input: HeroInput, p: PrecipSummary = nowPrecip(input)): HeroView {
-  const empty: HeroView = { temp: null, feels: null, feelsKind: null, highLow: null, normal: null, summary: '', strip: null, periods: [], freshness: null }
+  const empty: HeroView = { temp: null, tempUnit: isSi() ? 'C' : 'F', feels: null, feelsKind: null, highLow: null, normal: null, summary: '', strip: null, periods: [], freshness: null }
   if (!input.latest) return empty
   const c = readConditions(input.latest)
   const fl = feelsLikeF(c.airF, c.rh, c.windMph)

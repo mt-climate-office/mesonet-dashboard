@@ -6,7 +6,7 @@
  * range. The forecast periods are the icon row under the chart, not labels in
  * it. No zoom (style: the slider adds nothing to 48 h); the now dot is its one
  * last-point marker; tooltip on hover or tap. Model from core/overview/hero.ts; °F,
- * Denver wall-clock ms.
+ * Denver wall-clock ms; the builder and table draw it in the display units (core/units).
  */
 import type { EChartsOption, ScatterSeriesOption } from 'echarts'
 import { HERO_STRIP, variableStyle, withAlpha } from '../palette'
@@ -14,6 +14,7 @@ import { fmtNum, fmtWall, isoWall, MISSING } from './format'
 import { AUX, lineSeries } from './series'
 import { points, stepMs } from './style'
 import { paint } from './theme'
+import { fromUs, unitLabel } from '../units'
 import { axisTooltip, tipText } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
 
@@ -43,6 +44,17 @@ export interface HeroStripModel {
 
 const H24 = 24 * 3_600_000
 const deg = (v: number) => `${Math.round(v)}°`
+
+/** The model's °F values in the display units (the High/Low labels, axis and tooltip then read in them). */
+function inUnits(m: HeroStripModel): HeroStripModel {
+  const c = (v: number | null) => (v === null ? null : fromUs('temp', v))
+  return {
+    ...m,
+    observed: { t: m.observed.t, v: m.observed.v.map(c) },
+    forecast: { t: m.forecast.t, v: m.forecast.v.map((v) => fromUs('temp', v)) },
+    now: { t: m.now.t, v: c(m.now.v) },
+  }
+}
 
 const H = 3_600_000
 
@@ -128,7 +140,8 @@ function labels(id: string, ctx: ChartContext, color: string, span: [number, num
 }
 
 /** Observed (solid + area) → forecast (dashed), now rule + dot, high/low labels. */
-export const heroStripChart: ChartBuilder<HeroStripModel> = (m, ctx) => {
+export const heroStripChart: ChartBuilder<HeroStripModel> = (model, ctx) => {
+  const m = inUnits(model)
   const color = variableStyle('Air Temperature', ctx.theme.name)!.color
   const rule = paint(ctx.theme, HERO_STRIP.nowRule)
   const observed = lineSeries('Observed', points(m.observed.t, m.observed.v, stepMs('hourly')), { color })
@@ -161,7 +174,7 @@ export const heroStripChart: ChartBuilder<HeroStripModel> = (m, ctx) => {
       // The padded ends are not round numbers: label only the inner ticks.
       axisLabel: { formatter: '{value}°', showMinLabel: false, showMaxLabel: false },
     },
-    tooltip: axisTooltip(ctx, (x) => fmtWall(x, 'hourly'), (name, y) => tipText(name, `${Math.round(y)} °F`)),
+    tooltip: axisTooltip(ctx, (x) => fmtWall(x, 'hourly'), (name, y) => tipText(name, `${Math.round(y)} ${unitLabel('temp')}`)),
     series: [
       { ...observed, areaStyle: { color: withAlpha(color, HERO_STRIP.areaAlpha), origin: 'start' } },
       lineSeries('Forecast', points(fcX, fcY, stepMs('hourly')), { color, dash: 'dashed' }),
@@ -183,11 +196,13 @@ export const heroStripChart: ChartBuilder<HeroStripModel> = (m, ctx) => {
 }
 
 /** The sr-only twin: one row per hour, observed then forecast; period labels in the caption. */
-export function heroStripTable(m: HeroStripModel): ChartTable {
+export function heroStripTable(model: HeroStripModel): ChartTable {
+  const m = inUnits(model)
+  const u = unitLabel('temp')
   const periods = m.periods.map((p) => p.label).join(', ')
   return {
-    caption: `Air temperature, °F: the last 24 hours observed and the next 24 hours of NWS forecast${periods ? `. Forecast periods: ${periods}` : ''}.`,
-    columns: ['Time (MT)', 'Observed (°F)', 'Forecast (°F)'],
+    caption: `Air temperature, ${u}: the last 24 hours observed and the next 24 hours of NWS forecast${periods ? `. Forecast periods: ${periods}` : ''}.`,
+    columns: ['Time (MT)', `Observed (${u})`, `Forecast (${u})`],
     rows: [
       ...m.observed.t.map((t, i) => [isoWall(t, 'hourly'), fmtNum(m.observed.v[i], 0), MISSING]),
       ...m.forecast.t.map((t, i) => [isoWall(t, 'hourly'), MISSING, fmtNum(m.forecast.v[i], 0)]),

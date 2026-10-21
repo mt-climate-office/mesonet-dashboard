@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { setUnitsSource } from '../units'
 import { HERO_STRIP, THEMES, variableStyle, withAlpha } from '../palette'
 import { heroStripChart, heroStripTable, STRIP_3H_MIN_WIDTH, STRIP_6H_MIN_WIDTH, stripStepH, stripTickLabel, stripTicks, type HeroStripModel } from './heroStrip'
 import { paint } from './theme'
@@ -119,5 +120,18 @@ describe('heroStripTable', () => {
     expect(t.rows[23]).toEqual(['2026-10-02 14:00', '50', '—'])
     expect(t.rows[24]).toEqual(['2026-10-02 15:00', '—', '60'])
     expect(t.caption).toContain('Forecast periods: Tonight 45°')
+  })
+})
+
+describe('hero strip in SI', () => {
+  afterEach(() => setUnitsSource(() => 'us'))
+  it('draws and tabulates °C', () => {
+    setUnitsSource(() => 'si')
+    const s = series()
+    expect(s[2].data).toEqual([[NOW, (62 - 32) * 5 / 9]])
+    const t = heroStripTable(MODEL)
+    expect(t.columns).toEqual(['Time (MT)', 'Observed (°C)', 'Forecast (°C)'])
+    expect(t.rows[23]).toEqual(['2026-10-02 14:00', '10', '—'])
+    expect(t.caption).toMatch(/^Air temperature, °C:/)
   })
 })

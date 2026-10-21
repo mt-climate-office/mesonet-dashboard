@@ -3,8 +3,9 @@
  * view): speed binning, the renderer-free model (counts per compass point ×
  * speed bin) that the ECharts polar-bar builder consumes, and its stats. Calm
  * readings (under CALM_MPH) have no meaningful direction: they are counted
- * apart, not drawn. Binning is a port of legacy `plot_wind`: speeds
- * are rounded to whole mph with numpy's round-half-to-even, then `pd.qcut(q=8,
+ * apart, not drawn. Binning is a port of legacy `plot_wind`: speeds (in the
+ * display units, core/units) are rounded to whole mph, or to 0.1 m/s in SI,
+ * with numpy's round-half-to-even, then `pd.qcut(q=8,
  * duplicates="drop")`. qcut's edges are numpy linear-interpolated quantiles,
  * so they can be fractional (e.g. 3.75). Bins are right-closed, the first
  * includes the minimum, and duplicate edges collapse.
@@ -13,6 +14,7 @@ import type { ObservationRow } from '../api'
 import { CALM_MPH } from '../overview/summary'
 import { degToCompass, WIND_DIRECTIONS } from '../params'
 import { parseWallClock } from '../sensorEvents'
+import { type Units, fromUs, units } from '../units'
 import { formatReading } from '../variables/labels'
 
 /** Columns the rose requests (`elements=wind_spd,wind_dir`, LAB_SWAP names). */
@@ -58,24 +60,32 @@ export interface SpeedBins {
   labels: string[]
 }
 
-export function speedBins(rawSpeeds: readonly number[], n = 8): SpeedBins {
-  const speeds = rawSpeeds.filter(Number.isFinite).map(roundHalfEven)
-  const edges = quantileEdges(speeds, n)
-  const numBins = Math.max(1, edges.length - 1)
+/**
+ * qcut bins over `rawSpeeds`, rounded to whole multiples of `1 / scale` first (1: whole mph,
+ * legacy; 10: tenths, for m/s). Edges are in steps of `1 / scale` too; labels show the
+ * speeds a bin holds at that step ("4 – 6", "1.3 – 2.2").
+ */
+export function speedBins(rawSpeeds: readonly number[], n = 8, scale = 1): SpeedBins {
+  // Bin in whole steps (integers), as legacy does in whole mph, then scale back.
+  const speeds = rawSpeeds.filter(Number.isFinite).map((v) => roundHalfEven(v * scale))
+  const steps = quantileEdges(speeds, n)
+  const numBins = Math.max(1, steps.length - 1)
   const binFor = (speed: number) => {
-    const s = roundHalfEven(speed)
-    for (let i = 0; i < numBins - 1; i++) if (s <= edges[i + 1]) return i
+    const s = roundHalfEven(speed * scale)
+    for (let i = 0; i < numBins - 1; i++) if (s <= steps[i + 1]) return i
     return numBins - 1
   }
+  const digits = scale === 1 ? 0 : Math.round(Math.log10(scale))
+  const at = (x: number) => (x / scale).toFixed(digits)
   const labels = Array.from({ length: numBins }, (_, b) => {
-    if (edges.length < 2) return edges.length ? `${edges[0]}` : ''
+    if (steps.length < 2) return steps.length ? at(steps[0]) : ''
     // Bin 0 is [e0, e1]; bin b is (e_b, e_b+1].
-    const lo = b === 0 ? Math.ceil(edges[0]) : Math.floor(edges[b]) + 1
-    const hi = Math.floor(edges[b + 1])
-    if (lo > hi) return `(${+edges[b].toFixed(3)}, ${+edges[b + 1].toFixed(3)}]`
-    return lo === hi ? `${hi}` : `${lo} – ${hi}`
+    const lo = b === 0 ? Math.ceil(steps[0]) : Math.floor(steps[b]) + 1
+    const hi = Math.floor(steps[b + 1])
+    if (lo > hi) return `(${+(steps[b] / scale).toFixed(3)}, ${+(steps[b + 1] / scale).toFixed(3)}]`
+    return lo === hi ? at(hi) : `${at(lo)} – ${at(hi)}`
   })
-  return { edges, numBins, binFor, labels }
+  return { edges: steps.map((e) => e / scale), numBins, binFor, labels }
 }
 
 /**
@@ -93,7 +103,7 @@ export function windDateSpan(datetimes: readonly string[]): [string, string] | n
 
 /** One speed bin across the 16 compass points (N, NNE, … NNW). */
 export interface WindRoseBin {
-  /** Whole-mph range, e.g. "4 – 6" (see `speedBins`). */
+  /** Speed range in the model's units, e.g. "4 – 6" mph or "1.3 – 2.2" m/s (see `speedBins`). */
   label: string
   /** Observation counts aligned with `WIND_DIRECTIONS`. */
   counts: number[]
@@ -111,14 +121,17 @@ export interface WindRoseModel {
   calm: number
   /** Mean speed over every reading, calm ones included (mph). */
   meanSpeed: number
+  /** The display units the bins were made in (their labels' unit). */
+  units: Units
 }
 
 /**
  * Count rows by compass point and speed bin (qcut over the drawn speeds).
- * Rows missing either value are skipped; calm rows are counted in `calm`.
- * Null when no row has both values (the card then shows its no-data text).
+ * Rows missing either value are skipped; calm rows (under CALM_MPH, always tested in mph) are
+ * counted in `calm`. Speeds are binned in `u`. Null when no row has both values (the card then
+ * shows its no-data text).
  */
-export function buildWindRoseModel(rows: readonly ObservationRow[]): WindRoseModel | null {
+export function buildWindRoseModel(rows: readonly ObservationRow[], u: Units = units()): WindRoseModel | null {
   const obs: { dir: number; spd: number }[] = []
   let calm = 0
   let sum = 0
@@ -132,9 +145,11 @@ export function buildWindRoseModel(rows: readonly ObservationRow[]): WindRoseMod
   }
   const total = obs.length + calm
   if (total === 0) return null
-  const base = { directions: WIND_DIRECTIONS, span: windDateSpan(rows.map((r) => String(r.datetime))), n: obs.length, calm, meanSpeed: sum / total }
+  const base = { directions: WIND_DIRECTIONS, span: windDateSpan(rows.map((r) => String(r.datetime))), n: obs.length, calm, meanSpeed: sum / total, units: u }
   if (obs.length === 0) return { ...base, bins: [] }
-  const { numBins, binFor, labels } = speedBins(obs.map((o) => o.spd))
+  const speed = (mph: number) => fromUs('speed', mph, u)
+  const { numBins, binFor: binOf, labels } = speedBins(obs.map((o) => speed(o.spd)), 8, u === 'si' ? 10 : 1)
+  const binFor = (mph: number) => binOf(speed(mph))
   const bins: WindRoseBin[] = labels.slice(0, numBins).map((label) => ({ label, counts: WIND_DIRECTIONS.map(() => 0) }))
   for (const o of obs) {
     const d = (WIND_DIRECTIONS as readonly string[]).indexOf(degToCompass(o.dir))
@@ -142,6 +157,9 @@ export function buildWindRoseModel(rows: readonly ObservationRow[]): WindRoseMod
   }
   return { ...base, bins: bins.filter((b) => b.counts.some((c) => c > 0)) }
 }
+
+/** "under 1 mph" / "under 0.4 m/s": what calm means, in the display units. */
+export const calmText = (u: Units = units()): string => `under ${formatReading('wind_spd', CALM_MPH, 'display', u)}`
 
 /** Drawn readings per compass point, every speed bin together (aligned with `directions`). */
 export const directionTotals = (m: WindRoseModel): number[] => m.directions.map((_, i) => m.bins.reduce((a, b) => a + b.counts[i], 0))
@@ -171,7 +189,7 @@ export function windRoseStats(m: WindRoseModel): WindRoseStat[] {
   return [
     { label: 'Most often from', value: m.n === 0 ? 'Calm' : `${m.directions[totals.indexOf(top)]} · ${shareText(top, m)}` },
     { label: 'Calm', value: shareText(m.calm, m) },
-    { label: 'Average speed', value: formatReading('wind_spd', m.meanSpeed, 'table') },
+    { label: 'Average speed', value: formatReading('wind_spd', m.meanSpeed, 'table', m.units) },
     { label: 'Readings', value: (m.n + m.calm).toLocaleString('en-US') },
   ]
 }

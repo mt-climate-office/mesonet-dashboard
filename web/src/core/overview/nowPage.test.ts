@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { setUnitsSource } from '../units'
 import type { SoilParams, SoilSeries } from '../ag/contract'
 import { SWP_CAP_BAR } from '../ag/view/labels'
 import type { ObservationRow } from '../api'
@@ -178,5 +179,27 @@ describe('soil water potential', () => {
   })
   it('a dry-end clip (VWC below the lab range) reads as the capped lower bound', () => {
     expect(latestSwpBar(soil([30, 25, 2], [30, 28, 27]), params)).toBe(SWP_CAP_BAR)
+  })
+})
+
+describe('buildNowPage in SI', () => {
+  afterEach(() => setUnitsSource(() => 'us'))
+  it('tiles, gusts, dew point, soil depth, pressure and elevation in SI', () => {
+    setUnitsSource(() => 'si')
+    const page = buildNowPage(BASE)
+    const tile = (id: string) => page.tiles.find((t) => t.id === id)!
+    expect(tile('wind')).toMatchObject({ value: '3.3', unit: 'm/s', sub: 'SSE · gusts 5.5' })
+    expect(tile('precip')).toMatchObject({ value: '1.2', unit: 'mm' })
+    expect(tile('soil').sub).toBe('5 cm deep')
+    expect(tile('rh').sub).toBe('Dew point 9°')
+    expect(page.readingsMeta).toBe('Pressure 84.7 kPa · Snow none')
+    expect(stationMeta({ sub_network: 'HydroMet', elevation: 1495.09 })).toBe('HydroMet · 1,495 m')
+  })
+  it('calm still means under 1 mph; the peak gust reads in m/s', () => {
+    setUnitsSource(() => 'si')
+    const hourly: ObservationRow[] = [{ station: 'x', datetime: '2026-10-01 02:00:00-06:00', 'Gust Speed [mi/hr]': 43.24 }]
+    const wind = buildNowPage({ ...BASE, latest: { ...LATEST, 'Wind Speed [mi/h]': 0.4 }, hourly }).tiles.find((t) => t.id === 'wind')
+    expect(wind).toMatchObject({ value: 'Calm', sub: 'Peak gust 19.3 m/s (24 h)' })
+    expect(precipNow({ pptIn: 0.01, pptRateInH: 0.123 })).toBe('3.1 mm/h now')
   })
 })

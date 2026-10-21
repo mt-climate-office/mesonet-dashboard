@@ -5,6 +5,7 @@
 import type { Station } from '../api'
 import { fmtWall, MISSING } from '../charts/format'
 import { parseWallClock } from '../sensorEvents'
+import { isSi } from '../units'
 
 export interface DetailRow {
   label: string
@@ -31,10 +32,16 @@ export function formatCoordinates(lat: number, lon: number): string {
 /** Elevation in feet from metres, as legacy: round(m × 3.281). */
 export const metersToFeet = (m: number): number => Math.round(m * 3.281)
 
-/** "4,905 ft (1,495 m)" from metres (`metersToFeet`; numbers and units joined by NBSP). */
+/** "4,905 ft" from metres (`metersToFeet`), or "1,495 m" in SI (display units, core/units). */
+export const elevationText = (m: number): string =>
+  isSi() ? `${Math.round(m).toLocaleString('en-US')} m` : `${metersToFeet(m).toLocaleString('en-US')} ft`
+
+/** "4,905 ft (1,495 m)" from metres, metres first in SI: "1,495 m (4,905 ft)" (numbers and units joined by NBSP). */
 export function formatElevation(m: number): string {
   if (!Number.isFinite(m)) return MISSING
-  return `${metersToFeet(m).toLocaleString('en-US')}${NBSP}ft (${Math.round(m).toLocaleString('en-US')}${NBSP}m)`
+  const ft = `${metersToFeet(m).toLocaleString('en-US')}${NBSP}ft`
+  const metres = `${Math.round(m).toLocaleString('en-US')}${NBSP}m`
+  return isSi() ? `${metres} (${ft})` : `${ft} (${metres})`
 }
 
 /**
