@@ -23,6 +23,9 @@ export const units = (): Units => reader()
 /** The menu's name for `u`: "US" or "Metric". */
 export const unitsName = (u: Units): string => (u === 'si' ? 'Metric' : 'US')
 
+/** What a download in `u` contains: "US (°F, in, mph)" / "Metric (°C, mm, m/s)". */
+export const unitsFileText = (u: Units): string => (u === 'si' ? 'Metric (°C, mm, m/s)' : 'US (°F, in, mph)')
+
 /** True when values show in SI. */
 export const isSi = (u: Units = units()): boolean => u === 'si'
 

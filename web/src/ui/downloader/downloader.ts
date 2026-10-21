@@ -19,6 +19,7 @@ import { buildPreviewModel, type PreviewModel } from '../../core/models/download
 import { loadErrorText } from '../../core/loadError'
 import { stationHasSwp } from '../../core/stations'
 import { denverToday } from '../../core/today'
+import { unitsFileText } from '../../core/units'
 import type { DlPeriod, UrlState } from '../../core/url-schema'
 import { elementsResource } from '../charts/resources'
 import { component } from '../component'
@@ -120,6 +121,8 @@ export function downloader() {
     get datesText(): string { return this.dates.error ? 'Invalid range' : form.dateRangeLabel(this.dates.start, this.dates.end) },
     /** Under Interval: daily/monthly feels like and livestock risk are means, unlike their charts. */
     get meansNote(): string { return view.dailyMeansNote(this.url.period, this.pruned.selected) },
+    /** The file's units (the display units; switched in the header ⋯ menu). */
+    get unitsText(): string { return unitsFileText(this.url.units) },
     get intervalText(): string { return this.periodOptions.find((o) => o.value === this.url.period)?.label ?? this.url.period },
     isOpen(row: form.FormRow): boolean { return this.openRow === row },
     toggleRow(row: form.FormRow) { this.openRow = this.openRow === row ? null : row },
@@ -132,7 +135,7 @@ export function downloader() {
     get query(): DownloadQuery | null {
       if (this.blocker) return null
       const w = this.dates
-      return { station: this.stationId!, start: w.start, end: w.end, period: this.url.period, elements: this.pruned.selected, level: this.qc }
+      return { station: this.stationId!, start: w.start, end: w.end, period: this.url.period, elements: this.pruned.selected, level: this.qc, units: this.url.units }
     },
     /** The preview belongs to the current inputs. */
     get current(): boolean { return !!this.run && !!this.query && this.run.key === form.queryKey(this.query) },

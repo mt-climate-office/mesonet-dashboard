@@ -147,6 +147,7 @@ describe('fetchDownload', () => {
       period: 'monthly',
       elements: ['etr', 'feels_like'],
       level: 2,
+      units: 'us',
     })
     expect(calls).toHaveLength(1)
     expect(calls[0]).toContain('derived/daily')
@@ -189,6 +190,7 @@ describe('fetchDownload', () => {
       period: 'daily',
       elements: ['air_temp_0200', 'cci'],
       level: 1,
+      units: 'us',
     })
     expect(res.warnings).toHaveLength(1)
     expect(res.columns).toEqual([
@@ -210,8 +212,34 @@ describe('fetchDownload', () => {
       period: 'hourly',
       elements: ['air_temp_0200'],
       level: 0,
+      units: 'us',
     })
     expect(empty.rows).toEqual([])
+  })
+
+  it('asks the API for units=si and drops the kPa logger pressure column too', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', async (url: string) => {
+      calls.push(url)
+      return csvResponse(
+        [
+          'station,datetime,Air Temperature @ 2 m [°C],Logger Reference Pressure [kPa],has_na,obs_count,provisional',
+          'acebozem,2026-09-01 00:00:00-06:00,16.4,85.0,False,288,False',
+        ].join('\n'),
+      )
+    })
+    const res = await fetchDownload({
+      station: 'acebozem',
+      start: '2026-09-01',
+      end: '2026-09-01',
+      period: 'daily',
+      elements: ['air_temp_0200'],
+      level: 2,
+      units: 'si',
+    })
+    expect(calls[0]).toContain('units=si')
+    expect(res.columns).toContain('Air Temperature @ 2 m [°C]')
+    expect(res.columns.some((c) => c.startsWith('Logger Reference Pressure'))).toBe(false)
   })
 })
 
@@ -261,6 +289,12 @@ describe('soil water potential / percent saturation (computed in the browser)', 
     expect(other).toEqual([{ station: 'x', datetime: 'd' }])
   })
 
+  it('soilDerivedRows in SI: kPa headers and values (3 dp)', () => {
+    const [r] = soilDerivedRows([{ station: 'acebozem', datetime: 'd1', 'Soil VWC @ -5 cm [%]': 30 }], params, ['swp'], 'si')
+    expect(Object.keys(r)).toContain('Soil Water Potential @ -5 cm [kPa]')
+    expect(r['Soil Water Potential @ -5 cm [kPa]']).toBeCloseTo(bar(0.3) * 100, 0)
+  })
+
   it('fetchDownload: no /derived request for swp; its own soil_vwc request; user VWC columns untouched', async () => {
     const calls: string[] = []
     vi.stubGlobal('fetch', async (url: string) => {
@@ -269,7 +303,7 @@ describe('soil water potential / percent saturation (computed in the browser)', 
       return csvResponse(['station,datetime,Air Temperature @ 2 m [°F],has_na', 'acebozem,2026-09-01 00:00:00-06:00,61.5,False'].join('\n'))
     })
     const res = await fetchDownload(
-      { station: 'acebozem', start: '2026-09-01', end: '2026-09-02', period: 'daily', elements: ['air_temp_0200', 'swp'], level: 2 },
+      { station: 'acebozem', start: '2026-09-01', end: '2026-09-02', period: 'daily', elements: ['air_temp_0200', 'swp'], level: 2, units: 'us' },
       { soilParams: async () => params },
     )
     expect(calls.some((u) => u.includes('derived'))).toBe(false)
@@ -289,7 +323,7 @@ describe('soil water potential / percent saturation (computed in the browser)', 
       return csvResponse(vwc)
     })
     const res = await fetchDownload(
-      { station: 'acebozem', start: '2026-09-01', end: '2026-09-02', period: 'monthly', elements: ['feels_like', 'swp'], level: 2 },
+      { station: 'acebozem', start: '2026-09-01', end: '2026-09-02', period: 'monthly', elements: ['feels_like', 'swp'], level: 2, units: 'us' },
       { soilParams: async () => params },
     )
     expect(calls.filter((u) => u.includes('derived'))).toHaveLength(1)
@@ -305,7 +339,7 @@ describe('soil water potential / percent saturation (computed in the browser)', 
     const soilParams = async () => {
       throw new Error('offline')
     }
-    const q = { station: 'acebozem', start: '2026-09-01', end: '2026-09-02', period: 'daily' as const, level: 2 as const }
+    const q = { station: 'acebozem', start: '2026-09-01', end: '2026-09-02', period: 'daily' as const, level: 2 as const, units: 'us' as const }
     const res = await fetchDownload({ ...q, elements: ['air_temp_0200', 'swp', 'percent_saturation'] }, { soilParams })
     expect(res.warnings).toEqual(['Derived variables (swp, percent_saturation) could not be computed for this request; showing the rest.'])
     await expect(fetchDownload({ ...q, elements: ['swp'] }, { soilParams })).rejects.toThrow('offline')
