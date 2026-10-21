@@ -108,6 +108,12 @@ describe('elementLabel', () => {
     expect(elementLabel('Precipitation')).toBe('Precipitation')
     expect(elementLabel('Battery Voltage')).toBe('Battery Voltage')
   })
+  it('keeps the API’s metric heights and depths in SI', () => {
+    expect(elementLabel('Soil VWC @ -10 cm', 'si')).toBe('Soil moisture at 10 cm')
+    expect(elementLabel('Air Temperature @ 2 m', 'si')).toBe('Air temperature at 2 m')
+    expect(elementLabel('Wind Speed @ 10 m', 'si')).toBe('Wind at 10 m')
+    expect(elementLabel('Air Temperature @ 8 ft', 'si')).toBe('Air temperature at 8 ft')
+  })
 })
 
 describe('toCsv', () => {

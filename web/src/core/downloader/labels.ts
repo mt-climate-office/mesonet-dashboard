@@ -3,10 +3,13 @@
  * (core/variables/labels) with metric sensor depths/heights in US units, like
  * legacy `params.dist_swap` ("Soil VWC @ -10 cm" → "Soil moisture at 4 in",
  * "Air Temperature @ 2 m" → "Air temperature at 6.6 ft"). Legacy lacked
- * -70 cm; added. Only the label changes: the element code stays the value, and
- * CSV headers and filenames stay exactly as the API sends.
+ * -70 cm; added. In SI (core/units) the API's own metric heights and depths
+ * stay ("Soil moisture at 10 cm", "Air temperature at 2 m"). Only the label
+ * changes: the element code stays the value, and CSV headers and filenames
+ * stay exactly as the API sends.
  */
 import { ELEM_MAP, latestVarName } from '../params/latest'
+import { type Units, units } from '../units'
 import { plainName } from '../variables/labels'
 
 const DIST_SWAP: Readonly<Record<string, string>> = {
@@ -28,8 +31,10 @@ export function elementName(descriptionShort: string): string {
 }
 
 /** The picker label for an element's `description_short` (see the header); unknown names keep the API's. */
-export function elementLabel(descriptionShort: string): string {
+export function elementLabel(descriptionShort: string, u: Units = units()): string {
   const name = elementName(descriptionShort)
   const at = /@\s*(.+)$/.exec(descriptionShort)?.[1].trim()
-  return at ? `${name} at ${at.replace(/(-?\d+ (?:cm|m))(?![\w/])/g, (m) => DIST_SWAP[m] ?? m)}` : name
+  if (!at) return name
+  // SI keeps the API's metric value; a depth drops its minus sign ("-10 cm" → "10 cm").
+  return `${name} at ${at.replace(/(-?)(\d+ (?:cm|m))(?![\w/])/g, (m, _sign: string, v: string) => (u === 'si' ? v : (DIST_SWAP[m] ?? m)))}`
 }

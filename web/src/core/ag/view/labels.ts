@@ -7,8 +7,8 @@
  */
 import type { CciClass, FeelsLikeRegime, LocalDate, LocalDateTime, Nullable, SwpSeries } from '../contract'
 import { cToF, kPaToBar, mmToIn, msToMph } from '../compute'
-import { elementLabel, elementName } from '../../downloader/labels'
-import { type Units, degreeDays, depthsIn, displayUnit, fromUs, unitLabel, units } from '../../units'
+import { elementLabel } from '../../downloader/labels'
+import { type Units, degreeDays, displayUnit, fromUs, unitLabel, units } from '../../units'
 import { axisTitle, cumulativeTitle, plainUnit } from '../../variables/labels'
 
 /* ------------------------------------------------------- display units */
@@ -207,11 +207,7 @@ export function parseLabel(header: string | null | undefined): { name: string; u
  */
 export function annualAxisLabel(header: string | null | undefined, cumulative: boolean, u: Units = units()): string {
   const { name, unit } = parseLabel(header)
-  let plain = name ? elementLabel(name) : ''
-  if (u === 'si' && name) {
-    const at = /@\s*-?(.+)$/.exec(name)?.[1].trim()
-    plain = at ? `${elementName(name)} at ${depthsIn(at, u)}` : elementName(name)
-  }
+  const plain = name ? elementLabel(name, u) : ''
   const base = unit ? `${plain} (${plainUnit(displayUnit(unit, name, u))})` : plain
   return cumulative ? cumulativeTitle(base) : base
 }
