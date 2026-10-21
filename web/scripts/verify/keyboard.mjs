@@ -87,9 +87,32 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   const m7 = await menuState()
   check('menu: ArrowUp on the button opens it on the last item; Tab closes it', m6.open && m6.focus === 'menu-feedback' && !m7.open, JSON.stringify([m6, m7]))
 
+  // Units: Enter switches US ↔ metric, the menu stays open on the item, the URL and state text follow; again switches back.
+  await menuBtn.focus()
+  await page.keyboard.press('Enter')
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.press('ArrowDown')
+  const unitsState = () => page.evaluate(() => ({
+    focus: document.activeElement?.getAttribute('data-testid'),
+    open: !document.getElementById('header-menu').hidden,
+    state: document.querySelector('[data-testid="menu-units"] .dash-menu-state')?.textContent,
+    units: new URLSearchParams(location.search).get('units'),
+  }))
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => new URLSearchParams(location.search).get('units') === 'si', null, { timeout: 5000 }).catch(() => {})
+  const u1 = await unitsState()
+  await page.keyboard.press('Enter')
+  await page.waitForFunction(() => !new URLSearchParams(location.search).has('units'), null, { timeout: 5000 }).catch(() => {})
+  const u2 = await unitsState()
+  check('menu: Units switches to metric and back, staying open on the item (?units=si, then absent)',
+    u1.focus === 'menu-units' && u1.open && u1.state === 'Metric' && u1.units === 'si' && u2.open && u2.state === 'US' && u2.units === null,
+    JSON.stringify([u1, u2]))
+  await page.keyboard.press('Escape')
+
   // Help: from the menu with the keyboard; Esc closes the dialog and focus returns to the ⋯ button.
   await menuBtn.focus()
   await page.keyboard.press('Enter')
+  await page.keyboard.press('ArrowDown')
   await page.keyboard.press('ArrowDown')
   await page.keyboard.press('ArrowDown')
   await page.keyboard.press('Enter')

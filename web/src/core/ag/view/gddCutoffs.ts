@@ -125,6 +125,22 @@ function convertCutoffKey(raw: string | null, from: Units, to: Units): string | 
   return Number.isFinite(n) ? String(cutoffInUnits(cutoffToF(n, from), to)) : raw
 }
 
+/**
+ * A link without `units` is US. With a saved SI choice, the query string that opens it in SI:
+ * `units=si` plus any custom GDD cutoffs converted, so a shared °F link keeps its meaning. Null
+ * when nothing changes (the link names its units, or none are saved).
+ */
+export function adoptSavedUnits(search: string, saved: Units | null): string | null {
+  const params = new URLSearchParams(search)
+  if (params.has('units') || saved !== 'si') return null
+  params.set('units', 'si')
+  for (const k of ['gdd_lo', 'gdd_hi']) {
+    const v = params.get(k)
+    if (v !== null) params.set(k, convertCutoffKey(v, 'us', 'si') ?? v)
+  }
+  return `?${params.toString().replace(/%2C/gi, ',')}`
+}
+
 /** The URL patch that switches display units to `next`: custom GDD cutoffs convert with it. */
 export function toggleUnitsPatch(state: Pick<UrlState, 'units' | 'gdd_lo' | 'gdd_hi'>, next: Units): Partial<UrlState> {
   const patch: Partial<UrlState> = { units: next }

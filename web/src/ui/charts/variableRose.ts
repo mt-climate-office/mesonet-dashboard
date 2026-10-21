@@ -15,6 +15,7 @@ import { loadErrorText } from '../../core/loadError'
 import { buildWindRoseModel, windRoseStats, type WindRoseModel, type WindRoseStat } from '../../core/models/windRose'
 import { chartWindow } from '../../core/models/timeseries'
 import { CALM_MPH } from '../../core/overview/summary'
+import { type Units, units } from '../../core/units'
 import { formatReading, pageRange, roseAgg, roseAnnouncement, roseRequest, roseRows, spanDays, type PageRange } from '../../core/variables'
 import type { ChartBindings } from './chart'
 import { component } from '../component'
@@ -27,7 +28,7 @@ const stations = () => Alpine.store('station')
 export function variableRose(o: { part: 'chart' | 'stats' }) {
   // The model, kept while its rows and window are the same (the chart host redraws on a new model); kept
   // through a new window's load for the same station, so the rose does not flash.
-  let memo: { rows: unknown; range: PageRange; station: string; model: WindRoseModel | null } | null = null
+  let memo: { rows: unknown; range: PageRange; station: string; units: Units; model: WindRoseModel | null } | null = null
   return component({
     init() {
       if (o.part === 'chart') this.$watch('announceKey', (key: string) => key && announce(key))
@@ -55,8 +56,10 @@ export function variableRose(o: { part: 'chart' | 'stats' }) {
       const range = this.range()
       if (!res || res.status === 'error') return null
       if (!res.data) return memo?.station === id ? memo.model : null
-      if (memo?.rows !== res.data || memo.range !== range || memo.station !== id) {
-        memo = { rows: res.data, range, station: id, model: buildWindRoseModel(roseRows(Alpine.raw(res.data), range)) }
+      // Bins depend on the display units (whole mph or tenths of m/s), so a switch rebuilds.
+      const u = units()
+      if (memo?.rows !== res.data || memo.range !== range || memo.station !== id || memo.units !== u) {
+        memo = { rows: res.data, range, station: id, units: u, model: buildWindRoseModel(roseRows(Alpine.raw(res.data), range), u) }
       }
       return memo.model
     },

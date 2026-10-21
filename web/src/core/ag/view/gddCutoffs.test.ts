@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cutoffInUnits, parseGddCutoffs, sliderBounds, sliderWrites, toSlider, toggleUnitsPatch } from './gddCutoffs'
+import { adoptSavedUnits, cutoffInUnits, parseGddCutoffs, sliderBounds, sliderWrites, toSlider, toggleUnitsPatch } from './gddCutoffs'
 
 describe('GDD cutoffs in SI', () => {
   it('reads URL cutoffs in °C into °F state', () => {
@@ -32,5 +32,17 @@ describe('toggleUnitsPatch', () => {
     expect(toggleUnitsPatch({ units: 'us', gdd_lo: '50', gdd_hi: 'none' }, 'si')).toEqual({ units: 'si', gdd_lo: '10', gdd_hi: 'none' })
     expect(toggleUnitsPatch({ units: 'si', gdd_lo: '10', gdd_hi: null }, 'us')).toEqual({ units: 'us', gdd_lo: '50' })
     expect(toggleUnitsPatch({ units: 'us', gdd_lo: null, gdd_hi: null }, 'si')).toEqual({ units: 'si' })
+  })
+})
+
+describe('adoptSavedUnits', () => {
+  it('opens a US link in the saved SI, converting its cutoffs', () => {
+    expect(adoptSavedUnits('?s=acebozem&v=gdd&gdd_lo=50&gdd_hi=none', 'si')).toBe('?s=acebozem&v=gdd&gdd_lo=10&gdd_hi=none&units=si')
+    expect(adoptSavedUnits('?s=acebozem', 'si')).toBe('?s=acebozem&units=si')
+  })
+  it('leaves links that name their units, and US or no saved choice, alone', () => {
+    expect(adoptSavedUnits('?units=us&gdd_lo=50', 'si')).toBeNull()
+    expect(adoptSavedUnits('?gdd_lo=50', 'us')).toBeNull()
+    expect(adoptSavedUnits('?gdd_lo=50', null)).toBeNull()
   })
 })

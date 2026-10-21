@@ -248,7 +248,8 @@ export async function fetchDownload(q: DownloadQuery, deps: DownloadDeps = {}): 
     end_time: exclusiveEnd(q.end),
     level: q.level,
     na_info: true,
-    units: q.units,
+    // US is the API default: only SI is sent, so US requests (and their cache/fixture URLs) are unchanged.
+    ...(q.units === 'si' ? { units: 'si' } : {}),
   }
 
   // Monthly is aggregated from daily rows (ENDPOINTS.monthly is the daily path).

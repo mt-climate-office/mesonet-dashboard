@@ -6,6 +6,7 @@
  */
 import Alpine from 'alpinejs'
 import { parseQcLevel, setQcOverride } from './core/api/qcLevel'
+import { adoptSavedUnits } from './core/ag/view/gddCutoffs'
 import { legacyRedirect } from './core/router'
 import { readStation } from './core/stations/recent'
 import { readUnits, setUnitsSource } from './core/units'
@@ -126,12 +127,9 @@ if (!new URLSearchParams(location.search).has('s')) {
   }
 }
 
-// No `?units=`: the saved choice (core/units). US is the default, so only SI is written.
-if (!new URLSearchParams(location.search).has('units') && readUnits(browserStorage()) === 'si') {
-  const params = new URLSearchParams(location.search)
-  params.set('units', 'si')
-  replaceUrl(`?${params.toString().replace(/%2C/gi, ',')}`, location.hash)
-}
+// No `?units=`: the link is US; open it in the saved choice (core/units), its GDD cutoffs converted.
+const withUnits = adoptSavedUnits(location.search, readUnits(browserStorage()))
+if (withUnits) replaceUrl(withUnits, location.hash)
 // Display units follow `?units=` (reactive: a getter that formats a value re-runs on a toggle).
 setUnitsSource(() => Alpine.store('url').state.units)
 
