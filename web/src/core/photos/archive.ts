@@ -3,7 +3,7 @@
  * schedule's `patterns`, the monthly manifest CSV, the S3 listing XML, and
  * day selection over the resulting frames.
  */
-import { DEFAULT_PATTERNS, PHOTO_BASE, compareTokens, type PhotoPatterns } from './schedule'
+import { DEFAULT_PATTERNS, PHOTO_BASE, compareTokens, isShownView, type PhotoPatterns } from './schedule'
 import { compactUtc, localYmd, parseUtc } from './time'
 
 export interface PhotoFrame {
@@ -172,7 +172,7 @@ export function parseManifest(csv: string, station: string, o: ArchiveOpts = {})
     const at = (i: number) => (i >= 0 ? (f[i] ?? '').trim() : '')
     const token = at(iToken)
     const captured = parseUtc(at(iCaptured))
-    if (!token || Number.isNaN(captured)) continue
+    if (!token || !isShownView(token) || Number.isNaN(captured)) continue
     const slotRaw = at(iSlot)
     const slot = slotRaw ? parseUtc(slotRaw) : Math.round(captured / HOUR_MS) * HOUR_MS
     if (Number.isNaN(slot) || Math.abs(slot - captured) > snap) continue
@@ -198,7 +198,7 @@ export function framesFor(frames: PhotoFrame[], ymd: string, token?: string): Ph
     .sort((a, b) => b.slotUtcMs - a.slotUtcMs)
 }
 
-/** Distinct tokens in `frames`, canonical order. */
+/** Distinct shown tokens in `frames`, canonical order. */
 export function tokensOf(frames: PhotoFrame[]): string[] {
-  return [...new Set(frames.map((f) => f.token))].sort(compareTokens)
+  return [...new Set(frames.map((f) => f.token))].filter(isShownView).sort(compareTokens)
 }
