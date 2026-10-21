@@ -9,15 +9,16 @@ import type { Resource } from '../../core/cache'
 import type { ObservationRow } from '../../core/api'
 import { nowWindRoseRequest } from '../../core/cards'
 import { windRoseChart, windRoseTable, windRoseTitle } from '../../core/charts'
-import { buildWindRoseModel, type WindRoseModel } from '../../core/models/windRose'
+import { buildWindRoseModel, calmText, type WindRoseModel } from '../../core/models/windRose'
+import { type Units, units } from '../../core/units'
 import { roseRows } from '../../core/variables'
 import type { ChartBindings } from '../charts/chart'
 import { component } from '../component'
 import { windObs } from '../station/resources'
 
 export function windRoseCard() {
-  // The model, kept while its rows are the same array (the chart host redraws on a new model).
-  let memo: { rows: unknown; model: WindRoseModel | null } | null = null
+  // The model, kept while its rows and display units are the same (the chart host redraws on a new model).
+  let memo: { rows: unknown; units: Units; model: WindRoseModel | null } | null = null
   return component({
     get resource(): Resource<ObservationRow[]> | null {
       const id = Alpine.store('station').id
@@ -27,7 +28,8 @@ export function windRoseCard() {
     get model(): WindRoseModel | null {
       const rows = this.resource?.data
       if (!rows) return null
-      if (memo?.rows !== rows) memo = { rows, model: buildWindRoseModel(roseRows(Alpine.raw(rows), '24h')) }
+      const u = units()
+      if (memo?.rows !== rows || memo.units !== u) memo = { rows, units: u, model: buildWindRoseModel(roseRows(Alpine.raw(rows), '24h'), u) }
       return memo.model
     },
 
@@ -38,6 +40,11 @@ export function windRoseCard() {
       if (r.status === 'loading' && !r.data) return 'loading'
       const m = this.model
       return !m ? 'empty' : m.n === 0 ? 'calm' : 'ready'
+    },
+
+    /** The calm state's text: "Calm for the last 24 hours (under 1 mph)." in the display units. */
+    get calmMessage(): string {
+      return `Calm for the last 24 hours (${calmText()}).`
     },
 
     get title(): string {

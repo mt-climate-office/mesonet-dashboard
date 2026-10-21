@@ -9,7 +9,7 @@
     <p class="lc-message lc-strong">No wind data in the last 24 hours.</p>
   </template>
   <template x-if="state === 'calm'">
-    <p class="lc-message lc-strong">Calm for the last 24 hours (under 1 mph).</p>
+    <p class="lc-message lc-strong" x-text="calmMessage"></p>
   </template>
   <template x-if="state === 'ready'">
     <div class="lc-rose">

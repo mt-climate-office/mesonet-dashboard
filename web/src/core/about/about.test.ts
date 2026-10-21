@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { setUnitsSource } from '../units'
 import type { Station } from '../api'
 import { apiLinks } from './apiLinks'
 import { formatCoordinates, formatDay, formatElevation, formatLocation, metersToFeet, periodOfRecord, stationDetails } from './details'
@@ -148,5 +149,13 @@ describe('apiLinks', () => {
       'https://api.example/v2/latest?stations=acebozem&type=csv',
       'https://api.example/v2/config/acebozem/',
     ])
+  })
+})
+
+describe('elevation in SI', () => {
+  afterEach(() => setUnitsSource(() => 'us'))
+  it('metres first', () => {
+    setUnitsSource(() => 'si')
+    expect(formatElevation(1495.09)).toBe('1,495\u00a0m (4,905\u00a0ft)')
   })
 })

@@ -10,10 +10,11 @@ import { applyFrozenMask, frozenMask, swp } from '../ag/compute'
 import type { SoilParams, SoilSeries } from '../ag/contract'
 import { swpBar } from '../ag/view/labels'
 import type { ObservationRow, Station } from '../api'
-import { metersToFeet } from '../about/details'
+import { elevationText } from '../about/details'
 import type { StripPeriod } from '../charts/heroStrip'
 import { sparkline, type Sparkline, type SparkSeries } from '../charts/sparkline'
 import { parseWallClock } from '../sensorEvents'
+import { depthText } from '../units'
 import { compassWord, formatReading, formatValue, LABELS, labelUnit } from '../variables/labels'
 import { readConditions, type Conditions } from './conditions'
 import { buildHero, type HeroInput, type HeroView } from './hero'
@@ -63,7 +64,7 @@ export interface NowPage {
   icons: StripPeriod[]
   /** "Pressure 847 mb, steady · Snow none" ("" when neither is reported). */
   readingsMeta: string
-  /** "HydroMet · 4,905 ft". */
+  /** "HydroMet · 4,905 ft" (or "1,495 m"). */
   stationMeta: string
 }
 
@@ -92,7 +93,7 @@ function sub(id: TileId, c: Conditions, p: PrecipSummary): string {
     const dp = dewPointF(c.airF, c.rh)
     return dp === null ? '' : `Dew point ${formatValue('air_temp', dp)}°`
   }
-  if (id === 'soil' && c.soil[0]) return `${c.soil[0].depthIn} in deep`
+  if (id === 'soil' && c.soil[0]) return `${depthText(c.soil[0].depthIn)} deep`
   return ''
 }
 
@@ -148,10 +149,10 @@ function readingsMeta(c: Conditions, input: NowPageInput): string {
   return parts.join(' · ')
 }
 
-/** "HydroMet · 4,905 ft"; parts that are missing are left out. */
+/** "HydroMet · 4,905 ft" ("· 1,495 m" in SI); parts that are missing are left out. */
 export function stationMeta(s: Pick<Station, 'sub_network' | 'elevation'>): string {
-  const ft = Number.isFinite(s.elevation) ? `${metersToFeet(s.elevation).toLocaleString('en-US')} ft` : null
-  return [s.sub_network, ft].filter(Boolean).join(' · ')
+  const elev = Number.isFinite(s.elevation) ? elevationText(s.elevation) : null
+  return [s.sub_network, elev].filter(Boolean).join(' · ')
 }
 
 /** The whole Now page; tiles and the readings meta are empty until `/latest` arrives. */

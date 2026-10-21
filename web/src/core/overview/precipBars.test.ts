@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { setUnitsSource } from '../units'
 import type { ObservationRow } from '../api'
 import { precipBars, precipDailyQuery } from './precipBars'
 
@@ -37,5 +38,14 @@ describe('precipBars', () => {
     const r = precipBars([row('2026-09-20', 2), row('2026-09-28', 0.2), row('2026-09-29', null)], TODAY)!
     expect(r.spark.points).toBe(1)
     expect(r.sparkLabel).toBe('Last 7 days: 0.20 in in total, precipitation on 1 day.')
+  })
+})
+
+describe('precipBars in SI', () => {
+  afterEach(() => setUnitsSource(() => 'us'))
+  it('the sentence reads mm', () => {
+    setUnitsSource(() => 'si')
+    const r = precipBars(WEEK.map((d, i) => row(d, i === 0 ? 0.1 : i === 6 ? 0.4 : 0)), TODAY)!
+    expect(r.sparkLabel).toBe('Last 7 days: 12.7 mm in total, precipitation on 2 days.')
   })
 })

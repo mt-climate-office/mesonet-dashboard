@@ -14,6 +14,7 @@ import { loadErrorText } from '../../core/loadError'
 import { chartWindow } from '../../core/models/timeseries'
 import { buildWindRoseModel, type WindRoseModel } from '../../core/models/windRose'
 import { denverWallMs } from '../../core/today'
+import { type Units, units } from '../../core/units'
 import type { LatestAgg } from '../../core/url-schema'
 import {
   LABELS,
@@ -55,7 +56,7 @@ export function dashboardView() {
   const observers: ResizeObserver[] = []
   // Each stack's model, kept while the shared model is the same object (a new one would redraw the chart).
   const stackModels: ({ base: LatestTimeseriesModel; model: LatestTimeseriesModel | null } | null)[] = [null, null]
-  let rose: { rows: unknown; range: string; model: WindRoseModel | null } | null = null
+  let rose: { rows: unknown; range: string; units: Units; model: WindRoseModel | null } | null = null
   return component({
     ranges: DASHBOARD_RANGES,
     agTools: LIST_AG_TOOLS.map((id) => ({ id, name: LABELS[id]?.name ?? id, sub: LABELS[id]?.sub ?? '' })),
@@ -190,7 +191,8 @@ export function dashboardView() {
       const res = recordResource(roseRequest(id, w.start, w.end, roseAgg(url().state.agg, spanDays(w.start, w.end))))
       if (!res?.data) return rose?.model ?? null
       const range = activePreset(url().state)
-      if (rose?.rows !== res.data || rose.range !== range) rose = { rows: res.data, range, model: buildWindRoseModel(roseRows(Alpine.raw(res.data), range)) }
+      const u = units()
+      if (rose?.rows !== res.data || rose.range !== range || rose.units !== u) rose = { rows: res.data, range, units: u, model: buildWindRoseModel(roseRows(Alpine.raw(res.data), range), u) }
       return rose.model
     },
     roseTitle(): string {

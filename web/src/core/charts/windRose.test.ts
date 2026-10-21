@@ -131,3 +131,12 @@ describe('title + table', () => {
     )
   })
 })
+
+describe('wind rose in SI', () => {
+  it('bin names and the calm caption in m/s', () => {
+    const si = { ...model, units: 'si' as const, calm: 10 }
+    expect(binName('1.3 – 2.2', 'si')).toBe('1.3 – 2.2 m/s')
+    expect(windRoseTable(si).columns[1]).toMatch(/ m\/s$/)
+    expect(windRoseTable(si).caption).toMatch(/10 calm readings \(under 0\.4 m\/s, 50%\)/)
+  })
+})

@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { setUnitsSource } from '../units'
 import type { ObservationRow } from '../api'
 import { daysSincePrecip, isEvening, precipPhrase, skyPhrase, summarize, windClass, windPhrase, type SummaryInput } from './summary'
 
@@ -101,5 +102,14 @@ describe('summarize', () => {
     expect(isEvening(Date.UTC(2026, 9, 2, 18))).toBe(true)
     expect(isEvening(Date.UTC(2026, 9, 2, 5, 59))).toBe(true)
     expect(isEvening(Date.UTC(2026, 9, 2, 6))).toBe(false)
+  })
+})
+
+describe('summary in SI', () => {
+  afterEach(() => setUnitsSource(() => 'us'))
+  it('precipitation today in mm; thresholds stay US', () => {
+    setUnitsSource(() => 'si')
+    expect(precipPhrase(0.123, 0)).toBe('3.1 mm of precipitation today')
+    expect(windClass(9.9)).toBe('light')
   })
 })

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { calmText } from './windRose'
 import type { ObservationRow } from '../api'
 import { buildWindRoseModel, directionTotals, newestStamp, quantileEdges, roundHalfEven, rowsWithin, shareText, speedBins, windDateSpan, windRoseStats } from './windRose'
 
@@ -136,5 +137,22 @@ describe('rowsWithin / newestStamp', () => {
     expect(newest).toBe(Date.UTC(2026, 6, 2))
     expect(rowsWithin(rows, [Date.UTC(2026, 6, 1, 0, 0, 1), newest + 1]).map((r) => r.datetime)).toEqual(['2026-07-01 12:00:00-06:00', '2026-07-02 00:00:00-06:00'])
     expect(newestStamp([])).toBeNull()
+  })
+})
+
+describe('wind rose in SI', () => {
+  const rows = [225, 225, 225, 225, 225, 0, 0, 90].map((d, i) => ({ datetime: `2026-07-01 0${i}:00:00-06:00`, 'Wind Direction [deg]': d, 'Wind Speed [mi/hr]': 4 + i })) as unknown as ObservationRow[]
+  it('bins speeds in tenths of a m/s; calm is still under 1 mph', () => {
+    const m = buildWindRoseModel(rows, 'si')!
+    expect(m.units).toBe('si')
+    expect(m.n).toBe(8)
+    expect(m.bins.every((b) => /^\d+\.\d( – \d+\.\d)?$/.test(b.label))).toBe(true)
+    expect(m.bins[0].label.startsWith('1.8')).toBe(true) // 4 mph = 1.79 m/s
+    expect(windRoseStats(m)[2]).toEqual({ label: 'Average speed', value: '3.35 m/s' })
+    expect(calmText('si')).toBe('under 0.4 m/s')
+    expect(calmText('us')).toBe('under 1 mph')
+  })
+  it('speedBins at scale 10 labels tenths', () => {
+    expect(speedBins([1.24, 1.26, 2.0], 2, 10).labels).toEqual(['1.2 – 1.3', '1.4 – 2.0'])
   })
 })
