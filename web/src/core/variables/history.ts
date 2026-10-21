@@ -12,6 +12,7 @@ import { HttpError, type ObservationRow } from '../api'
 import { recordRequest, type RecordRequest } from '../latest/requests'
 import type { Variable } from './catalog'
 import { WIND_DIRECTION } from './direction'
+import { columnValue } from '../units'
 import { axisTitle, cumulativeTitle } from './labels'
 import { primaryColumn } from './summary'
 
@@ -82,8 +83,8 @@ export async function historyRows(fetch: () => Promise<ObservationRow[]>): Promi
 
 /**
  * The chart model from the years loaded so far (any order). Each year's
- * daily rows contribute the variable's primary column (shallowest depth).
- * Null until a year has a value.
+ * daily rows contribute the variable's primary column (shallowest depth), in
+ * the display units. Null until a year has a value.
  */
 export function historyModel(v: Variable, years: readonly (readonly ObservationRow[])[], currentYear: number): (AnnualModel & { column: string }) | null {
   const byDate = new Map<string, number | null>()
@@ -96,7 +97,8 @@ export function historyModel(v: Variable, years: readonly (readonly ObservationR
     for (const r of rows) {
       const d = String(r.datetime).slice(0, 10)
       const y = (r as Record<string, unknown>)[col]
-      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) byDate.set(d, typeof y === 'number' && Number.isFinite(y) ? y : null)
+      // annualChart draws in the display units (its traces are not converted again).
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) byDate.set(d, typeof y === 'number' && Number.isFinite(y) ? columnValue(col, y) : null)
     }
   }
   if (!column || ![...byDate.values()].some((x) => x !== null)) return null

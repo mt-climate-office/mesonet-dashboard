@@ -1,9 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest'
+<<<<<<< HEAD
 import { setUnitsSource } from '../units'
+=======
+>>>>>>> units-charts
 import type { Station } from '../api'
 import { apiLinks } from './apiLinks'
 import { formatCoordinates, formatDay, formatElevation, formatLocation, metersToFeet, periodOfRecord, stationDetails } from './details'
 import { pptLabel, pptRows, readingLabel, readingRows, readingValue } from './readings'
+import { setUnitsSource } from '../units'
 import { measuresText, sensorHistory, sensorName } from './sensorHistory'
 
 const bozeman: Station = {
@@ -152,10 +156,24 @@ describe('apiLinks', () => {
   })
 })
 
+<<<<<<< HEAD
 describe('elevation in SI', () => {
   afterEach(() => setUnitsSource(() => 'us'))
   it('metres first', () => {
     setUnitsSource(() => 'si')
     expect(formatElevation(1495.09)).toBe('1,495\u00a0m (4,905\u00a0ft)')
+=======
+describe('readings in SI', () => {
+  afterEach(() => setUnitsSource(() => 'us'))
+  it('values, units and depths in SI; the precipitation summary in mm', () => {
+    setUnitsSource(() => 'si')
+    const v = (value: string, unit = '', note = '') => ({ value, unit, note })
+    expect(readingValue('Air Temperature [°F]', '50')).toEqual(v('10.0', '°C'))
+    expect(readingValue('Atmospheric Pressure [mbar]', '848.93')).toEqual(v('84.89', 'kPa'))
+    expect(readingValue('Mystery Speed [mi/hr]', '10')).toEqual(v('4.47', 'm/s'))
+    expect(readingLabel('Soil VWC @ 4 in [%]')).toBe('Soil moisture at 10 cm')
+    const [row] = pptRows({ station: 'acebozem', 'Year to Date Precipitation [in]': 1 })
+    expect([row.value, row.unit]).toEqual(['25.4', 'mm'])
+>>>>>>> units-charts
   })
 })

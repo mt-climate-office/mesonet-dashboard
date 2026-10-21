@@ -28,6 +28,7 @@ import {
   type SubplotKind,
 } from '../sensorEvents'
 import type { LatestAgg } from '../url-schema'
+import { type Units, columnValue, depthsIn, units } from '../units'
 import { axisTitle } from '../variables/labels'
 
 /** Default window: the last 14 days (legacy). */
@@ -316,8 +317,46 @@ function withoutCombined(series: TimeseriesSeries[]): TimeseriesSeries[] {
   })
 }
 
-/** A depth's series on one sensor array, in tooltips and stats: "2 in · B". */
-export const arrayLabel = (depth: string, probe: string): string => `${depth} · ${probe}`
+/** A depth's series on one sensor array, in tooltips and stats: "2 in · B" ("5 cm · B" in SI). */
+export const arrayLabel = (depth: string, probe: string): string => `${depthsIn(depth)} · ${probe}`
+
+const inUnits = new WeakMap<TimeseriesModel, TimeseriesModel>()
+
+/**
+ * `ts` (US, as built) with every value in `u`: series, daily bands and normals, converted by their
+ * column's unit (core/units `columnValue`). Names, depths and axis titles are unchanged (the axis
+ * title is already in the display units); US returns `ts` itself. For chart builders: stats and
+ * formatters take the US model and convert as they format.
+ */
+export function timeseriesInUnits(ts: TimeseriesModel, u: Units = units()): TimeseriesModel {
+  if (u !== 'si') return ts
+  const hit = inUnits.get(ts)
+  if (hit) return hit
+  const conv = (col: string, vs: readonly (number | null)[]) => vs.map((v) => columnValue(col, v, u))
+  const out: TimeseriesModel = {
+    ...ts,
+    panels: ts.panels.map((p) => {
+      const col = p.series[0]?.name ?? ''
+      const nm = p.normals
+      return {
+        ...p,
+        series: p.series.map((s) => ({
+          ...s,
+          values: conv(s.name, s.values),
+          ...(s.band ? { band: { lo: conv(s.name, s.band.lo), hi: conv(s.name, s.band.hi) } } : {}),
+        })),
+        normals:
+          nm?.kind === 'band'
+            ? { ...nm, min: conv(col, nm.min), max: conv(col, nm.max) }
+            : nm?.kind === 'markers'
+              ? { ...nm, p25: conv(col, nm.p25), median: conv(col, nm.median), p75: conv(col, nm.p75) }
+              : nm,
+      }
+    }),
+  }
+  inUnits.set(ts, out)
+  return out
+}
 
 /** Legacy empty-panel note: "<variable> data are not available for this time period." */
 export const panelNoDataText = (variable: string): string =>

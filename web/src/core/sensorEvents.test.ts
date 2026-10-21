@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { setUnitsSource } from './units'
 import {
   buildSensorEvents,
   defaultEventWidth,
@@ -299,5 +300,14 @@ describe('sensorEventText', () => {
     ).toBe(
       'A sensor outage was reported on 2026-09-24 and is ongoing as of 2026-09-27, affecting the following elements:<br>A,<br>B',
     )
+  })
+})
+
+describe('sensorEventText in SI', () => {
+  afterEach(() => setUnitsSource(() => 'us'))
+  it('names the elements in the display units', () => {
+    setUnitsSource(() => 'si')
+    const e: SensorEvent = { reason: 'added', x0: t('2026-09-24 12:00'), x1: t('2026-09-24 18:00'), elements: ['Soil Temperature @ 4 in [°F]', 'Precipitation [in]'], openEnded: false }
+    expect(sensorEventText(e)).toBe('A sensor was added/replaced on 2026-09-24, affecting the following elements:<br>Soil Temperature @ 10 cm [°C],<br>Precipitation [mm]')
   })
 })

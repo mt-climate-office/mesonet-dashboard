@@ -11,6 +11,7 @@
  * timestamps, so working in wall-clock space keeps overlays aligned with the
  * series without a timezone library; charts render it with `useUTC: true`.
  */
+import { columnInUnits } from './params/columns'
 
 const HOUR = 60 * 60 * 1000
 const DAY = 24 * HOUR
@@ -512,7 +513,8 @@ export function sensorEventsForSubplot({
 export function sensorEventText(e: SensorEvent): string {
   const date0 = formatWallDate(e.x0)
   const date1 = formatWallDate(e.x1)
-  const elems = e.elements.join(',<br>')
+  // Element names are US column names (ELEMENT_LABELS, the matching keys); shown in the display units.
+  const elems = e.elements.map((el) => columnInUnits(el)).join(',<br>')
   if (e.reason === 'added') {
     return `A sensor was added/replaced on ${date0}, affecting the following elements:<br>${elems}`
   }
