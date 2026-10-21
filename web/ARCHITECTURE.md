@@ -223,6 +223,20 @@ UTC; `core/sensorEvents.ts#parseWallClock`); chart builders set
 `useUTC: true`. Never `new Date(string)` on a date-only string (Safari / UTC
 day shift); parse by hand or with dayjs formats.
 
+### Units
+
+`?units=us|si` (the API's names; absent = US) picks the **display** units. The header ⋯ menu's Units
+item switches it (custom `gdd_lo`/`gdd_hi` convert in the same patch: they are read in the display units),
+and the choice is saved (`mco-dashboard-units`) and copied into links without the key at boot. **Data stays
+US everywhere**: every request but the Downloader's asks for the API default, so parsing, column matching,
+cache keys and thresholds (calm wind, trace precipitation, risk classes) never change, and a switch refetches
+nothing. Ag compute is SI inside and converts at its display edge as before. Display edges convert with
+`core/units` (`fromUs`, `columnValue`, `unitLabel`, `displayUnit`, `depthText`) or the `core/variables/labels`
+formatters (`formatValue`, `formatReading`, `axisTitle`, `labelUnit`), which convert a US value of an id with a
+`q` quantity. `units()` reads `$store.url` through a reader main.ts injects, so a getter that formats re-runs on a
+switch and the chart host's model effect redraws. The Downloader sends `units` to the API, so its CSV carries the
+API's own SI headers (soil water potential in kPa).
+
 ## Theming reaches charts and maps through one event
 
 Kit tokens are CSS custom properties on `<html data-theme>`. Canvas renderers

@@ -115,6 +115,11 @@ const SCENARIOS = [
   { name: 'downloader', query: DL_QUERY, before: runDownload, evidence: { charts: 1 } },
   // Big screens: the dashboard (the strip, the two stacks, the rose, the map, the readings table).
   { name: 'dashboard', query: '?s=acebozem', viewports: [WIDE], evidence: { charts: 4, filled: ['[data-testid="dashboard-map"] tbody', '[data-testid="about-readings-table"] tbody'] } },
+  // Metric display units (?units=si; core/units): the same views with SI values and labels.
+  { name: 'now-si', query: '?s=acebozem&units=si', evidence: { charts: 1, filled: ['[data-testid="now-tiles"]'] } },
+  { name: 'variable-si', query: '?s=acebozem&v=air_temp&agg=daily&units=si#charts', evidence: { charts: 1, filled: ['[data-testid="variable-stats"] dl'] } },
+  { name: 'ag-gdd-si', query: '?s=acebozem&v=gdd&units=si#charts', evidence: { charts: 1 } },
+  { name: 'downloader-si', query: DL_QUERY.replace('#', '&units=si#'), before: runDownload, evidence: { charts: 1 } },
   { name: 'photo-dialog', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPhoto },
   { name: 'help-dialog', query: '?s=acebozem#latest', evidence: { charts: 1 }, after: openHelp },
 ]
