@@ -8,6 +8,7 @@ import Alpine from 'alpinejs'
 import { parseQcLevel, setQcOverride } from './core/api/qcLevel'
 import { legacyRedirect } from './core/router'
 import { readStation } from './core/stations/recent'
+import { readUnits, setUnitsSource } from './core/units'
 import { migrateLegacySearch, stationPathRedirect } from './core/url-schema'
 import { createDataStore } from './stores/data'
 import { browserStorage, createStationStore } from './stores/station'
@@ -124,6 +125,15 @@ if (!new URLSearchParams(location.search).has('s')) {
     replaceUrl(`?${params.toString().replace(/%2C/gi, ',')}`, location.hash)
   }
 }
+
+// No `?units=`: the saved choice (core/units). US is the default, so only SI is written.
+if (!new URLSearchParams(location.search).has('units') && readUnits(browserStorage()) === 'si') {
+  const params = new URLSearchParams(location.search)
+  params.set('units', 'si')
+  replaceUrl(`?${params.toString().replace(/%2C/gi, ',')}`, location.hash)
+}
+// Display units follow `?units=` (reactive: a getter that formats a value re-runs on a toggle).
+setUnitsSource(() => Alpine.store('url').state.units)
 
 /* 2. Stores. Order matters: each store's init() runs on registration and may
       read the stores above it (theme → url; station → url, data; view → url). ------- */

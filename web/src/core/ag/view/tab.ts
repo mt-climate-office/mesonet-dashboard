@@ -9,12 +9,13 @@ import type { RangeValue } from '../../controls/rangeModel'
 import { type DerivedVar, GDD_CROPS, SOIL_VAR_OPTIONS, isAgTool } from '../../params/ag'
 import { plainName } from '../../variables/labels'
 import { stationHasSwp } from '../../stations'
+import { unitLabel } from '../../units'
 import type { UrlKey, UrlState } from '../../url-schema'
 import { elementLabel } from '../../downloader/labels'
 import type { GddCrop, LocalDate } from '../contract'
 import { GDD_CUTOFFS_F } from '../compute/gdd'
 import { addDays } from '../data/parse'
-import { type GddCutoffState, SLIDER_NONE, parseGddCutoffs, sliderWrites, toSlider } from './gddCutoffs'
+import { type GddCutoffState, cutoffInUnits, parseGddCutoffs, sliderBounds, sliderWrites, toSlider } from './gddCutoffs'
 import { gddSeasonWindow } from './gddSeason'
 import type { Period, SoilProfileVar } from './labels'
 
@@ -30,7 +31,7 @@ const TIME_AGG = new Set<string>(['etr', 'feels_like', 'cci', 'swp', 'percent_sa
 /** Ag URL keys this module reads. */
 export type AgUrl = Pick<
   UrlState,
-  's' | 'v' | 'crop' | 'gdd_lo' | 'gdd_hi' | 'gdd_proj' | 'ag_time' | 'lt' | 'soilv' | 'annv' | 'ag_from' | 'ag_to'
+  's' | 'v' | 'crop' | 'gdd_lo' | 'gdd_hi' | 'gdd_proj' | 'ag_time' | 'lt' | 'soilv' | 'annv' | 'ag_from' | 'ag_to' | 'units'
 >
 
 export interface AgTab {
@@ -88,7 +89,7 @@ export function resolveAgTab(url: AgUrl, station: Station | undefined, today: Lo
     variableLabel: plainName(variable, variable),
     crop,
     cropLabel: GDD_CROPS.find((c) => c.value === crop)?.label ?? crop,
-    cut: parseGddCutoffs(crop, url.gdd_lo, url.gdd_hi),
+    cut: parseGddCutoffs(crop, url.gdd_lo, url.gdd_hi, url.units),
     swpOnly: SWP_ONLY.has(variable),
     hasSwp,
     showTimeAgg,
@@ -134,19 +135,21 @@ export function annualOptions(elements: readonly StationElement[]): { value: str
 
 /* ----------------------------------------------------------- GDD slider */
 
-const fmtCutoff = (f: number) => (Number.isFinite(f) ? `${f} °F` : 'no upper cutoff')
+/** A °F cutoff in the display units: "50 °F", "10 °C". */
+const fmtTemp = (f: number) => `${cutoffInUnits(f)} ${unitLabel('temp')}`
+const fmtCutoff = (f: number) => (Number.isFinite(f) ? fmtTemp(f) : 'no upper cutoff')
 
-/** Slider value (°F; high null = "no upper cutoff") for the current cutoffs. */
+/** Slider value (display units; high null = "no upper cutoff") for the current cutoffs. */
 export function sliderValue(t: Pick<AgTab, 'crop' | 'cut'>): RangeValue {
   const [cl, ch] = GDD_CUTOFFS_F[t.crop]
   const hi = toSlider(t.cut.hiF ?? ch)
-  return { low: toSlider(t.cut.loF ?? cl), high: hi >= SLIDER_NONE ? null : hi }
+  return { low: toSlider(t.cut.loF ?? cl), high: hi >= sliderBounds().none ? null : hi }
 }
 
 /** URL patch for a committed slider value: only a moved thumb is written. */
 export function sliderPatch(t: Pick<AgTab, 'crop' | 'cut'>, v: RangeValue): Partial<UrlState> {
   const prev = sliderValue(t)
-  const pos = (r: RangeValue) => [r.low, r.high ?? SLIDER_NONE] as const
+  const pos = (r: RangeValue) => [r.low, r.high ?? sliderBounds().none] as const
   const w = sliderWrites(t.crop, pos(prev), pos(v))
   const patch: Partial<UrlState> = {}
   if (w.lo !== undefined) patch.gdd_lo = w.lo
@@ -158,13 +161,13 @@ export function sliderPatch(t: Pick<AgTab, 'crop' | 'cut'>, v: RangeValue): Part
 export function cutoffSummary(t: Pick<AgTab, 'crop' | 'cropLabel' | 'cut'>): string {
   const [cl, ch] = GDD_CUTOFFS_F[t.crop]
   if (t.cut.custom) {
-    return `Custom cutoffs: ${t.cut.loF ?? cl} °F to ${fmtCutoff(t.cut.hiF ?? ch)}. Growth-stage labels are not shown.`
+    return `Custom cutoffs: ${fmtTemp(t.cut.loF ?? cl)} to ${fmtCutoff(t.cut.hiF ?? ch)}. Growth-stage labels are not shown.`
   }
   const ndawn =
     t.crop === 'wheat' || t.crop === 'barley'
-      ? `, switching to ${GDD_CUTOFFS_F[`${t.crop}2`][1]} °F at Haun stage 2 (NDAWN).`
+      ? `, switching to ${fmtTemp(GDD_CUTOFFS_F[`${t.crop}2`][1])} at Haun stage 2 (NDAWN).`
       : '.'
-  return `${t.cropLabel} cutoffs: ${cl} °F to ${fmtCutoff(ch)}${ndawn} Move the slider for custom cutoffs.`
+  return `${t.cropLabel} cutoffs: ${fmtTemp(cl)} to ${fmtCutoff(ch)}${ndawn} Move the slider for custom cutoffs.`
 }
 
 /* ------------------------------------------------------------- fix-ups */

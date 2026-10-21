@@ -12,10 +12,11 @@ import Alpine from 'alpinejs'
 import type { RangeValue } from '../../core/controls/rangeModel'
 import { GDD_CROPS } from '../../core/params/ag'
 import { NOT_PROJECTABLE, PROJECTION_OPTIONS, projectable } from '../../core/ag/view/projection'
-import { SLIDER_MAX, SLIDER_MIN } from '../../core/ag/view/gddCutoffs'
+import { sliderBounds } from '../../core/ag/view/gddCutoffs'
 import { denverToday } from '../../core/today'
 import { optionChips, type OptionChip, type OptionId } from '../../core/ag/view/summary'
 import { annualElement, annualOptions, cropPatch, cutoffSummary, pickOne, sliderPatch, sliderValue, urlFixups } from '../../core/ag/view/tab'
+import { unitLabel } from '../../core/units'
 import type { UrlState } from '../../core/url-schema'
 import { component } from '../component'
 import { currentTab, elementsResource, raw } from './shared'
@@ -48,7 +49,11 @@ export function agOptions() {
       { value: 'adult', label: 'Adult' },
       { value: 'newborn', label: 'Newborn' },
     ],
-    slider: { min: SLIDER_MIN, max: SLIDER_MAX, step: 1, allowNone: true, unit: '°F' },
+    /** The cutoff slider's range and unit in the display units (read when it mounts; options.html remounts it on a switch). */
+    get slider() {
+      const { min, max } = sliderBounds()
+      return { min, max, step: 1, allowNone: true, unit: unitLabel('temp') }
+    },
 
     init() {
       fx = Alpine.effect(() => {

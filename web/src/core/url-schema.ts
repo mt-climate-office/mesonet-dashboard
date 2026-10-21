@@ -3,12 +3,14 @@
  * its parser. Pure; `stores/url.ts` is the only caller that touches `location`.
  *
  * Key map (query param → meaning). Each tab owns its keys so state set on one
- * tab never leaks into another; only `s` (station) and `theme` are shared.
+ * tab never leaks into another; only `s` (station), `theme` and `units` are shared.
  *
  *   Shared     s          station id (raw; may be an NWSLI or mis-cased id
  *                         until stores/station.ts rewrites it)
  *              theme      dark | light | high-contrast (read first by the
  *                         inline anti-flash script; absent = saved/OS choice)
+ *              units      us | si: display units (the API's names; core/units).
+ *                         Absent = us; main.ts copies the saved choice in at boot
  *
  *   Charts     v          what Charts shows, one namespace: an Ag tool id
  *                         (core/params/ag AG_TOOL_IDS: gdd, etr, …) opens that
@@ -43,7 +45,8 @@
  *   Ag Tools   (the open tool is `v` above; old links' `var` is mapped by
  *              core/router.ts at boot)
  *              crop       GDD crop
- *              gdd_lo, gdd_hi  custom GDD cutoffs, °F (absent = the crop's)
+ *              gdd_lo, gdd_hi  custom GDD cutoffs in the display units, °F or
+ *                         °C (`units`; absent = the crop's)
  *              gdd_proj   GDD projection horizon: season | 30 | 60 | off
  *              ag_time    hourly | daily
  *              lt         livestock: adult | newborn
@@ -71,6 +74,7 @@
  * cards' `card`/`info`) are preserved as-is, so old links round-trip.
  */
 import { SELECTED_VARS } from './params/latest'
+import { UNITS } from './units'
 
 /* -------------------------------------------------------------------------- */
 /* Option lists and types                                                      */
@@ -182,6 +186,7 @@ export const URL_SCHEMA = {
   // Shared
   s: str(),
   theme: oneOf(THEMES, null),
+  units: oneOf(UNITS, 'us'),
   // Charts
   v: str(),
   view: oneOf(CHART_VIEWS, 'recent'),

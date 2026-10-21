@@ -27,6 +27,8 @@
         <span x-text="text('cutoffs')"></span><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
       </button>
       <div class="dash-popover-panel" id="ag-opt-cutoffs-panel" role="dialog" aria-label="Temperature cutoffs" hidden>
+        <!-- Keyed on the display units: the slider's range and unit are fixed at init, so a units switch remounts it. -->
+        <template x-for="u in [$store.url.state.units]" :key="u">
         <fieldset class="ctl-fieldset ctl-range" data-testid="ag-cutoffs"
                   x-data="rangeSlider({ ...slider, value: () => sliderValue(), onChange: (v) => setSlider(v), label: 'Temperature cutoffs', lowLabel: 'Base', highLabel: 'Upper cutoff' })">
           <legend class="ctl-legend" x-text="label"></legend>
@@ -39,6 +41,7 @@
             <input type="range" :id="ids.high" :min="cfg.min" :max="highMax()" :step="cfg.step" :value="highPosition()" :aria-valuetext="highText()" @input="onHigh($event)" @change="commit()">
           </div>
         </fieldset>
+        </template>
         <p class="ctl-note" data-testid="gdd-cutoff-mode" x-text="cutoffText()"></p>
         <button type="button" class="nav-btn ag-reset" x-show="tab.cut.custom" @click="resetCutoffs()" x-text="'Reset to ' + tab.cropLabel.toLowerCase() + ' cutoffs'"></button>
       </div>

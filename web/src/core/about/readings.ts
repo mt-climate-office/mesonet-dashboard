@@ -8,7 +8,7 @@
 import { ELEM_MAP } from '../params/latest'
 import { depthLabelFromColumn, variableForColumn } from '../params/columns'
 import { currentConditionsRows, pptSummaryRows } from '../cards/currentConditions'
-import { LABELS, formatValue } from '../variables/labels'
+import { LABELS, formatValue, labelUnit } from '../variables/labels'
 
 export interface Reading {
   /** The API column ("Soil VWC @ 4 in [%]"), or "Timestamp". */
@@ -60,7 +60,7 @@ export function readingValue(col: string, value: string): ReadingValue {
   if (!m || col === 'Timestamp') return { value, unit: '', note: '' }
   const note = m[2].trim()
   const id = labelId(col)
-  if (id) return { value: formatValue(id, Number(m[1]), 'table'), unit: LABELS[id].unit, note }
+  if (id) return { value: formatValue(id, Number(m[1]), 'table'), unit: labelUnit(id), note }
   const unit = /\[([^\]]+)\]/.exec(col)?.[1]
   return unit ? { value: m[1], unit, note } : { value, unit: '', note: '' }
 }

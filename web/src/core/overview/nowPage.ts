@@ -14,7 +14,7 @@ import { metersToFeet } from '../about/details'
 import type { StripPeriod } from '../charts/heroStrip'
 import { sparkline, type Sparkline, type SparkSeries } from '../charts/sparkline'
 import { parseWallClock } from '../sensorEvents'
-import { compassWord, formatReading, formatValue, LABELS } from '../variables/labels'
+import { compassWord, formatReading, formatValue, LABELS, labelUnit } from '../variables/labels'
 import { readConditions, type Conditions } from './conditions'
 import { buildHero, type HeroInput, type HeroView } from './hero'
 import { nowPrecip, type PrecipSummary } from './precip'
@@ -115,7 +115,7 @@ function windView(c: Conditions, gust: number | null): Pick<NowTileView, 'value'
   if (gust === null) return null
   const sub = `Peak gust ${formatReading('windgust', gust)} (24 h)`
   if (c.windMph !== null && c.windMph < CALM_MPH) return { value: 'Calm', unit: '', note: '', sub }
-  return { value: formatValue('wind_spd', c.windMph), unit: LABELS.wind_spd.unit, note: ['now', c.windDeg === null ? null : compassWord(c.windDeg)].filter(Boolean).join(' · '), sub }
+  return { value: formatValue('wind_spd', c.windMph), unit: labelUnit('wind_spd'), note: ['now', c.windDeg === null ? null : compassWord(c.windDeg)].filter(Boolean).join(' · '), sub }
 }
 
 function tileView(t: Tile, c: Conditions, input: NowPageInput, p: PrecipSummary, series: Partial<Record<SeriesKey, SparkSeries>>, gust: number | null): NowTileView {
@@ -126,7 +126,7 @@ function tileView(t: Tile, c: Conditions, input: NowPageInput, p: PrecipSummary,
     v: t.v,
     name: LABELS[t.v].name,
     value: formatValue(t.v, reading(t.id, c, p)),
-    unit: LABELS[t.v].unit,
+    unit: labelUnit(t.v),
     note: '',
     sub: sub(t.id, c, p),
     detail: t.id === 'precip' ? precipDetail(input, p) : '',
