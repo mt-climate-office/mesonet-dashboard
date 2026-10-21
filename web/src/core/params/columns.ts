@@ -2,6 +2,7 @@
  * Column-name normalisation and pure column/depth helpers shared by the
  * charts. Mirrors params.lab_swap from the legacy app.
  */
+import { type Units, depthsIn, displayUnit, units } from '../units'
 
 /**
  * Column-name normalisation applied to API responses. Mirrors params.lab_swap.
@@ -95,6 +96,15 @@ export function variableForColumn(col: string): string | null {
 export function depthLabelFromColumn(col: string): string | null {
   const m = col.match(/@\s*([0-9]+\s*in)/)
   return m ? m[1].replace(/\s+/g, ' ') : null
+}
+
+/**
+ * A (LAB_SWAP-named, US) column name as shown in `u`: its unit and soil depth converted
+ * ("Soil Temperature @ 4 in [°F]" → "Soil Temperature @ 10 cm [°C]"); a display string only, never a key.
+ */
+export function columnInUnits(col: string, u: Units = units()): string {
+  if (u !== 'si') return col
+  return depthsIn(col, u).replace(/\[([^\]]+)\]\s*$/, (_, unit: string) => `[${displayUnit(unit, col, u)}]`)
 }
 
 /**

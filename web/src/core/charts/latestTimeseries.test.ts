@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { ObservationRow } from '../api'
 import { buildTimeseriesModel } from '../models/timeseries'
 import type { StationNormals } from '../normals'
@@ -7,6 +7,7 @@ import { LAYOUT, TABLE_ROW_LIMIT, keyedGaps, latestTimeseriesChart, latestTimese
 import { LTTB_THRESHOLD } from './series'
 import { testCtx } from './testing'
 import { paint } from './theme'
+import { setUnitsSource } from '../units'
 
 type S = { id?: string; type?: string; name?: string; xAxisIndex?: number; yAxisIndex?: number; color?: string; data?: unknown[]; sampling?: string; lineStyle?: { type?: string }; symbolRotate?: number }
 type Opt = { grid: { top: number; height: number }[]; xAxis: { min: number; max: number; axisLabel: { show: boolean } }[]; yAxis: { name: string; min?: number; max?: number }[]; dataZoom: { xAxisIndex: number[]; startValue: number; endValue: number }[]; series: S[]; graphic: { style?: { text?: string }; children?: { style?: { text?: string } }[] }[]; useUTC: boolean; tooltip: { formatter: (p: unknown) => string } }
@@ -326,5 +327,42 @@ describe('latestTimeseriesTable', () => {
   })
   it('formats small values with 3 decimals', () => {
     expect([fmtValue(0.012), fmtValue(12.345), fmtValue(0)]).toEqual(['0.012', '12.35', '0'])
+  })
+})
+
+describe('latestTimeseries in SI (units=si)', () => {
+  afterEach(() => setUnitsSource(() => 'us'))
+  const si = () => setUnitsSource(() => 'si')
+
+  it('draws values, axis titles and tooltips in SI; the model stays US', () => {
+    si()
+    const m = model(hourRows(3, (i) => ({ 'Air Temperature @ 2 m [°F]': 50 + i * 9, 'Wind Speed [mi/hr]': 10 })), ['Air Temperature', 'Wind Speed'])
+    const o = build(m)
+    const temp = dataSeries(o).find((x) => x.id === 'p0:Air Temperature @ 2 m [°F]')!
+    expect((temp.data as number[][]).map((d) => d[1])).toEqual([10, 15, 20])
+    expect(m.ts.panels[0].series[0].values).toEqual([50, 59, 68])
+    expect(o.yAxis[0].name).toContain('(°C)')
+    const html = o.tooltip.formatter([{ seriesId: 'p1:Wind Speed [mi/hr]', value: [view[0], 4.47], axisValue: view[0], marker: '' }])
+    expect(html).toContain('4.47 m/s')
+  })
+  it('soil depths key and label in cm', () => {
+    si()
+    const row = (build(model(hourRows(3, soil), ['Soil VWC'])).graphic as { children?: { style?: { text?: string } }[] }[])
+      .filter((g) => g.children)
+      .map((g) => g.children![1].style?.text)
+    expect(row).toEqual(['5 cm', '10 cm', '50 cm'])
+  })
+  it('the zero-based floor follows the units (0.05 in → 1.27 mm: a dry day stays low)', () => {
+    si()
+    const o = build(model(hourRows(3, () => ({ 'Precipitation [in]': 0 })), ['Precipitation']))
+    expect(o.yAxis[0].min).toBe(0)
+    expect(o.yAxis[0].max).toBeGreaterThanOrEqual(1.27)
+    expect(o.yAxis[0].max).toBeLessThan(2)
+  })
+  it('the table twin converts once (from the US model)', () => {
+    si()
+    const t = latestTimeseriesTable(model(hourRows(3, met), ['Precipitation', 'Air Temperature']))
+    expect(t.columns).toEqual(['Time (MT)', 'Precipitation (mm)', 'Air temperature (°C)'])
+    expect(t.rows[0]).toEqual(['2026-07-01 00:00', '0.0', '15.6'])
   })
 })

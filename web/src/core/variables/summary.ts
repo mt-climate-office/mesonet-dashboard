@@ -17,6 +17,7 @@ import { parseWallClock } from '../sensorEvents'
 import type { Variable } from './catalog'
 import { last24h } from './range'
 import { WIND_DIRECTION, WRAP_DEGREES } from './direction'
+import { columnValue, depthsIn, displayUnit } from '../units'
 import { LABELS, compassWord, formatReading, plainName } from './labels'
 import { fmtStat, prevailing } from './stats'
 
@@ -67,9 +68,11 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
     const col = primaryColumn(hourlyCols, v.name)
     const series = col ? { t: last48.map((x) => x.t), v: last48.map((x) => num(x.r[col])) } : null
     const vals = series ? series.v.filter((x): x is number => x !== null) : []
-    const spark = series ? sparkline(series, sparkOptions(v, vals)) : null
+    // The sparkline is drawn in the display units (its zero-based floor is: core/charts/style `yBounds`); text formats from US.
+    const shown = series && col ? { t: series.t, v: series.v.map((x) => columnValue(col, x)) } : null
+    const spark = shown ? sparkline(shown, sparkOptions(v, shown.v.filter((x): x is number => x !== null))) : null
     const unit = col ? unitOf(col) : ''
-    const fmt = (x: number, u: string) => `${fmtStat(x)}${u ? ` ${u}` : ''}`
+    const fmt = (x: number, u: string) => `${fmtStat(columnValue(col ?? '', x) ?? x)}${u ? ` ${displayUnit(u, col ?? '')}` : ''}`
     // The plain unit and precision where labels.ts knows the variable (totals at table precision, as the stats).
     const show = (x: number, u: string, where: 'display' | 'table' = 'display') =>
       v.id === 'wind_dir' ? compassWord(x) : v.id in LABELS ? formatReading(v.id, x, where) : fmt(x, u)
@@ -93,7 +96,7 @@ export function variableRows(vars: readonly Variable[], latest: Record<string, u
     const value = now ?? newest
     const valueCol = now !== null ? latestCol : col
     const depth = valueCol ? depthLabelFromColumn(valueCol) : null
-    return { id: v.id, name: plainName(v.id, v.name), value: value === null ? '—' : show(value, unitOf(valueCol ?? '')), note: depth ? `at ${depth}` : '', spark, sparkLabel }
+    return { id: v.id, name: plainName(v.id, v.name), value: value === null ? '—' : show(value, unitOf(valueCol ?? '')), note: depth ? `at ${depthsIn(depth)}` : '', spark, sparkLabel }
   })
 }
 
@@ -119,5 +122,5 @@ export function currentReading(v: Variable, latest: Record<string, unknown> | un
   const value = col ? num(latest?.[col]) : null
   if (col === null || value === null) return null
   const depth = depthLabelFromColumn(col)
-  return `${v.id === 'wind_dir' ? compassWord(value) : formatReading(v.id, value)}${depth ? ` at ${depth}` : ''}`
+  return `${v.id === 'wind_dir' ? compassWord(value) : formatReading(v.id, value)}${depth ? ` at ${depthsIn(depth)}` : ''}`
 }

@@ -15,7 +15,7 @@ import { loadErrorText } from '../../core/loadError'
 import { buildWindRoseModel, windRoseStats, type WindRoseModel, type WindRoseStat } from '../../core/models/windRose'
 import { chartWindow } from '../../core/models/timeseries'
 import { CALM_MPH } from '../../core/overview/summary'
-import { pageRange, roseAgg, roseAnnouncement, roseRequest, roseRows, spanDays, type PageRange } from '../../core/variables'
+import { formatReading, pageRange, roseAgg, roseAnnouncement, roseRequest, roseRows, spanDays, type PageRange } from '../../core/variables'
 import type { ChartBindings } from './chart'
 import { component } from '../component'
 import { announce } from '../shell/live'
@@ -67,7 +67,7 @@ export function variableRose(o: { part: 'chart' | 'stats' }) {
     status(): PlotStatus {
       const m = this.model()
       const s = plotStatus({ empty: null, waiting: !stations().id, record: this.resource()?.status ?? null, hasModel: !!m })
-      return s.kind === 'ready' && m && m.n === 0 ? { kind: 'empty', title: `Calm throughout (under ${CALM_MPH} mph): nothing to draw.` } : s
+      return s.kind === 'ready' && m && m.n === 0 ? { kind: 'empty', title: `Calm throughout (under ${formatReading('wind_spd', CALM_MPH)}): nothing to draw.` } : s
     },
     loadError(): string {
       const res = this.resource()

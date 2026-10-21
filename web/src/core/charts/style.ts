@@ -5,6 +5,7 @@
  */
 import type { DataZoomComponentOption, GridComponentOption, LineSeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { Nullable } from '../ag/contract'
+import { type Quantity, fromUs } from '../units'
 import { grid, timeAxis } from './axes'
 import type { ChartContext } from './types'
 
@@ -87,6 +88,19 @@ const ZERO: Record<string, number> = {
   'Solar Radiation': 100,
   'Snow Depth': 1,
 }
+/** The quantity of each zero-based floor above (US): the floor follows the display units (core/units). */
+const ZERO_QUANTITY: Record<string, Quantity> = {
+  Precipitation: 'precip',
+  'Reference ET': 'precip',
+  'Max Precip Rate': 'rate',
+  'Wind Speed': 'speed',
+  'Gust Speed': 'speed',
+  'Snow Depth': 'snow',
+}
+const zeroFloor = (variable: string) => {
+  const q = ZERO_QUANTITY[variable]
+  return q ? fromUs(q, ZERO[variable]) : ZERO[variable]
+}
 const FIXED: Record<string, [number, number, number]> = {
   'Relative Humidity': [0, 100, 25],
   'Wind Direction': [0, 360, 90],
@@ -153,7 +167,7 @@ export function yBounds(variable: string, lo: number | null, hi: number | null):
   const fixed = FIXED[variable]
   if (fixed) return { min: fixed[0], max: fixed[1], interval: fixed[2] }
   if (lo == null || hi == null || !Number.isFinite(lo) || !Number.isFinite(hi)) return null
-  if (variable in ZERO) return roundOut(0, Math.max(hi * (1 + Y_PAD), ZERO[variable]))
+  if (variable in ZERO) return roundOut(0, Math.max(hi * (1 + Y_PAD), zeroFloor(variable)))
   const span = hi - lo || Math.max(Math.abs(hi) * 0.1, 1)
   const pad = span * Y_PAD
   const bottom = NON_NEGATIVE.has(variable) && lo >= 0 ? Math.max(0, lo - pad) : lo - pad

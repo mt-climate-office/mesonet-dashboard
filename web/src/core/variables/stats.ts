@@ -1,7 +1,7 @@
 /**
  * The variable page's stats card: low / high / average of each plotted column
  * over the visible window, or the total for summed variables (precipitation,
- * reference ET). Input is one core/models/timeseries panel (display units).
+ * reference ET). Input is one core/models/timeseries panel (US); values show in the display units.
  * With a daily low–high band (band.ts), Low and High are the true extremes
  * from the band, not the extremes of the daily means. Wind direction has one
  * stat, its prevailing direction (a vector mean, core/variables/direction):
@@ -9,6 +9,7 @@
  */
 import { arrayLabel, type TimeseriesPanel } from '../models/timeseries'
 import { PREVAILING_MIN_STRENGTH, WIND_DIRECTION, circularMean } from './direction'
+import { columnValue, depthsIn, displayUnit } from '../units'
 import { LABELS, compassWord, formatReading } from './labels'
 
 export interface StatItem {
@@ -63,10 +64,12 @@ export function panelStats(
     }
     // A total keeps the day so far; averages of whole days leave it out.
     const vals = within(s.values, !sum)
-    const unit = unitOf(s.name)
+    const unit = displayUnit(unitOf(s.name), s.name)
     const plain = id !== undefined && id in LABELS
-    const fmt = (v: number | null) => (v === null ? '—' : plain ? formatReading(id, v, 'table') : `${fmtStat(v)}${unit ? ` ${unit}` : ''}`)
-    const label = single ? '' : s.depth && s.probe ? arrayLabel(s.depth, s.probe) : (s.depth ?? s.name.replace(/\s*\[[^\]]*\]\s*$/, ''))
+    // US in; formatReading converts by id, other columns by their unit.
+    const fmt = (v: number | null) =>
+      v === null ? '—' : plain ? formatReading(id, v, 'table') : `${fmtStat(columnValue(s.name, v) ?? v)}${unit ? ` ${unit}` : ''}`
+    const label = single ? '' : s.depth && s.probe ? arrayLabel(s.depth, s.probe) : s.depth ? depthsIn(s.depth) : s.name.replace(/\s*\[[^\]]*\]\s*$/, '')
     if (sum) return { label, items: [{ label: 'Total', value: fmt(vals.length ? vals.reduce((a, b) => a + b, 0) : null) }] }
     if (panel.variable === WIND_DIRECTION) return { label, items: [{ label: 'Prevailing', value: prevailing(vals) }] }
     // A reduce, not Math.min(...vals): a long raw window would overflow the argument list.
