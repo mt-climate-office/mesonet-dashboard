@@ -5,7 +5,7 @@ import { SWP_CAPPED_SHARE, annualAxisLabel, depthLabel, dropCappedDepths, fromSi
 // Ported from web/src/features/ag/figures/figures.test.ts (the renderer-free parts).
 describe('Ag display helpers', () => {
   it('depth labels use the dashboard inch names', () => {
-    expect([5, 10, 20, 50, 70, 91, 100].map(depthLabel)).toEqual([
+    expect([5, 10, 20, 50, 70, 91, 100].map((cm) => depthLabel(cm))).toEqual([
       '2 in', '4 in', '8 in', '20 in', '28 in', '36 in', '40 in',
     ])
   })
