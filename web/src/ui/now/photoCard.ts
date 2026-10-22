@@ -1,5 +1,6 @@
 /**
- * `x-data="photoCard"`: Now's photos from the data2 archive only (core/photos, view model core/cards/photo).
+ * `x-data="photoCard"`: Now's photos from the data2 archive only (the kit's MCO.photos via core/photos, view
+ * model core/cards/photo), public views and range only (N, E, S, W from 2026-10-22, website D7).
  * The tile is a carousel of the newest frame of each direction (core/cards `photoSlides`; swipe, ‹ › or the
  * dots, ui/layout/carousel); a slide opens a kit dialog on that direction, with direction, day and time
  * pickers over the webp_large frames and "Download original". Closing the dialog drops the picks.
@@ -7,7 +8,7 @@
 import Alpine from 'alpinejs'
 import { derivedKey, isRecentDay, knownFrames, noCameraImages, photoDay, photoMessage, photoMinDay, photoPick, photoSlides, photoState, photoTimeOptions, photoTitle, type PhotoPick, type PhotoStateInput } from '../../core/cards'
 import { denverToday } from '../../core/today'
-import { basename, framesFor, type PhotoFrame, type StationCamera } from '../../core/photos'
+import { photos, type PhotoFrame, type StationCamera } from '../../core/photos'
 import type { SegmentedOption } from '../controls/segmented'
 import type { SelectOption } from '../controls/timeSelect'
 import { component } from '../component'
@@ -77,7 +78,7 @@ export function photoCard() {
       if (!s || !cam) return null
       const month = monthFrames(s, cam, this.day.slice(0, 7))
       if (!month.data) return { status: month.status, data: undefined }
-      const frames = framesFor(month.data, this.day)
+      const frames = photos().framesFor(month.data, this.day)
       const key = derivedKey(frames)
       if (!key) return { status: 'success', data: frames }
       // Until (or unless) the derived WebPs are confirmed, show the frames whose WebP the manifest names.
@@ -150,7 +151,8 @@ export function photoCard() {
     },
 
     minDay(): string | null {
-      return this.cam ? photoMinDay(this.cam) : null
+      const s = photoSchedule().data
+      return s && this.cam ? photoMinDay(s, this.cam) : null
     },
     directionOptions(): SegmentedOption[] {
       const p = this.pick
@@ -204,7 +206,7 @@ export function photoCard() {
 
     /** Archive basename of the shown WebP (the download file name). */
     fileName(): string {
-      return this.pick?.active ? basename(this.pick.active.webpUrl) : ''
+      return this.pick?.active ? photos().basename(this.pick.active.webpUrl) : ''
     },
 
     /**
@@ -218,7 +220,7 @@ export function photoCard() {
       if (!url || blob?.url !== url || !blob.data) return
       e.preventDefault()
       const href = URL.createObjectURL(blob.data)
-      const a = Object.assign(document.createElement('a'), { href, download: basename(url) })
+      const a = Object.assign(document.createElement('a'), { href, download: photos().basename(url) })
       document.body.append(a)
       a.click()
       a.remove()

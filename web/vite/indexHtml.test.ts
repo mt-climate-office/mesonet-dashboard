@@ -36,14 +36,14 @@ describe('index.html', () => {
   it('pins every kit and MapLibre tag with integrity + crossorigin', () => {
     const tags = html.match(/<(?:link|script)[^>]+(?:mco-web-style@|maplibre-gl@)[^>]*>/g) ?? []
     const pinned = tags.filter((t) => !t.includes('rel="preload"') && !t.includes('rel="icon"') && !t.includes('apple-touch-icon'))
-    expect(pinned.length).toBe(6)
+    expect(pinned.length).toBe(7)
     for (const t of pinned) {
       expect(t).toMatch(/integrity="sha384-[A-Za-z0-9+/=]+"/)
       expect(t).toContain('crossorigin="anonymous"')
       expect(t).not.toContain('@latest')
     }
     const versions = new Set([...html.matchAll(/mco-web-style@([\d.]+)/g)].map((m) => m[1]))
-    expect([...versions]).toEqual(['0.11.3'])
+    expect([...versions]).toEqual(['0.14.0'])
     const maplibre = new Set([...html.matchAll(/maplibre-gl@([\d.]+)/g)].map((m) => m[1]))
     expect([...maplibre]).toEqual(['6.11.2'])
   })

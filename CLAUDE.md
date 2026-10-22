@@ -11,4 +11,4 @@ hexes), --accent is fill-only, aria-pressed drives toggle styling, canvas
 data needs a live region + sr-only table twin. To change shared styling,
 change the kit and bump the pinned version here; never patch a local copy.
 
-Kit version pinned: **@0.11.3** (`web/index.html`; MapLibre 6.11.2 through the kit's import map).
+Kit version pinned: **@0.14.0** (`web/index.html`; MapLibre 6.11.2 through the kit's import map). Station photos are the kit's `MCO.photos` (`photos/mco-photos.js`), typed in `web/src/types/mco-photos.d.ts`; the vitest suite loads the same pinned, SRI-checked files (`web/test/kit.ts`). No TypeScript copy of kit logic.

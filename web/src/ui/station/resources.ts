@@ -10,31 +10,23 @@ import type { Resource } from '../../core/cache'
 import { fetchOnePagers, ONE_PAGERS_STALE_MS, type WindRoseRequest } from '../../core/cards'
 import { configKey, TTL } from '../../core/latest'
 import { denverToday } from '../../core/today'
-import {
-  confirmDerived,
-  fetchLatestFrames,
-  fetchMonthFrames,
-  fetchSchedule,
-  type PhotoFrame,
-  type PhotoSchedule,
-  type StationCamera,
-} from '../../core/photos'
+import { photos, type PhotoFrame, type PhotoSchedule, type StationCamera } from '../../core/photos'
 
 const MIN = 60_000
 /** `live`: time-sensitive, re-read on the freshness tick (stores/data.ts). */
 const cached = <T>(key: string, fn: () => Promise<T>, ttl: number, live = false): Resource<T> =>
   Alpine.store('data').cached(key, fn, { ttl, live })
 
-/** data2 camera registry. */
-export const photoSchedule = () => cached('photo:schedule', () => fetchSchedule(), 60 * MIN)
+/** data2 camera registry, public view (MCO.photos.load; `fresh` so each refetch after the TTL is a new read). */
+export const photoSchedule = () => cached('photo:schedule', () => photos().load({ fresh: true }), 60 * MIN)
 
 /** Today + yesterday (local) frames from the live bucket listings. */
 export const latestFrames = (s: PhotoSchedule, cam: StationCamera) =>
-  cached(`photo:latest:${cam.station}`, () => fetchLatestFrames(s, cam), 5 * MIN, true)
+  cached(`photo:latest:${cam.station}`, () => photos().fetchLatestFrames(s, cam), 5 * MIN, true)
 
 /** One local month's manifest (`YYYY-MM`); the current month refreshes, past months never change. */
 export const monthFrames = (s: PhotoSchedule, cam: StationCamera, ym: string) =>
-  cached(`photo:month:${cam.station}:${ym}`, () => fetchMonthFrames(s, cam, ym), ym === denverToday().slice(0, 7) ? 5 * MIN : Infinity)
+  cached(`photo:month:${cam.station}:${ym}`, () => photos().fetchMonthFrames(s, cam, ym), ym === denverToday().slice(0, 7) ? 5 * MIN : Infinity)
 
 /**
  * A past day's frames with derived WebPs confirmed; `derived` is core/cards/photo `derivedKey(frames)`.
@@ -42,7 +34,7 @@ export const monthFrames = (s: PhotoSchedule, cam: StationCamera, ym: string) =>
  * forever; only a fully confirmed day is cached with no expiry.
  */
 export const confirmedDay = (s: PhotoSchedule, cam: StationCamera, day: string, derived: string, frames: PhotoFrame[]) =>
-  cached(`photo:confirm:${cam.station}:${day}:${derived}`, () => confirmDerived(s, cam, frames, { strict: true }), Infinity)
+  cached(`photo:confirm:${cam.station}:${day}:${derived}`, () => photos().confirmDerived(s, cam, frames, { strict: true }), Infinity)
 
 /** Newest observation row(s) for Current Conditions. */
 export const latestObs = (station: string) => cached(`latest:${station}`, () => getStationLatest(station), 5 * MIN, true)
