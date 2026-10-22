@@ -4,9 +4,9 @@ import { SWP_CAPPED_SHARE, annualAxisLabel, depthLabel, dropCappedDepths, fromSi
 
 // Ported from web/src/features/ag/figures/figures.test.ts (the renderer-free parts).
 describe('Ag display helpers', () => {
-  it('depth labels use the dashboard inch names', () => {
-    expect([5, 10, 20, 50, 70, 91, 100].map(depthLabel)).toEqual([
-      '2 in', '4 in', '8 in', '20 in', '28 in', '36 in', '40 in',
+  it('depth labels are the probe’s metric depth', () => {
+    expect([5, 10, 20, 50, 70, 91, 100].map((cm) => depthLabel(cm))).toEqual([
+      '5 cm', '10 cm', '20 cm', '50 cm', '70 cm', '91 cm', '100 cm',
     ])
   })
 
@@ -19,8 +19,8 @@ describe('Ag display helpers', () => {
 
   it('annual axis labels in plain words and units', () => {
     expect(annualAxisLabel('Total Precipitation [in]', true)).toBe('Cumulative precipitation (in)')
-    expect(annualAxisLabel('Average Air Temperature @ 2 m [°F]', false)).toBe('Air temperature at 6.6 ft (°F)')
-    expect(annualAxisLabel('Average Wind Speed @ 10 m [mi/hr]', false)).toBe('Wind at 33 ft (mph)')
+    expect(annualAxisLabel('Average Air Temperature @ 2 m [°F]', false)).toBe('Air temperature at 2 m (°F)')
+    expect(annualAxisLabel('Average Wind Speed @ 10 m [mi/hr]', false)).toBe('Wind at 10 m (mph)')
   })
 
   it('fromSi inverts the data layer conversions', () => {
@@ -54,8 +54,8 @@ describe('dropCappedDepths (SWP chart)', () => {
     expect(out.series.kPa).toEqual([s.kPa[0]])
     expect(out.series.clipped).toHaveLength(1)
     expect(out.notes).toEqual([
-      '4 in: drier than -1,000 bar for nearly the whole period, so it is not drawn.',
-      '40 in: drier than -1,000 bar for the whole period, so it is not drawn.',
+      '10 cm: drier than -1,000 bar for nearly the whole period, so it is not drawn.',
+      '100 cm: drier than -1,000 bar for the whole period, so it is not drawn.',
     ])
   })
   it('keeps a depth under 90% on the cap, and one with no readings', () => {

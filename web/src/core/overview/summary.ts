@@ -94,10 +94,10 @@ export function daysSincePrecip(p: PrecipSummary, hourly: readonly ObservationRo
   return null
 }
 
-/** "0.12 in of precipitation today" ("precipitation today" without an amount), "no precipitation since yesterday", "no precipitation in 4 days", "no precipitation in over a week", or null. */
+/** "0.12 in of precipitation today" ("3.0 mm …" in SI; "precipitation today" without an amount), "no precipitation since yesterday", "no precipitation in 4 days", "no precipitation in over a week", or null. */
 export function precipPhrase(todayIn: number | null, days: number | null): string | null {
   if (days === null) return null
-  if (days === 0) return todayIn !== null && todayIn >= PRECIP_MIN_IN ? `${todayIn.toFixed(2)} in of precipitation today` : 'precipitation today'
+  if (days === 0) return todayIn !== null && todayIn >= PRECIP_MIN_IN ? `${formatReading('ppt', todayIn)} of precipitation today` : 'precipitation today'
   if (days > DRY_CAP_DAYS) return 'no precipitation in over a week'
   return days === 1 ? 'no precipitation since yesterday' : `no precipitation in ${days} days`
 }

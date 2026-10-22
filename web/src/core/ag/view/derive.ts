@@ -14,13 +14,12 @@ import type {
 import {
   type AnnualTrace,
   applyFrozenMask,
-  cToF,
   frozenMask,
   groupByYear,
   isCumulativeVariable,
 } from '../compute'
 import type { AnnualDaily } from '../data'
-import { type SoilProfileVar, annualAxisLabel, fromSi, parseLabel, swpBar } from './labels'
+import { type SoilProfileVar, annualAxisLabel, fromSi, parseLabel, swpBar, swpOut, tempOut } from './labels'
 
 /* ------------------------------------------------------ sensor coverage */
 
@@ -122,7 +121,7 @@ export function profileValues(
   }
   switch (variable) {
     case 'soil_temp':
-      return done(soil.depthsCm, soil.tempC.map((col) => col.map((v) => cToF(v))), false)
+      return done(soil.depthsCm, soil.tempC.map((col) => col.map((v) => tempOut(v))), false)
     case 'soil_vwc':
       return done(soil.depthsCm, soil.vwcPct, true)
     case 'soil_blk_ec': {
@@ -132,7 +131,7 @@ export function profileValues(
     case 'swp': {
       const s = extra.swp
       if (!s) return null
-      return done(s.depthsCm, swpBar(s).bar, true)
+      return done(s.depthsCm, swpBar(s).bar.map((col) => col.map((v) => swpOut(v))), true)
     }
     case 'percent_saturation': {
       const p = extra.pct
@@ -161,7 +160,7 @@ export interface AnnualResult {
 export function annualTraces(element: string, years: AnnualDaily[]): AnnualResult {
   const cumulative = isCumulativeVariable(element)
   const header = years.flatMap((y) => y.years).find((y) => y.header)?.header ?? null
-  const conv = fromSi(parseLabel(header).unit)
+  const conv = fromSi(parseLabel(header).unit, header ?? '')
   const traces: AnnualTrace[] = []
   for (const res of years) {
     for (const y of res.years) {

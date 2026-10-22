@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { setUnitsSource } from '../units'
 import type { TimeseriesPanel } from '../models/timeseries'
 import { fmtStat, panelStats, prevailing } from './stats'
 
@@ -57,7 +58,7 @@ describe('panelStats', () => {
       { name: 'Soil VWC @ 2 in [%]', depth: '2 in', values: [10, 11, 12, 13] },
       { name: 'Soil VWC @ 4 in [%]', depth: '4 in', values: [null, null, null, null] },
     ]), x, [0, 40], false)
-    expect(rows.map((r) => r.label)).toEqual(['2 in', '4 in'])
+    expect(rows.map((r) => r.label)).toEqual(['5 cm', '10 cm'])
     expect(rows[1].items[0].value).toBe('—')
   })
   it('in the plain unit and table precision with the variable id', () => {
@@ -73,5 +74,18 @@ describe('panelStats', () => {
   })
   it('formats by magnitude', () => {
     expect([0.0349, 5.678, 56.78, 848.93, -12.34].map(fmtStat)).toEqual(['0.03', '5.68', '56.8', '849', '-12.3'])
+  })
+})
+
+describe('panelStats in SI', () => {
+  afterEach(() => setUnitsSource(() => 'us'))
+  it('converts from the US panel once: by id, else by the column unit; depths in cm', () => {
+    setUnitsSource(() => 'si')
+    const [row] = panelStats(panel([{ name: 'Air Temperature [°F]', values: [50, 68] }]), [0, 10], [0, 20], false, 'air_temp')
+    expect(row.items.map((i) => i.value)).toEqual(['10.0 °C', '20.0 °C', '15.0 °C'])
+    const [plain] = panelStats(panel([{ name: 'Air Temperature [°F]', values: [50, 68] }]), [0, 10], [0, 20], false)
+    expect(plain.items[0].value).toBe('10 °C')
+    const rows = panelStats(panel([{ name: 'Soil VWC @ 2 in [%]', depth: '2 in', values: [10] }, { name: 'Soil VWC @ 4 in [%]', depth: '4 in', values: [12] }]), [0], [0, 10], false, 'soil_vwc')
+    expect(rows.map((r) => r.label)).toEqual(['5 cm', '10 cm'])
   })
 })

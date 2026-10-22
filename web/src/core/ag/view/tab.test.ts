@@ -84,7 +84,7 @@ describe('patches', () => {
 })
 
 describe('annual options', () => {
-  it('annual: unique elements, US-unit labels, natural sort', () => {
+  it('annual: unique elements, metric heights and depths, natural sort', () => {
     const els = [
       { element: 'soil_vwc_1000', description_short: 'Soil VWC @ -100 cm' },
       { element: 'soil_vwc_0010', description_short: 'Soil VWC @ -10 cm' },
@@ -92,9 +92,9 @@ describe('annual options', () => {
       { element: 'air_temp_0200', description_short: 'Air Temperature @ 2 m' },
     ] as StationElement[]
     expect(annualOptions(els)).toEqual([
-      { value: 'air_temp_0200', label: 'Air temperature at 6.6 ft' },
-      { value: 'soil_vwc_0010', label: 'Soil moisture at 4 in' },
-      { value: 'soil_vwc_1000', label: 'Soil moisture at 40 in' },
+      { value: 'air_temp_0200', label: 'Air temperature at 2 m' },
+      { value: 'soil_vwc_0010', label: 'Soil moisture at 10 cm' },
+      { value: 'soil_vwc_1000', label: 'Soil moisture at 100 cm' },
     ])
   })
 })

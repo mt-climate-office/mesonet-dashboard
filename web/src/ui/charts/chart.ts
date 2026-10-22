@@ -12,6 +12,7 @@ import { echartsTheme, readChartTheme } from '../../core/charts/theme'
 import type { ChartBuilder, ChartContext, ChartTable, ChartTheme } from '../../core/charts/types'
 import { type Range, type ViewState, carryState, categoryMs, fromAxisRange, sameRange, toAxisRange } from '../../core/charts/zoom'
 import { THEME_EVENT, isTheme } from '../../core/theme'
+import { units } from '../../core/units'
 import { component } from '../component'
 
 export interface ChartOptions<M> {
@@ -301,7 +302,7 @@ export class ChartHost<M> {
 
 /**
  * `Alpine.data('chart', chart)`: `x-data="chart({ builder, table, label, model: () => …, onZoom, range })"`.
- * Two effects: `model()` changes re-render; `range()` changes only zoom. Disposes on destroy.
+ * Two effects: `model()` or display-unit changes re-render; `range()` changes only zoom. Disposes on destroy.
  */
 export function chart<M>(bind: ChartBindings<M>) {
   let host: ChartHost<M> | null = null
@@ -312,6 +313,8 @@ export function chart<M>(bind: ChartBindings<M>) {
       effects.push(
         Alpine.effect(() => {
           const m = bind.model()
+          // Builders format values and axis names in the display units (core/units): read here so a switch redraws.
+          units()
           void host?.render(m == null ? null : Alpine.raw(m))
         }),
       )

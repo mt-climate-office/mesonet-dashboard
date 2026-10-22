@@ -7,10 +7,10 @@
  * `windRoseLargeChart` (the Wind direction page's Rose view, as large as the card allows).
  */
 import type { EChartsOption } from 'echarts'
-import { directionTotals, shareText, type WindRoseModel } from '../models/windRose'
-import { CALM_MPH } from '../overview/summary'
+import { calmText, directionTotals, shareText, type WindRoseModel } from '../models/windRose'
 import { binColors } from '../palette'
 import { dateRangeText } from '../ag/view/summary'
+import { type Units, unitLabel } from '../units'
 import { escapeHtml } from './format'
 import { tooltipBase } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
@@ -27,8 +27,8 @@ export function windRoseTitle(m: WindRoseModel, last24h = false): string | null 
   return `Wind, ${a.slice(0, 4) === b.slice(0, 4) ? range.replace(/, \d{4}$/, '') : range}`
 }
 
-/** Legend / tooltip name of a bin: "4 – 6 mph". */
-export const binName = (label: string): string => `${label} mph`
+/** Legend / tooltip name of a bin: "4 – 6 mph", "1.3 – 2.2 m/s" (the model's units). */
+export const binName = (label: string, u: Units = 'us'): string => `${label} ${unitLabel('speed', u)}`
 
 /** Only the 8 principal points are labelled (legacy tickvals 0, 45, … 315). */
 const PRINCIPAL = new Set(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'])
@@ -50,7 +50,7 @@ const percentOf = (count: number, m: WindRoseModel): number => (m.n + m.calm ? (
 /** The shared option; `layout` places the rose and its key. */
 function roseOption(m: WindRoseModel, ctx: ChartContext, layout: { polar: object; legend: object }): EChartsOption {
   const colors = binColors(m.bins.length, ctx.theme.name)
-  const names = m.bins.map((b) => binName(b.label))
+  const names = m.bins.map((b) => binName(b.label, m.units))
   // One category spans 22.5°; start half a band past 12 o'clock so N is centred at the top.
   const startAngle = 90 + 360 / m.directions.length / 2
   return {
@@ -138,10 +138,10 @@ export const windRoseFitChart: ChartBuilder<WindRoseModel> = (m, ctx) =>
  */
 export function windRoseTable(m: WindRoseModel, last24h = false): ChartTable {
   const totals = directionTotals(m)
-  const calm = m.calm ? `; ${m.calm.toLocaleString('en-US')} calm readings (under ${CALM_MPH} mph, ${shareText(m.calm, m)}) are not drawn` : ''
+  const calm = m.calm ? `; ${m.calm.toLocaleString('en-US')} calm readings (${calmText(m.units)}, ${shareText(m.calm, m)}) are not drawn` : ''
   return {
     caption: `${windRoseTitle(m, last24h) ?? 'Wind data'}: share of readings by direction and speed${calm}`,
-    columns: ['Direction', ...m.bins.map((b) => binName(b.label)), 'Share'],
+    columns: ['Direction', ...m.bins.map((b) => binName(b.label, m.units)), 'Share'],
     rows: m.directions.map((d, i) => [d, ...m.bins.map((b) => shareText(b.counts[i], m)), shareText(totals[i], m)]),
     fixedOrder: true,
   }

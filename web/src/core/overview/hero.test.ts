@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { setUnitsSource } from '../units'
 import type { ForecastPeriod, ObservationRow } from '../api'
 import { abbrPeriod, buildHero, type HeroInput } from './hero'
 
@@ -82,7 +83,7 @@ describe('buildHero', () => {
     expect(buildHero({ ...BASE, forecast: { location: null, periods, hourlyUrl: null } }).strip?.periods[0].icon).toBeNull()
   })
   it('empty until /latest arrives', () => {
-    expect(buildHero({ ...BASE, latest: undefined })).toEqual({ temp: null, feels: null, feelsKind: null, highLow: null, normal: null, summary: '', strip: null, periods: [], freshness: null })
+    expect(buildHero({ ...BASE, latest: undefined })).toEqual({ temp: null, tempUnit: 'F', feels: null, feelsKind: null, highLow: null, normal: null, summary: '', strip: null, periods: [], freshness: null })
   })
 })
 
@@ -95,5 +96,21 @@ describe('abbrPeriod', () => {
     expect(abbrPeriod('Tonight')).toBe('Tonight')
     expect(abbrPeriod('This Afternoon')).toBe('This Afternoon')
     expect(abbrPeriod('Columbus Day')).toBe('Columbus Day')
+  })
+})
+
+describe('buildHero in SI', () => {
+  afterEach(() => setUnitsSource(() => 'us'))
+  it('temperatures, high/low, normals and period labels in °C; precipitation today in mm', () => {
+    setUnitsSource(() => 'si')
+    const normals = { tmmx: [{ type: 'daily', variable: 'tmmx', month: 10, day: 1, q25: null, q75: null, median: 66.83 }], tmmn: [{ type: 'daily', variable: 'tmmn', month: 10, day: 1, q25: null, q75: null, median: 38.39 }] }
+    const h = buildHero({ ...BASE, normals })
+    expect(h.temp).toBe('14°')
+    expect(h.tempUnit).toBe('C')
+    expect(h.highLow).toBe('High 17° · Low 4° (24 h)')
+    expect(h.normal).toBe('Normal 19° · 4°')
+    expect(h.periods[0].label).toBe('Tonight 7°')
+    // The strip model stays °F; its builder converts.
+    expect(h.strip!.now.v).toBe(56.984)
   })
 })

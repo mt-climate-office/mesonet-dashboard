@@ -6,6 +6,8 @@
  */
 import type { LocalDate } from '../contract'
 import { GDD_CUTOFFS_F } from '../compute/gdd'
+import { unitLabel } from '../../units'
+import { cutoffInUnits } from './gddCutoffs'
 import { projectable } from './projection'
 import { intervalWord } from '../../variables/interval'
 import type { AgTab } from './tab'
@@ -30,15 +32,16 @@ const PROJECTION_TEXT: Record<AgTab['gddProj'], string> = {
 }
 
 /**
- * "32–70 °F", or "from 44 °F" without an upper cutoff; custom cutoffs win over the crop's. Wheat
+ * "32–70 °F" ("0–21 °C" in SI), or "from 44 °F" without an upper cutoff; custom cutoffs win over the crop's. Wheat
  * and barley read "32–70/95 °F": the upper cutoff switches at Haun stage 2 (NDAWN).
  */
 function cutoffText(t: Pick<AgTab, 'crop' | 'cut'>): string {
   const [cl, ch] = GDD_CUTOFFS_F[t.crop]
-  const lo = t.cut.loF ?? cl
-  const hi = t.cut.hiF ?? ch
-  const sw = !t.cut.custom && (t.crop === 'wheat' || t.crop === 'barley') ? `/${GDD_CUTOFFS_F[`${t.crop}2`][1]}` : ''
-  return Number.isFinite(hi) ? `${lo}–${hi}${sw} °F` : `from ${lo} °F`
+  const lo = cutoffInUnits(t.cut.loF ?? cl)
+  const hi = cutoffInUnits(t.cut.hiF ?? ch)
+  const sw = !t.cut.custom && (t.crop === 'wheat' || t.crop === 'barley') ? `/${cutoffInUnits(GDD_CUTOFFS_F[`${t.crop}2`][1])}` : ''
+  const unit = unitLabel('temp')
+  return Number.isFinite(hi) ? `${lo}–${hi}${sw} ${unit}` : `from ${lo} ${unit}`
 }
 
 /** The projection chip: its setting, or "No projection" when the dates end in the past (projection `projectable`). */

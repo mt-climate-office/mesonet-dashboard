@@ -15,6 +15,7 @@ import { loadSoilParams, soilParamsFor } from '../ag/data/soilParams'
 import { aggregateMonthly, DAYS_WITH_DATA_COLUMN, type Row } from '../aggregate'
 import { exclusiveEnd, fetchText, HttpError } from '../api'
 import { MISSING_DATA_COLUMN, parseCsv } from '../csv'
+import type { Units } from '../units'
 import { DERIVED_ENDPOINTS, ENDPOINTS } from '../params'
 import { LABELS } from '../variables/labels'
 import { soilDerivedRows } from './soilDerived'
@@ -98,8 +99,8 @@ export function daySpan(start: string, end: string): number {
   return Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / 86_400_000) + 1
 }
 
-/** Legacy dropped this unless the logger pressure element was asked for. */
-const LOGGER_PRESSURE_COLUMN = 'Logger Reference Pressure [mbar]'
+/** Legacy dropped this unless the logger pressure element was asked for ([mbar], or [kPa] with units=si). */
+const LOGGER_PRESSURE_COLUMN = /^Logger Reference Pressure \[/
 const LOGGER_PRESSURE_ELEMENT = 'bp_logger_0244'
 
 const TRAILING_COLUMNS = [MISSING_DATA_COLUMN, 'provisional', 'obs_count', DAYS_WITH_DATA_COLUMN]
@@ -113,6 +114,8 @@ export interface DownloadQuery {
   period: DlPeriod
   elements: string[]
   level: QcLevel
+  /** The API's `units`: the file's columns are in these (the dashboard's display units). */
+  units: Units
 }
 
 export interface DownloadResult {
@@ -245,6 +248,8 @@ export async function fetchDownload(q: DownloadQuery, deps: DownloadDeps = {}): 
     end_time: exclusiveEnd(q.end),
     level: q.level,
     na_info: true,
+    // US is the API default: only SI is sent, so US requests (and their cache/fixture URLs) are unchanged.
+    ...(q.units === 'si' ? { units: 'si' } : {}),
   }
 
   // Monthly is aggregated from daily rows (ENDPOINTS.monthly is the daily path).
@@ -266,7 +271,7 @@ export async function fetchDownload(q: DownloadQuery, deps: DownloadDeps = {}): 
       ? Promise.all([
           fetchRows(ENDPOINTS[q.period], { ...common, elements: 'soil_vwc', public: false }),
           (deps.soilParams ?? defaultSoilParams)(q.station),
-        ]).then(([rows, params]) => soilDerivedRows(rows, params, soil))
+        ]).then(([rows, params]) => soilDerivedRows(rows, params, soil, q.units))
       : Promise.resolve([] as Row[]),
   ])
 
@@ -295,9 +300,10 @@ export async function fetchDownload(q: DownloadQuery, deps: DownloadDeps = {}): 
 
   if (!std.includes(LOGGER_PRESSURE_ELEMENT)) {
     obs = obs.map((r) => {
-      if (!(LOGGER_PRESSURE_COLUMN in r)) return r
+      const col = Object.keys(r).find((k) => LOGGER_PRESSURE_COLUMN.test(k))
+      if (!col) return r
       const rest = { ...r }
-      delete rest[LOGGER_PRESSURE_COLUMN]
+      delete rest[col]
       return rest
     })
   }

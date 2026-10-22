@@ -2,11 +2,13 @@
  * Soil charts: the Soil Profile heatmap (depth × time for VWC, temperature,
  * EC, SWP or saturation, frozen cells hatched), SWP depth lines on an
  * inverted log axis with field-capacity / wilting-point bands, and percent
- * saturation depth lines. kPa → bar happens here.
+ * saturation depth lines. kPa → bar happens here (US); SI keeps kPa, and soil
+ * temperature and depths follow the display units (ag/view/labels).
  */
 import type { EChartsOption, HeatmapSeriesOption, LineSeriesOption } from 'echarts'
 import type { LocalDate, LocalDateTime, Nullable, PercentSaturationSeries, SwpSeries } from '../ag/contract'
-import { PROFILE_META, SWP_CAP_BAR, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, type SoilProfileVar, depthLabel, swpBar, swpText } from '../ag/view/labels'
+import { SWP_CAP_BAR, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, type SoilProfileVar, depthInches, depthLabel, fText, profileMeta, swpBar, swpOut, swpText, swpUnit } from '../ag/view/labels'
+import { isSi } from '../units'
 import { HEATMAP, SWP_BANDS, depthStyle } from '../palette'
 import { grid, logAxis, logExtent, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtNum, fmtWall, isoWall, wallMs, type Period } from './format'
@@ -19,8 +21,19 @@ import { axisTooltip, tipText, tooltipBase } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
 import { axisTitle } from '../variables/labels'
 
-/** Nominal inches of a sensor depth (91 cm → 36), for depthStyle. */
-const depthInches = (cm: number) => Number.parseInt(depthLabel(cm), 10)
+/** Display units per bar (1, or 100 kPa in SI). */
+const swpScale = () => swpOut(1) ?? 1
+
+/** `HEATMAP[v]` with its midpoint and its label in the display units (soil temperature 0 °C, SWP 1,500 kPa). */
+function heatScale(v: SoilProfileVar) {
+  const scale = HEATMAP[v]
+  if (!isSi()) return scale
+  if (v === 'soil_temp') return { ...scale, midpoint: profileMeta(v).mid, midpointLabel: `Freezing (${fText(32)})` }
+  if (v === 'swp' && scale.midpoint !== undefined) {
+    return { ...scale, midpoint: scale.midpoint * swpScale(), midpointLabel: `Wilting point (${(SWP_WILTING_POINT * swpScale()).toLocaleString('en-US')} ${swpUnit()})` }
+  }
+  return scale
+}
 
 /* ------------------------------------------------------- Soil profile */
 
@@ -28,7 +41,7 @@ export interface SoilProfileModel {
   variable: SoilProfileVar
   time: (LocalDate | LocalDateTime)[]
   depthsCm: number[]
-  /** Display units (°F, %, mS/cm, bar), already frozen-masked; `values[d][i]`. */
+  /** Display units (°F, %, mS/cm, bar; °C and kPa in SI), already frozen-masked; `values[d][i]`. */
   values: Nullable[][]
   /** `frozen[d][i]`: cells hidden by the frozen-soil mask. */
   frozen?: boolean[][]
@@ -37,7 +50,8 @@ export interface SoilProfileModel {
   period: Period
 }
 
-export const FROZEN_NAME = 'Frozen soil (≤ 32 °F)'
+/** The frozen-cell legend name: "Frozen soil (≤ 32 °F)" ("≤ 0 °C" in SI). */
+export const frozenName = () => `Frozen soil (≤ ${fText(32)})`
 
 /** Depth indices drawn: has data before masking, and a value or a frozen cell. */
 function keptDepths(m: SoilProfileModel): number[] {
@@ -98,9 +112,10 @@ function categoryAxis(xMs: number[], period: Period, compact: boolean) {
 export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
   const keep = keptDepths(m)
   if (keep.length === 0 || m.time.length === 0) return { series: [] }
-  const meta = PROFILE_META[m.variable]
-  const scale = HEATMAP[m.variable]
+  const meta = profileMeta(m.variable)
+  const scale = heatScale(m.variable)
   const isLog = m.variable === 'swp'
+  const FROZEN_NAME = frozenName()
   // Category data are wall-clock ms, so the host can report and apply zoom in ms (core/charts/zoom.ts).
   const xMs = m.time.map(wallMs)
   const y = keep.map((d) => depthLabel(m.depthsCm[d]))
@@ -118,9 +133,10 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
     }),
   )
   if (!Number.isFinite(lo)) lo = hi = scale.midpoint !== undefined ? toZ(scale.midpoint) : 0
-  // SWP colors span at most 0.01–1000 bar; drier/wetter cells saturate (inversion blows up near residual VWC).
-  if (isLog) [lo, hi] = [Math.max(lo, -2), Math.min(hi, 3)]
-  const digits = m.variable === 'soil_blk_ec' || isLog ? 2 : 1
+  // SWP colors span at most 0.01–1000 bar (1–100,000 kPa); drier/wetter cells saturate (inversion blows up near residual VWC).
+  const decades = Math.log10(swpScale())
+  if (isLog) [lo, hi] = [Math.max(lo, -2 + decades), Math.min(hi, 3 + decades)]
+  const digits = m.variable === 'soil_blk_ec' || (isLog && !isSi()) ? 2 : 1
   const fmt = (z: number) => (isLog ? `-${Number((10 ** z).toPrecision(2))}` : z.toFixed(m.variable === 'soil_blk_ec' ? 2 : 0))
   const cells: [number, number][] = []
   keep.forEach((d, yi) => m.frozen?.[d]?.forEach((f, xi) => f && cells.push([xi, yi])))
@@ -131,7 +147,7 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
   const cb = colorBar(ctx, scale, [lo, hi], {
     title: meta.label,
     midpoint: scale.midpoint !== undefined ? toZ(scale.midpoint) : undefined,
-    ticks: isLog ? [{ value: Math.log10(SWP_FIELD_CAPACITY), label: `FC (-${SWP_FIELD_CAPACITY})` }] : [],
+    ticks: isLog ? [{ value: Math.log10(SWP_FIELD_CAPACITY * swpScale()), label: `FC (-${Number((SWP_FIELD_CAPACITY * swpScale()).toPrecision(2))})` }] : [],
     fmt,
     seriesIndex: trace ? 1 : 0,
     bottom: cells.length ? 24 : 4, // compact: under the frozen-soil legend
@@ -161,7 +177,7 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
         const [xi, yi, z] = p.value ?? []
         const head = `<div class="tooltip-name">${escapeHtml(fmtWall(xMs[xi], m.period))}</div>`
         if (p.seriesType === 'custom') return `${head}${escapeHtml(y[yi])}: ${escapeHtml(FROZEN_NAME)}, value hidden`
-        const v = isLog ? `-${(10 ** z).toFixed(2)}` : z.toFixed(digits)
+        const v = isLog ? `-${(10 ** z).toFixed(digits)}` : z.toFixed(digits)
         return `${head}${tipText(y[yi], `${v} ${meta.units}`)}`
       }) as never,
     },
@@ -170,9 +186,9 @@ export const soilProfileChart: ChartBuilder<SoilProfileModel> = (m, ctx) => {
 }
 
 export function soilProfileTable(m: SoilProfileModel): ChartTable {
-  const meta = PROFILE_META[m.variable]
+  const meta = profileMeta(m.variable)
   const keep = keptDepths(m)
-  const digits = m.variable === 'soil_blk_ec' || m.variable === 'swp' ? 2 : 1
+  const digits = m.variable === 'soil_blk_ec' || (m.variable === 'swp' && !isSi()) ? 2 : 1
   return {
     caption: `Soil profile: ${meta.label} by depth`,
     columns: [m.period === 'hourly' ? 'Time (MT)' : 'Date', ...keep.map((d) => depthLabel(m.depthsCm[d]))],
@@ -206,7 +222,7 @@ const shallowest = (depthsCm: number[]) => depthsCm.indexOf(Math.min(...depthsCm
 function depthTable(caption: string, period: Period, time: string[], depthsCm: number[], values: Nullable[][], f: (v: Nullable) => string): ChartTable {
   return {
     caption,
-    columns: [period === 'hourly' ? 'Time (MT)' : 'Date', ...depthsCm.map(depthLabel)],
+    columns: [period === 'hourly' ? 'Time (MT)' : 'Date', ...depthsCm.map((cm) => depthLabel(cm))],
     rows: time.map((t, i) => [isoWall(wallMs(t), period), ...depthsCm.map((_, d) => f(values[d][i]))]),
   }
 }
@@ -242,14 +258,15 @@ function swpLines(ctx: ChartContext, xs: number[], depthsCm: number[], bar: Null
 }
 
 /**
- * The SWP band lines and their gutter labels: "Field capacity" over "-0.33 bar"; on compact
- * screens the name breaks too, so the gutter stays narrow.
+ * The SWP band lines and their gutter labels: "Field capacity" over "-0.33 bar" ("-33 kPa" in SI);
+ * on compact screens the name breaks too, so the gutter stays narrow.
  */
 function swpBandLines(ctx: ChartContext): { y: number; label: string }[] {
-  const label = (name: string, bar: number) => `${ctx.compact ? name.replace(' ', '\n') : name}\n-${bar} bar`
+  const k = swpScale()
+  const label = (name: string, bar: number) => `${ctx.compact ? name.replace(' ', '\n') : name}\n-${Number((bar * k).toPrecision(4)).toLocaleString('en-US')} ${swpUnit()}`
   return [
-    { y: SWP_FIELD_CAPACITY, label: label(SWP_BANDS.labels.fieldCapacity, SWP_FIELD_CAPACITY) },
-    { y: SWP_WILTING_POINT, label: label(SWP_BANDS.labels.wiltingPoint, SWP_WILTING_POINT) },
+    { y: SWP_FIELD_CAPACITY * k, label: label(SWP_BANDS.labels.fieldCapacity, SWP_FIELD_CAPACITY) },
+    { y: SWP_WILTING_POINT * k, label: label(SWP_BANDS.labels.wiltingPoint, SWP_WILTING_POINT) },
   ]
 }
 
@@ -262,11 +279,16 @@ function swpBandLines(ctx: ChartContext): { y: number; label: string }[] {
  */
 export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
   const xs = m.series.time.map(wallMs)
-  const { bar, dry } = swpBar(m.series)
+  // Drawn in the display units (bar, or kPa in SI): `k` per bar.
+  const k = swpScale()
+  const sb = swpBar(m.series)
+  const dry = sb.dry
+  const bar = sb.bar.map((col) => col.map((v) => (v == null ? null : v * k)))
+  const cap = SWP_CAP_BAR * k
   const flat = bar.flat().filter((v): v is number => v != null && v > 0)
-  const [min, decade] = logExtent(Math.min(...flat), Math.max(...flat), [SWP_FIELD_CAPACITY, SWP_WILTING_POINT])
-  // Capped dry-end points sit on SWP_CAP_BAR: one more decade keeps them off the frame, ticks on decades.
-  const max = dry.some((col) => col.some(Boolean)) && decade <= SWP_CAP_BAR ? SWP_CAP_BAR * 10 : decade
+  const [min, decade] = logExtent(Math.min(...flat), Math.max(...flat), [SWP_FIELD_CAPACITY * k, SWP_WILTING_POINT * k])
+  // Capped dry-end points sit on the cap: one more decade keeps them off the frame, ticks on decades.
+  const max = dry.some((col) => col.some(Boolean)) && decade <= cap ? cap * 10 : decade
   const lg = agLegend(ctx, depthKey(ctx, m.series.depthsCm))
   const step = stepMs(m.period)
   // The slider traces the shallowest depth, wet up as the inverted log axis draws it.
@@ -282,8 +304,8 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
             ctx,
             [xs[0], xs[xs.length - 1]],
             [
-              { from: min, to: SWP_FIELD_CAPACITY },
-              { from: SWP_WILTING_POINT, to: max },
+              { from: min, to: SWP_FIELD_CAPACITY * k },
+              { from: SWP_WILTING_POINT * k, to: max },
             ],
             lines,
           ),
@@ -297,15 +319,16 @@ export const swpChart: ChartBuilder<SwpModel> = (m, ctx) => {
     yAxis: f.trace ? [y, f.trace.yAxis] : y,
     legend: lg.legend,
     // A joint point repeats the solid line's value: list it once.
-    tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y, note) => (note === JOINT ? null : tipText(name, swpText(y, note === DRY)))),
+    tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y, note) => (note === JOINT ? null : tipText(name, swpText(y / k, note === DRY)))),
     series: [...(f.trace ? [f.trace.series] : []), ...bands, ...swpLines(ctx, xs, m.series.depthsCm, bar, dry, step)],
   } satisfies EChartsOption
 }
 
 export function swpTable(m: SwpModel): ChartTable {
   const { bar, dry } = swpBar(m.series)
-  const t = depthTable('Soil water potential by depth, bar (negative = suction)', m.period, m.series.time, m.series.depthsCm, bar, (v) =>
-    v == null ? MISSING : `-${v.toFixed(2)}`,
+  const k = swpScale()
+  const t = depthTable(`Soil water potential by depth, ${swpUnit()} (negative = suction)`, m.period, m.series.time, m.series.depthsCm, bar, (v) =>
+    v == null ? MISSING : `-${(v * k).toFixed(isSi() ? 1 : 2)}`,
   )
   // Dry-end clips are lower bounds on suction: "≤ -1000.00".
   t.rows.forEach((row, i) => m.series.depthsCm.forEach((_, d) => dry[d][i] && (row[d + 1] = `≤ ${row[d + 1]}`)))

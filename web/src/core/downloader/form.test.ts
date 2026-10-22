@@ -52,10 +52,10 @@ describe('formWaiting', () => {
 
 describe('queryKey', () => {
   it('changes with every input of the request', () => {
-    const q = { station: 's', start: '2026-09-01', end: '2026-09-30', period: 'daily' as const, elements: ['a', 'b'], level: 2 as const }
+    const q = { station: 's', start: '2026-09-01', end: '2026-09-30', period: 'daily' as const, elements: ['a', 'b'], level: 2 as const, units: 'us' as const }
     const k = queryKey(q)
     expect(queryKey({ ...q })).toBe(k)
-    for (const patch of [{ station: 't' }, { start: '2026-09-02' }, { end: '2026-09-29' }, { period: 'hourly' as const }, { elements: ['a'] }, { level: 1 as const }])
+    for (const patch of [{ station: 't' }, { start: '2026-09-02' }, { end: '2026-09-29' }, { period: 'hourly' as const }, { elements: ['a'] }, { level: 1 as const }, { units: 'si' as const }])
       expect(queryKey({ ...q, ...patch })).not.toBe(k)
   })
 })

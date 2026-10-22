@@ -535,6 +535,11 @@
    "status": 200,
    "type": "image/png",
    "file": "api-day_bkn-d9fd54b0bb.png"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&start_time=2026-09-01&end_time=2026-10-01&level=2&na_info=true&units=si&elements=ppt&public=false&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-a5e349047a.csv"
   }
  }
 }

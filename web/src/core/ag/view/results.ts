@@ -9,7 +9,8 @@ import type { DailyMet, DailyNormals, GddStageTable, HourlyMet, LocalDate, SoilP
 import { cciDailyRange, cciHourly, etoDaily, etoHourly, feelsLikeDailyRange, feelsLikeHourly, fToC, gdd, GDD_CUTOFFS_F, percentSaturation, projectGdd, swp as swpFromParams } from '../compute'
 import type { AnnualDaily, ForecastResult } from '../data'
 import { annualTraces, coverage, partialNote, profileValues, unavailableMessage } from './derive'
-import { type Period, type SoilProfileVar, SWP_CAP_BAR, dropCappedDepths, swpBar } from './labels'
+import { type Period, type SoilProfileVar, dropCappedDepths, fText, swpBar, swpCapText, tempUnit } from './labels'
+import { cutoffInUnits } from './gddCutoffs'
 import type { AgTab, AgVariable } from './tab'
 import { NOT_PROJECTABLE } from './projection'
 import { loadErrorText } from '../../loadError'
@@ -136,7 +137,8 @@ export function gddView({ tab, met, table, through, normals, forecast }: GddInpu
   }
   if (series.ndawnSwitch) {
     const hi = GDD_CUTOFFS_F[`${crop as 'wheat' | 'barley'}2`][1]
-    notes.push(`${cropLabel} follows NDAWN: ${crops[0]}–${crops[1]} °F until Haun stage 2, then ${crops[0]}–${hi} °F.`)
+    const c = (f: number) => cutoffInUnits(f)
+    notes.push(`${cropLabel} follows NDAWN: ${c(crops[0])}–${c(crops[1])} ${tempUnit()} until Haun stage 2, then ${c(crops[0])}–${c(hi)} ${tempUnit()}.`)
   }
   const partial = partialNote(cov, 'daily', 'GDD')
   if (partial) notes.push(partial)
@@ -211,14 +213,14 @@ export function soilView(i: SoilInputs): AgView<SoilChart> {
     return emptyView('No soil water potential for this station and period.')
   }
   if (swp && swp.depthsCm.length === 0) {
-    return emptyView(`Every depth is drier than -${SWP_CAP_BAR.toLocaleString('en-US')} bar for this period.`, capped?.notes)
+    return emptyView(`Every depth is drier than ${swpCapText()} for this period.`, capped?.notes)
   }
   const notes: string[] = [...(capped?.notes ?? [])]
   if (pct) notes.push('Soil saturation uses published mesonet-soils porosity for each depth.')
   if (swp) notes.push('Soil water potential is computed in the browser from published mesonet-soils parameters.')
   if (swp && swpBar(swp).dry.some((col) => col.some(Boolean))) {
     notes.push(
-      `Dotted lines: the soil is drier than the driest lab sample, so the true suction is at least the value shown (drawn no deeper than -${SWP_CAP_BAR.toLocaleString('en-US')} bar).`,
+      `Dotted lines: the soil is drier than the driest lab sample, so the true suction is at least the value shown (drawn no deeper than ${swpCapText()}).`,
     )
   }
   if (i.variable === 'swp' && swp) return ready({ kind: 'swp', model: { series: swp, period } }, notes)
@@ -229,7 +231,7 @@ export function soilView(i: SoilInputs): AgView<SoilChart> {
   if (!v || v.depthsCm.length === 0) return emptyView('This station has no data for the selected soil variable in this period.', notes)
   if (v.anyFrozen) {
     notes.push(
-      'Grey cells: frozen soil (soil temperature ≤ 32 °F). Water content, EC, saturation and water potential are hidden there because frozen-soil readings are not reliable.',
+      `Grey cells: frozen soil (soil temperature ≤ ${fText(32)}). Water content, EC, saturation and water potential are hidden there because frozen-soil readings are not reliable.`,
     )
   }
   const model: SoilProfileModel = { variable: sub, time: soil.time, depthsCm: v.depthsCm, values: v.values, frozen: v.frozen, period }

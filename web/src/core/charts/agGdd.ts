@@ -6,11 +6,13 @@
  * reached that day (a hidden piecewise visualMap on x); the stage lines are one
  * neutral stroke above the bars, and the cumulative line and the projection stay
  * in the text color on a surface-colored halo, so none vanish into the bars.
- * GDD values are already °F·day (contract), so no conversion.
+ * GDD values are °F·day (contract); `displayModel` turns them (and the stage thresholds) into
+ * °C·day in SI before drawing, so the rest of the builder works in the display units.
  */
 import type { EChartsOption, LineSeriesOption, VisualMapComponentOption } from 'echarts'
 import type { GddProjection, GddSeries, GddStage, Nullable } from '../ag/contract'
-import { finiteMax, stageText } from '../ag/view/labels'
+import { cutoffInUnits } from '../ag/view/gddCutoffs'
+import { finiteMax, gddOut, gddUnit, stageText } from '../ag/view/labels'
 import { CUMULATIVE_LINE, GDD, GDD_STAGE_LINE, gddStageColors } from '../palette'
 import { dualAxis, niceCeil } from './axes'
 import { fmtNum, fmtWall, wallMs } from './format'
@@ -81,11 +83,24 @@ export function fittedStageLabels(lines: StageLine[], width: number): { lines: {
   return { lines: lines.map((l) => ({ y: l.y, label: l.label })), gutter: 0 }
 }
 
-const fmtF = (f: number) => (Number.isFinite(f) ? `${f}` : '∞')
+const fmtF = (f: number) => (Number.isFinite(f) ? `${cutoffInUnits(f)}` : '∞')
 
-/** "Daily GDDs (32–∞ °F)", or "Daily GDDs (32–70/95 °F)" with the NDAWN switch's second upper cutoff. */
+/** "Daily GDDs (32–∞ °F)", or "Daily GDDs (32–70/95 °F)" with the NDAWN switch's second upper cutoff; °C in SI. */
 export const gddBarName = (cutoffsF: readonly [number, number], switchHighF?: number) =>
-  `Daily GDDs (${fmtF(cutoffsF[0])}–${fmtF(cutoffsF[1])}${switchHighF != null ? `/${fmtF(switchHighF)}` : ''} °F)`
+  `Daily GDDs (${fmtF(cutoffsF[0])}–${fmtF(cutoffsF[1])}${switchHighF != null ? `/${fmtF(switchHighF)}` : ''} ${gddUnit()})`
+
+/** The model's GDD values and stage thresholds in the display units (°C·day in SI; US unchanged). */
+export function displayModel(m: GddModel): GddModel {
+  const conv = (xs: Nullable[]) => xs.map((v) => gddOut(v))
+  if (gddOut(1) === 1) return m
+  const p = m.projection
+  return {
+    ...m,
+    series: { ...m.series, daily: conv(m.series.daily), cumulative: conv(m.series.cumulative) },
+    stages: m.stages?.map((st) => ({ ...st, gdd: gddOut(st.gdd) ?? st.gdd })),
+    projection: p && { ...p, daily: conv(p.daily), cumulative: conv(p.cumulative), cumulativeQ25: conv(p.cumulativeQ25), cumulativeQ75: conv(p.cumulativeQ75) },
+  }
+}
 
 /** Per-day growth-stage text for the tooltip and table. */
 function stageLabels(m: GddModel): string[] {
@@ -227,7 +242,8 @@ export function gddAxisMax(m: GddModel): number {
   return niceCeil(top * 1.02)
 }
 
-export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
+export const gddChart: ChartBuilder<GddModel> = (model, ctx) => {
+  const m = displayModel(model)
   const c = GDD[ctx.theme.name]
   const xs = m.series.date.map(wallMs)
   const stages = stageLabels(m)
@@ -262,7 +278,7 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
       s.name === GDD_NAMES.q25 ? [] : [{ name: String(s.name), short: SHORT[String(s.name)], icon: s.name === GDD_NAMES.band ? 'rect' : undefined }],
     ),
   ])
-  const [y1, y2] = dualAxis('Daily GDD (°F)', 'Cumulative GDD (°F)', { rightMax: y2max })
+  const [y1, y2] = dualAxis(`Daily GDD (${gddUnit()})`, `Cumulative GDD (${gddUnit()})`, { rightMax: y2max })
   // The slider traces the cumulative GDDs, over the observed days and any projection.
   const allXs = [...xs, ...(m.projection?.date.map(wallMs) ?? [])]
   const f = timeFrame(ctx, { extent: plotExtent(allXs, DAY, true), trace: cumPoints, yAxisIndex: 2, legendPx: LEGEND_PX, right: 64 + gutter })
@@ -304,7 +320,8 @@ export const gddChart: ChartBuilder<GddModel> = (m, ctx) => {
   } satisfies EChartsOption
 }
 
-export function gddTable(m: GddModel): ChartTable {
+export function gddTable(model: GddModel): ChartTable {
+  const m = displayModel(model)
   const stages = stageLabels(m)
   const rows = m.series.date.map((d, i) => [d, 'Observed', fmtNum(m.series.daily[i], 1), fmtNum(m.series.cumulative[i], 0), stages[i]])
   const p = m.projection
@@ -317,7 +334,7 @@ export function gddTable(m: GddModel): ChartTable {
   }
   return {
     caption: `Growing degree days, ${gddBarName(m.cutoffsF, m.switchHighF).replace('Daily GDDs ', '')}`,
-    columns: ['Date', 'Source', 'Daily GDD (°F)', 'Cumulative GDD (°F)', 'Growth stage'],
+    columns: ['Date', 'Source', `Daily GDD (${gddUnit()})`, `Cumulative GDD (${gddUnit()})`, 'Growth stage'],
     rows,
   }
 }

@@ -6,8 +6,8 @@ import {
   AIR_RANGE_NAME,
   CCI_GROUPS,
   CCI_RANGE_NAME,
-  ETR_AXIS,
-  ETR_CUM_AXIS,
+  etrAxis,
+  etrCumAxis,
   FEELS_LIKE_LINE_NAME,
   FEELS_LIKE_MARKERS,
   cciChart,
@@ -41,9 +41,9 @@ describe('etrChart', () => {
     const last = cum.data.filter((p) => p[1] != null).at(-1)!
     expect(last[1]).toBeCloseTo(total, 8)
     expect(o.useUTC).toBe(true)
-    expect(ax(o).map((a) => a.name)).toEqual([ETR_AXIS, ETR_CUM_AXIS])
-    expect(ETR_AXIS).toBe('Reference ET (in)')
-    expect(ETR_CUM_AXIS).toBe('Cumulative reference ET (in)')
+    expect(ax(o).map((a) => a.name)).toEqual([etrAxis(), etrCumAxis()])
+    expect(etrAxis()).toBe('Reference ET (in)')
+    expect(etrCumAxis()).toBe('Cumulative reference ET (in)')
   })
 
   it('bars in the ETR role, the running total in the text color, for each theme', () => {

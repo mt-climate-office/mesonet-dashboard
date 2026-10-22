@@ -1,13 +1,44 @@
 /**
  * Renderer-free display helpers for Ag Tools: unit conversion at the display
- * edge, axis/legend labels, stage text and the soil-band constants. Pulled
- * out of the old Plotly builders (web/src/features/ag/figures) so the ECharts
- * builders in core/charts reuse them unchanged.
+ * edge (contract SI → the display units, core/units: US by default, SI with
+ * `units=si`), axis/legend labels, stage text and the soil-band constants.
+ * Pulled out of the old Plotly builders (web/src/features/ag/figures) so the
+ * ECharts builders in core/charts reuse them unchanged.
  */
 import type { CciClass, FeelsLikeRegime, LocalDate, LocalDateTime, Nullable, SwpSeries } from '../contract'
 import { cToF, kPaToBar, mmToIn, msToMph } from '../compute'
 import { elementLabel } from '../../downloader/labels'
+import { type Units, degreeDays, displayUnit, fromUs, unitLabel, units } from '../../units'
 import { axisTitle, cumulativeTitle, plainUnit } from '../../variables/labels'
+
+/* ------------------------------------------------------- display units */
+
+/** A contract °C value in the display units (°F in US). */
+export const tempOut = (c: Nullable, u: Units = units()): Nullable => (u === 'si' ? c : cToF(c))
+
+/** A contract mm amount (ET, precipitation) in the display units (in in US). */
+export const mmOut = (mm: Nullable, u: Units = units()): Nullable => (u === 'si' ? mm : mmToIn(mm))
+
+/** A GDD value (°F·day, the contract) in the display units (°C·day in SI). */
+export const gddOut = (f: Nullable, u: Units = units()): Nullable => (u === 'si' ? degreeDays(f, u) : f)
+
+/** A US °F threshold (CCI onsets, the frozen line) in the display units. */
+export const fOut = (f: number, u: Units = units()): number => fromUs('temp', f, u)
+
+/** A bar magnitude (`swpBar`) in the display units (kPa in SI). */
+export const swpOut = (bar: Nullable, u: Units = units()): Nullable => (bar == null ? null : fromUs('swp', bar, u))
+
+/** "°F" / "°C". */
+export const tempUnit = (u: Units = units()): string => unitLabel('temp', u)
+/** "in" / "mm" (amounts). */
+export const amountUnit = (u: Units = units()): string => unitLabel('precip', u)
+/** "bar" / "kPa" (soil water potential). */
+export const swpUnit = (u: Units = units()): string => unitLabel('swp', u)
+/** "°F" / "°C" on GDD axes and captions ("Daily GDD (°C)"). */
+export const gddUnit = tempUnit
+
+/** A whole-degree °F threshold as shown: "77 °F", "25 °C". */
+export const fText = (f: number, u: Units = units()): string => `${Math.round(fOut(f, u))} ${tempUnit(u)}`
 
 export type Period = 'daily' | 'hourly'
 
@@ -72,7 +103,7 @@ export function dropCappedDepths(s: SwpSeries): { series: SwpSeries; notes: stri
     const capped = bar[d].filter((v) => v != null && v >= SWP_CAP_BAR).length
     if (valued === 0 || capped / valued < SWP_CAPPED_SHARE) return [d]
     const when = capped === valued ? 'the whole period' : 'nearly the whole period'
-    notes.push(`${depthLabel(cm)}: drier than -${SWP_CAP_BAR.toLocaleString('en-US')} bar for ${when}, so it is not drawn.`)
+    notes.push(`${depthLabel(cm)}: drier than ${swpCapText()} for ${when}, so it is not drawn.`)
     return []
   })
   if (keep.length === s.depthsCm.length) return { series: s, notes }
@@ -82,10 +113,18 @@ export function dropCappedDepths(s: SwpSeries): { series: SwpSeries; notes: stri
   }
 }
 
-/** "-12.34 bar", or "≤ -1000.00 bar (drier than the lab range)" for a dry-end clip. */
-export function swpText(bar: number, dry: boolean): string {
-  return dry ? `≤ -${bar.toFixed(2)} bar (drier than the lab range)` : `-${bar.toFixed(2)} bar`
+/** A bar magnitude as shown: "-12.34 bar" / "-1234.0 kPa". */
+const swpMagnitude = (bar: number, u: Units): string =>
+  `-${(swpOut(bar, u) ?? bar).toFixed(u === 'si' ? 1 : 2)} ${swpUnit(u)}`
+
+/** "-12.34 bar", or "≤ -1000.00 bar (drier than the lab range)" for a dry-end clip; kPa in SI. */
+export function swpText(bar: number, dry: boolean, u: Units = units()): string {
+  return dry ? `≤ ${swpMagnitude(bar, u)} (drier than the lab range)` : swpMagnitude(bar, u)
 }
+
+/** The dry-end cap as text: "-1,000 bar" / "-100,000 kPa". */
+export const swpCapText = (u: Units = units()): string =>
+  `-${(swpOut(SWP_CAP_BAR, u) ?? SWP_CAP_BAR).toLocaleString('en-US')} ${swpUnit(u)}`
 
 export const FEELS_LIKE_LABELS: Record<FeelsLikeRegime, string> = {
   wind_chill: 'Wind Chill',
@@ -103,21 +142,33 @@ export const CCI_CLASSES: CciClass[] = [
   'Extreme Danger',
 ]
 
-/** Soil profile heatmap labels and units (display units; SWP drawn on log10 bar). */
-export const PROFILE_META: Record<SoilProfileVar, { label: string; units: string; mid?: number }> = {
-  soil_vwc: { label: axisTitle('soil_vwc', 'Soil moisture'), units: '%' },
-  soil_temp: { label: axisTitle('soil_temp', 'Soil temperature'), units: '°F', mid: 32 },
-  soil_blk_ec: { label: axisTitle('soil_ec_blk', 'Soil salinity (EC)'), units: 'mS/cm' },
-  swp: { label: axisTitle('swp', 'Soil water potential'), units: 'bar' },
-  percent_saturation: { label: axisTitle('percent_saturation', 'Soil saturation'), units: '%' },
+/** Soil profile heatmap label, units and diverging midpoint for `v` in the display units (SWP drawn on log10). */
+export function profileMeta(v: SoilProfileVar, u: Units = units()): { label: string; units: string; mid?: number } {
+  switch (v) {
+    case 'soil_vwc':
+      return { label: axisTitle('soil_vwc', 'Soil moisture', u), units: '%' }
+    case 'soil_temp':
+      return { label: axisTitle('soil_temp', 'Soil temperature', u), units: tempUnit(u), mid: fOut(32, u) }
+    case 'soil_blk_ec':
+      return { label: axisTitle('soil_ec_blk', 'Soil salinity (EC)', u), units: 'mS/cm' }
+    case 'swp':
+      return { label: axisTitle('swp', 'Soil water potential', u), units: swpUnit(u) }
+    case 'percent_saturation':
+      return { label: axisTitle('percent_saturation', 'Soil saturation', u), units: '%' }
+  }
 }
 
 /**
- * SI → the API's US display unit, keyed by the unit in the API column label
- * (the unit `data/parse.ts` `toSi` converted from). Unknown units were not
- * converted and pass through. Null stays null.
+ * SI → the display unit, keyed by the unit in the API column label (the unit
+ * `data/parse.ts` `toSi` converted from): the API's US unit, or in SI the
+ * contract value itself (snow depth mm → cm, as the API's SI). Unknown units
+ * were not converted and pass through. Null stays null.
  */
-export function fromSi(unit: string | null | undefined): (v: Nullable) => Nullable {
+export function fromSi(unit: string | null | undefined, header = '', u: Units = units()): (v: Nullable) => Nullable {
+  if (u === 'si') {
+    const t = (unit ?? '').trim()
+    return /^snow/i.test(parseLabel(header).name) && (t === 'in' || t === 'in.') ? (v) => (v == null ? null : v / 10) : (v) => v
+  }
   switch ((unit ?? '').trim()) {
     case '°F':
     case 'degF':
@@ -152,11 +203,12 @@ export function parseLabel(header: string | null | undefined): { name: string; u
  * Annual comparison y label in plain words (core/downloader `elementLabel`,
  * `plainUnit`): "Average Air Temperature @ 2 m [°F]" → "Air temperature at
  * 6.6 ft (°F)"; cumulative "Total Precipitation [in]" → "Cumulative precipitation (in)".
+ * In SI: the API's metric height or depth and the SI unit ("Air temperature at 2 m (°C)").
  */
-export function annualAxisLabel(header: string | null | undefined, cumulative: boolean): string {
+export function annualAxisLabel(header: string | null | undefined, cumulative: boolean, u: Units = units()): string {
   const { name, unit } = parseLabel(header)
   const plain = name ? elementLabel(name) : ''
-  const base = unit ? `${plain} (${plainUnit(unit)})` : plain
+  const base = unit ? `${plain} (${plainUnit(displayUnit(unit, name, u))})` : plain
   return cumulative ? cumulativeTitle(base) : base
 }
 
@@ -171,8 +223,11 @@ export function stageText(stage: number | string | null, name: string | null): s
 /** Nominal soil-sensor depths, cm → the dashboard's inch labels (LAB_SWAP). */
 const CM_TO_IN: Record<number, number> = { 5: 2, 10: 4, 20: 8, 50: 20, 70: 28, 91: 36, 100: 40 }
 
-/** 10 → "4 in"; non-nominal depths round to the nearest inch. */
-export const depthLabel = (cm: number): string => `${CM_TO_IN[cm] ?? Math.round(cm / 2.54)} in`
+/** The depth's inch label number (palette depth colors are keyed by it): 10 → 4. */
+export const depthInches = (cm: number): number => CM_TO_IN[cm] ?? Math.round(cm / 2.54)
+
+/** 10 → "4 in" ("10 cm" in SI); non-nominal depths round to the nearest inch. */
+export const depthLabel = (cm: number): string => `${cm} cm`
 
 /**
  * Chart x values: local (America/Denver) wall-clock strings, `YYYY-MM-DD` for

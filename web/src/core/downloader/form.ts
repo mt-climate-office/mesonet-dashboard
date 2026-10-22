@@ -59,7 +59,7 @@ export function formWaiting(i: { catalogLoading: boolean; prefillPending: boolea
 }
 
 /** A request's identity: a result belongs to the form while their keys match. */
-export const queryKey = (q: DownloadQuery): string => [q.station, q.start, q.end, q.period, q.level, q.elements.join(',')].join('|')
+export const queryKey = (q: DownloadQuery): string => [q.station, q.start, q.end, q.period, q.level, q.units, q.elements.join(',')].join('|')
 
 export interface PrimaryAction {
   /** `preview` fetches; `download` saves the fetched rows as CSV. */

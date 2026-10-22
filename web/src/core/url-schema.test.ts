@@ -21,6 +21,14 @@ describe('readUrlState / writeUrlSearch', () => {
     expect(s.dl).toBe(false)
     expect(s.qc).toBeNull()
     expect(s.pct).toBe(true)
+    expect(s.units).toBe('us')
+  })
+
+  it('units: us | si, the default omitted', () => {
+    expect(readUrlState('?units=si').units).toBe('si')
+    expect(readUrlState('?units=metric').units).toBe('us')
+    expect(writeUrlSearch({ ...readUrlState(''), units: 'si' })).toBe('?units=si')
+    expect(writeUrlSearch({ ...readUrlState(''), units: 'us' })).toBe('')
   })
 
   it('rejects values outside an enum and keeps `vars=` as an explicit empty list', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { calmText } from './windRose'
 import type { ObservationRow } from '../api'
-import { buildWindRoseModel, directionTotals, newestStamp, quantileEdges, roundHalfEven, rowsWithin, shareText, speedBins, windDateSpan, windRoseStats } from './windRose'
+import { SI_MIN_BINS, buildWindRoseModel, directionTotals, newestStamp, quantileEdges, roundHalfEven, rowsWithin, shareText, speedBins, windDateSpan, windRoseStats } from './windRose'
 
 describe('roundHalfEven', () => {
   it('rounds like numpy', () => {
@@ -136,5 +137,28 @@ describe('rowsWithin / newestStamp', () => {
     expect(newest).toBe(Date.UTC(2026, 6, 2))
     expect(rowsWithin(rows, [Date.UTC(2026, 6, 1, 0, 0, 1), newest + 1]).map((r) => r.datetime)).toEqual(['2026-07-01 12:00:00-06:00', '2026-07-02 00:00:00-06:00'])
     expect(newestStamp([])).toBeNull()
+  })
+})
+
+describe('wind rose in SI', () => {
+  const rows = [225, 225, 225, 225, 225, 0, 0, 90].map((d, i) => ({ datetime: `2026-07-01 0${i}:00:00-06:00`, 'Wind Direction [deg]': d, 'Wind Speed [mi/hr]': 4 + i })) as unknown as ObservationRow[]
+  it('bins on whole m/s, or half m/s for light winds; calm is still under 1 mph', () => {
+    const m = buildWindRoseModel(rows, 'si')!
+    expect(m.units).toBe('si')
+    expect(m.n).toBe(8)
+    // 4–11 mph is 1.8–4.9 m/s: 4 distinct whole speeds, under SI_MIN_BINS, so half steps.
+    expect(m.bins.map((b) => b.label)).toEqual(['2', '2.5', '3', '3.5', '4', '4.5', '5'])
+    expect(windRoseStats(m)[2]).toEqual({ label: 'Average speed', value: '3.35 m/s' })
+    expect(calmText('si')).toBe('under 0.4 m/s')
+    expect(calmText('us')).toBe('under 1 mph')
+  })
+  it('bins on whole m/s when the window holds enough distinct speeds', () => {
+    const windy = Array.from({ length: 40 }, (_, i) => ({ datetime: `2026-07-01 00:${String(i).padStart(2, '0')}:00-06:00`, 'Wind Direction [deg]': 225, 'Wind Speed [mi/hr]': 2 + i * 0.75 })) as unknown as ObservationRow[]
+    const labels = buildWindRoseModel(windy, 'si')!.bins.map((b) => b.label)
+    expect(labels.every((l) => /^\d+( – \d+)?$/.test(l))).toBe(true)
+    expect(labels.length).toBeGreaterThanOrEqual(SI_MIN_BINS)
+  })
+  it('speedBins at scale 2 labels half steps without trailing zeros', () => {
+    expect(speedBins([1.2, 1.6, 2.0, 2.4], 2, 2).labels).toEqual(['1 – 1.5', '2 – 2.5'])
   })
 })

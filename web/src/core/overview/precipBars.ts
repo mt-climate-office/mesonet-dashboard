@@ -5,6 +5,7 @@
  */
 import type { ObservationRow } from '../api'
 import { sparkline, type Sparkline } from '../charts/sparkline'
+import { formatReading } from '../variables/labels'
 
 const DAYS = 7
 const COL = 'Precipitation [in]'
@@ -44,5 +45,5 @@ export function precipBars(rows: readonly ObservationRow[] | undefined, today: s
   if (!spark) return null
   if (!(total > 0)) return { spark, sparkLabel: 'Last 7 days: no precipitation.' }
   const wet = v.filter((x) => x !== null && x > 0).length
-  return { spark, sparkLabel: `Last 7 days: ${total.toFixed(2)} in in total, precipitation on ${wet} ${wet === 1 ? 'day' : 'days'}.` }
+  return { spark, sparkLabel: `Last 7 days: ${formatReading('ppt', total)} in total, precipitation on ${wet} ${wet === 1 ? 'day' : 'days'}.` }
 }

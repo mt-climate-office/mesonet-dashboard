@@ -4,7 +4,7 @@
  * level-`q.level` `soil_vwc` rows of the download period; output is one row
  * per input row with the legacy `/derived` headers, so old `els=swp,…`
  * links produce the same columns:
- *   Soil Water Potential @ -5 cm [bar]   positive bar magnitude, 3 dp
+ *   Soil Water Potential @ -5 cm [bar]   positive bar magnitude, 3 dp ([kPa] with units=si)
  *   Soil Water Potential @ -5 cm Clipped?  VWC outside the lab range (the
  *                                          value is then a bound, not a fit)
  *   Percent Saturation @ -5 cm [%]
@@ -15,13 +15,14 @@ import { kPaToBar, percentSaturation, swp } from '../ag/compute'
 import type { Nullable, SoilParams, SoilSeries } from '../ag/contract'
 import type { Row } from '../aggregate'
 import { MISSING_DATA_COLUMN } from '../csv'
+import type { Units } from '../units'
 
 const VWC_COL = /^Soil VWC @ -(\d+) cm \[%\]$/
 
 const num = (v: unknown): Nullable => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 const round3 = (v: Nullable) => (v == null ? null : Math.round(v * 1000) / 1000)
 
-export function soilDerivedRows(rows: readonly Row[], params: SoilParams[], codes: readonly string[]): Row[] {
+export function soilDerivedRows(rows: readonly Row[], params: SoilParams[], codes: readonly string[], units: Units = 'us'): Row[] {
   if (rows.length === 0) return []
   const cols = new Map<number, string>()
   for (const r of rows) {
@@ -47,7 +48,8 @@ export function soilDerivedRows(rows: readonly Row[], params: SoilParams[], code
     const out: Row = { station: r.station, datetime: r.datetime }
     s?.depthsCm.forEach((cm, d) => {
       const v = s.kPa[d][i]
-      out[`Soil Water Potential @ -${cm} cm [bar]`] = round3(kPaToBar(v))
+      if (units === 'si') out[`Soil Water Potential @ -${cm} cm [kPa]`] = round3(v)
+      else out[`Soil Water Potential @ -${cm} cm [bar]`] = round3(kPaToBar(v))
       out[`Soil Water Potential @ -${cm} cm Clipped?`] = v == null ? null : s.clipped[d][i]
     })
     p?.depthsCm.forEach((cm, d) => {

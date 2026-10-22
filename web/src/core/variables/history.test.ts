@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getStationRecord, type ObservationRow } from '../api'
 import { stationVariables } from './catalog'
+import { setUnitsSource } from '../units'
 import { HISTORY_MAX_YEARS, historyModel, historyNote, historyRequest, historyRows, historyYears, requestGroups } from './history'
 
 const ELEMENTS = [
@@ -92,5 +93,15 @@ describe('historyNote', () => {
     expect(historyNote({ name: 'Precipitation', sum: true })).toBe('Daily values, one line per year, as a running total within each year.')
     expect(historyNote({ name: 'Air Temperature', sum: false })).toBe('Daily values, one line per year.')
     expect(historyNote(undefined)).toBe('Daily values, one line per year.')
+  })
+})
+
+describe('historyModel in SI', () => {
+  afterEach(() => setUnitsSource(() => 'us'))
+  it('traces and the y title in the display units (annualChart does not convert)', () => {
+    setUnitsSource(() => 'si')
+    const m = historyModel(PPT, [daily(2026, 2, 'Precipitation [in]', () => 1)], 2026)!
+    expect(m.traces[0].values).toEqual([25.4, 50.8])
+    expect(m.yLabel).toBe('Cumulative precipitation (mm)')
   })
 })

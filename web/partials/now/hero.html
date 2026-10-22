@@ -8,7 +8,7 @@
   <span class="sr-only">Air temperature: </span>
   <div class="now-hero-top">
     <p class="now-temp mco-num-display" data-testid="now-temp">
-      <span x-text="page.hero.temp ?? '—'"></span><span class="now-temp-unit" x-show="page.hero.temp">F</span>
+      <span x-text="page.hero.temp ?? '—'"></span><span class="now-temp-unit" x-show="page.hero.temp" x-text="page.hero.tempUnit">F</span>
     </p>
     <p class="now-hilo">
       <span x-show="page.hero.highLow" x-text="page.hero.highLow"></span>

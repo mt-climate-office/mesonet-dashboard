@@ -6,16 +6,18 @@
  * "not available" notes, in the house chart style (style.ts: gaps, y-axis
  * rule, slider and its trace). Every key sits in one place: a row at the top
  * left of its panel. Wind direction is drawn as small dots with compass ticks
- * (windDirection.ts). Input is core/models/timeseries (display units).
+ * (windDirection.ts). Input is core/models/timeseries (US); values are drawn in the display units
+ * (core/units, `timeseriesInUnits`).
  */
 import type { EChartsOption, GraphicComponentOption, SeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { TimeseriesModel, TimeseriesPanel, TimeseriesSeries } from '../models/timeseries'
-import { arrayLabel, isDepthVariable, panelNoDataText } from '../models/timeseries'
+import { arrayLabel, isDepthVariable, panelNoDataText, timeseriesInUnits } from '../models/timeseries'
 import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, sensorColor, variableStyle, withAlpha } from '../palette'
 import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
 import { WIND_DIRECTION } from '../variables/direction'
-import { formatValue, plainName, plainUnit } from '../variables/labels'
+import { LABELS, formatValue, plainName, plainUnit } from '../variables/labels'
+import { columnValue, depthsIn, displayUnit, quantityOfColumn } from '../units'
 import { timeAxis, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtWall, isoWall, plainLabel } from './format'
 import { bandSeries, sensorEventSeries } from './overlays'
@@ -117,9 +119,9 @@ const unitOf = (col: string) => /\[([^\]]+)\]\s*$/.exec(col)?.[1] ?? ''
  */
 function plainSeries(p: TimeseriesPanel, s: TimeseriesSeries): { label: string; full: string; unit: string } {
   const name = plainName(ELEM_MAP[p.variable]?.[0] ?? '', p.variable)
-  const key = s.depth ?? (p.legend ? columnKey(p.variable, s.name) : null)
-  const unit = plainUnit(unitOf(s.name))
-  if (s.depth && s.probe) return { label: arrayLabel(s.depth, s.probe), full: `${name} at ${s.depth}, array ${s.probe}`, unit }
+  const key = s.depth ? depthsIn(s.depth) : p.legend ? columnKey(p.variable, s.name) : null
+  const unit = plainUnit(displayUnit(unitOf(s.name), s.name))
+  if (s.depth && s.probe) return { label: arrayLabel(s.depth, s.probe), full: `${name} at ${depthsIn(s.depth)}, array ${s.probe}`, unit }
   return { label: key ?? name, full: key ? `${name} at ${key}` : name, unit }
 }
 
@@ -136,7 +138,8 @@ const PARTIAL_BAR_ALPHA = 0.35
 /** Today's partial daily point: a hollow ring this wide (px), over the line or dots. */
 const PARTIAL_RING = 8
 
-export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ctx) => {
+export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (model, ctx) => {
+  const m = { ...model, ts: timeseriesInUnits(model.ts) }
   const { panels } = m.ts
   const n = panels.length
   const filled = m.fill && ctx.height ? fillRows(m.fill.rows, ctx.height, ctx.compact) : null
@@ -206,7 +209,8 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (m, ct
       }
       // One key per depth (its arrays share the color); the arrays' line styles are keyed after the depths.
       if (s.depth) {
-        if (!keys.some((k) => k.label === s.depth)) keys.push({ label: s.depth, color })
+        const depth = depthsIn(s.depth)
+        if (!keys.some((k) => k.label === depth)) keys.push({ label: depth, color })
       }
       else if (p.legend) keys.push({ label: columnKey(p.variable, s.name), color, ...(dots ? { glyph: shape.glyph } : {}) })
       // The variable page's Daily band (core/variables/band; drawn by variable.ts) and the mean it surrounds.
@@ -399,18 +403,21 @@ export function latestTimeseriesTable(m: LatestTimeseriesModel, limit = TABLE_RO
       const { full, unit } = plainSeries(p, s)
       const name = unit ? `${full} (${unit})` : full
       return [
-        { id, name, values: s.values },
-        ...(s.band ? [{ id, name: `Low: ${name}`, values: s.band.lo }, { id, name: `High: ${name}`, values: s.band.hi }] : []),
+        { id, col: s.name, name, values: s.values },
+        ...(s.band ? [{ id, col: s.name, name: `Low: ${name}`, values: s.band.lo }, { id, col: s.name, name: `High: ${name}`, values: s.band.hi }] : []),
       ]
     })
   })
   const rows: string[][] = []
   let total = 0
+  // The model is US: an id with a unit converts as it formats; any other converting column converts here.
+  const cell = (c: (typeof cols)[number], v: number) =>
+    !LABELS[c.id]?.q && quantityOfColumn(c.col) ? formatValue('', columnValue(c.col, v), 'table') : formatValue(c.id, v, 'table')
   m.ts.x.forEach((x, j) => {
     if (!Number.isFinite(x) || cols.every((c) => c.values[j] == null)) return
     if (++total > limit) return
     // Today's partial daily row keeps its date, so the column stays a date column.
-    rows.push([x === m.partial ? `${isoWall(x, period)} (so far)` : isoWall(x, period), ...cols.map((c) => (c.values[j] == null ? MISSING : formatValue(c.id, c.values[j], 'table')))])
+    rows.push([x === m.partial ? `${isoWall(x, period)} (so far)` : isoWall(x, period), ...cols.map((c) => (c.values[j] == null ? MISSING : cell(c, c.values[j]!)))])
   })
   if (total > limit) {
     rows.push([`Showing first ${limit} of ${total} rows; use the Data Downloader for the full record.`])

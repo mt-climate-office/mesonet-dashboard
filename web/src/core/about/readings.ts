@@ -8,7 +8,8 @@
 import { ELEM_MAP } from '../params/latest'
 import { depthLabelFromColumn, variableForColumn } from '../params/columns'
 import { currentConditionsRows, pptSummaryRows } from '../cards/currentConditions'
-import { LABELS, formatValue } from '../variables/labels'
+import { depthsIn, displayUnit, fromUs, isSi, quantityOfUnit } from '../units'
+import { LABELS, formatValue, labelUnit } from '../variables/labels'
 
 export interface Reading {
   /** The API column ("Soil VWC @ 4 in [%]"), or "Timestamp". */
@@ -45,7 +46,7 @@ export function readingLabel(col: string): string {
   const id = labelId(col)
   const name = id ? LABELS[id].name : col.split('[')[0].trim()
   const depth = id ? depthLabelFromColumn(col) : null
-  return depth ? `${name} at ${depth}` : name
+  return depth ? `${name} at ${depthsIn(depth)}` : name
 }
 
 /**
@@ -60,9 +61,12 @@ export function readingValue(col: string, value: string): ReadingValue {
   if (!m || col === 'Timestamp') return { value, unit: '', note: '' }
   const note = m[2].trim()
   const id = labelId(col)
-  if (id) return { value: formatValue(id, Number(m[1]), 'table'), unit: LABELS[id].unit, note }
+  if (id) return { value: formatValue(id, Number(m[1]), 'table'), unit: labelUnit(id), note }
   const unit = /\[([^\]]+)\]/.exec(col)?.[1]
-  return unit ? { value: m[1], unit, note } : { value, unit: '', note: '' }
+  if (!unit) return { value, unit: '', note: '' }
+  // Unknown columns: the number as given in US, converted (to 2 decimals) where its unit has an SI form.
+  const q = quantityOfUnit(unit, col)
+  return q && isSi() ? { value: String(Number(fromUs(q, Number(m[1])).toFixed(2))), unit: displayUnit(unit, col), note } : { value: m[1], unit, note }
 }
 
 /**
@@ -90,7 +94,12 @@ export function pptLabel(col: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 }
 
-/** The HydroMet precipitation summary (core/cards `pptSummaryRows`, newest window first), in inches. */
+/** The HydroMet precipitation summary (core/cards `pptSummaryRows`, newest window first), in the display units. */
 export function pptRows(summary: Record<string, unknown> | undefined): Reading[] {
-  return pptSummaryRows(summary).map(([col, total]) => ({ col, label: pptLabel(col), value: total.replace(/ in$/, ''), unit: 'in' }))
+  return pptSummaryRows(summary).map(([col, total]) => {
+    // "1.23 in" (US) is converted here; a total already in other units keeps them.
+    const m = /^(-?\d+(?:\.\d+)?)\s*(\S*)$/.exec(total)
+    if (m && m[2] === 'in') return { col, label: pptLabel(col), value: formatValue('ppt', Number(m[1]), 'table'), unit: labelUnit('ppt') }
+    return { col, label: pptLabel(col), value: m ? m[1] : total, unit: m ? m[2] : '' }
+  })
 }

@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { percentSaturation, swp } from '../ag/compute'
 import { soilParams, soilSeries } from '../ag/__tests__/adapters'
 import { profileValues } from '../ag/view/derive'
-import { SWP_CAP_BAR, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, depthLabel, swpBar } from '../ag/view/labels'
+import { SWP_CAP_BAR, SWP_FIELD_CAPACITY, SWP_WILTING_POINT, depthInches, depthLabel, swpBar } from '../ag/view/labels'
 import { FROZEN, HEATMAP, THEMES, depthStyle } from '../palette'
-import { FROZEN_NAME, monthStarts, percentSaturationChart, percentSaturationTable, soilProfileChart, soilProfileTable, swpChart, swpTable, type SoilProfileModel } from './agSoil'
+import { frozenName, monthStarts, percentSaturationChart, percentSaturationTable, soilProfileChart, soilProfileTable, swpChart, swpTable, type SoilProfileModel } from './agSoil'
 import { DASH_ICON, LINE_ICON } from './agLegend'
 import { drawn, shownY, testCtx } from './testing'
 
@@ -44,18 +44,18 @@ describe('swpChart', () => {
     const phone = swpChart({ series: s, period: 'daily' }, testCtx('light', 390, true))
     expect(series(phone)[0].markLine!.data.map((l) => l.name)).toEqual(['Field\ncapacity\n-0.33 bar', 'Wilting\npoint\n-15 bar'])
     expect((phone.grid as { right: number }).right).toBeLessThan((o.grid as { right: number }).right)
-    expect(lines.map((l) => l.name)).toEqual(s.depthsCm.map(depthLabel))
+    expect(lines.map((l) => l.name)).toEqual(s.depthsCm.map((cm) => depthLabel(cm)))
     const i = s.kPa[1].findIndex((v) => v != null)
     expect((lines[1].data[i] as number[])[1]).toBeCloseTo(s.kPa[1][i]! / 100, 10)
     // The key draws each depth's dash (4 and 20 in are dashed).
     const key = (o.legend as { data: { name: string; icon: string }[] }).data
-    expect(key.map((k) => k.name)).toEqual(s.depthsCm.map(depthLabel))
+    expect(key.map((k) => k.name)).toEqual(s.depthsCm.map((cm) => depthLabel(cm)))
     expect(key.map((k) => k.icon)).toEqual(s.depthsCm.map((cm) => (depthStyle(Number.parseInt(depthLabel(cm)), 'light').dash ? DASH_ICON : LINE_ICON)))
   })
   it('depth colors are stable palette roles per theme', () => {
     for (const t of THEMES) {
       const lines = series(swpChart({ series: s, period: 'daily' }, testCtx(t))).slice(1).filter((l) => l.lineStyle?.type !== 'dotted')
-      const want = s.depthsCm.map((cm) => depthStyle(Number.parseInt(depthLabel(cm)), t))
+      const want = s.depthsCm.map((cm) => depthStyle(depthInches(cm), t))
       expect(lines.map((l) => [l.color, l.lineStyle?.type])).toEqual(want.map((w) => [w.color, w.dash ?? 'solid']))
     }
   })
@@ -63,14 +63,14 @@ describe('swpChart', () => {
     const { bar, dry } = swpBar(s)
     // The fixture season dries 2 in and 40 in past the lab range.
     const dryDepths = s.depthsCm.filter((_, d) => dry[d].some(Boolean))
-    expect(dryDepths.map(depthLabel)).toEqual(['2 in', '40 in'])
+    expect(dryDepths.map((cm) => depthLabel(cm))).toEqual(['5 cm', '100 cm'])
     const dryVals = bar.flatMap((col, k) => col.filter((v, j) => dry[k][j] && v != null)) as number[]
     expect(dryVals.every((v) => v >= SWP_WILTING_POINT && v <= SWP_CAP_BAR)).toBe(true)
     expect(dryVals).toContain(SWP_CAP_BAR)
     const o = swpChart({ series: s, period: 'daily' }, testCtx())
     const lines = series(o).slice(1)
     const dotted = lines.filter((l) => l.lineStyle?.type === 'dotted')
-    expect(dotted.map((l) => l.name)).toEqual(dryDepths.map(depthLabel))
+    expect(dotted.map((l) => l.name)).toEqual(dryDepths.map((cm) => depthLabel(cm)))
     const d = s.depthsCm.indexOf(dryDepths[0])
     expect(dotted[0].color).toBe(lines.find((l) => l.name === dotted[0].name && l.lineStyle?.type !== 'dotted')!.color)
     // Full strength: a depth capped all season must not read as a reference line.
@@ -84,7 +84,7 @@ describe('swpChart', () => {
     const fmt = (o.tooltip as { formatter: (p: unknown) => string }).formatter
     const tip = (note: string) => fmt([{ seriesName: '2 in', value: [pts[0][0], 1000, note], marker: '', axisValue: pts[0][0] }])
     expect(tip('dry')).toContain('≤ -1000.00 bar (drier than the lab range)')
-    expect(tip('joint')).not.toContain('2 in')
+    expect(tip('joint')).not.toContain('5 cm')
     const t = swpTable({ series: s, period: 'daily' })
     expect(t.rows[i][d + 1]).toBe(`≤ -${bar[d][i]!.toFixed(2)}`)
   })
@@ -99,7 +99,7 @@ describe('swpChart', () => {
   })
   it('table shows suction as negative bar', () => {
     const t = swpTable({ series: s, period: 'daily' })
-    expect(t.columns).toEqual(['Date', ...s.depthsCm.map(depthLabel)])
+    expect(t.columns).toEqual(['Date', ...s.depthsCm.map((cm) => depthLabel(cm))])
     expect(t.rows).toHaveLength(s.time.length)
     expect(t.rows.flat().some((c) => /^-\d/.test(c))).toBe(true)
   })
@@ -110,7 +110,7 @@ describe('percentSaturationChart', () => {
     const p = percentSaturation(soil, params)
     const o = percentSaturationChart({ series: p, period: 'daily' }, testCtx())
     expect(shownY(o)[0]).toMatchObject({ type: 'value', min: 0, max: 100, interval: 25 })
-    expect(series(o).map((l) => l.name)).toEqual(p.depthsCm.map(depthLabel))
+    expect(series(o).map((l) => l.name)).toEqual(p.depthsCm.map((cm) => depthLabel(cm)))
     expect(percentSaturationTable({ series: p, period: 'daily' }).rows).toHaveLength(p.time.length)
   })
 })
@@ -150,12 +150,12 @@ describe('soilProfileChart', () => {
     const [heat, frozen] = series(o)
     expect(heat.type).toBe('heatmap')
     expect(heat.data).toEqual([[1, 0, 20], [0, 1, 30], [1, 1, 31]])
-    expect(shownY(o)[0]).toMatchObject({ type: 'category', data: ['2 in', '4 in'], inverse: true })
+    expect(shownY(o)[0]).toMatchObject({ type: 'category', data: ['5 cm', '10 cm'], inverse: true })
     // Category data are wall-clock ms (local noon for daily rows) so the host zooms in ms.
     const x = o.xAxis as { type: string; data: number[]; axisLabel: { formatter: (v: number) => string } }
     expect(x).toMatchObject({ type: 'category', data: [Date.UTC(2026, 0, 1, 12), Date.UTC(2026, 0, 2, 12)] })
     expect(x.axisLabel.formatter(x.data[0])).toBe('Jan 1')
-    expect(frozen).toMatchObject({ type: 'custom', name: FROZEN_NAME, data: [[0, 0]], color: FROZEN.light.color })
+    expect(frozen).toMatchObject({ type: 'custom', name: frozenName(), data: [[0, 0]], color: FROZEN.light.color })
     expect(o.visualMap).toMatchObject({ seriesIndex: 0, dimension: 2 })
   })
   it('compact: horizontal color bar under the plot, grid bottom clears it', () => {
@@ -195,7 +195,7 @@ describe('soilProfileChart', () => {
     const m: SoilProfileModel = { variable: 'soil_vwc', time: winter.time, depthsCm: pv.depthsCm, values: pv.values, frozen: pv.frozen, period: 'daily' }
     expect(series(soilProfileChart(m, testCtx()))).toHaveLength(2)
     const t = soilProfileTable(m)
-    expect(t.columns).toEqual(['Date', ...pv.depthsCm.map(depthLabel)])
+    expect(t.columns).toEqual(['Date', ...pv.depthsCm.map((cm) => depthLabel(cm))])
     expect(t.rows).toHaveLength(winter.time.length)
     expect(t.rows.flat()).toContain('frozen')
   })

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { INDEX_LINE, NORMALS } from '../palette'
 import { TOKENS_SNAPSHOT } from '../palette/tokens.snapshot'
-import { echartsTheme, paint, readChartTheme } from './theme'
+import { echartsTheme, paint, readChartTheme, tickNumber } from './theme'
 import { fakeGetVar } from './testing'
 
 describe('readChartTheme', () => {
@@ -52,5 +52,19 @@ describe('echartsTheme', () => {
       expect([z.dataBackground.lineStyle.color, z.dataBackground.areaStyle.color]).toEqual([t.textMuted, t.grid])
       expect([z.selectedDataBackground.lineStyle.color, z.selectedDataBackground.areaStyle.color]).toEqual([t.text, t.textMuted])
     }
+  })
+})
+
+describe('tickNumber', () => {
+  it('drops float noise from computed ticks and groups thousands', () => {
+    expect(tickNumber(0.1 * 3)).toBe('0.3')
+    expect(tickNumber(0.05 * 3)).toBe('0.15')
+    expect(tickNumber(0.0025)).toBe('0.0025')
+    expect(tickNumber(1200)).toBe('1,200')
+    expect(tickNumber(-10)).toBe('-10')
+  })
+  it('is the value-axis default label formatter', () => {
+    const t = echartsTheme(readChartTheme('light', fakeGetVar('light'))) as { valueAxis: { axisLabel: { formatter: unknown } } }
+    expect(t.valueAxis.axisLabel.formatter).toBe(tickNumber)
   })
 })

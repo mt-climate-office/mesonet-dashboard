@@ -9,6 +9,8 @@
  */
 import type { EChartsOption, SeriesOption } from 'echarts'
 import { DAILY_RANGE, withAlpha } from '../palette'
+import { timeseriesInUnits } from '../models/timeseries'
+import { displayUnit } from '../units'
 import { plainUnit } from '../variables/labels'
 import { LAYOUT, latestTimeseriesChart, latestTimeseriesTable, seriesColor, type LatestTimeseriesModel } from './latestTimeseries'
 import { bandSeries } from './overlays'
@@ -22,8 +24,10 @@ export type VariableModel = LatestTimeseriesModel
 
 const BAND_ID = 'daily-range'
 
-export const variableChart: ChartBuilder<VariableModel> = (m, ctx) => {
-  const option = latestTimeseriesChart(m, ctx)
+export const variableChart: ChartBuilder<VariableModel> = (model, ctx) => {
+  const option = latestTimeseriesChart(model, ctx)
+  // The band below is drawn here from the model too: in the display units, as latestTimeseries draws.
+  const m = { ...model, ts: timeseriesInUnits(model.ts) }
   const [g] = option.grid as { left: number; right: number }[]
   const panel = m.ts.panels[0]
   const s = panel?.series.length === 1 ? panel.series[0] : undefined
@@ -42,7 +46,7 @@ export const variableChart: ChartBuilder<VariableModel> = (m, ctx) => {
   const xs = pick(m.ts.x).map((x) => x + 12 * 3_600_000)
   const color = withAlpha(seriesColor(ctx, panel, s, 0), DAILY_RANGE.alpha)
   const band = bandSeries(DAILY_RANGE.label, `${AUX}${BAND_ID}-base`, xs, pick(s.band.lo), pick(s.band.hi), { color, digits: 1, stack: BAND_ID, step: DAY })
-  const unit = plainUnit(/\[([^\]]+)\]\s*$/.exec(s.name)?.[1] ?? '')
+  const unit = plainUnit(displayUnit(/\[([^\]]+)\]\s*$/.exec(s.name)?.[1] ?? '', s.name))
   const base = (option.tooltip as { formatter: (p: TipParam | TipParam[]) => string }).formatter
   const formatter = (raw: TipParam | TipParam[]) => {
     const fill = (Array.isArray(raw) ? raw : [raw]).find((p) => p.seriesId === `${BAND_ID}-band`)
