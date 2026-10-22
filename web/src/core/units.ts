@@ -40,7 +40,6 @@ export type Quantity =
   | 'pressure' // mb ↔ kPa (pressure, VPD)
   | 'swp' // bar ↔ kPa (soil water potential)
   | 'elev' // ft ↔ m
-  | 'depth' // in ↔ cm (soil sensor depths)
 
 interface QuantitySpec {
   us: string
@@ -65,7 +64,6 @@ const SPECS: Record<Quantity, QuantitySpec> = {
   pressure: { us: 'mb', si: 'kPa', toSi: (v) => v / 10, toUs: (v) => v * 10, siDigits: 1 },
   swp: { us: 'bar', si: 'kPa', toSi: (v) => v * 100, toUs: (v) => v / 100, siDigits: -1 },
   elev: { us: 'ft', si: 'm', toSi: (v) => v / FT_PER_M, toUs: (v) => v * FT_PER_M, siDigits: 0 },
-  depth: { us: 'in', si: 'cm', toSi: (v) => v * 2.54, toUs: (v) => v / 2.54, siDigits: 0 },
 }
 
 /** `v` (in `q`'s US unit) in `u`; null/non-finite pass through. */
@@ -142,18 +140,18 @@ export function displayUnit(unit: string, col = '', u: Units = units()): string 
   return q ? SPECS[q].si : unit
 }
 
-/** Soil sensor depths: inches shown (the LAB_SWAP labels) ↔ the probe's cm. */
+/**
+ * Sensor depths and heights are not display units: they always read as the probe's metric depth
+ * ("10 cm"), whatever `units` is. Column keys stay inch-keyed internally (LAB_SWAP); these turn
+ * those inch keys back into the true cm depth for display.
+ */
 const IN_TO_CM: Readonly<Record<number, number>> = { 2: 5, 4: 10, 8: 20, 20: 50, 28: 70, 36: 91, 40: 100 }
 
-/** A soil depth label in `u`: "4 in" → "10 cm" (the sensor's true depth); "4 in" in US. */
-export function depthText(inches: number, u: Units = units()): string {
-  return u === 'si' ? `${IN_TO_CM[inches] ?? Math.round(inches * 2.54)} cm` : `${inches} in`
-}
+/** A soil depth key in inches as shown: 4 → "10 cm" (the sensor's true depth). */
+export const depthText = (inches: number): string => `${IN_TO_CM[inches] ?? Math.round(inches * 2.54)} cm`
 
-/** Rewrite every "N in" soil depth inside `text` for `u` ("Soil moisture at 4 in" → "… at 10 cm"). */
-export function depthsIn(text: string, u: Units = units()): string {
-  return u === 'si' ? text.replace(/\b(\d+) in\b/g, (_, n: string) => depthText(Number(n), u)) : text
-}
+/** Rewrite every "N in" soil depth inside `text` as cm ("Soil moisture at 4 in" → "… at 10 cm"). */
+export const depthsIn = (text: string): string => text.replace(/\b(\d+) in\b/g, (_, n: string) => depthText(Number(n)))
 
 /** The saved choice (localStorage), copied into `?units=` at boot when a link has none. */
 export const UNITS_KEY = 'mco-dashboard-units'

@@ -235,7 +235,10 @@ nothing. Ag compute is SI inside and converts at its display edge as before. Dis
 formatters (`formatValue`, `formatReading`, `axisTitle`, `labelUnit`), which convert a US value of an id with a
 `q` quantity. `units()` reads `$store.url` through a reader main.ts injects, so a getter that formats re-runs on a
 switch and the chart host's model effect redraws. The Downloader sends `units` to the API, so its CSV carries the
-API's own SI headers (soil water potential in kPa).
+API's own SI headers (soil water potential in kPa). **Sensor heights and soil depths are not display units**: they always
+read metric, as the API names them ("Air temperature at 2 m", "Soil moisture at 10 cm"), in both systems; LAB_SWAP's
+inch keys ("@ 4 in") stay internal (matching, depth colors) and `core/units` `depthText`/`depthsIn` show them as cm. The
+wind rose bins whole mph, or whole m/s (half m/s for a light-wind window: `SI_MIN_BINS`).
 
 ## Theming reaches charts and maps through one event
 

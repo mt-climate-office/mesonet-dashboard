@@ -86,12 +86,11 @@ describe('columns', () => {
     expect(displayUnit('%', '', 'si')).toBe('%')
     expect(displayUnit('°F', '', 'us')).toBe('°F')
   })
-  it('soil depths show the probe’s cm in SI', () => {
-    expect(depthText(4, 'si')).toBe('10 cm')
-    expect(depthText(36, 'si')).toBe('91 cm')
-    expect(depthText(4, 'us')).toBe('4 in')
-    expect(depthsIn('Soil moisture at 2 in', 'si')).toBe('Soil moisture at 5 cm')
-    expect(depthsIn('Soil moisture at 2 in', 'us')).toBe('Soil moisture at 2 in')
+  it('soil depths always show the probe’s cm (not a display unit)', () => {
+    expect(depthText(4)).toBe('10 cm')
+    expect(depthText(36)).toBe('91 cm')
+    expect(depthsIn('Soil moisture at 2 in')).toBe('Soil moisture at 5 cm')
+    expect(depthsIn('Precipitation [in]')).toBe('Precipitation [in]')
   })
 })
 

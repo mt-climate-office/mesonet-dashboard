@@ -56,7 +56,7 @@ describe('variableRows', () => {
   })
   it('takes current values from /latest, with the depth for soil', () => {
     expect(byId.air_temp).toMatchObject({ value: '57 °F', note: '' })
-    expect(byId.soil_vwc).toMatchObject({ value: '9%', note: 'at 2 in' })
+    expect(byId.soil_vwc).toMatchObject({ value: '9%', note: 'at 5 cm' })
   })
   it('summed variables show the last 24 h total and bars', () => {
     expect(byId.ppt).toMatchObject({ value: '0.30 in', note: 'last 24 h' })
@@ -115,7 +115,7 @@ describe('currentReading', () => {
   const v = (id: string) => VARS.find((x) => x.id === id)!
   it('the /latest reading in plain units at the shallowest depth; none for totals or without a reading', () => {
     expect(currentReading(v('air_temp'), LATEST)).toBe('57 °F')
-    expect(currentReading(v('soil_vwc'), LATEST)).toBe('9% at 2 in')
+    expect(currentReading(v('soil_vwc'), LATEST)).toBe('9% at 5 cm')
     expect(currentReading(v('ppt'), LATEST)).toBeNull()
     expect(currentReading(v('bp'), LATEST)).toBeNull()
     expect(currentReading(v('air_temp'), undefined)).toBeNull()

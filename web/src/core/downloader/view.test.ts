@@ -58,11 +58,11 @@ describe('standardOptions / elementGroups', () => {
     el('etr', 'Reference ET'),
   ])
   it('dedupes, drops derived codes, swaps units and sorts naturally', () => {
-    expect(opts.map((o) => o.label)).toEqual(['Air temperature', 'Soil moisture at 4 in', 'Soil moisture at 40 in'])
+    expect(opts.map((o) => o.label)).toEqual(['Air temperature', 'Soil moisture at 10 cm', 'Soil moisture at 100 cm'])
   })
   it('names the height only when a station has several sensors of that variable', () => {
     const two = standardOptions([el('air_temp_0200', 'Air Temperature @ 2 m'), el('air_temp_0244', 'Air Temperature @ 8 ft'), el('ppt', 'Precipitation')])
-    expect(two.map((o) => o.label)).toEqual(['Air temperature at 6.6 ft', 'Air temperature at 8 ft', 'Precipitation'])
+    expect(two.map((o) => o.label)).toEqual(['Air temperature at 2 m', 'Air temperature at 8 ft', 'Precipitation'])
   })
   it('groups standard and derived; SWP options only at has_swp stations', () => {
     expect(elementGroups(opts, false).map((g) => [g.label, g.options.length])).toEqual([

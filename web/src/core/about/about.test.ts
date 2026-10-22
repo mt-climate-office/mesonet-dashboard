@@ -56,8 +56,8 @@ describe('readings', () => {
   it('gives API columns plain labels, with depths', () => {
     expect(readingLabel('Timestamp')).toBe('Observed')
     expect(readingLabel('Air Temperature [°F]')).toBe('Air temperature')
-    expect(readingLabel('Soil VWC @ 4 in [%]')).toBe('Soil moisture at 4 in')
-    expect(readingLabel('Bulk EC @ 40 in [mS/cm]')).toBe('Soil salinity (EC) at 40 in')
+    expect(readingLabel('Soil VWC @ 4 in [%]')).toBe('Soil moisture at 10 cm')
+    expect(readingLabel('Bulk EC @ 40 in [mS/cm]')).toBe('Soil salinity (EC) at 100 cm')
     expect(readingLabel('Gust Speed [mi/hr]')).toBe('Wind gusts')
     expect(readingLabel('Wind Direction [deg]')).toBe('Wind direction')
     expect(readingLabel('Atmospheric Pressure [mbar]')).toBe('Pressure')
@@ -84,7 +84,7 @@ describe('readings', () => {
     const rows = readingRows({ datetime: '2026-10-01 13:15:00-06:00', 'Soil VWC @ 4 in [%]': 13.35 })
     expect(rows).toEqual([
       { col: 'Timestamp', label: 'Observed', value: 'Oct 1, 2026 1:15 PM', unit: '' },
-      { col: 'Soil VWC @ 4 in [%]', label: 'Soil moisture at 4 in', value: '13.4', unit: '%' },
+      { col: 'Soil VWC @ 4 in [%]', label: 'Soil moisture at 10 cm', value: '13.4', unit: '%' },
     ])
     const feels = readingRows({ datetime: '2026-01-01 08:00:00-07:00', 'Air Temperature [°F]': 10, 'Wind Speed [mi/hr]': 15 }).find((r) => r.col === 'Feels like [°F]')
     expect(feels?.label).toMatch(/^Feels like \(wind chill\)$/)

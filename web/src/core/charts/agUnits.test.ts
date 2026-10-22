@@ -23,7 +23,6 @@ afterEach(() => setUnitsSource(() => 'us'))
 describe('Ag labels in SI', () => {
   it('depths, SWP text, profile units and the frozen line', () => {
     expect(depthLabel(10)).toBe('10 cm')
-    expect(depthLabel(10, 'us')).toBe('4 in')
     expect(swpText(0.33, false)).toBe('-33.0 kPa')
     expect(swpText(1000, true)).toBe('≤ -100000.0 kPa (drier than the lab range)')
     expect(profileMeta('soil_temp')).toMatchObject({ units: '°C', mid: 0 })
@@ -35,7 +34,7 @@ describe('Ag labels in SI', () => {
     expect(fromSi('in', 'Snow Depth [in]')(100)).toBe(10)
     expect(annualAxisLabel('Average Air Temperature @ 2 m [°F]', false)).toBe('Air temperature at 2 m (°C)')
     expect(annualAxisLabel('Total Precipitation [in]', true)).toBe('Cumulative precipitation (mm)')
-    expect(annualAxisLabel('Average Air Temperature @ 2 m [°F]', false, 'us')).toBe('Air temperature at 6.6 ft (°F)')
+    expect(annualAxisLabel('Average Air Temperature @ 2 m [°F]', false, 'us')).toBe('Air temperature at 2 m (°F)')
   })
   it('capped-depth notes name the cap in kPa', () => {
     const s: SwpSeries = { depthsCm: [10], time: ['2025-07-01'], epochMs: [0], kPa: [[1e6]], clipped: [[true]] } as unknown as SwpSeries

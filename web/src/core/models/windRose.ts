@@ -4,7 +4,8 @@
  * speed bin) that the ECharts polar-bar builder consumes, and its stats. Calm
  * readings (under CALM_MPH) have no meaningful direction: they are counted
  * apart, not drawn. Binning is a port of legacy `plot_wind`: speeds (in the
- * display units, core/units) are rounded to whole mph, or to 0.1 m/s in SI,
+ * display units, core/units) are rounded to whole mph, or to whole m/s in SI
+ * (half m/s when under SI_MIN_BINS distinct whole speeds: a light-wind window),
  * with numpy's round-half-to-even, then `pd.qcut(q=8,
  * duplicates="drop")`. qcut's edges are numpy linear-interpolated quantiles,
  * so they can be fractional (e.g. 3.75). Bins are right-closed, the first
@@ -20,6 +21,9 @@ import { formatReading } from '../variables/labels'
 /** Columns the rose requests (`elements=wind_spd,wind_dir`, LAB_SWAP names). */
 export const WIND_DIR_COLUMN = 'Wind Direction [deg]'
 export const WIND_SPEED_COLUMN = 'Wind Speed [mi/hr]'
+
+/** Fewest distinct whole-m/s speeds before SI bins on half m/s (whole mph gives legacy's 8 at most stations). */
+export const SI_MIN_BINS = 5
 
 /** numpy `round` (half to even), e.g. 2.5 → 2, 3.5 → 4. */
 export function roundHalfEven(x: number): number {
@@ -62,8 +66,8 @@ export interface SpeedBins {
 
 /**
  * qcut bins over `rawSpeeds`, rounded to whole multiples of `1 / scale` first (1: whole mph,
- * legacy; 10: tenths, for m/s). Edges are in steps of `1 / scale` too; labels show the
- * speeds a bin holds at that step ("4 – 6", "1.3 – 2.2").
+ * legacy, or whole m/s; 2: half m/s). Edges are in steps of `1 / scale` too; labels show the
+ * speeds a bin holds at that step ("4 – 6", "1.5 – 2.5").
  */
 export function speedBins(rawSpeeds: readonly number[], n = 8, scale = 1): SpeedBins {
   // Bin in whole steps (integers), as legacy does in whole mph, then scale back.
@@ -75,8 +79,8 @@ export function speedBins(rawSpeeds: readonly number[], n = 8, scale = 1): Speed
     for (let i = 0; i < numBins - 1; i++) if (s <= steps[i + 1]) return i
     return numBins - 1
   }
-  const digits = scale === 1 ? 0 : Math.round(Math.log10(scale))
-  const at = (x: number) => (x / scale).toFixed(digits)
+  // Trailing zeros dropped: half steps read "1.5 – 2", whole steps "4 – 6".
+  const at = (x: number) => String(Number((x / scale).toFixed(3)))
   const labels = Array.from({ length: numBins }, (_, b) => {
     if (steps.length < 2) return steps.length ? at(steps[0]) : ''
     // Bin 0 is [e0, e1]; bin b is (e_b, e_b+1].
@@ -148,7 +152,10 @@ export function buildWindRoseModel(rows: readonly ObservationRow[], u: Units = u
   const base = { directions: WIND_DIRECTIONS, span: windDateSpan(rows.map((r) => String(r.datetime))), n: obs.length, calm, meanSpeed: sum / total, units: u }
   if (obs.length === 0) return { ...base, bins: [] }
   const speed = (mph: number) => fromUs('speed', mph, u)
-  const { numBins, binFor: binOf, labels } = speedBins(obs.map((o) => speed(o.spd)), 8, u === 'si' ? 10 : 1)
+  const speeds = obs.map((o) => speed(o.spd))
+  // Light winds in whole m/s hold too few distinct speeds to tell apart: bin on half m/s then.
+  const light = u === 'si' && new Set(speeds.map(roundHalfEven)).size < SI_MIN_BINS
+  const { numBins, binFor: binOf, labels } = speedBins(speeds, 8, light ? 2 : 1)
   const binFor = (mph: number) => binOf(speed(mph))
   const bins: WindRoseBin[] = labels.slice(0, numBins).map((label) => ({ label, counts: WIND_DIRECTIONS.map(() => 0) }))
   for (const o of obs) {

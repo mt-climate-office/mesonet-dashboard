@@ -99,20 +99,14 @@ describe('orderColumns', () => {
 })
 
 describe('elementLabel', () => {
-  it('converts metric depths/heights like legacy dist_swap', () => {
-    expect(elementLabel('Soil VWC @ -10 cm')).toBe('Soil moisture at 4 in')
-    expect(elementLabel('Soil VWC @ -100 cm')).toBe('Soil moisture at 40 in')
-    expect(elementLabel('Air Temperature @ 2 m')).toBe('Air temperature at 6.6 ft')
-    expect(elementLabel('Wind Speed @ 10 m')).toBe('Wind at 33 ft')
+  it('plain names with the API’s metric depths and heights (not display units)', () => {
+    expect(elementLabel('Soil VWC @ -10 cm')).toBe('Soil moisture at 10 cm')
+    expect(elementLabel('Soil VWC @ -100 cm')).toBe('Soil moisture at 100 cm')
+    expect(elementLabel('Air Temperature @ 2 m')).toBe('Air temperature at 2 m')
+    expect(elementLabel('Wind Speed @ 10 m')).toBe('Wind at 10 m')
     expect(elementLabel('Air Temperature @ 8 ft')).toBe('Air temperature at 8 ft')
     expect(elementLabel('Precipitation')).toBe('Precipitation')
     expect(elementLabel('Battery Voltage')).toBe('Battery Voltage')
-  })
-  it('keeps the API’s metric heights and depths in SI', () => {
-    expect(elementLabel('Soil VWC @ -10 cm', 'si')).toBe('Soil moisture at 10 cm')
-    expect(elementLabel('Air Temperature @ 2 m', 'si')).toBe('Air temperature at 2 m')
-    expect(elementLabel('Wind Speed @ 10 m', 'si')).toBe('Wind at 10 m')
-    expect(elementLabel('Air Temperature @ 8 ft', 'si')).toBe('Air temperature at 8 ft')
   })
 })
 

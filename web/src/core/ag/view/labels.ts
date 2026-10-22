@@ -207,7 +207,7 @@ export function parseLabel(header: string | null | undefined): { name: string; u
  */
 export function annualAxisLabel(header: string | null | undefined, cumulative: boolean, u: Units = units()): string {
   const { name, unit } = parseLabel(header)
-  const plain = name ? elementLabel(name, u) : ''
+  const plain = name ? elementLabel(name) : ''
   const base = unit ? `${plain} (${plainUnit(displayUnit(unit, name, u))})` : plain
   return cumulative ? cumulativeTitle(base) : base
 }
@@ -227,7 +227,7 @@ const CM_TO_IN: Record<number, number> = { 5: 2, 10: 4, 20: 8, 50: 20, 70: 28, 9
 export const depthInches = (cm: number): number => CM_TO_IN[cm] ?? Math.round(cm / 2.54)
 
 /** 10 → "4 in" ("10 cm" in SI); non-nominal depths round to the nearest inch. */
-export const depthLabel = (cm: number, u: Units = units()): string => (u === 'si' ? `${cm} cm` : `${depthInches(cm)} in`)
+export const depthLabel = (cm: number): string => `${cm} cm`
 
 /**
  * Chart x values: local (America/Denver) wall-clock strings, `YYYY-MM-DD` for

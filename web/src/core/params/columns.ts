@@ -8,7 +8,9 @@ import { type Units, depthsIn, displayUnit, units } from '../units'
  * Column-name normalisation applied to API responses. Mirrors params.lab_swap.
  * The new API already emits `datetime` (legacy used `index`); the rename is
  * mostly soil depth conversions (cm → inches) and consolidating the multi-
- * height air-temp / wind columns under a single canonical label.
+ * height air-temp / wind columns under a single canonical label. The inch keys
+ * are internal (matching, depth colors): depths always display as the probe's
+ * cm (core/units `depthsIn`).
  */
 export const LAB_SWAP: Record<string, string> = {
   index: 'datetime',
@@ -104,7 +106,7 @@ export function depthLabelFromColumn(col: string): string | null {
  */
 export function columnInUnits(col: string, u: Units = units()): string {
   if (u !== 'si') return col
-  return depthsIn(col, u).replace(/\[([^\]]+)\]\s*$/, (_, unit: string) => `[${displayUnit(unit, col, u)}]`)
+  return depthsIn(col).replace(/\[([^\]]+)\]\s*$/, (_, unit: string) => `[${displayUnit(unit, col, u)}]`)
 }
 
 /**

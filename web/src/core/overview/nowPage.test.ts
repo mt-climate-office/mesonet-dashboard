@@ -48,7 +48,7 @@ describe('buildNowPage tiles', () => {
       ['solar', 'sol_rad', 'Sunlight'],
       ['soil', 'soil_vwc', 'Soil moisture'],
     ])
-    expect(tile('soil')).toMatchObject({ value: '8', unit: '%', sub: '2 in deep', chip: null })
+    expect(tile('soil')).toMatchObject({ value: '8', unit: '%', sub: '5 cm deep', chip: null })
     expect(tile('solar')).toMatchObject({ value: '400', unit: 'W/m²' })
   })
   it('wind: compass word and gusts; humidity: dew point; rain: window and YTD share', () => {

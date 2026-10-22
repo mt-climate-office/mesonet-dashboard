@@ -43,7 +43,7 @@ describe('latestTimeseriesChart', () => {
     m.ts.panels[0].sensorSpans = [{ x0: view[0], x1: view[0] + 3_600_000, text: 'x' }]
     const o = build(m)
     const row = keys(o)
-    expect(row.map((k) => k.text)).toEqual(['2 in', '4 in', '20 in', 'Sensor change'])
+    expect(row.map((k) => k.text)).toEqual(['5 cm', '10 cm', '50 cm', 'Sensor change'])
     expect(new Set(row.map((k) => k.y)).size).toBe(1)
     expect(row[0].x).toBe(72)
     expect(row.every((k, i) => i === 0 || k.x > row[i - 1].x)).toBe(true)
@@ -52,7 +52,7 @@ describe('latestTimeseriesChart', () => {
     const m = model(hourRows(6, soil), ['Soil VWC'])
     m.ts.panels[0].sensorSpans = [{ x0: view[0], x1: view[0] + 3_600_000, text: 'x' }]
     const row = keys(latestTimeseriesChart(m, testCtx('dark', 200, true)) as unknown as Opt)
-    expect(row.find((k) => k.text === 'Sensor change')!.y).toBeGreaterThan(row.find((k) => k.text === '2 in')!.y)
+    expect(row.find((k) => k.text === 'Sensor change')!.y).toBeGreaterThan(row.find((k) => k.text === '5 cm')!.y)
   })
   it('a panel with keys gets a taller gap above it, so its key row clears the panel above', () => {
     const m = model(hourRows(6, (i) => ({ 'Air Temperature @ 2 m [°F]': 60 + i, ...soil(i) })), ['Air Temperature', 'Soil VWC'])
@@ -128,7 +128,7 @@ describe('latestTimeseriesChart', () => {
       expect(s.map((x) => x.name)).toEqual(['Soil VWC @ 2 in [%]', 'Soil VWC @ 4 in [%]', 'Soil VWC @ 20 in [%]'])
       expect(s.map((x) => x.color)).toEqual([2, 4, 20].map((d) => depthColor(d, theme)))
       expect(s.map((x) => x.lineStyle?.type)).toEqual(['solid', 'solid', 'solid'])
-      expect(texts(o)).toEqual(expect.arrayContaining(['2 in', '4 in', '20 in']))
+      expect(texts(o)).toEqual(expect.arrayContaining(['5 cm', '10 cm', '50 cm']))
     }
   })
 
@@ -145,9 +145,9 @@ describe('latestTimeseriesChart', () => {
     expect(s.map((x) => x.color)).toEqual([2, 2, 20, 20].map((d) => depthColor(d, 'dark')))
     expect(s.map((x) => x.lineStyle?.type)).toEqual(['solid', 'dashed', 'solid', 'dashed'])
     const keys = texts(o)
-    expect(keys.filter((t) => t === '2 in')).toHaveLength(1)
-    expect(keys).toEqual(expect.arrayContaining(['2 in', '20 in', 'Array A', 'Array B']))
-    expect(latestTimeseriesTable(m).columns).toEqual(['Time (MT)', 'Soil moisture at 2 in, array A (%)', 'Soil moisture at 2 in, array B (%)', 'Soil moisture at 20 in, array A (%)', 'Soil moisture at 20 in, array B (%)'])
+    expect(keys.filter((t) => t === '5 cm')).toHaveLength(1)
+    expect(keys).toEqual(expect.arrayContaining(['5 cm', '50 cm', 'Array A', 'Array B']))
+    expect(latestTimeseriesTable(m).columns).toEqual(['Time (MT)', 'Soil moisture at 5 cm, array A (%)', 'Soil moisture at 5 cm, array B (%)', 'Soil moisture at 50 cm, array A (%)', 'Soil moisture at 50 cm, array B (%)'])
   })
 
   it('multi-column line panels: a color per column (sensorColor), all solid, and a key', () => {

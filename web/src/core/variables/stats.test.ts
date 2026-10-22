@@ -58,7 +58,7 @@ describe('panelStats', () => {
       { name: 'Soil VWC @ 2 in [%]', depth: '2 in', values: [10, 11, 12, 13] },
       { name: 'Soil VWC @ 4 in [%]', depth: '4 in', values: [null, null, null, null] },
     ]), x, [0, 40], false)
-    expect(rows.map((r) => r.label)).toEqual(['2 in', '4 in'])
+    expect(rows.map((r) => r.label)).toEqual(['5 cm', '10 cm'])
     expect(rows[1].items[0].value).toBe('—')
   })
   it('in the plain unit and table precision with the variable id', () => {
