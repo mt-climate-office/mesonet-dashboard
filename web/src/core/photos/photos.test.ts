@@ -60,6 +60,10 @@ const RAW: RawSchedule = {
       first_month: '2020-01',
       periods: [{ from: '2020-01-01T00:00:00-07:00', until: '2021-01-01T00:00:00-07:00', views: { N: {} } }],
     },
+    skycam: {
+      first_month: '2024-01',
+      periods: [{ from: '2024-01-01T00:00:00-07:00', until: null, views: { NS: {}, SNOW: {}, G: {} } }],
+    },
   },
 }
 
@@ -92,31 +96,32 @@ describe('time', () => {
 
 describe('schedule', () => {
   const s = parseSchedule(RAW)
-  it('current views in canonical order with legacy labels', () => {
+  it('current views: cardinal only, N E S W order, legacy labels', () => {
     const cam = s.stations.get('acebozem')!
     expect(cam.name).toBe('Bozeman')
     expect(cam.firstMonth).toBe('2017-01')
     expect(cam.currentViews).toEqual([
-      { token: 'E', label: 'East' },
       { token: 'N', label: 'North' },
-      { token: 'SNOW', label: 'Snow' },
+      { token: 'E', label: 'East' },
     ])
-    expect(cam.allLabels).toMatchObject({ NS: 'North Sky', S: 'South', SNOW: 'Snow' })
+    expect(cam.allLabels).toEqual({ N: 'North', E: 'East', S: 'South' })
     expect(s.snapMaxMs).toBe(1_800_000)
     expect(s.base).toBe(B)
   })
   it('hasCamera needs a current period with views', () => {
     expect(hasCamera(s, 'acebozem')).toBe(true)
     expect(hasCamera(s, 'oldcam')).toBe(false)
+    // Only sky/snow/ground views: nothing to show, so no camera (Now falls back to the wind rose).
+    expect(hasCamera(s, 'skycam')).toBe(false)
     expect(hasCamera(s, 'nope')).toBe(false)
     expect(hasCamera(undefined, 'acebozem')).toBe(false)
   })
   it('viewsBetween picks the periods overlapping a day', () => {
     const cam = s.stations.get('acebozem')!
     const day = (d: string) => viewsBetween(cam, localToUtcMs(d), localToUtcMs(addDays(d, 1))).map((v) => v.token)
-    expect(day('2025-07-15')).toEqual(['N', 'S', 'NS'])
-    expect(day('2026-09-20')).toEqual(['E', 'N', 'S', 'SNOW', 'NS'])
-    expect(day('2026-09-30')).toEqual(['E', 'N', 'SNOW'])
+    expect(day('2025-07-15')).toEqual(['N', 'S'])
+    expect(day('2026-09-20')).toEqual(['N', 'E', 'S'])
+    expect(day('2026-09-30')).toEqual(['N', 'E'])
   })
   it('directionLabel prefers legacy words', () => {
     expect(directionLabel('SS', 'SS')).toBe('South Sky')
@@ -172,7 +177,9 @@ const MANIFEST = [
   // blank webp_large, slot present → derive from slot
   'acebozem,,N,2026-09-01T18:00:30Z,,2026-09-01,,2026-09-01T18:00:00Z,photos/jpg/acebozem/acebozem_N_20260901T180030Z.jpg,,',
   // blank slot + webp → snap capture to nearest hour
-  'acebozem,,NS,2026-09-01T20:59:40Z,,2026-09-01,,,photos/jpg/acebozem/acebozem_NS_20260901T205940Z.jpg,,',
+  'acebozem,,S,2026-09-01T20:59:40Z,,2026-09-01,,,photos/jpg/acebozem/acebozem_S_20260901T205940Z.jpg,,',
+  // a sky view → hidden (cardinal views only)
+  'acebozem,,NS,2026-09-01T21:00:00Z,,2026-09-01,,2026-09-01T21:00:00Z,photos/jpg/acebozem/acebozem_NS_20260901T210000Z.jpg,,',
   // > 30 min from its slot → jpg only, skipped
   'acebozem,,N,2026-09-01T18:45:00Z,,2026-09-01,,2026-09-01T18:00:00Z,photos/jpg/acebozem/acebozem_N_20260901T184500Z.jpg,,',
   // duplicate of the first slot (re-shot) → deduplicated
@@ -182,11 +189,11 @@ const MANIFEST = [
 
 describe('manifest', () => {
   const frames = parseManifest(MANIFEST, 'acebozem', { base: B, snapMaxMs: 1_800_000 })
-  it('handles the blank-webp quirk and snap limit', () => {
+  it('handles the blank-webp quirk and snap limit; skips non-cardinal views', () => {
     expect(frames.map((f) => basename(f.webpUrl))).toEqual([
       'acebozem_N_20260901T150000Z.webp',
       'acebozem_N_20260901T180000Z.webp',
-      'acebozem_NS_20260901T210000Z.webp',
+      'acebozem_S_20260901T210000Z.webp',
     ])
     expect(frames[0].jpgUrl).toBe(`${B}photos/jpg/acebozem/acebozem_N_20260901T150005Z.jpg`)
     expect(frames[0].capturedUtcMs).toBe(Date.UTC(2026, 8, 1, 15, 0, 5))
@@ -222,10 +229,10 @@ describe('fetchers', () => {
       return new Response('', { status: 404 })
     })
     const frames = await fetchLatestFrames(schedule, cam, Date.UTC(2026, 9, 1, 22))
-    expect(urls).toHaveLength(9)
-    // Current views in canonical order (E, N, SNOW here), three UTC days each.
+    expect(urls).toHaveLength(6)
+    // Current shown views in canonical order (N, E here; SNOW is hidden), three UTC days each.
     expect(urls[0]).toBe(
-      `${B}?list-type=2&prefix=${encodeURIComponent('photos/webp/large/acebozem/acebozem_E_20260929')}`,
+      `${B}?list-type=2&prefix=${encodeURIComponent('photos/webp/large/acebozem/acebozem_N_20260929')}`,
     )
     expect(urls.every((u) => !u.includes('/api/'))).toBe(true)
     expect(frames).toHaveLength(2)
@@ -263,7 +270,7 @@ describe('fetchers', () => {
       'acebozem_N_20260901T150000Z.webp',
       'acebozem_N_20260901T180000Z.webp',
     ])
-    expect(urls).toHaveLength(2) // N + NS on 2026-09-01; the non-derived frame needs no listing
+    expect(urls).toHaveLength(2) // N + S on 2026-09-01; the non-derived frame needs no listing
   })
 
   it('confirmDerived strict rejects on a failed listing; lenient drops those frames', async () => {

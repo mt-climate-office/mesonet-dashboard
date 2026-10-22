@@ -84,8 +84,11 @@ const LEGACY_LABELS: Record<string, string> = {
   SNOW: 'Snow',
 }
 
-/** West first (user decision 2026-10-08): it opens the carousel and the dialog. */
-const DIRECTION_ORDER = ['W', 'E', 'N', 'S', 'SNOW', 'NS', 'SS', 'G']
+/** The only views the dashboard shows, in display order; North opens the carousel and the dialog (#110). */
+const SHOWN_VIEWS = ['N', 'E', 'S', 'W']
+
+/** True for a cardinal view (N/E/S/W); sky, snow and ground views are hidden. */
+export const isShownView = (token: string): boolean => SHOWN_VIEWS.includes(token.toUpperCase())
 
 /** Legacy label for a token, else the schedule's view name, else the token. */
 export function directionLabel(token: string, view?: string): string {
@@ -93,10 +96,10 @@ export function directionLabel(token: string, view?: string): string {
   return LEGACY_LABELS[t] ?? (view && view !== token ? view : token)
 }
 
-/** Canonical W/E/N/S/Snow/sky order; unknown tokens last, alphabetically. */
+/** Canonical N/E/S/W order; unknown tokens last, alphabetically. */
 export function compareTokens(a: string, b: string): number {
   const rank = (t: string) => {
-    const i = DIRECTION_ORDER.indexOf(t.toUpperCase())
+    const i = SHOWN_VIEWS.indexOf(t.toUpperCase())
     return i < 0 ? 99 : i
   }
   return rank(a) - rank(b) || a.localeCompare(b)
@@ -107,7 +110,7 @@ export function parseSchedule(doc: RawSchedule): PhotoSchedule {
   for (const [id, st] of Object.entries(doc.stations ?? {})) {
     const allLabels: Record<string, string> = {}
     const periods: PhotoPeriod[] = (st.periods ?? []).map((p) => {
-      const tokens = Object.keys(p.views ?? {}).sort(compareTokens)
+      const tokens = Object.keys(p.views ?? {}).filter(isShownView).sort(compareTokens)
       const views = tokens.map((token) => {
         const v = p.views![token]
         const label = directionLabel(token, v.view)
