@@ -17,8 +17,12 @@ const MIN = 60_000
 const cached = <T>(key: string, fn: () => Promise<T>, ttl: number, live = false): Resource<T> =>
   Alpine.store('data').cached(key, fn, { ttl, live })
 
-/** data2 camera registry, public view (MCO.photos.load; `fresh` so each refetch after the TTL is a new read). */
-export const photoSchedule = () => cached('photo:schedule', () => photos().load({ fresh: true }), 60 * MIN)
+/**
+ * data2 camera registry, public views with their full history (MCO.photos.load; website DECISIONS D16:
+ * the 2026-10-22 floor is the website hero's, not the dashboard's). `fresh`: each refetch after the TTL
+ * is a new read.
+ */
+export const photoSchedule = () => cached('photo:schedule', () => photos().load({ fullHistory: true, fresh: true }), 60 * MIN)
 
 /** Today + yesterday (local) frames from the live bucket listings. */
 export const latestFrames = (s: PhotoSchedule, cam: StationCamera) =>

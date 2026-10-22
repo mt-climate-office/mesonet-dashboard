@@ -9,7 +9,8 @@ const view = (name: string, slots: string[]) => ({ view: name, slots_local: slot
 const S915 = ['09:00', '15:00']
 const S3 = ['09:00', '12:00', '15:00']
 // Shaped like the live schedule: the legacy patrol, the eight-view plan from 2026-09-20 (N on the
-// rain gauge, S on the snow stake), and the re-aimed plan from 2026-10-21 16:00 MDT (website D7).
+// rain gauge, S on the snow stake), and the re-aimed plan from 2026-10-21 16:00 MDT. The dashboard
+// keeps the full public history (fullHistory, website DECISIONS D16), pre-cutover N and S included.
 const RAW: RawSchedule = {
   schema: 1,
   stations: {
@@ -30,7 +31,7 @@ const RAW: RawSchedule = {
     acesnowy: { first_month: '2020-01', periods: [{ from: '2020-01-01T00:00:00-07:00', until: null, views: { SNOW: view('Snow', S3) } }] },
   },
 }
-const schedule = P.parseSchedule(RAW)
+const schedule = P.parseSchedule(RAW, { fullHistory: true })
 const cam = schedule.stations.get('acebozem')!
 
 const listing = (token: string, ...stamps: string[]) =>
@@ -48,15 +49,26 @@ const frames: PhotoFrame[] = [
   ...listing('W', '20261023T150000Z', '20261023T210000Z'),
 ]
 
-describe('the public schedule and frames (MCO.photos, D7)', () => {
+describe('the public schedule and frames, full history (MCO.photos fullHistory, D16)', () => {
   it('keeps N, E, S, W only; a station with no public view is left out', () => {
     expect([...schedule.stations.keys()].sort()).toEqual(['acebozem', 'acenewer'])
     expect(cam.currentViews.map((v) => v.token)).toEqual(['N', 'E', 'W'])
-    expect(schedule.minDate).toBe('2026-10-22')
   })
-  it('drops frames from before the re-aim and frames of staff views', () => {
-    expect(listing('N', '20261001T150000Z', '20261021T210000Z', '20261022T150000Z').map((f) => f.slotUtcMs)).toEqual([Date.UTC(2026, 9, 22, 15)])
+  it('keeps frames from before the re-aim, North and South included; never a staff view', () => {
+    expect(listing('N', '20261001T150000Z', '20261021T210000Z', '20261022T150000Z').map((f) => f.slotUtcMs)).toEqual([
+      Date.UTC(2026, 9, 1, 15),
+      Date.UTC(2026, 9, 21, 21),
+      Date.UTC(2026, 9, 22, 15),
+    ])
+    expect(listing('S', '20251001T150000Z')).toHaveLength(1)
     expect(listing('SNOW', '20261023T150000Z')).toEqual([])
+  })
+  it('a pre-cutover day shows that day\'s North frame', () => {
+    const old = listing('N', '20261001T150000Z', '20261001T210000Z')
+    const p = photoPick({ station: 'Bozeman', cam, day: '2026-10-01', recent: false, frames: old, direction: null, slotUtcMs: null })
+    expect(p.direction).toBe('N')
+    expect(p.active?.webpUrl).toBe(`${B}photos/webp/large/acebozem/acebozem_N_20261001T210000Z.webp`)
+    expect(p.stamp).toBe('Oct 1, 2026 3:00 PM')
   })
 })
 
@@ -71,10 +83,9 @@ describe('photoDay / isRecentDay / photoMinDay', () => {
     expect(isRecentDay('2026-10-22', '2026-10-23')).toBe(true)
     expect(isRecentDay('2026-10-21', '2026-10-23')).toBe(false)
   })
-  it('min day: the first public day (D7), else the camera\'s first month or first window', () => {
-    expect(photoMinDay(schedule, cam)).toBe('2026-10-22')
-    expect(photoMinDay(schedule, schedule.stations.get('acenewer')!)).toBe('2026-11-04')
-    expect(photoMinDay({ minDate: null }, cam)).toBe('2026-10-21')
+  it('min day from first_month (full history)', () => {
+    expect(photoMinDay(cam)).toBe('2017-01-01')
+    expect(photoMinDay(schedule.stations.get('acenewer')!)).toBe('2026-11-01')
     expect(noCameraImages(cam)).toBe(false)
     expect(noCameraImages(undefined)).toBe(true)
     expect(noCameraImages(schedule.stations.get('acesnowy'))).toBe(true)
@@ -118,8 +129,8 @@ describe('photoPick', () => {
   it('no frames: chips from the schedule (current views when recent, else that day’s windows)', () => {
     expect(photoPick({ ...base, frames: undefined }).tokens).toEqual(['N', 'E', 'W'])
     expect(photoPick({ ...base, frames: [], day: '2026-10-22', recent: false }).tokens).toEqual(['N', 'E', 'W'])
-    // Before the re-aim nothing is public, whatever the camera shot (D7).
-    expect(photoPick({ ...base, frames: [], day: '2025-07-01', recent: false }).tokens).toEqual([])
+    // Before the re-aim, the views the schedule had that day (the legacy patrol's N, E, S; NS is not public).
+    expect(photoPick({ ...base, frames: [], day: '2025-07-01', recent: false }).tokens).toEqual(['N', 'E', 'S'])
     const none = photoPick({ ...base, frames: [] })
     expect(none.active).toBeUndefined()
     expect(none.alt).toBe('acebozem North camera')

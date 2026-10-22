@@ -1,6 +1,6 @@
 /**
  * `x-data="photoCard"`: Now's photos from the data2 archive only (the kit's MCO.photos via core/photos, view
- * model core/cards/photo), public views and range only (N, E, S, W from 2026-10-22, website D7).
+ * model core/cards/photo): the public views (N, E, S, W) with their full history (website DECISIONS D16).
  * The tile is a carousel of the newest frame of each direction (core/cards `photoSlides`; swipe, ‹ › or the
  * dots, ui/layout/carousel); a slide opens a kit dialog on that direction, with direction, day and time
  * pickers over the webp_large frames and "Download original". Closing the dialog drops the picks.
@@ -151,8 +151,7 @@ export function photoCard() {
     },
 
     minDay(): string | null {
-      const s = photoSchedule().data
-      return s && this.cam ? photoMinDay(s, this.cam) : null
+      return this.cam ? photoMinDay(this.cam) : null
     },
     directionOptions(): SegmentedOption[] {
       const p = this.pick

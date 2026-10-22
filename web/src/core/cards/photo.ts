@@ -1,10 +1,10 @@
 /**
  * Latest Photo card view model over the kit's MCO.photos (core/photos): which day, which source
  * (latest listings vs. monthly manifest), which direction chips and which frame. All times are
- * America/Denver. The schedule and frames arrive already limited to the public views (N, E, S, W)
- * and the public range (from 2026-10-22, website D7).
+ * America/Denver. The schedule and frames arrive limited to the public views (N, E, S, W), with their
+ * full history (`fullHistory: true`, website DECISIONS D16).
  */
-import { photos, type PhotoFrame, type PhotoSchedule, type StationCamera } from '../photos'
+import { photos, type PhotoFrame, type StationCamera } from '../photos'
 
 /**
  * The day shown: the user's pick, else the local day of the newest latest
@@ -23,15 +23,8 @@ export function photoDay(picked: string | null, latest: readonly PhotoFrame[] | 
  */
 export const isRecentDay = (day: string, today: string): boolean => day >= MCO.shiftDate(today, -1)
 
-/**
- * Earliest pickable day: the latest of the schedule's first public day (2026-10-22, D7), the 1st of
- * the camera's first archived month and the day its first window opens; null when none is known.
- */
-export function photoMinDay(schedule: Pick<PhotoSchedule, 'minDate'>, cam: StationCamera): string | null {
-  const days = [schedule.minDate, cam.firstMonth ? `${cam.firstMonth}-01` : null, cam.windows[0] ? photos().localYmd(cam.windows[0].fromMs) : null]
-  const known = days.filter((d): d is string => !!d).sort()
-  return known.length ? known[known.length - 1] : null
-}
+/** Earliest pickable day: the 1st of the camera's first archived month, or null. */
+export const photoMinDay = (cam: StationCamera): string | null => (cam.firstMonth ? `${cam.firstMonth}-01` : null)
 
 /** True when the schedule has no public view for the station, ever (the kit leaves such a station out). */
 export const noCameraImages = (cam: StationCamera | undefined): boolean => !cam || cam.windows.length === 0

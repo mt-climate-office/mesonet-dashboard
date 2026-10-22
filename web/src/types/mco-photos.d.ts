@@ -1,6 +1,6 @@
 /**
  * Types for `MCO.photos` (mco-web-style photos/mco-photos.js, pinned in index.html after core).
- * Hand-written from the module's source comments; only what the dashboard calls, plus the shapes it reads.
+ * Hand-written from the module's source comments (0.15.0); only what the dashboard calls, plus the shapes it reads.
  * The kit ships no types: when the pin moves, re-read the module and update these.
  */
 
@@ -44,6 +44,8 @@ export interface PhotoSchedule {
   patterns: PhotoPatterns
   snapMaxMs: number
   internal: boolean
+  /** Public views with no date floor and pre-cutover N and S kept (0.15.0, website D16). */
+  fullHistory: boolean
   sinceMs: number
   generated: string | null
   stations: Map<string, StationCamera>
@@ -51,7 +53,7 @@ export interface PhotoSchedule {
   tokens: string[]
   /** Every slot any window lists, 'HH:MM', sorted. */
   candidates: string[]
-  /** The first Mountain date that offers a slot ('YYYY-MM-DD'; public: 2026-10-22), or null. */
+  /** The first Mountain date that offers a slot ('YYYY-MM-DD'; public default: 2026-10-22), or null. */
   minDate: string | null
 }
 
@@ -106,9 +108,12 @@ export interface McoPhotos {
   /** ISO instant the public range starts at (D7). */
   PUBLIC_SINCE: string
 
-  /** Fetch and parse schedule.json (cached per base/audience; `fresh` refetches). Public by default. */
-  load(opts?: { base?: string; internal?: boolean; since?: string | number | null; fresh?: boolean; timeoutMs?: number }): Promise<PhotoSchedule>
-  parseSchedule(doc: RawSchedule, opts?: { internal?: boolean; since?: string | number | null; base?: string }): PhotoSchedule
+  /**
+   * Fetch and parse schedule.json (cached per base/audience/history; `fresh` refetches). Public by default,
+   * from 2026-10-22; `fullHistory` keeps the public views' whole archive, pre-cutover N and S included.
+   */
+  load(opts?: { base?: string; internal?: boolean; fullHistory?: boolean; since?: string | number | null; fresh?: boolean; timeoutMs?: number }): Promise<PhotoSchedule>
+  parseSchedule(doc: RawSchedule, opts?: { internal?: boolean; fullHistory?: boolean; since?: string | number | null; base?: string }): PhotoSchedule
   hasCamera(schedule: PhotoSchedule | null | undefined, station: StationRef | null | undefined): boolean
   viewsBetween(station: StationCamera, startMs: number, endMs: number): PhotoView[]
 
