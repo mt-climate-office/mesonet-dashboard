@@ -1,0 +1,9 @@
+station,datetime,Air Temperature @ 2 m [°F],provisional
+acebozem,2026-10-15 00:00:00-06:00,37.36,False
+acebozem,2026-10-16 00:00:00-06:00,39.619,False
+acebozem,2026-10-17 00:00:00-06:00,48.596,False
+acebozem,2026-10-18 00:00:00-06:00,49.044,False
+acebozem,2026-10-19 00:00:00-06:00,50.895,False
+acebozem,2026-10-20 00:00:00-06:00,48.477,False
+acebozem,2026-10-21 00:00:00-06:00,50.002,False
+acebozem,2026-10-22 00:00:00-06:00,52.889,True

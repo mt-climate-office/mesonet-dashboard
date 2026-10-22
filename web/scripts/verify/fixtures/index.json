@@ -1,185 +1,65 @@
 {
- "recordedAt": "2026-10-02T04:00:21.263Z",
+ "recordedAt": "2026-10-22T20:04:00.100Z",
  "entries": {
+  "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/outage.json": {
+   "status": 200,
+   "type": "text/plain; charset=utf-8",
+   "file": "raw-main_outage.json-e61f773796.txt"
+  },
   "https://mesonet2.climate.umt.edu/api/v2/stations?type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-v2_stations-0e51b3ead0.csv"
   },
-  "https://data2.climate.umt.edu/mesonet/photos/schedule/schedule.json": {
+  "https://data2.climate.umt.edu/mesonet/soils/soil_params.json": {
    "status": 200,
-   "type": "application/json; charset=utf-8",
-   "file": "data2-schedule_schedule.json-f0274af744.json"
-  },
-  "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/outage.json": {
-   "status": 200,
-   "type": "text/plain; charset=utf-8",
-   "file": "raw-main_outage.json-e61f773796.txt"
+   "type": "application/json",
+   "file": "data2-soils_soil_params.json-1ae5c68290.json"
   },
   "https://mesonet2.climate.umt.edu/api/v2/elements/acebozem/?type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-elements_acebozem-595391cc18.csv"
   },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_N_20260930": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-01649f1078.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_N_20261001": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-6c31b98b22.xml"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=ppt,soil_vwc,soil_temp,air_temp&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=ppt,soil_vwc,soil_temp,air_temp&start_time=2026-10-08&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-c540fe5e93.csv"
+   "file": "mesonet2-observations_hourly-f0922a8a2b.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/latest?stations=acebozem&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&elements=etr&start_time=2026-10-08&end_time=2026-10-23&level=2&rm_na=false&na_info=false&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-v2_latest-1d64e5ea53.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/ppt/?stations=acebozem&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_ppt-55c7dbd4ca.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&elements=etr&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=false&na_info=false&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_hourly-bae7d720ee.csv"
+   "file": "mesonet2-derived_hourly-f7b504cbfd.csv"
   },
   "https://mesonet2.climate.umt.edu/api/v2/config/acebozem/": {
    "status": 200,
    "type": "application/json",
    "file": "mesonet2-config_acebozem-5b18fafae1.json"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/elements/acebozem/?public=true&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/latest?stations=acebozem&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-elements_acebozem-80684a9968.csv"
+   "file": "mesonet2-v2_latest-1d64e5ea53.csv"
   },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_E_20261001": {
+  "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/one-pagers.json": {
    "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-d395279151.xml"
+   "type": "text/plain; charset=utf-8",
+   "file": "raw-main_one-pagers.json-ca4a6dbbb3.txt"
   },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_E_20260930": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-8de9a58c2b.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_N_20261002": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-c205ed2f7d.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_SNOW_20261002": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-5b7554a00a.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_S_20261002": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-10752c13ba.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_S_20261001": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-a1cd9de855.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_S_20260930": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-41d6ba3b89.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_SNOW_20260930": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-5a49dfef0d.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_W_20261001": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-4d942dc848.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_SNOW_20261001": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-422d2e17fc.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_E_20261002": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-64d665172c.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_W_20261002": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-8b59d3ab37.xml"
-  },
-  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_W_20260930": {
-   "status": 200,
-   "type": "application/xml",
-   "file": "data2-mesonet-da505fc218.xml"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=wind_spd,wind_dir&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=true&na_info=false&public=true&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/derived/ppt/?stations=acebozem&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-aa832de4d4.csv"
+   "file": "mesonet2-derived_ppt-55c7dbd4ca.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&start_time=2025-10-01&end_time=2026-10-02&level=2&elements=air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd&agg_func=min,max,avg,min,max,avg,avg,avg&type=csv": {
+  "https://api.weather.gov/points/45.66,-111.07": {
    "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-3a0c5d4a63.csv"
+   "type": "application/geo+json",
+   "file": "api-points_45.66_-111.07-6ec6d11e8d.json"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&start_time=2025-10-01&end_time=2026-10-02&level=2&elements=soil_vwc,soil_temp,soil_ec_blk&agg_func=avg&type=csv": {
+  "https://api.weather.gov/gridpoints/TFX/95,57/forecast": {
    "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-1c73d14d80.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2022-01-01&end_time=2023-01-01&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-a2386ea280.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2021-01-01&end_time=2022-01-01&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-3647a4f978.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2024-01-01&end_time=2025-01-01&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-78d17be2cc.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2020-01-01&end_time=2021-01-01&type=csv": {
-   "status": 404,
-   "type": "application/json",
-   "file": "mesonet2-observations_daily-73d531f609.json"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2023-01-01&end_time=2024-01-01&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-d1d565a8ad.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2025-01-01&end_time=2026-01-01&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-0d255f3c74.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2026-01-01&end_time=2027-01-01&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-244e22924d.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&start_time=2026-09-01&end_time=2026-10-01&level=2&na_info=true&elements=ppt&public=false&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-0640a7e22a.csv"
+   "type": "application/geo+json",
+   "file": "api-95_57_forecast-fd45520912.json"
   },
   "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/normals/acebozem_pr.csv": {
    "status": 200,
@@ -196,80 +76,140 @@
    "type": "text/plain; charset=utf-8",
    "file": "raw-normals_acebozem_tmmn.csv-ba8be1d66c.txt"
   },
-  "https://api.weather.gov/points/45.66,-111.07": {
+  "https://api.weather.gov/gridpoints/TFX/95,57/forecast/hourly": {
    "status": 200,
    "type": "application/geo+json",
-   "file": "api-points_45.66_-111.07-6ec6d11e8d.json"
+   "file": "api-forecast_hourly-5fda2b2b6e.json"
   },
-  "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/normals/acebozem_pet.csv": {
-   "status": 200,
-   "type": "text/plain; charset=utf-8",
-   "file": "raw-normals_acebozem_pet.csv-2d9aefaa7e.txt"
-  },
-  "https://api.weather.gov/gridpoints/TFX/95,57": {
+  "https://api.weather.gov/alerts/active?point=45.66,-111.07": {
    "status": 200,
    "type": "application/geo+json",
-   "file": "api-TFX_95_57-1c3e0214dd.json"
+   "file": "api-alerts_active-a293be3348.json"
   },
-  "https://api.weather.gov/gridpoints/TFX/95,57/forecast": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,ppt,sol_rad,soil_vwc,bp,windgust,snow_depth&start_time=2026-10-20&level=2&rm_na=true&na_info=false&public=true&type=csv": {
    "status": 200,
-   "type": "application/geo+json",
-   "file": "api-95_57_forecast-fd45520912.json"
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-a2d4f274fe.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=ppt&start_time=2026-10-16&end_time=2026-10-23&level=2&rm_na=true&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-9765f5ca69.csv"
+  },
+  "https://data2.climate.umt.edu/mesonet/photos/schedule/schedule.json": {
+   "status": 200,
+   "type": "application/json; charset=utf-8",
+   "file": "data2-schedule_schedule.json-f0274af744.json"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=acebozem&start_time=2026-10-21&end_time=2026-10-23&level=2&elements=soil_vwc,soil_temp,soil_ec_blk&agg_func=avg&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-f39cbc3036.csv"
+  },
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_N_20261020": {
+   "status": 200,
+   "type": "application/xml",
+   "file": "data2-mesonet-ae198b82cb.xml"
   },
   "https://api.weather.gov/icons/land/day/few?size=medium": {
    "status": 200,
    "type": "image/png",
    "file": "api-day_few-e415491edd.png"
   },
-  "https://api.weather.gov/icons/land/day/skc?size=medium": {
+  "https://api.weather.gov/icons/land/day/rain,70/snow,100?size=medium": {
    "status": 200,
    "type": "image/png",
-   "file": "api-day_skc-d78ad3e786.png"
+   "file": "api-rain_70_snow_100-2fd94c30a8.png"
   },
-  "https://api.weather.gov/icons/land/night/sct?size=medium": {
+  "https://api.weather.gov/icons/land/night/snow,100/snow,30?size=medium": {
    "status": 200,
    "type": "image/png",
-   "file": "api-night_sct-790e5c379e.png"
+   "file": "api-snow_100_snow_30-071d2a96c4.png"
   },
-  "https://api.weather.gov/icons/land/day/sct?size=medium": {
+  "https://api.weather.gov/icons/land/night/bkn/rain,20?size=medium": {
    "status": 200,
    "type": "image/png",
-   "file": "api-day_sct-e6e6f30dc5.png"
+   "file": "api-bkn_rain_20-cdc9b362ed.png"
   },
-  "https://api.weather.gov/icons/land/night/few?size=medium": {
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_E_20261022": {
    "status": 200,
-   "type": "image/png",
-   "file": "api-night_few-00bb73bdfb.png"
+   "type": "application/xml",
+   "file": "data2-mesonet-644f521c53.xml"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=rh&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_W_20261021": {
+   "status": 200,
+   "type": "application/xml",
+   "file": "data2-mesonet-163a7330b5.xml"
+  },
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_E_20261021": {
+   "status": 200,
+   "type": "application/xml",
+   "file": "data2-mesonet-697a1434d9.xml"
+  },
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_S_20261020": {
+   "status": 200,
+   "type": "application/xml",
+   "file": "data2-mesonet-63545a689a.xml"
+  },
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_W_20261022": {
+   "status": 200,
+   "type": "application/xml",
+   "file": "data2-mesonet-8d179f12ab.xml"
+  },
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_S_20261021": {
+   "status": 200,
+   "type": "application/xml",
+   "file": "data2-mesonet-320ebd9153.xml"
+  },
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_W_20261020": {
+   "status": 200,
+   "type": "application/xml",
+   "file": "data2-mesonet-0639f07927.xml"
+  },
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_N_20261021": {
+   "status": 200,
+   "type": "application/xml",
+   "file": "data2-mesonet-8d848a3ffe.xml"
+  },
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_S_20261022": {
+   "status": 200,
+   "type": "application/xml",
+   "file": "data2-mesonet-880b7040bd.xml"
+  },
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_E_20261020": {
+   "status": 200,
+   "type": "application/xml",
+   "file": "data2-mesonet-a360cef6e1.xml"
+  },
+  "https://data2.climate.umt.edu/mesonet/?list-type=2&prefix=photos%2Fwebp%2Flarge%2Facebozem%2Facebozem_N_20261022": {
+   "status": 200,
+   "type": "application/xml",
+   "file": "data2-mesonet-f1d90682b4.xml"
+  },
+  "https://tiles.basemaps.cartocdn.com/fonts/Open%20Sans%20Semibold,Arial%20Unicode%20MS%20Bold/0-255.pbf": {
+   "status": 200,
+   "type": "application/x-protobuf-gzipped",
+   "file": "tiles-Open_20Sans_20Semibold_Arial_20Unicode_2-e925ee9f6b"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,wind_dir,windgust,sol_rad,bp,snow_depth,ppt,ppt_max_rate,soil_temp,soil_vwc,soil_ec_blk&start_time=2026-10-20&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-377e458d3a.csv"
+   "file": "mesonet2-observations_hourly-6e3ad32638.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&elements=etr&start_time=2026-10-20&end_time=2026-10-23&level=2&rm_na=false&na_info=false&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-183d83a3b4.csv"
+   "file": "mesonet2-derived_hourly-245ac92df6.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,wind_dir,windgust,sol_rad,bp,snow_depth,ppt,ppt_max_rate,soil_temp,soil_vwc,soil_ec_blk&start_time=2026-09-29&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp&start_time=2026-10-08&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-515885d7e0.csv"
+   "file": "mesonet2-observations_hourly-529d915996.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&elements=etr&start_time=2026-09-29&end_time=2026-10-02&level=2&rm_na=false&na_info=false&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2026-01-01&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_hourly-d8e9db64b0.csv"
-  },
-  "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/one-pagers.json": {
-   "status": 200,
-   "type": "text/plain; charset=utf-8",
-   "file": "raw-main_one-pagers.json-ca4a6dbbb3.txt"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2026-01-01&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-224d567ae7.csv"
+   "file": "mesonet2-observations_daily-20702d33a6.csv"
   },
   "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2025-01-01&end_time=2026-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
    "status": 200,
@@ -291,130 +231,115 @@
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-observations_daily-bf8be99ec4.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2021-01-01&end_time=2022-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2020-10-30&end_time=2022-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-b35cf4f7fe.csv"
+   "file": "mesonet2-observations_daily-d0a0e41c2d.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2020-10-30&end_time=2021-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
-   "status": 404,
-   "type": "application/json",
-   "file": "mesonet2-observations_daily-8ac42b3e45.json"
-  },
-  "https://api.weather.gov/gridpoints/TFX/95,57/forecast/hourly": {
-   "status": 200,
-   "type": "application/geo+json",
-   "file": "api-forecast_hourly-5fda2b2b6e.json"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp,air_temp&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&agg_func=min,max&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2026-10-08&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-f9c1a60589.csv"
+   "file": "mesonet2-observations_daily-1ba41b2945.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp,air_temp&start_time=2026-10-08&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&agg_func=min,max&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-58e9c0dc23.csv"
+   "file": "mesonet2-observations_daily-5035309e24.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp&start_time=2026-09-24&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=wind_spd,wind_dir&start_time=2026-10-08&end_time=2026-10-23&level=2&rm_na=true&na_info=false&public=true&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-d599a7a6a4.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2026-09-24&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-cee7428be0.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp,air_temp&start_time=2026-09-24&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&agg_func=min,max&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-ac77a6eb4e.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2026-01-01&end_time=2026-10-02&level=2&rm_na=false&na_info=false&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_daily-70c4471518.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2025-01-01&end_time=2026-01-01&level=2&rm_na=false&na_info=false&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_daily-ba9d8af9d1.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2024-01-01&end_time=2025-01-01&level=2&rm_na=false&na_info=false&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_daily-8dad9c4dd6.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2023-01-01&end_time=2024-01-01&level=2&rm_na=false&na_info=false&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_daily-f0e65dc58c.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2022-01-01&end_time=2023-01-01&level=2&rm_na=false&na_info=false&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_daily-5c70a260aa.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2021-01-01&end_time=2022-01-01&level=2&rm_na=false&na_info=false&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_daily-91d7fa92f4.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2020-10-30&end_time=2021-01-01&level=2&rm_na=false&na_info=false&type=csv": {
-   "status": 404,
-   "type": "application/json",
-   "file": "mesonet2-derived_daily-5a895c6c11.json"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=ppt&start_time=2026-09-25&end_time=2026-10-02&level=2&rm_na=true&na_info=false&public=true&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-17e7f179ef.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,ppt,sol_rad,soil_vwc,bp,windgust,snow_depth&start_time=2026-09-29&level=2&rm_na=true&na_info=false&public=true&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-134d45ed94.csv"
-  },
-  "https://data2.climate.umt.edu/mesonet/soils/soil_params.json": {
-   "status": 200,
-   "type": "application/json",
-   "file": "data2-soils_soil_params.json-1ae5c68290.json"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=acebozem&start_time=2026-09-30&end_time=2026-10-02&level=2&elements=soil_vwc,soil_temp,soil_ec_blk&agg_func=avg&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-11047a3fc1.csv"
+   "file": "mesonet2-observations_hourly-6626f8f4f5.csv"
   },
   "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&start_time=2026-04-15&end_time=2026-10-01&level=2&elements=air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd&agg_func=min,max,avg,min,max,avg,avg,avg&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-observations_daily-a1a3ad58f9.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&start_time=2026-05-01&end_time=2026-10-02&level=2&elements=air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd&agg_func=min,max,avg,min,max,avg,avg,avg&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&start_time=2025-10-22&end_time=2026-10-23&level=2&elements=air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd&agg_func=min,max,avg,min,max,avg,avg,avg&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-77f93fc704.csv"
+   "file": "mesonet2-observations_daily-460882325d.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2020-10-30&end_time=2022-01-01&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&start_time=2025-10-22&end_time=2026-10-23&level=2&elements=soil_vwc,soil_temp,soil_ec_blk&agg_func=avg&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-d0a0e41c2d.csv"
+   "file": "mesonet2-observations_daily-101dd1685a.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2022-01-01&end_time=2023-01-01&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-a2386ea280.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2025-01-01&end_time=2026-01-01&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-0d255f3c74.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2026-01-01&end_time=2027-01-01&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-244e22924d.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2024-01-01&end_time=2025-01-01&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-78d17be2cc.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2023-01-01&end_time=2024-01-01&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-d1d565a8ad.csv"
   },
   "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&elements=air_temp_0200&agg_func=avg&level=2&start_time=2020-01-01&end_time=2022-01-01&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-observations_daily-0273bda49e.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2020-10-30&end_time=2022-01-01&level=2&rm_na=false&na_info=false&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/elements/acebozem/?public=true&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_daily-15964ab684.csv"
+   "file": "mesonet2-elements_acebozem-80684a9968.csv"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=wind_dir&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&start_time=2026-09-01&end_time=2026-10-01&level=2&na_info=true&elements=ppt&public=false&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-3904acfbe3.csv"
+   "file": "mesonet2-observations_daily-0640a7e22a.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,wind_dir,windgust,sol_rad,bp,snow_depth,ppt,ppt_max_rate,soil_temp,soil_vwc,soil_ec_blk&start_time=2026-10-08&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-e3947d59e8.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&start_time=2026-09-01&end_time=2026-10-01&level=2&na_info=true&units=si&elements=ppt&public=false&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-a5e349047a.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=rh&start_time=2026-10-08&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-59df34a5c1.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp&start_time=2026-10-15&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-640ffc5105.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp&start_time=2026-10-15&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-a75f77c08f.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&elements=air_temp,air_temp&start_time=2026-10-15&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&agg_func=min,max&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-ee3e3b2f02.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=wind_dir&start_time=2026-10-08&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-5fd4d47580.csv"
   },
   "https://mesonet2.climate.umt.edu/api/v2/elements/arskeogh/?type=csv": {
    "status": 200,
@@ -436,40 +361,55 @@
    "type": "application/json",
    "file": "mesonet2-config_arskeogh-1ff40a60e4.json"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=arskeogh&elements=air_temp&start_time=2026-09-01&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=arskeogh&elements=air_temp&start_time=2026-09-22&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-843e662117.csv"
+   "file": "mesonet2-observations_hourly-82deb688f8.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations?stations=arskeogh&elements=wind_spd,wind_dir&start_time=2026-10-21&end_time=2026-10-23&level=2&rm_na=true&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-v2_observations-63d242873c.csv"
   },
   "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/normals/arskeogh_tmmx.csv": {
    "status": 200,
    "type": "text/plain; charset=utf-8",
    "file": "raw-normals_arskeogh_tmmx.csv-e6a75fec62.txt"
   },
-  "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/normals/arskeogh_tmmn.csv": {
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=arskeogh&elements=ppt&start_time=2026-10-16&end_time=2026-10-23&level=2&rm_na=true&na_info=false&public=true&type=csv": {
    "status": 200,
-   "type": "text/plain; charset=utf-8",
-   "file": "raw-normals_arskeogh_tmmn.csv-a4c0cc7290.txt"
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_daily-d585141306.csv"
+  },
+  "https://api.weather.gov/alerts/active?point=46.41,-105.95": {
+   "status": 200,
+   "type": "application/geo+json",
+   "file": "api-alerts_active-4d0940da85.json"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=arskeogh&elements=air_temp,rh,wind_spd,ppt,sol_rad,soil_vwc,bp,windgust,vpd_atmo&start_time=2026-10-20&level=2&rm_na=true&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-9dabf05f09.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=arskeogh&start_time=2026-10-21&end_time=2026-10-23&level=2&elements=soil_vwc,soil_temp,soil_ec_blk&agg_func=avg&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-b511d83113.csv"
   },
   "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/normals/arskeogh_pr.csv": {
    "status": 200,
    "type": "text/plain; charset=utf-8",
    "file": "raw-normals_arskeogh_pr.csv-dc63b941ee.txt"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=arskeogh&elements=ppt&start_time=2026-09-25&end_time=2026-10-02&level=2&rm_na=true&na_info=false&public=true&type=csv": {
+  "https://raw.githubusercontent.com/mt-climate-office/mesonet-dashboard/refs/heads/main/normals/arskeogh_tmmn.csv": {
    "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-b1bdea98c7.csv"
+   "type": "text/plain; charset=utf-8",
+   "file": "raw-normals_arskeogh_tmmn.csv-a4c0cc7290.txt"
   },
   "https://api.weather.gov/points/46.41,-105.95": {
    "status": 200,
    "type": "application/geo+json",
    "file": "api-points_46.41_-105.95-bcc1215c36.json"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly/?stations=arskeogh&start_time=2026-09-30&end_time=2026-10-02&level=2&elements=soil_vwc,soil_temp,soil_ec_blk&agg_func=avg&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-b4d8ed6f17.csv"
   },
   "https://api.weather.gov/gridpoints/BYZ/189,113/forecast": {
    "status": 200,
@@ -486,60 +426,65 @@
    "type": "application/geo+json",
    "file": "api-forecast_hourly-9e96e3f2f4.json"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations?stations=arskeogh&elements=wind_spd,wind_dir&start_time=2026-09-30&end_time=2026-10-02&level=2&rm_na=true&public=true&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-v2_observations-7f977965ea.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=arskeogh&elements=air_temp,rh,wind_spd,ppt,sol_rad,soil_vwc,bp,windgust,vpd_atmo&start_time=2026-09-29&level=2&rm_na=true&na_info=false&public=true&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-19cd06f004.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,wind_dir,windgust,sol_rad,bp,snow_depth,ppt,ppt_max_rate,soil_temp,soil_vwc,soil_ec_blk&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-1092fc4072.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,wind_dir,windgust,sol_rad,bp,snow_depth,ppt,ppt_max_rate,soil_temp,soil_vwc,soil_ec_blk&start_time=2026-09-24&end_time=2026-10-02&level=2&rm_na=false&na_info=false&public=true&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-83a334a725.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&elements=etr&start_time=2026-09-24&end_time=2026-10-02&level=2&rm_na=false&na_info=false&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-derived_hourly-0d2ca0c2c0.csv"
-  },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=wind_spd,wind_dir&start_time=2026-09-24&end_time=2026-10-02&level=2&rm_na=true&na_info=false&public=true&type=csv": {
-   "status": 200,
-   "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_hourly-982f44acba.csv"
-  },
-  "https://tiles.basemaps.cartocdn.com/fonts/Open%20Sans%20Semibold,Arial%20Unicode%20MS%20Bold/0-255.pbf": {
-   "status": 200,
-   "type": "application/x-protobuf-gzipped",
-   "file": "tiles-Open_20Sans_20Semibold_Arial_20Unicode_2-e925ee9f6b"
-  },
-  "https://api.weather.gov/alerts/active?point=45.66,-111.07": {
-   "status": 200,
-   "type": "application/geo+json",
-   "file": "api-alerts_active-a293be3348.json"
-  },
-  "https://api.weather.gov/alerts/active?point=46.41,-105.95": {
-   "status": 200,
-   "type": "application/geo+json",
-   "file": "api-alerts_active-4d0940da85.json"
-  },
-  "https://api.weather.gov/icons/land/day/bkn?size=medium": {
+  "https://api.weather.gov/icons/land/day/bkn/rain,20?size=medium": {
    "status": 200,
    "type": "image/png",
-   "file": "api-day_bkn-d9fd54b0bb.png"
+   "file": "api-bkn_rain_20-46572709af.png"
   },
-  "https://mesonet2.climate.umt.edu/api/v2/observations/daily?stations=acebozem&start_time=2026-09-01&end_time=2026-10-01&level=2&na_info=true&units=si&elements=ppt&public=false&type=csv": {
+  "https://api.weather.gov/icons/land/night/rain,60/rain,20?size=medium": {
+   "status": 200,
+   "type": "image/png",
+   "file": "api-rain_60_rain_20-698e46462a.png"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/daily/?stations=acebozem&start_time=2026-05-01&end_time=2026-10-16&level=2&elements=air_temp,air_temp,air_temp,rh,rh,rh,sol_rad,wind_spd&agg_func=min,max,avg,min,max,avg,avg,avg&type=csv": {
    "status": 200,
    "type": "text/csv; charset=utf-8",
-   "file": "mesonet2-observations_daily-a5e349047a.csv"
+   "file": "mesonet2-observations_daily-1208690827.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2026-01-01&end_time=2026-10-23&level=2&rm_na=false&na_info=false&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_daily-6b37376cc5.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2025-01-01&end_time=2026-01-01&level=2&rm_na=false&na_info=false&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_daily-ba9d8af9d1.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2024-01-01&end_time=2025-01-01&level=2&rm_na=false&na_info=false&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_daily-8dad9c4dd6.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2023-01-01&end_time=2024-01-01&level=2&rm_na=false&na_info=false&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_daily-f0e65dc58c.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2022-01-01&end_time=2023-01-01&level=2&rm_na=false&na_info=false&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_daily-5c70a260aa.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/daily?stations=acebozem&elements=etr&start_time=2020-10-30&end_time=2022-01-01&level=2&rm_na=false&na_info=false&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_daily-15964ab684.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=wind_spd,wind_dir&start_time=2026-10-15&end_time=2026-10-23&level=2&rm_na=true&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-0bf44952f4.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=acebozem&elements=air_temp,rh,wind_spd,wind_dir,windgust,sol_rad,bp,snow_depth,ppt,ppt_max_rate,soil_temp,soil_vwc,soil_ec_blk&start_time=2026-10-15&end_time=2026-10-23&level=2&rm_na=false&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-a27cd428c5.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&elements=etr&start_time=2026-10-15&end_time=2026-10-23&level=2&rm_na=false&na_info=false&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_hourly-0c3c9b49da.csv"
   }
  }
 }
