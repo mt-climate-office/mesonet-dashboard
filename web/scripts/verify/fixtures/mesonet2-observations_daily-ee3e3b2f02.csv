@@ -1,9 +1,0 @@
-station,datetime,Maximum Air Temperature @ 2 m [°F],Minimum Air Temperature @ 2 m [°F],provisional
-acebozem,2026-10-15 00:00:00-06:00,47.12,29.824,False
-acebozem,2026-10-16 00:00:00-06:00,56.678,24.62,False
-acebozem,2026-10-17 00:00:00-06:00,65.876,31.269,False
-acebozem,2026-10-18 00:00:00-06:00,62.78,33.705,False
-acebozem,2026-10-19 00:00:00-06:00,70.52,33.562,False
-acebozem,2026-10-20 00:00:00-06:00,62.744,34.169,False
-acebozem,2026-10-21 00:00:00-06:00,65.12,37.094,False
-acebozem,2026-10-22 00:00:00-06:00,69.476,40.458,True
