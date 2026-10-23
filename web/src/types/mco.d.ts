@@ -1,13 +1,15 @@
 /**
  * Types for the kit globals loaded from the CDN in index.html: `window.MCO`
  * (core/mco-core.js), `MCO.photos` (photos/mco-photos.js; types in mco-photos.d.ts), `MCO.places`
- * (places/mco-places.js; types, with the kit search box, in mco-places.d.ts), `MCO.map`
+ * (places/mco-places.js; types, with the kit search box, in mco-places.d.ts), `MCO.summary`
+ * (summary/mco-summary.js; types in mco-summary.d.ts), `MCO.map`
  * (map/mco-map.js) and `maplibregl`. The kit version is pinned in index.html only.
  * Hand-written from the kit's source comments; extend as calls are added.
  */
 import type * as MapLibre from 'maplibre-gl'
 import type { McoPhotos } from './mco-photos'
 import type { McoPlaces, SearchBox, SearchBoxOptions, SearchModel } from './mco-places'
+import type { McoSummary } from './mco-summary'
 
 type Theme = 'dark' | 'light' | 'high-contrast'
 
@@ -132,6 +134,7 @@ interface Mco {
   map: McoMap
   photos: McoPhotos
   places: McoPlaces
+  summary: McoSummary
 }
 
 declare global {
