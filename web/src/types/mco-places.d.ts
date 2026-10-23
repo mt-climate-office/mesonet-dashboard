@@ -46,6 +46,8 @@ export interface SearchBoxOptions {
   announce?: boolean
   fillOnSelect?: boolean
   sectionLimits?: Readonly<Record<string, number>>
+  /** Fill an option's element (textContent only); the default is the label and a mono meta. */
+  renderRow?: (item: SearchItem, el: HTMLElement) => void
 }
 
 export interface SearchBox {

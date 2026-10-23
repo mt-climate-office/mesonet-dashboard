@@ -69,6 +69,17 @@ export function stationSearch() {
         },
         stations: () => Alpine.store('station').list,
         value: () => Alpine.store('station').id,
+        // The kit's row with a space between name and meta, so the option's text (and its accessible name) reads
+        // "Bozeman HydroMet", not "BozemanHydroMet".
+        renderRow: (item, el) => {
+          const label = document.createElement('span')
+          label.className = 'mco-search-label'
+          label.textContent = item.label
+          const meta = document.createElement('span')
+          meta.className = 'mco-search-meta'
+          meta.textContent = item.meta ?? item.id
+          el.append(label, ' ', meta)
+        },
         onSelect: (id) => {
           sync()
           this.choose(id)
