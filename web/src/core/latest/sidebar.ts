@@ -5,7 +5,7 @@
  */
 import { denverDay } from '../today'
 import type { Station } from '../api'
-import type { ComboboxItem } from '../controls/comboboxModel'
+import type { SearchItem } from '../../types/mco-places'
 import { DEFAULT_VARS, SELECTED_VARS, latestVarsFromElements } from '../params'
 import { NETWORK_OPTIONS, type LatestAgg, type UrlState } from '../url-schema'
 import { DEFAULT_WINDOW_DAYS } from '../models/timeseries'
@@ -38,11 +38,11 @@ export function netsValue(next: readonly string[], options: readonly string[]): 
 /**
  * Combobox items: stations passing the network filter, grouped by network
  * (groups and names alphabetical), in the "Stations" results section. Typing
- * also matches the NWSLI id; a county is a place (core/places), which lists
+ * also matches the NWSLI id; a county is a place (the kit's MCO.places), which lists
  * the stations in it. While typing, the combobox ranks matches across networks
- * (core/controls/comboboxModel).
+ * (the kit's MCO.searchModel).
  */
-export function stationItems(list: readonly Station[], nets: readonly string[], selected: string | null): ComboboxItem[] {
+export function stationItems(list: readonly Station[], nets: readonly string[], selected: string | null): SearchItem[] {
   return list
     .filter((s) => passesNets(s, nets, selected))
     .sort((a, b) => a.sub_network.localeCompare(b.sub_network) || a.name.localeCompare(b.name))

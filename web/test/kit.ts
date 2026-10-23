@@ -19,8 +19,8 @@ import type { Mco } from '../src/types/mco'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE = join(ROOT, 'node_modules', '.cache', 'mco-kit')
 
-/** The kit scripts the tests evaluate, in load order (photos needs core). */
-const FILES = ['core/mco-core.js', 'photos/mco-photos.js']
+/** The kit scripts the tests evaluate, in load order (photos and places need core). */
+const FILES = ['core/mco-core.js', 'photos/mco-photos.js', 'places/mco-places.js']
 
 interface KitFile {
   path: string
@@ -42,23 +42,53 @@ const sri = (bytes: Buffer) => `sha384-${createHash('sha384').update(bytes).dige
 
 export function verified(f: KitFile, bytes: Buffer): Buffer {
   const got = sri(bytes)
-  if (got !== f.integrity) throw new Error(`${f.url}: integrity mismatch (index.html pins ${f.integrity}, got ${got})`)
+  if (got !== f.integrity) throw new Error(`${f.url}: integrity mismatch (pinned ${f.integrity}, got ${got})`)
   return bytes
 }
 
-/** Download any pinned file not yet cached, checked against its SRI before it is written. */
-export async function ensureKit(): Promise<void> {
-  for (const f of kitFiles()) {
-    if (existsSync(f.cachePath)) {
-      verified(f, readFileSync(f.cachePath))
-      continue
-    }
-    const res = await fetch(f.url, { signal: AbortSignal.timeout(30_000) })
-    if (!res.ok) throw new Error(`${f.url}: HTTP ${res.status}`)
-    const bytes = verified(f, Buffer.from(await res.arrayBuffer()))
-    mkdirSync(dirname(f.cachePath), { recursive: true })
-    writeFileSync(f.cachePath, bytes)
+/**
+ * Data a kit script fetches from its own tag, pinned by a hash that script carries (so by its SRI too):
+ * MCO.places' gazetteer. [published path, the script, the constant holding the hash].
+ */
+const DATA: [string, string, string][] = [['places/mt-places.json', 'places/mco-places.js', 'DATA_INTEGRITY']]
+
+/** Each DATA file at the pinned tag, with the integrity its (SRI-checked, cached) script names. */
+export function kitDataFiles(): KitFile[] {
+  const scripts = kitFiles()
+  return DATA.map(([path, script, constant]) => {
+    const s = scripts.find((f) => f.path === script)
+    if (!s) throw new Error(`${path}: its script ${script} is not in FILES`)
+    const src = verified(s, readFileSync(s.cachePath)).toString('utf8')
+    const integrity = new RegExp(`\\.${constant} = '(sha384-[A-Za-z0-9+/=]+)'`).exec(src)?.[1]
+    if (!integrity) throw new Error(`${script} names no ${constant}`)
+    return { path, url: s.url.replace(script, path), integrity, cachePath: s.cachePath.replace(script, path) }
+  })
+}
+
+async function cache(f: KitFile): Promise<void> {
+  if (existsSync(f.cachePath)) {
+    verified(f, readFileSync(f.cachePath))
+    return
   }
+  const res = await fetch(f.url, { signal: AbortSignal.timeout(30_000) })
+  if (!res.ok) throw new Error(`${f.url}: HTTP ${res.status}`)
+  const bytes = verified(f, Buffer.from(await res.arrayBuffer()))
+  mkdirSync(dirname(f.cachePath), { recursive: true })
+  writeFileSync(f.cachePath, bytes)
+}
+
+/** Download any pinned file (scripts, then their data) not yet cached, checked against its hash before it is written. */
+export async function ensureKit(): Promise<void> {
+  for (const f of kitFiles()) await cache(f)
+  for (const f of kitDataFiles()) await cache(f)
+}
+
+/** A kit data file's text (cached by globalSetup), re-checked against its hash. */
+export function kitData(path: string): string {
+  const f = kitDataFiles().find((d) => d.path === path)
+  if (!f) throw new Error(`${path} is not a kit data file (test/kit.ts DATA)`)
+  if (!existsSync(f.cachePath)) throw new Error(`${path} @ ${f.url} is not cached: vitest's globalSetup (test/kit-global.ts) fetches it`)
+  return verified(f, readFileSync(f.cachePath)).toString('utf8')
 }
 
 /** A stub DOM element: enough for mco-core.js to load (it only wires listeners and reads attributes). */

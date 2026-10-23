@@ -14,7 +14,7 @@
     })();
   </script>
   <title>Controls · MT Mesonet</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.15.0/theme/mco-theme.css"
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.0/theme/mco-theme.css"
         integrity="sha384-s6MS3mtowaDBNrYl8BzVKW+tkporVrIEixS7kjvHZ67k4syUXk0rKKMCHO2pNjNu"
         crossorigin="anonymous">
   <link rel="stylesheet" href="./controls.css">
@@ -28,7 +28,6 @@
               border: 1px solid var(--border); border-radius: var(--radius-lg); }
     .readout { margin-top: 0.6rem; font-size: 0.75rem; color: var(--text-secondary); }
     .readout code { font-family: var(--font-mono); color: var(--text-primary); word-break: break-all; }
-    .demo-combobox { max-width: 22rem; }
   </style>
 </head>
 <body>
@@ -65,50 +64,6 @@
       </div>
     </fieldset>
     <p class="readout">period: <code x-data x-text="$store.demo.period"></code></p>
-  </section>
-
-  <section aria-labelledby="h-station">
-    <h2 id="h-station">Station (combobox)</h2>
-    <div class="ctl-combobox demo-combobox" x-data="combobox({ items: () => $store.demo.stations,
-         value: () => $store.demo.station, onSelect: (id) => $store.demo.station = id,
-         label: 'Station', placeholder: 'Search by name or id' })"
-         @focusout="onFocusOut($event)">
-      <label class="ctl-label" :id="ids.label" :for="ids.input" x-text="label"></label>
-      <div class="ctl-combobox-field">
-        <input x-ref="input" class="ctl-input" type="text" role="combobox"
-               autocomplete="off" spellcheck="false" aria-autocomplete="list"
-               :id="ids.input" :placeholder="placeholder" :aria-expanded="open"
-               :aria-controls="ids.listbox" :aria-activedescendant="activeId()"
-               :value="query" @input="onInput($event)"
-               @keydown="onKeydown($event)" @click="toggle()">
-        <button type="button" class="ctl-clear" x-show="hasText()"
-                :aria-label="'Clear ' + label" @click="clear()">&times;</button>
-      </div>
-      <div class="ctl-combobox-popup" x-show="open">
-        <div role="listbox" class="ctl-combobox-list" :id="ids.listbox"
-             :aria-labelledby="ids.label" x-show="result.total > 0">
-          <template x-for="group in result.groups" :key="group.name ?? ''">
-            <ul :role="group.name ? 'group' : 'presentation'"
-                :aria-labelledby="group.name ? groupId(group.name) : null">
-              <li role="presentation" class="ctl-combobox-group" x-show="group.name"
-                  :id="group.name ? groupId(group.name) : null" x-text="group.name"></li>
-              <template x-for="item in group.items" :key="item.id">
-                <li role="option" class="ctl-option" :id="optionId(item.id)"
-                    :aria-selected="isActive(item.id)" :class="{ 'is-current': isCurrent(item.id) }"
-                    @mousedown.prevent @click="select(item.id)">
-                  <span x-text="item.label"></span>
-                  <span class="ctl-option-meta" x-text="item.id"></span>
-                </li>
-              </template>
-            </ul>
-          </template>
-        </div>
-        <p class="ctl-combobox-note" x-show="note()" x-text="note()"></p>
-      </div>
-      <div role="status" class="sr-only" x-text="status()"></div>
-    </div>
-    <p class="readout">station: <code x-data x-text="JSON.stringify($store.demo.station)"></code>
-      (try "bozeman", "BOZM8", or Down to browse; 260 items, capped at 200)</p>
   </section>
 
   <section aria-labelledby="h-elements">
@@ -243,25 +198,12 @@
 <script type="module">
   import Alpine from 'alpinejs'
   import { chips } from './chips'
-  import { combobox } from './combobox'
   import { dateInput } from './dateInput'
   import { dateRange } from './dateRange'
   import { multiselect } from './multiselect'
   import { rangeSlider } from './rangeSlider'
   import { segmented } from './segmented'
   import { timeSelect } from './timeSelect'
-
-  const real = [
-    ['aceabsar', 'Absarokee', 'HydroMet', 'ABSM8'], ['acebozem', 'Bozeman Airport', 'HydroMet', 'BZNM8'],
-    ['acecrow', 'Crow Agency', 'HydroMet', 'CRWM8'], ['acemissou', 'Missoula South', 'HydroMet', 'MSSM8'],
-    ['aceglacie', 'West Glacier', 'HydroMet', 'WGLM8'], ['agrbozem', 'Bozeman', 'AgriMet', 'BOZM8'],
-    ['agrcorva', 'Corvallis', 'AgriMet', 'CRVM8'], ['agrmoccas', 'Moccasin', 'AgriMet', 'MOCM8'],
-    ['coopmoz', 'Mozart Ranch', 'Cooperator'], ['coopflat', 'Flathead Lake', 'Cooperator'],
-  ]
-  const stations = real.map(([id, label, group, nwsli]) => ({ id, label, group, keywords: nwsli ? [nwsli] : [] }))
-  for (let i = 1; i <= 250; i++) {
-    stations.push({ id: `synth${String(i).padStart(3, '0')}`, label: `Synthetic station ${i}`, group: 'Synthetic' })
-  }
 
   const themes = [
     { value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }, { value: 'high-contrast', label: 'High contrast' },
@@ -282,8 +224,6 @@
       { value: 'month', label: 'Month' }, { value: 'year', label: 'Year', disabled: true },
     ],
     period: 'week',
-    stations,
-    station: 'acebozem',
     elementGroups: [
       { id: 'standard', label: 'Standard elements', options: [
         { value: 'air_temp', label: 'Air Temperature' }, { value: 'rh', label: 'Relative Humidity' },
@@ -306,7 +246,6 @@
   })
 
   Alpine.data('chips', chips)
-  Alpine.data('combobox', combobox)
   Alpine.data('dateInput', dateInput)
   Alpine.data('dateRange', dateRange)
   Alpine.data('multiselect', multiselect)

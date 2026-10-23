@@ -138,11 +138,10 @@ export function stationPicker() {
       document.getElementById('main')?.focus({ preventScroll: true })
     },
 
-    /* Search (ui/controls/combobox; ./stationSearch): stations, then places while typing */
+    /* Search (./stationSearch, the kit's place search): stations, then places while typing */
     /** The search's result list opened or closed. On a phone the sheet goes full and the list fills it. */
     searchList(open: boolean): void {
       this.searchOpen = open
-      if (open) this.placesWanted = true
       if (open && this.mode === 'sheet') ctl?.setState?.('full')
     },
     /** The 336 px drawer has room beside "Near me" for the short hint only (picker.css); the sheet names counties too. */
@@ -199,6 +198,7 @@ export function stationPicker() {
     },
 
     destroy() {
+      this.searchDestroy()
       cleanups.forEach((f) => f())
       ctl?.destroy()
       ctl = null

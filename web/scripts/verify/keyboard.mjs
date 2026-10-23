@@ -160,18 +160,18 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await close()
 }
 
-/* ── Landing search (first visit): a place lists its stations (core/places) ── */
+/* ── Landing search (first visit): a place lists its stations (the kit's MCO.places) ── */
 {
   const { page, problems, close } = await open(env, '?theme=light#now')
   const SEARCH = '[data-testid="landing"] [data-testid="picker-search"]'
   const input = page.locator(SEARCH).getByRole('combobox')
   await page.waitForFunction((sel) => document.querySelector(`${sel} input`)?.getAttribute('placeholder') === 'Station, town, county or ZIP', SEARCH)
   await input.focus()
-  // The places load when the list opens.
+  // The places load (from the kit tag) when the field first takes focus.
   await page.keyboard.type('bozeman')
   // Wait for the end state (both headings shown): the places arrive after the stations, and under load slowly.
-  await page.waitForFunction((sel) => [...document.querySelectorAll(`${sel} .ctl-combobox-group`)].filter((g) => g.offsetParent).map((g) => g.textContent.trim().toLowerCase()).join('|') === 'stations|places', SEARCH, { timeout: 20000 }).catch(() => {})
-  const heads = await page.locator(`${SEARCH} .ctl-combobox-group:visible`).allInnerTexts()
+  await page.waitForFunction((sel) => [...document.querySelectorAll(`${sel} .mco-search-group`)].filter((g) => g.offsetParent).map((g) => g.textContent.trim().toLowerCase()).join('|') === 'stations|places', SEARCH, { timeout: 20000 }).catch(() => {})
+  const heads = await page.locator(`${SEARCH} .mco-search-group:visible`).allInnerTexts()
   check('place search: stations and places under their own headings', heads.join('|').toLowerCase() === 'stations|places', JSON.stringify(heads))
   await page.keyboard.press('Escape') // clears the text
   await page.keyboard.type('gallatin')
