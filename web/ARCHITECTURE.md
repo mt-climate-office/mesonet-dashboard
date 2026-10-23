@@ -1,7 +1,7 @@
 # Mesonet dashboard architecture
 
 The Montana Mesonet Dashboard, rebuilt on the MCO house style
-([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.11.3)
+([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.15.0)
 with Alpine.js, Apache ECharts and TypeScript. Served at
 `/mesonet-dashboard/` on GitHub Pages, and through the Caddy proxy
 (mt-climate-office/mesonet_app) as `mesonet.climate.umt.edu/dash/next/`, the
@@ -418,7 +418,11 @@ Download sheet (a row open, after Preview), About and its two sheets, Help) × 1
 ## Testing
 
 - Everything in `core/` has a sibling `*.test.ts`; vitest runs in Node
-  (`vitest.config.ts`). Ag fixtures in `core/ag/__fixtures__` are the golden
+  (`vitest.config.ts`). The one global is the kit's `MCO` (core + photos): `test/kit.ts` reads
+  the pinned URLs and SRI hashes from `index.html`, fetches each file once into
+  `node_modules/.cache/mco-kit/`, checks it against its hash (a mismatch fails the run) and
+  evaluates it in `node:vm`, so tests run the same bytes the page loads. Photo logic is the
+  kit's (`core/photos` only types it); its own tests are the kit's `tools/check-photos.mjs`. Ag fixtures in `core/ag/__fixtures__` are the golden
   parity data; live cross-checks run with `AG_LIVE=1`.
 - Stores keep their logic in core (`cache.ts`, `url-schema.ts`, `theme.ts`,
   `stations.ts#confirmedStation`), so they need no DOM tests.
@@ -439,7 +443,7 @@ leaving ~180 KB for the sections; at the UX P0 prototype the entry is 107 KB and
 
 Data from mesonet2 v2 at QC level 2; Ag computed client-side, SWP and percent
 saturation included (mesonet-soils `soil_params.json`, data2 first, which
-also decides `has_swp`); photos only from data2 `webp_large`; soil and GDD
+also decides `has_swp`); photos only from data2 `webp_large`, through the kit's `MCO.photos` (public views, `fullHistory: true`, D16); soil and GDD
 static data vendored in `public/data/` (`core/ag/data/vendor-static.mjs`; the
 place gazetteer for the picker's search, `core/places/vendor-places.mjs`);
 Satellite hidden. `web/` is frozen: hotfixes only, each mirrored into

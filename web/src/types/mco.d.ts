@@ -1,9 +1,11 @@
 /**
  * Types for the kit globals loaded from the CDN in index.html: `window.MCO`
- * (core/mco-core.js @0.11.3), `MCO.map` (map/mco-map.js) and `maplibregl`.
+ * (core/mco-core.js), `MCO.photos` (photos/mco-photos.js; types in mco-photos.d.ts), `MCO.map`
+ * (map/mco-map.js) and `maplibregl`. The kit version is pinned in index.html only.
  * Hand-written from the kit's source comments; extend as calls are added.
  */
 import type * as MapLibre from 'maplibre-gl'
+import type { McoPhotos } from './mco-photos'
 
 type Theme = 'dark' | 'light' | 'high-contrast'
 
@@ -122,6 +124,7 @@ interface Mco {
   getParamLower(key: string, params?: URLSearchParams): string | null
   splitTokens(raw: string | null): string[] | null
   map: McoMap
+  photos: McoPhotos
 }
 
 declare global {

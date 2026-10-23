@@ -1,22 +1,10 @@
 /**
- * Latest Photo card view model over core/photos (web/ CameraCard logic):
- * which day, which source (latest listings vs. monthly manifest), which
- * direction chips and which frame. All times are America/Denver.
+ * Latest Photo card view model over the kit's MCO.photos (core/photos): which day, which source
+ * (latest listings vs. monthly manifest), which direction chips and which frame. All times are
+ * America/Denver. The schedule and frames arrive limited to the public views (N, E, S, W), with their
+ * full history (`fullHistory: true`, website DECISIONS D16).
  */
-import {
-  addDays,
-  basename,
-  directionLabel,
-  formatLocal,
-  formatLocalTime,
-  framesFor,
-  localToUtcMs,
-  localYmd,
-  tokensOf,
-  viewsBetween,
-  type PhotoFrame,
-  type StationCamera,
-} from '../photos'
+import { photos, type PhotoFrame, type StationCamera } from '../photos'
 
 /**
  * The day shown: the user's pick, else the local day of the newest latest
@@ -26,21 +14,20 @@ export function photoDay(picked: string | null, latest: readonly PhotoFrame[] | 
   if (picked) return picked
   let newest: number | null = null
   for (const f of latest ?? []) if (newest == null || f.slotUtcMs > newest) newest = f.slotUtcMs
-  return newest != null ? localYmd(newest) : today
+  return newest != null ? photos().localYmd(newest) : today
 }
 
 /**
  * Today and yesterday come from the latest listings (three UTC days span both
  * local days at any hour); older days from the station's monthly manifest.
  */
-export const isRecentDay = (day: string, today: string): boolean => day >= addDays(today, -1)
+export const isRecentDay = (day: string, today: string): boolean => day >= MCO.shiftDate(today, -1)
 
 /** Earliest pickable day: the 1st of the camera's first archived month, or null. */
 export const photoMinDay = (cam: StationCamera): string | null => (cam.firstMonth ? `${cam.firstMonth}-01` : null)
 
-/** True when the schedule lists no views for the station, ever. */
-export const noCameraImages = (cam: StationCamera | undefined): boolean =>
-  !cam || (cam.currentViews.length === 0 && cam.periods.length === 0)
+/** True when the schedule has no public view for the station, ever (the kit leaves such a station out). */
+export const noCameraImages = (cam: StationCamera | undefined): boolean => !cam || cam.windows.length === 0
 
 /**
  * Cache-key suffix for confirming a day's derived frames (manifest
@@ -49,13 +36,13 @@ export const noCameraImages = (cam: StationCamera | undefined): boolean =>
 export function derivedKey(frames: readonly PhotoFrame[]): string {
   return frames
     .filter((f) => f.derived)
-    .map((f) => basename(f.webpUrl))
+    .map((f) => photos().basename(f.webpUrl))
     .sort()
     .join(',')
 }
 
-/** Label of a direction: the schedule's (legacy) label, else the legacy word, else the token. */
-export const photoLabel = (cam: StationCamera, token: string): string => cam.allLabels[token] ?? directionLabel(token)
+/** Label of a direction: the schedule's label, else the kit's word ('North'), else the token. */
+export const photoLabel = (cam: StationCamera, token: string): string => cam.allLabels[token] ?? photos().label(token)
 
 /**
  * What a past day shows while its derived WebPs are unconfirmed, or when the
@@ -66,7 +53,7 @@ export const knownFrames = (frames: readonly PhotoFrame[]): PhotoFrame[] => fram
 export interface PhotoPick {
   /** Direction chips (tokens), canonical order. */
   tokens: string[]
-  /** token → chip label (legacy words). */
+  /** token → chip label ('North'). */
   labels: Record<string, string>
   /** The chosen direction: the pick if offered, else N, else the first. */
   direction: string
@@ -98,19 +85,18 @@ export interface PhotoPickInput {
  * an empty day), the views the schedule had on that day.
  */
 export function photoPick(i: PhotoPickInput): PhotoPick {
-  const dayFrames = framesFor([...(i.frames ?? [])], i.day)
-  const tokens = dayFrames.length
-    ? tokensOf(dayFrames)
-    : (i.recent
-        ? i.cam.currentViews
-        : viewsBetween(i.cam, localToUtcMs(i.day), localToUtcMs(addDays(i.day, 1)))
-      ).map((v) => v.token)
+  const P = photos()
+  const dayFrames = P.framesFor([...(i.frames ?? [])], i.day)
+  const tokens = [
+    ...(dayFrames.length
+      ? P.tokensOf(dayFrames)
+      : (i.recent ? i.cam.currentViews : P.viewsBetween(i.cam, P.toUtcMs(i.day), P.toUtcMs(MCO.shiftDate(i.day, 1)))).map((v) => v.token)),
+  ]
   const labels = Object.fromEntries(tokens.map((t) => [t, photoLabel(i.cam, t)]))
-  const direction =
-    i.direction && tokens.includes(i.direction) ? i.direction : (tokens[0] ?? 'N')
+  const direction = i.direction && tokens.includes(i.direction) ? i.direction : (tokens[0] ?? P.DEFAULT_VIEW)
   const frames = dayFrames.filter((f) => f.token === direction)
   const active = frames.find((f) => f.slotUtcMs === i.slotUtcMs) ?? frames[0]
-  const stamp = active ? formatLocal(active.slotUtcMs) : ''
+  const stamp = active ? P.stampLabel(active.slotUtcMs) : ''
   const label = photoLabel(i.cam, direction)
   return { tokens, labels, direction, label, frames, active, stamp, alt: `${i.station} ${label} camera ${stamp}`.trim() }
 }
@@ -129,7 +115,7 @@ export function photoSlides(i: PhotoPickInput): PhotoPick[] {
 /** Time-select options for a direction's frames: value = slot ms, label = local time only ("3:00 PM";
  *  the Day field beside it holds the date). */
 export const photoTimeOptions = (frames: readonly PhotoFrame[]): { value: string; label: string }[] =>
-  frames.map((f) => ({ value: String(f.slotUtcMs), label: formatLocalTime(f.slotUtcMs) }))
+  frames.map((f) => ({ value: String(f.slotUtcMs), label: photos().timeLabel(f.slotUtcMs) }))
 
 /** The photo dialog's title: "Bozeman · North · Oct 1, 2026 3:00 PM" ('' without a pick). */
 export const photoTitle = (name: string, p: PhotoPick | null): string =>
