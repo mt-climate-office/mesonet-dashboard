@@ -135,6 +135,17 @@ below, which stay for the record and name what replaced them.
 - **Why:** one copy of the search, the gazetteer and the distance rules, in the kit, for the dashboard and
   climate.umt.edu (website DECISIONS D9, extraction #2).
 
+### Now summary: the kit's MCO.summary
+- **Before:** the hero's one-line summary and its phrase rules in `core/overview/summary.ts`, with `peakGust`
+  and `hourlyPrecip` (`series.ts`) and the current NWS period (`hero.ts`) beside it.
+- **New:** the same code, ported into mco-web-style 0.17.0 as `MCO.summary` (`summary/mco-summary.js`); the
+  dashboard's modules keep their names and signatures and call it. No visible change: the same sentence for the
+  same inputs, in US and metric (this module's tests, and the hero and Now page tests, pass unchanged against
+  the pinned kit file; a 40,000-input comparison against the old TypeScript matched on every one). Kit 0.16.1's
+  search-row change comes with the bump but does not reach the picker, which draws its own rows (`renderRow`).
+- **Why:** one copy of the conditions sentence, in the kit, for the dashboard and climate.umt.edu's homepage
+  (website DECISIONS D9, extraction #3).
+
 ### Photos: the kit's MCO.photos, full public history
 - **Before (#110):** the dashboard's own copy of the photo code: North, East, South and West back to each camera's first archived month.
 - **New:** the same views and range, from the kit's `MCO.photos` (mco-web-style 0.15.0) loaded from the pinned file, with `fullHistory: true`. The 2026-10-22 floor in the kit's public default (website DECISIONS D7) is for the climate.umt.edu hero only (D16). Pre-cutover "North" and "South" stay, labelled as before, although until 2026-10-21 16:00 MDT they pointed at the rain gauge and the snow stake. A station whose only views are staff views (Snow, Pluvio, Solar) has no public camera.

@@ -1,11 +1,25 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { setUnitsSource } from '../units'
 import type { ObservationRow } from '../api'
-import { daysSincePrecip, isEvening, precipPhrase, skyPhrase, summarize, windClass, windPhrase, type SummaryInput } from './summary'
+import { CALM_MPH, DRY_CAP_DAYS, NOTABLE_GUST_MPH, PRECIP_MIN_IN, daysSincePrecip, isEvening, precipPhrase, skyPhrase, summarize, windClass, windPhrase, type SummaryInput } from './summary'
+
+// The rules are the kit's MCO.summary: the pinned file on the test global (test/kit.ts), the same bytes
+// index.html loads. These cases are the ones this module had before it moved to the kit.
 
 const P = { sinceMidnight: null, last24h: null, last7d: null, ytd: null }
 const NOON = Date.UTC(2026, 9, 2, 12)
 const NIGHT = Date.UTC(2026, 9, 2, 21)
+
+describe('the kit', () => {
+  it("the thresholds the app imports at load are MCO.summary's", () => {
+    expect([PRECIP_MIN_IN, DRY_CAP_DAYS, NOTABLE_GUST_MPH, CALM_MPH]).toEqual([
+      MCO.summary.PRECIP_MIN_IN,
+      MCO.summary.DRY_CAP_DAYS,
+      MCO.summary.NOTABLE_GUST_MPH,
+      MCO.summary.CALM_MPH,
+    ])
+  })
+})
 
 describe('skyPhrase', () => {
   it.each([
@@ -111,5 +125,10 @@ describe('summary in SI', () => {
     setUnitsSource(() => 'si')
     expect(precipPhrase(0.123, 0)).toBe('3.1 mm of precipitation today')
     expect(windClass(9.9)).toBe('light')
+  })
+  it('the sentence follows the display units: a gust in m/s', () => {
+    setUnitsSource(() => 'si')
+    const input: SummaryInput = { shortForecast: 'Partly Cloudy', windMph: 0.4, windDeg: 157.5, peakGustMph: 43.24, precipTodayIn: 0, daysSincePrecip: 5, nowWallMs: NOON }
+    expect(summarize(input)).toBe('Partly cloudy, calm after gusts to 19.3 m/s earlier, no precipitation in 5 days.')
   })
 })

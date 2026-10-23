@@ -1,7 +1,7 @@
 # Mesonet dashboard architecture
 
 The Montana Mesonet Dashboard, rebuilt on the MCO house style
-([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.16.2)
+([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.17.0)
 with Alpine.js, Apache ECharts and TypeScript. Served at
 `/mesonet-dashboard/` on GitHub Pages, and through the Caddy proxy
 (mt-climate-office/mesonet_app) as `mesonet.climate.umt.edu/dash/next/`, the
@@ -445,6 +445,7 @@ Data from mesonet2 v2 at QC level 2; Ag computed client-side, SWP and percent
 saturation included (mesonet-soils `soil_params.json`, data2 first, which
 also decides `has_swp`); photos only from data2 `webp_large`, through the kit's `MCO.photos` (public views, `fullHistory: true`, D16); soil and GDD
 static data vendored in `public/data/` (`core/ag/data/vendor-static.mjs`); the
-picker's search, its place gazetteer and Near me are the kit's `MCO.places` (0.16.0+);
+picker's search, its place gazetteer and Near me are the kit's `MCO.places` (0.16.0+); the Now hero's
+summary sentence, the 24 h peak gust and the hourly rain sums are the kit's `MCO.summary` (0.17.0);
 Satellite hidden. `web/` is frozen: hotfixes only, each mirrored into
 `core/` in the same PR. Intentional behaviour changes go in `DIVERGENCES.md`.

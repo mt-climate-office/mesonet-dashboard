@@ -93,27 +93,20 @@ export function sparkSeries(rows: readonly ObservationRow[]): Partial<Record<Ser
   return out
 }
 
-/** Hourly precipitation sums: since local midnight of `today`, and the last 24 rows' hours. Null without ppt. */
+/**
+ * Hourly precipitation sums: since local midnight of `today`, and the last 24 rows' hours. Null without ppt.
+ * The kit's `MCO.summary.hourlyPrecip` (read at call time).
+ */
 export function hourlyPrecip(rows: readonly ObservationRow[], today: string): { sinceMidnight: number; last24h: number } | null {
-  const all = timed(rows).filter((r) => num(r.row['Precipitation [in]']) !== null)
-  if (!all.length) return null
-  const end = all[all.length - 1].t
-  const sum = (xs: typeof all) => xs.reduce((a, r) => a + (r.row['Precipitation [in]'] as number), 0)
-  return {
-    sinceMidnight: sum(all.filter((r) => r.date === today)),
-    last24h: sum(all.filter((r) => r.t > end - 24 * HOUR)),
-  }
+  return MCO.summary.hourlyPrecip(rows, today)
 }
 
 /**
  * Peak gust (mph) in the `hours` before `nowMs` (wall-clock ms): the hourly
  * maxima of the hours that overlap that window, and `latest` (`/latest`'s gust).
  * Null when no hourly row there has a gust (not loaded yet, or no gust sensor).
+ * The kit's `MCO.summary.peakGust` (read at call time).
  */
 export function peakGust(rows: readonly ObservationRow[] | undefined, latest: number | null, nowMs: number, hours = 24): number | null {
-  const gusts = timed(rows ?? [])
-    .filter((r) => r.t > nowMs - (hours + 1) * HOUR && r.t <= nowMs)
-    .flatMap((r) => Object.keys(r.row).filter((c) => c.startsWith('Gust Speed')).map((c) => num(r.row[c])))
-    .filter((v): v is number => v !== null)
-  return gusts.length ? Math.max(...gusts, latest ?? -Infinity) : null
+  return MCO.summary.peakGust(rows, latest, nowMs, hours)
 }
