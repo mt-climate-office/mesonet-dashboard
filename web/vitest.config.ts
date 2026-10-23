@@ -1,7 +1,7 @@
 /**
  * Vitest: every test is pure and runs in Node. Test files import
  * describe/it/expect from 'vitest' explicitly (no injected globals).
- * The one global is the kit's `MCO`: the pinned core + photos files from
+ * The one global is the kit's `MCO`: the pinned core, photos and places files from
  * index.html, fetched once, SRI-checked and evaluated in node:vm (test/kit.ts).
  */
 import { defineConfig, mergeConfig } from 'vitest/config'

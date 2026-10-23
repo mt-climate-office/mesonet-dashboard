@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { kitFiles, verified } from './kit'
+import { kitData, kitDataFiles, kitFiles, verified } from './kit'
 
 describe('the kit files the tests load (test/kit.ts)', () => {
-  it('are the ones index.html pins, core before photos', () => {
+  it('are the ones index.html pins, core first', () => {
     const files = kitFiles()
-    expect(files.map((f) => f.path)).toEqual(['core/mco-core.js', 'photos/mco-photos.js'])
+    expect(files.map((f) => f.path)).toEqual(['core/mco-core.js', 'photos/mco-photos.js', 'places/mco-places.js'])
     const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
     for (const f of files) expect(html).toContain(`<script src="${f.url}"\n          integrity="${f.integrity}"`)
   })
@@ -18,7 +18,14 @@ describe('the kit files the tests load (test/kit.ts)', () => {
       expect(() => verified(f, bad)).toThrow(/integrity mismatch/)
     }
   })
-  it('put MCO.photos on the test global', () => {
+  it('put MCO.photos and MCO.places on the test global', () => {
     expect(MCO.photos.PUBLIC).toEqual(['N', 'E', 'S', 'W'])
+    expect(MCO.places.RESULTS).toBe(8)
+  })
+  it('fetch the gazetteer from the same tag, checked against the hash mco-places.js carries', () => {
+    const [f] = kitDataFiles()
+    expect(f.url).toBe(kitFiles()[2].url.replace('places/mco-places.js', 'places/mt-places.json'))
+    expect(f.integrity).toBe(MCO.places.DATA_INTEGRITY)
+    expect(JSON.parse(kitData('places/mt-places.json')).rows.length).toBeGreaterThan(900)
   })
 })

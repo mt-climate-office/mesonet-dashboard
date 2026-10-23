@@ -4,7 +4,6 @@
  * zoom held within `LOCATOR_ZOOM` (`locatorZoom`).
  */
 import type { Station } from '../api'
-import { haversineKm } from '../stations/nearest'
 
 /** [[west, south], [east, north]] in decimal degrees. */
 export type LngLatBox = [[number, number], [number, number]]
@@ -26,7 +25,7 @@ export function locatorFrame(
   if (!s || !Number.isFinite(s.latitude) || !Number.isFinite(s.longitude)) return null
   const near = list
     .filter((n) => Number.isFinite(n.latitude) && Number.isFinite(n.longitude))
-    .map((n) => ({ n, km: haversineKm(s.latitude, s.longitude, n.latitude, n.longitude) }))
+    .map((n) => ({ n, km: MCO.places.haversineKm(s.latitude, s.longitude, n.latitude, n.longitude) }))
     .filter((d) => d.km > SAME_SITE_KM)
     .sort((a, b) => a.km - b.km)
     .slice(0, neighbours)
