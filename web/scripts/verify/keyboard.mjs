@@ -173,7 +173,7 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await page.waitForFunction((sel) => [...document.querySelectorAll(`${sel} .mco-search-group`)].filter((g) => g.offsetParent).map((g) => g.textContent.trim().toLowerCase()).join('|') === 'stations|places', SEARCH, { timeout: 20000 }).catch(() => {})
   const heads = await page.locator(`${SEARCH} .mco-search-group:visible`).allInnerTexts()
   check('place search: stations and places under their own headings', heads.join('|').toLowerCase() === 'stations|places', JSON.stringify(heads))
-  await page.keyboard.press('Escape') // clears the text
+  await page.keyboard.press('Escape') // the kit's order: closes the list and restores the (empty) text it opened with
   await page.keyboard.type('gallatin')
   // The county's exact keyword becomes the active option.
   await page.waitForFunction((sel) => {
@@ -222,8 +222,10 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
     const id = document.querySelector(`${sel} input`)?.getAttribute('aria-activedescendant')
     return id ? document.getElementById(id)?.textContent?.replace(/\s+/g, ' ').trim() : null
   }, SEARCH)
-  // The option shows the station's name and network ("Bozeman HydroMet"), as the Recent rows do.
+  // The option shows the station's name and network, as the Recent rows do; the kit's row (0.16.1+) puts a
+  // visually hidden ", " between them, so its text and accessible name read "Bozeman, HydroMet".
   check('combobox: typing + ArrowDown sets aria-activedescendant on the match', /^Bozeman\b/.test(active ?? ''), String(active))
+  check('combobox: the option reads "name, network" (the kit\'s separator)', /^Bozeman, HydroMet$/.test(active ?? ''), String(active))
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => new URLSearchParams(location.search).get('s') === 'acebozem', null, { timeout: 10000 }).catch(() => {})
   check('combobox: Enter selects the station (?s=acebozem)', (await urlParam(page, 's')) === 'acebozem')
@@ -257,7 +259,7 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   await close()
 }
 
-/* ── Station picker search: starts empty; × clears, keeps focus, shows the full list; Esc order ── */
+/* ── Station picker search: starts empty; × clears, keeps focus, shows the full list; the kit's Esc order ── */
 {
   const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=light#now')
   await rendered({ filled: ['[data-testid="now-tiles"]'] })
@@ -287,15 +289,32 @@ const urlParam = (page, k) => page.evaluate((k) => new URLSearchParams(location.
   const v2 = await view()
   check('picker search: × shows with text; it clears the text, keeps focus and shows the full list',
     v1.clear && v2.value === '' && v2.focused && v2.list && v2.options > v1.options && !v2.clear, JSON.stringify([v1, v2]))
+  // The kit's Esc order (HOUSE-STYLE §3, website DECISIONS D19): close the list and restore the text it opened
+  // with, then clear the text, then the picker closes. Typed into an empty field, the restored text is empty.
   await input.fill('gl')
   await page.keyboard.press('Escape')
   const e1 = await view()
   await page.keyboard.press('Escape')
   const e2 = await view()
+  check('picker search: typed text, Esc closes the list and restores the empty field; the next Esc closes the picker',
+    e1.value === '' && !e1.list && e1.focused && e1.picker && !e2.picker, JSON.stringify([e1, e2]))
+  // Text already in the field when the list opens: Esc restores it, the next clears it, the next closes the picker.
+  await page.getByTestId('station-switcher').click()
+  await input.waitFor({ state: 'visible' })
+  await input.focus()
+  await input.evaluate((el) => { el.value = 'gl' })
+  await page.keyboard.press('ArrowDown')
+  await page.keyboard.type('a')
+  const r0 = await view()
   await page.keyboard.press('Escape')
-  const e3 = await view()
-  check('picker search: Esc clears the text, then closes the list, then closes the picker',
-    e1.value === '' && e1.list && e1.picker && !e2.list && e2.picker && !e3.picker, JSON.stringify([e1, e2, e3]))
+  const r1 = await view()
+  await page.keyboard.press('Escape')
+  const r2 = await view()
+  await page.keyboard.press('Escape')
+  const r3 = await view()
+  check('picker search: Esc closes and restores the text, then clears it, then closes the picker',
+    r0.value === 'gla' && r0.list && r1.value === 'gl' && !r1.list && r1.picker && r2.value === '' && !r2.list && r2.picker && !r3.picker,
+    JSON.stringify([r0, r1, r2, r3]))
   const p = await problems()
   check('picker search: console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
   await close()

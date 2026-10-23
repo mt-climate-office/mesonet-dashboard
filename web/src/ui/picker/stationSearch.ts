@@ -1,6 +1,6 @@
 /**
  * The station search shared by the picker and the no-station landing (partials/picker/search.html):
- * the kit's place search (`MCO.places.initPlaceSearch`, on `MCO.initSearchBox`; mco-web-style 0.16.0).
+ * the kit's place search (`MCO.places.initPlaceSearch`, on `MCO.initSearchBox`; mco-web-style 0.16.0+).
  * Stations, and places while typing: a picked county, reservation, town or ZIP code lists its stations
  * below, where Near me does. The kit owns the ranking, the gazetteer (loaded from the pinned tag on the
  * first focus), the listbox and its announcements. Spread into a component that has `choose(id)`:
@@ -8,9 +8,9 @@
  * and whose destroy() calls `searchDestroy()`.
  *
  * Kept from the dashboard's own combobox, around the kit's box: the × (clears the text, keeps focus,
- * shows the full list), a click on the field toggling the list, leaving the search emptying it, and the
- * Esc order (clear the text, then close the list, then let the picker close). The kit's own Esc order is
- * close-and-restore, then clear (HOUSE-STYLE §3); see DIVERGENCES.md.
+ * shows the full list), a click on the field toggling the list, and leaving the search emptying it.
+ * Esc is the kit's (HOUSE-STYLE §3; website DECISIONS D19): close the list and restore the text it opened
+ * with, then clear the text, then let the picker close. See DIVERGENCES.md.
  */
 import Alpine from 'alpinejs'
 import { stationItems } from '../../core/latest'
@@ -62,24 +62,14 @@ export function stationSearch() {
         input: field,
         listbox,
         label: 'Search stations and places',
-        // The network beside each station, as in Recent (the box shows the id otherwise).
+        // The network beside each station, as in Recent (the box shows the id otherwise). The kit's default row
+        // (0.16.1+) separates name and meta for the accessible name: "Bozeman, HydroMet".
         items: () => {
           const st = Alpine.store('station')
           return stationItems(st.list, Alpine.store('url').state.nets, st.id).map((s) => ({ ...s, meta: s.group }))
         },
         stations: () => Alpine.store('station').list,
         value: () => Alpine.store('station').id,
-        // The kit's row with a space between name and meta, so the option's text (and its accessible name) reads
-        // "Bozeman HydroMet", not "BozemanHydroMet".
-        renderRow: (item, el) => {
-          const label = document.createElement('span')
-          label.className = 'mco-search-label'
-          label.textContent = item.label
-          const meta = document.createElement('span')
-          meta.className = 'mco-search-meta'
-          meta.textContent = item.meta ?? item.id
-          el.append(label, ' ', meta)
-        },
         onSelect: (id) => {
           sync()
           this.choose(id)
@@ -93,13 +83,6 @@ export function stationSearch() {
         areas: { url: `${import.meta.env.BASE_URL}geo/mt_reservations_simple.geojson` },
       })
 
-      // Esc with text: clear it and show the full list, before the kit's handler (which would close).
-      const onEsc = (e: KeyboardEvent) => {
-        if (e.key !== 'Escape' || field.value === '') return
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        this.clearSearch()
-      }
       // A click on the field toggles the list; closing it empties the field.
       const onClick = () => {
         if (!isOpen()) return ps?.open()
@@ -114,7 +97,6 @@ export function stationSearch() {
         sync()
         ps?.close()
       }
-      field.addEventListener('keydown', onEsc, true)
       field.addEventListener('click', onClick)
       field.addEventListener('input', sync)
       field.addEventListener('keyup', sync)
@@ -125,7 +107,6 @@ export function stationSearch() {
       // The catalog changed while the list is open (it loaded): re-filter.
       this.$watch('$store.station.list', () => ps?.refresh())
       cleanups = [
-        () => field.removeEventListener('keydown', onEsc, true),
         () => field.removeEventListener('click', onClick),
         () => field.removeEventListener('input', sync),
         () => field.removeEventListener('keyup', sync),
@@ -145,7 +126,7 @@ export function stationSearch() {
     searchList(open: boolean): void {
       void open
     },
-    /** ×, or Esc with text: empty the field, keep focus, show the full list. */
+    /** ×: empty the field, keep focus, show the full list. */
     clearSearch(this: SearchHost): void {
       if (!input || !ps) return
       input.value = ''

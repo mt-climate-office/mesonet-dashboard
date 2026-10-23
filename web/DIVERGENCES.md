@@ -76,7 +76,8 @@ below, which stay for the record and name what replaced them.
   field once pressed. Recents follow, then "Browse on the map", which reveals the network chips and the map
   (MapLibre starts on the first reveal). Drawer / sheet, focus, `inert` and Esc rules are unchanged.
   The field starts empty (P1 showed the station name in it) and ranks matches across networks while typing
-  (P1 grouped them by network); Esc clears the text, then closes the list, then the picker. On a phone,
+  (P1 grouped them by network); Esc clears the text, then closes the list, then the picker (superseded: Esc
+  now follows the kit, see [Station search](#station-search-the-kits-search-box-and-place-search)). On a phone,
   the map opens the sheet full and fills it (two fingers move it).
 - **Why:** DESIGN.md "Redesign 2026-10": most visits search or pick a recent station. The prefilled name
   had to be deleted before every search, and grouping put a prefix match under a network of weaker ones.
@@ -120,9 +121,14 @@ below, which stay for the record and name what replaced them.
 - **New:** `MCO.places.initPlaceSearch` on `MCO.initSearchBox` (mco-web-style 0.16.0), which the dashboard's code
   was ported into: the same ranking, sections ("Stations", then up to 8 "Places"), place lists, distances and
   announcements. Kept around the kit's box (`ui/picker/stationSearch.ts`): the ×, a click on the field toggling
-  the list, leaving the search emptying it, and the Esc order **clear the text, then close the list, then close
-  the picker**. The kit's own order (HOUSE-STYLE §3) is close-and-restore, then clear; keeping ours is a
-  deliberate local difference, open to dropping. Visible differences: "No matches" and "Showing 200 of N" are a
+  the list, and leaving the search emptying it. **Esc is the kit's order** (HOUSE-STYLE §3; mco-web-style 0.16.2
+  bump): close the list and restore the text it opened with, then clear the text, then the picker closes. Text
+  typed into an empty field is restored to empty, so in practice the first Esc closes the list and empties the
+  field and the second closes the picker. Until the 0.16.2 bump a capture-phase key handler kept the dashboard's
+  older order (clear the text and show the full list, then close the list, then close the picker); it was
+  dropped by owner decision (website DECISIONS D19: search Escape order follows the kit everywhere). The options
+  are the kit's default row, whose name reads "Bozeman, HydroMet" (a visually hidden ", ", 0.16.1); the dashboard
+  had drawn its own row with a space for the same reason, and dropped it. Visible differences: "No matches" and "Showing 200 of N" are a
   disabled row inside the list instead of a line under it; the result count is read by the page's one announcer
   (`MCO.announce`) instead of a status inside the search; "1 station near you" is singular. The 0.16.0 bump
   also brings kit 0.15.1's tribal-label font fix to the maps.

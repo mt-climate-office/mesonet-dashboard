@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- Montana Mesonet Dashboard. Head follows mco-web-style
-     snippets/head.html @0.16.0; body markup lives in partials/ (inlined at
+     snippets/head.html @0.16.2; body markup lives in partials/ (inlined at
      build by vite/include.ts). The kit version + SRI hashes live ONLY here. -->
 <html lang="en">
 <head>
@@ -75,14 +75,14 @@
   <meta name="twitter:image" content="https://mt-climate-office.github.io/mesonet-dashboard/og-card.png">
   <meta name="twitter:image:alt" content="The Mesonet Dashboard's station chooser: a search box above a map of Montana Mesonet stations">
 
-  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.0/assets/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.0/assets/favicon-16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.0/assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.2/assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.2/assets/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.2/assets/apple-touch-icon.png">
 
   <!-- House fonts (same @version as the theme CSS; crossorigin required, no integrity). -->
-  <link rel="preload" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.0/fonts/outfit-latin.woff2"
+  <link rel="preload" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.2/fonts/outfit-latin.woff2"
         as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.0/fonts/space-mono-latin.woff2"
+  <link rel="preload" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.2/fonts/space-mono-latin.woff2"
         as="font" type="font/woff2" crossorigin>
 
   <!-- MapLibre 6 (kit snippets/head.html): ES modules only, imported by MCO.map.loadMapLibre(); the one-line
@@ -97,7 +97,7 @@
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.css"
         integrity="sha384-ntw3zEt6rcVML7jDK0ULmHa5hxLB23afsPqzqfY+gLgMfAkbFCnCgPpkZvV5mmZX"
         crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.0/theme/mco-theme.css"
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.2/theme/mco-theme.css"
         integrity="sha384-s6MS3mtowaDBNrYl8BzVKW+tkporVrIEixS7kjvHZ67k4syUXk0rKKMCHO2pNjNu"
         crossorigin="anonymous">
   <script type="module" src="/src/main.ts"></script>
@@ -106,18 +106,18 @@
   <!-- @include partials/shell.html -->
 
   <!-- Kit: classic scripts, before the (deferred) app module runs. MapLibre comes later, on demand (ui/map/presets.ts). -->
-  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.0/core/mco-core.js"
-          integrity="sha384-e/w/XoE6ST74jVtXv8UqMUoZ6rNWZn3XW9eAk4j2zWzuFOO2HYlsNV6uwK28/FrE"
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.2/core/mco-core.js"
+          integrity="sha384-5LuIiruVjXsc4aJP9psEF1MLhfwow4XrNztT4Sn1OSCbbY7wkqTpgWbX+ucBlUlC"
           crossorigin="anonymous"></script>
   <!-- Station photos (MCO.photos: schedule, slots, frames; public N/E/S/W; the dashboard asks for fullHistory). After core. -->
-  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.0/photos/mco-photos.js"
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.2/photos/mco-photos.js"
           integrity="sha384-VepbbKE6CKKljLPjOlw1TATvqOZH73WIWtFXmpSR5RAgYVEphm1rE2fkGa+vK17C"
           crossorigin="anonymous"></script>
   <!-- Place search (MCO.places: the station search's places, nearest stations, Near me; its gazetteer comes from this tag). After core. -->
-  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.0/places/mco-places.js"
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.2/places/mco-places.js"
           integrity="sha384-4Amo71pLoRONH4SjB2I+Ai9FpSNqDDGGqQVxq4z0Yu/0c7GtGgLUYtNX/wQDUHVg"
           crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.0/map/mco-map.js"
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@0.16.2/map/mco-map.js"
           integrity="sha384-BmAbWT508YkXfTenCpVne4+ONoA0HyPeR6qLIt1KxVFXTD+jWtHSWnysuInSQx8t"
           crossorigin="anonymous"></script>
 </body>
