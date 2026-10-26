@@ -33,6 +33,10 @@ interface McoMap {
   TRIBAL_LABEL_LAYOUT: MapLibre.SymbolLayerSpecification['layout']
   /** CARTO Dark Matter (dark + high-contrast) or Positron (light), read at call time. */
   cartoStyleUrl(): string
+  /** Bad basemap label → correct text, exact whole-label matches (kit 0.20.0). */
+  LABEL_CORRECTIONS: Record<string, string>
+  /** Rewrite every symbol layer's text-field to apply LABEL_CORRECTIONS; returns the layers rewritten. */
+  correctBasemapLabels(map: MapLibre.Map, table?: Record<string, string>): number
   themedStyleUrl(urls: { dark: string; light: string }): string
   initialCamera(
     params: URLSearchParams,
