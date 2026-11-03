@@ -8,7 +8,7 @@
 import { ELEM_MAP } from '../params/latest'
 import { depthLabelFromColumn, variableForColumn } from '../params/columns'
 import { currentConditionsRows, pptSummaryRows } from '../cards/currentConditions'
-import { depthsIn, displayUnit, fromUs, isSi, quantityOfUnit } from '../units'
+import { converts, depthsIn, displayUnit, fromUs, quantityOfUnit } from '../units'
 import { LABELS, formatValue, labelUnit } from '../variables/labels'
 
 export interface Reading {
@@ -66,7 +66,7 @@ export function readingValue(col: string, value: string): ReadingValue {
   if (!unit) return { value, unit: '', note: '' }
   // Unknown columns: the number as given in US, converted (to 2 decimals) where its unit has an SI form.
   const q = quantityOfUnit(unit, col)
-  return q && isSi() ? { value: String(Number(fromUs(q, Number(m[1])).toFixed(2))), unit: displayUnit(unit, col), note } : { value: m[1], unit, note }
+  return q && converts(q) ? { value: String(Number(fromUs(q, Number(m[1])).toFixed(2))), unit: displayUnit(unit, col), note } : { value: m[1], unit, note }
 }
 
 /**

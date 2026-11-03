@@ -93,10 +93,10 @@ describe('buildNowPage tiles', () => {
     expect(rain(daily([0, 0, 0, 0, 0, 0, 0]))).toMatchObject({ spark: { kind: 'bars', bars: [] }, sparkLabel: 'Last 7 days: no precipitation.' })
     expect(rain(undefined).spark).toBeNull()
   })
-  it('sparkline sentences in the plain unit and display precision (mb, not mbar)', () => {
+  it('sparkline sentences in the plain unit and display precision (VPD in kPa, not mbar)', () => {
     const hourly: ObservationRow[] = [3, 4.12].map((v, i) => ({ station: 'x', datetime: `2026-10-01 1${i}:00:00-06:00`, 'VPD [mbar]': v, 'Relative Humidity [%]': 40 + i * 10 }))
     const p = buildNowPage({ ...BASE, latest: { ...LATEST, 'VPD [mbar]': 4.1 }, hourly })
-    expect(p.tiles.find((t) => t.id === 'vpd')?.sparkLabel).toBe('Last 48 hours: from 3.0 to 4.1 mb.')
+    expect(p.tiles.find((t) => t.id === 'vpd')?.sparkLabel).toBe('Last 48 hours: from 0.30 to 0.41 kPa.')
     expect(p.tiles.find((t) => t.id === 'rh')?.sparkLabel).toBe('Last 48 hours: from 40 to 50%.')
   })
   it('the Dry/Wet chip from SWP', () => {
@@ -107,9 +107,9 @@ describe('buildNowPage tiles', () => {
 
 describe('buildNowPage rows', () => {
   it('pressure with its 3 h trend once the hourly rows are in; snow none or its depth', () => {
-    expect(buildNowPage(BASE).readingsMeta).toBe('Pressure 847 mb · Snow none')
-    expect(buildNowPage({ ...BASE, hourly: pressure([846, 847, 848, 849.5]) }).readingsMeta).toBe('Pressure 847 mb, rising · Snow none')
-    expect(buildNowPage({ ...BASE, latest: { ...LATEST, 'Snow Depth [in]': 3.24 } }).readingsMeta).toBe('Pressure 847 mb · Snow 3.2 in')
+    expect(buildNowPage(BASE).readingsMeta).toBe('Pressure 25.02 inHg · Snow none')
+    expect(buildNowPage({ ...BASE, hourly: pressure([846, 847, 848, 849.5]) }).readingsMeta).toBe('Pressure 25.02 inHg, rising · Snow none')
+    expect(buildNowPage({ ...BASE, latest: { ...LATEST, 'Snow Depth [in]': 3.24 } }).readingsMeta).toBe('Pressure 25.02 inHg · Snow 3.2 in')
   })
   it('leaves out what the station does not report', () => {
     const bare = Object.fromEntries(Object.entries(LATEST).filter(([k]) => !/^(Atmospheric Pressure|Snow Depth)/.test(k)))

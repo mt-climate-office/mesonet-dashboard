@@ -1,7 +1,8 @@
 /**
  * Display units: US (the API default, and every value the app fetches and computes on) or SI
  * (the API's `units=si`). Data stays US everywhere; display edges convert with `fromUs` and
- * label with `unitLabel`. The active system comes from an injected reader (main.ts: `?units=`),
+ * label with `unitLabel`. Two quantities' US display is not the data's unit: the API's mb, shown
+ * as inHg for barometric pressure (`baro`) and as kPa for VPD (`vpd`, its unit in agronomy). The active system comes from an injected reader (main.ts: `?units=`),
  * so a reactive getter that formats a value re-runs when it changes; tests and core default to US.
  */
 import { MM_PER_IN, MS_PER_MPH } from './ag/compute/units'
@@ -37,7 +38,9 @@ export type Quantity =
   | 'snow' // in ↔ cm
   | 'rate' // in/h ↔ mm/h
   | 'speed' // mph ↔ m/s
-  | 'pressure' // mb ↔ kPa (pressure, VPD)
+  | 'baro' // mb data, shown inHg ↔ kPa (barometric pressure)
+  | 'vpd' // mb data, shown kPa in both (vapor pressure deficit)
+  | 'pressure' // mb ↔ kPa (any other mb column)
   | 'swp' // bar ↔ kPa (soil water potential)
   | 'elev' // ft ↔ m
 
@@ -50,9 +53,15 @@ interface QuantitySpec {
   toUs: (v: number) => number
   /** Extra decimals SI needs to keep US precision (mm vs in: fewer; m/s, kPa: more). */
   siDigits: number
+  /** Data value → US display value, when the US display unit is not the data's (mb → inHg). */
+  usShown?: (v: number) => number
+  /** US display value → data value (inverse of `usShown`). */
+  usData?: (v: number) => number
 }
 
 const FT_PER_M = 1 / 0.3048
+/** Millibars (hPa) per inch of mercury (1 inHg = 3,386.389 Pa). */
+export const MB_PER_INHG = 33.8638866667
 
 const SPECS: Record<Quantity, QuantitySpec> = {
   temp: { us: '°F', si: '°C', toSi: (f) => ((f - 32) * 5) / 9, toUs: (c) => (c * 9) / 5 + 32, siDigits: 0 },
@@ -61,21 +70,35 @@ const SPECS: Record<Quantity, QuantitySpec> = {
   snow: { us: 'in', si: 'cm', toSi: (v) => v * 2.54, toUs: (v) => v / 2.54, siDigits: 0 },
   rate: { us: 'in/h', si: 'mm/h', toSi: (v) => v * MM_PER_IN, toUs: (v) => v / MM_PER_IN, siDigits: -1 },
   speed: { us: 'mph', si: 'm/s', toSi: (v) => v * MS_PER_MPH, toUs: (v) => v / MS_PER_MPH, siDigits: 1 },
+  baro: {
+    us: 'inHg',
+    si: 'kPa',
+    toSi: (v) => v / 10,
+    toUs: (v) => v * 10,
+    siDigits: -1,
+    usShown: (v) => v / MB_PER_INHG,
+    usData: (v) => v * MB_PER_INHG,
+  },
   pressure: { us: 'mb', si: 'kPa', toSi: (v) => v / 10, toUs: (v) => v * 10, siDigits: 1 },
+  vpd: { us: 'kPa', si: 'kPa', toSi: (v) => v / 10, toUs: (v) => v * 10, siDigits: 0, usShown: (v) => v / 10, usData: (v) => v * 10 },
   swp: { us: 'bar', si: 'kPa', toSi: (v) => v * 100, toUs: (v) => v / 100, siDigits: -1 },
   elev: { us: 'ft', si: 'm', toSi: (v) => v / FT_PER_M, toUs: (v) => v * FT_PER_M, siDigits: 0 },
 }
 
-/** `v` (in `q`'s US unit) in `u`; null/non-finite pass through. */
+/** `v` (in `q`'s data unit: US, mb for `baro`) in `u`; null/non-finite pass through. */
 export function fromUs(q: Quantity, v: number, u?: Units): number
 export function fromUs(q: Quantity, v: number | null | undefined, u?: Units): number | null
 export function fromUs(q: Quantity, v: number | null | undefined, u: Units = units()): number | null {
   if (v === null || v === undefined || !Number.isFinite(v)) return v ?? null
-  return u === 'si' ? SPECS[q].toSi(v) : v
+  const s = SPECS[q]
+  return u === 'si' ? s.toSi(v) : (s.usShown?.(v) ?? v)
 }
 
-/** `v` in `u` back to `q`'s US unit (an input typed in SI, e.g. a GDD cutoff). */
-export const toUs = (q: Quantity, v: number, u: Units = units()): number => (u === 'si' ? SPECS[q].toUs(v) : v)
+/** `v` in `u` back to `q`'s data unit (an input typed in SI, e.g. a GDD cutoff). */
+export const toUs = (q: Quantity, v: number, u: Units = units()): number => (u === 'si' ? SPECS[q].toUs(v) : (SPECS[q].usData?.(v) ?? v))
+
+/** Whether `q`'s values change in `u`: always in SI; in US only where the display unit is not the data's (`baro`). */
+export const converts = (q: Quantity, u: Units = units()): boolean => u === 'si' || SPECS[q].usShown !== undefined
 
 /** `q`'s unit text in `u`: "°F" / "°C", "in" / "mm". */
 export const unitLabel = (q: Quantity, u: Units = units()): string => (u === 'si' ? SPECS[q].si : SPECS[q].us)
@@ -110,7 +133,7 @@ export function quantityOfUnit(unit: string, col = ''): Quantity | null {
     case 'mbar':
     case 'mb':
     case 'millibar':
-      return 'pressure'
+      return /^Atmospheric Pressure/i.test(col) ? 'baro' : /^VPD/i.test(col) ? 'vpd' : 'pressure'
     case 'in/hr':
     case 'in/h':
       return 'rate'
@@ -133,11 +156,16 @@ export function columnValue(col: string, v: number | null | undefined, u: Units 
   return q ? fromUs(q, v, u) : (v ?? null)
 }
 
-/** A US unit string as shown in `u` ("°F" → "°C", "mi/hr" → "m/s"); others unchanged. */
+/** A US unit string as shown in `u` ("°F" → "°C", "mi/hr" → "m/s", pressure "mbar" → "inHg"); others unchanged. */
 export function displayUnit(unit: string, col = '', u: Units = units()): string {
-  if (u !== 'si') return unit
   const q = quantityOfUnit(unit, col)
-  return q ? SPECS[q].si : unit
+  return q && converts(q, u) ? unitLabel(q, u) : unit
+}
+
+/** Whether column `col`'s values change in `u` (core/models `timeseriesInUnits`). */
+export function columnConverts(col: string, u: Units = units()): boolean {
+  const q = quantityOfColumn(col)
+  return q !== null && converts(q, u)
 }
 
 /**
