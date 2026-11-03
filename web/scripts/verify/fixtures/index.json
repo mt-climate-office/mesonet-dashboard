@@ -575,6 +575,36 @@
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-derived_hourly-659b79d375.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived?stations=acebozem&elements=vpd&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-v2_derived-11e494035d.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&start_time=2026-09-29&end_time=2026-10-02&level=2&rm_na=false&elements=vpd&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_hourly-e3b0b36d04.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=false&elements=vpd&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_hourly-f4940fb36a.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived?stations=arskeogh&elements=vpd&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-v2_derived-5d65a883c8.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/observations/hourly?stations=arskeogh&elements=air_temp,rh,wind_spd,ppt,sol_rad,soil_vwc,bp,windgust&start_time=2026-09-29&level=2&rm_na=true&na_info=false&public=true&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-observations_hourly-ffde6bdda5.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=arskeogh&start_time=2026-09-29&level=2&rm_na=true&elements=vpd&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_hourly-643b9c2519.csv"
   }
  }
 }

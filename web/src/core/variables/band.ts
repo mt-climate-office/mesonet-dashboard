@@ -13,10 +13,10 @@ import type { Variable } from './catalog'
 
 /**
  * Variables with a band: not totals (precipitation, ETr), not wind direction (a circular mean) and not
- * pressure, shown as sea-level pressure, which the API has no daily minimum or maximum of (core/api/pressure).
+ * the derived pressure and VPD, which the API has no daily minimum or maximum of (core/api/pressure, vpd).
  */
 export const hasBand = (v: Pick<Variable, 'sum' | 'name'>): boolean =>
-  !v.sum && v.name !== 'Wind Direction' && v.name !== 'Atmospheric Pressure'
+  !v.sum && v.name !== 'Wind Direction' && v.name !== 'Atmospheric Pressure' && v.name !== 'VPD'
 
 /**
  * "Minimum Air Temperature @ 2 m [°F]" → the edge and the mean column it

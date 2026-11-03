@@ -74,13 +74,21 @@ export const COLOR_MAPPER: Record<string, string | null> = {
  */
 export const LATEST_EXCLUDED_ELEMENTS: ReadonlySet<string> = new Set(['ppt_corrected'])
 
+/** The VPD element code. Its values come from `/derived` `vpd` at every station (core/api/vpd), not the sensor. */
+export const VPD_ELEMENT = 'vpd_atmo'
+
+/** Whether a station has what the derived VPD needs: air temperature and relative humidity. */
+const hasVpdInputs = (names: ReadonlySet<string>): boolean =>
+  names.has('Air Temperature') && names.has('Relative Humidity')
+
 /** Display-variable name of an element: its description_short before "@". */
 export const latestVarName = (descriptionShort: string): string =>
   descriptionShort.split('@')[0].trim()
 
 /**
  * Variable chips for a station (legacy update_select_vars): each element's
- * description_short before "@", deduped, plus "Reference ET", sorted.
+ * description_short before "@", deduped, plus "Reference ET", plus "VPD" where
+ * the station has its inputs (derived, core/api/vpd), sorted.
  */
 export function latestVarsFromElements(
   elements: ReadonlyArray<{ element: string; description_short: string }>,
@@ -92,6 +100,7 @@ export function latestVarsFromElements(
     if (name) out.add(name)
   }
   out.add('Reference ET')
+  if (hasVpdInputs(out)) out.add('VPD')
   return [...out].sort()
 }
 
@@ -101,7 +110,8 @@ export function latestVarsFromElements(
  * API expands `soil_vwc` to every depth). A variable missing from ELEM_MAP
  * falls back to the station's elements with that description_short, so new
  * API elements plot without a code change. With the station's element list,
- * prefixes the station doesn't report are dropped.
+ * prefixes the station doesn't report are dropped, except VPD, which
+ * getStationRecord serves from `/derived` at every station.
  */
 export function latestElementCodes(
   vars: readonly string[],
@@ -123,7 +133,7 @@ export function latestElementCodes(
   if (!stationElements || codes.size === 0) return [...codes]
   const have = stationElements.map((r) => r.element)
   const filtered = [...codes].filter((c) =>
-    have.some((h) => h === c || h.startsWith(`${c}_`)),
+    c === VPD_ELEMENT || have.some((h) => h === c || h.startsWith(`${c}_`)),
   )
   return filtered.length > 0 ? filtered : [...codes]
 }
