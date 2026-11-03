@@ -108,6 +108,9 @@ describe('elementLabel', () => {
     expect(elementLabel('Precipitation')).toBe('Precipitation')
     expect(elementLabel('Battery Voltage')).toBe('Battery Voltage')
   })
+  it('names bp as the measurement it downloads, not the sea-level pressure Charts shows', () => {
+    expect(elementLabel('Atmospheric Pressure')).toBe('Station pressure')
+  })
 })
 
 describe('toCsv', () => {

@@ -540,6 +540,41 @@
    "status": 200,
    "type": "text/csv; charset=utf-8",
    "file": "mesonet2-observations_daily-a5e349047a.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived?stations=acebozem&elements=mslp&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-v2_derived-93c2eabffc.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&start_time=2026-09-29&level=2&rm_na=true&elements=mslp&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_hourly-94252bea8e.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&start_time=2026-09-29&end_time=2026-10-02&level=2&rm_na=false&elements=mslp&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_hourly-dd114bc605.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&start_time=2026-09-17&end_time=2026-10-02&level=2&rm_na=false&elements=mslp&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_hourly-a29d83cc73.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived?stations=arskeogh&elements=mslp&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-v2_derived-c85a7b20c1.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=arskeogh&start_time=2026-09-29&level=2&rm_na=true&elements=mslp&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_hourly-67344fbffc.csv"
+  },
+  "https://mesonet2.climate.umt.edu/api/v2/derived/hourly?stations=acebozem&start_time=2026-09-24&end_time=2026-10-02&level=2&rm_na=false&elements=mslp&type=csv": {
+   "status": 200,
+   "type": "text/csv; charset=utf-8",
+   "file": "mesonet2-derived_hourly-659b79d375.csv"
   }
  }
 }

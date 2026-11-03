@@ -36,7 +36,8 @@ export const LABELS: Readonly<Record<string, PlainLabel>> = {
   windgust: { name: 'Wind gusts', unit: 'mph', digits: d(0, 1), q: 'speed' },
   wind_dir: { name: 'Wind direction', unit: '°', digits: d(0, 0) },
   sol_rad: { name: 'Sunlight', unit: 'W/m²', digits: d(0, 0) },
-  bp: { name: 'Pressure', unit: 'mb', digits: d(0, 1), q: 'pressure' },
+  // Shown as sea-level pressure (core/api/pressure); the Download picker names the measurement "Station pressure".
+  bp: { name: 'Sea-level pressure', unit: 'mb', digits: d(0, 1), q: 'pressure' },
   snow_depth: { name: 'Snow depth', unit: 'in', digits: d(1, 1), q: 'snow' },
   // Precipitation and evaporation (etr is also the Reference ET Ag tool: one id, one label)
   ppt: { name: 'Precipitation', unit: 'in', digits: d(2, 2), q: 'precip' },

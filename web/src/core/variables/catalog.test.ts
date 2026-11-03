@@ -51,8 +51,8 @@ describe('stationVariables', () => {
   })
   it('Compare chips: plain names, sorted by them; the value stays the display variable', () => {
     const opts = plainVariableOptions(['Soil VWC', 'Gust Speed', 'Atmospheric Pressure', 'Bulk EC', 'Longwave In'], ELEMENTS)
-    expect(opts.map((o) => o.label)).toEqual(['Longwave In', 'Pressure', 'Soil moisture', 'Soil salinity (EC)', 'Wind gusts'])
-    expect(opts.find((o) => o.label === 'Pressure')?.value).toBe('Atmospheric Pressure')
+    expect(opts.map((o) => o.label)).toEqual(['Longwave In', 'Sea-level pressure', 'Soil moisture', 'Soil salinity (EC)', 'Wind gusts'])
+    expect(opts.find((o) => o.label === 'Sea-level pressure')?.value).toBe('Atmospheric Pressure')
   })
   it('flags summed and normals variables', () => {
     expect(findVariable(vars, 'ppt')).toMatchObject({ sum: true, normals: true, group: 'Precipitation and evaporation' })

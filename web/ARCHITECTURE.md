@@ -441,7 +441,8 @@ leaving ~180 KB for the sections; at the UX P0 prototype the entry is 107 KB and
 
 ## Rules carried from web/
 
-Data from mesonet2 v2 at QC level 2; Ag computed client-side, SWP and percent
+Data from mesonet2 v2 at QC level 2; pressure shown as the API's derived sea-level pressure (`mslp`,
+`core/api/pressure`; the Downloader keeps the measured `bp`); Ag computed client-side, SWP and percent
 saturation included (mesonet-soils `soil_params.json`, data2 first, which
 also decides `has_swp`); photos only from data2 `webp_large`, through the kit's `MCO.photos` (public views, `fullHistory: true`, D16); soil and GDD
 static data vendored in `public/data/` (`core/ag/data/vendor-static.mjs`; the
