@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import {
+  columnConverts,
   columnValue,
   degreeDays,
   depthText,
@@ -50,6 +51,25 @@ describe('conversions', () => {
     expect(degreeDays(1800, 'si')).toBe(1000)
     expect(degreeDays(1800, 'us')).toBe(1800)
   })
+  it('barometric pressure: mb data shown as inHg (US) or kPa (SI); VPD kPa in both', () => {
+    expect(fromUs('baro', 1013.25, 'us')).toBeCloseTo(29.921, 3)
+    expect(fromUs('baro', 1013.25, 'si')).toBeCloseTo(101.325)
+    expect(toUs('baro', 29.92, 'us')).toBeCloseTo(1013.21, 2)
+    expect(toUs('baro', 101.325, 'si')).toBeCloseTo(1013.25)
+    expect(unitLabel('baro', 'us')).toBe('inHg')
+    expect(digitsFor('baro', 2, 'si')).toBe(1)
+    expect(fromUs('vpd', 4, 'us')).toBeCloseTo(0.4)
+    expect(fromUs('vpd', 4, 'si')).toBeCloseTo(0.4)
+    expect(unitLabel('vpd', 'us')).toBe('kPa')
+    expect(fromUs('pressure', 4, 'us')).toBe(4)
+    expect(columnValue('Atmospheric Pressure [mbar]', 1013.25, 'us')).toBeCloseTo(29.921, 3)
+    expect(displayUnit('mbar', 'Atmospheric Pressure [mbar]', 'us')).toBe('inHg')
+    expect(displayUnit('mbar', 'VPD [mbar]', 'us')).toBe('kPa')
+    expect(displayUnit('mbar', 'Logger Reference Pressure [mbar]', 'us')).toBe('mbar')
+    expect(columnConverts('Atmospheric Pressure [mbar]', 'us')).toBe(true)
+    expect(columnConverts('Air Temperature [°F]', 'us')).toBe(false)
+    expect(columnConverts('Air Temperature [°F]', 'si')).toBe(true)
+  })
   it('toUs inverts fromUs', () => {
     expect(toUs('temp', 10, 'si')).toBeCloseTo(50)
     expect(toUs('temp', -1, 'si')).toBeCloseTo(30.2)
@@ -73,7 +93,9 @@ describe('columns', () => {
     expect(quantityOfColumn('Snow Depth [in]')).toBe('snow')
     expect(quantityOfColumn('Precipitation [in]')).toBe('precip')
     expect(quantityOfColumn('Wind Speed [mi/hr]')).toBe('speed')
-    expect(quantityOfColumn('Atmospheric Pressure [mbar]')).toBe('pressure')
+    expect(quantityOfColumn('Atmospheric Pressure [mbar]')).toBe('baro')
+    expect(quantityOfColumn('VPD [mbar]')).toBe('vpd')
+    expect(quantityOfColumn('Logger Reference Pressure [mbar]')).toBe('pressure')
     expect(quantityOfColumn('Max Precip Rate [in/hr]')).toBe('rate')
     expect(quantityOfColumn('Relative Humidity [%]')).toBeNull()
     expect(quantityOfColumn('station')).toBeNull()

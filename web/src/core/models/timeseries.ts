@@ -28,7 +28,7 @@ import {
   type SubplotKind,
 } from '../sensorEvents'
 import type { LatestAgg } from '../url-schema'
-import { type Units, columnValue, depthsIn, units } from '../units'
+import { type Units, columnConverts, columnValue, depthsIn, units } from '../units'
 import { axisTitle } from '../variables/labels'
 
 /** Default window: the last 14 days (legacy). */
@@ -325,11 +325,12 @@ const inUnits = new WeakMap<TimeseriesModel, TimeseriesModel>()
 /**
  * `ts` (US, as built) with every value in `u`: series, daily bands and normals, converted by their
  * column's unit (core/units `columnValue`). Names, depths and axis titles are unchanged (the axis
- * title is already in the display units); US returns `ts` itself. For chart builders: stats and
+ * title is already in the display units); US returns `ts` itself unless a column converts there too
+ * (pressure, mb → inHg). For chart builders: stats and
  * formatters take the US model and convert as they format.
  */
 export function timeseriesInUnits(ts: TimeseriesModel, u: Units = units()): TimeseriesModel {
-  if (u !== 'si') return ts
+  if (u !== 'si' && !ts.panels.some((p) => p.series.some((s) => columnConverts(s.name, u)))) return ts
   const hit = inUnits.get(ts)
   if (hit) return hit
   const conv = (col: string, vs: readonly (number | null)[]) => vs.map((v) => columnValue(col, v, u))

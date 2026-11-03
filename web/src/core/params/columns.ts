@@ -105,7 +105,7 @@ export function depthLabelFromColumn(col: string): string | null {
  * ("Soil Temperature @ 4 in [°F]" → "Soil Temperature @ 10 cm [°C]"); a display string only, never a key.
  */
 export function columnInUnits(col: string, u: Units = units()): string {
-  if (u !== 'si') return col
+  if (u !== 'si') return col.replace(/\[([^\]]+)\]\s*$/, (_, unit: string) => `[${displayUnit(unit, col, u)}]`)
   return depthsIn(col).replace(/\[([^\]]+)\]\s*$/, (_, unit: string) => `[${displayUnit(unit, col, u)}]`)
 }
 
