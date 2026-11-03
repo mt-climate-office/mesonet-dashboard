@@ -232,6 +232,20 @@ below, which stay for the record and name what replaced them.
 - **Why:** the user (2026-11-03): kPa is VPD's unit in US agronomy and horticulture; mb is not a US-customary
   unit, and no one gives VPD in inHg.
 
+### VPD is the derived VPD, at every station (2026-11)
+- **Before:** VPD was the ATMOS 41's own reading (`vpd_atmo`), so only the 84 stations with that sensor (the 8 ft
+  AgriMet/BLM stations) had it: the Now tile, the "All readings" sheet, the Charts variable page and Compare.
+- **New:** everywhere the dashboard shows VPD it is the API's derived `vpd` (mesonet-db-rds #236), calculated from
+  air temperature and relative humidity (FAO-56 saturation vapour pressure; daily from the day's extremes, FAO-56
+  eqs. 12 and 17). Every station with both inputs has it, so the VPD tile, list entry and chart appear at ~245
+  stations. Where the sensor reports too, the two agree to ~0.02 mb. One place, `core/api/vpd`, does it:
+  `getStationRecord` drops `vpd_atmo` from the observations request (most stations have none) and adds a
+  `/derived` request for `vpd` on the same endpoints as `mslp`; `getStationLatest` adds the latest `vpd`. Its
+  value fills the VPD column; a reading with no derived value shows as missing, never as the sensor's. The VPD
+  page has no Daily low–high band: the API has no daily minimum or maximum of `vpd`. The **Download** sheet keeps
+  the sensor's `vpd_atmo`.
+- **Why:** the user (2026-11-03): use the derived VPD at all stations in the explorer and the dashboard.
+
 ### Now: wind with the 24 h peak gust
 - **P1:** the latest 5-minute wind speed and gust ("1 mph", "SE · gusts 2").
 - **New:** the Wind tile reads "1 mph now · SE" ("Calm" under 1 mph) over "Gusts to 43 mph · 24 h":

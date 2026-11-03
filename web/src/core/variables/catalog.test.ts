@@ -22,10 +22,11 @@ const ELEMENTS = [
 
 describe('stationVariables', () => {
   const vars = stationVariables(ELEMENTS)
-  it('lists every display variable once, in group order, with ETr and without ppt_corrected', () => {
+  it('lists every display variable once, in group order, with ETr, derived VPD and without ppt_corrected', () => {
     expect(vars.map((v) => v.name)).toEqual([
       'Air Temperature',
       'Relative Humidity',
+      'VPD',
       'Wind Speed',
       'Gust Speed',
       'Wind Direction',
@@ -40,6 +41,11 @@ describe('stationVariables', () => {
       'Bulk EC',
       'Longwave In',
     ])
+  })
+  it('offers VPD only with both of its inputs, air temperature and humidity', () => {
+    const noRh = ELEMENTS.filter((e) => e.element !== 'rh')
+    expect(stationVariables(noRh).map((v) => v.name)).not.toContain('VPD')
+    expect(vars.find((v) => v.name === 'VPD')?.id).toBe('vpd_atmo')
   })
   it('uses element-family ids, the element code for unmapped ones', () => {
     expect(vars.map((v) => v.id)).toContain('air_temp')

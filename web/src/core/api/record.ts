@@ -3,6 +3,7 @@ import type { AggPeriod } from '../params'
 import { DERIVED_ENDPOINTS, ENDPOINTS } from '../params'
 import { fetchCsv, mergeOn } from './http'
 import { asksPressure, asSeaLevel, fetchMslp, withoutPressure } from './pressure'
+import { asDerivedVpd, asksVpd, fetchVpd, withoutVpd } from './vpd'
 import { qcLevel } from './qcLevel'
 import type { ObservationRow } from './types'
 
@@ -52,13 +53,15 @@ export function exclusiveEnd(d: Date | string): string {
 /**
  * Mirrors get_data.get_station_record. Returns the time series CSV joined with
  * derived elements (e.g. etr) when has_etr / derived_elems are set. Station
- * pressure (`bp`) comes back as sea-level pressure (core/api/pressure); a
- * daily min/max request drops it, since the API has no daily extremes of it.
+ * pressure (`bp`) comes back as sea-level pressure (core/api/pressure) and
+ * VPD (`vpd_atmo`) as the derived `vpd` (core/api/vpd); a daily min/max
+ * request drops both, since the API has no daily extremes of either.
  */
 export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]> {
-  if (q.aggFunc?.length && asksPressure(q.elements)) {
-    return getStationRecord({ ...q, elements: withoutPressure(q.elements ?? '') })
+  if (q.aggFunc?.length && (asksPressure(q.elements) || asksVpd(q.elements))) {
+    return getStationRecord({ ...q, elements: withoutVpd(withoutPressure(q.elements ?? '')) })
   }
+  const vpd = asksVpd(q.elements)
   const start = fmtDate(q.start)
   const end = q.end ? exclusiveEnd(q.end) : undefined
 
@@ -67,7 +70,8 @@ export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]
   // (see mesonet-db-rds#189).
   const derivedQuery = {
     stations: q.station,
-    elements: q.elements ?? '',
+    // VPD is not requested as an observation: most stations have no `vpd_atmo`.
+    elements: vpd ? withoutVpd(q.elements ?? '') : (q.elements ?? ''),
     start_time: start,
     end_time: end,
     level: q.level ?? qcLevel(),
@@ -80,12 +84,12 @@ export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]
   const baseQuery = {
     ...(q.period === 'raw' ? noNaInfo : { ...noNaInfo, na_info }),
     public: q.publicOnly ?? true,
-    ...(q.aggFunc?.length && q.elements ? aggFuncQuery(q.elements, q.aggFunc) : {}),
+    ...(q.aggFunc?.length && derivedQuery.elements ? aggFuncQuery(derivedQuery.elements, q.aggFunc) : {}),
     ...(q.splitArrays ? { split_arrays: true } : {}),
   }
 
   const observations =
-    q.elements && q.elements !== ''
+    derivedQuery.elements !== ''
       ? await fetchCsv<ObservationRow>(ENDPOINTS[q.period], baseQuery)
       : []
 
@@ -124,6 +128,18 @@ export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]
       console.warn('Sea-level pressure request failed; pressure left empty.', err)
     }
     merged = asSeaLevel(merged)
+  }
+
+  if (vpd) {
+    // A failed request leaves VPD empty rather than failing the record.
+    const { stations, start_time, end_time, level, rm_na } = derivedQuery
+    try {
+      merged = mergeOn(merged, await fetchVpd(q.period, { stations, start_time, end_time, level, rm_na }), ['station', 'datetime'])
+    } catch (err) {
+      if (observations.length === 0) throw err
+      console.warn('VPD request failed; VPD left empty.', err)
+    }
+    merged = asDerivedVpd(merged)
   }
 
   return merged
