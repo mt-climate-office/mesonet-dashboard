@@ -9,10 +9,17 @@
 import { ELEM_MAP, latestVarName } from '../params/latest'
 import { plainName } from '../variables/labels'
 
+/**
+ * Download names that differ from the Charts names: downloads carry the measured `bp`, which Charts
+ * shows reduced to sea level (core/api/pressure).
+ */
+const DOWNLOAD_NAMES: Readonly<Record<string, string>> = { bp: 'Station pressure' }
+
 /** The plain name of an element's `description_short`, without its height or depth ("Air temperature"). */
 export function elementName(descriptionShort: string): string {
   const api = latestVarName(descriptionShort)
-  return plainName(ELEM_MAP[api]?.[0] ?? '', api)
+  const id = ELEM_MAP[api]?.[0] ?? ''
+  return DOWNLOAD_NAMES[id] ?? plainName(id, api)
 }
 
 /** The picker label for an element's `description_short` (see the header); unknown names keep the API's. */

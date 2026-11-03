@@ -2,6 +2,7 @@
 import type { AggPeriod } from '../params'
 import { DERIVED_ENDPOINTS, ENDPOINTS } from '../params'
 import { fetchCsv, mergeOn } from './http'
+import { asksPressure, asSeaLevel, fetchMslp, withoutPressure } from './pressure'
 import { qcLevel } from './qcLevel'
 import type { ObservationRow } from './types'
 
@@ -50,9 +51,14 @@ export function exclusiveEnd(d: Date | string): string {
 
 /**
  * Mirrors get_data.get_station_record. Returns the time series CSV joined with
- * derived elements (e.g. etr) when has_etr / derived_elems are set.
+ * derived elements (e.g. etr) when has_etr / derived_elems are set. Station
+ * pressure (`bp`) comes back as sea-level pressure (core/api/pressure); a
+ * daily min/max request drops it, since the API has no daily extremes of it.
  */
 export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]> {
+  if (q.aggFunc?.length && asksPressure(q.elements)) {
+    return getStationRecord({ ...q, elements: withoutPressure(q.elements ?? '') })
+  }
   const start = fmtDate(q.start)
   const end = q.end ? exclusiveEnd(q.end) : undefined
 
@@ -106,6 +112,18 @@ export async function getStationRecord(q: RecordQuery): Promise<ObservationRow[]
       elements: q.derivedElems.join(','),
     })
     merged = mergeOn(merged, derived, ['station', 'datetime'])
+  }
+
+  if (asksPressure(q.elements)) {
+    // A failed request leaves pressure empty rather than failing the record.
+    const { stations, start_time, end_time, level, rm_na } = derivedQuery
+    try {
+      const mslp = await fetchMslp(q.period, { stations, start_time, end_time, level, rm_na })
+      merged = mergeOn(merged, mslp, ['station', 'datetime'])
+    } catch (err) {
+      console.warn('Sea-level pressure request failed; pressure left empty.', err)
+    }
+    merged = asSeaLevel(merged)
   }
 
   return merged

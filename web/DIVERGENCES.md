@@ -207,6 +207,23 @@ below, which stay for the record and name what replaced them.
   elevation) links to About.
 - **Why:** a station pressure of ~850 mb means little on its own; its 3 h change is what forecasts use.
 
+### Pressure is sea-level pressure (2026-11)
+- **Before:** every pressure the dashboard showed was the station's measured pressure (`bp`, ~850 mb at
+  Bozeman). It mostly varies with elevation, so stations could not be compared, and it matched no forecast.
+- **New:** wherever the dashboard shows pressure (Now's "All readings" meta and 3 h trend, the "All readings"
+  sheet, the Charts variable page, Compare, the Charts list, the big-screen dashboard), it is the API's derived
+  **sea-level pressure** (`mslp`, mesonet-db-rds #225). That is an NWS-style reduction using the 12-hour mean
+  temperature plus a plateau correction fit to ASOS, within ~0.6 hPa of NWS sea-level pressure. Its plain name is
+  "Sea-level pressure"; Now's sentence still says "Pressure". One place, `core/api/pressure`, does it:
+  `getStationRecord` and `getStationLatest` still request `bp` (for the row timeline and `provisional`), add a
+  `/derived` request for `mslp` (native rows for the 5-min view, since `DERIVED_ENDPOINTS` raw is hourly), and
+  move its value into the pressure column. A reading with no sea-level value (no air temperature, or a failed
+  request) shows as missing, never as station pressure. The pressure page has no Daily low–high band: the API has
+  no daily minimum or maximum of `mslp`. The **Download** sheet keeps the measurement, named "Station
+  pressure" there.
+- **Why:** the user (2026-11-02): sea-level pressure replaces station pressure in the front ends; the measurement
+  stays in the API and in downloads.
+
 ### Now: wind with the 24 h peak gust
 - **P1:** the latest 5-minute wind speed and gust ("1 mph", "SE · gusts 2").
 - **New:** the Wind tile reads "1 mph now · SE" ("Calm" under 1 mph) over "Gusts to 43 mph · 24 h":
@@ -285,7 +302,7 @@ below, which stay for the record and name what replaced them.
   (`core/variables/interval`). 5-min (`raw`) is offered for windows of 7 days or less; on a longer window the page
   draws Auto. **Daily** adds one request, `/observations/daily` with `agg_func=min,max` over the same elements
   (`core/api/record` `aggFunc`), and draws each day's true low–high as a band behind the mean line (a one-column
-  variable; not totals or wind direction); the stats' Low / High are those true extremes (one 5-minute reading,
+  variable; not totals, wind direction or pressure, see "Pressure is sea-level pressure"); the stats' Low / High are those true extremes (one 5-minute reading,
   where the old Min was a daily average). The table gains Low / High columns. Compare is unchanged: there `agg`
   absent is still hourly (`latestAgg`), so every old `#latest` link draws what it did.
 - **Why:** DESIGN.md "Redesign 2026-10", decision 5: daily means alone hide the day's range, and "Min 34.9" next to a daily

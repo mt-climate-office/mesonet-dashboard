@@ -60,7 +60,7 @@ describe('readings', () => {
     expect(readingLabel('Bulk EC @ 40 in [mS/cm]')).toBe('Soil salinity (EC) at 100 cm')
     expect(readingLabel('Gust Speed [mi/hr]')).toBe('Wind gusts')
     expect(readingLabel('Wind Direction [deg]')).toBe('Wind direction')
-    expect(readingLabel('Atmospheric Pressure [mbar]')).toBe('Pressure')
+    expect(readingLabel('Atmospheric Pressure [mbar]')).toBe('Sea-level pressure')
     expect(readingLabel('Feels like [°F]')).toBe('Feels like')
     expect(readingLabel('Mystery Thing [zz]')).toBe('Mystery Thing')
   })
