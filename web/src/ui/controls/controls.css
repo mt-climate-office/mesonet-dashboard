@@ -1,4 +1,4 @@
-/* Styles for the shared form controls in ui/controls/ (combobox, multiselect,
+/* Styles for the shared form controls in ui/controls/ (the search field, multiselect,
    date inputs, select, segmented, chips, range sliders). Kit tokens only; the
    kit supplies the focus ring and the reduced-motion clamp. */
 
@@ -77,7 +77,9 @@
 .ctl-error:not(:empty)::before { content: "\26A0\FE0E  " / ""; }
 .ctl-note { font-size: var(--fs-xs); color: var(--text-muted); }
 
-/* ── Combobox ───────────────────────────────────────────────────────────── */
+/* ── Search (the kit's MCO.initSearchBox, ui/picker/stationSearch.ts) ───── */
+/* The field, its × and the popup are the dashboard's; the kit renders the rows inside the popup
+   (.mco-search-group / -option / -label / -meta / -note), restyled here to the dashboard's list. */
 .ctl-combobox { position: relative; display: flex; flex-direction: column; gap: 0.25rem; }
 .ctl-combobox-field { position: relative; display: flex; }
 .ctl-combobox-field .ctl-input { width: 100%; padding-right: 2.2rem; }
@@ -97,26 +99,20 @@
   border: 1px solid var(--border); border-radius: var(--radius-md);
   box-shadow: var(--shadow);
 }
-.ctl-combobox-list ul { list-style: none; }
-.ctl-combobox-group {
+.ctl-combobox-popup .mco-search-group {
   position: sticky; top: 0;
   padding: 6px 10px 3px;
   background: var(--bg-surface); color: var(--text-muted);
   font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
 }
-.ctl-option {
-  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-  min-height: 30px; padding: 4px 10px;
-  color: var(--text-primary); font-size: var(--fs-sm);
-  cursor: pointer;
+.ctl-combobox-popup .mco-search-option {
+  align-items: center;
+  min-height: 30px; padding: 4px 10px; border-radius: 0;
+  font-size: var(--fs-sm);
 }
-.ctl-option:hover { background: var(--accent-hover); }
-/* aria-selected marks the keyboard-active option (aria-activedescendant). */
-.ctl-option[aria-selected="true"] { background: var(--accent-hover); box-shadow: inset 3px 0 0 var(--accent-line); }
-.ctl-option.is-current { font-weight: 600; }
-.ctl-option.is-current > :first-child::before { content: "\2713  " / ""; }
-.ctl-option-meta { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
-.ctl-combobox-note { padding: 6px 10px; font-size: var(--fs-xs); color: var(--text-muted); }
+.ctl-combobox-popup .mco-search-option.is-current > :first-child::before { content: "\2713  " / ""; }
+.ctl-combobox-popup .mco-search-meta { font-size: var(--fs-xs); }
+.ctl-combobox-popup .mco-search-note { padding: 6px 10px; font-size: var(--fs-xs); color: var(--text-muted); }
 
 /* ── Chips (multi-toggle and removable) ─────────────────────────────────── */
 .ctl-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
@@ -217,7 +213,7 @@
 /* ── Touch: ≥40px targets (WCAG 2.5.5, HOUSE-STYLE §5.5) ───────────────── */
 @media (hover: none) {
   :root { --ctl-h: 40px; }
-  .ctl-chip, .ctl-option, .ctl-check { min-height: 40px; }
+  .ctl-chip, .ctl-combobox-popup .mco-search-option, .ctl-check { min-height: 40px; }
   /* ≥ 16 px text in fields: iOS Safari zooms the page into any smaller focused input. */
   .ctl-input { font-size: var(--fs-md); }
   .ctl-seg .seg-btn { font-size: var(--fs-md); } /* the same text size as the fields beside them */

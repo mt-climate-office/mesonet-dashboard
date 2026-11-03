@@ -13,55 +13,18 @@ How the controls work:
 - **State.** A control reads its state through getters (`value: () => …`) and reports changes
   through a callback (`onChange` / `onSelect`). The caller owns the state, usually a store, so the
   URL stays the source of truth.
-- **Registration.** Register the factories in `main.ts`, e.g. `Alpine.data('combobox', combobox)`.
+- **Registration.** Register the factories in `main.ts`, e.g. `Alpine.data('multiselect', multiselect)`.
 - **Logic.** Pure logic lives in `src/core/controls/*Model.ts` (with unit tests), per the layer rule. The `.ts` factories here only hold
   view state and ARIA wiring.
 - **Review.** To check by hand, open `demo.html` through the Vite dev server with
   `?theme=dark|light|high-contrast`.
 
-## combobox: station picker
+## Station search: the kit's
 
-Use it to pick one item from a long list. It is an editable WAI-ARIA combobox with list
-autocomplete.
-
-**API**
-
-```ts
-combobox({ items: () => Item[], value: () => string | null, onSelect(id), label, placeholder?, limit? })
-Item = { id, label, group?, keywords?: string[] }
-```
-
-**Filtering and display**
-
-- Typing filters case-insensitively on the label, the id and `keywords`. Put the NWSLI id in
-  `keywords`.
-- The field holds only the typed text (it starts empty; the selection shows elsewhere).
-- With no text, items group under `group`, in the order each group first appears. While
-  typing, one ungrouped list, best match first; it is highlighted.
-- At most 200 options render, with a "Showing 200 of N" note.
-
-**Keyboard**
-
-- Down/Up opens the list and moves through it.
-- Home/End jump to the first or last option once you are navigating.
-- Enter selects.
-- Escape clears the text, then closes the list, then lets an enclosing dialog close.
-- The ✕ button shows whenever there is text; it clears it, keeps focus and shows the full list.
-
-**Screen readers.** A polite status reads the result count.
-
-**Layout.** The popup is absolutely positioned at `--z-flyout`, so an ancestor with
-`overflow: hidden` will clip it.
-
-**Kit swap.** The options mirror the kit's planned `MCO.initSearchBox({input, dropdown, items,
-renderRow, onSelect})`, so it can replace this later.
-
-```html
-<div class="ctl-combobox" x-data="combobox({ items: () => $store.stations.items, value: () => $store.url.station,
-     onSelect: (id) => $store.url.set('station', id), label: 'Station' })" @focusout="onFocusOut($event)">
-  …see combobox.ts…
-</div>
-```
+The station search (picker and landing) is the kit's `MCO.places.initPlaceSearch` on
+`MCO.initSearchBox` (mco-web-style 0.16.0), wired in `ui/picker/stationSearch.ts`; this directory no longer
+has a combobox. Its markup is `partials/picker/search.html`; its rows are the kit's `.mco-search-*`,
+styled for the dashboard in `controls.css` (§ Search list).
 
 ## multiselect: grouped checkboxes (Downloader elements)
 

@@ -23,14 +23,14 @@ export function stationLanding() {
       announce(`${st.byId(id)?.name ?? id} selected`)
       document.getElementById('main')?.focus({ preventScroll: true })
     },
-    /** The search's list opened: the places load (the field is wide enough without the picker's sheet rules). */
-    searchList(open: boolean): void {
-      if (open) this.placesWanted = true
-    },
     /** The long hint, except beside the map on a short, wide screen (landing.css), where the field is narrower than the drawer's. */
     searchPlaceholder(): string {
       if (!Alpine.store('station').catalog?.data) return 'Loading stations…'
       return matchMedia(SIDE_BY_SIDE).matches ? 'Station or town' : 'Station, town, county or ZIP'
+    },
+
+    destroy() {
+      this.searchDestroy()
     },
 
     line(): string {

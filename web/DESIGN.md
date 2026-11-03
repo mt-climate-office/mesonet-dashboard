@@ -57,7 +57,7 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
 - **Search** starts empty (the header names the station; Recent marks it). With text, matches rank across
   networks (exact name or id, then the name starting with the text, then a later word, an id, any substring,
   then a typo of 1–2 letters; shorter names first within each; accents and apostrophes ignored), and on a
-  phone the sheet goes full; with none, the list groups by network. Typing also finds **places** (`core/places`,
+  phone the sheet goes full; with none, the list groups by network. Typing also finds **places** (the kit's `MCO.places`,
   the Census Gazetteer: counties, reservations, towns, ZIP codes, plus the Little Shell Tribe at Great Falls; up to 8, under a "Places" heading below the
   stations, with the kind beside the name). Picking a place lists its stations where Near me does, headed by
   the place: a county or reservation every station inside it, a town, ZIP code or tribe (or an area with none) the
@@ -197,7 +197,7 @@ under an auto-opened picker drawer or sheet, which left the page barren (DIVERGE
 - **Heading and line:** "Choose a station" (`--fs-xl`) and "Current conditions, trends and forecasts from N
   Montana Mesonet stations." (N from the catalog; `core/stations/landing`). An unknown `?s=` adds "There is no
   station “x”. Choose another below." (a status).
-- **Search:** the picker's own combobox (`partials/picker/search.html` + `ui/picker/stationSearch.ts`, shared):
+- **Search:** the kit's place search on its search box (`partials/picker/search.html` + `ui/picker/stationSearch.ts`, shared):
   station, town, county or ZIP, Near me inside the field, places and Near me's results below it. 52 px tall,
   at most 40 rem wide; its results list drops over the map.
 - **Map:** the picker's station map (`landingMap`, `ui/map/presets.ts`: the same station layer, network styling,

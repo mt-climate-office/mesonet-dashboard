@@ -104,6 +104,8 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   // Every style load (first, then each setStyle) starts from a bare basemap.
   map.on('style.load', () => {
     retried = false
+    // Known OSM vandalism CARTO hasn't rebuilt past (kit 0.20.0); watchBasemap does this for other apps.
+    MCO.map.correctBasemapLabels(map)
     letPlaceLabelsMove(map)
     addBoundaries(map)
     opts.layers(map, MCO.getTheme())

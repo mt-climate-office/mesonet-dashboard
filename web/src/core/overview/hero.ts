@@ -53,14 +53,8 @@ const deg = (f: number) => `${Math.round(fromUs('temp', f))}°`
 /** A period's temperature in °F (NWS sends F for US points; C converts). */
 const periodF = (p: ForecastPeriod) => (p.temperatureUnit === 'C' ? (p.temperature * 9) / 5 + 32 : p.temperature)
 
-/** The period covering wall-clock `t`, else the first; null without periods. */
-function currentPeriod(periods: readonly ForecastPeriod[], t: number): ForecastPeriod | null {
-  const covers = (p: ForecastPeriod) => {
-    const [s, e] = [parseWallClock(p.startTime), parseWallClock(p.endTime)]
-    return s !== null && e !== null && s <= t && t < e
-  }
-  return periods.find(covers) ?? periods[0] ?? null
-}
+/** The period covering wall-clock `t`, else the first; null without periods (the kit's `MCO.summary.currentPeriod`). */
+const currentPeriod = (periods: readonly ForecastPeriod[], t: number): ForecastPeriod | null => MCO.summary.currentPeriod(periods, t)
 
 /** "Wednesday Night" → "Wed night", "Thanksgiving Day" unchanged: NWS period names, shortened for the icon row. */
 export const abbrPeriod = (name: string): string =>

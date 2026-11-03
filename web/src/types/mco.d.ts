@@ -1,11 +1,15 @@
 /**
  * Types for the kit globals loaded from the CDN in index.html: `window.MCO`
- * (core/mco-core.js), `MCO.photos` (photos/mco-photos.js; types in mco-photos.d.ts), `MCO.map`
+ * (core/mco-core.js), `MCO.photos` (photos/mco-photos.js; types in mco-photos.d.ts), `MCO.places`
+ * (places/mco-places.js; types, with the kit search box, in mco-places.d.ts), `MCO.summary`
+ * (summary/mco-summary.js; types in mco-summary.d.ts), `MCO.map`
  * (map/mco-map.js) and `maplibregl`. The kit version is pinned in index.html only.
  * Hand-written from the kit's source comments; extend as calls are added.
  */
 import type * as MapLibre from 'maplibre-gl'
 import type { McoPhotos } from './mco-photos'
+import type { McoPlaces, SearchBox, SearchBoxOptions, SearchModel } from './mco-places'
+import type { McoSummary } from './mco-summary'
 
 type Theme = 'dark' | 'light' | 'high-contrast'
 
@@ -29,6 +33,10 @@ interface McoMap {
   TRIBAL_LABEL_LAYOUT: MapLibre.SymbolLayerSpecification['layout']
   /** CARTO Dark Matter (dark + high-contrast) or Positron (light), read at call time. */
   cartoStyleUrl(): string
+  /** Bad basemap label → correct text, exact whole-label matches (kit 0.20.0). */
+  LABEL_CORRECTIONS: Record<string, string>
+  /** Rewrite every symbol layer's text-field to apply LABEL_CORRECTIONS; returns the layers rewritten. */
+  correctBasemapLabels(map: MapLibre.Map, table?: Record<string, string>): number
   themedStyleUrl(urls: { dark: string; light: string }): string
   initialCamera(
     params: URLSearchParams,
@@ -123,8 +131,14 @@ interface Mco {
   urlParams(): URLSearchParams
   getParamLower(key: string, params?: URLSearchParams): string | null
   splitTokens(raw: string | null): string[] | null
+  /** Search ranking (0.8.0; sections 0.16.0). */
+  searchModel: SearchModel
+  /** The APG combobox with list autocomplete over `.mco-search` markup (0.8.0). */
+  initSearchBox(opts: SearchBoxOptions): SearchBox
   map: McoMap
   photos: McoPhotos
+  places: McoPlaces
+  summary: McoSummary
 }
 
 declare global {

@@ -27,7 +27,6 @@ import { variableRose } from './ui/charts/variableRose'
 import { variableList } from './ui/charts/variableList'
 import { variablePage } from './ui/charts/variablePage'
 import { chips } from './ui/controls/chips'
-import { combobox } from './ui/controls/combobox'
 import { dateInput } from './ui/controls/dateInput'
 import { dateRange } from './ui/controls/dateRange'
 import { multiselect } from './ui/controls/multiselect'
@@ -160,8 +159,8 @@ Alpine.data('globalNotices', globalNotices)
 Alpine.data('installTip', installTip)
 Alpine.data('toggletip', toggletip)
 
-// Form controls (ui/controls/README.md): x-data="combobox({ … })" etc.
-Alpine.data('combobox', combobox)
+// Form controls (ui/controls/README.md): x-data="multiselect({ … })" etc. The station search is the kit's
+// (MCO.places.initPlaceSearch, ui/picker/stationSearch.ts).
 Alpine.data('multiselect', multiselect)
 Alpine.data('dateRange', dateRange)
 Alpine.data('dateInput', dateInput)

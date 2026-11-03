@@ -59,9 +59,9 @@
 .picker-row-meta { flex-shrink: 0; font-size: var(--fs-xs); color: var(--text-muted); }
 
 /* Search results read like the rows above: 44 px, the network (or a place's kind) in the UI font,
-   not the generic combobox's dense mono codes (ui/controls/controls.css). */
-.picker-search .ctl-option { min-height: 44px; padding: 0.4rem 0.6rem; }
-.picker-search .ctl-option-meta { font-family: var(--font-ui); }
+   not the kit search's dense mono codes (ui/controls/controls.css). */
+.picker-search .mco-search-option { min-height: 44px; padding: 0.4rem 0.6rem; }
+.picker-search .mco-search-meta { font-family: var(--font-ui); }
 
 /* "Browse on the map": a full-width row that opens the map dialog. */
 .picker-browse-toggle {

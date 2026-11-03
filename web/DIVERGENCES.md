@@ -76,7 +76,8 @@ below, which stay for the record and name what replaced them.
   field once pressed. Recents follow, then "Browse on the map", which reveals the network chips and the map
   (MapLibre starts on the first reveal). Drawer / sheet, focus, `inert` and Esc rules are unchanged.
   The field starts empty (P1 showed the station name in it) and ranks matches across networks while typing
-  (P1 grouped them by network); Esc clears the text, then closes the list, then the picker. On a phone,
+  (P1 grouped them by network); Esc clears the text, then closes the list, then the picker (superseded: Esc
+  now follows the kit, see [Station search](#station-search-the-kits-search-box-and-place-search)). On a phone,
   the map opens the sheet full and fills it (two fingers move it).
 - **Why:** DESIGN.md "Redesign 2026-10": most visits search or pick a recent station. The prefilled name
   had to be deleted before every search, and grouping put a prefix match under a network of weaker ones.
@@ -113,6 +114,37 @@ below, which stay for the record and name what replaced them.
   forecast" link to the NWS page. The current period's sky feeds the summary sentence. Beyond 24 h, and
   the chance of precipitation, are on the NWS page. Without NWS coverage the strip shows the observed day only.
 - **Why:** DESIGN.md "Now": one picture of yesterday into tomorrow instead of a second card of text.
+
+### Station search: the kit's search box and place search
+- **Before:** the dashboard's own combobox (`ui/controls/combobox.ts`, `core/controls/comboboxModel.ts`), place
+  search (`core/places`) and Near me (`core/stations/nearest.ts`), with a vendored gazetteer.
+- **New:** `MCO.places.initPlaceSearch` on `MCO.initSearchBox` (mco-web-style 0.16.0), which the dashboard's code
+  was ported into: the same ranking, sections ("Stations", then up to 8 "Places"), place lists, distances and
+  announcements. Kept around the kit's box (`ui/picker/stationSearch.ts`): the ×, a click on the field toggling
+  the list, and leaving the search emptying it. **Esc is the kit's order** (HOUSE-STYLE §3; mco-web-style 0.16.2
+  bump): close the list and restore the text it opened with, then clear the text, then the picker closes. Text
+  typed into an empty field is restored to empty, so in practice the first Esc closes the list and empties the
+  field and the second closes the picker. Until the 0.16.2 bump a capture-phase key handler kept the dashboard's
+  older order (clear the text and show the full list, then close the list, then close the picker); it was
+  dropped by owner decision (website DECISIONS D19: search Escape order follows the kit everywhere). The options
+  are the kit's default row, whose name reads "Bozeman, HydroMet" (a visually hidden ", ", 0.16.1); the dashboard
+  had drawn its own row with a space for the same reason, and dropped it. Visible differences: "No matches" and "Showing 200 of N" are a
+  disabled row inside the list instead of a line under it; the result count is read by the page's one announcer
+  (`MCO.announce`) instead of a status inside the search; "1 station near you" is singular. The 0.16.0 bump
+  also brings kit 0.15.1's tribal-label font fix to the maps.
+- **Why:** one copy of the search, the gazetteer and the distance rules, in the kit, for the dashboard and
+  climate.umt.edu (website DECISIONS D9, extraction #2).
+
+### Now summary: the kit's MCO.summary
+- **Before:** the hero's one-line summary and its phrase rules in `core/overview/summary.ts`, with `peakGust`
+  and `hourlyPrecip` (`series.ts`) and the current NWS period (`hero.ts`) beside it.
+- **New:** the same code, ported into mco-web-style 0.17.0 as `MCO.summary` (`summary/mco-summary.js`); the
+  dashboard's modules keep their names and signatures and call it. No visible change: the same sentence for the
+  same inputs, in US and metric (this module's tests, and the hero and Now page tests, pass unchanged against
+  the pinned kit file; a 40,000-input comparison against the old TypeScript matched on every one). Kit 0.16.1's
+  search-row change comes with the bump but does not reach the picker, which draws its own rows (`renderRow`).
+- **Why:** one copy of the conditions sentence, in the kit, for the dashboard and climate.umt.edu's homepage
+  (website DECISIONS D9, extraction #3).
 
 ### Photos: the kit's MCO.photos, full public history
 - **Before (#110):** the dashboard's own copy of the photo code: North, East, South and West back to each camera's first archived month.
@@ -1551,16 +1583,16 @@ Plotted values were checked against web/ point for point: acebozem hourly, mdama
 
 ### Station picker: place search and typo matches (new)
 - **Legacy / P1:** stations only, by name, id, NWSLI id or county substring.
-- **New:** typing also lists Montana places from the Census Gazetteer (`public/data/places.json`,
-  `core/places/vendor-places.mjs`: 56 counties, 7 reservations with the nations' names as keywords, the
+- **New:** typing also lists Montana places from the Census Gazetteer (the kit's `MCO.places`, mco-web-style
+  0.16.0, `places/mt-places.json`; until 0.16.0 the dashboard's own copy: 56 counties, 7 reservations with the nations' names as keywords, the
   Little Shell Tribe (no Census reservation; listed at Great Falls, its 5 nearest stations),
   incorporated places and CDPs, ZIP codes), at most 8 under the stations. Picking one lists stations where
   Near me does: every station in a county (the catalog's `county`) or on a reservation (its boundary in
   `public/geo/`), nearest the centre first, else the 5 nearest. A typo of 1 letter (5+ letters typed) or 2
   (8+) still matches, ranked last; numbers never match by typo. Accents and apostrophes are ignored.
-- **Why:** people know their town, county, reservation or ZIP code, not a station's name. The list is bundled
-  (15 KB gzipped, loaded when the search list first opens), so nothing typed leaves the browser and the CSP
-  needs no geocoder. Counties left the station keywords: the county place lists the same stations, nearest first.
+- **Why:** people know their town, county, reservation or ZIP code, not a station's name. The whole list loads
+  (15 KB gzipped, from the pinned kit tag, checked against the hash the kit's script carries, on the field's
+  first focus), so nothing typed leaves the browser and the CSP needs no geocoder. Counties left the station keywords: the county place lists the same stations, nearest first.
 
 ### Network filter (ST-002, ST-003)
 - **Same as web/:** chips come from the catalog's networks, all are on by default, and turning every chip off shows every station.
