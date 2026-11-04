@@ -38,15 +38,9 @@ const GREY: Record<Theme, string> = { light: '#767676', dark: '#8a8a8a', 'high-c
 /* ------------------------------------------------------------------ networks */
 
 export type NetworkName = 'HydroMet' | 'AgriMet' | 'Cooperator'
-/** Marker form; shape is the non-color channel that survives grayscale (HOUSE-STYLE §6). */
-export type NetworkShape = 'circle' | 'circle-hollow' | 'ring'
 
-export const NETWORK_SHAPE: Record<NetworkName, NetworkShape> = {
-  HydroMet: 'circle',
-  AgriMet: 'circle-hollow',
-  Cooperator: 'ring',
-}
-
+// Station markers carry no network encoding (kit 0.21.0, HOUSE-STYLE §7): every station draws in the
+// HydroMet blue (MCO.map.stationPaint's default); the other two are kept for their contrast record.
 // Tol bright blue / vibrant orange / vibrant teal. HydroMet light 4.70 dark 3.28 HC 4.46;
 // Cooperator 3.55 / 4.34 / 5.91. AgriMet #EE7733 is 2.87 on white, so light darkens it.
 export const NETWORK_COLOR: Record<Theme, Record<NetworkName, string>> = {

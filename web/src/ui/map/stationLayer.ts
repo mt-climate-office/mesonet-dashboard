@@ -1,26 +1,31 @@
 /**
- * Station circles on a map host: markers from core/map, hover/focus popup
- * (DOM + textContent only — never setHTML; MIGRATION-MATRIX Q3), click to
- * select, focus halo for the keyboard twin. Used through ui/map/presets.ts.
+ * Station circles on a map host: the kit's one station paint and its colocation module (count badge +
+ * spider, MCO.map.colocation), a hover/focus popup (DOM + textContent only — never setHTML;
+ * MIGRATION-MATRIX Q3), click to select, focus halo for the keyboard twin. Used through ui/map/presets.ts.
  */
 import type * as MapLibre from 'maplibre-gl'
 import type { Station } from '../../core/api'
 import {
-  clickTarget,
-  keyCodes,
-  markerKeyOf,
+  markerProps,
   popupLines,
-  stationMarkers,
+  selectedSite,
+  siteOf,
+  stationRank,
   type MarkerCollection,
+  type MarkerProps,
 } from '../../core/map'
-import { SELECTION_RING, resolve, type Theme } from '../../core/palette'
-import { cssVar } from './map'
+import type { Theme } from '../../core/palette'
+import type { ColocationController } from '../../types/mco'
 
 const SRC = 'stations'
-/** Invisible, larger hit target over every marker (touch-friendly). */
+/** Invisible, larger hit targets over every anchor and spider foot (touch-friendly). */
 const HIT = 'stations-hit'
+const SPIDER_HIT = 'spider-hit'
 /** A blank 28 px image: the selected marker's footprint in symbol collision. */
 const OBSTACLE = 'station-obstacle'
+/** Popup offset (px) over a stacked site: clear of the spider's top foot (26 px out, kit RADIUS_PX). */
+const STACKED_OFFSET = 38
+const EMPTY: MarkerCollection = { type: 'FeatureCollection', features: [] }
 
 export interface StationLayerInput {
   stations: readonly Station[]
@@ -29,46 +34,59 @@ export interface StationLayerInput {
 }
 
 export interface StationLayer {
-  /** Host `layers` callback: adds the source and circle layers for `theme`; returns the markers drawn. */
+  /** Host `layers` callback: adds the source and layers for the current theme; returns the features drawn. */
   add(map: MapLibre.Map, theme: Theme): MarkerCollection
-  /** New stations / filter / selection; returns the markers now drawn. */
+  /** New stations / filter / selection; returns the features now drawn. */
   update(input: StationLayerInput): MarkerCollection
-  /** Show the popup + focus halo on station `id` (keyboard twin); null hides both. */
+  /** Show the popup + focus halo on station `id`'s site (keyboard twin); null hides both. */
   focus(id: string | null): void
   dispose(): void
 }
 
-
-// Base dot radius by zoom; rings add a pad on top (a number, or a per-feature
-// expression — zoom must stay the top-level interpolate input).
-type Pad = number | MapLibre.ExpressionSpecification
-const radius = (pad: Pad): MapLibre.ExpressionSpecification => [
-  'interpolate', ['linear'], ['zoom'], 4, ['+', 4.5, pad], 8, ['+', 6, pad], 12, ['+', 9, pad],
-]
-const HAS_HALO: MapLibre.ExpressionSpecification = ['!=', ['get', 'halo'], '']
-
 /** Wire a station layer to `map`; `onSelect` gets the clicked station id. */
 export function createStationLayer(map: MapLibre.Map, onSelect: (id: string) => void): StationLayer {
   let input: StationLayerInput = { stations: [], visible: null, selected: null }
-  let markers: MarkerCollection = { type: 'FeatureCollection', features: [] }
+  let site: string | null = null
   let byId = new Map<string, Station>()
-  let hoverKey: string | null = null
+  let hoverId: string | null = null
   let focusId: string | null = null
+  /** Where the hovered spider foot is drawn (the spider moves feet off the catalog point). */
+  let footAt: [number, number] | null = null
+  const A = MCO.map.colocation.ANCHOR_ONLY
 
   const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12, className: 'map-popup', maxWidth: '260px' })
 
-  const rebuild = (theme: Theme = MCO.getTheme()) => {
-    markers = stationMarkers({ ...input, theme, getVar: cssVar })
-    ;(map.getSource(SRC) as MapLibre.GeoJSONSource | undefined)?.setData(markers)
-    const focusKey = markerKeyOf(markers, focusId) ?? ''
-    if (map.getLayer('stations-focus')) map.setFilter('stations-focus', ['==', ['get', 'key'], focusKey])
+  // Grouping, the spider, hover-to-fan and click-to-select are the kit's (4-decimal buckets, HydroMet anchors).
+  // On touch a first tap on a stacked site only fans it out: selecting navigates (the picker closes), so the
+  // second station there must be reachable first.
+  const coloc: ColocationController<Station, MarkerProps> = MCO.map.colocation(map, {
+    source: SRC,
+    rank: stationRank,
+    visible: (s: Station) => (input.visible === null || input.visible.has(s.station)) && Number.isFinite(s.latitude) && Number.isFinite(s.longitude),
+    properties: (s: Station) => markerProps(s, input.selected, site),
+    anchorLayers: [HIT, 'stations-dots', 'stations-badge', 'stations-badge-disc'],
+    spiderLayers: [SPIDER_HIT, 'spider-dots'],
+    anchorClick: matchMedia('(hover: none)').matches ? 'spider' : undefined,
+    onSelect: (id) => onSelect(id),
+  })
+
+  const markers = (): MarkerCollection => coloc.collection()
+
+  const setFocusFilter = () => {
+    const s = focusId ? byId.get(focusId) : undefined
+    const f: MapLibre.FilterSpecification = ['all', A, ['==', ['get', 'bucket'], s ? siteOf(s) : '']]
+    if (map.getLayer('stations-focus')) map.setFilter('stations-focus', f)
   }
 
-  const showPopup = (key: string) => {
-    const f = markers.features.find((m) => m.properties.key === key)
-    if (!f) return popup.remove()
+  /** The popup on `id`: a site's anchor lists every station there; a spider foot only itself. */
+  const showPopup = (id: string, foot: boolean) => {
+    const s = byId.get(id)
+    const info = coloc.info(id)
+    if (!s || !info) return popup.remove()
+    const ids = foot ? [id] : coloc.members(id).map((m) => m.station)
+    const anchor = foot ? s : (coloc.members(id)[0] ?? s)
     const body = document.createElement('div')
-    for (const line of popupLines(keyCodes(key), byId)) {
+    for (const line of popupLines(ids, byId)) {
       const name = document.createElement('p')
       name.className = 'map-popup-name'
       name.textContent = line.name
@@ -77,106 +95,101 @@ export function createStationLayer(map: MapLibre.Map, onSelect: (id: string) => 
       detail.textContent = line.detail
       body.append(name, detail)
     }
-    popup.setLngLat(f.geometry.coordinates).setDOMContent(body).addTo(map)
+    popup.setOffset(!foot && info.count > 1 ? STACKED_OFFSET : 12)
+    const at: [number, number] = foot && footAt ? footAt : [anchor.longitude, anchor.latitude]
+    popup.setLngLat(at).setDOMContent(body).addTo(map)
     // Decoration for sighted users; the sr-only table twin carries the same text.
     popup.getElement()?.setAttribute('aria-hidden', 'true')
   }
 
-  const featureKey = (e: MapLibre.MapLayerMouseEvent) => String(e.features?.[0]?.properties?.key ?? '')
   const onMove = (e: MapLibre.MapLayerMouseEvent) => {
     map.getCanvas().style.cursor = 'pointer'
-    const key = featureKey(e)
-    if (key && key !== hoverKey) showPopup((hoverKey = key))
+    const f = e.features?.[0]
+    const id = String(f?.properties?.station ?? '')
+    const foot = f?.layer.id === SPIDER_HIT
+    footAt = foot && f?.geometry.type === 'Point' ? (f.geometry.coordinates as [number, number]) : null
+    const key = `${foot ? 'foot' : 'site'}:${id}`
+    if (id && key !== hoverId) {
+      hoverId = key
+      showPopup(id, foot)
+    }
   }
   const onLeave = () => {
     map.getCanvas().style.cursor = ''
-    hoverKey = null
-    const key = markerKeyOf(markers, focusId)
-    if (key) showPopup(key)
+    hoverId = null
+    footAt = null
+    if (focusId && coloc.info(focusId)) showPopup(focusId, false)
     else popup.remove()
   }
-  const onClick = (e: MapLibre.MapLayerMouseEvent) => {
-    const id = clickTarget(featureKey(e), input.selected)
-    if (id) onSelect(id)
+  for (const layer of [HIT, SPIDER_HIT]) {
+    map.on('mousemove', layer, onMove)
+    map.on('mouseleave', layer, onLeave)
   }
-  map.on('mousemove', HIT, onMove)
-  map.on('mouseleave', HIT, onLeave)
-  map.on('click', HIT, onClick)
+
+  const rebuild = () => {
+    site = selectedSite(input.stations, input.visible, input.selected)
+    coloc.setData(input.stations)
+    setFocusFilter()
+  }
 
   return {
-    add(m, theme) {
-      m.addSource(SRC, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-      const ring = resolve(SELECTION_RING, cssVar)
-      // Co-located outer ring (second network's color) under the dot.
-      m.addLayer({
-        id: 'stations-halo', type: 'circle', source: SRC, filter: HAS_HALO,
-        layout: { 'circle-sort-key': ['get', 'sort'] },
-        paint: { 'circle-radius': radius(3.5), 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-width': 2.5, 'circle-stroke-color': ['get', 'halo'] },
-      })
-      m.addLayer({
-        id: 'stations-dots', type: 'circle', source: SRC,
-        layout: { 'circle-sort-key': ['get', 'sort'] },
-        paint: {
-          'circle-radius': radius(0),
-          'circle-color': ['get', 'fill'],
-          'circle-stroke-color': ['get', 'stroke'],
-          'circle-stroke-width': ['get', 'strokeWidth'],
+    add(m) {
+      m.addSource(SRC, { type: 'geojson', data: EMPTY })
+      coloc.addSources()
+      // Selected site on top, then stacked sites.
+      const sort: MapLibre.DataDrivenPropertyValueSpecification<number> = [
+        '+', ['*', 2, ['get', 'siteSelected']], ['case', MCO.map.colocation.STACKED, 1, 0],
+      ]
+      const layers: MapLibre.LayerSpecification[] = [
+        { id: 'spider-lines', type: 'line', source: coloc.spiderLinesSource, paint: MCO.map.colocation.spiderLinePaint() },
+        { id: 'stations-dots', type: 'circle', source: SRC, filter: A, layout: { 'circle-sort-key': sort }, paint: MCO.map.stationPaint() },
+        // Selection ring (kit --selection-ring) on the site holding the selected station, whichever member it is.
+        {
+          id: 'stations-selected', type: 'circle', source: SRC, filter: ['all', A, ['==', ['get', 'siteSelected'], 1]],
+          paint: MCO.map.selectionPaint(),
         },
-      })
-      // Selection ring: kit --selection-ring, outside the halo when co-located.
-      m.addLayer({
-        id: 'stations-selected', type: 'circle', source: SRC, filter: ['==', ['get', 'selected'], 1],
-        paint: {
-          'circle-radius': radius(['case', HAS_HALO, 7.5, 4.5]),
-          'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-width': 3, 'circle-stroke-color': ring,
+        // Keyboard focus halo in the kit focus-ring color (--accent-line): the visible focus indicator
+        // while a twin-table button (sr-only) has focus.
+        { id: 'stations-focus', type: 'circle', source: SRC, filter: ['all', A, ['==', ['get', 'bucket'], '']], paint: MCO.map.focusPaint() },
+        ...MCO.map.colocation.badgeLayers({ id: 'stations-badge', source: SRC }),
+        // An invisible collision box over the selected marker: basemap labels (placed after it) step
+        // aside instead of running under the ring (map.ts letPlaceLabelsMove).
+        {
+          id: 'stations-selected-obstacle', type: 'symbol', source: SRC, filter: ['all', A, ['==', ['get', 'siteSelected'], 1]],
+          layout: { 'icon-image': OBSTACLE, 'icon-allow-overlap': true, 'icon-ignore-placement': false },
         },
-      })
-      // Keyboard focus halo in the kit focus-ring color (--accent-line): the visible
-      // focus indicator while a twin-table button (sr-only) has focus.
-      m.addLayer({
-        id: 'stations-focus', type: 'circle', source: SRC, filter: ['==', ['get', 'key'], ''],
-        paint: {
-          'circle-radius': radius(11), 'circle-color': 'rgba(0,0,0,0)',
-          'circle-stroke-width': 2, 'circle-stroke-color': cssVar('--accent-line'),
-        },
-      })
-      // An invisible collision box over the selected marker: basemap labels (placed after it) step
-      // aside instead of running under the ring (map.ts letPlaceLabelsMove).
+        { id: HIT, type: 'circle', source: SRC, filter: A, layout: { 'circle-sort-key': sort }, paint: MCO.map.hitPaint() },
+        { id: 'spider-dots', type: 'circle', source: coloc.spiderSource, paint: MCO.map.stationPaint() },
+        { id: 'spider-selected', type: 'circle', source: coloc.spiderSource, filter: ['==', ['get', 'selected'], 1], paint: MCO.map.selectionPaint() },
+        { id: SPIDER_HIT, type: 'circle', source: coloc.spiderSource, paint: MCO.map.hitPaint() },
+      ]
       if (!m.hasImage(OBSTACLE)) m.addImage(OBSTACLE, { width: 28, height: 28, data: new Uint8Array(28 * 28 * 4) })
-      m.addLayer({
-        id: 'stations-selected-obstacle', type: 'symbol', source: SRC, filter: ['==', ['get', 'selected'], 1],
-        layout: { 'icon-image': OBSTACLE, 'icon-allow-overlap': true, 'icon-ignore-placement': false },
-      })
-      m.addLayer({
-        id: HIT, type: 'circle', source: SRC,
-        // Same order as the drawn dots, so the marker on top is the one hit.
-        layout: { 'circle-sort-key': ['get', 'sort'] },
-        paint: { 'circle-radius': radius(7), 'circle-color': 'rgba(0,0,0,0)' },
-      })
-      rebuild(theme)
-      return markers
+      for (const l of layers) if (!m.getLayer(l.id)) m.addLayer(l)
+      rebuild()
+      return markers()
     },
 
     update(next) {
       input = next
       byId = new Map(next.stations.map((s) => [s.station, s]))
       rebuild()
-      if (hoverKey && !markers.features.some((f) => f.properties.key === hoverKey)) onLeave()
-      return markers
+      if (hoverId && !coloc.info(hoverId.slice(hoverId.indexOf(':') + 1))) onLeave()
+      return markers()
     },
 
     focus(id) {
       focusId = id
-      rebuild()
-      const key = markerKeyOf(markers, id)
-      if (key) showPopup(key)
-      else if (!hoverKey) popup.remove()
+      setFocusFilter()
+      if (id && coloc.info(id)) showPopup(id, false)
+      else if (!hoverId) popup.remove()
     },
 
     dispose() {
-      map.off('mousemove', HIT, onMove)
-      map.off('mouseleave', HIT, onLeave)
-      map.off('click', HIT, onClick)
+      for (const layer of [HIT, SPIDER_HIT]) {
+        map.off('mousemove', layer, onMove)
+        map.off('mouseleave', layer, onLeave)
+      }
+      coloc.dispose()
       popup.remove()
     },
   }

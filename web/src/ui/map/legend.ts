@@ -58,7 +58,16 @@ export function createLegend(title = 'Stations', opts: { collapsed?: boolean } =
           sw.setAttribute('aria-hidden', 'true')
           sw.style.background = r.swatch.fill
           sw.style.border = `${r.swatch.strokeWidth}px solid ${r.swatch.stroke}`
-          if (r.halo) sw.style.boxShadow = `0 0 0 1.5px var(--bg-surface), 0 0 0 3.5px ${r.halo}`
+          if (r.badge) {
+            // The map's count badge (MCO.map.colocation.badgeLayers): a disc up-right of the dot.
+            const b = document.createElement('span')
+            b.className = 'map-legend-badge'
+            b.textContent = r.badge.text
+            b.style.background = r.badge.fill
+            b.style.borderColor = r.badge.stroke
+            b.style.color = r.badge.color
+            sw.append(b)
+          }
           const label = document.createElement('span')
           label.textContent = r.label
           li.append(sw, label)

@@ -1,19 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import type { Station } from '../api'
-import { NETWORK_COLOR, type Theme } from '../palette'
+import type { Theme } from '../palette'
 import { TOKENS_SNAPSHOT } from '../palette/tokens.snapshot'
 import {
   asNetwork,
-  clickTarget,
   formatElevation,
   legendRows,
-  markerKeyOf,
-  markerStyle,
+  markerProps,
   popupLines,
+  selectedSite,
   selectionAnnouncement,
-  stationMarkers,
+  siteOf,
+  stationRank,
   stationRows,
   visibleStations,
+  type MarkerCollection,
 } from './index'
 
 const st = (station: string, over: Partial<Station> = {}): Station => ({
@@ -33,86 +34,89 @@ const st = (station: string, over: Partial<Station> = {}): Station => ({
   ...over,
 })
 
-// Bozeman pair is co-located (same lat/lon), as in the live catalog.
+// The Bozeman pair is co-located, as in the live catalog; its AgriMet sits 2 m off (same 4-decimal
+// bucket), which the old exact-equality grouping split into two markers.
 const CATALOG: Station[] = [
   st('acebozem', { name: 'Bozeman', longitude: -111.05, latitude: 45.66 }),
-  st('bozmtest', { name: 'Bozeman AgriMet', sub_network: 'AgriMet', longitude: -111.05, latitude: 45.66 }),
+  st('bozmtest', { name: 'Bozeman AgriMet', sub_network: 'AgriMet', longitude: -111.05002, latitude: 45.66001 }),
   st('aceabsar', { name: 'Absarokee', longitude: -109.61, latitude: 45.56, county: 'Stillwater' }),
   st('wsrfoo', { name: 'Foo', sub_network: 'AgriMet', longitude: -108, latitude: 47, county: '' }),
   st('nocoords', { latitude: Number.NaN }),
 ]
 
-// Kit v0.11.3 --dot-stroke per theme (not in the palette snapshot).
-const DOT_STROKE: Record<Theme, string> = { dark: '#ffffff', light: '#2a2a3a', 'high-contrast': '#ffffff' }
-const getVar = (theme: Theme) => (name: string) =>
-  name === '--dot-stroke' ? DOT_STROKE[theme] : (TOKENS_SNAPSHOT[theme][name] ?? '')
+const TOKENS: Record<Theme, Record<string, string>> = {
+  dark: { '--dot-stroke': '#ffffff', '--accent': '#1a6faf', '--text-on-accent': '#ffffff' },
+  light: { '--dot-stroke': '#2a2a3a', '--accent': '#1a6faf', '--text-on-accent': '#ffffff' },
+  'high-contrast': { '--dot-stroke': '#ffffff', '--accent': '#ffd200', '--text-on-accent': '#000000' },
+}
+const getVar = (theme: Theme) => (name: string) => TOKENS[theme][name] ?? TOKENS_SNAPSHOT[theme][name] ?? ''
 
-const markers = (selected: string | null = null, visible: ReadonlySet<string> | null = null, theme: Theme = 'dark') =>
-  stationMarkers({ stations: CATALOG, visible, selected, theme, getVar: getVar(theme) })
+/**
+ * The features the map draws: the kit's own MCO.map.colocation (the pinned bytes, test/kit.ts) over a
+ * stub map, with the app's rank and properties, as ui/map/stationLayer.ts wires it.
+ */
+function drawn(selected: string | null = null, visible: ReadonlySet<string> | null = null): MarkerCollection {
+  const stub = { getSource: () => undefined, on() {}, getCanvas: () => ({ addEventListener() {} }) }
+  const site = selectedSite(CATALOG, visible, selected)
+  const coloc = MCO.map.colocation(stub as never, {
+    source: 'stations',
+    rank: stationRank,
+    visible: (s: Station) => (visible === null || visible.has(s.station)) && Number.isFinite(s.latitude),
+    properties: (s: Station) => markerProps(s, selected, site),
+    interactive: false,
+  } as never)
+  return coloc.setData(CATALOG) as unknown as MarkerCollection
+}
 
-describe('asNetwork', () => {
-  it('keeps palette networks and maps anything else to HydroMet (legacy rule)', () => {
+describe('asNetwork / stationRank', () => {
+  it('keeps the networks and maps anything else to HydroMet (legacy rule)', () => {
     expect(asNetwork('AgriMet')).toBe('AgriMet')
     expect(asNetwork('Cooperator')).toBe('Cooperator')
     expect(asNetwork('Something')).toBe('HydroMet')
   })
-})
-
-describe('markerStyle', () => {
-  it('gives each network shape a distinct paint', () => {
-    const g = getVar('light')
-    expect(markerStyle('HydroMet', 'light', g)).toEqual({ fill: '#4477AA', stroke: '#2a2a3a', strokeWidth: 1.2 })
-    expect(markerStyle('AgriMet', 'light', g)).toEqual({ fill: '#ffffff', stroke: '#CC6622', strokeWidth: 2.5 })
-    expect(markerStyle('Cooperator', 'light', g)).toEqual({ fill: 'rgba(0,0,0,0)', stroke: '#009988', strokeWidth: 1.5 })
+  it('ranks HydroMet first, so it anchors a shared site', () => {
+    expect(CATALOG.slice(0, 2).map(stationRank)).toEqual([0, 1])
+    expect(stationRank(st('x', { sub_network: 'Cooperator' }))).toBe(2)
   })
 })
 
-describe('stationMarkers', () => {
-  it('merges co-located stations into one marker and drops rows without coordinates', () => {
-    const fc = markers()
-    expect(fc.features.map((f) => f.properties.key)).toEqual(['acebozem,bozmtest', 'aceabsar', 'wsrfoo'])
-    const pair = fc.features[0].properties
-    expect(pair.network).toBe('HydroMet')
-    expect(pair.networks).toBe('HydroMet,AgriMet')
-    expect(pair.halo).toBe(NETWORK_COLOR.dark.AgriMet)
-    expect(fc.features[1].properties.halo).toBe('')
-    expect(fc.features[0].geometry.coordinates).toEqual([-111.05, 45.66])
+describe('siteOf / selectedSite / markerProps', () => {
+  it('is the kit bucket: 4 decimals, so stations a few metres apart share a site', () => {
+    expect(siteOf(CATALOG[0])).toBe('45.6600,-111.0500')
+    expect(siteOf(CATALOG[1])).toBe(siteOf(CATALOG[0]))
+    expect(siteOf(CATALOG[2])).not.toBe(siteOf(CATALOG[0]))
   })
-
-  it('flags the selected marker and sorts it on top', () => {
-    const fc = markers('bozmtest')
-    expect(fc.features[0].properties.selected).toBe(1)
-    expect(fc.features[0].properties.sort).toBe(3)
-    expect(fc.features[1].properties).toMatchObject({ selected: 0, sort: 0 })
+  it('gives no site to a selection the filter hides', () => {
+    expect(selectedSite(CATALOG, null, 'bozmtest')).toBe('45.6600,-111.0500')
+    expect(selectedSite(CATALOG, new Set(['acebozem']), 'bozmtest')).toBeNull()
+    expect(selectedSite(CATALOG, null, null)).toBeNull()
+    expect(selectedSite(CATALOG, null, 'nope')).toBeNull()
   })
-
-  it('respects the visible set (network filter)', () => {
-    const fc = markers('acebozem', new Set(['bozmtest', 'wsrfoo']))
-    expect(fc.features.map((f) => f.properties.key)).toEqual(['bozmtest', 'wsrfoo'])
-    expect(fc.features[0].properties).toMatchObject({ network: 'AgriMet', halo: '', selected: 0 })
-  })
-
-  it('re-resolves colors per theme', () => {
-    const light = markers(null, null, 'light')
-    expect(light.features[2].properties.stroke).toBe('#CC6622')
-    expect(markers().features[2].properties.stroke).toBe('#EE7733')
+  it('marks the selected station and every station at its site', () => {
+    const site = selectedSite(CATALOG, null, 'bozmtest')
+    expect(markerProps(CATALOG[0], 'bozmtest', site)).toEqual({ station: 'acebozem', selected: 0, siteSelected: 1 })
+    expect(markerProps(CATALOG[1], 'bozmtest', site)).toEqual({ station: 'bozmtest', selected: 1, siteSelected: 1 })
+    expect(markerProps(CATALOG[2], 'bozmtest', site)).toEqual({ station: 'aceabsar', selected: 0, siteSelected: 0 })
   })
 })
 
-describe('clickTarget / markerKeyOf', () => {
-  it('picks the first code, then cycles through a co-located marker', () => {
-    expect(clickTarget('acebozem,bozmtest', null)).toBe('acebozem')
-    expect(clickTarget('acebozem,bozmtest', 'aceabsar')).toBe('acebozem')
-    expect(clickTarget('acebozem,bozmtest', 'acebozem')).toBe('bozmtest')
-    expect(clickTarget('acebozem,bozmtest', 'bozmtest')).toBe('acebozem')
-    expect(clickTarget('aceabsar', 'aceabsar')).toBe('aceabsar')
-    expect(clickTarget('', null)).toBeNull()
+describe('the drawn features (kit MCO.map.colocation with the app rank)', () => {
+  it('makes one stacked site with a HydroMet anchor and drops rows without coordinates', () => {
+    const fc = drawn()
+    const anchors = fc.features.filter((f) => f.properties.colocationIndex === 0)
+    expect(anchors.map((f) => [f.properties.station, f.properties.colocationCount])).toEqual([
+      ['acebozem', 2],
+      ['aceabsar', 1],
+      ['wsrfoo', 1],
+    ])
+    expect(fc.features.find((f) => f.properties.station === 'bozmtest')?.properties.colocationIndex).toBe(1)
   })
-  it('finds the marker holding a station', () => {
-    const fc = markers()
-    expect(markerKeyOf(fc, 'bozmtest')).toBe('acebozem,bozmtest')
-    expect(markerKeyOf(fc, 'nope')).toBeNull()
-    expect(markerKeyOf(fc, null)).toBeNull()
+  it('turns a pair into a plain dot when the filter hides one', () => {
+    const fc = drawn(null, new Set(['bozmtest', 'wsrfoo']))
+    expect(fc.features.map((f) => [f.properties.station, f.properties.colocationCount, f.properties.colocationIndex])).toEqual([
+      ['bozmtest', 1, 0],
+      ['wsrfoo', 1, 0],
+    ])
   })
 })
 
@@ -153,20 +157,21 @@ describe('text models', () => {
 })
 
 describe('legendRows', () => {
-  it('lists networks present, the co-located row with a count, and the selection ring', () => {
-    const rows = legendRows(markers(), 'dark', getVar('dark'))
+  it('has one station row (no network rows), the co-located row with its badge and site count, and the ring', () => {
+    const rows = legendRows(drawn(), 'dark', getVar('dark'))
     expect(rows.map((r) => [r.key, r.label, r.count])).toEqual([
-      ['HydroMet', 'HydroMet', null],
-      ['AgriMet', 'AgriMet', null],
+      ['station', 'Station', null],
       ['co-located', 'Co-located stations', 1],
       ['selected', 'Selected station', null],
     ])
-    expect(rows[2].halo).toBe(NETWORK_COLOR.dark.AgriMet)
-    expect(rows[3].swatch.stroke).toBe('#5aaee8')
+    expect(rows[0].swatch).toEqual({ fill: '#4477AA', stroke: '#ffffff', strokeWidth: 1.2 })
+    expect(rows[1].badge).toEqual({ text: '2', fill: '#1a6faf', stroke: '#ffffff', color: '#ffffff' })
+    expect(rows[2].swatch.stroke).toBe('#5aaee8')
   })
 
-  it('drops rows for networks the filter hides', () => {
-    const rows = legendRows(markers(null, new Set(['aceabsar'])), 'light', getVar('light'))
-    expect(rows.map((r) => r.key)).toEqual(['HydroMet', 'selected'])
+  it('drops the co-located row when no site holds two visible stations', () => {
+    const rows = legendRows(drawn(null, new Set(['aceabsar', 'bozmtest'])), 'light', getVar('light'))
+    expect(rows.map((r) => r.key)).toEqual(['station', 'selected'])
+    expect(rows[0].swatch.stroke).toBe('#2a2a3a')
   })
 })
