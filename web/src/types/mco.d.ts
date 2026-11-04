@@ -75,6 +75,94 @@ interface McoMap {
     tribalLine: Record<string, unknown>
     tribalLabelPaint: Record<string, unknown>
   }
+  /** The one station circle (0.21.0): no network encoding; defaults are the HydroMet blue, the radius ramp and a --dot-stroke edge. */
+  stationPaint(opts?: { fill?: unknown; radius?: unknown; stroke?: unknown; strokeWidth?: number }): MapLibre.CircleLayerSpecification['paint']
+  /** The selected-station ring, in --selection-ring (read at call time). */
+  selectionPaint(opts?: { radius?: unknown; width?: number }): MapLibre.CircleLayerSpecification['paint']
+  /** The keyboard-focus halo, in --accent-line (read at call time). */
+  focusPaint(opts?: { radius?: unknown; width?: number }): MapLibre.CircleLayerSpecification['paint']
+  /** An invisible circle (11 px radius by default): a tappable target. */
+  hitPaint(opts?: { radius?: unknown }): MapLibre.CircleLayerSpecification['paint']
+  /** Colocated stations (0.21.0): 4-decimal buckets, a count badge and a spider. */
+  colocation: McoColocation
+}
+
+/** Properties MCO.map.colocation adds to every feature it emits, on top of the app's. */
+interface ColocationProps {
+  /** Visible stations at the site. */
+  colocationCount: number
+  /** 0 = the site's anchor (the marker drawn); spider feet are 0 too. */
+  colocationIndex: number
+  /** The site key (`bucketKey`). */
+  bucket: string
+  colocationId: string
+}
+
+/** A GeoJSON point collection as the kit emits it (structurally what MapLibre's setData takes). */
+interface PointCollection<P> {
+  type: 'FeatureCollection'
+  features: { type: 'Feature'; geometry: { type: 'Point'; coordinates: [number, number] }; properties: P }[]
+}
+
+interface ColocationOptions<T> {
+  /** The app's GeoJSON source id. */
+  source: string
+  id?: (s: T) => string
+  lngLat?: (s: T) => [number, number]
+  /** Lower = the site's anchor. */
+  rank?: (s: T) => number
+  visible?: (s: T) => boolean
+  properties?: (s: T) => object
+  anchorLayers?: string[]
+  spiderLayers?: string[]
+  /** 'spider': a first click on a stacked anchor only fans it out. */
+  anchorClick?: 'spider'
+  onSelect?: (id: string, info: { item: T | undefined; foot: boolean }) => void
+  onEmpty?: () => void
+}
+
+interface ColocationController<T, P = Record<string, unknown>> {
+  setData(items?: readonly T[]): PointCollection<P & ColocationProps>
+  refresh(): PointCollection<P & ColocationProps>
+  /** Adds the two spider sources (call in style.load, before the app's layers). */
+  addSources(): void
+  open(bucketOrId: string): boolean
+  close(): void
+  isOpen(): boolean
+  openBucket(): string | null
+  /** The site's visible members, anchor first. */
+  members(bucketOrId: string): T[]
+  siblings(id: string): T[]
+  info(id: string): { bucket: string; index: number; count: number } | null
+  collection(): PointCollection<P & ColocationProps>
+  spiderSource: string
+  spiderLinesSource: string
+  dispose(): void
+}
+
+interface McoColocation {
+  <T, P extends object = Record<string, unknown>>(
+    map: MapLibre.Map,
+    opts: ColocationOptions<T> & { properties?: (s: T) => P },
+  ): ColocationController<T, P>
+  PRECISION: number
+  /** "lat,lon", each to `precision` (default PRECISION, 4) decimals: the site key. */
+  bucketKey(lat: number, lon: number, precision?: number): string
+  /** Layer filter: the site anchors only. */
+  ANCHOR_ONLY: MapLibre.ExpressionSpecification
+  /** Layer filter: sites with more than one visible station. */
+  STACKED: MapLibre.ExpressionSpecification
+  /** The count badge: a disc layer (`${id}-disc`) then its text layer (`id`); add both, in order. */
+  badgeLayers(opts: {
+    id?: string
+    source: string
+    filter?: unknown
+    offset?: [number, number]
+    radius?: number
+    textSize?: number
+    minzoom?: number
+  }): MapLibre.LayerSpecification[]
+  spiderLinePaint(): MapLibre.LineLayerSpecification['paint']
 }
 
 interface Mco {
@@ -150,4 +238,4 @@ declare global {
   const maplibregl: typeof MapLibre
 }
 
-export type { Mco, McoMap, Theme }
+export type { ColocationController, ColocationProps, Mco, McoMap, PointCollection, Theme }

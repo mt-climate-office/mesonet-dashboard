@@ -1,7 +1,7 @@
 # Mesonet dashboard architecture
 
 The Montana Mesonet Dashboard, rebuilt on the MCO house style
-([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.17.0)
+([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.21.0)
 with Alpine.js, Apache ECharts and TypeScript. Served at
 `/mesonet-dashboard/` on GitHub Pages, and through the Caddy proxy
 (mt-climate-office/mesonet_app) as `mesonet.climate.umt.edu/dash/next/`, the
@@ -418,7 +418,7 @@ Download sheet (a row open, after Preview), About and its two sheets, Help) × 1
 ## Testing
 
 - Everything in `core/` has a sibling `*.test.ts`; vitest runs in Node
-  (`vitest.config.ts`). The one global is the kit's `MCO` (core + photos): `test/kit.ts` reads
+  (`vitest.config.ts`). The one global is the kit's `MCO` (core, photos, places, summary and map): `test/kit.ts` reads
   the pinned URLs and SRI hashes from `index.html`, fetches each file once into
   `node_modules/.cache/mco-kit/`, checks it against its hash (a mismatch fails the run) and
   evaluates it in `node:vm`, so tests run the same bytes the page loads. Photo logic is the

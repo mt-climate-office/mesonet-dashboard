@@ -7,7 +7,7 @@
    --card-pad from ui/layout/card.css); list rows and stats pad 12 px (3 × --gap-tight). */
 
 /* Shared */
-.charts-empty { padding: 2rem 1rem; text-align: center; font-size: var(--fs-sm); color: var(--text-secondary); }
+.charts-empty { padding: 2rem 1rem; text-align: center; font-size: var(--dash-fs-sm); color: var(--text-secondary); }
 .charts-empty-title { font-weight: 700; color: var(--text-primary); }
 
 /* List: a search field, then one card per group, one link row per entry (name over sub | value | sparkline). */
@@ -18,7 +18,7 @@
   display: block; width: 100%; min-height: 44px; margin: 0;
   padding: 0 calc(var(--card-pad) + 2rem) 0 calc(var(--card-pad) + 18px + 0.5rem);
   border: 0; border-radius: 999px; background: var(--bg-surface); box-shadow: var(--card-shadow);
-  font: inherit; font-size: var(--fs-md); color: var(--text-primary);
+  font: inherit; font-size: var(--dash-fs-md); color: var(--text-primary);
   -webkit-appearance: none; appearance: none;
 }
 [data-theme="high-contrast"] .charts-search input { border: 1px solid var(--border); box-shadow: none; }
@@ -43,7 +43,7 @@
 }
 /* Rows run edge to edge: the card has no padding, each row carries --card-pad. */
 .charts-group { display: flow-root; padding: 0; }
-.charts-group-title { margin: var(--gap) var(--card-pad) var(--gap-tight); font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.charts-group-title { margin: var(--gap) var(--card-pad) var(--gap-tight); font-size: var(--dash-fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 .charts-rows { list-style: none; }
 .charts-rows li + li { border-top: 1px solid var(--border); }
 .charts-row {
@@ -55,9 +55,9 @@
 }
 .charts-rows li:last-child .charts-row { border-radius: 0 0 var(--card-radius) var(--card-radius); }
 .charts-row:hover { background: var(--accent-hover); }
-.charts-row-name { font-size: var(--fs-md); font-weight: 500; color: var(--text-primary); }
-.charts-row-sub { display: block; font-size: var(--fs-sm); font-weight: 400; color: var(--text-muted); }
-.charts-row-value { font-size: var(--fs-md); color: var(--text-primary); white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+.charts-row-name { font-size: var(--dash-fs-md); font-weight: 500; color: var(--text-primary); }
+.charts-row-sub { display: block; font-size: var(--dash-fs-sm); font-weight: 400; color: var(--text-muted); }
+.charts-row-value { font-size: var(--dash-fs-md); color: var(--text-primary); white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 .charts-row .dash-spark { margin-top: 0; }
 /* Ag tools and More: name over a one-line description, no value or sparkline. */
 .charts-row--tool { grid-template-columns: minmax(0, 1fr); }
@@ -68,7 +68,7 @@
 .charts-group .charts-skel-title { width: 6rem; height: 0.75rem; margin: var(--gap) var(--card-pad) var(--gap-tight); }
 .charts-group .charts-skel-row { height: 28px; margin: calc(3 * var(--gap-tight)) var(--card-pad); }
 .charts-group .charts-skel-row + .charts-skel-row { margin-top: calc(6 * var(--gap-tight) + 1px); }
-.charts-nomatch { font-size: var(--fs-sm); color: var(--text-secondary); }
+.charts-nomatch { font-size: var(--dash-fs-sm); color: var(--text-secondary); }
 
 /* Chart page frame (variable page, Ag tools, Compare): a column at --gap, the subline tight under
    the title. touch-action: the page scrolls vertically; a sideways swipe is ours (ui/layout/swipe.ts).
@@ -78,23 +78,23 @@
 .chart-head + .chart-sub { margin-top: var(--gap-tight); }
 .chart-page { touch-action: pan-y pinch-zoom; }
 .chart-head { display: flex; align-items: center; gap: var(--gap-tight); margin-left: -0.5rem; }
-.chart-title { flex: 1; min-width: 0; margin: 0; font-size: var(--fs-xl); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; color: var(--text-primary); text-wrap: balance; }
+.chart-title { flex: 1; min-width: 0; margin: 0; font-size: var(--dash-fs-xl); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; color: var(--text-primary); text-wrap: balance; }
 .chart-head .dash-icon-btn svg { fill: none; }
 .chart-head .dash-menu .dash-icon-btn svg { fill: currentColor; }
-.chart-sub { margin: 0; font-size: var(--fs-sm); color: var(--text-secondary); }
+.chart-sub { margin: 0; font-size: var(--dash-fs-sm); color: var(--text-secondary); }
 /* The plot keeps a thin frame; ECharts lays out its own axis margins. */
 .chart-card { padding: calc(2 * var(--gap-tight)); }
 
 /* Range chips: one scrolling row; the interval row is quieter and wraps. */
 .chart-chips { display: flex; align-items: center; gap: 0.4rem; overflow-x: auto; padding: 2px; scrollbar-width: none; }
 .chart-interval { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-tight) 0.35rem; }
-.chart-interval-label { margin-right: 0.35rem; font-size: var(--fs-sm); color: var(--text-muted); }
+.chart-interval-label { margin-right: 0.35rem; font-size: var(--dash-fs-sm); color: var(--text-muted); }
 .chart-interval .dash-chip { padding-inline: 0.65rem; }
 /* A chip not offered here stays focusable (aria-disabled); the note under the row says why
    (All years beside the wind rose, too). */
 :is(.chart-interval, .chart-chips) .dash-chip[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
 :is(.chart-interval, .chart-chips) .dash-chip[aria-disabled="true"]:hover { background: none; color: var(--text-secondary); }
-.chart-interval-note { flex-basis: 100%; font-size: var(--fs-xs); color: var(--text-muted); }
+.chart-interval-note { flex-basis: 100%; font-size: var(--dash-fs-xs); color: var(--text-muted); }
 .chart-range-note { margin: calc(-1 * var(--gap-tight)) 0 0; }
 @media (max-width: 640px), (max-height: 560px) { .chart-chips .dash-chip { padding-inline: 0.75rem; } }
 /* "1 y" is narrower than a 40 px touch target (HOUSE-STYLE §5.5). */
@@ -116,9 +116,9 @@
   .chart-stat { min-width: 0; padding-right: 0; }
   .chart-stat.is-wide { grid-column: span 2; }
 }
-.chart-stat dt { font-size: var(--fs-xs); color: var(--text-muted); }
-.chart-stat dd { font-size: var(--fs-lg); font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums; }
-.chart-stat-depth dd { font-size: var(--fs-sm); color: var(--text-secondary); }
+.chart-stat dt { font-size: var(--dash-fs-xs); color: var(--text-muted); }
+.chart-stat dd { font-size: var(--dash-fs-lg); font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+.chart-stat-depth dd { font-size: var(--dash-fs-sm); color: var(--text-secondary); }
 
 /* The chart, its loading/empty overlay and All years. The skeleton and the chart share one height. */
 .var-history > .dash-section-note { padding: 0 0.5rem var(--gap-tight); }
@@ -135,7 +135,7 @@
    puts the key beside the rose at 30 rem tall (a short screen: the height under the header); a
    narrower one (a phone) is as tall as it is wide plus 5.5 rem for the key under the rose (two or
    three rows). Its stats card is two by two on compact screens ("SSE · 16%" on one line). */
-.var-rose-title { margin: 0; padding: var(--gap-tight) 0.5rem 0; text-align: center; font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary); }
+.var-rose-title { margin: 0; padding: var(--gap-tight) 0.5rem 0; text-align: center; font-size: var(--dash-fs-sm); font-weight: 600; color: var(--text-primary); }
 .var-rose .var-canvas { container-type: inline-size; }
 .var-rose .var-canvas > * { --rose-h: 30rem; }
 @media (max-height: 560px) { .var-rose .var-canvas > * { --rose-h: max(16rem, calc(100dvh - 5rem)); } }
@@ -148,13 +148,13 @@
 /* A chart as a table (partials/charts/table.html): scrolls sideways inside its box, never the page. */
 .var-table-bar { display: flex; justify-content: flex-end; padding-bottom: var(--gap-tight); }
 .var-table-scroll { overflow-x: auto; max-width: 100%; }
-.var-table-grid { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.var-table-grid { width: 100%; border-collapse: collapse; font-size: var(--dash-fs-sm); }
 .var-table-grid th, .var-table-grid td { padding: 0.35rem 0.6rem; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
 /* The time column, left. :first-of-type, not :first-child: each row's first child is its <template x-for>. */
 .var-table-grid th:first-of-type, .var-table-grid td:first-of-type { text-align: left; }
 .var-table-grid thead th { font-weight: 600; color: var(--text-secondary); }
 .var-table-grid td { font-family: var(--font-mono); color: var(--text-primary); }
-.var-pager { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); padding: calc(2 * var(--gap-tight)); font-size: var(--fs-sm); color: var(--text-secondary); }
+.var-pager { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); padding: calc(2 * var(--gap-tight)); font-size: var(--dash-fs-sm); color: var(--text-secondary); }
 
 /* The Custom dates sheet: a small panel. */
 .dates-sheet { --sheet-w: 28rem; }
@@ -170,7 +170,7 @@
 }
 .cmp-summary {
   min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: var(--gap-tight);
-  font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); cursor: pointer; list-style: none;
+  font-size: var(--dash-fs-sm); font-weight: 600; color: var(--text-secondary); cursor: pointer; list-style: none;
 }
 /* Our chevron instead of each engine's marker (Safari keeps its own beside a flex summary). */
 .cmp-summary::-webkit-details-marker { display: none; }
@@ -180,7 +180,7 @@
 .cmp-group { display: flex; flex-direction: column; align-items: flex-start; gap: calc(2 * var(--gap-tight)); padding-top: var(--gap); margin-top: var(--gap); border-top: 1px solid var(--border); }
 .cmp-group > * { max-width: 100%; }
 .cmp-group .ctl-note { margin: 0; }
-.cmp-legend { font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
+.cmp-legend { font-size: var(--dash-fs-sm); font-weight: 600; color: var(--text-secondary); }
 /* Interval and variable chips wrap; every variable shows (no inner scroll box to cut a row). */
 .cmp-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; padding: 2px; }
 /* The normals switch off (not daily data): dimmed like a chip not offered here; the note under it says why. */
@@ -202,4 +202,4 @@
 .cmp-status > div { width: 100%; }
 /* The error state centred in the plot's place (partials/load-error.html). */
 :is(.var-status, .cmp-status) .dash-load-error { align-items: center; padding: var(--card-pad); text-align: center; }
-.cmp-refreshing { position: absolute; top: 0.4rem; right: var(--gap); z-index: 1; font-size: var(--fs-xs); color: var(--text-muted); }
+.cmp-refreshing { position: absolute; top: 0.4rem; right: var(--gap); z-index: 1; font-size: var(--dash-fs-xs); color: var(--text-muted); }

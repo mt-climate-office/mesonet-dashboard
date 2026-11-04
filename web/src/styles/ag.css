@@ -1,6 +1,6 @@
 /* An Ag tool inside Charts (partials/ag/*), in the chart-page frame (charts.css): its option chips
    and their popovers (ui/layout/popover.css), the chart card and the chart states. Panels are
-   .dash-card (ui/layout/card.css); sizes are the --fs-* scale; kit tokens only. Inputs are 16 px on
+   .dash-card (ui/layout/card.css); sizes are the --dash-fs-* scale; kit tokens only. Inputs are 16 px on
    touch through ui/controls/controls.css. */
 
 /* Option chips: a raised pill per option naming its value, with a caret; they wrap. */
@@ -9,7 +9,7 @@
 .ag-opt { color: var(--text-primary); }
 .ag-opt svg { color: var(--text-muted); }
 .ag-opt[aria-expanded="true"] { background: var(--accent-hover); }
-.ag-reset { align-self: flex-start; font-size: var(--fs-xs); }
+.ag-reset { align-self: flex-start; font-size: var(--dash-fs-xs); }
 
 /* Chart card: shorter on compact screens (narrow, or a landscape phone) so it fits and the page
    around it stays reachable. */
@@ -31,7 +31,7 @@
 .ag-notes-tip:not([hidden]) { display: flex; flex-direction: column; gap: 0.4rem; }
 .ag-state {
   min-height: 12rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;
-  font-size: var(--fs-sm); color: var(--text-secondary); text-align: center; padding: 1rem;
+  font-size: var(--dash-fs-sm); color: var(--text-secondary); text-align: center; padding: 1rem;
 }
 .ag-state .dash-load-error { align-items: center; }
 

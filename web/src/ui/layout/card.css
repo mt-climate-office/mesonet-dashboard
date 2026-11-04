@@ -45,18 +45,18 @@ a.dash-card {
 a.dash-card:hover { background: var(--accent-hover); }
 [data-theme="high-contrast"] a.dash-card:hover { border-color: var(--accent-line); }
 
-.dash-card-title { margin: 0 0 0.6rem; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
+.dash-card-title { margin: 0 0 0.6rem; font-size: var(--dash-fs-sm); font-weight: 600; color: var(--text-secondary); }
 
 /* Display numerals (readings ≥ 1.75 rem: the Now hero, tiles) use the kit's .mco-num-display (0.10.0);
    these are their sizes. Space Mono stays for tables, ids, timestamps and axes. */
 :root {
-  --fs-display-tile: 1.9rem;  /* Now's tile values */
-  --fs-display-hero: 5rem;    /* Now's temperature; 7 rem beside the tiles (desktop) */
+  --dash-fs-display-tile: 1.9rem;  /* Now's tile values */
+  --dash-fs-display-hero: 5rem;    /* Now's temperature; 7 rem beside the tiles (desktop) */
 }
-@media (min-width: 1060px) and (min-height: 561px) { :root { --fs-display-hero: 7rem; } }
+@media (min-width: 1060px) and (min-height: 561px) { :root { --dash-fs-display-hero: 7rem; } }
 
 /* Underlined, not color-only (WCAG 1.4.1). */
-.dash-link { color: var(--accent-line); font-size: var(--fs-sm); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+.dash-link { color: var(--accent-line); font-size: var(--dash-fs-sm); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
 /* A standalone link (not inside prose) gets a 40 px touch target (HOUSE-STYLE §5.5). */
 @media (hover: none) { .dash-link { display: inline-flex; align-items: center; min-height: 40px; } }
 
@@ -65,7 +65,7 @@ a.dash-card:hover { background: var(--accent-hover); }
   display: inline-flex; align-items: center; gap: 0.3rem;
   padding: 0.05rem 0.5rem;
   border: 1px solid var(--ctrl-border); border-radius: 999px;
-  font-size: var(--fs-xs); font-weight: 600; color: var(--text-secondary);
+  font-size: var(--dash-fs-xs); font-weight: 600; color: var(--text-secondary);
   white-space: nowrap;
 }
 .dash-badge--warn { border: 2px solid var(--text-primary); color: var(--text-primary); }
@@ -83,7 +83,7 @@ a.dash-card:hover { background: var(--accent-hover); }
   border: 0; border-radius: 999px;
   background: var(--bg-surface); box-shadow: var(--card-shadow);
   color: var(--text-secondary);
-  font: inherit; font-size: var(--fs-sm); font-weight: 500; white-space: nowrap;
+  font: inherit; font-size: var(--dash-fs-sm); font-weight: 500; white-space: nowrap;
   cursor: pointer; transition: var(--transition);
 }
 .dash-chip:hover { color: var(--text-primary); background: var(--accent-hover); }
@@ -97,5 +97,5 @@ a.dash-card:hover { background: var(--accent-hover); }
 /* The error state (partials/load-error.html): what failed and why, then Retry. Inside a card, or
    centred in a chart's loading slot (charts.css). */
 .dash-load-error { display: flex; flex-direction: column; align-items: flex-start; gap: var(--gap); }
-.dash-load-error p { margin: 0; color: var(--text-secondary); font-size: var(--fs-sm); }
+.dash-load-error p { margin: 0; color: var(--text-secondary); font-size: var(--dash-fs-sm); }
 

@@ -1,7 +1,7 @@
 /* The Download sheet's form (partials/downloader/index.html): flat summary rows (label left,
    value right) that expand in place, the primary button and its one-line reason, notices,
    the preview and the BLM funding line. One column at every width; the sheet body scrolls.
-   Kit tokens, the --fs-* scale and the shared spacing tokens (--gap, --gap-tight, --card-pad) only. */
+   Kit tokens, the --dash-fs-* scale and the shared spacing tokens (--gap, --gap-tight, --card-pad) only. */
 
 /* A short form: a narrow centred panel from tablet up (ui/layout/sheet.css reads --sheet-w). */
 .dl-sheet { --sheet-w: 34rem; }
@@ -17,7 +17,7 @@
   min-height: 48px; padding: var(--gap, 12px) var(--gap-tight, 4px);
   /* The hover fill keeps its inset, but the label lines up with the title and the button. */
   width: calc(100% + 2 * var(--gap-tight, 4px)); margin-inline: calc(-1 * var(--gap-tight, 4px));
-  font: inherit; font-size: var(--fs-md); text-align: left;
+  font: inherit; font-size: var(--dash-fs-md); text-align: left;
   color: var(--text-primary); background: none; border: 0;
 }
 .dl-row-btn { cursor: pointer; border-radius: var(--radius-md); }
@@ -36,8 +36,8 @@
 .dl-row-panel { display: flex; flex-direction: column; gap: var(--gap, 12px); padding: var(--gap-tight, 4px) 0 var(--card-pad, 16px); }
 /* The controls inside a row match the rows (16 px text): 40 px fields and segments, 14 px labels. */
 .dl-row-panel { --ctl-h: 40px; }
-.dl-row-panel :is(.ctl-input, .ctl-seg .seg-btn, .ctl-check) { font-size: var(--fs-md); }
-.dl-row-panel :is(.ctl-label, .ctl-legend, .ctl-note) { font-size: var(--fs-sm); }
+.dl-row-panel :is(.ctl-input, .ctl-seg .seg-btn, .ctl-check) { font-size: var(--dash-fs-md); }
+.dl-row-panel :is(.ctl-label, .ctl-legend, .ctl-note) { font-size: var(--dash-fs-sm); }
 .dl-row-panel .seg-btns { width: 100%; }
 .dl-row-panel .seg-btn { flex: 1; justify-content: center; }
 /* Quality labels are long: one option per line. */
@@ -68,7 +68,7 @@
 /* ⚠ + text, so the meaning never rests on color. */
 .dl-msg {
   padding: 8px var(--gap, 12px);
-  font-size: var(--fs-sm); line-height: 1.45;
+  font-size: var(--dash-fs-sm); line-height: 1.45;
   color: var(--text-primary);
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -82,7 +82,7 @@
 .nav-btn.dl-btn-primary {
   justify-content: center; gap: 8px;
   width: 100%; min-height: 48px; margin-top: var(--gap-tight, 4px);
-  font-size: var(--fs-md); font-weight: 600;
+  font-size: var(--dash-fs-md); font-weight: 600;
   background: var(--accent); border-color: var(--accent-line); color: var(--text-on-accent);
 }
 .nav-btn.dl-btn-primary svg { stroke: currentColor; }
@@ -99,21 +99,21 @@
   border-style: dashed; border-color: var(--text-muted); color: var(--text-muted);
 }
 .nav-btn.dl-btn-primary[aria-busy="true"] { cursor: progress; }
-.dl-reason { font-size: var(--fs-sm); color: var(--text-secondary); text-align: center; }
+.dl-reason { font-size: var(--dash-fs-sm); color: var(--text-secondary); text-align: center; }
 
 /* ── Preview ───────────────────────────────────────────────────────────── */
 .dl-preview { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.dl-preview-title { margin: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
+.dl-preview-title { margin: 0; font-size: var(--dash-fs-sm); font-weight: 600; color: var(--text-secondary); }
 .dl-preview-status {
   display: flex; align-items: center; justify-content: center;
   min-height: 6rem; padding: var(--card-pad, 16px);
-  text-align: center; font-size: var(--fs-sm); color: var(--text-secondary);
+  text-align: center; font-size: var(--dash-fs-sm); color: var(--text-secondary);
 }
 .dl-preview-status.is-error { color: var(--text-primary); }
 .dl-preview-status.is-error::before { content: "\26A0\FE0E  " / ""; white-space: pre; }
 
 /* Funder attribution (legacy DL-020), as a quiet line under the form. */
-.dl-funding { font-size: var(--fs-xs); color: var(--text-secondary); text-align: center; }
+.dl-funding { font-size: var(--dash-fs-xs); color: var(--text-secondary); text-align: center; }
 /* The award reference wraps as one piece, never "(RM-CESU Award" / "L16AC00359)". */
 .dl-nowrap { white-space: nowrap; }
 

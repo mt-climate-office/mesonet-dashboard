@@ -6,10 +6,10 @@
 
 .lc-message {
   margin: auto; padding: 1rem; max-width: 22rem;
-  text-align: center; font-size: var(--fs-sm); color: var(--text-muted);
+  text-align: center; font-size: var(--dash-fs-sm); color: var(--text-muted);
 }
 .lc-strong { font-weight: 700; color: var(--text-primary); }
-.lc-title { font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary); margin: 0; }
+.lc-title { font-size: var(--dash-fs-sm); font-weight: 600; color: var(--text-primary); margin: 0; }
 
 /* Wind rose: title above the chart, chart fills the rest of the pane. */
 .lc-rose { flex: 1; min-height: 0; display: flex; flex-direction: column; }

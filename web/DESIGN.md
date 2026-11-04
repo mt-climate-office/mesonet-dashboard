@@ -97,7 +97,7 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
   | `--card-radius` | 16 px | in-flow cards |
   | `--panel-radius` | the kit `--radius-lg` (12 px) | floating panels: sheets, popovers, menus |
 
-  Inner pieces use the kit `--radius-md` (8 px), pills 999 px. Type uses only the `--fs-*` scale ("Type scale").
+  Inner pieces use the kit `--radius-md` (8 px), pills 999 px. Type uses only the app's `--dash-fs-*` scale ("Type scale"); the kit's own `--dash-fs-*` are left alone.
 - **Width:** section content stops at 75 rem, centred (it matters from about 1280 px).
 - **Chips:** range and interval chips are pills; the active range is filled with high contrast
   (`--text-primary` fill, `--bg-deep` text), the interval row is quieter (an accent-hover fill). `aria-pressed`
@@ -158,11 +158,11 @@ tiles, rows at every width.
 
 | Slot | Content | Data (tier) |
 |---|---|---|
-| Hero | Air temperature (`.mco-num-display`, `--fs-display-hero`: 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("High 74° · Low 41° (24 h)", so the two agree; normal "Normal 67° · 38°"), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain; "calm after gusts to 43 mph earlier" when the 24 h peak gust is ≥ 25 mph) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
+| Hero | Air temperature (`.mco-num-display`, `--dash-fs-display-hero`: 5 rem phones / 7 rem desktop); on the right the high and low of the strip's observed 24 h ("High 74° · Low 41° (24 h)", so the two agree; normal "Normal 67° · 38°"), today's gridMET normal and the NWS feels-like ("Wind chill"/"Heat index"); the one-line **summary** (`summarize`: sky, wind, rain; "calm after gusts to 43 mph earlier" when the 24 h peak gust is ≥ 25 mph) | `/latest`, NWS periods (1); hourly + `tmmx`/`tmmn` (2) |
 | Freshness | "Updated 7 min ago · Provisional": **Provisional** is a text button (only when `/latest` says so) that opens the toggletip (served at QC level 1 until the next daily QC run, about 8 AM); **No report for over 2 hours** warning | `/latest` (1) |
 | Strip | The **48 h strip** in the chart host (`core/charts/heroStrip`): the last 24 h observed (solid, area) into the next 24 h of NWS hourly forecast (dashed), the now rule, the observed high above its point and the low below it (the y range is padded so both stay inside the plot); x ticks "Now" plus plain hours ("6 AM", "Noon"; every 6 h on phones, 3 h wider; none crowding "Now"); its sr-only table; a "Loading the 48-hour strip…" status while tier 2 loads and a short note in its place when there is nothing to draw. Below it the forecast periods as an icon row: every upcoming NWS period (about 7 days), as many as fit on one line (`ui/layout/fitRow`), short names ("Wed night 40°"), each a link to the NWS forecast (api.weather.gov icons only, alt = the short forecast; the periods are not labelled inside the plot), a solid/dashed legend and "Full forecast" (NWS, new tab) | hourly + NWS hourly (2) |
 | Media | Latest camera frames, West first (W · E · N · S · Snow; `core/photos` `DIRECTION_ORDER`), in the carousel (opens the photo dialog; its caption bottom right, clear of the camera's own label), or the wind rose without a camera (a fixed 20 rem card): the last 24 hours of raw readings (5-min, AgriMet 15-min; `nowWindRoseRequest`), "Wind, last 24 hours", calm readings counted apart (see the Rose view) | photo schedule, latest listings (1) |
-| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary, then what is falling now from `/latest`, `rainNow`: "0.12 in/h now" (the peak rate), "raining now", "dry now"; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (derived from air temperature and humidity, so nearly every station; core/api/vpd). Plain name, value (`.mco-num-display`, `--fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page, whose heading takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
+| Tiles | Only the relevant ones (`nowTiles`): Wind ("1 mph now · SE", "Calm" under 1 mph, the summary's "calm" too (`CALM_MPH`); "Peak gust 43 mph (24 h)" from `peakGust`, else "SE · gusts 2" before the hourly rows), Rain (7 d total, "Last 7 days", 24 h without the ppt summary, then what is falling now from `/latest`, `rainNow`: "0.12 in/h now" (the peak rate), "raining now", "dry now"; a second line "This year: 81% of normal"; seven daily bars, `rainBars`, a bare baseline after a dry week), Humidity (dew point), Sunlight (by day only), Soil moisture (shallowest depth; a **Dry/Wet** badge from soil water potential where the station has soil parameters), Snow depth (the snow rule), VPD (derived from air temperature and humidity, so nearly every station; core/api/vpd). Plain name, value (`.mco-num-display`, `--dash-fs-display-tile`: 1.9 rem) and unit from `core/variables/labels`, a sub-line and a 48 h sparkline; each a link to its variable page, whose heading takes focus | `/latest`, `/derived/ppt/` (1); hourly, `pr`, hourly `soil_vwc` for SWP (2) |
 | Rows | **All readings** (meta: "Pressure 847 mb, steady · Snow none", the 3 h trend once the hourly rows are in) → opens the readings sheet over Now (`openSheet`, no navigation; see About); **Station details** (meta: "HydroMet · 4,905 ft") → About (`target: 'main'`) | `/stations`, `/latest` |
 
 **Photo dialog** (`partials/now/photo-dialog.html`, `ui/now/photoCard.ts`, model `core/cards/photo`): a kit
@@ -194,7 +194,7 @@ is the **landing** (`partials/landing.html`, `ui/picker/stationLanding.ts`), whi
 (Now, Charts and About all show it; the section host is hidden). It replaced a small "No station selected" card
 under an auto-opened picker drawer or sheet, which left the page barren (DIVERGENCES "No-station landing").
 
-- **Heading and line:** "Choose a station" (`--fs-xl`) and "Current conditions, trends and forecasts from N
+- **Heading and line:** "Choose a station" (`--dash-fs-xl`) and "Current conditions, trends and forecasts from N
   Montana Mesonet stations." (N from the catalog; `core/stations/landing`). An unknown `?s=` adds "There is no
   station “x”. Choose another below." (a status).
 - **Search:** the kit's place search on its search box (`partials/picker/search.html` + `ui/picker/stationSearch.ts`, shared):
@@ -611,12 +611,12 @@ Each is framework-free CSS on kit tokens plus a small vanilla `init…({…})`; 
 
 | Token | rem | Use |
 |---|---|---|
-| `--fs-xs` | 0.75 | labels, captions, badges, tab-bar labels |
-| `--fs-sm` | 0.875 | card text, secondary lines, section links |
-| `--fs-md` | 1 | body, **inputs on touch** (≥ 16 px stops iOS zoom) |
-| `--fs-lg` | 1.25 | section titles |
-| `--fs-xl` | 1.75 | tile values, station name |
-| `--fs-2xl` | 2.5 | the hero value |
+| `--dash-fs-xs` | 0.75 | labels, captions, badges, tab-bar labels |
+| `--dash-fs-sm` | 0.875 | card text, secondary lines, section links |
+| `--dash-fs-md` | 1 | body, **inputs on touch** (≥ 16 px stops iOS zoom) |
+| `--dash-fs-lg` | 1.25 | section titles |
+| `--dash-fs-xl` | 1.75 | tile values, station name |
+| `--dash-fs-2xl` | 2.5 | the hero value |
 
 New CSS uses only these; ag.css, downloader.css and charts.css are on them. `now-cards.css` (the wind rose
 pane and photo dialog carried over from the Latest cards) still uses older sizes.

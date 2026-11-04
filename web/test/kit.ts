@@ -19,8 +19,11 @@ import type { Mco } from '../src/types/mco'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const CACHE = join(ROOT, 'node_modules', '.cache', 'mco-kit')
 
-/** The kit scripts the tests evaluate, in load order (photos and places need core; summary needs nothing). */
-const FILES = ['core/mco-core.js', 'photos/mco-photos.js', 'places/mco-places.js', 'summary/mco-summary.js']
+/**
+ * The kit scripts the tests evaluate, in load order (photos and places need core; summary and map need
+ * nothing). Only map's pure parts run here (`MCO.map.colocation.bucketKey`); MapLibre never loads.
+ */
+const FILES = ['core/mco-core.js', 'photos/mco-photos.js', 'places/mco-places.js', 'summary/mco-summary.js', 'map/mco-map.js']
 
 interface KitFile {
   path: string

@@ -1,6 +1,6 @@
 /* About (partials/about/*, partials/sheets/about-*.html): one column on phones; from tablet up two
    (details + map | rows + notes). The readings and sensor changes open in modal sheets, where they
-   scroll inside .about-scroll, never the page sideways. Kit tokens, the --fs-* scale and the shared
+   scroll inside .about-scroll, never the page sideways. Kit tokens, the --dash-fs-* scale and the shared
    spacing tokens (--gap, --gap-tight, --card-pad, --card-radius) only. */
 
 .about-grid, .about-col { display: grid; gap: var(--gap, 12px); grid-template-columns: minmax(0, 1fr); align-items: start; }
@@ -8,7 +8,7 @@
   .about-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-.about-message { margin: 0; font-size: var(--fs-sm); color: var(--text-secondary); }
+.about-message { margin: 0; font-size: var(--dash-fs-sm); color: var(--text-secondary); }
 
 /* List cards pad 0: their rows and blocks carry --card-pad, so a row's hover fill and hairline
    run edge to edge without negative margins. */
@@ -20,7 +20,7 @@
 .about-dl dt { color: var(--text-muted); }
 /* Values carry no-break spaces inside a coordinate or a measure (core/about/details.ts). */
 .about-dl dd { margin: 0; color: var(--text-primary); overflow-wrap: break-word; }
-.about-id { margin-left: 8px; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); }
+.about-id { margin-left: 8px; font-family: var(--font-mono); font-size: var(--dash-fs-xs); color: var(--text-muted); }
 
 /* Rows (one-pager, readings, sensor changes): full-width lines in a padless card, a hairline between. */
 .about-row {
@@ -41,7 +41,7 @@
 .about-map { overflow: hidden; }
 .about-map-frame { height: 16rem; }
 @media (min-width: 641px) and (min-height: 561px) { .about-map-frame { height: 20rem; } }
-.about-hint { display: none; margin: 0; padding: var(--gap, 12px) var(--card-pad, 16px); font-size: var(--fs-xs); color: var(--text-muted); }
+.about-hint { display: none; margin: 0; padding: var(--gap, 12px) var(--card-pad, 16px); font-size: var(--dash-fs-xs); color: var(--text-muted); }
 @media (hover: none) { .about-hint { display: block; } }
 
 /* The sheets: only the labelled region scrolls (the sticky table head stays put). */
@@ -54,10 +54,10 @@
 .about-scroll { --fade-pad: 0px; --fade-gap: 0px; }
 
 /* Current readings. */
-.about-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.about-table { width: 100%; border-collapse: collapse; font-size: var(--dash-fs-sm); }
 .about-table + .about-table { margin-top: var(--card-pad, 16px); }
-.about-table caption { text-align: left; padding: 0 0 var(--gap-tight, 4px); font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); }
-.about-table thead th { position: sticky; top: 0; background: var(--bg-surface); font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); text-align: left; padding: var(--gap-tight, 4px) 8px; border-bottom: 1px solid var(--border); }
+.about-table caption { text-align: left; padding: 0 0 var(--gap-tight, 4px); font-size: var(--dash-fs-xs); font-weight: 600; color: var(--text-muted); }
+.about-table thead th { position: sticky; top: 0; background: var(--bg-surface); font-size: var(--dash-fs-xs); font-weight: 600; color: var(--text-muted); text-align: left; padding: var(--gap-tight, 4px) 8px; border-bottom: 1px solid var(--border); }
 .about-table thead th:last-child { text-align: right; }
 .about-table tbody th { font-weight: 400; color: var(--text-secondary); text-align: left; padding: 8px; overflow-wrap: anywhere; }
 .about-table td { font-family: var(--font-mono); color: var(--text-primary); text-align: right; padding: 8px; white-space: nowrap; }
@@ -73,21 +73,21 @@
    measures under the sensor; rows inset 8 px like the readings table. */
 .about-days, .about-changes { list-style: none; margin: 0; padding: 0; }
 .about-days > li + li { margin-top: var(--gap, 12px); }
-.about-day { margin: 0 0 var(--gap-tight, 4px); padding: 0 8px; font-size: var(--fs-sm); font-weight: 600; color: var(--text-primary); }
+.about-day { margin: 0 0 var(--gap-tight, 4px); padding: 0 8px; font-size: var(--dash-fs-sm); font-weight: 600; color: var(--text-primary); }
 .about-changes li {
   display: grid; grid-template-columns: 5rem minmax(0, 1fr); align-items: baseline; gap: 2px var(--gap, 12px);
-  padding: 8px; border-top: 1px solid var(--border); font-size: var(--fs-sm);
+  padding: 8px; border-top: 1px solid var(--border); font-size: var(--dash-fs-sm);
 }
 .about-changes .dash-badge { justify-content: center; }
 .about-sensor { color: var(--text-primary); text-wrap: pretty; }
-.about-measures { grid-column: 2; font-size: var(--fs-xs); color: var(--text-secondary); text-wrap: pretty; }
+.about-measures { grid-column: 2; font-size: var(--dash-fs-xs); color: var(--text-secondary); text-wrap: pretty; }
 
 /* About the data: prose. */
-.about-notes .dash-card-title { font-size: var(--fs-md); color: var(--text-primary); }
-.about-notes-list { margin: 0; font-size: var(--fs-sm); }
+.about-notes .dash-card-title { font-size: var(--dash-fs-md); color: var(--text-primary); }
+.about-notes-list { margin: 0; font-size: var(--dash-fs-sm); }
 .about-notes-list dt { font-weight: 600; color: var(--text-primary); }
 .about-notes-list dd { margin: var(--gap-tight, 4px) 0 var(--gap, 12px); color: var(--text-secondary); line-height: 1.5; max-width: 65ch; }
-.about-subtitle { margin: var(--gap-tight, 4px) 0 8px; font-size: var(--fs-sm); font-weight: 600; color: var(--text-secondary); }
+.about-subtitle { margin: var(--gap-tight, 4px) 0 8px; font-size: var(--dash-fs-sm); font-weight: 600; color: var(--text-secondary); }
 .about-api { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-tight, 4px) var(--card-pad, 16px); }
 /* On touch each link is a 40 px row (card.css), so wrapped rows would sit far apart: list them one per row. */
 @media (hover: none) { .about-api { flex-direction: column; align-items: flex-start; gap: 0; } }

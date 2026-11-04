@@ -8,6 +8,73 @@ What web-next deliberately does differently, in three parts:
 
 Each entry gives the old behaviour, the new one, and why. Add an entry in the same PR as the change.
 
+## Family conformance (kit 0.21.0, 2026-11)
+
+The 2026-11-03 family audit set one set of rules for every MCO tool (kit HOUSE-STYLE §1, §3, §6, §7 at
+0.21.0). The dashboard takes the ones that apply to it; the map-tool rules about the phone bar and the
+station sheet do not (it is a station app, not a map tool), and the entries below say what stays different.
+
+### Station markers: one marker, colocated sites as a count badge (2026-11)
+- **Before:** each network its own shape and colour (HydroMet a filled blue dot, AgriMet a hollow orange dot,
+  Cooperator a teal ring), a legend row per network, and a co-located site drawn as the first network's dot
+  inside an orange ring. Stations were merged only when their latitude and longitude were exactly equal, and a
+  second click on a co-located marker cycled to its next station.
+- **New:** every station is the kit's `MCO.map.stationPaint()` (the HydroMet blue with a `--dot-stroke` edge;
+  networks are not encoded). Grouping, the count badge and the spider are the kit's `MCO.map.colocation`:
+  stations whose coordinates agree to 4 decimals (about 11 m) are one marker with a count badge ("2"), and
+  hovering it (or tapping it, on touch) fans the stations out; a foot selects that station. The anchor is the
+  HydroMet station (`core/map` `stationRank`). The legend has one Station row, a Co-located stations row (the
+  badge, and how many sites carry one) and the selection ring; no network rows. The selection, focus and hit
+  rings are the kit's `selectionPaint`, `focusPaint` and `hitPaint`. `core/downloader/stationGroups.ts` (the
+  exact-equality grouping) is gone.
+- **Kept, and different from the kit demo:**
+  - **The selection ring sits on the site** (`siteSelected`) whenever any of its stations is selected, and on the
+    foot while the spider is open. The kit demo rings only the selected station itself, so a selected AgriMet
+    station at a shared site would show no ring until its spider opened; the locator maps frame the selected
+    station and need the ring.
+  - **On touch, the first tap on a stacked site only fans it out** (`anchorClick: 'spider'`). Selecting a station
+    here navigates (the picker closes), so the second station at the site has to be reachable before anything is
+    selected. On a mouse, hovering fans it out, so a click selects as the kit's default does.
+  - **The hover popup stays the dashboard's** `maplibregl.Popup` (it also shows for the keyboard twin's focus, and
+    lists every station at a site with its network and elevation); over a stacked site it is offset clear of the
+    spider's top foot. The kit's `initCursorTooltip` has no focus path.
+- **Why:** 2026-11-03 family decision 4 (no network encoding on markers; one colocated rule family-wide), and the
+  4-decimal bucket keeps a pair a few metres apart together where exact equality split it.
+
+### Header controls: the kit's one control height (2026-11)
+- **Before:** the station button and the ⋯ button were 40 px at every width; the section track was 38 px (32 px
+  links) on a mouse.
+- **New:** the station button, the ⋯ button and the section track stand `var(--control-h)`: 34 px with a mouse,
+  40 px on touch. On touch the section links fill the track, so each stays a 40 px target.
+- **Why:** 2026-11-03 family decision 10 (kit 0.21.0 `--control-h`), one control height in every bar.
+
+### Type scale: app-named tokens; the brand title is the kit's again (2026-11)
+- **Before:** `ui/layout/type.css` redefined the kit's own `--fs-xs` … `--fs-2xl` at `:root`, so every kit rule
+  that reads them grew too (the navbar brand title was 14 px, not the kit's 12 px).
+- **New:** the dashboard's scale is `--dash-fs-*` (same six values, plus `--dash-fs-display-*`). The kit's
+  tokens are untouched. Measured before/after on the landing, Now, Charts, About and a variable page at 1440 and
+  390 px: the brand title (14 → 12 px) is the only font size that changed.
+- **Why:** the kit's `--fs-*` scale is the kit's (HOUSE-STYLE §2 "Type & spacing scale"); redefining it in an app resizes
+  kit chrome, and the 2026-11 audit found the dashboard's brand title off the family's 12 px. The dashboard keeps its
+  own, larger scale for its own rules (DESIGN.md "Type scale").
+
+### Head: canonical and card URLs on the install address; subtitle without a period (2026-11)
+- **Before:** `canonical`, `og:url`, `og:image` and `twitter:image` pointed at the GitHub Pages copy
+  (`mt-climate-office.github.io/mesonet-dashboard/`); the brand subtitle ended with a period.
+- **New:** all four point at `https://mesonet.climate.umt.edu/dash/next/` (the card image is the same file,
+  served there by the Caddy proxy). The subtitle reads "A service of the Montana Climate Office", as in the kit.
+- **Why:** kit `snippets/head.html` (canonical on the production host, never github.io) and the kit lockup.
+
+### What stays different from the map tools (2026-11)
+- **The phone header keeps the ⋯ menu** (Share, Theme, Units, Help, Feedback) and the bottom tab bar. It does
+  not use the kit's compact ☰ bar (`data-rail="compact"`): the owner kept the ⋯ menu for the dashboard
+  in the 2026-11-03 family decisions (decision 1).
+- **No `MCO.initSheet` station sheet and no `?station=`:** a station here is the whole page (`?s=<id>`), not a
+  detail over a map, so the station-sheet and `flyToAndOpen` rules do not apply. The family audit lists the
+  dashboard with its `s` parameter and no map checks.
+- **The section track and the station button are dashboard controls** (`.dash-sections`, `.dash-switcher`), not
+  `.seg-btns` / `.nav-btn`; they take `--control-h` instead (above).
+
 ## Redesign 2026-10: three places, chart first
 
 ### Redesign 2026-10 (summary)
@@ -743,7 +810,7 @@ Every legacy data color is replaced by a role in `core/palette/roles.ts` (house 
 | AG-PS-001 | Depth colors as LDP-011 | `depthStyle()` |
 | AG-ANN-003 | Past years YlGnBu 0.15–0.75 (legacy), Viridis (web/); current year black, width 3 | `yearColors(n, theme)`: last year and the year before in their own batlow colors, older years grey, fainter with age; current year `ANNUAL_CURRENT` = `--text-primary`, width 3 |
 | DL-017 | Preview lines black | `previewColor(i, theme)`: Tol bright cycle (light keeps blue, green, red, purple) |
-| DL-018 | AgriMet `#00cc96`, HydroMet `#7A7AFB`, co-located `#FB7A7A`, selected `#FFD700` | `NETWORK_COLOR`: HydroMet `#4477AA` circle, AgriMet `#CC6622` (light; `#EE7733` dark/HC) hollow circle, Cooperator `#009988` ring; selected `SELECTION_RING` = `--selection-ring`. A co-located site is one marker, inner dot the first network and outer ring the second ("Maps") |
+| DL-018 | AgriMet `#00cc96`, HydroMet `#7A7AFB`, co-located `#FB7A7A`, selected `#FFD700` | (Superseded 2026-11: every station the kit's `stationPaint`, colocated sites a count badge; see "Station markers".) `NETWORK_COLOR`: HydroMet `#4477AA` circle, AgriMet `#CC6622` (light; `#EE7733` dark/HC) hollow circle, Cooperator `#009988` ring; selected `SELECTION_RING` = `--selection-ring`. A co-located site is one marker, inner dot the first network and outer ring the second ("Maps") |
 | (Latest map, `web/src/lib/networks.ts`) | HydroMet `#7A7AFB`, AgriMet `#00cc96`, Cooperator `#FB7A7A`, selected `#FFD700` | Same as DL-018 |
 
 ### Fonts, chrome and themes
@@ -1514,7 +1581,8 @@ and DL-018 above.
   replace `public/mt_counties.geojson`. CARTO's own `boundary_county` layer is
   hidden. The Downloader draws counties heavier, as legacy emphasised them; the
   Latest map uses the kit default.
-- **Marker colours and shapes (DL-018).** The legacy colours (AgriMet
+- **Marker colours and shapes (DL-018)** (superseded 2026-11 by "Station markers: one marker, colocated
+  sites as a count badge": one uniform marker and the kit's count badge). The legacy colours (AgriMet
   `#00cc96`, HydroMet `#7A7AFB`, co-located `#FB7A7A`, selected `#FFD700`) are
   replaced by `core/palette` `NETWORK_COLOR` and `NETWORK_SHAPE`. HydroMet is a
   filled dot, AgriMet a hollow dot and Cooperator a thin ring, so the network
@@ -1523,7 +1591,7 @@ and DL-018 above.
   palette has no co-located colour). The selected station gets a
   `--selection-ring` ring. The legend is a kit `.mco-panel` with text labels;
   it collapses on phones.
-- **Clicking a co-located marker** selects its first station (alphabetical, as
+- **Clicking a co-located marker** (superseded 2026-11: the kit's spider; see "Station markers") selects its first station (alphabetical, as
   in legacy). Clicking it again selects the next one, so a pointer can reach
   every station at the site. Legacy always took the first.
 - **Popup.** Hovering a marker lists every station at that point with its name,
