@@ -19,6 +19,6 @@
   max-width: min(24rem, 100%); padding: 0.5rem 0.75rem;
   background: var(--bg-raised); border: 1px solid var(--border); border-radius: var(--radius-md);
   box-shadow: var(--shadow);
-  font-size: var(--fs-sm); line-height: 1.45; color: var(--text-secondary);
+  font-size: var(--dash-fs-sm); line-height: 1.45; color: var(--text-secondary);
 }
 .dash-toggletip-tip strong { color: var(--text-primary); }

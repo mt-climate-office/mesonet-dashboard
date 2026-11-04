@@ -9,9 +9,9 @@
   min-height: calc(100dvh - var(--chrome-h, 52px) - var(--tabbar-h, 0px));
 }
 .landing-head { display: flex; flex-direction: column; gap: var(--gap-tight); }
-.landing-title { font-size: var(--fs-xl); font-weight: 700; line-height: 1.15; color: var(--text-primary); }
-.landing-line { font-size: var(--fs-md); color: var(--text-secondary); }
-.landing-note { font-size: var(--fs-sm); color: var(--text-primary); }
+.landing-title { font-size: var(--dash-fs-xl); font-weight: 700; line-height: 1.15; color: var(--text-primary); }
+.landing-line { font-size: var(--dash-fs-md); color: var(--text-secondary); }
+.landing-note { font-size: var(--dash-fs-sm); color: var(--text-primary); }
 .landing-note:empty { display: none; }
 
 /* The search: wider and a step taller than in the picker, and the results list sits over the map. */
@@ -33,7 +33,7 @@
     align-content: start; column-gap: var(--gap);
   }
   .landing-head, .landing-search { grid-column: 1; }
-  .landing-title { font-size: var(--fs-lg); }
-  .landing-line { font-size: var(--fs-sm); }
+  .landing-title { font-size: var(--dash-fs-lg); }
+  .landing-line { font-size: var(--dash-fs-sm); }
   .landing-map { grid-column: 2; grid-row: 1 / span 2; min-height: 0; }
 }

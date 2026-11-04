@@ -8,7 +8,7 @@
 .ctl-legend,
 .ctl-label {
   display: block;
-  font-size: var(--fs-xs); font-weight: 600;
+  font-size: var(--dash-fs-xs); font-weight: 600;
   color: var(--text-secondary);
 }
 .ctl-legend { margin-bottom: 0.35rem; }
@@ -22,7 +22,7 @@
 
 .ctl-input {
   box-sizing: border-box;
-  font: inherit; font-size: var(--fs-sm);
+  font: inherit; font-size: var(--dash-fs-sm);
   min-height: var(--ctl-h); padding: 5px 9px;
   color: var(--text-primary); background: var(--input-bg);
   border: 1px solid var(--ctrl-border); border-radius: var(--radius-md);
@@ -72,10 +72,10 @@
   background-repeat: no-repeat;
 }
 
-.ctl-error { font-size: var(--fs-xs); color: var(--text-primary); }
+.ctl-error { font-size: var(--dash-fs-xs); color: var(--text-primary); }
 .ctl-error:not(:empty) { margin-top: 0.35rem; }
 .ctl-error:not(:empty)::before { content: "\26A0\FE0E  " / ""; }
-.ctl-note { font-size: var(--fs-xs); color: var(--text-muted); }
+.ctl-note { font-size: var(--dash-fs-xs); color: var(--text-muted); }
 
 /* ── Search (the kit's MCO.initSearchBox, ui/picker/stationSearch.ts) ───── */
 /* The field, its × and the popup are the dashboard's; the kit renders the rows inside the popup
@@ -87,7 +87,7 @@
   position: absolute; right: 2px; top: 50%; transform: translateY(-50%);
   width: 30px; height: 30px;
   border: 0; border-radius: var(--radius-sm); background: none;
-  color: var(--text-secondary); font: inherit; font-size: var(--fs-md); line-height: 1;
+  color: var(--text-secondary); font: inherit; font-size: var(--dash-fs-md); line-height: 1;
   cursor: pointer;
 }
 .ctl-clear:hover { background: var(--accent-hover); color: var(--text-primary); }
@@ -103,22 +103,22 @@
   position: sticky; top: 0;
   padding: 6px 10px 3px;
   background: var(--bg-surface); color: var(--text-muted);
-  font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: var(--dash-fs-xs); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
 }
 .ctl-combobox-popup .mco-search-option {
   align-items: center;
   min-height: 30px; padding: 4px 10px; border-radius: 0;
-  font-size: var(--fs-sm);
+  font-size: var(--dash-fs-sm);
 }
 .ctl-combobox-popup .mco-search-option.is-current > :first-child::before { content: "\2713  " / ""; }
-.ctl-combobox-popup .mco-search-meta { font-size: var(--fs-xs); }
-.ctl-combobox-popup .mco-search-note { padding: 6px 10px; font-size: var(--fs-xs); color: var(--text-muted); }
+.ctl-combobox-popup .mco-search-meta { font-size: var(--dash-fs-xs); }
+.ctl-combobox-popup .mco-search-note { padding: 6px 10px; font-size: var(--dash-fs-xs); color: var(--text-muted); }
 
 /* ── Chips (multi-toggle and removable) ─────────────────────────────────── */
 .ctl-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
 .ctl-chips > .ctl-legend { width: 100%; margin-bottom: 0; }
 /* kit-override: compact .nav-btn for dense chip rows (34px → 28px; touch is restored below). */
-.ctl-chip { min-height: 28px; padding: 3px 10px; border-radius: 999px; font-size: var(--fs-xs); }
+.ctl-chip { min-height: 28px; padding: 3px 10px; border-radius: 999px; font-size: var(--dash-fs-xs); }
 /* A check on pressed chips: state is not carried by color alone. */
 .ctl-chip[aria-pressed="true"]::before { content: "\2713" / ""; }
 .ctl-chip-list { display: flex; flex-wrap: wrap; gap: 0.35rem; list-style: none; }
@@ -146,7 +146,7 @@
 .ctl-check {
   display: flex; align-items: center; gap: 0.45rem;
   min-height: 28px;
-  color: var(--text-primary); font-size: var(--fs-sm);
+  color: var(--text-primary); font-size: var(--dash-fs-sm);
   cursor: pointer;
 }
 .ctl-check input { width: 16px; height: 16px; accent-color: var(--accent-line); cursor: pointer; }
@@ -155,7 +155,7 @@
 /* ── Segmented (radio fieldset in kit .seg-btns) ─────────────────────────── */
 /* kit-override: the kit's .seg-btn is a 30 px toolbar control; as a form control it takes --ctl-h, like
    the fields beside it, and their text size. */
-.ctl-seg .seg-btn { box-sizing: border-box; height: auto; min-height: var(--ctl-h); font-size: var(--fs-sm); }
+.ctl-seg .seg-btn { box-sizing: border-box; height: auto; min-height: var(--ctl-h); font-size: var(--dash-fs-sm); }
 /* The radio covers its label, invisibly, so the kit's universal :focus-visible
    ring lands on the whole segment and clicks anywhere hit the input. */
 .ctl-seg .seg-btn { position: relative; }
@@ -182,7 +182,7 @@
 .ctl-range { --thumb: 18px; }
 .ctl-range-values { display: flex; justify-content: space-between; gap: 0.75rem; }
 .ctl-range-values .ctl-label { display: inline-flex; gap: 0.35rem; align-items: baseline; }
-.ctl-range-value { font-family: var(--font-ui); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text-primary); }
+.ctl-range-value { font-family: var(--font-ui); font-size: var(--dash-fs-xs); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text-primary); }
 .ctl-range-track { position: relative; height: 28px; margin-top: 0.25rem; }
 .ctl-range-track::before {
   content: ''; position: absolute; top: 50%; height: 4px; margin-top: -2px;
@@ -215,8 +215,8 @@
   :root { --ctl-h: 40px; }
   .ctl-chip, .ctl-combobox-popup .mco-search-option, .ctl-check { min-height: 40px; }
   /* ≥ 16 px text in fields: iOS Safari zooms the page into any smaller focused input. */
-  .ctl-input { font-size: var(--fs-md); }
-  .ctl-seg .seg-btn { font-size: var(--fs-md); } /* the same text size as the fields beside them */
+  .ctl-input { font-size: var(--dash-fs-md); }
+  .ctl-seg .seg-btn { font-size: var(--dash-fs-md); } /* the same text size as the fields beside them */
   .ctl-clear { width: 40px; height: 40px; }
   .ctl-check input { width: 20px; height: 20px; }
   .ctl-range { --thumb: 26px; }

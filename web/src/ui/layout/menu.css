@@ -37,7 +37,7 @@
   width: 100%; min-height: 40px; padding: 0.5rem 0.75rem;
   border: 0; border-radius: var(--radius-md);
   background: none; color: var(--text-primary);
-  font: inherit; font-size: var(--fs-sm); text-align: left; text-decoration: none;
+  font: inherit; font-size: var(--dash-fs-sm); text-align: left; text-decoration: none;
   cursor: pointer; white-space: nowrap; flex-shrink: 0;
 }
 .dash-menu-item:hover { background: var(--accent-hover); }

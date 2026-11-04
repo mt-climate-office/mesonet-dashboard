@@ -9,7 +9,7 @@
 .picker-search { --clear-w: 32px; --near-w: 6.2rem; }
 .picker-search .ctl-combobox-field { align-items: center; }
 .picker-search .ctl-input {
-  min-height: 44px; font-size: var(--fs-md);
+  min-height: 44px; font-size: var(--dash-fs-md);
   padding-left: 2.4rem; padding-right: calc(var(--near-w) + 0.5rem);
   border-radius: 999px;
 }
@@ -23,7 +23,7 @@
   height: 34px; padding: 0 0.7rem;
   border: 0; border-radius: 999px;
   background: var(--accent-hover); color: var(--accent-line);
-  font: inherit; font-size: var(--fs-sm); font-weight: 600; white-space: nowrap;
+  font: inherit; font-size: var(--dash-fs-sm); font-weight: 600; white-space: nowrap;
   cursor: pointer;
 }
 .picker-near svg { stroke: currentColor; }
@@ -35,8 +35,8 @@
 }
 
 .picker-group { display: flex; flex-direction: column; gap: calc(2 * var(--gap-tight)); }
-.picker-group-title { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
-.picker-note { font-size: var(--fs-sm); color: var(--text-muted); }
+.picker-group-title { font-size: var(--dash-fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.picker-note { font-size: var(--dash-fs-sm); color: var(--text-muted); }
 
 .picker-list { list-style: none; display: flex; flex-direction: column; }
 .picker-row {
@@ -44,7 +44,7 @@
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
   padding: 0.4rem 0.6rem;
   background: none; border: 0; border-radius: var(--radius-md);
-  color: var(--text-primary); font: inherit; font-size: var(--fs-sm); text-align: left;
+  color: var(--text-primary); font: inherit; font-size: var(--dash-fs-sm); text-align: left;
   cursor: pointer;
 }
 .picker-row:hover { background: var(--accent-hover); }
@@ -56,7 +56,7 @@
   background: var(--accent-line);
 }
 .picker-row-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.picker-row-meta { flex-shrink: 0; font-size: var(--fs-xs); color: var(--text-muted); }
+.picker-row-meta { flex-shrink: 0; font-size: var(--dash-fs-xs); color: var(--text-muted); }
 
 /* Search results read like the rows above: 44 px, the network (or a place's kind) in the UI font,
    not the kit search's dense mono codes (ui/controls/controls.css). */
@@ -69,7 +69,7 @@
   width: 100%; min-height: 44px; padding: 0.4rem 0.6rem;
   border: 0; border-radius: var(--radius-md);
   background: none; color: var(--accent-line);
-  font: inherit; font-size: var(--fs-sm); font-weight: 600; text-align: left;
+  font: inherit; font-size: var(--dash-fs-sm); font-weight: 600; text-align: left;
   cursor: pointer;
 }
 .picker-browse-toggle:hover { background: var(--accent-hover); }

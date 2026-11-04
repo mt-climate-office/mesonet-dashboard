@@ -164,7 +164,7 @@ falls short.
 ## Tokens
 
 ### Type scale — new
-- **Here:** `--fs-xs .75 · --fs-sm .875 · --fs-md 1 · --fs-lg 1.25 · --fs-xl 1.75 · --fs-2xl 2.5` rem (`ui/layout/type.css`).
+- **Here:** `--dash-fs-xs .75 · --dash-fs-sm .875 · --dash-fs-md 1 · --dash-fs-lg 1.25 · --dash-fs-xl 1.75 · --dash-fs-2xl 2.5` rem (`ui/layout/type.css`). App-named since 2026-11: the kit shipped its own `--fs-*` (0.9.0, smaller values its components read), and redefining those at `:root` resized the kit's chrome.
 - **Why:** the kit sets sizes per component (0.55–1.05 rem, nine distinct values in this app alone).
 - **Proposed:** kit `--fs-*` tokens (theme-independent, one `:root` block), used by the kit's own components over time.
 
@@ -177,7 +177,7 @@ falls short.
 
 ### Display numerals — shipped (mco-web-style#36)
 - **Done in 0.10.0:** `--font-display-num` + `.mco-num-display`. The app's `.num-display` is gone; `ui/layout/card.css`
-  keeps only the display sizes (`--fs-display-hero`, `--fs-display-tile`).
+  keeps only the display sizes (`--dash-fs-display-hero`, `--dash-fs-display-tile`).
 
 ### Breakpoints — gap
 - **Here:** the desktop edge `(min-width: 1060px)` is written in JS (`ui/picker/stationPicker.ts`) and CSS.

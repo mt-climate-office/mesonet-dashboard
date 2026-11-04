@@ -34,12 +34,12 @@ main:focus { outline: none; } /* focus target for the skip link only */
   border-radius: var(--radius-lg);
   color: var(--text-secondary);
 }
-.tab-placeholder h2 { font-size: var(--fs-md); color: var(--text-primary); margin-bottom: 0.25rem; }
+.tab-placeholder h2 { font-size: var(--dash-fs-md); color: var(--text-primary); margin-bottom: 0.25rem; }
 
 .app-footer {
   padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
   border-top: 1px solid var(--border);
-  font-size: var(--fs-xs);
+  font-size: var(--dash-fs-xs);
   color: var(--text-muted);
   text-align: center;
 }
@@ -66,7 +66,7 @@ main:focus { outline: none; } /* focus target for the skip link only */
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent-line);
   border-radius: var(--radius-md);
-  font-size: var(--fs-sm);
+  font-size: var(--dash-fs-sm);
   color: var(--text-secondary);
   line-height: 1.5;
 }
@@ -84,7 +84,7 @@ main:focus { outline: none; } /* focus target for the skip link only */
   align-items: center;
   gap: 0.4rem;
   margin-bottom: 0.3rem;
-  font-size: var(--fs-xs);
+  font-size: var(--dash-fs-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;

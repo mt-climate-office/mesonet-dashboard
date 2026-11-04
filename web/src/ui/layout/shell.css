@@ -41,7 +41,7 @@
   padding: 0.3rem 0.6rem 0.3rem 0.7rem;
   border: 0; border-radius: 999px;
   background: none; color: var(--text-primary);
-  font: inherit; font-size: var(--fs-md); font-weight: 600;
+  font: inherit; font-size: var(--dash-fs-md); font-weight: 600;
   cursor: pointer; transition: var(--transition);
 }
 .dash-switcher:hover, .dash-switcher[aria-expanded="true"] { background: var(--accent-hover); }
@@ -52,12 +52,12 @@
   background: var(--bg-raised);
 }
 .dash-switcher-caret { flex-shrink: 0; stroke: var(--text-muted); }
-@media (min-width: 641px) { .dash-switcher { font-size: var(--fs-lg); } }
+@media (min-width: 641px) { .dash-switcher { font-size: var(--dash-fs-lg); } }
 
 /* The region that view transitions cross-fade (ui/layout/transition.css). */
 .dash-section-host { view-transition-name: dash-section; min-width: 0; }
 
 .dash-section-head { margin-bottom: var(--gap); }
-.dash-section-title { font-size: var(--fs-lg); font-weight: 600; color: var(--text-primary); }
-.dash-section-note { margin-top: var(--gap-tight); font-size: var(--fs-sm); color: var(--text-muted); }
+.dash-section-title { font-size: var(--dash-fs-lg); font-weight: 600; color: var(--text-primary); }
+.dash-section-note { margin-top: var(--gap-tight); font-size: var(--dash-fs-sm); color: var(--text-muted); }
 
