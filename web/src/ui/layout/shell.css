@@ -34,11 +34,12 @@
   .mco-navbar > .nav-divider { display: none; }
 }
 
-/* Station button: the name, large and plain, with a caret; truncates, never wraps. */
+/* Station button: the name, large and plain, with a caret; truncates, never wraps. The kit's one
+   navbar control height (--control-h: 34 px, 40 px on touch), like every header control. */
 .dash-switcher {
   display: inline-flex; align-items: center; gap: 0.3rem;
-  flex-shrink: 1; min-width: 0; max-width: min(100%, 24rem); min-height: 40px;
-  padding: 0.3rem 0.6rem 0.3rem 0.7rem;
+  flex-shrink: 1; min-width: 0; max-width: min(100%, 24rem); height: var(--control-h);
+  padding: 0 0.6rem 0 0.7rem;
   border: 0; border-radius: 999px;
   background: none; color: var(--text-primary);
   font: inherit; font-size: var(--dash-fs-md); font-weight: 600;

@@ -9,15 +9,18 @@
    aria-current="page", never colour alone: a raised pill + bolder label in the header; a pill
    behind the icon + bolder label in the tab bar. */
 
+/* The track stands --control-h (34 px; 40 px on touch), the kit's one navbar control height. On touch the
+   links fill it, so each stays a 40 px target. */
 .dash-sections {
   display: inline-flex; gap: 0.2rem; flex-shrink: 0;
-  padding: 0.2rem;
+  box-sizing: border-box; height: var(--control-h);
+  padding: 3px;
   background: var(--bg-raised);
   border-radius: 999px;
 }
 .dash-section-link {
   display: inline-flex; align-items: center;
-  min-height: 32px; padding: 0.3rem 1rem;
+  padding: 0 1rem;
   border-radius: 999px;
   color: var(--text-secondary); text-decoration: none;
   font-size: var(--dash-fs-sm); font-weight: 500; white-space: nowrap;
@@ -28,7 +31,7 @@
   background: var(--bg-surface); color: var(--text-primary); font-weight: 700;
   box-shadow: var(--card-shadow);
 }
-@media (hover: none) { .dash-section-link { min-height: 40px; } }
+@media (hover: none) { .dash-sections { padding: 0; } }
 
 .dash-tabbar { display: none; }
 

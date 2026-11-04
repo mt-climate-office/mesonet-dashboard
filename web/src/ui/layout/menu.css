@@ -1,6 +1,6 @@
 /* Menu button + menu (ui/layout/menu.ts; kit candidate .mco-menu, KIT-NOTES.md).
      .dash-menu         the positioned wrapper around the button and the panel
-     .dash-icon-btn     a round, borderless 40 px icon button (the ⋯ trigger)
+     .dash-icon-btn     a round, borderless icon button (the ⋯ trigger), --control-h square
      .dash-menu-panel   role="menu": a surface below the button, right-aligned, at --z-flyout;
                         it scrolls when taller than the room below (menu.ts sets max-height)
      .dash-menu-item    role="menuitem" (button or link); .dash-menu-state is a muted value on
@@ -11,7 +11,7 @@
 
 .dash-icon-btn {
   display: inline-grid; place-items: center;
-  width: 40px; height: 40px; padding: 0;
+  width: var(--control-h); height: var(--control-h); padding: 0;
   border: 0; border-radius: 999px;
   background: none; color: var(--text-secondary);
   cursor: pointer; transition: var(--transition);
