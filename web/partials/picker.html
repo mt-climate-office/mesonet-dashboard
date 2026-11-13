@@ -1,25 +1,29 @@
 <!-- Station picker (x-data="stationPicker", ui/picker/stationPicker.ts): search first (stations, and
-     places while typing; the "Near me" chip inside the field; Near me's or a picked place's stations
-     below), recents, then "Browse on the map",
-     which opens the network chips and the station map full screen (a dialog). A drawer (.dash-drawer, inline ≥ 1060 px /
-     overlay, also on short, wide screens) or, ≤ 640 px wide, a bottom sheet (.dash-sheet); the class
-     follows the viewport.
-     The head's handle button is the sheet's drag/toggle target and is hidden in drawer mode. -->
+     places while typing; the "Near me" chip inside the field), then a scrolling body: Near me's or a picked
+     place's stations, recents, then "Browse on the map", which opens the network chips and the station map
+     full screen (a dialog). One structure in three presentations (.dash-drawer[data-presentation], set by
+     ui/layout/drawer.ts): inline ≥ 1060 px, an overlay drawer on tablets, and a full-height panel under the
+     header on phones (MCO.viewport.isCompact(): ≤ 640 px wide or ≤ 560 px tall). The search sits outside
+     the scrolling body, so it stays pinned while the list or the body scrolls. A labelled dialog while modal,
+     but not aria-modal: the header stays live (its station button, aria-expanded, closes the picker), and
+     aria-modal would tell a screen reader it is out of reach. The content and the tab bar are inert. -->
 <aside id="station-picker" class="dash-picker" x-data="stationPicker"
        x-cloak :class="panelClass()"
-       :role="modal ? 'dialog' : null" :aria-modal="modal ? 'true' : null"
+       :role="modal ? 'dialog' : null"
        aria-labelledby="picker-title" data-testid="station-picker">
   <div class="dash-panel-head">
-    <button type="button" class="dash-sheet-handle" aria-controls="station-picker"
-            aria-label="Show more of the station picker" data-testid="sheet-handle">
-      <span class="dash-sheet-grab" aria-hidden="true"></span>
-    </button>
     <h2 class="dash-panel-title" id="picker-title">Choose a station</h2>
     <button type="button" class="modal-close" aria-label="Close station picker" @click="close()" data-testid="picker-close">×</button>
   </div>
 
-  <div class="dash-panel-body">
+  <!-- Pinned: never inside a scroller (the kit's list scroll would scroll it out of view). With results open,
+       the list fills the picker under the field and the body below steps aside. -->
+  <div class="picker-search-bar">
     <!-- @include partials/picker/search.html -->
+  </div>
+
+  <div class="dash-panel-body">
+    <!-- @include partials/picker/near.html -->
 
     <section class="picker-group" aria-labelledby="picker-recent-title" x-show="recent().length" data-testid="recent-list">
       <h3 class="picker-group-title" id="picker-recent-title">Recent</h3>

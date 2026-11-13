@@ -1,0 +1,17 @@
+<!-- Under the station search (partials/picker/search.html), in the picker's scrolling body and on the
+     no-station landing: Near me's results (the chip closes the search list), or a picked place's stations,
+     headed by the place ("Gallatin County", "Near Bozeman"). -->
+<section class="picker-group" x-id="['near-title']" :aria-labelledby="$id('near-title')" x-show="near.status !== 'idle'" data-testid="near-results">
+  <h3 class="picker-group-title" :id="$id('near-title')" x-text="near.title"></h3>
+  <p class="picker-note" role="status" x-show="near.status === 'locating'">Finding your location…</p>
+  <p class="picker-note" role="status" x-show="near.status === 'finding'">Finding stations…</p>
+  <p class="picker-note" role="status" x-show="near.status === 'denied'" data-testid="near-denied">Location access is off for this site. Search by name or pick a station on the map.</p>
+  <p class="picker-note" role="status" x-show="near.status === 'error'">Your location could not be found. Search by name or pick a station on the map.</p>
+  <ul class="picker-list" x-show="near.status === 'ready'" data-testid="near-list">
+    <template x-for="r in near.rows" :key="r.station">
+      <li><button type="button" class="picker-row" @click="choose(r.station)" :aria-current="r.station === $store.station.id ? 'true' : null">
+        <span class="picker-row-name" x-text="r.name"></span><span class="picker-row-meta" x-text="r.dist"></span>
+      </button></li>
+    </template>
+  </ul>
+</section>

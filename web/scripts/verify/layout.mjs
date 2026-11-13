@@ -5,19 +5,23 @@
  * view scrolls sideways; the Now hero through its strip is above the fold at 390×844; the header is one
  * row at 390 and 1440 (sections in it only from tablet up); the phone tab bar has three items
  * on a solid surface; the Download sheet fits the screen; the picker's map fills the screen after
- * "Browse on the map" (× and Esc return to the picker, a pick closes both) and a short handle drag never closes the sheet; the no-station landing fills the screen
+ * "Browse on the map" (× and Esc return to the picker, a pick closes both); on phones (390×844, 844×390, 320×568) the
+ * picker is a full-width panel under the live header whose search field stays visible above a modelled keyboard
+ * with results under it, while the tablet and desktop keep their drawers; the no-station landing fills the screen
  * with its map (no picker over it) on every section; with reduced motion a section change
  * starts no view transition; the big-screen dashboard shows only with room for it (2560 × 1440, 1920 × 1080
  * without the station drawer; not 1920 × 900 or 1440), fills the screen without scrolling, its two stacks'
  * rows aligned (also after a resize), and a panel's name opens its chart on the same window and interval (Back returns). Run via `npm run verify`.
  */
-import { DL_QUERY, VIEWPORTS, WIDE, check, finish, open, start } from './lib.mjs'
+import { DL_QUERY, LANDSCAPE, SMALL, TABLET, VIEWPORTS, WIDE, animationsDone, check, finish, keyboardFor, open, setKeyboard, start } from './lib.mjs'
 
 const PHONE = VIEWPORTS[1]
+// The touch swipes below drive CDP touch events, which only Chromium has (VERIFY_ENGINE=webkit skips them).
+const CDP = process.env.VERIFY_ENGINE !== 'webkit'
 const env = await start()
 
 /* ── Touch: a vertical swipe over a chart scrolls the page ──────────────── */
-for (const [name, query, evidence, target] of [
+if (CDP) for (const [name, query, evidence, target] of [
   ['variable chart', '?s=acebozem&v=air_temp#charts', { charts: 1 }, '[data-testid="variable-chart"] canvas'],
   ['Compare', '?s=acebozem#latest', { charts: 1 }, '.cmp-chart canvas'],
   ['Ag chart', '?s=acebozem&v=gdd#charts', { charts: 1 }, '[data-testid="ag-chart-gdd"] canvas'],
@@ -48,7 +52,7 @@ for (const [name, query, evidence, target] of [
 }
 
 /* ── Touch: a sideways swipe on a variable page walks the list (core/swipe) ── */
-{
+if (CDP) {
   const { page, problems, close, rendered } = await open(env, '?s=acebozem&v=air_temp#charts', { viewport: PHONE })
   await rendered({ charts: 1 })
   const cdp = await page.context().newCDPSession(page)
@@ -319,7 +323,7 @@ for (const vp of VIEWPORTS) {
   await page.getByTestId('picker-browse').tap()
   // The fixtured station (another would need its data recorded); a pick closes everything all the same.
   await page.locator('[data-testid="picker-map"] .sr-only button[data-id="acebozem"]').evaluate((b) => b.click())
-  await page.waitForFunction(() => document.getElementById('station-picker').hidden, null, { timeout: 5000 }).catch(() => {})
+  await page.waitForFunction(() => getComputedStyle(document.getElementById('station-picker')).visibility === 'hidden', null, { timeout: 5000 }).catch(() => {})
   const pick = { ...(await state()), s: await page.evaluate(() => new URLSearchParams(location.search).get('s')), main: await page.evaluate(() => document.activeElement?.id === 'main') }
   check('[picker map 390] a pick on the map selects it and closes the map and the picker; focus to <main>', pick.s === 'acebozem' && !pick.map && !pick.picker && pick.main, JSON.stringify(pick))
   const p = await problems()
@@ -327,25 +331,94 @@ for (const vp of VIEWPORTS) {
   await close()
 }
 
-/* ── Picker sheet (390): a short upward drag on the handle that ends above the sheet keeps it open ── */
-// The touch click after the drag lands on the scrim; the sheet ignores it (ui/layout/sheet.ts).
-{
-  const { page, problems, close, rendered } = await open(env, '?s=acebozem', { viewport: PHONE })
+/* ── Picker presentations: phone panel (390×844, 844×390, 320×568), tablet overlay, desktop inline ── */
+// On a phone the picker is one full-height panel under the header (to the tab bar), full width, portrait and
+// landscape; the header stays live. Tapping the empty search opens the list without moving the field, which
+// stays outside every scroller: with a keyboard up (modelled: visualViewport shrunk) the field and the first
+// results sit above it, and walking the list with the arrow keys scrolls only the list (on kit 0.21.1 too, whose
+// MCO.initSearchBox scrolls the active row with scrollIntoView).
+for (const vp of [PHONE, LANDSCAPE, SMALL]) {
+  const label = `[picker panel ${vp.name}]`
+  const { page, problems, close, rendered } = await open(env, '?s=acebozem', { viewport: vp })
   await rendered({ filled: ['[data-testid="now-tiles"]'] })
   await page.getByTestId('station-switcher').tap()
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'), null, { timeout: 10000 })
-  const top = await page.evaluate(() => document.getElementById('station-picker').getBoundingClientRect().top)
-  const cdp = await page.context().newCDPSession(page)
-  const touch = (type, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: 135, y }] })
-  await touch('touchStart', top + 12)
-  for (let i = 1; i <= 10; i++) await touch('touchMove', top + 12 - i * 1.4)
-  await touch('touchEnd')
-  await page.waitForTimeout(500)
-  const open_ = await page.evaluate(() => !document.getElementById('station-picker').hidden)
-  check('[picker sheet 390] a short upward handle drag ending above the sheet keeps it open', open_, `top ${Math.round(top)}`)
+  await animationsDone(page)
+  const geo = () => page.evaluate(() => {
+    const R = (el) => { const r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), right: Math.round(r.right), h: Math.round(r.height) } }
+    const p = document.getElementById('station-picker')
+    const root = getComputedStyle(document.documentElement)
+    const x = p.querySelector('[data-testid="picker-close"]').getBoundingClientRect()
+    return {
+      presentation: p.dataset.presentation, open: p.classList.contains('is-open'), panel: R(p), input: R(p.querySelector('[data-testid="picker-search"] input')),
+      chromeH: Math.round(parseFloat(root.getPropertyValue('--chrome-h'))), tabbarH: Math.round(parseFloat(root.getPropertyValue('--tabbar-h')) || 0),
+      vw: innerWidth, vh: innerHeight, close: [Math.round(x.width), Math.round(x.height)],
+      navbarInert: document.querySelector('.mco-navbar').inert, contentInert: document.querySelector('.dash-content').inert,
+      scrollers: (() => { const out = []; for (let e = p.querySelector('[data-testid="picker-search"] input').parentElement; e && e !== document.body; e = e.parentElement) { const o = getComputedStyle(e).overflowY; if (o !== 'visible' && o !== 'clip') out.push(e.className || e.tagName) } return out })(),
+    }
+  })
+  const g = await geo()
+  check(`${label} a full-width panel from under the header to the tab bar (or the bottom), header live, content inert, × ≥ 44 px`,
+    g.presentation === 'panel' && g.open && g.panel.top === g.chromeH && g.panel.left === 0 && g.panel.right === g.vw && g.panel.bottom === g.vh - g.tabbarH &&
+      !g.navbarInert && g.contentInert && g.close[0] >= 44 && g.close[1] >= 44, JSON.stringify(g))
+  check(`${label} the search field is in no scroller`, g.scrollers.length === 0, JSON.stringify(g.scrollers))
+  // Tap the empty field: the list opens (the full station list), the field stays where it was.
+  await page.locator('#station-picker [data-testid="picker-search"] input').tap()
+  await page.waitForFunction(() => document.querySelectorAll('#station-picker [role="option"]').length > 3, null, { timeout: 5000 }).catch(() => {})
+  const kb = keyboardFor(vp)
+  await setKeyboard(page, kb)
+  await page.waitForFunction(() => document.documentElement.classList.contains('kb-open'), null, { timeout: 5000 }).catch(() => {})
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
+  const line = vp.height - kb
+  const reach = (line) => page.evaluate((line) => {
+    const p = document.getElementById('station-picker')
+    const input = p.querySelector('[data-testid="picker-search"] input')
+    const ir = input.getBoundingClientRect()
+    const hit = (el) => { const r = el.getBoundingClientRect(); const t = document.elementFromPoint(r.left + Math.min(r.width / 2, 40), r.top + r.height / 2); return !!t && (t === el || el.contains(t)) }
+    const opts = [...p.querySelectorAll('[role="option"]')]
+    return {
+      input: [Math.round(ir.top), Math.round(ir.bottom)], inputVisible: ir.top >= 0 && ir.bottom <= line && hit(input), focused: document.activeElement === input,
+      options: opts.length, reachable: opts.filter((o) => { const r = o.getBoundingClientRect(); return r.height > 0 && r.top >= 0 && r.bottom <= line && hit(o) }).length,
+      panelBottom: Math.round(p.getBoundingClientRect().bottom), scrollY: Math.round(scrollY),
+    }
+  }, line)
+  const k1 = await reach(line)
+  // 844×390 under this keyboard leaves 180 px, 54 of them the header: one 44 px row fits under the field, and the
+  // list scrolls to the rest. Three rows need 132 px on their own, more than the 126 px below the header.
+  const want = vp === LANDSCAPE ? 1 : 3
+  check(`${label} after tapping the empty field, keyboard up (${kb} px): the field fully visible and focused, ≥ ${want} results above the keyboard, the panel ends at it`,
+    k1.inputVisible && k1.focused && k1.options > 3 && k1.reachable >= want && k1.panelBottom <= line, JSON.stringify({ line, ...k1 }))
+  for (let i = 0; i < 10; i++) await page.keyboard.press('ArrowDown')
+  const k2 = await reach(line)
+  check(`${label} ArrowDown ×10 scrolls only the list: the field and the page stay put`,
+    k2.inputVisible && k2.input[0] === k1.input[0] && k2.scrollY === k1.scrollY, JSON.stringify({ k1, k2 }))
+  await setKeyboard(page, 0)
+  // The header stays live: the station button closes the picker.
+  await page.getByTestId('station-switcher').tap()
+  await animationsDone(page)
+  check(`${label} the station button closes it`, !(await geo()).open)
   const p = await problems()
-  check('[picker sheet drag] console + CSP clean', p.length === 0, p.slice(0, 4).join(' | '))
+  check(`${label} console + CSP clean`, p.length === 0, p.slice(0, 4).join(' | '))
   await close()
+}
+{
+  // Tablet keeps the overlay drawer (from the left, under the header); desktop the inline drawer. The header is live in both.
+  for (const [vp, want] of [[TABLET, 'overlay'], [VIEWPORTS[0], 'inline']]) {
+    const { page, close, rendered } = await open(env, '?s=acebozem', { viewport: vp })
+    await rendered({ filled: ['[data-testid="now-tiles"]'] })
+    const isOpen = () => page.evaluate(() => document.getElementById('station-picker').classList.contains('is-open'))
+    if (!(await isOpen())) await page.getByTestId('station-switcher').click()
+    await animationsDone(page)
+    const d = await page.evaluate(() => {
+      const p = document.getElementById('station-picker')
+      const r = p.getBoundingClientRect()
+      const s = p.querySelector('[data-testid="picker-search"]').getBoundingClientRect()
+      const body = p.querySelector('.dash-panel-body').getBoundingClientRect()
+      return { presentation: p.dataset.presentation, left: Math.round(r.left), w: Math.round(r.width), vw: innerWidth, navbarInert: document.querySelector('.mco-navbar').inert, searchAboveBody: s.bottom <= body.top }
+    })
+    check(`[picker ${vp.name}] the ${want} drawer at the left, the search pinned above the body, the header live`,
+      d.presentation === want && d.left === 0 && d.w < d.vw && !d.navbarInert && d.searchAboveBody, JSON.stringify(d))
+    await close()
+  }
 }
 
 /* ── Reduced motion: a section change starts no view transition ─────────── */
