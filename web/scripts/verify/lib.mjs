@@ -37,7 +37,7 @@ export const TABLET = { name: '768x1024', width: 768, height: 1024, touch: true 
 
 /**
  * Model an on-screen keyboard the way iOS Safari opens one: the layout viewport stays, `visualViewport.height`
- * shrinks by `kb` px (0 lifts it) and the visual viewport fires `resize` (ui/layout/keyboard.ts listens).
+ * shrinks by `kb` px (0 lifts it) and the visual viewport fires `resize` (the kit's MCO.keyboard listens).
  */
 export const setKeyboard = (page, kb) =>
   page.evaluate((kb) => {
