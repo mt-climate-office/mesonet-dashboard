@@ -27,8 +27,10 @@ falls short.
   and `MCO.initSheet({ panel, handle, scrim?, background, toggles?, onChange? }) → { open({state, opener, focus}), close({restoreFocus}), setState, isOpen, state, destroy }`.
 
 ### Side drawer — new
-- **Here:** `.dash-drawer[data-presentation="inline" | "overlay"]` (`ui/layout/drawer.css`),
-  `initDrawer({ panel, toggles, scrim, overlay, background, onChange })` (`ui/layout/drawer.ts`).
+- **Here:** `.dash-drawer[data-presentation="inline" | "overlay" | "panel"]` (`ui/layout/drawer.css`),
+  `initDrawer({ panel, toggles, scrim, overlay, full, background, onChange })` (`ui/layout/drawer.ts`). `panel` is the
+  overlay at full width from under the header to the tab bar or an on-screen keyboard (the station picker on
+  phones, `MCO.viewport.isCompact()`); the header stays out of the inert set in every presentation.
 - **Why:** HOUSE-STYLE §3 mentions "off-canvas drawer + `.mco-scrim`, panel at `--z-drawer`" but ships only the
   scrim and the tier. Explorer's sidebar (inline, margin slide) and its compact drawer (overlay) are two
   copies of one idea.
@@ -115,7 +117,7 @@ falls short.
 - **Here:** `.dash-sheet.dash-sheet--modal` + `.dash-sheet-scrim` (`ui/layout/sheet.css`), the same
   `initSheet`, wrapped by `x-data="sheet({ id, urlKey })"` with `openSheet(id, opener)` / `closeSheet(id)`
   (`ui/shell/sheet.ts`). The Download sheet.
-- **Why:** a task sheet (a form) must cover the chrome, unlike the picker sheet, which sits on the tab bar.
+- **Why:** a task sheet (a form) must cover the chrome, unlike the station picker, which stays under the live header.
 - **Tiers:** the panel at `--z-flyout` and its scrim at `--z-chrome-top` (later in the DOM than the navbar,
   so it covers it). No new numbers; the kit could name a `--z-modal` tier for it.
 - **Layout:** a bottom sheet on compact screens; a centred panel (`--sheet-w`, default 40 rem) from 641 px.

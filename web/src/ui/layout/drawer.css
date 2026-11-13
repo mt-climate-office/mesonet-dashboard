@@ -3,9 +3,14 @@
      inline   in the flex row beside the content; slides by margin (content
               reflows), sticky under the navbar with its own scroll
      overlay  fixed over the content at --z-drawer, with the scrim
+     panel    phones (MCO.viewport.isCompact()): the overlay at full width, from
+              under the header down to the tab bar, or to an on-screen keyboard
    Closed = slid out + visibility:hidden, the visibility flip delayed until the
    slide ends so it animates out but leaves the tab order and the AT tree.
    .no-anim suppresses the slide for the state applied on page load.
+   The header stays live over every presentation (it is not in the inert set), and an
+   overlay or panel stops above an on-screen keyboard (--kb-inset, --vv-h, .kb-open:
+   ui/layout/keyboard.ts).
    Shared panel parts (.dash-panel-head/-title/-body) are styled here and
    reused by the sheet. */
 
@@ -25,20 +30,28 @@
 }
 .dash-drawer.is-open { margin-left: 0; visibility: visible; transition: margin-left var(--drawer-ease), visibility 0s; }
 
-.dash-drawer[data-presentation="overlay"] {
+.dash-drawer:is([data-presentation="overlay"], [data-presentation="panel"]) {
   position: fixed; z-index: var(--z-drawer);
-  top: var(--chrome-h, 52px); bottom: 0; left: 0;
+  top: var(--chrome-h, 52px); bottom: var(--kb-inset, 0px); left: 0;
   height: auto; width: min(var(--drawer-w), 88vw);
   margin-left: 0;
   box-shadow: var(--shadow);
   transform: translateX(-100%);
   transition: transform var(--drawer-ease), visibility 0s linear 0.22s;
 }
-.dash-drawer[data-presentation="overlay"].is-open { transform: none; transition: transform var(--drawer-ease), visibility 0s; }
+.dash-drawer:is([data-presentation="overlay"], [data-presentation="panel"]).is-open { transform: none; transition: transform var(--drawer-ease), visibility 0s; }
 .dash-drawer.no-anim { transition: none; }
 
-/* The sheet's drag handle has no job in a drawer. */
-.dash-drawer .dash-sheet-handle { display: none; }
+/* Phones: one full-height panel under the header, the whole width, above the tab bar or an on-screen
+   keyboard, whichever is higher; with the keyboard open its height is what stays visible (--vv-h). It still
+   slides in from the left, where its opener (the station button) sits. */
+.dash-drawer[data-presentation="panel"] {
+  right: 0; width: auto;
+  bottom: max(var(--tabbar-h, 0px), var(--kb-inset, 0px));
+  border-right: 0; box-shadow: none;
+  padding-right: env(safe-area-inset-right);
+}
+.kb-open .dash-drawer[data-presentation="panel"] { bottom: auto; height: calc(var(--vv-h, 100dvh) - var(--chrome-h, 52px)); }
 
 /* Shared panel parts (drawer + sheet). */
 .dash-panel-head {

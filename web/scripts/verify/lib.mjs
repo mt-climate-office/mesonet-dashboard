@@ -3,14 +3,15 @@
  * `vite preview`, opens pages with every third-party request answered from
  * fixtures/ (deterministic; `VERIFY_RECORD=1` fetches and saves missing ones),
  * pins the clock to the recording time, and collects console errors and CSP
- * violations. `VERIFY_CHANNEL=chrome` uses installed Chrome instead of the bundled Chromium.
+ * violations. `VERIFY_CHANNEL=chrome` uses installed Chrome instead of the bundled Chromium; `VERIFY_ENGINE=webkit`
+ * uses Playwright's WebKit.
  */
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { deflateSync } from 'node:zlib'
-import { chromium } from 'playwright'
+import { chromium, webkit } from 'playwright'
 import { preview } from 'vite'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -27,6 +28,26 @@ export const VIEWPORTS = [
 ]
 /** A large desktop screen: the dashboard shows (core/dashboard `showsDashboard`). Only the scenarios that name it run here. */
 export const WIDE = { name: '2560', width: 2560, height: 1440 }
+/** A landscape phone (short: the kit's compact rule matches by height). Only the scenarios that name it run here. */
+export const LANDSCAPE = { name: '844x390', width: 844, height: 390, touch: true }
+/** The smallest phone in use (iPhone SE, 1st gen). Only the scenarios that name it run here. */
+export const SMALL = { name: '320x568', width: 320, height: 568, touch: true }
+/** A tablet (portrait): the picker is the overlay drawer. Only the scenarios that name it run here. */
+export const TABLET = { name: '768x1024', width: 768, height: 1024, touch: true }
+
+/**
+ * Model an on-screen keyboard the way iOS Safari opens one: the layout viewport stays, `visualViewport.height`
+ * shrinks by `kb` px (0 lifts it) and the visual viewport fires `resize` (ui/layout/keyboard.ts listens).
+ */
+export const setKeyboard = (page, kb) =>
+  page.evaluate((kb) => {
+    const vv = window.visualViewport
+    const h = innerHeight - kb
+    Object.defineProperty(vv, 'height', { configurable: true, get: () => h })
+    vv.dispatchEvent(new Event('resize'))
+  }, kb)
+/** The keyboard height the production audit models: 290 px in portrait, min(210, h − 110) in landscape. */
+export const keyboardFor = (vp) => (vp.width > vp.height ? Math.min(210, vp.height - 110) : 290)
 
 /* ── Network: what may go live, what is stubbed, what comes from fixtures ── */
 
@@ -159,11 +180,14 @@ export async function start() {
   if (RECORD) mkdirSync(FIX_DIR, { recursive: true })
   const server = await preview({ root: ROOT, logLevel: 'silent', preview: { port: 0, host: '127.0.0.1' } })
   const base = server.resolvedUrls.local[0]
-  const browser = await chromium.launch({
-    channel: process.env.VERIFY_CHANNEL || undefined,
-    // MapLibre needs WebGL; GPU-less CI runners only get it from SwiftShader, which Chrome no longer enables by default.
-    args: ['--enable-unsafe-swiftshader'],
-  })
+  // VERIFY_ENGINE=webkit runs a suite in Playwright's WebKit (by hand; CI runs Chromium).
+  const browser = process.env.VERIFY_ENGINE === 'webkit'
+    ? await webkit.launch()
+    : await chromium.launch({
+      channel: process.env.VERIFY_CHANNEL || undefined,
+      // MapLibre needs WebGL; GPU-less CI runners only get it from SwiftShader, which Chrome no longer enables by default.
+      args: ['--enable-unsafe-swiftshader'],
+    })
   return {
     base,
     browser,
@@ -265,6 +289,9 @@ export async function open(env, query, { viewport = VIEWPORTS[0], reducedMotion 
           // Kit-owned map chrome: mco-web-style 0.7.1 leaves these < 40 px under (hover: none). Kept as an
           // exemption by user decision (no kit issue; MIGRATION-MATRIX "Decisions (W4)").
           if (el.matches('.maplibregl-ctrl-group button, .maplibregl-ctrl-attrib-button, .mco-panel-toggle')) continue
+          // A disabled option is text, not a target: the kit's search list ends with one ("Showing 200 of 245; type to
+          // narrow", "No matches"), a disabled option because a listbox may only own options.
+          if (el.matches('[role=option][aria-disabled="true"]')) continue
           const r = el.getBoundingClientRect()
           const cs = getComputedStyle(el)
           if (r.width === 0 || r.height === 0 || cs.visibility === 'hidden') continue

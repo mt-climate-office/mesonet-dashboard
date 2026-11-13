@@ -4,7 +4,7 @@
  * console error or CSP violation. Run via `npm run verify` (needs dist/).
  */
 import { AxeBuilder } from '@axe-core/playwright'
-import { DL_QUERY, THEMES, VIEWPORTS, WIDE, animationsDone, check, dlReady, finish, open, runDownload, start } from './lib.mjs'
+import { DL_QUERY, LANDSCAPE, SMALL, THEMES, VIEWPORTS, WIDE, animationsDone, check, dlReady, finish, open, runDownload, start } from './lib.mjs'
 
 /** Help, opened from the header ⋯ menu over a rendered Compare chart: the dialog's own contrast and names. */
 const openHelp = async (page) => {
@@ -30,6 +30,16 @@ const openPicker = async (page) => {
   await page.waitForFunction(() => document.querySelector('[data-testid="recent-list"]')?.offsetParent !== null, null, { timeout: 30000 })
   await browseMap(page)
 }
+/** The picker opened from the station button, its empty search tapped: the station list open under the field. */
+const openPickerSearch = async (page) => {
+  await page.getByTestId('station-switcher').click()
+  await page.waitForFunction(() => getComputedStyle(document.getElementById('station-picker')).visibility === 'visible', null, { timeout: 10000 })
+  await page.locator('#station-picker [data-testid="picker-search"] input').click()
+  await page.waitForFunction(() => document.querySelectorAll('#station-picker [role="option"]').length > 3, null, { timeout: 10000 })
+  await animationsDone(page)
+}
+/** The picker at both default widths and on the two smallest phones (the landscape and the 320 px panel). */
+const PICKER_VIEWPORTS = [...VIEWPORTS, LANDSCAPE, SMALL]
 /** The Now photo dialog with its pickers, once its frame is in and its open transition has ended. */
 const openPhoto = async (page) => {
   await page.getByTestId('now-photo-open').click()
@@ -86,7 +96,9 @@ const SCENARIOS = [
   { name: 'about-readings', query: '?s=acebozem#about', evidence: ABOUT, after: aboutSheet('about-readings-row', '[data-testid="about-readings-table"] tbody') },
   { name: 'about-history', query: '?s=acebozem#about', evidence: ABOUT, after: aboutSheet('about-history-row', '[data-testid="about-history"] .about-days') },
   { name: 'landing', query: '', evidence: { filled: ['[data-testid="landing-map"] tbody'] } },
-  { name: 'picker-open', query: '?s=acebozem', evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPicker },
+  { name: 'picker-open', query: '?s=acebozem', viewports: PICKER_VIEWPORTS, evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPicker },
+  // The picker itself (phone panel, desktop drawer) with its search list open: the pinned field, the list, the live header.
+  { name: 'picker-search', query: '?s=acebozem', viewports: PICKER_VIEWPORTS, evidence: { filled: ['[data-testid="now-tiles"]'] }, after: openPickerSearch },
   // Charts: the variable list (with the Ag tools group), a variable page, and Compare (a legacy #latest link lands there).
   { name: 'charts-list', query: '?s=acebozem#charts', evidence: { filled: ['[data-testid="var-air_temp"] .dash-spark svg', '[data-testid="charts-ag-tools"] ul'] } },
   // The variable page: its ⋯ menu, All years, the table, the Daily interval's band, the Custom dates sheet.

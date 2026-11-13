@@ -46,8 +46,8 @@ Station view (?s=<id>; remembered in localStorage mco-dashboard-station)
 │            &dl=1           the Download sheet over any of them (a chart's ⋯ → Download data)
 └─ About     #about          metadata, all current readings, locator map
 Header ⋯ menu: Share this view · Install app (where it can be installed) · Theme · Help · Send feedback
-Station picker: drawer (desktop/tablet) or bottom sheet (phones):
-                search (Near me inside) · recents · Browse on the map (full screen: network chips + map)
+Station picker: inline drawer (desktop), overlay drawer (tablet) or full-height panel under the header (phones):
+                search, pinned (Near me inside) · recents · Browse on the map (full screen: network chips + map)
 ```
 
 - **Entry:** `?s=` opens that station; otherwise the last one; otherwise the **landing** (first visit; "No
@@ -56,8 +56,11 @@ Station picker: drawer (desktop/tablet) or bottom sheet (phones):
   to `<main>`, the new station's content. Recent updates at once.
 - **Search** starts empty (the header names the station; Recent marks it). With text, matches rank across
   networks (exact name or id, then the name starting with the text, then a later word, an id, any substring,
-  then a typo of 1–2 letters; shorter names first within each; accents and apostrophes ignored), and on a
-  phone the sheet goes full; with none, the list groups by network. Typing also finds **places** (the kit's `MCO.places`,
+  then a typo of 1–2 letters; shorter names first within each; accents and apostrophes ignored); with none,
+  the list groups by network. The field is pinned above a scrolling body in every presentation; an open list
+  fills the picker under it and scrolls on its own (Near me, recents and the map row step aside), so neither
+  the list nor the body can scroll the field away. Opening the picker focuses the field but opens no list until
+  a tap or a key. Typing also finds **places** (the kit's `MCO.places`,
   the Census Gazetteer: counties, reservations, towns, ZIP codes, plus the Little Shell Tribe at Great Falls; up to 8, under a "Places" heading below the
   stations, with the kind beside the name). Picking a place lists its stations where Near me does, headed by
   the place: a county or reservation every station inside it, a town, ZIP code or tribe (or an area with none) the
@@ -124,7 +127,7 @@ drawer) reads `MCO.viewport` and the desktop query in JS.
 
 | Name | Query | Sections | Station picker | Now grid |
 |---|---|---|---|---|
-| compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) on narrow screens (≤ 640 px); a short, wide screen (landscape phone) keeps the header sections | bottom sheet (peek / full) on narrow screens; the overlay drawer on short, wide ones | one column, tiles 2-up |
+| compact | `(max-width: 640px), (max-height: 560px)` (`MCO.viewport.COMPACT_MQ`) | bottom tab bar (3 items, solid surface) on narrow screens (≤ 640 px); a short, wide screen (landscape phone) keeps the header sections | a full-height panel under the header, full width, portrait and landscape (to the tab bar, or above an on-screen keyboard, whose open state also hides the panel's title row while results show) | one column, tiles 2-up |
 | tablet | 641–1059 px | segmented control in the header | overlay drawer + scrim | one column, tiles 2-up |
 | desktop | ≥ 1060 px | segmented control in the header (+ the brand) | in-flow drawer, remembered (`mco-dashboard-drawer`) | hero + tiles (4-up) beside photo + rows |
 | dashboard | ≥ 1760 px beside the drawer **and** ≥ 1000 px tall (JS: `$store.view.wide`, core/dashboard `showsDashboard`) | none: Now, About and the Charts list are one dashboard; chart pages keep their own | as desktop (opening the drawer at 1920 px gives the space back to the tabs) | the dashboard (see "Dashboard") |
@@ -642,8 +645,11 @@ pane and photo dialog carried over from the Latest cards) still uses older sizes
   ("Crop: Wheat"); stats are a `<dl>`.
 - Touch targets ≥ 40 px under `(hover: none)`; the tab bar is 56 px.
 - Status is text: "No report for over 2 hours", "Feels like 41° · Wind chill"; the Provisional text button opens its note (`aria-expanded`).
-- The picker is `role="dialog" aria-modal="true"` only when it is modal (sheet, overlay drawer); the inline
-  drawer is a plain landmark beside the content.
+- The picker is a labelled `role="dialog"` only when it is modal (phone panel, overlay drawer), without
+  `aria-modal`: the header stays live, so a screen reader must be able to reach it (the station button names the
+  picker with `aria-controls` and `aria-expanded`); the content and the tab bar are `inert`. The inline
+  drawer is a plain landmark beside the content. The header is never inert: over a modal picker, using it (a tap,
+  or Tab into it) closes the picker first; the station button toggles it.
 
 ## Controls and dialogs (UX audit, 2026-10-07)
 

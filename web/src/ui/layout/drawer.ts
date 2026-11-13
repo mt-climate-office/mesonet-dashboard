@@ -1,9 +1,10 @@
 /**
  * Side drawer (framework-free; kit candidate `.mco-drawer`, KIT-NOTES.md).
- * Two presentations, chosen per call by `overlay()`:
+ * Three presentations, chosen per call by `overlay()` and `full()`:
  *  - inline:  in the page's flex row, slides by `margin-inline-start` (the
  *             content reflows; mesonet-explorer's sidebar). Not modal.
  *  - overlay: fixed over the content with a scrim; modal (background inert).
+ *  - panel:   an overlay that fills the screen under the header (phones). Modal.
  * Closed drawers are `visibility: hidden` (out of the tab order and the AT
  * tree, after the slide). Esc closes; focus moves in on open and back on close.
  * CSS: ui/layout/drawer.css. The Alpine wrapper is ui/picker/stationPicker.ts.
@@ -17,6 +18,8 @@ export interface DrawerOptions {
   scrim?: HTMLElement | null
   /** True when the drawer should be an overlay right now (e.g. below the desktop breakpoint). */
   overlay: () => boolean
+  /** True when the overlay should be the full-width panel under the header (phones). */
+  full?: () => boolean
   /** Elements made inert while the overlay is open. */
   background: () => Element[]
   /** After every open/close (persist the inline preference here). */
@@ -41,7 +44,7 @@ export function initDrawer(o: DrawerOptions): Drawer {
 
   const paint = () => {
     const overlay = o.overlay()
-    o.panel.dataset.presentation = overlay ? 'overlay' : 'inline'
+    o.panel.dataset.presentation = !overlay ? 'inline' : o.full?.() ? 'panel' : 'overlay'
     o.panel.classList.toggle('is-open', open)
     // visibility:hidden alone is not enough: descendants that set `visibility: visible`
     // (MapLibre's compact attribution does) stay focusable. inert closes that hole.
