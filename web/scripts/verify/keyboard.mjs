@@ -6,14 +6,14 @@
  * dialog, the Charts drill-down and Back, views mounting only while
  * open (no cross-view requests), legacy links (#ag, #downloader), the Download sheet
  * (focus, Esc, inert, dl key), its form (rows, reason, Preview → Download CSV), About's readings and
- * sensor-change sheets (focus in and back), the picker drawer and sheet (focus, Esc, inert), the tab
+ * sensor-change sheets (focus in and back), the picker drawer and phone panel (focus, Esc, inert, the live header), the tab
  * bar and history, the variable page (⋯ Show as table, Previous / Next, range and interval chips,
  * Wind direction’s Time series | Rose switch and the rose’s table and Download, AgriMet’s 15-min,
  * Custom dates), focus after Charts drill-downs (variables and Ag tools), Ag option chips and their
  * popovers, Download prefilled from a chart's ⋯, chart table twins, map sr-table selection, reduced motion.
  * Run via `npm run verify`.
  */
-import { DL_QUERY, VIEWPORTS, VISIBLE_SCOPES, animationsDone, check, dlReady, finish, open, runDownload, start } from './lib.mjs'
+import { DL_QUERY, LANDSCAPE, VIEWPORTS, VISIBLE_SCOPES, animationsDone, check, dlReady, finish, open, runDownload, start } from './lib.mjs'
 
 const env = await start()
 
@@ -620,19 +620,27 @@ for (const [name, query, charts, before] of [
   await close()
 }
 
-/* ── Picker drawer (1440) and sheet (390): focus in, Esc, focus back, inert, tab order ── */
-for (const vp of VIEWPORTS) {
-  const label = vp.touch ? 'picker sheet (390)' : 'picker drawer (1440)'
+/* ── Picker drawer (1440) and phone panel (390, 844×390): focus in, Esc, focus back, inert, the live header ── */
+for (const vp of [...VIEWPORTS, LANDSCAPE]) {
+  const label = vp.touch ? `picker panel (${vp.name})` : 'picker drawer (1440)'
   const { page, problems, close, rendered } = await open(env, '?s=acebozem&theme=dark', { viewport: vp })
   await rendered({ filled: ['[data-testid="now-tiles"]'] })
-  // Shown = rendered and visible (a closed sheet is `hidden`, a closed drawer `visibility: hidden`).
+  // Shown = rendered and visible (a closed drawer or panel is `visibility: hidden` after its slide).
   const state = () => page.evaluate(() => {
     const p = document.getElementById('station-picker')
     return {
       shown: !p.hidden && getComputedStyle(p).visibility === 'visible',
       inside: p.contains(document.activeElement),
       focus: document.activeElement?.dataset.testid ?? document.activeElement?.id,
-      inert: [...document.querySelectorAll('.mco-navbar, .dash-content, .dash-tabbar')].map((e) => e.inert),
+      // The header stays live; the content and the tab bar go inert while the picker is modal.
+      navbar: document.querySelector('.mco-navbar').inert,
+      inert: [...document.querySelectorAll('.dash-content, .dash-tabbar')].map((e) => e.inert),
+      search: document.activeElement === document.querySelector('#station-picker [data-testid="picker-search"] input'),
+      list: document.querySelector('#station-picker [data-testid="picker-search"] input')?.getAttribute('aria-expanded') === 'true',
+      // A labelled dialog while modal, never aria-modal (the live header must stay reachable to a screen reader).
+      role: p.getAttribute('role'), ariaModal: p.getAttribute('aria-modal'), labelled: document.getElementById(p.getAttribute('aria-labelledby'))?.textContent.trim(),
+      // The station button names the picker it controls and says whether it is open.
+      switcher: (() => { const b = document.querySelector('[data-testid="station-switcher"]'); return { name: b.getAttribute('aria-label'), controls: b.getAttribute('aria-controls'), expanded: b.getAttribute('aria-expanded') } })(),
     }
   })
   const shown = (want) => page.waitForFunction((want) => {
@@ -647,10 +655,29 @@ for (const vp of VIEWPORTS) {
   await page.keyboard.press('Escape')
   await shown(false)
   const s2 = await state()
-  check(`${label}: Enter on the switcher opens it, focus moves in`, !s0.shown && s1.shown && s1.inside, JSON.stringify([s0, s1]))
+  check(`${label}: Enter on the switcher opens it, focus moves to the search, the list stays shut until a tap or a key`,
+    !s0.shown && s1.shown && s1.inside && s1.search && !s1.list, JSON.stringify([s0, s1]))
   check(`${label}: Esc closes it, focus returns to the switcher`, !s2.shown && s2.focus === 'station-switcher', JSON.stringify(s2))
+  check(`${label}: the header is never inert`, !s1.navbar && !s2.navbar, JSON.stringify([s1.navbar, s2.navbar]))
+  check(`${label}: ${vp.touch ? 'a labelled dialog without aria-modal' : 'no dialog role (not modal)'}; the station button controls it (aria-controls, aria-expanded true then false, named)`,
+    (vp.touch ? s1.role === 'dialog' && s1.labelled === 'Choose a station' : s1.role === null) && s1.ariaModal === null &&
+      s1.switcher.controls === 'station-picker' && s1.switcher.expanded === 'true' && s2.switcher.expanded === 'false' && /Change station/.test(s1.switcher.name ?? ''),
+    JSON.stringify([s1.role, s1.ariaModal, s1.labelled, s1.switcher, s2.switcher]))
   if (vp.touch) {
-    check(`${label}: navbar, content and tab bar inert while open, not after`, s1.inert.every(Boolean) && !s2.inert.some(Boolean), JSON.stringify([s1.inert, s2.inert]))
+    check(`${label}: content and tab bar inert while open, not after`, s1.inert.every(Boolean) && !s2.inert.some(Boolean), JSON.stringify([s1.inert, s2.inert]))
+    // The live header: the ⋯ menu closes the picker and opens; the station button toggles it shut.
+    await page.getByTestId('station-switcher').tap()
+    await shown(true)
+    await page.getByTestId('header-menu-button').tap()
+    await shown(false)
+    const m = { ...(await state()), menu: await page.evaluate(() => !document.getElementById('header-menu').hidden) }
+    check(`${label}: tapping ⋯ closes the picker and opens the menu`, !m.shown && m.menu && !m.inert.some(Boolean), JSON.stringify(m))
+    await page.keyboard.press('Escape')
+    await page.getByTestId('station-switcher').tap()
+    await shown(true)
+    await page.getByTestId('station-switcher').tap()
+    await shown(false)
+    check(`${label}: tapping the station button again closes it`, !(await state()).shown)
   } else {
     check(`${label}: the inline drawer is not modal (nothing inert)`, !s1.inert.some(Boolean), JSON.stringify(s1.inert))
     // Closed = visibility:hidden, so Tab from the last header button skips it.

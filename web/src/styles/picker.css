@@ -1,5 +1,5 @@
-/* Station picker content (partials/picker.html); the drawer / sheet frame is
-   ui/layout/{drawer,sheet}.css. Search first: a rounded field with a search icon, the clear
+/* Station picker content (partials/picker.html); the drawer / panel frame is
+   ui/layout/drawer.css. Search first: a rounded field with a search icon, the clear
    button and the "Near me" chip inside it. Then recents, then "Browse on the map", which
    reveals the network chips and the map. Kit tokens only. */
 
@@ -76,16 +76,26 @@
 .picker-browse-toggle svg { flex-shrink: 0; stroke: currentColor; }
 .picker-browse-toggle > span { flex: 1; }
 
-/* Phone sheet with search results open (stationPicker goes full): the list fills the sheet under the
-   field and scrolls on its own; recents, Near me and "Browse on the map" step aside until it closes. */
-.dash-sheet.search-open[data-state="full"] { height: calc(100dvh - var(--chrome-h, 52px) - var(--tabbar-h, 0px) - 0.5rem); }
-.dash-sheet.search-open .picker-group { display: none; }
-.dash-sheet.search-open .picker-search { flex: 1 1 auto; min-height: 0; }
-/* Sized to its results (scrolling when they overflow), not a bordered box stretched to the sheet's foot. */
-.dash-sheet.search-open .ctl-combobox-popup { position: static; flex: 0 1 auto; min-height: 0; max-height: none; }
+/* The search is pinned (partials/picker.html): it sits outside the scrolling body, so neither the body's
+   scroll nor the kit's list scroll (MCO.initSearchBox scrolls the active row into view) can move it out of
+   sight. With results open (stationPicker `searchOpen`) the list fills the picker under the field and scrolls
+   on its own; Near me, recents and "Browse on the map" step aside until it closes. The same in every
+   presentation: the desktop drawer, the tablet overlay and the phone panel. */
+.picker-search-bar { flex-shrink: 0; display: flex; flex-direction: column; min-height: 0; padding: var(--gap) var(--gutter) 0; }
+.dash-picker.search-open .picker-search-bar { flex: 1 1 auto; padding-bottom: var(--gap); }
+.dash-picker.search-open .dash-panel-body { display: none; }
+.dash-picker.search-open .picker-search { flex: 1 1 auto; min-height: 0; }
+/* Sized to its results (scrolling when they overflow), not a box floating over the body or stretched to the foot. */
+.dash-picker .ctl-combobox-popup { position: static; flex: 0 1 auto; min-height: 0; max-height: none; box-shadow: none; }
 
-/* Keyboard open (typing a search): the results fill what is visible under the header. */
-.kb-open .dash-sheet.search-open[data-state="full"] { height: calc(var(--vv-h, 100dvh) - var(--chrome-h, 52px) - 0.5rem); }
+/* Phone panel with the keyboard open: only the part above the keyboard is visible (drawer.css), so the
+   title row steps aside and the results get its height. The header's station button, still live, closes
+   the picker; the title and × return with the keyboard's dismissal. */
+.kb-open .dash-drawer[data-presentation="panel"].search-open .dash-panel-head { display: none; }
+/* A landscape phone keeps ~126 px under the header: tighter padding and a 44 px field leave room for the
+   first group heading and its first row (still a 44 px target). */
+.kb-open .dash-drawer[data-presentation="panel"].search-open .picker-search-bar { padding: var(--gap-tight) var(--gutter); }
+.kb-open .dash-drawer[data-presentation="panel"].search-open .picker-search .ctl-input { min-height: 44px; }
 
 /* The map dialog fills the screen (the kit's .mco-modal box, made full-bleed): the header, the network
    chips, then the map down to the bottom edge. Safe-area insets keep the title and × clear of a notch. */
