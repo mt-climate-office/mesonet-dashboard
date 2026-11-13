@@ -193,11 +193,27 @@ interface Mco {
     isTouch(): boolean
     onChange(fn: () => void): () => void
   }
+  /**
+   * The on-screen keyboard (kit 1.0.0, a port of this app's former `ui/layout/keyboard.ts`): from the visual
+   * viewport it publishes `--kb-inset` (px covered; 0 under `KEYBOARD_MIN_PX` or while pinch-zoomed), `--vv-h`
+   * and `.kb-open` on <html>, and fires `mco:keyboard` ({ detail: { open, inset } }) on document. `ready()` starts it.
+   */
+  keyboard: {
+    KEYBOARD_MIN_PX: number
+    /** Pure: px between the bottom of the visible area and the layout viewport's; 0 under `KEYBOARD_MIN_PX`. */
+    keyboardInset(layoutHeight: number, vvHeight: number, vvOffsetTop: number): number
+    /** Idempotent; returns `stop`. A no-op without `visualViewport`. */
+    start(): () => void
+    stop(): void
+    isOpen(): boolean
+    /** Current px the keyboard covers. */
+    inset(): number
+  }
   createToast(opts?: { element?: HTMLElement; duration?: number }): McoToast
   /** Singleton toast, 2800 ms default. */
   showToast(msg: string, ms?: number): void
   getTheme(): Theme
-  /** Release the anti-flash snippet's first-paint hold (`mco-booting`, `[data-hold]`); idempotent. */
+  /** Release the anti-flash snippet's first-paint hold (`mco-booting`, `[data-hold]`) and start `keyboard` (kit 1.0.0). */
   ready(): void
   /** Sets data-theme; persists to localStorage 'mco-theme' unless persist: false. Fires `mco:themechange` on document when it changes. */
   setTheme(theme: Theme, opts?: { persist?: boolean }): void

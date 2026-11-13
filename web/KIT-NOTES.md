@@ -216,10 +216,12 @@ Now's photos: full-width slides on a scroll-snap track (a touch swipe is native 
 and decorative dots, `role="group"` + `aria-roledescription` on the carousel and each slide.
 `ui/layout/carousel.{ts,css}`: `initCarousel({ track, onIndex })` → `go(i)`, reduced-motion aware.
 
-### Keyboard inset — new (`--kb-inset`, `--vv-h`, `.kb-open`)
-iOS Safari covers bottom-anchored panels with the on-screen keyboard. `ui/layout/keyboard.ts` publishes
-the keyboard's height from `visualViewport`; sheets and phone popovers sit at
-`max(var(--tabbar-h), var(--kb-inset))`. A kit sheet would want the same.
+### Keyboard inset — in the kit since 1.0.0 (`MCO.keyboard`: `--kb-inset`, `--vv-h`, `.kb-open`)
+iOS Safari covers bottom-anchored panels with the on-screen keyboard. The app's `ui/layout/keyboard.ts` and
+`core/keyboardInset.ts` published the keyboard's height from `visualViewport`; kit 1.0.0 took them as `MCO.keyboard`
+(same names, same 80 px threshold, started by `MCO.ready()`), and the local copies are gone. Sheets and phone
+popovers still sit at `max(var(--tabbar-h), var(--kb-inset))` and read `--vv-h` under `.kb-open` (app CSS, unchanged).
+The kit adds one guard: while the page is pinch-zoomed (`visualViewport.scale` > 1.05) nothing reads as a keyboard.
 
 ### UX audit (2026-10-07) — kit candidates
 - **`color-scheme` per theme:** the kit sets none, so native checkboxes and pickers draw light in dark themes. The app
