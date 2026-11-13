@@ -1,7 +1,7 @@
 # Mesonet dashboard architecture
 
 The Montana Mesonet Dashboard, rebuilt on the MCO house style
-([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.21.0)
+([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.21.2)
 with Alpine.js, Apache ECharts and TypeScript. Served at
 `/mesonet-dashboard/` on GitHub Pages, and through the Caddy proxy
 (mt-climate-office/mesonet_app) as `mesonet.climate.umt.edu/dash/next/`, the
