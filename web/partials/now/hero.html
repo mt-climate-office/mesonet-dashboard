@@ -25,7 +25,7 @@
       <span class="dash-toggletip" x-data="toggletip" data-testid="now-provisional">
         <span aria-hidden="true">·</span>
         <button type="button" class="now-prov-btn dash-toggletip-btn" aria-controls="now-provisional-tip" aria-expanded="false">Provisional</button>
-        <span class="dash-toggletip-tip" id="now-provisional-tip" hidden><strong>Provisional data.</strong> Readings since the last daily quality-control run (about 8 AM) have had only basic range checks (QC level 1). They are replaced by fully checked level 2 values after the next run, so they may change.</span>
+        <span class="dash-toggletip-tip" id="now-provisional-tip" hidden><strong>Provisional data.</strong> Readings since the last daily quality check, about 8 AM, have basic range checks only. They may change when the next check replaces them.</span>
       </span>
     </template>
     <template x-if="page.hero.freshness?.stale">

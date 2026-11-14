@@ -213,6 +213,8 @@ interface Mco {
   /** Singleton toast, 2800 ms default. */
   showToast(msg: string, ms?: number): void
   getTheme(): Theme
+  /** The family credit line: "<source> · Montana Climate Office · climate.umt.edu" (kit 0.9.0). */
+  credit(opts?: { source?: string }): string
   /** Release the anti-flash snippet's first-paint hold (`mco-booting`, `[data-hold]`) and start `keyboard` (kit 1.0.0). */
   ready(): void
   /** Sets data-theme; persists to localStorage 'mco-theme' unless persist: false. Fires `mco:themechange` on document when it changes. */
