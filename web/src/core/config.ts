@@ -23,9 +23,11 @@ export const OPENAPI_URL = `${MESONET_ORIGIN}/api/openapi.json`
 export const API_PUBLIC_URL = PROD_API
 
 /**
- * The retired Dash app, on the on-prem host: the "previous dashboard" links in the legacy `?state=` and
- * `#satellite` notices (core/notices). Deliberately NOT derived from MESONET_ORIGIN: /dash on mesonet2 is
- * this dashboard. Whether these links stay is Kyle's call.
+ * The retired Dash app, on the on-prem host. Two notice links use it (core/notices): an old `?state=<hash>`
+ * share link shows "Open the saved layout in the previous dashboard" (LEGACY_DASHBOARD_URL/?state=<hash>), and
+ * `#satellite` shows "Open satellite indicators in the previous dashboard" (LEGACY_SATELLITE_URL). Deliberately
+ * NOT derived from MESONET_ORIGIN: /dash on mesonet2 is this dashboard, and after the cutover this address is
+ * too, so both links then reach this app. Whether they stay is Kyle's call.
  */
 export const LEGACY_DASHBOARD_URL = 'https://mesonet.climate.umt.edu/dash'
 
