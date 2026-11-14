@@ -5,9 +5,10 @@
  * desktop Chromium offer a real prompt (`beforeinstallprompt`); iOS has none,
  * so iPhone and iPad get the Share → Add to Home Screen steps instead. Pure.
  */
+import { DASHBOARD_URL } from './config'
 
-/** Where installs point (user decision 2026-10-08): the Caddy-proxied build on the Mesonet host. */
-export const INSTALL_HOME = { hostname: 'mesonet.climate.umt.edu', pathname: '/dash/next/' } as const
+/** Where installs point (user decision 2026-10-08): the dashboard's public address on the Mesonet host (config DASHBOARD_URL). */
+export const INSTALL_HOME = { hostname: new URL(DASHBOARD_URL).hostname, pathname: new URL(DASHBOARD_URL).pathname } as const
 
 /** localStorage key: the phone tip was dismissed (app-prefixed, HOUSE-STYLE §4). */
 export const TIP_KEY = 'mco-dashboard-install-tip'

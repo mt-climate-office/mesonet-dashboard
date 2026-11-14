@@ -1,7 +1,7 @@
 /**
  * "Install the app" (core/install.ts decides what to offer). On the install
  * address it links the manifest, relative to the page, so it resolves under
- * /dash/next/ behind the Caddy proxy; elsewhere there is no manifest and no
+ * /dash/ on the Mesonet host (core/install INSTALL_HOME); elsewhere there is no manifest and no
  * offer. It keeps the browser's `beforeinstallprompt` for the ⋯ menu's
  * Install app and the phone tip (`x-data="installTip"`, partials/shell.html).
  */

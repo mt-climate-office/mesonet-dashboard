@@ -9,7 +9,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { expandIncludes } from './include'
+import { DASHBOARD_URL, MESONET_ORIGIN } from '../src/core/config'
+import { applyConstants, expandIncludes } from './include'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const html = readFileSync(resolve(root, 'index.html'), 'utf8')
@@ -60,5 +61,18 @@ describe('index.html', () => {
     expect(out).toContain('x-data="agTab')
     expect(out).toContain('x-data="downloader')
     expect(out).toContain('x-data="stationPicker')
+  })
+
+  it('takes the Mesonet host from config.ts: head tags, API links, and the CSP allows it', () => {
+    const out = applyConstants(expandIncludes(html, root), { DASHBOARD_URL, MESONET_ORIGIN })
+    expect(out).toContain(`<link rel="canonical" href="${DASHBOARD_URL}">`)
+    expect(out).toContain(`<meta property="og:url" content="${DASHBOARD_URL}">`)
+    expect(out).toContain(`<meta property="og:image" content="${DASHBOARD_URL}og-card.png">`)
+    expect(out).toContain(`<meta name="twitter:image" content="${DASHBOARD_URL}og-card.png">`)
+    expect(out).toContain(`href="${MESONET_ORIGIN}/api/v2/docs"`)
+    expect(out).not.toMatch(/__[A-Z][A-Z0-9_]*__/)
+    expect(out).not.toMatch(/mesonet\.climate\.umt\.edu\/(dash\/next|api)/)
+    expect(csp).toMatch(new RegExp(`connect-src[^;]*${MESONET_ORIGIN.replace(/[.]/g, '\\.')}`))
+    expect(() => applyConstants('__NOPE__', {})).toThrow()
   })
 })

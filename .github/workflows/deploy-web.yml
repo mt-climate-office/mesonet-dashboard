@@ -1,7 +1,7 @@
 name: Build & deploy web/
 
-# web/ at /mesonet-dashboard/ (the Caddy proxy also serves it as
-# mesonet.climate.umt.edu/dash/next/, the install address). Pages serves only
+# web/ at /mesonet-dashboard/ (the Mesonet host also serves it at /dash/, the
+# install address: web/src/core/config.ts DASHBOARD_URL). Pages serves only
 # the root 404.html (web/public/404.html), which routes <root>/<station> deep
 # links and old /mesonet-dashboard/next/ links.
 on:

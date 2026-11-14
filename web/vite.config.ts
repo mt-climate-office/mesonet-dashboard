@@ -1,16 +1,19 @@
 /**
  * Vite config for the dashboard. Served under VITE_BASE (default: the Pages
- * path /mesonet-dashboard/, also proxied as mesonet.climate.umt.edu/dash/next/). index.html pulls in partials/ via
- * the @include plugin; the dev server proxies the API to dodge CORS.
+ * path /mesonet-dashboard/; the Mesonet host proxies it at /dash/, src/core/config.ts DASHBOARD_URL, and
+ * proxies /mesonet-dashboard/ too, so the absolute base works there). index.html pulls in partials/ via the
+ * @include plugin, then htmlConstants fills __DASHBOARD_URL__ / __MESONET_ORIGIN__ from config.ts; the dev
+ * server proxies the API to dodge CORS.
  */
 import { defineConfig } from 'vite'
-import { htmlInclude } from './vite/include.ts'
+import { DASHBOARD_URL, MESONET_ORIGIN } from './src/core/config.ts'
+import { htmlConstants, htmlInclude } from './vite/include.ts'
 
 const base = process.env.VITE_BASE ?? '/mesonet-dashboard/'
 
 export default defineConfig({
   base,
-  plugins: [htmlInclude()],
+  plugins: [htmlInclude(), htmlConstants({ DASHBOARD_URL, MESONET_ORIGIN })],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -22,7 +25,7 @@ export default defineConfig({
     // Same-origin in dev (connect-src 'self'); production calls the API directly.
     proxy: {
       '/_api': {
-        target: 'https://mesonet2.climate.umt.edu',
+        target: MESONET_ORIGIN,
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/_api/, '/api/v2'),
       },
