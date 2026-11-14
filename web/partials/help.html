@@ -1,83 +1,50 @@
 <!-- Help dialog (Help in the header ⋯ menu; x-data="helpDialog", ui/shell/helpDialog.ts).
-     Static hrefs are the no-JS fallback; :href binds the core/config.ts values. Content ported from web/src/components/HelpModal.tsx
-     (legacy layout.generate_modal), in kit .info-section blocks. -->
+     The family's four help sections, in kit .info-section blocks (mco-web-style HOUSE-STYLE, help modal).
+     Static hrefs are the no-JS fallback; :href binds the core/config.ts values; the credit line is MCO.credit. -->
 <dialog class="mco-modal" id="help-modal" aria-labelledby="help-modal-title" data-testid="help-modal" x-data="helpDialog">
   <div class="info-modal-box">
     <div class="info-modal-header">
-      <div>
-        <h2 class="info-modal-title" id="help-modal-title" tabindex="-1" autofocus>The Montana Mesonet Dashboard</h2>
-        <p class="info-modal-subtitle">A service of the Montana Climate Office.</p>
-      </div>
+      <h2 class="info-modal-title" id="help-modal-title" tabindex="-1" autofocus>The Montana Mesonet Dashboard</h2>
       <button type="button" class="modal-close" data-close-modal aria-label="Close">×</button>
     </div>
 
     <div class="info-section">
-      <h3>Welcome</h3>
-      <p>This dashboard shows current and historical data from every station in the Montana
-         Mesonet. To see a station, pick it with the station button at the top, or add it to
-         the address (for example
-         <a href="?s=crowagen" :href="exampleUrl" x-text="exampleUrl">?s=crowagen</a>).</p>
-    </div>
-
-    <div class="info-section">
-      <h3>Using the dashboard</h3>
+      <h3>What this shows</h3>
+      <p>Weather and soil data from one Montana Mesonet station.</p>
       <ul>
-        <li>Pick a station with the station button at the top (search by name, county, reservation, town or
-            ZIP, <strong>Near me</strong>, recent stations or the map). The dashboard reopens
-            your last station next time.</li>
-        <li><strong>Now</strong> shows the station's current conditions, the last 48 hours with
-            the NWS forecast, and the latest photos. Tap a reading to chart it.</li>
-        <li><strong>Charts</strong> lists every variable the station reports and the Ag tools
-            (growing degree days, feels like, livestock risk, soil profile, soil water potential
-            and more). <strong>Compare</strong> stacks several variables on one time axis.</li>
-        <li>A chart's ⋮ menu shows it as a table, downloads its data as CSV, or shares it.</li>
-        <li><strong>About</strong> gives the station's details, its location, every current
-            reading and its sensor changes.</li>
-        <li>The address keeps the dashboard's state, so copying it (or using
-            <strong>Share this view</strong>) shares what you see.</li>
-        <li>Satellite indicators are on the
-            <a href="https://mesonet.climate.umt.edu/dash#satellite" :href="satelliteUrl" target="_blank" rel="noopener noreferrer">previous dashboard</a>.</li>
+        <li><strong>Now:</strong> current conditions, the last 48 hours and the forecast.</li>
+        <li><strong>Charts:</strong> every variable, the Ag tools and Compare.</li>
+        <li><strong>About:</strong> the station's details and sensor changes.</li>
       </ul>
     </div>
 
     <div class="info-section">
-      <h3>Data source</h3>
-      <p>Station data come from the
-         <a href="https://mesonet2.climate.umt.edu/api/v2/docs" :href="apiDocsUrl" target="_blank" rel="noopener noreferrer">Montana Mesonet API</a>
-         at quality-control level 2; the newest readings are provisional until the daily
-         quality check. Times are Mountain Time.</p>
-    </div>
-
-    <div class="info-section">
-      <h3>Contact</h3>
-      <p>To report a bug, request a feature or ask about the dashboard:</p>
+      <h3>How to use it</h3>
       <ul>
-        <li>email <a href="mailto:kyle.bocinsky@umontana.edu">kyle.bocinsky@umontana.edu</a>,</li>
-        <li>fill out our <a href="https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN" :href="feedbackUrl" target="_blank" rel="noopener noreferrer">feedback form</a>,</li>
-        <li>or open an issue on <a href="https://github.com/mt-climate-office/mesonet-dashboard/issues" target="_blank" rel="noopener noreferrer">our GitHub</a>.</li>
+        <li>Tap the station name to search, or use <strong>Near me</strong> or <strong>Browse on the map</strong>.</li>
+        <li>Tap a reading on <strong>Now</strong> to chart it.</li>
+        <li>Use a chart's ⋮ menu to <strong>Download data</strong>, <strong>Show as table</strong> or <strong>Share this chart</strong>.</li>
+        <li>Keys: <kbd>Esc</kbd> closes a menu, sheet or this window.</li>
       </ul>
-      <p>For general questions about the Mesonet and its development, contact
-         the state climatologist (Kelsey Jencso) at
-         <a href="mailto:kelsey.jencso@umontana.edu">kelsey.jencso@umontana.edu</a>.</p>
     </div>
 
     <div class="info-section">
-      <h3>Montana Mesonet background</h3>
-      <p>The Montana Climate Office (MCO) installed the Mesonet's first weather and soil
-         moisture monitoring stations in 2016 as part of the Montana Research and Economic
-         Development Initiative (MREDI). The Mesonet was designed to support decision-making
-         for statewide drought assessments, precision agriculture, and rangeland and forested
-         watershed management. The network grew through support from private landowners,
-         watershed groups, tribes, state agencies and federal grants, and through a 2020
-         U.S. Army Corps of Engineers contract that added stations across central and eastern
-         Montana to improve drought assessments and flood forecasting.<span x-show="stationCount()">
-         Today it has <span x-text="stationCount()"></span> stations.</span></p>
+      <h3>Share or bookmark</h3>
+      <p>The address holds this view. Copy it, or use <strong>Share this view</strong> in the ⋯ menu.
+         Add a station ID to open it, like
+         <a href="?s=crowagen" :href="exampleUrl" x-text="exampleUrl">?s=crowagen</a>.
+         Times are Mountain Time.</p>
     </div>
 
     <div class="info-section">
-      <h3>Source code</h3>
-      <p>See how we built this application at our
-         <a href="https://github.com/mt-climate-office/mesonet-dashboard/tree/main" target="_blank" rel="noopener noreferrer">GitHub repository</a>.</p>
+      <h3>Data</h3>
+      <ul>
+        <li><a href="https://mesonet2.climate.umt.edu/api/v2/docs" :href="apiDocsUrl" target="_blank" rel="noopener noreferrer">Montana Mesonet API</a>,
+            checked every 5 minutes.</li>
+        <li><a href="https://www.weather.gov/" target="_blank" rel="noopener noreferrer">National Weather Service</a> forecasts.</li>
+      </ul>
+      <p>The newest readings are provisional until the daily quality check.</p>
+      <p x-text="credit"></p>
     </div>
   </div>
 </dialog>
