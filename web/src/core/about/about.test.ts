@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Station } from '../api'
+import { MESONET_ORIGIN } from '../config'
 import { apiLinks } from './apiLinks'
 import { formatCoordinates, formatDay, formatElevation, formatLocation, metersToFeet, periodOfRecord, stationDetails } from './details'
 import { pptLabel, pptRows, readingLabel, readingRows, readingValue } from './readings'
@@ -145,7 +146,7 @@ describe('sensorHistory', () => {
 describe('apiLinks', () => {
   it('points at the public API for this station', () => {
     expect(apiLinks('acebozem', 'https://api.example/v2/').map((l) => l.href)).toEqual([
-      'https://mesonet2.climate.umt.edu/api/v2/docs',
+      `${MESONET_ORIGIN}/api/v2/docs`,
       'https://api.example/v2/latest?stations=acebozem&type=csv',
       'https://api.example/v2/config/acebozem/',
     ])
