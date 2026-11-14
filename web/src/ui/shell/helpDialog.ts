@@ -19,8 +19,8 @@ export function helpDialog() {
   let off: (() => void) | null = null
   return component({
     apiDocsUrl: API_DOCS_URL,
-    /** This app's address with a station, wherever it is served (the Pages root, or `/dash/next/` behind the proxy). */
-    exampleUrl: new URL(`${import.meta.env.BASE_URL}?s=crowagen`, location.origin).href,
+    /** This app's address with a station: the address the visitor is on (Pages, or the Mesonet host's /dash/). */
+    exampleUrl: `${location.origin}${location.pathname}?s=crowagen`,
     /** The family's credit line (Data section), never hand-typed. */
     credit: MCO.credit({ source: 'Montana Mesonet' }),
 

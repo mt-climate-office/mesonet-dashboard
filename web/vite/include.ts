@@ -30,3 +30,21 @@ export function htmlInclude(): Plugin {
     },
   }
 }
+
+const CONSTANT = /__([A-Z][A-Z0-9_]*)__/g
+
+/** Replace `__NAME__` with `values.NAME` (src/core/config.ts values); an unknown name is an error, not a silent literal. */
+export function applyConstants(html: string, values: Record<string, string>): string {
+  return html.replace(CONSTANT, (token, name: string) => {
+    if (!(name in values)) throw new Error(`index.html: ${token} has no value (vite.config.ts htmlConstants)`)
+    return values[name]
+  })
+}
+
+/** Vite plugin: fill `__NAME__` tokens in index.html and its partials (after @include) from config values. */
+export function htmlConstants(values: Record<string, string>): Plugin {
+  return {
+    name: 'html-constants',
+    transformIndexHtml: { order: 'pre', handler: (html) => applyConstants(html, values) },
+  }
+}

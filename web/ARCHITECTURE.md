@@ -3,9 +3,10 @@
 The Montana Mesonet Dashboard, rebuilt on the MCO house style
 ([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @1.0.0)
 with Alpine.js, Apache ECharts and TypeScript. Served at
-`/mesonet-dashboard/` on GitHub Pages, and through the Caddy proxy
-(mt-climate-office/mesonet_app) as `mesonet.climate.umt.edu/dash/next/`, the
-install address.
+`/mesonet-dashboard/` on GitHub Pages, and by the Mesonet host at `/dash/`, the
+install address (`DASHBOARD_URL` in `src/core/config.ts`).
+
+Cutover: change `MESONET_ORIGIN` in `src/core/config.ts` and the CSP `connect-src` in `index.html`.
 
 Read this file first. It is short on purpose: if something here is unclear,
 fix this file in the same PR. Layout, components, motion and type are in

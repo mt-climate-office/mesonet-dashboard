@@ -1,9 +1,10 @@
 <!doctype html>
 <!-- GitHub Pages serves this (status 404) for any path with no file. It sends `<root>/<station>` to
      `<root>/?s=<station>` (deep links from the legacy app) and anything else to `<root>/`, keeping
-     query and hash. `<root>` is the Pages project (`/mesonet-dashboard`), or `/dash/next` behind the
-     Caddy proxy on mesonet.climate.umt.edu. Links to the retired `/mesonet-dashboard/next/` copy land
-     on the root. -->
+     query and hash. `<root>` is the Pages project (`/mesonet-dashboard`), `/dash` behind the Mesonet host
+     (src/core/config.ts DASHBOARD_URL; the first path segment, like Pages), or `/dash/next`, the old proxied
+     address. Links to the retired `/mesonet-dashboard/next/` copy land on the root. The noscript link is the
+     retired Dash app (config LEGACY_DASHBOARD_URL; a static file cannot read it). -->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
