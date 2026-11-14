@@ -8,7 +8,7 @@
 .dash-sheet {
   --sheet-ease: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   position: fixed; z-index: var(--z-detail);
-  /* Above the tab bar, or above an on-screen keyboard when one is open (ui/layout/keyboard.ts). */
+  /* Above the tab bar, or above an on-screen keyboard when one is open (the kit's MCO.keyboard, started by MCO.ready()). */
   left: 0; right: 0; bottom: max(var(--tabbar-h, 0px), var(--kb-inset, 0px));
   display: flex; flex-direction: column;
   max-height: min(64dvh, 34rem);

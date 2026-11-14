@@ -10,7 +10,7 @@
    .no-anim suppresses the slide for the state applied on page load.
    The header stays live over every presentation (it is not in the inert set), and an
    overlay or panel stops above an on-screen keyboard (--kb-inset, --vv-h, .kb-open:
-   ui/layout/keyboard.ts).
+   the kit's MCO.keyboard).
    Shared panel parts (.dash-panel-head/-title/-body) are styled here and
    reused by the sheet. */
 

@@ -59,7 +59,6 @@ import { popover } from './ui/shell/popover'
 import { sections } from './ui/shell/sections'
 import { sheet } from './ui/shell/sheet'
 import { stationHeader } from './ui/shell/stationHeader'
-import { initKeyboardInset } from './ui/layout/keyboard'
 import './styles/app.css'
 import './ui/layout/type.css'
 import './ui/layout/shell.css'
@@ -219,11 +218,10 @@ Alpine.data('agSoilView', agSoilView)
 Alpine.data('agAnnualView', agAnnualView)
 
 Alpine.start()
-// The anti-flash snippet's first-paint hold (kit 0.9.0): Alpine has drawn the shell.
+// The anti-flash snippet's first-paint hold (kit 0.9.0): Alpine has drawn the shell. Since kit 1.0.0 this also
+// starts MCO.keyboard (--kb-inset, --vv-h, .kb-open), which keeps bottom sheets and docked popovers above an
+// on-screen keyboard (iOS Safari covers them otherwise).
 MCO.ready()
-
-// Bottom sheets and docked popovers stay above an on-screen keyboard (iOS Safari covers them otherwise).
-initKeyboardInset()
 
 // Page counts (GoatCounter; skipped off production and under DNT/GPC).
 startAnalytics()

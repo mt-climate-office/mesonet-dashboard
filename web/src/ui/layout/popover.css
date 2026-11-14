@@ -23,7 +23,7 @@
 @media (max-width: 640px) {
   .dash-popover { position: static; }
   .dash-popover-panel {
-    /* Above the tab bar, or above an on-screen keyboard when one is open (ui/layout/keyboard.ts). */
+    /* Above the tab bar, or above an on-screen keyboard when one is open (the kit's MCO.keyboard, started by MCO.ready()). */
     position: fixed; top: auto; left: 0; right: 0; bottom: max(var(--tabbar-h, 0px), var(--kb-inset, 0px));
     width: auto; min-width: 0; max-width: none; max-height: 70dvh; overflow-y: auto;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;

@@ -81,7 +81,8 @@ export function createMap(el: HTMLElement, opts: MapHostOptions): MapHost {
   })
   map.touchZoomRotate.disableRotation()
   map.keyboard.disableRotation()
-  MCO.map.addNavigation(map)
+  // Top-right, not the kit's top-left default (kit 1.0.0): the legend panel holds the top-left corner here.
+  MCO.map.addNavigation(map, { position: 'top-right' })
   MCO.map.addFitControl(map, { fitOpts })
   const floor = MCO.map.installZoomFloor(map, { fitOpts })
   map.once('load', () => floor.refresh())

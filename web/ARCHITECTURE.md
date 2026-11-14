@@ -1,7 +1,7 @@
 # Mesonet dashboard architecture
 
 The Montana Mesonet Dashboard, rebuilt on the MCO house style
-([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @0.21.2)
+([mco-web-style](https://github.com/mt-climate-office/mco-web-style) @1.0.0)
 with Alpine.js, Apache ECharts and TypeScript. Served at
 `/mesonet-dashboard/` on GitHub Pages, and through the Caddy proxy
 (mt-climate-office/mesonet_app) as `mesonet.climate.umt.edu/dash/next/`, the
@@ -309,7 +309,7 @@ the others at the end of `partials/shell.html`. Open it with
 if the URL should hold the open state. Modal sheet bodies fade their bottom edge while there is more to scroll
 (`ui/layout/scrollFade.ts`, wired in `ui/shell/sheet.ts`); call `initScrollFade(el)` for any other scroller. Anything anchored to the bottom of the screen (sheets, phone
 popovers) sits above an on-screen keyboard: `bottom: max(var(--tabbar-h, 0px), var(--kb-inset, 0px))`
-and, under `.kb-open`, a max height from `--vv-h` ("phone popovers" are narrow screens only, ≤ 640 px) (`ui/layout/keyboard.ts` publishes both; iOS Safari
+and, under `.kb-open`, a max height from `--vv-h` ("phone popovers" are narrow screens only, ≤ 640 px) (the kit's `MCO.keyboard`, started by `MCO.ready()` since kit 1.0.0, publishes both; iOS Safari
 otherwise covers the panel).
 
 **Add a Now tile.** (1) In `core/overview/tiles.ts`, a `TILES` entry (its id, the Charts `v=` id it
