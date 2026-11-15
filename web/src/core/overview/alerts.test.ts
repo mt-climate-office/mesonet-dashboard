@@ -39,6 +39,8 @@ describe('alertWhen', () => {
     expect(alertWhen({ onset: at(12, 18), ends: at(13, 12) }, NOW)).toBe('from 6 PM today until noon Tue')
     expect(alertWhen({ onset: at(13, 0), ends: at(13, 9) }, NOW)).toBe('from 12 AM until 9 AM Tue')
     expect(alertWhen({ onset: at(13, 6, 30), ends: at(13, 9) }, NOW)).toBe('from 6:30 AM until 9 AM Tue')
+    expect(alertWhen({ onset: at(13, 12), ends: at(13, 18) }, NOW)).toBe('from noon until 6 PM Tue')
+    expect(alertWhen({ onset: at(12, 12), ends: at(12, 18) }, NOW)).toBe('from noon until 6 PM today')
     expect(alertWhen({ onset: at(13, 3), ends: null }, NOW)).toBe('from 3 AM Tue')
     expect(alertWhen({ onset: null, ends: null }, NOW)).toBe('')
   })
