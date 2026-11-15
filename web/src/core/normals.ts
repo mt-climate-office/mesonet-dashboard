@@ -3,7 +3,7 @@
  * from this repo's `normals/` CSVs (raw.githubusercontent.com).
  */
 import { parseCsv } from './csv'
-import { timedFetch, type ObservationRow } from './api'
+import { HttpError, timedFetch, type ObservationRow } from './api'
 
 /**
  * GridMET 1991-2020 normals are pre-computed CSVs hosted in this repo.
@@ -48,7 +48,12 @@ async function loadCsv(station: string, varCode: string): Promise<NormalRow[]> {
   const key = `${station}/${varCode}`
   if (cache.has(key)) return cache.get(key)!
   const url = `${NORMALS_BASE}/${station}_${varCode}.csv`
-  const text = await timedFetch(url, {}, async (r) => (r.ok ? r.text() : null))
+  // Only a 404 means the file does not exist; other failures throw so the fetch is retried, not cached as no normals.
+  const text = await timedFetch(url, {}, async (r) => {
+    if (r.status === 404) return null
+    if (!r.ok) throw new HttpError(r.status, url, '')
+    return r.text()
+  })
   if (text === null) {
     cache.set(key, [])
     return []
@@ -73,7 +78,7 @@ export interface StationNormals {
 
 /**
  * Fetch and combine the relevant normals for one station + display variable.
- * Returns null if the variable has no normals or all the fetches failed.
+ * Returns null if the variable has no normals or none of its files exist.
  */
 export async function fetchNormals(
   station: string,
