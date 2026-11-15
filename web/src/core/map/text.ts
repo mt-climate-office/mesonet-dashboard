@@ -3,22 +3,14 @@
  * `.sr-only` table twin and the live-region announcement. Strings only — the
  * UI puts them in the DOM with textContent, never as HTML.
  */
+import { formatElevation } from '../about/details'
 import type { Station } from '../api'
 import { asNetwork } from './markers'
-
-const FT_PER_M = 3.28084
-
-/** Elevation in metres → "1,400 m (4,593 ft)", each rounded from the raw value; null for a missing/non-finite value. */
-export function formatElevation(metres: number | null | undefined): string | null {
-  if (typeof metres !== 'number' || !Number.isFinite(metres)) return null
-  const fmt = (n: number) => Math.round(n).toLocaleString('en-US')
-  return `${fmt(metres)} m (${fmt(metres * FT_PER_M)} ft)`
-}
 
 export interface PopupLine {
   /** Station name (falls back to the id). */
   name: string
-  /** "HydroMet · 1,400 m (4,593 ft)" (elevation omitted when unknown). */
+  /** "HydroMet · 4,595 ft (1,400 m)", in the display units as About shows it (elevation omitted when unknown). */
   detail: string
 }
 
@@ -28,7 +20,7 @@ export function popupLines(codes: readonly string[], byId: ReadonlyMap<string, S
   for (const id of codes) {
     const s = byId.get(id)
     if (!s) continue
-    const elev = formatElevation(s.elevation)
+    const elev = Number.isFinite(s.elevation) ? formatElevation(s.elevation) : null
     out.push({ name: s.name || s.station, detail: [asNetwork(s.sub_network), elev].filter(Boolean).join(' · ') })
   }
   return out
