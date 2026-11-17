@@ -48,7 +48,7 @@ export function alertWhen(a: Pick<NwsAlert, 'onset' | 'ends'>, nowWallMs: number
   if (a.onset === null || a.onset <= nowWallMs) return until
   const from = at(a.onset, nowWallMs)
   const sameDay = a.ends !== null && day(a.onset) === day(a.ends)
-  return [`from ${sameDay ? from.split(' ').slice(0, 2).join(' ') : from}`, until].filter(Boolean).join(' ')
+  return [`from ${sameDay ? from.slice(0, from.lastIndexOf(' ')) : from}`, until].filter(Boolean).join(' ')
 }
 
 const RANK: Record<AlertTone, number> = { danger: 0, warning: 1, info: 2 }

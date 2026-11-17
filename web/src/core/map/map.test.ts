@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { Station } from '../api'
 import type { Theme } from '../palette'
 import { TOKENS_SNAPSHOT } from '../palette/tokens.snapshot'
+import { setUnitsSource } from '../units'
 import {
   asNetwork,
-  formatElevation,
   legendRows,
   markerProps,
   popupLines,
@@ -123,19 +123,22 @@ describe('the drawn features (kit MCO.map.colocation with the app rank)', () => 
 describe('text models', () => {
   const byId = new Map(CATALOG.map((s) => [s.station, s]))
 
-  it('formats elevation in whole metres and feet', () => {
-    expect(formatElevation(1400)).toBe('1,400 m (4,593 ft)')
-    expect(formatElevation(1400.4)).toBe('1,400 m (4,594 ft)')
-    expect(formatElevation(0)).toBe('0 m (0 ft)')
-    expect(formatElevation(Number.NaN)).toBeNull()
-    expect(formatElevation(null)).toBeNull()
-  })
-
   it('builds popup lines per member, skipping unknown ids', () => {
     expect(popupLines(['acebozem', 'bozmtest', 'ghost'], byId)).toEqual([
-      { name: 'Bozeman', detail: 'HydroMet · 1,400 m (4,594 ft)' },
-      { name: 'Bozeman AgriMet', detail: 'AgriMet · 1,400 m (4,594 ft)' },
+      { name: 'Bozeman', detail: 'HydroMet · 4,595 ft (1,400 m)' },
+      { name: 'Bozeman AgriMet', detail: 'AgriMet · 4,595 ft (1,400 m)' },
     ])
+  })
+
+  it('shows popup elevation as About does: metres first in SI, omitted when unknown', () => {
+    setUnitsSource(() => 'si')
+    try {
+      expect(popupLines(['acebozem'], byId)[0].detail).toBe('HydroMet · 1,400 m (4,595 ft)')
+    } finally {
+      setUnitsSource(() => 'us')
+    }
+    const noElev = st('noelev', { elevation: Number.NaN })
+    expect(popupLines(['noelev'], new Map([['noelev', noElev]]))[0].detail).toBe('HydroMet')
   })
 
   it('keeps markup in names as plain text (the UI uses textContent)', () => {
