@@ -363,5 +363,38 @@ def toggle_modal(n1, is_open):
     return is_open
 
 
+
+# Shows the new-dashboard notice once per browser: the localStorage flag is
+# set when the notice opens, so closing it by the button, the X, Escape or the
+# backdrop all count as seen. The flag is keyed on NEXT_DASHBOARD_NOTICE_ID in
+# layout.py, so changing that id shows the notice again. If localStorage is
+# unavailable the notice shows on each load. "url.pathname" is the page-load
+# trigger; open and close share one callback because they share one output.
+app.clientside_callback(
+    """
+    function(pathname, closeClicks, config) {
+        const trigger = window.dash_clientside.callback_context.triggered[0];
+        if (trigger && trigger.prop_id === 'next-dashboard-modal-close.n_clicks') {
+            return false;
+        }
+        const key = 'nextDashboardNoticeSeen:' + ((config && config.id) || '');
+        try {
+            if (window.localStorage.getItem(key)) {
+                return false;
+            }
+            window.localStorage.setItem(key, '1');
+        } catch (e) {
+            // Storage blocked: show the notice rather than hide it for good.
+        }
+        return true;
+    }
+    """,
+    Output("next-dashboard-modal", "is_open"),
+    Input("url", "pathname"),
+    Input("next-dashboard-modal-close", "n_clicks"),
+    State("next-dashboard-modal-config", "data"),
+)
+
+
 if __name__ == "__main__":
     app.run_server(debug=True)
