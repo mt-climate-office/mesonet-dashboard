@@ -1681,6 +1681,44 @@ clientside_callback(
 )
 
 
+# Shows the new-dashboard notice once per browser: the localStorage flag is
+# set when the notice opens, so closing it by the button, the X, Escape or the
+# backdrop all count as seen. The flag is keyed on NEXT_DASHBOARD_NOTICE_ID in
+# layout.py, so changing that id shows the notice again. If localStorage is
+# unavailable the notice shows on each load. An active outage notice takes the
+# screen instead; this one waits for a load without it. Same single-callback
+# and "app-layout.children" trigger as the outage modal above, for the same
+# reasons.
+clientside_callback(
+    """
+    function(layoutChildren, closeClicks, config, outageConfig) {
+        const trigger = window.dash_clientside.callback_context.triggered[0];
+        if (trigger && trigger.prop_id === 'next-dashboard-modal-close.n_clicks') {
+            return false;
+        }
+        if (outageConfig && outageConfig.active) {
+            return false;
+        }
+        const key = 'nextDashboardNoticeSeen:' + ((config && config.id) || '');
+        try {
+            if (window.localStorage.getItem(key)) {
+                return false;
+            }
+            window.localStorage.setItem(key, '1');
+        } catch (e) {
+            // Storage blocked: show the notice rather than hide it for good.
+        }
+        return true;
+    }
+    """,
+    Output("next-dashboard-modal", "is_open"),
+    Input("app-layout", "children"),
+    Input("next-dashboard-modal-close", "n_clicks"),
+    State("next-dashboard-modal-config", "data"),
+    State("outage-modal-config", "data"),
+)
+
+
 # @app.callback(
 #     Output("feedback-modal", "is_open"),
 #     [Input("feedback-button", "n_clicks")],

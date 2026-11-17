@@ -206,6 +206,117 @@ def generate_outage_modal(app_ref: Any) -> html.Div:
     )
 
 
+# The new dashboard (web/ in this repo), served beside this app, and the form
+# that collects feedback on it. NEXT_DASHBOARD_NOTICE_ID keys the "already
+# seen" flag in the browser; change it to show the notice again to everyone.
+NEXT_DASHBOARD_URL = "https://mesonet.climate.umt.edu/dash/next/"
+FEEDBACK_FORM_URL = "https://airtable.com/appUacO5Pq7wZYoJ3/pagqtNp2dSSjhkUkN/form"
+NEXT_DASHBOARD_NOTICE_ID = "2026-11-next-dashboard"
+
+# base-styles.css colors links #1EAEDB (2.6:1 on white, below the 4.5:1 that
+# WCAG AA asks of text) and restyles <button> but not <a> buttons. These keep
+# the notice's links readable and its two buttons alike. Sizes are in px
+# because the same stylesheet sets the root font size to 10px.
+_NOTICE_LINK_STYLE = {"color": "#0B5ED7"}
+_NOTICE_BUTTON_STYLE = {
+    "height": "auto",
+    "padding": "6px 12px",
+    "fontSize": "15px",
+    "fontWeight": 400,
+    "lineHeight": 1.5,
+    "letterSpacing": "normal",
+    "textTransform": "none",
+}
+
+
+def generate_next_dashboard_modal() -> html.Div:
+    """
+    Generate the notice that a new dashboard is coming.
+
+    Tells visitors that a new dashboard will replace this one, links to it at
+    /dash/next/, and says where to send feedback. A clientside callback in
+    app.py opens it once per browser (see NEXT_DASHBOARD_NOTICE_ID) and keeps
+    it closed while an outage notice is showing.
+
+    Returns:
+        html.Div: Modal dialog component with the notice, plus the store the
+            clientside gating callback reads.
+    """
+    return html.Div(
+        [
+            dcc.Store(
+                id="next-dashboard-modal-config",
+                data={"id": NEXT_DASHBOARD_NOTICE_ID},
+            ),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(
+                        dbc.ModalTitle(
+                            "A new Mesonet dashboard is coming",
+                            id="next-dashboard-modal-title",
+                        )
+                    ),
+                    dbc.ModalBody(
+                        [
+                            html.P(
+                                [
+                                    "A new Montana Mesonet dashboard will replace "
+                                    "this one. It is still in testing, and you can "
+                                    "try it now at ",
+                                    html.A(
+                                        "mesonet.climate.umt.edu/dash/next",
+                                        href=NEXT_DASHBOARD_URL,
+                                        style=_NOTICE_LINK_STYLE,
+                                    ),
+                                    ".",
+                                ]
+                            ),
+                            html.P(
+                                [
+                                    "Tell us what works and what does not on the ",
+                                    html.A(
+                                        "feedback form",
+                                        href=FEEDBACK_FORM_URL,
+                                        target="_blank",
+                                        rel="noopener",
+                                        style=_NOTICE_LINK_STYLE,
+                                    ),
+                                    " (opens in a new tab).",
+                                ],
+                                className="mb-0",
+                            ),
+                        ]
+                    ),
+                    dbc.ModalFooter(
+                        [
+                            dbc.Button(
+                                "Keep using this dashboard",
+                                id="next-dashboard-modal-close",
+                                color="secondary",
+                                outline=True,
+                                n_clicks=0,
+                                style=_NOTICE_BUTTON_STYLE,
+                            ),
+                            dbc.Button(
+                                "Try the new dashboard",
+                                href=NEXT_DASHBOARD_URL,
+                                external_link=True,
+                                color="primary",
+                                style=_NOTICE_BUTTON_STYLE,
+                            ),
+                        ]
+                    ),
+                ],
+                id="next-dashboard-modal",
+                labelledby="next-dashboard-modal-title",
+                is_open=False,
+                centered=True,
+                size="md",
+            ),
+        ]
+    )
+
+
 def feedback_iframe() -> html.Div:
     """
     Generate the feedback modal dialog with embedded form.
@@ -1584,6 +1695,7 @@ def app_layout(app_ref, stations):
             dbc.Row(className="h-100", id="main-content"),
             generate_modal(),
             generate_outage_modal(app_ref),
+            generate_next_dashboard_modal(),
             # feedback_iframe(),
             dbc.Modal(
                 [],
