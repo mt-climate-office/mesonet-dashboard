@@ -80,14 +80,14 @@
   <meta name="twitter:image" content="__DASHBOARD_URL__og-card.png">
   <meta name="twitter:image:alt" content="The Mesonet Dashboard's station chooser: a search box above a map of Montana Mesonet stations">
 
-  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.1.1/assets/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.1.1/assets/favicon-16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.1.1/assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.2.0/assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.2.0/assets/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.2.0/assets/apple-touch-icon.png">
 
   <!-- House fonts (same @version as the theme CSS; crossorigin required, no integrity). -->
-  <link rel="preload" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.1.1/fonts/outfit-latin.woff2"
+  <link rel="preload" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.2.0/fonts/outfit-latin.woff2"
         as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.1.1/fonts/space-mono-latin.woff2"
+  <link rel="preload" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.2.0/fonts/space-mono-latin.woff2"
         as="font" type="font/woff2" crossorigin>
 
   <!-- MapLibre 6 (kit snippets/head.html): ES modules only, imported by MCO.map.loadMapLibre(); the one-line
@@ -102,8 +102,8 @@
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.css"
         integrity="sha384-ntw3zEt6rcVML7jDK0ULmHa5hxLB23afsPqzqfY+gLgMfAkbFCnCgPpkZvV5mmZX"
         crossorigin="anonymous">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.1.1/theme/mco-theme.css"
-        integrity="sha384-SzDKR28wwlGdF7OkE1auBP3jztb0mBqYVu93PFQsGtw+H/AvE3x+eEmkAwe51kl4"
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.2.0/theme/mco-theme.css"
+        integrity="sha384-3NnxwFCsQtUxhjn1qkcZ8kWMVfCU1wQvygRG4Z5xev3LZYiO0CIT5DmlOYmrH0mn"
         crossorigin="anonymous">
   <script type="module" src="/src/main.ts"></script>
 </head>
@@ -111,22 +111,22 @@
   <!-- @include partials/shell.html -->
 
   <!-- Kit: classic scripts, before the (deferred) app module runs. MapLibre comes later, on demand (ui/map/presets.ts). -->
-  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.1.1/core/mco-core.js"
-          integrity="sha384-Nk83STg5HZ5lrHKiiGjgNZ1J80WCPlKUNp00h/nnYYQZ2TQsvlCi5QmWdmjgUa9u"
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.2.0/core/mco-core.js"
+          integrity="sha384-Lg1ZYKs0QP/c+2yHsq7uESujpfwptLkhliGBSfiL1ujTp546sMarq5wDVwfu6+Fn"
           crossorigin="anonymous"></script>
   <!-- Station photos (MCO.photos: schedule, slots, frames; public N/E/S/W; the dashboard asks for fullHistory). After core. -->
-  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.1.1/photos/mco-photos.js"
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.2.0/photos/mco-photos.js"
           integrity="sha384-ozh/CC3Rkx2Nr0HhRWGblyI7Qv4lUCRObmP01WH882/F3tDGUVGJngiKlTF6z+xz"
           crossorigin="anonymous"></script>
   <!-- Place search (MCO.places: the station search's places, nearest stations, Near me; its gazetteer comes from this tag). After core. -->
-  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.1.1/places/mco-places.js"
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.2.0/places/mco-places.js"
           integrity="sha384-o466EG179AbHeGgIqShv/SOZJey7dpFZmoau7VQ/MndZu2FhUoTjRaHrBVBGnGxz"
           crossorigin="anonymous"></script>
   <!-- The Now hero's one-line summary (MCO.summary: sky, wind, peak gust, dry days; the dashboard passes its rows and units). Needs nothing; after core like the rest. -->
-  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.1.1/summary/mco-summary.js"
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.2.0/summary/mco-summary.js"
           integrity="sha384-Ddz8IQRrF2NGqAKlZHghk0YqkH8nbk/pEYc5RsZgRAcSDYYgxNx2rK52UcUq2Bk0"
           crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.1.1/map/mco-map.js"
+  <script src="https://cdn.jsdelivr.net/gh/mt-climate-office/mco-web-style@1.2.0/map/mco-map.js"
           integrity="sha384-e0qIyit6dZojkXI677UlnDsT21wfxDYDRH6tisxwamJWoUkFoM+T6A3YgkEs6KtE"
           crossorigin="anonymous"></script>
 </body>
