@@ -203,3 +203,7 @@
 /* The error state centred in the plot's place (partials/load-error.html). */
 :is(.var-status, .cmp-status) .dash-load-error { align-items: center; padding: var(--card-pad); text-align: center; }
 .cmp-refreshing { position: absolute; top: 0.4rem; right: var(--gap); z-index: 1; font-size: var(--dash-fs-xs); color: var(--text-muted); }
+
+/* A chart linked to the hovered one (the dashboard's two stacks, echarts.connect) echoes its crosshair
+   but returns an empty tooltip (core/charts/latestTimeseries): no empty box beside the real one. */
+.chart-canvas .mco-tooltip:empty { display: none !important; }
