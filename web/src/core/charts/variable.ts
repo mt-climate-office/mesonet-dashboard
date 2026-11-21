@@ -59,7 +59,9 @@ export const variableChart: ChartBuilder<VariableModel> = (model, ctx) => {
   const formatter = (raw: TipParam | TipParam[]) => {
     const fill = (Array.isArray(raw) ? raw : [raw]).find((p) => p.seriesId === `${BAND_ID}-band`)
     const note = Array.isArray(fill?.value) && typeof fill.value[2] === 'string' ? fill.value[2] : ''
-    return base(raw) + (note ? `<div>${tipText('Low–high', `${note}${unit ? ` ${unit}` : ''}`)}</div>` : '')
+    const head = base(raw)
+    // An empty tooltip (the pointer is not over this chart, latestTimeseries) stays empty.
+    return head && head + (note ? `<div>${tipText('Low–high', `${note}${unit ? ` ${unit}` : ''}`)}</div>` : '')
   }
   return {
     ...out,
@@ -92,7 +94,9 @@ function cumulativeLine(option: EChartsOption, ctx: ChartContext, variable: stri
     const p = (Array.isArray(raw) ? raw : [raw]).find((x) => x.seriesId === CUMULATIVE_ID)
     const y = Array.isArray(p?.value) ? p.value[1] : null
     const row = typeof y === 'number' && Number.isFinite(y) ? `<div>${tipText('Cumulative', `${fmtValue(y)}${unit ? ` ${unit}` : ''}`)}</div>` : ''
-    return base(raw) + row
+    const head = base(raw)
+    // An empty tooltip (the pointer is not over this chart, latestTimeseries) stays empty.
+    return head && head + row
   }
   return {
     yAxis: {

@@ -54,6 +54,9 @@ describe('variableChart', () => {
     ])
     expect(html).toContain('Cumulative')
     expect(html).toContain('0.35 in')
+    // The host says the pointer is elsewhere: no tooltip, not a stray Cumulative row.
+    const away = variableChart(m, { ...testCtx('light'), pointerY: () => null }) as unknown as typeof o
+    expect(away.tooltip.formatter([{ seriesId: 'cumulative', value: [x, 0.35], axisValue: x, marker: '' }])).toBe('')
     expect(variableTable(m).columns.at(-1)).toMatch(/^Cumulative precipitation/)
     // Not for other variables.
     expect((variableChart(model(), testCtx('light')) as unknown as typeof o).series.some((x) => x.id === 'cumulative')).toBe(false)
