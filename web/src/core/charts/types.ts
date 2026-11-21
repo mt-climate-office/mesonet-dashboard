@@ -42,6 +42,12 @@ export interface ChartContext {
    * drag or pinch zoom (a swipe scrolls the page) and tap-triggered tooltips.
    */
   touch: boolean
+  /**
+   * The pointer's y over the canvas (CSS px from its top), or null when unknown. Live: read it
+   * inside a tooltip formatter, never while building (the option must not depend on it). The
+   * host updates it before ECharts handles the same event.
+   */
+  pointerY?: () => number | null
 }
 
 /**

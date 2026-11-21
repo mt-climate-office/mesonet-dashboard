@@ -208,6 +208,33 @@ describe('latestTimeseriesChart', () => {
     expect(html).not.toContain('mi/hr')
   })
 
+  it('a stack’s tooltip shows only the hovered panel, headed by its plain name; none when the pointer is over a linked chart', () => {
+    const m = model(hourRows(3, (i) => ({ ...met(i), ...soil(i) })), ['Air Temperature', 'Soil VWC'])
+    let y: number | null = null
+    const o = latestTimeseriesChart(m, { ...testCtx('light', 900), pointerY: () => y }) as unknown as Opt
+    const x = view[0] + 3_600_000
+    const params = [
+      { seriesId: 'p0:Air Temperature @ 2 m [°F]', value: [x, 61], axisValue: x, marker: '' },
+      { seriesId: 'p1:Soil VWC @ 2 in [%]', value: [x, 11], axisValue: x, marker: '' },
+    ]
+    const tip = () => o.tooltip.formatter(params)
+    y = o.grid[1].top + 5
+    expect(tip()).toContain('Soil moisture')
+    expect(tip()).toContain('11%')
+    expect(tip()).not.toContain('Soil VWC')
+    expect(tip()).not.toContain('61')
+    y = o.grid[0].top + 5
+    expect(tip()).toContain('61 °F')
+    expect(tip()).not.toContain('Soil moisture')
+    // The host says the pointer is elsewhere (the dashboard's other, connected stack): no tooltip.
+    y = null
+    expect(tip()).toBe('')
+    // No host pointer at all: every panel.
+    const bare = latestTimeseriesChart(m, testCtx('light', 900)) as unknown as Opt
+    expect(bare.tooltip.formatter(params)).toContain('61 °F')
+    expect(bare.tooltip.formatter(params)).toContain('11%')
+  })
+
   it('daily rows sit at local noon', () => {
     const rows = [1, 2, 3].map((d) => ({ station: 'x', datetime: `2026-07-0${d}`, 'Air Temperature @ 2 m [°F]': 60 })) as ObservationRow[]
     const line = dataSeries(build(model(rows, ['Air Temperature'], {}, 'daily')))[0]

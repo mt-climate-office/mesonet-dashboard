@@ -150,6 +150,8 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (model
   // Panel tops: each gap above a panel with keys is LAYOUT.keyPad taller.
   const tops = filled ? filled.tops : panels.reduce<number[]>((t, p, i) => [...t, i === 0 ? LAYOUT.top : t[i - 1] + h + LAYOUT.gap + (panelHasKeys(p) ? LAYOUT.keyPad : 0)], [])
   const topOf = (i: number) => tops[i] ?? LAYOUT.top
+  /** The panel at canvas y (a filled stack's last panel takes the empty rows below it). */
+  const panelAt = (y: number) => Math.min(n - 1, tops.filter((t, i) => i > 0 && t <= y).length)
   const ok = m.ts.x.map(Number.isFinite)
   // Daily rows sit at local noon so a bar fills its own day (as the Ag charts, format.ts wallMs).
   const shift = m.period === 'daily' ? 12 * 3_600_000 : 0
@@ -339,13 +341,24 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (model
       panelRows.push(`<div>${typeof p.marker === 'string' ? p.marker : ''}${text}</div>`)
       rows.set(meta.panel, panelRows)
     }
+    // The host knows the pointer is not over this chart: a linked chart (the dashboard's other stack,
+    // echarts.connect) is echoing it. It draws the crosshair but no tooltip (empty: styles/charts.css).
+    if (ctx.pointerY && ctx.pointerY() === null) return ''
+    // A stack shows only the hovered panel's rows (the crosshair still runs through every panel);
+    // with no host pointer, every panel's.
+    const y = n > 1 ? (ctx.pointerY?.() ?? null) : null
+    const only = y == null ? null : panelAt(y)
     const parts = panels.map((pn, i) => {
+      if (only != null && i !== only) return ''
       const spans = pn.sensorSpans.filter((s) => x >= s.x0 && x <= s.x1)
       const r = rows.get(i) ?? []
       if (!r.length && !spans.length) return ''
       const notes = spans.map((s) => `<div class="tooltip-sub">${escapeHtml(plainLabel(s.text)).replace(/\n/g, '<br>')}</div>`)
-      // One panel (the variable page): the rows already name the variable.
-      const head = n > 1 ? `<div class="tooltip-sub">${escapeHtml(pn.variable)}</div>` : ''
+      // The panel's plain name ("Soil moisture"), as its axis title says it, never the API's ("Soil VWC"),
+      // over rows that do not already say it (depths, heights); one panel (the variable page) never needs it.
+      const name = plainName(ELEM_MAP[pn.variable]?.[0] ?? '', pn.variable)
+      const named = [...tipMeta.values()].every((t) => t.panel !== i || t.label === name)
+      const head = n > 1 && !named ? `<div class="tooltip-sub">${escapeHtml(name)}</div>` : ''
       return `${head}${r.join('')}${notes.join('')}`
     })
     const when = x === partialX ? `${PARTIAL_DAY_LABEL}, ${fmtWall(x, tipPeriod)}` : fmtWall(x, tipPeriod)
