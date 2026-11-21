@@ -243,7 +243,7 @@ function rangeChart<K extends string>(
  * Reference-line label font (px); the labels are two short lines ("Heat stress" / "from 77 °F"),
  * or on compact screens "77 °F" / "heat".
  */
-const refFont = (ctx: ChartContext) => (ctx.compact ? 10 : 11)
+const refFont = (ctx: ChartContext) => (ctx.compact ? 11 : 12)
 
 /**
  * Grid right margin (px) for the reference-line labels beside the plot, so they never sit on the

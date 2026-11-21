@@ -26,6 +26,26 @@ const week = model(168, ['Air Temperature'], [view[0], view[0] + 7 * DAY])
 type Opt = { grid: Record<string, number>[]; series: { type: string; color: string }[]; dataZoom: { type: string; disabled?: boolean; startValue?: number; endValue?: number }[]; tooltip: { triggerOn?: string } }
 
 describe('variableChart', () => {
+  it('respaces the depth labels for its own, taller plot: same readings, a smaller gap in axis units', () => {
+    const soilRows = Array.from({ length: 4 }, (_, i) => ({
+      station: 'acebozem',
+      datetime: `2026-07-01 0${i}:00:00-06:00`,
+      'Soil VWC @ 2 in [%]': 28,
+      'Soil VWC @ 4 in [%]': 28.2,
+      'Soil VWC @ 20 in [%]': 10,
+    })) as ObservationRow[]
+    const m: VariableModel = { ts: buildTimeseriesModel({ rows: soilRows, vars: ['Soil VWC'], period: 'hourly' })!, period: 'hourly', view }
+    type Lab = { id?: string; data: { value: number[] }[] }
+    const labels = (h: number) => (variableChart(m, { ...testCtx('light'), height: h }).series as Lab[]).find((x) => String(x.id).endsWith('-depth-labels'))!
+    const gap = (l: Lab) => Math.abs(l.data[0].value[1] - l.data[1].value[1])
+    const short = labels(200)
+    const tall = labels(800)
+    expect(short.data.map((d) => d.value[2])).toEqual([28, 28.2, 10])
+    expect(tall.data.map((d) => d.value[2])).toEqual([28, 28.2, 10])
+    // The two close depths are pulled apart; less so (in axis units) on the taller plot.
+    expect(gap(short)).toBeGreaterThan(gap(tall))
+    expect(gap(tall)).toBeGreaterThan(0.2)
+  })
   it('draws the Compare panel for one variable, its plot filling the host height', () => {
     for (const theme of THEMES) {
       const o = variableChart(model(), testCtx(theme)) as unknown as Opt
@@ -113,6 +133,18 @@ describe('latestTimeseriesChart on a compact touch screen', () => {
 
 describe('dashboardStackChart', () => {
   const two = model(168, ['Air Temperature', 'Relative Humidity'], [view[0], view[0] + 7 * DAY])
+  it('no depth keys over soil panels (each line is named at its end; the panel link sits there), unlike the variable page', () => {
+    const soilRows = Array.from({ length: 4 }, (_, i) => ({ station: 'acebozem', datetime: `2026-07-01 0${i}:00:00-06:00`, 'Soil VWC @ 2 in [%]': 20, 'Soil VWC @ 20 in [%]': 10 })) as ObservationRow[]
+    const m: VariableModel = { ts: buildTimeseriesModel({ rows: soilRows, vars: ['Soil VWC'], period: 'hourly' })!, period: 'hourly', view }
+    type G = { style?: { text?: string }; children?: { style?: { text?: string } }[] }[]
+    const texts = (g: G) => g.flatMap((x) => [x.style?.text, ...(x.children ?? []).map((c) => c.style?.text)]).filter(Boolean)
+    const ctx = { ...testCtx('light', 800), height: 400 }
+    expect(texts(dashboardStackChart(m, ctx).graphic as G)).not.toContain('5 cm')
+    expect(texts(variableChart(m, ctx).graphic as G)).toContain('5 cm')
+    // The lines are still named at their ends.
+    const labels = (dashboardStackChart(m, ctx).series as { id?: string; data: { label: { formatter: string } }[] }[]).find((x) => String(x.id).endsWith('-depth-labels'))!
+    expect(labels.data.map((d) => d.label.formatter)).toEqual(['5 cm', '50 cm'])
+  })
   type Stack = { grid: { top: number; height: number }[]; dataZoom: { type: string }[]; yAxis: { min: number; max: number; interval: number }[] }
   it('rows from `fill`: equal, at fixed tops, so two stacks with the same rows align; compact, no slider; ≤ 3 y intervals; no y titles', () => {
     const a = dashboardStackChart({ ...two, fill: { rows: 3 } }, { ...testCtx('dark', 800), height: 600 }) as unknown as Stack

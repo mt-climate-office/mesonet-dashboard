@@ -20,6 +20,7 @@ import { type AgLegendItem, DASH_ICON, LINE_ICON, agLegend, liftForLegend } from
 import { axisTooltip, tipText, tooltipBase } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
 import { axisTitle } from '../variables/labels'
+import { depthLabelGutter, depthLabels, withFocus, type DepthEnd } from './latestTimeseries'
 
 /** Display units per bar (1, or 100 kPa in SI). */
 const swpScale = () => swpOut(1) ?? 1
@@ -205,11 +206,22 @@ export function soilProfileTable(m: SoilProfileModel): ChartTable {
 
 /* ------------------------------------------------------- depth lines */
 
-/** One line per depth, shallow → deep, in the depth's own color and dash (style LINE_WIDTH, gaps at `step`). */
+/**
+ * One line per depth, shallow → deep, in the depth's own color and dash (style LINE_WIDTH, gaps at
+ * `step`); pointing at one dims the others (latestTimeseries `withFocus`), as on the station charts.
+ */
 function depthLines(ctx: ChartContext, xs: number[], depthsCm: number[], values: Nullable[][], step: number): LineSeriesOption[] {
   return depthsCm.map((cm, d) =>
-    lineSeries(depthLabel(cm), points(xs, values[d], step), depthStyle(depthInches(cm), ctx.theme.name)),
+    withFocus(lineSeries(depthLabel(cm), points(xs, values[d], step), depthStyle(depthInches(cm), ctx.theme.name))),
   )
+}
+
+/** Each depth's last reading, for its label at the line's end (latestTimeseries `depthLabels`). */
+function depthEnds(ctx: ChartContext, xs: number[], depthsCm: number[], values: Nullable[][], step: number): DepthEnd[] {
+  return depthsCm.flatMap((cm, d) => {
+    const last = [...points(xs, values[d], step)].reverse().find((p) => p[1] != null)
+    return last ? [{ x: last[0], y: last[1] as number, text: depthLabel(cm), color: depthStyle(depthInches(cm), ctx.theme.name).color }] : []
+  })
 }
 
 /** The legend items of the depth lines: a bare line in each depth's dash (the default dot hid it). */
@@ -248,7 +260,8 @@ function swpLines(ctx: ChartContext, xs: number[], depthsCm: number[], bar: Null
   return depthsCm.flatMap((cm, d) => {
     const style = depthStyle(depthInches(cm), ctx.theme.name)
     const name = depthLabel(cm)
-    const solid = lineSeries(name, points(xs, bar[d].map((v, i) => (dry[d][i] ? null : v)), step), style)
+    // Pointing at a depth dims the others; the dotted dry-end companion is its own series, so it dims too.
+    const solid = withFocus(lineSeries(name, points(xs, bar[d].map((v, i) => (dry[d][i] ? null : v)), step), style))
     if (!dry[d].some(Boolean)) return [solid]
     const near = (i: number) => dry[d][i] || !!dry[d][i - 1] || !!dry[d][i + 1]
     const ys = bar[d].map((v, i) => (near(i) ? v : null))
@@ -347,17 +360,28 @@ export const percentSaturationChart: ChartBuilder<PercentSaturationModel> = (m, 
   const lg = agLegend(ctx, depthKey(ctx, m.series.depthsCm))
   const step = stepMs(m.period)
   const trace = points(xs, m.series.pct[shallowest(m.series.depthsCm)] ?? [], step)
-  const f = timeFrame(ctx, { extent: plotExtent(xs, step, false), trace, yAxisIndex: 1, legendPx: LEGEND_PX })
+  // Each depth named at its line's end (as the station charts), in a gutter right of the plot.
+  const font = ctx.compact ? 11 : 12
+  const ends = depthEnds(ctx, xs, m.series.depthsCm, m.series.pct, step)
+  const right = ends.length ? depthLabelGutter(ends.map((e) => e.text), font) : undefined
+  const f = timeFrame(ctx, { extent: plotExtent(xs, step, false), trace, yAxisIndex: 1, legendPx: LEGEND_PX, right })
   // A closed 0–100 % scale, as relative humidity (style FIXED).
-  const y = { ...valueAxis(axisTitle('percent_saturation', 'Soil saturation'), { min: 0, max: 100 }), interval: 25 }
+  const axis = { min: 0, max: 100 }
+  const y = { ...valueAxis(axisTitle('percent_saturation', 'Soil saturation'), axis), interval: 25 }
+  const frame = liftForLegend(f.grid, f.dataZoom, lg.extra)
+  const plotPx = (ctx.height ?? 0) - Number(frame.grid.top ?? 0) - Number(frame.grid.bottom ?? 0)
   return {
     useUTC: true,
-    ...liftForLegend(f.grid, f.dataZoom, lg.extra),
+    ...frame,
     xAxis: f.xAxis,
     yAxis: f.trace ? [y, f.trace.yAxis] : y,
     legend: lg.legend,
     tooltip: axisTooltip(ctx, (x) => fmtWall(x, m.period), (name, y) => tipText(name, `${y.toFixed(1)} %`)),
-    series: [...(f.trace ? [f.trace.series] : []), ...depthLines(ctx, xs, m.series.depthsCm, m.series.pct, step)],
+    series: [
+      ...(f.trace ? [f.trace.series] : []),
+      ...depthLines(ctx, xs, m.series.depthsCm, m.series.pct, step),
+      ...(ends.length ? [depthLabels(ends, 0, font, ctx, axis, plotPx)] : []),
+    ],
   } satisfies EChartsOption
 }
 

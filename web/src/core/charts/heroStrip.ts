@@ -134,7 +134,7 @@ function labels(id: string, ctx: ChartContext, color: string, span: [number, num
     itemStyle: { color },
     data: pts.map((p) => ({
       value: [p.x, p.y],
-      label: { show: true, formatter: p.text, position: p.below ? 'bottom' : 'top', align: align(p.x), color: ctx.theme.textMuted, fontFamily: ctx.theme.fontUi, fontSize: ctx.compact ? 10 : 11 },
+      label: { show: true, formatter: p.text, position: p.below ? 'bottom' : 'top', align: align(p.x), color: ctx.theme.textMuted, fontFamily: ctx.theme.fontUi, fontSize: ctx.compact ? 11 : 12 },
     })),
   }
 }

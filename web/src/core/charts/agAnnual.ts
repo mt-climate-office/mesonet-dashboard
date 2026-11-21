@@ -1,7 +1,7 @@
 /**
  * Annual comparison: one line per calendar year on a day-of-year axis.
  * Prior years from batlow (old → new), the current year in --text-primary
- * at width 3. Axes as every time chart's (mono labels, 10 px on phones, the
+ * at width 3. Axes as every time chart's (mono labels, 11 px on phones, the
  * x axis at the bottom); the years' key is the station charts' key (keys.ts) at
  * the top left, wrapping onto more rows, the current year first and emphasized.
  * Wind direction draws dots (windDirection.ts). Traces arrive in display units
@@ -70,7 +70,7 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
       : lineSeries(String(t.year), pts, { color, width: isCurrent ? ANNUAL_CURRENT.width : LINE_WIDTH })
     return isCurrent ? { ...s, z: 3 } : s
   })
-  const fontSize = ctx.compact ? 10 : 11
+  const fontSize = ctx.compact ? 11 : 12
   // The current year leads the key, so it is on the first row however many years wrap below it; then newest → oldest.
   const keyed: KeyEntry[] = [...traces.filter((t) => t.year === m.currentYear), ...[...prior].reverse()].map((t) => ({
     label: String(t.year),

@@ -34,7 +34,7 @@ const BAR_W = 12
  */
 const TOP = 52
 const TITLE_TOP = 30
-const CHAR_W = 6.4 // ~11 px mono
+const CHAR_W = 7 // ~12 px mono (theme.ts axis labels)
 /** Height of the horizontal bar block: title, bar, tick labels. */
 const H_BLOCK = 44
 

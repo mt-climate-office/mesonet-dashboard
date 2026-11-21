@@ -32,10 +32,10 @@ describe('annualChart', () => {
     expect(MONTH_MID_DOY.slice(0, 2)).toEqual([17, 46])
     expect(MONTH_MID_DOY.map(x.axisLabel.formatter)).toEqual(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
     expect(o.yAxis).toMatchObject({ name: 'Cumulative precipitation (in)' })
-    // Phones: every other month, 10 px labels, as the other phone axes.
+    // Phones: every other month, 11 px labels, as the other phone axes.
     const phone = annualChart(model, testCtx('light', 390, true)).xAxis as X
     expect(phone.axisLabel.customValues.map(phone.axisLabel.formatter)).toEqual(['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov'])
-    expect(phone.axisLabel.fontSize).toBe(10)
+    expect(phone.axisLabel.fontSize).toBe(11)
   })
   type G = { x: number; y: number; children: { style: { text?: string; fill?: string; font?: string } }[] }
   const keys = (o: unknown) => ((o as { graphic: G[] }).graphic ?? []).map((g) => ({ text: g.children[1].style.text, fill: g.children[1].style.fill, font: g.children[1].style.font, x: g.x, y: g.y }))

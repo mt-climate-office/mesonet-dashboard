@@ -46,7 +46,7 @@ export function wrapKeys(ctx: ChartContext, entries: KeyEntry[], avail: number):
 
 /** A row of keys, left-aligned from `left` px with its middle at `y`. */
 export function keyRow(ctx: ChartContext, entries: KeyEntry[], left: number, y: number): GraphicComponentOption[] {
-  const size = ctx.compact ? 10 : 11
+  const size = ctx.compact ? 11 : 12
   let x = left
   const out: GraphicComponentOption[] = []
   for (const e of entries) {

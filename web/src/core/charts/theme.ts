@@ -56,7 +56,7 @@ export const tickNumber = (v: number): string =>
  * Data colors come from the builders, never from here.
  */
 export function echartsTheme(t: ChartTheme): Record<string, unknown> {
-  const label = { color: t.textMuted, fontFamily: t.fontMono, fontSize: 11 }
+  const label = { color: t.textMuted, fontFamily: t.fontMono, fontSize: 12 }
   const axis = {
     axisLine: { lineStyle: { color: t.grid } },
     axisTick: { lineStyle: { color: t.grid } },
