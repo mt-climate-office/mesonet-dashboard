@@ -10,6 +10,8 @@ import { drawn, shownY, testCtx } from './testing'
 
 type S = { type: string; name: string; id?: string; data: unknown[]; color: string; lineStyle?: { type: string; opacity?: number }; markArea?: { data: [{ yAxis: number }, { yAxis: number }][] }; markLine?: { data: { yAxis: number; name?: string }[] } }
 const series = (o: { series?: unknown }) => drawn<S>(o)
+/** The depth lines only: no depth-label points (latestTimeseries `depthLabels`). */
+const lines = (o: { series?: unknown }) => series(o).filter((x) => !String((x as { id?: string }).id ?? '').endsWith('-depth-labels'))
 const texts = (o: { graphic?: unknown }) =>
   ((o.graphic ?? []) as { type: string; style?: { text?: string } }[]).filter((g) => g.type === 'text').map((g) => g.style!.text)
 
@@ -97,6 +99,12 @@ describe('swpChart', () => {
     const [y] = shownY<{ max: number }>(swpChart({ series, period: 'daily' }, testCtx()))
     expect(y.max).toBe(SWP_CAP_BAR * 10)
   })
+  it('pointing at a depth\'s line dims the others', () => {
+    const o = swpChart({ series: s, period: 'daily' }, testCtx())
+    const lines = (o.series as { type?: string; id?: string; emphasis?: { focus?: string }; lineStyle?: { type?: string } }[]).filter((x) => x.type === 'line' && !String(x.id ?? '').startsWith('aux:') && x.lineStyle?.type !== 'dotted')
+    expect(lines.length).toBeGreaterThan(0)
+    expect(lines.every((l) => l.emphasis?.focus === 'series')).toBe(true)
+  })
   it('table shows suction as negative bar', () => {
     const t = swpTable({ series: s, period: 'daily' })
     expect(t.columns).toEqual(['Date', ...s.depthsCm.map((cm) => depthLabel(cm))])
@@ -110,8 +118,18 @@ describe('percentSaturationChart', () => {
     const p = percentSaturation(soil, params)
     const o = percentSaturationChart({ series: p, period: 'daily' }, testCtx())
     expect(shownY(o)[0]).toMatchObject({ type: 'value', min: 0, max: 100, interval: 25 })
-    expect(series(o).map((l) => l.name)).toEqual(p.depthsCm.map((cm) => depthLabel(cm)))
+    expect(lines(o).map((l) => l.name)).toEqual(p.depthsCm.map((cm) => depthLabel(cm)))
     expect(percentSaturationTable({ series: p, period: 'daily' }).rows).toHaveLength(p.time.length)
+  })
+  it('each depth named at its line\'s end, in a gutter right of the plot; pointing at a line dims the others', () => {
+    const p = percentSaturation(soil, params)
+    const o = percentSaturationChart({ series: p, period: 'daily' }, { ...testCtx(), height: 400 })
+    type L = { id?: string; emphasis?: { focus?: string }; data: { label: { formatter: string } }[] }
+    const all = o.series as L[]
+    const labels = all.find((x) => String(x.id).endsWith('-depth-labels'))!
+    expect(labels.data.map((d) => d.label.formatter)).toEqual(p.depthsCm.map((cm) => depthLabel(cm)))
+    expect(lines(o).every((l) => (l as unknown as L).emphasis?.focus === 'series')).toBe(true)
+    expect(Number((o.grid as { right: number }).right)).toBeGreaterThan(24)
   })
 })
 

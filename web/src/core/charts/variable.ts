@@ -7,17 +7,17 @@
  * mean line, named in the tooltip. The host sets the height in CSS: 420 px,
  * `min(60dvh, 420px)` on phones (styles/charts.css).
  */
-import type { EChartsOption, SeriesOption } from 'echarts'
+import type { EChartsOption, SeriesOption, YAXisComponentOption } from 'echarts'
 import { DAILY_RANGE, withAlpha } from '../palette'
 import { timeseriesInUnits } from '../models/timeseries'
 import { displayUnit } from '../units'
 import { plainUnit } from '../variables/labels'
-import { LAYOUT, latestTimeseriesChart, latestTimeseriesTable, seriesColor, type LatestTimeseriesModel } from './latestTimeseries'
+import { LAYOUT, depthLabels, latestTimeseriesChart, latestTimeseriesTable, seriesColor, type DepthEnd, type LatestTimeseriesModel } from './latestTimeseries'
 import { bandSeries } from './overlays'
 import { AUX } from './series'
 import { DAY, bottomLayout } from './style'
 import { tipText, type TipParam } from './tooltip'
-import type { ChartBuilder, ChartTable } from './types'
+import type { ChartBuilder, ChartContext, ChartTable } from './types'
 
 /** A LatestTimeseriesModel with exactly one panel. */
 export type VariableModel = LatestTimeseriesModel
@@ -33,9 +33,12 @@ export const variableChart: ChartBuilder<VariableModel> = (model, ctx) => {
   const s = panel?.series.length === 1 ? panel.series[0] : undefined
   // Room under the plot for the x labels, and the slider when it shows (style `bottomLayout`).
   const slider = (option.dataZoom as { type?: string }[]).some((z) => z.type === 'slider')
+  const bottom = bottomLayout(slider).grid
   const out: EChartsOption = {
     ...option,
-    grid: [{ left: g.left, right: g.right, top: LAYOUT.top, bottom: bottomLayout(slider).grid }],
+    grid: [{ left: g.left, right: g.right, top: LAYOUT.top, bottom }],
+    // The plot fills the host's height, not the stack's panel height: respace the depth labels for it.
+    ...(ctx.height ? { series: respaceDepthLabels(option, ctx, ctx.height - LAYOUT.top - bottom) } : {}),
   }
   if (!s?.band) return out
 
@@ -56,8 +59,19 @@ export const variableChart: ChartBuilder<VariableModel> = (model, ctx) => {
   return {
     ...out,
     tooltip: { ...(option.tooltip as object), formatter: formatter as never },
-    series: [...(option.series as SeriesOption[]), ...band],
+    series: [...(out.series as SeriesOption[]), ...band],
   }
+}
+
+/** The option's series with its depth labels (latestTimeseries `depthLabels`) spaced for a plot `plotPx` tall. */
+function respaceDepthLabels(option: EChartsOption, ctx: ChartContext, plotPx: number): SeriesOption[] {
+  const series = option.series as SeriesOption[]
+  return series.map((x) => {
+    if (x.type !== 'scatter' || !String(x.id ?? '').endsWith('-depth-labels')) return x
+    const data = x.data as { value: [number, number, number]; label: { formatter: string; color: string; fontSize: number } }[]
+    const ends: DepthEnd[] = data.map((d) => ({ x: d.value[0], y: d.value[2], text: d.label.formatter, color: d.label.color }))
+    return depthLabels(ends, 0, data[0]?.label.fontSize ?? 12, ctx, (option.yAxis as YAXisComponentOption[])[0] as { min?: unknown; max?: unknown }, plotPx)
+  })
 }
 
 /** At most `n` intervals on a fixed-interval y axis: the step grows by whole multiples, the top rounds up to a tick. */
@@ -76,7 +90,8 @@ function sparseTicks(y: Record<string, unknown>, n: number): Record<string, unkn
  * other stack's; one row each without it), at most 3 y intervals each, no y titles (the panel links name them).
  */
 export const dashboardStackChart: ChartBuilder<LatestTimeseriesModel> = (m, ctx) => {
-  const option = latestTimeseriesChart({ ...m, fill: m.fill ?? { rows: m.ts.panels.length } }, { ...ctx, compact: true })
+  // No depth keys: every depth is named at its line's end, and the panel links sit where the key row would.
+  const option = latestTimeseriesChart({ ...m, fill: m.fill ?? { rows: m.ts.panels.length }, depthKeys: false }, { ...ctx, compact: true })
   // No y titles: each panel's link over it names it with its unit ("Pressure 846 mb"), and a title beside
   // wide tick labels ("852.5") would crowd the card's edge.
   return { ...option, yAxis: (option.yAxis as Record<string, unknown>[]).map((y) => ({ ...sparseTicks(y, 3), name: '' })) } as EChartsOption

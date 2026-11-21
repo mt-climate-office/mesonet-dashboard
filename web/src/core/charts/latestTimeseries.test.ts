@@ -3,7 +3,7 @@ import type { ObservationRow } from '../api'
 import { buildTimeseriesModel } from '../models/timeseries'
 import type { StationNormals } from '../normals'
 import { ETR, NORMALS, PRECIP, THEMES, depthColor, sensorColor, variableStyle } from '../palette'
-import { LAYOUT, TABLE_ROW_LIMIT, keyedGaps, latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, fmtValue, type LatestTimeseriesModel } from './latestTimeseries'
+import { LAYOUT, TABLE_ROW_LIMIT, keyedGaps, spreadApart, latestTimeseriesChart, latestTimeseriesHeight, latestTimeseriesTable, fmtValue, type LatestTimeseriesModel } from './latestTimeseries'
 import { LTTB_THRESHOLD } from './series'
 import { testCtx } from './testing'
 import { paint } from './theme'
@@ -130,6 +130,45 @@ describe('latestTimeseriesChart', () => {
       expect(s.map((x) => x.lineStyle?.type)).toEqual(['solid', 'solid', 'solid'])
       expect(texts(o)).toEqual(expect.arrayContaining(['5 cm', '10 cm', '50 cm']))
     }
+  })
+
+  it('soil depths: each depth is named at its last reading (once, overlaps nudged apart), pointing at a line dims the others, and the plot leaves room', () => {
+    type L = S & { emphasis?: { focus?: string; blurScope?: string; lineStyle?: unknown }; triggerLineEvent?: boolean }
+    type Lab = { id: string; silent: boolean; data: { value: [number, number]; label: { formatter: string; color: string } }[] }
+    const split = build(model(hourRows(4, (i) => ({
+      'Soil VWC @ 2 in (probe A) [%]': 10 + i,
+      'Soil VWC @ 2 in (probe B) [%]': 11 + i,
+      'Soil VWC @ 20 in (probe A) [%]': 20,
+      'Soil VWC @ 20 in (probe B) [%]': 21,
+    })), ['Soil VWC'], { splitArrays: true }))
+    const s = dataSeries(split) as L[]
+    expect(s.every((x) => x.triggerLineEvent && x.emphasis?.focus === 'series' && x.emphasis.blurScope === 'coordinateSystem')).toBe(true)
+    // The line's own emphasis (its width) survives under the focus.
+    expect(s[0].emphasis?.lineStyle).toBeDefined()
+    const labels = split.series.find((x) => x.id === 'aux:p0-depth-labels') as unknown as Lab
+    expect(labels).toMatchObject({ silent: true })
+    // Array A's last readings (13 and 20; value[2]), one label per depth, in the depth's color.
+    expect(labels.data.map((d) => [d.label.formatter, (d.value as unknown as number[])[2], d.label.color])).toEqual([
+      ['5 cm', 13, depthColor(2, 'dark')],
+      ['50 cm', 20, depthColor(20, 'dark')],
+    ])
+    expect((split as unknown as { grid: { right: number }[] }).grid[0].right).toBeGreaterThan(16)
+    // A stack with soil makes room on every panel (their time axes stay aligned); without soil, none.
+    const mixed = build(model(hourRows(4, (i) => ({ ...met(i), ...soil(i) })), ['Air Temperature', 'Soil VWC'])) as unknown as { grid: { right: number }[]; series: { id?: string }[] }
+    expect(new Set(mixed.grid.map((g) => g.right)).size).toBe(1)
+    expect(mixed.series.map((x) => x.id).filter((id) => String(id).includes('depth-labels'))).toEqual(['aux:p1-depth-labels'])
+    expect((build(model(hourRows(4, met), ['Air Temperature'])) as unknown as { grid: { right: number }[] }).grid[0].right).toBe(16)
+  })
+
+  it('spreadApart: close labels move apart by the gap, as little as possible, inside the axis, order kept', () => {
+    expect(spreadApart([10, 30], 2, 0, 50)).toEqual([10, 30])
+    expect(spreadApart([28.3, 28.0, 24], 2, 0, 50)).toEqual([28.3, 26.3, 24])
+    // Pushed under the axis floor: the stack rises from it instead.
+    expect(spreadApart([1, 0.5, 0.2], 2, 0, 50)).toEqual([4, 2, 0])
+    // Input order is kept in the output; the higher value stays the higher label.
+    const out = spreadApart([20, 21, 20.5], 2, 0, 50)
+    expect(out[1]).toBeGreaterThan(out[2])
+    expect(out[2]).toBeGreaterThan(out[0])
   })
 
   it('soil arrays: each depth\'s color on both, B dashed; one key per depth, then the arrays', () => {
