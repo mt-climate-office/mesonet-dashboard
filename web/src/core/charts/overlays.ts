@@ -72,7 +72,7 @@ export function hBandSeries(
 ): LineSeriesOption {
   const fill = paint(ctx.theme, SWP_BANDS.fill)
   const stroke = paint(ctx.theme, SWP_BANDS.line)
-  const fontSize = ctx.compact ? 10 : 11
+  const fontSize = ctx.compact ? 11 : 12
   return {
     type: 'line',
     id: `${AUX}bands`,
@@ -113,7 +113,7 @@ export function hBandSeries(
 /** Grid right margin (px) that fits `hBandSeries` labels beside the plot: the longest label line, 6 px off, 8 px clear. */
 export function hBandGutter(ctx: ChartContext, labels: string[]): number {
   const longest = Math.max(0, ...labels.flatMap((l) => l.split('\n')).map((l) => l.length))
-  return Math.ceil(longest * (ctx.compact ? 10 : 11) * 0.58) + 14
+  return Math.ceil(longest * (ctx.compact ? 11 : 12) * 0.58) + 14
 }
 
 /** One sensor-change span in wall-clock ms with its hover text. */

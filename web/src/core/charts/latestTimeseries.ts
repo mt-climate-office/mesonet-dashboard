@@ -316,8 +316,8 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (model
       ...range,
       gridIndex: i,
       nameGap: ctx.compact ? 36 : 46,
-      nameTextStyle: { fontSize: ctx.compact ? 10 : 11, lineHeight: ctx.compact ? 12 : 14 },
-      axisLabel: { show: !p.noData, fontSize: ctx.compact ? 10 : 11, ...(p.variable === WIND_DIRECTION ? { formatter: compassTick } : {}) },
+      nameTextStyle: { fontSize: ctx.compact ? 11 : 12, lineHeight: ctx.compact ? 12 : 14 },
+      axisLabel: { show: !p.noData, fontSize: ctx.compact ? 11 : 12, ...(p.variable === WIND_DIRECTION ? { formatter: compassTick } : {}) },
       splitLine: { show: !p.noData },
     } as YAXisComponentOption
   })
