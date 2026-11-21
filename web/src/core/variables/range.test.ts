@@ -13,6 +13,18 @@ describe('range chips', () => {
     expect(presetPatch('14d', today)).toEqual({ from: null, to: null })
     expect(presetPatch('1y', today)).toEqual({ from: '2025-10-02', to: '2026-10-02' })
   })
+  it('YTD starts Jan 1; Water year starts Oct 1, of last year before October', () => {
+    expect(presetPatch('ytd', today)).toEqual({ from: '2026-01-01', to: '2026-10-02' })
+    expect(presetPatch('wy', today)).toEqual({ from: '2026-10-01', to: '2026-10-02' })
+    const sep = dayjs('2026-09-30')
+    expect(presetPatch('wy', sep)).toEqual({ from: '2025-10-01', to: '2026-09-30' })
+    expect(activePreset(presetPatch('wy', sep), sep)).toBe('wy')
+    expect(activePreset(presetPatch('ytd', sep), sep)).toBe('ytd')
+    // Oct 2: Water year's window is 24 h's; the URL reads back as the first chip.
+    expect(activePreset(presetPatch('wy', today), today)).toBe('24h')
+    expect(rangeLabel('wy', '', '')).toBe('Water year to date')
+    expect(rangeChipPatch('ytd', 'raw', sep)).toMatchObject({ view: 'recent', from: '2026-01-01', agg: null })
+  })
   it('read back from the URL whatever the interval; anything else is custom', () => {
     for (const id of ['24h', '7d', '14d', '30d', '1y'] as const) expect(activePreset(presetPatch(id, today), today)).toBe(id)
     expect(activePreset({ from: '2026-09-01', to: '2026-09-20' }, today)).toBe('custom')

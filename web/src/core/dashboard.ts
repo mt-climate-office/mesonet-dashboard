@@ -29,7 +29,7 @@ export function pageFor(section: Section, state: Pick<UrlState, 'cmp' | 'v'>, wi
 
 /** The dashboard's range chips: the chart pages' presets up to 30 days (one request holds every variable). */
 export const DASHBOARD_RANGES: readonly { id: RangePreset['id']; label: string }[] = RANGE_CHIPS.flatMap((c) =>
-  c.id === 'all' || c.id === '1y' ? [] : [{ id: c.id, label: c.label }],
+  c.id === 'all' || c.id === '1y' || c.id === 'ytd' || c.id === 'wy' ? [] : [{ id: c.id, label: c.label }],
 )
 
 /** The variable the dashboard draws as a wind rose of the window, not a time series. */

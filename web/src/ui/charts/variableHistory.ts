@@ -10,7 +10,7 @@ import Alpine from 'alpinejs'
 import { getStationRecord, type ObservationRow } from '../../core/api'
 import { annualChart, annualTable, type AnnualModel } from '../../core/charts'
 import { installDate, todayIso } from '../../core/latest'
-import { findVariable, historyModel, historyNote, historyRequest, historyRows, historyYears, plainName, requestGroups, type Variable } from '../../core/variables'
+import { currentHistoryYear, findVariable, historyModel, historyNote, historyRequest, historyRows, historyYears, plainName, requestGroups, type Variable } from '../../core/variables'
 import { component } from '../component'
 import { announce } from '../shell/live'
 import { chartVariables, stationElements } from './resources'
@@ -37,7 +37,11 @@ export function variableHistory() {
     },
     /** The note above the chart (core/variables historyNote): how each year is drawn. */
     note(): string {
-      return historyNote(this.variable)
+      return historyNote(this.variable, this.waterYear())
+    },
+    /** Years run Oct 1 – Sep 30 (`wy=1`, the variable page's Year row); the same requests, grouped differently. */
+    waterYear(): boolean {
+      return Alpine.store('url').state.wy
     },
     /** Each request group's rows so far (newest first); requests stop at the first group still loading. */
     get years(): { years: number[]; rows: ObservationRow[] | null; loading: boolean }[] {
@@ -61,7 +65,8 @@ export function variableHistory() {
     model(): (AnnualModel & { column: string }) | null {
       const v = this.variable
       if (!v) return null
-      return historyModel(v, this.years.flatMap((y) => (y.rows ? [y.rows] : [])), Number(todayIso().slice(0, 4)))
+      const wy = this.waterYear()
+      return historyModel(v, this.years.flatMap((y) => (y.rows ? [y.rows] : [])), currentHistoryYear(todayIso(), wy), wy)
     },
     loading(): boolean {
       return this.years.some((y) => y.loading)
@@ -71,7 +76,7 @@ export function variableHistory() {
       const pending = this.years.find((y) => y.loading)
       if (pending) return `Loading ${[...pending.years].reverse().join('–')}…`
       const have = this.model()?.traces.map((t) => t.year) ?? []
-      return have.length ? `Showing ${Math.min(...have)}–${Math.max(...have)}.` : ''
+      return have.length ? `Showing ${this.waterYear() ? 'water years ' : ''}${Math.min(...have)}–${Math.max(...have)}.` : ''
     },
   })
 }

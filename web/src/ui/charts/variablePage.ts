@@ -20,6 +20,7 @@ import {
   RANGE_CHIPS,
   ROSE_ALL_YEARS_REASON,
   WIND_VIEW_CHIPS,
+  YEAR_CHIPS,
   arraysNote,
   arraysPatch,
   currentReading,
@@ -47,6 +48,7 @@ import {
   windViewPatch,
   withBand,
   type ArrayChip,
+  type YearChip,
   type IntervalChip,
   type PageRange,
   type StatRow,
@@ -68,6 +70,19 @@ import { chartVariables, elementsResource, recordResource, seriesModel, seriesRe
 
 const url = () => Alpine.store('url')
 const stations = () => Alpine.store('station')
+
+/**
+ * Scroll a sideways-scrolling chip row so its pressed chip is fully in view: the row only (a
+ * chip's scrollIntoView would also scroll the page to it).
+ */
+function revealPressed(row: HTMLElement | undefined): void {
+  const chip = row?.querySelector<HTMLElement>('[aria-pressed="true"]')
+  if (!row || !chip) return
+  const r = row.getBoundingClientRect()
+  const c = chip.getBoundingClientRect()
+  if (c.left < r.left) row.scrollLeft -= r.left - c.left + 8
+  else if (c.right > r.right) row.scrollLeft += c.right - r.right + 8
+}
 
 export function variablePage() {
   const build = seriesModel()
@@ -165,6 +180,27 @@ export function variablePage() {
     /** This page offers the Combined | Separate arrays row (soil depths, as a time series or its table). */
     offersArrays(): boolean {
       return offersArrays(this.variable) && !this.all() && !this.rose()
+    },
+    /** All years offers the Calendar | Water year row (`wy=1`; kept when leaving All years, so it comes back as left). */
+    offersYears(): boolean {
+      return this.all() && !this.rose()
+    },
+    yearChips: YEAR_CHIPS,
+    yearView(): YearChip {
+      return url().state.wy ? 'water' : 'calendar'
+    },
+    setYearView(id: YearChip): void {
+      if (id === this.yearView()) return
+      url().set({ wy: id === 'water' })
+      countEvent(`years/${id}`, 'All years grouping chosen')
+    },
+    /**
+     * The range row's x-effect: it scrolls sideways on phones (8 chips), so keep the pressed chip
+     * in view when the row renders and whenever the range changes.
+     */
+    revealRange(row: HTMLElement): void {
+      this.range()
+      void this.$nextTick(() => revealPressed(row))
     },
     arrayChips: ARRAY_CHIPS,
     arrayView(): ArrayChip {

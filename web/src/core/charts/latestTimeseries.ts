@@ -16,7 +16,7 @@ import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewCol
 import { ELEM_MAP } from '../params/latest'
 import type { LatestAgg } from '../url-schema'
 import { WIND_DIRECTION } from '../variables/direction'
-import { LABELS, formatValue, plainName, plainUnit } from '../variables/labels'
+import { LABELS, cumulativeTitle, formatValue, plainName, plainUnit } from '../variables/labels'
 import { columnValue, depthsIn, displayUnit, quantityOfColumn } from '../units'
 import { timeAxis, valueAxis } from './axes'
 import { MISSING, escapeHtml, fmtWall, isoWall, plainLabel } from './format'
@@ -510,7 +510,7 @@ export const TABLE_ROW_LIMIT = 500
  * then a one-cell note row), one column per plotted column (plus its daily
  * low and high where the variable page attached a band).
  */
-export function latestTimeseriesTable(m: LatestTimeseriesModel, limit = TABLE_ROW_LIMIT): ChartTable {
+export function latestTimeseriesTable(m: LatestTimeseriesModel, limit = TABLE_ROW_LIMIT, opts: { cumulative?: boolean } = {}): ChartTable {
   const period = m.period === 'daily' ? 'daily' : 'hourly'
   const cols = m.ts.panels.flatMap((p) => {
     // Table precision per variable (core/variables/labels `digits.table`): "56.0" beside "70.4", never "56".
@@ -521,6 +521,8 @@ export function latestTimeseriesTable(m: LatestTimeseriesModel, limit = TABLE_RO
       return [
         { id, col: s.name, name, values: s.values },
         ...(s.band ? [{ id, col: s.name, name: `Low: ${name}`, values: s.band.lo }, { id, col: s.name, name: `High: ${name}`, values: s.band.hi }] : []),
+        // The variable page's running total of an accumulation, as its chart draws it (variable.ts).
+        ...(opts.cumulative && isAccumulation(p.variable) ? [{ id, col: s.name, name: cumulativeTitle(name), values: runningTotal(s.values) }] : []),
       ]
     })
   })

@@ -101,7 +101,7 @@
         <!-- @include partials/charts/rose.html -->
       </template>
 
-      <div class="chart-chips" role="group" aria-label="Range" data-no-swipe data-testid="range-chips">
+      <div class="chart-chips" role="group" aria-label="Range" data-no-swipe data-testid="range-chips" x-effect="revealRange($el)">
         <template x-for="c in rangeChips" :key="c.id">
           <button type="button" class="dash-chip" :aria-pressed="range() === c.id" :aria-disabled="rangeOff(c.id) ? 'true' : null"
                   :aria-describedby="rangeOff(c.id) ? 'var-range-note' : null"
@@ -116,6 +116,16 @@
           <template x-for="c in windViews" :key="c.id">
             <button type="button" class="dash-chip dash-chip--quiet" :aria-pressed="windView() === c.id" @click="setWindView(c.id)"
                     :data-testid="'wind-view-' + c.id" x-text="c.label"></button>
+          </template>
+        </div>
+      </template>
+      <!-- All years only: Calendar | Water year (wy=1; Oct 1 – Sep 30). -->
+      <template x-if="offersYears()">
+        <div class="chart-interval" role="group" aria-labelledby="var-years-label" data-no-swipe data-testid="year-chips">
+          <span class="chart-interval-label" id="var-years-label">Years</span>
+          <template x-for="c in yearChips" :key="c.id">
+            <button type="button" class="dash-chip dash-chip--quiet" :aria-pressed="yearView() === c.id" @click="setYearView(c.id)"
+                    :data-testid="'years-' + c.id" x-text="c.label"></button>
           </template>
         </div>
       </template>

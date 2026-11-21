@@ -8,14 +8,16 @@
  * `min(60dvh, 420px)` on phones (styles/charts.css).
  */
 import type { EChartsOption, SeriesOption, YAXisComponentOption } from 'echarts'
-import { DAILY_RANGE, withAlpha } from '../palette'
+import { CUMULATIVE_LINE, DAILY_RANGE, withAlpha } from '../palette'
 import { timeseriesInUnits } from '../models/timeseries'
 import { displayUnit } from '../units'
-import { plainUnit } from '../variables/labels'
-import { LAYOUT, depthLabels, latestTimeseriesChart, latestTimeseriesTable, seriesColor, type DepthEnd, type LatestTimeseriesModel } from './latestTimeseries'
+import { cumulativeTitle, plainUnit } from '../variables/labels'
+import { dualAxis } from './axes'
+import { LAYOUT, depthLabels, fmtValue, latestTimeseriesChart, latestTimeseriesTable, seriesColor, type DepthEnd, type LatestTimeseriesModel } from './latestTimeseries'
 import { bandSeries } from './overlays'
-import { AUX } from './series'
-import { DAY, bottomLayout } from './style'
+import { AUX, lineSeries } from './series'
+import { DAY, bottomLayout, isAccumulation, runningTotal, yBounds, type Point } from './style'
+import { paint } from './theme'
 import { tipText, type TipParam } from './tooltip'
 import type { ChartBuilder, ChartContext, ChartTable } from './types'
 
@@ -34,11 +36,14 @@ export const variableChart: ChartBuilder<VariableModel> = (model, ctx) => {
   // Room under the plot for the x labels, and the slider when it shows (style `bottomLayout`).
   const slider = (option.dataZoom as { type?: string }[]).some((z) => z.type === 'slider')
   const bottom = bottomLayout(slider).grid
+  const cum = s && isAccumulation(panel.variable) ? cumulativeLine(option, ctx, panel.variable) : null
+  // The plot fills the host's height, not the stack's panel height: respace the depth labels for it.
+  const series = ctx.height ? respaceDepthLabels(option, ctx, ctx.height - LAYOUT.top - bottom) : (option.series as SeriesOption[])
   const out: EChartsOption = {
     ...option,
-    grid: [{ left: g.left, right: g.right, top: LAYOUT.top, bottom }],
-    // The plot fills the host's height, not the stack's panel height: respace the depth labels for it.
-    ...(ctx.height ? { series: respaceDepthLabels(option, ctx, ctx.height - LAYOUT.top - bottom) } : {}),
+    grid: [{ left: g.left, right: cum ? CUMULATIVE_RIGHT : g.right, top: LAYOUT.top, bottom }],
+    series: cum ? [...series, cum.series] : series,
+    ...(cum ? { yAxis: [...(option.yAxis as YAXisComponentOption[]), cum.yAxis], tooltip: cum.tooltip } : {}),
   }
   if (!s?.band) return out
 
@@ -54,12 +59,57 @@ export const variableChart: ChartBuilder<VariableModel> = (model, ctx) => {
   const formatter = (raw: TipParam | TipParam[]) => {
     const fill = (Array.isArray(raw) ? raw : [raw]).find((p) => p.seriesId === `${BAND_ID}-band`)
     const note = Array.isArray(fill?.value) && typeof fill.value[2] === 'string' ? fill.value[2] : ''
-    return base(raw) + (note ? `<div>${tipText('Low–high', `${note}${unit ? ` ${unit}` : ''}`)}</div>` : '')
+    const head = base(raw)
+    // An empty tooltip (the pointer is not over this chart, latestTimeseries) stays empty.
+    return head && head + (note ? `<div>${tipText('Low–high', `${note}${unit ? ` ${unit}` : ''}`)}</div>` : '')
   }
   return {
     ...out,
     tooltip: { ...(option.tooltip as object), formatter: formatter as never },
     series: [...(out.series as SeriesOption[]), ...band],
+  }
+}
+
+/** Room right of the plot for the running total's axis (labels and title). */
+const CUMULATIVE_RIGHT = 64
+const CUMULATIVE_ID = 'cumulative'
+
+/**
+ * An accumulation's running total over the window (precipitation, reference ET): a line on its own
+ * right axis over the bars, as the Ag ETr chart draws it, named on that axis and in the tooltip
+ * ("Cumulative: 4.21 in"). Built from the bars as drawn, so it shares their x values and gaps.
+ */
+function cumulativeLine(option: EChartsOption, ctx: ChartContext, variable: string) {
+  const series = option.series as SeriesOption[]
+  const bar = series.find((x) => x.type === 'bar' && String(x.id ?? '').startsWith('p0:'))
+  if (!bar) return null
+  const pts = (bar.data as (Point | { value: Point })[]).map((d) => (Array.isArray(d) ? d : d.value))
+  const total = runningTotal(pts.map((p) => p[1]))
+  const data: Point[] = pts.map((p, i) => [p[0], total[i]])
+  const yAxes = option.yAxis as YAXisComponentOption[]
+  const [, right] = dualAxis('', cumulativeTitle(String(yAxes[0].name ?? '')))
+  const unit = plainUnit(displayUnit(/\[([^\]]+)\]\s*$/.exec(String(bar.name))?.[1] ?? '', String(bar.name)))
+  const base = (option.tooltip as { formatter: (p: TipParam | TipParam[]) => string }).formatter
+  const formatter = (raw: TipParam | TipParam[]) => {
+    const p = (Array.isArray(raw) ? raw : [raw]).find((x) => x.seriesId === CUMULATIVE_ID)
+    const y = Array.isArray(p?.value) ? p.value[1] : null
+    const row = typeof y === 'number' && Number.isFinite(y) ? `<div>${tipText('Cumulative', `${fmtValue(y)}${unit ? ` ${unit}` : ''}`)}</div>` : ''
+    const head = base(raw)
+    // An empty tooltip (the pointer is not over this chart, latestTimeseries) stays empty.
+    return head && head + row
+  }
+  return {
+    yAxis: {
+      ...right,
+      ...yBounds(variable, 0, total.reduce<number>((a, v) => (v != null && v > a ? v : a), 0)),
+      alignTicks: false,
+      gridIndex: 0,
+      nameGap: ctx.compact ? 36 : 46,
+      nameTextStyle: (yAxes[0] as { nameTextStyle?: unknown }).nameTextStyle,
+      axisLabel: { ...(right.axisLabel as object), fontSize: ctx.compact ? 11 : 12 },
+    } as YAXisComponentOption,
+    series: { ...lineSeries('Cumulative', data, { color: paint(ctx.theme, CUMULATIVE_LINE), yAxisIndex: yAxes.length, id: CUMULATIVE_ID }), xAxisIndex: 0 } as SeriesOption,
+    tooltip: { ...(option.tooltip as object), formatter: formatter as never },
   }
 }
 
@@ -98,7 +148,7 @@ export const dashboardStackChart: ChartBuilder<LatestTimeseriesModel> = (m, ctx)
 }
 
 /** The sr-only twin (first 500 rows), as Compare's; daily low and high columns with a band. */
-export const variableTable = (m: VariableModel): ChartTable => latestTimeseriesTable(m)
+export const variableTable = (m: VariableModel): ChartTable => latestTimeseriesTable(m, undefined, { cumulative: true })
 
 /** Every row, for the visible table view (paged by core/variables `tablePage`). */
-export const variableTableAll = (m: VariableModel): ChartTable => latestTimeseriesTable(m, Infinity)
+export const variableTableAll = (m: VariableModel): ChartTable => latestTimeseriesTable(m, Infinity, { cumulative: true })

@@ -28,6 +28,8 @@ export interface AnnualModel {
   currentYear: number
   /** The display variable ("Air Temperature"), for the y-axis rule (style `yBounds`); a cumulative total is zero-based. */
   variable?: string
+  /** Traces are water years (Oct 1 – Sep 30; `doy` is the day of the water year), named "WY 2027". */
+  waterYear?: boolean
 }
 
 /** The middle of the key's first row (px from the top); the plot starts this far under its last row. */
@@ -53,6 +55,15 @@ export const monthDay = (date: string) => `${MONTHS[Number(date.slice(5, 7)) - 1
 /** Shared tooltip header: day of year only, since the same DOY is a different date in leap years. */
 export const doyHeader = (doy: number) => `Day ${Math.round(doy)}`
 
+/** Month order, and each month's first day and label position, on a water-year axis (Oct 1 = day 1). */
+const WY_ORDER = [9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8]
+const WY_MONTHS = WY_ORDER.map((i) => MONTHS[i])
+const WY_START_DAY = WY_ORDER.map((i) => (i >= 9 ? MONTH_START_DOY[i] - 273 : MONTH_START_DOY[i] + 92))
+const WY_MID_DAY = WY_START_DAY.map((d, i) => Math.round((d + (WY_START_DAY[i + 1] ?? 366)) / 2))
+
+/** A trace's name in the key, tooltip and table: "2026", or "WY 2026". */
+const yearName = (m: Pick<AnnualModel, 'waterYear'>, year: number) => (m.waterYear ? `WY ${year}` : String(year))
+
 export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
   const traces = sortedTraces(m)
   const prior = traces.filter((t) => t.year !== m.currentYear)
@@ -66,14 +77,14 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
     // One line width; the current year is the design's one highlight (ANNUAL_CURRENT).
     const pts = points(t.doy, t.values, stepMs('doy'), t.date.map(monthDay))
     const s = dots
-      ? directionDots(String(t.year), pts, { color, size: isCurrent ? DIRECTION_DOT + 2 : DIRECTION_DOT })
-      : lineSeries(String(t.year), pts, { color, width: isCurrent ? ANNUAL_CURRENT.width : LINE_WIDTH })
+      ? directionDots(yearName(m, t.year), pts, { color, size: isCurrent ? DIRECTION_DOT + 2 : DIRECTION_DOT })
+      : lineSeries(yearName(m, t.year), pts, { color, width: isCurrent ? ANNUAL_CURRENT.width : LINE_WIDTH })
     return isCurrent ? { ...s, z: 3 } : s
   })
   const fontSize = ctx.compact ? 11 : 12
   // The current year leads the key, so it is on the first row however many years wrap below it; then newest → oldest.
   const keyed: KeyEntry[] = [...traces.filter((t) => t.year === m.currentYear), ...[...prior].reverse()].map((t) => ({
-    label: String(t.year),
+    label: yearName(m, t.year),
     color: colorOf(t),
     ...(dots ? { glyph: '●' } : {}),
     ...(t.year === m.currentYear ? { strong: true } : {}),
@@ -82,10 +93,13 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
   const left = base.left as number
   const rows = wrapKeys(ctx, keyed, ctx.width - left - (base.right as number))
   const g = { ...base, top: KEY_TOP + Math.max(0, rows.length - 1) * KEY_ROW + KEY_CLEAR }
+  const months = m.waterYear ? WY_MONTHS : MONTHS
+  const starts = m.waterYear ? WY_START_DAY : MONTH_START_DOY
+  const mids = m.waterYear ? WY_MID_DAY : MONTH_MID_DOY
   // Phones label every other month.
-  const labelled = MONTH_MID_DOY.filter((_, i) => !ctx.compact || i % 2 === 0)
+  const labelled = mids.filter((_, i) => !ctx.compact || i % 2 === 0)
   return {
-    // No zoom: a calendar year is the whole axis.
+    // No zoom: a year (calendar or water) is the whole axis.
     grid: g,
     // Month ticks at the 1st (non-leap DOY), names mid-month; the tooltip gives each year's exact date.
     xAxis: {
@@ -94,10 +108,10 @@ export const annualChart: ChartBuilder<AnnualModel> = (m, ctx) => {
       max: 366,
       splitLine: { show: false },
       axisLine: { onZero: false },
-      axisTick: { customValues: MONTH_START_DOY },
+      axisTick: { customValues: starts },
       axisLabel: {
         customValues: labelled,
-        formatter: (v: number) => MONTHS[MONTH_MID_DOY.indexOf(v)] ?? '',
+        formatter: (v: number) => months[mids.indexOf(v)] ?? '',
         hideOverlap: true,
         fontSize,
       },
@@ -121,8 +135,8 @@ export function annualTable(m: AnnualModel): ChartTable {
   const doys = [...new Set(traces.flatMap((t) => t.doy))].sort((a, b) => a - b)
   const byYear = traces.map((t) => new Map(t.doy.map((d, i) => [d, t.values[i]])))
   return {
-    caption: `${m.yLabel} by day of year and year`,
-    columns: ['Day of year', ...traces.map((t) => String(t.year))],
+    caption: m.waterYear ? `${m.yLabel} by day of water year and water year` : `${m.yLabel} by day of year and year`,
+    columns: [m.waterYear ? 'Day of water year' : 'Day of year', ...traces.map((t) => yearName(m, t.year))],
     rows: doys.map((d) => [String(d), ...byYear.map((y) => (y.has(d) ? fmtNum(y.get(d), 2) : MISSING))]),
   }
 }
