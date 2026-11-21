@@ -68,6 +68,8 @@ export class ChartHost<M> {
   /** A model has been drawn: later draws (range, interval, data, theme, resize) never animate. */
   private drawn = false
   private silentZoom = false
+  /** The pointer's y over the canvas (ChartContext `pointerY`), null when it is not over it. */
+  private pointerY: number | null = null
   /** Wall-clock ms per category when the x axis is categorical (heatmaps), else null. */
   private cats: number[] | null = null
   /** Last requested range (wall-clock ms), re-applied after model renders. */
@@ -92,6 +94,12 @@ export class ChartHost<M> {
     this.tableEl = document.createElement('table')
     twin.append(this.tableEl)
     el.append(this.canvas, twin)
+    // Capture phase on the ECharts host: runs before zrender's own listeners (on an inner element),
+    // so a tooltip formatter reading ctx.pointerY sees this event's position, not the previous one.
+    for (const type of ['pointermove', 'pointerdown', 'mousemove'] as const) this.canvas.addEventListener(type, this.onPointer, { capture: true, passive: true })
+    // A mouse leaving forgets it; a finger's pointerleave comes right after it lifts, before the
+    // tap's click shows the tooltip, so a tap keeps its position.
+    this.canvas.addEventListener('pointerleave', (e) => e.pointerType === 'mouse' && (this.pointerY = null), { passive: true })
     document.addEventListener(THEME_EVENT, this.onTheme)
     document.addEventListener('pointerdown', this.onPointerDown, { passive: true })
     this.ro = new ResizeObserver(() => this.onResize())
@@ -186,7 +194,18 @@ export class ChartHost<M> {
   }
 
   private ctx(): ChartContext {
-    return { theme: this.theme, width: this.canvas.clientWidth || 800, height: this.canvas.clientHeight || undefined, compact: isCompact(), touch: isTouch() }
+    return {
+      theme: this.theme,
+      width: this.canvas.clientWidth || 800,
+      height: this.canvas.clientHeight || undefined,
+      compact: isCompact(),
+      touch: isTouch(),
+      pointerY: () => this.pointerY,
+    }
+  }
+
+  private onPointer = (e: MouseEvent): void => {
+    this.pointerY = e.clientY - this.canvas.getBoundingClientRect().top
   }
 
   /** What a redraw keeps: legend toggles always, the zoom window only for same-data redraws. */
