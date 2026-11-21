@@ -101,7 +101,7 @@
         <!-- @include partials/charts/rose.html -->
       </template>
 
-      <div class="chart-chips" role="group" aria-label="Range" data-no-swipe data-testid="range-chips">
+      <div class="chart-chips" role="group" aria-label="Range" data-no-swipe data-testid="range-chips" x-effect="revealRange($el)">
         <template x-for="c in rangeChips" :key="c.id">
           <button type="button" class="dash-chip" :aria-pressed="range() === c.id" :aria-disabled="rangeOff(c.id) ? 'true' : null"
                   :aria-describedby="rangeOff(c.id) ? 'var-range-note' : null"
