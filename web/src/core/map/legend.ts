@@ -1,7 +1,8 @@
 /**
- * Station-map legend model: the one station marker (no network rows: networks are not encoded,
- * HOUSE-STYLE §7), a co-located row with the count badge and how many sites carry one, and the
- * selection ring. Text carries the meaning; swatches are decoration.
+ * Station-map legend model: the station marker (HydroMet's filled circle and, when any is drawn,
+ * AgriMet's ring: this map's documented exception to HOUSE-STYLE §7, DIVERGENCES.md), a co-located
+ * row with the count badge and how many sites carry one, and the selection ring. Text carries the
+ * meaning; swatches are decoration.
  */
 import { NETWORK_COLOR, SELECTION_RING, resolve, type Theme } from '../palette'
 import type { MarkerCollection } from './markers'
@@ -39,12 +40,27 @@ export function stationStyle(theme: Theme, getVar: GetVar): MarkerStyle {
   return { fill: NETWORK_COLOR[theme].HydroMet, stroke: resolve({ token: '--dot-stroke' }, getVar), strokeWidth: 1.2 }
 }
 
+/**
+ * AgriMet's ring, as the kit's earlier `MCO.map.markerPaint('agrimet')` drew it: an AgriMet-orange
+ * 2.5 px outline round a --bg-surface center. The station map's dots (ui/map stationLayer) and this
+ * legend both draw it from here.
+ */
+export function agrimetStyle(theme: Theme, getVar: GetVar): MarkerStyle {
+  return { fill: resolve({ token: '--bg-surface' }, getVar), stroke: NETWORK_COLOR[theme].AgriMet, strokeWidth: 2.5 }
+}
+
 /** Legend rows for the features currently drawn (`MCO.map.colocation`'s collection). */
 export function legendRows(markers: MarkerCollection, theme: Theme, getVar: GetVar): LegendRow[] {
   const station = stationStyle(theme, getVar)
   const stacked = markers.features.filter((f) => f.properties.colocationIndex === 0 && f.properties.colocationCount > 1)
   const rows: LegendRow[] = []
-  if (markers.features.length) rows.push({ key: 'station', label: 'Station', count: null, swatch: station, badge: null })
+  // With AgriMet rings drawn, the two networks get a row each; otherwise one plain station row.
+  const agrimet = markers.features.some((f) => f.properties.network === 'AgriMet')
+  const others = markers.features.some((f) => f.properties.network !== 'AgriMet')
+  if (agrimet) {
+    if (others) rows.push({ key: 'station', label: 'HydroMet', count: null, swatch: station, badge: null })
+    rows.push({ key: 'agrimet', label: 'AgriMet', count: null, swatch: agrimetStyle(theme, getVar), badge: null })
+  } else if (markers.features.length) rows.push({ key: 'station', label: 'Station', count: null, swatch: station, badge: null })
   if (stacked.length) {
     rows.push({
       key: 'co-located',

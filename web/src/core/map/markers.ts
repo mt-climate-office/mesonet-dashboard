@@ -1,7 +1,8 @@
 /**
  * Station markers for the map host (kit 0.21.0, HOUSE-STYLE §7): every station draws the same
- * (`MCO.map.stationPaint`), and the stations at one site are one marker with a count badge and a
- * spider (`MCO.map.colocation`, which groups by its 4-decimal buckets). The pure parts live here:
+ * (`MCO.map.stationPaint`), except AgriMet, which this map draws as the kit's earlier AgriMet ring
+ * (`legend` agrimetStyle; a documented exception, DIVERGENCES.md). The stations at one
+ * site are one marker with a count badge and a spider (`MCO.map.colocation`, 4-decimal buckets). The pure parts live here:
  * the anchor rank, each station's feature properties and the selected site.
  */
 import type { Station } from '../api'
@@ -37,6 +38,8 @@ export interface MarkerProps {
   selected: 0 | 1
   /** 1 on every station at the selected station's site (the anchor carries the ring while the spider is shut). */
   siteSelected: 0 | 1
+  /** The station's network: AgriMet draws as a ring (`stationLayer` dotPaint). */
+  network: NetworkName
 }
 
 /** Features as `MCO.map.colocation` emits them: the app's properties plus its count, index and bucket. */
@@ -58,5 +61,6 @@ export function markerProps(s: Station, selected: string | null, site: string | 
     station: s.station,
     selected: s.station === selected ? 1 : 0,
     siteSelected: site !== null && siteOf(s) === site ? 1 : 0,
+    network: asNetwork(s.sub_network),
   }
 }
