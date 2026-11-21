@@ -9,7 +9,7 @@
  * (windDirection.ts). Input is core/models/timeseries (US); values are drawn in the display units
  * (core/units, `timeseriesInUnits`).
  */
-import type { EChartsOption, GraphicComponentOption, SeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
+import type { EChartsOption, GraphicComponentOption, LineSeriesOption, ScatterSeriesOption, SeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts'
 import type { TimeseriesModel, TimeseriesPanel, TimeseriesSeries } from '../models/timeseries'
 import { arrayLabel, isDepthVariable, panelNoDataText, timeseriesInUnits } from '../models/timeseries'
 import { DAILY_RANGE, ETR, NORMALS, PRECIP, SENSOR_EVENT, depthColor, previewColor, sensorColor, variableStyle, withAlpha } from '../palette'
@@ -47,6 +47,11 @@ export interface LatestTimeseriesModel {
    * time axes end level. Without a height it falls back to the fixed layout.
    */
   fill?: { rows: number }
+  /**
+   * false: no depth keys over soil panels (the dashboard's stacks: each depth is named at its line's
+   * end, and the panel's link sits where the key row would, so the two ran into each other).
+   */
+  depthKeys?: false
 }
 
 /**
@@ -125,6 +130,81 @@ function plainSeries(p: TimeseriesPanel, s: TimeseriesSeries): { label: string; 
   return { label: key ?? name, full: key ? `${name} at ${key}` : name, unit }
 }
 
+/** Px between a line's last point and its depth label. */
+const END_LABEL_GAP = 4
+
+/** Right margin (px) for depth labels `texts` at `fontSize` beside the plot. */
+export const depthLabelGutter = (texts: readonly string[], fontSize: number): number =>
+  texts.length ? Math.ceil(Math.max(...texts.map((l) => l.length)) * fontSize * 0.6) + END_LABEL_GAP + 4 : 0
+
+/** A depth is labelled once: on array A's line (or the only array's) when arrays are split. */
+const endLabelled = (p: TimeseriesPanel, s: TimeseriesSeries): boolean => !!s.depth && (!s.probe || s.probe === [...new Set(p.series.map((x) => x.probe))].sort()[0])
+
+/**
+ * Soil depths are close colors (roma's two ends), so color alone is not enough: pointing at a
+ * depth's line dims the panel's other lines (its own emphasis, the width, is kept).
+ */
+export const withFocus = (line: LineSeriesOption): LineSeriesOption => ({
+  ...line,
+  triggerLineEvent: true,
+  emphasis: { ...line.emphasis, focus: 'series', blurScope: 'coordinateSystem' },
+  blur: { lineStyle: { opacity: 0.2 } },
+})
+
+/** A soil depth's label: its line's last reading, the text ("50 cm") and the line's color. */
+export interface DepthEnd {
+  x: number
+  y: number
+  text: string
+  color: string
+}
+
+/**
+ * `ys` moved apart so neighbours are at least `gap` apart, each moved as little as possible and kept
+ * within [lo, hi] when they fit (order kept: the highest value stays the highest label).
+ */
+export function spreadApart(ys: readonly number[], gap: number, lo: number, hi: number): number[] {
+  const order = ys.map((y, i) => [y, i] as const).sort((a, b) => b[0] - a[0])
+  const out = order.map(([y]) => Math.min(y, hi))
+  for (let k = 1; k < out.length; k++) out[k] = Math.min(out[k], out[k - 1] - gap)
+  if (out.length && out[out.length - 1] < lo) {
+    out[out.length - 1] = lo
+    for (let k = out.length - 2; k >= 0; k--) out[k] = Math.max(out[k], out[k + 1] + gap)
+  }
+  const res = new Array<number>(ys.length)
+  order.forEach(([, i], k) => (res[i] = out[k]))
+  return res
+}
+
+/**
+ * A panel's depth labels: each depth named ("50 cm") just right of its line's last reading, in its
+ * color, labels that would overlap spread apart (`spreadApart`, by a label's height in the axis'
+ * units for a plot `plotPx` tall). Invisible points (no tooltip: aux; no events); `value[2]` keeps
+ * the reading, so a host drawing a taller plot can respace them (variable.ts `respaceDepthLabels`).
+ */
+export function depthLabels(ends: readonly DepthEnd[], panel: number, fontSize: number, ctx: ChartContext, axis: { min?: unknown; max?: unknown }, plotPx: number): ScatterSeriesOption {
+  const { min, max } = axis
+  const ys = typeof min === 'number' && typeof max === 'number' && max > min && plotPx > 0
+    ? spreadApart(ends.map((e) => e.y), ((fontSize + 2) * (max - min)) / plotPx, min, max)
+    : ends.map((e) => e.y)
+  return {
+    type: 'scatter',
+    id: `${AUX}p${panel}-depth-labels`,
+    xAxisIndex: panel,
+    yAxisIndex: panel,
+    silent: true,
+    symbolSize: 0,
+    z: 5,
+    // Pointing at a line dims the panel's other series; the labels stay readable.
+    blur: { itemStyle: { opacity: 1 }, label: { opacity: 1 } },
+    data: ends.map((e, k) => ({
+      value: [e.x, ys[k], e.y],
+      label: { show: true, position: 'right', distance: END_LABEL_GAP, formatter: e.text, color: e.color, fontSize, fontFamily: ctx.theme.fontUi },
+    })),
+    tooltip: { show: false },
+  }
+}
+
 /** Sensor arrays past the first are dashed (the depth's color stays; core/models/timeseries `splitArrays`). */
 const arrayDash = (probe: string | null | undefined): 'dashed' | undefined => (probe && probe !== 'A' ? 'dashed' : undefined)
 
@@ -145,7 +225,10 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (model
   const filled = m.fill && ctx.height ? fillRows(m.fill.rows, ctx.height, ctx.compact) : null
   const h = filled ? filled.height : panelPx(n, ctx.compact)
   const left = ctx.compact ? 56 : 72
-  const right = 16
+  // Soil depths are labelled at their lines' right ends ("50 cm"): room for the longest label there.
+  const endFont = ctx.compact ? 11 : 12
+  const endLabels = panels.flatMap((p) => p.series.flatMap((s) => (s.depth && endLabelled(p, s) ? [depthsIn(s.depth)] : [])))
+  const right = endLabels.length ? depthLabelGutter(endLabels, endFont) : 16
   const plotW = Math.max(40, ctx.width - left - right)
   // Panel tops: each gap above a panel with keys is LAYOUT.keyPad taller.
   const tops = filled ? filled.tops : panels.reduce<number[]>((t, p, i) => [...t, i === 0 ? LAYOUT.top : t[i - 1] + h + LAYOUT.gap + (panelHasKeys(p) ? LAYOUT.keyPad : 0)], [])
@@ -174,10 +257,13 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (model
   const graphic: GraphicComponentOption[] = []
   const global = { normals: false, markers: false, sensor: false, partialLine: false, partialBar: null as string | null }
   const panelKeys: KeyEntry[][] = []
+  /** Per panel: its depth labels' line ends, drawn once the panel's y axis is known. */
+  const panelEnds: DepthEnd[][] = []
 
   panels.forEach((p, i) => {
     const axes = { xAxisIndex: i, yAxisIndex: i }
     const keys: KeyEntry[] = []
+    const ends: DepthEnd[] = []
     p.series.forEach((s, j) => {
       const color = seriesColor(ctx, p, s, i)
       const { label, unit } = plainSeries(p, s)
@@ -196,7 +282,12 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (model
       // a soil depth drawn per array is solid on array A and dashed on B.
       const shape = DIRECTION_SHAPES[p.legend ? j % DIRECTION_SHAPES.length : 0]
       const style = { color, yAxisIndex: i, id: `p${i}:${s.name}`, dash: arrayDash(s.probe) }
-      push({ ...(dots ? directionDots(s.name, pts(s.values), { ...style, symbol: shape.symbol }) : lineSeries(s.name, pts(s.values), style)), xAxisIndex: i }, {
+      const line: SeriesOption = dots
+        ? directionDots(s.name, pts(s.values), { ...style, symbol: shape.symbol })
+        : s.depth
+          ? withFocus(lineSeries(s.name, pts(s.values), style))
+          : lineSeries(s.name, pts(s.values), style)
+      push({ ...line, xAxisIndex: i } as SeriesOption, {
         panel: i,
         label,
         unit,
@@ -207,15 +298,21 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (model
         const ring = markerSeries(`${AUX}partial`, [[partialX, s.values[partialAt]]], { color, size: PARTIAL_RING })
         push({ ...ring, ...axes, id: `${AUX}p${i}-partial-${j}`, itemStyle: { color: ctx.theme.surface, borderColor: color, borderWidth: 2 }, z: 4, silent: true, large: false }, null)
       }
+      if (!dots && endLabelled(p, s)) {
+        const last = [...pts(s.values)].reverse().find((pt) => pt[1] != null)
+        if (last) ends.push({ x: last[0], y: last[1] as number, text: depthsIn(s.depth!), color })
+      }
       // One key per depth (its arrays share the color); the arrays' line styles are keyed after the depths.
       if (s.depth) {
         const depth = depthsIn(s.depth)
-        if (!keys.some((k) => k.label === depth)) keys.push({ label: depth, color })
+        if (m.depthKeys !== false && !keys.some((k) => k.label === depth)) keys.push({ label: depth, color })
       }
       else if (p.legend) keys.push({ label: columnKey(p.variable, s.name), color, ...(dots ? { glyph: shape.glyph } : {}) })
       // The variable page's Daily band (core/variables/band; drawn by variable.ts) and the mean it surrounds.
       else if (s.band) keys.push({ label: 'Daily mean', color }, { label: DAILY_RANGE.label, color: withAlpha(color, DAILY_RANGE.alpha), block: true })
     })
+
+    panelEnds[i] = ends
 
     const probes = [...new Set(p.series.flatMap((s) => (s.probe ? [s.probe] : [])))].sort()
     for (const probe of probes) keys.push({ label: `Array ${probe}`, color: ctx.theme.textMuted, dash: arrayDash(probe) })
@@ -320,6 +417,12 @@ export const latestTimeseriesChart: ChartBuilder<LatestTimeseriesModel> = (model
       axisLabel: { show: !p.noData, fontSize: ctx.compact ? 11 : 12, ...(p.variable === WIND_DIRECTION ? { formatter: compassTick } : {}) },
       splitLine: { show: !p.noData },
     } as YAXisComponentOption
+  })
+
+  // Depth labels, spread apart on each panel's own axis and height (the last filled panel's is taller).
+  panelEnds.forEach((ends, i) => {
+    const px = filled && i === n - 1 ? filled.tops[filled.tops.length - 1] + h - topOf(i) : h
+    if (ends.length) push(depthLabels(ends, i, endFont, ctx, yAxis[i] as { min?: unknown; max?: unknown }, px), null)
   })
 
   const tipPeriod = m.period === 'daily' ? 'daily' : 'hourly'
