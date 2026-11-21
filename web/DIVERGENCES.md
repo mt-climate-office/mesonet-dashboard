@@ -41,6 +41,21 @@ station sheet do not (it is a station app, not a map tool), and the entries belo
 - **Why:** 2026-11-03 family decision 4 (no network encoding on markers; one colocated rule family-wide), and the
   4-decimal bucket keeps a pair a few metres apart together where exact equality split it.
 
+### Station markers: AgriMet draws as a ring on this map (2026-11, exception to HOUSE-STYLE §7)
+- **Before:** every station the same marker (the entry above), per §7: "Station markers carry no network
+  encoding".
+- **New:** AgriMet stations (anchors and spider feet) draw as the kit's earlier AgriMet marker: an
+  AgriMet-orange 2.5 px outline round a `--bg-surface` center (`core/map` `agrimetStyle`, which the legend uses
+  too). HydroMet (and anything else) stays `MCO.map.stationPaint()`. The layer paint switches on the marker's
+  `network` property (`ui/map/stationLayer` `dotPaint`). It is drawn here, not with the kit's deprecated
+  `MCO.map.markerPaint('agrimet')`: that needs the kit's palette module, which this app does not load, and
+  throws without it. The legend gains a HydroMet row and an AgriMet row when both are
+  drawn (one Station row otherwise). Text still names every network: the popup, the station sheet and the
+  sr-only table twin.
+- **Why:** colleague feedback (2026-11-21) that regular users want to tell AgriMet from HydroMet on the map at a
+  glance; Kyle chose the orange ring for this map only. It overrides the kit locally rather than changing it, so
+  no other consumer changes.
+
 ### Header controls: the kit's one control height (2026-11)
 - **Before:** the station button and the ⋯ button were 40 px at every width; the section track was 38 px (32 px
   links) on a mouse.

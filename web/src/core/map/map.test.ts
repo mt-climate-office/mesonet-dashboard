@@ -94,9 +94,9 @@ describe('siteOf / selectedSite / markerProps', () => {
   })
   it('marks the selected station and every station at its site', () => {
     const site = selectedSite(CATALOG, null, 'bozmtest')
-    expect(markerProps(CATALOG[0], 'bozmtest', site)).toEqual({ station: 'acebozem', selected: 0, siteSelected: 1 })
-    expect(markerProps(CATALOG[1], 'bozmtest', site)).toEqual({ station: 'bozmtest', selected: 1, siteSelected: 1 })
-    expect(markerProps(CATALOG[2], 'bozmtest', site)).toEqual({ station: 'aceabsar', selected: 0, siteSelected: 0 })
+    expect(markerProps(CATALOG[0], 'bozmtest', site)).toEqual({ station: 'acebozem', selected: 0, siteSelected: 1, network: 'HydroMet' })
+    expect(markerProps(CATALOG[1], 'bozmtest', site)).toEqual({ station: 'bozmtest', selected: 1, siteSelected: 1, network: 'AgriMet' })
+    expect(markerProps(CATALOG[2], 'bozmtest', site)).toEqual({ station: 'aceabsar', selected: 0, siteSelected: 0, network: 'HydroMet' })
   })
 })
 
@@ -160,21 +160,27 @@ describe('text models', () => {
 })
 
 describe('legendRows', () => {
-  it('has one station row (no network rows), the co-located row with its badge and site count, and the ring', () => {
+  it('has a HydroMet and an AgriMet row (AgriMet draws as a ring), the co-located row with its badge and site count, and the ring', () => {
     const rows = legendRows(drawn(), 'dark', getVar('dark'))
     expect(rows.map((r) => [r.key, r.label, r.count])).toEqual([
-      ['station', 'Station', null],
+      ['station', 'HydroMet', null],
+      ['agrimet', 'AgriMet', null],
       ['co-located', 'Co-located stations', 1],
       ['selected', 'Selected station', null],
     ])
     expect(rows[0].swatch).toEqual({ fill: '#4477AA', stroke: '#ffffff', strokeWidth: 1.2 })
-    expect(rows[1].badge).toEqual({ text: '2', fill: '#1a6faf', stroke: '#ffffff', color: '#ffffff' })
-    expect(rows[2].swatch.stroke).toBe('#5aaee8')
+    // The kit's earlier AgriMet marker: its orange, 2.5 px, round a --bg-surface center.
+    expect(rows[1].swatch).toEqual({ fill: TOKENS_SNAPSHOT.dark['--bg-surface'], stroke: '#EE7733', strokeWidth: 2.5 })
+    expect(rows[2].badge).toEqual({ text: '2', fill: '#1a6faf', stroke: '#ffffff', color: '#ffffff' })
+    expect(rows[3].swatch.stroke).toBe('#5aaee8')
   })
 
-  it('drops the co-located row when no site holds two visible stations', () => {
-    const rows = legendRows(drawn(null, new Set(['aceabsar', 'bozmtest'])), 'light', getVar('light'))
-    expect(rows.map((r) => r.key)).toEqual(['station', 'selected'])
+  it('one plain station row when no AgriMet station is drawn; only AgriMet: just its row', () => {
+    const rows = legendRows(drawn(null, new Set(['aceabsar', 'acebozem'])), 'light', getVar('light'))
+    expect(rows.map((r) => [r.key, r.label])).toEqual([['station', 'Station'], ['selected', 'Selected station']])
     expect(rows[0].swatch.stroke).toBe('#2a2a3a')
+    const agri = legendRows(drawn(null, new Set(['wsrfoo'])), 'light', getVar('light'))
+    expect(agri.map((r) => r.key)).toEqual(['agrimet', 'selected'])
+    expect(agri[0].swatch.stroke).toBe('#CC6622')
   })
 })

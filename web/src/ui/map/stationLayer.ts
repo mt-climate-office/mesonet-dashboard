@@ -6,6 +6,7 @@
 import type * as MapLibre from 'maplibre-gl'
 import type { Station } from '../../core/api'
 import {
+  agrimetStyle,
   markerProps,
   popupLines,
   selectedSite,
@@ -41,6 +42,29 @@ export interface StationLayer {
   /** Show the popup + focus halo on station `id`'s site (keyboard twin); null hides both. */
   focus(id: string | null): void
   dispose(): void
+}
+
+/**
+ * The station dot: the kit's one station circle (`stationPaint`), except AgriMet stations, drawn as
+ * the kit's earlier AgriMet ring (an AgriMet-orange outline round a --bg-surface center; core/map
+ * `agrimetStyle`, which the legend draws too), so the two networks read apart at a glance. A
+ * deliberate exception to HOUSE-STYLE §7 for this map only (DIVERGENCES.md); text still names every
+ * network (popup, sheet, table twin). Not the kit's deprecated `markerPaint('agrimet')`: it needs the
+ * kit's palette module, which this app does not load, and throws without it. Read at call time,
+ * like every kit paint: the host re-adds the layers on a theme change.
+ */
+function dotPaint(theme: Theme): MapLibre.CircleLayerSpecification['paint'] {
+  const base = MCO.map.stationPaint() as Record<string, unknown>
+  const style = getComputedStyle(document.documentElement)
+  const ring = agrimetStyle(theme, (name) => style.getPropertyValue(name).trim())
+  const agrimet: MapLibre.ExpressionSpecification = ['==', ['get', 'network'], 'AgriMet']
+  // `base` is the kit's untyped paint object; its values are plain colors and numbers or expressions.
+  return {
+    ...base,
+    'circle-color': ['case', agrimet, ring.fill, base['circle-color']],
+    'circle-stroke-color': ['case', agrimet, ring.stroke, base['circle-stroke-color']],
+    'circle-stroke-width': ['case', agrimet, ring.strokeWidth, base['circle-stroke-width']],
+  } as unknown as MapLibre.CircleLayerSpecification['paint']
 }
 
 /** Wire a station layer to `map`; `onSelect` gets the clicked station id. */
@@ -133,7 +157,7 @@ export function createStationLayer(map: MapLibre.Map, onSelect: (id: string) => 
   }
 
   return {
-    add(m) {
+    add(m, theme) {
       m.addSource(SRC, { type: 'geojson', data: EMPTY })
       coloc.addSources()
       // Selected site on top, then stacked sites.
@@ -142,7 +166,7 @@ export function createStationLayer(map: MapLibre.Map, onSelect: (id: string) => 
       ]
       const layers: MapLibre.LayerSpecification[] = [
         { id: 'spider-lines', type: 'line', source: coloc.spiderLinesSource, paint: MCO.map.colocation.spiderLinePaint() },
-        { id: 'stations-dots', type: 'circle', source: SRC, filter: A, layout: { 'circle-sort-key': sort }, paint: MCO.map.stationPaint() },
+        { id: 'stations-dots', type: 'circle', source: SRC, filter: A, layout: { 'circle-sort-key': sort }, paint: dotPaint(theme) },
         // Selection ring (kit --selection-ring) on the site holding the selected station, whichever member it is.
         {
           id: 'stations-selected', type: 'circle', source: SRC, filter: ['all', A, ['==', ['get', 'siteSelected'], 1]],
@@ -159,7 +183,7 @@ export function createStationLayer(map: MapLibre.Map, onSelect: (id: string) => 
           layout: { 'icon-image': OBSTACLE, 'icon-allow-overlap': true, 'icon-ignore-placement': false },
         },
         { id: HIT, type: 'circle', source: SRC, filter: A, layout: { 'circle-sort-key': sort }, paint: MCO.map.hitPaint() },
-        { id: 'spider-dots', type: 'circle', source: coloc.spiderSource, paint: MCO.map.stationPaint() },
+        { id: 'spider-dots', type: 'circle', source: coloc.spiderSource, paint: dotPaint(theme) },
         { id: 'spider-selected', type: 'circle', source: coloc.spiderSource, filter: ['==', ['get', 'selected'], 1], paint: MCO.map.selectionPaint() },
         { id: SPIDER_HIT, type: 'circle', source: coloc.spiderSource, paint: MCO.map.hitPaint() },
       ]
