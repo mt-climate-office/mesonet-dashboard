@@ -37,6 +37,17 @@ describe('annualChart', () => {
     expect(phone.axisLabel.customValues.map(phone.axisLabel.formatter)).toEqual(['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov'])
     expect(phone.axisLabel.fontSize).toBe(10)
   })
+  it('water years: Oct → Sep on the axis, traces named "WY 2027" in the key, tooltip and table', () => {
+    type X = { axisTick: { customValues: number[] }; axisLabel: { customValues: number[]; formatter: (v: number) => string } }
+    const wy = groupByYear(['2025-10-01', '2026-01-01', '2026-10-01', '2026-11-01'], [1, 2, 3, 4], { cumulative: true, waterYear: true })
+    const m = { traces: wy, yLabel: 'Cumulative precipitation (in)', currentYear: 2027, waterYear: true }
+    const o = annualChart(m, testCtx())
+    const x = o.xAxis as X
+    expect(x.axisTick.customValues.slice(0, 4)).toEqual([1, 32, 62, 93])
+    expect(x.axisLabel.customValues.map(x.axisLabel.formatter)).toEqual(['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'])
+    expect((o.series as S[]).map((s) => s.name)).toEqual(['WY 2026', 'WY 2027'])
+    expect(annualTable(m).columns).toEqual(['Day of water year', 'WY 2026', 'WY 2027'])
+  })
   type G = { x: number; y: number; children: { style: { text?: string; fill?: string; font?: string } }[] }
   const keys = (o: unknown) => ((o as { graphic: G[] }).graphic ?? []).map((g) => ({ text: g.children[1].style.text, fill: g.children[1].style.fill, font: g.children[1].style.font, x: g.x, y: g.y }))
   it('the years key is the station charts’ key row (graphics, no ECharts legend) at the top left of the plot', () => {

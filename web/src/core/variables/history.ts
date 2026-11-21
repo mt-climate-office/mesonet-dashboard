@@ -7,7 +7,7 @@
  * Summed variables (precipitation, reference ET) show the running total within each year.
  */
 import type { AnnualModel } from '../charts/agAnnual'
-import { groupByYear } from '../ag/compute/annual'
+import { groupByYear, waterYearOf } from '../ag/compute/annual'
 import { HttpError, type ObservationRow } from '../api'
 import { recordRequest, type RecordRequest } from '../latest/requests'
 import type { Variable } from './catalog'
@@ -22,10 +22,21 @@ type ElementRow = { element: string; description_short: string }
  * The note above the All years chart: how each year is drawn (a line, or dots for wind
  * direction) and, for a total, that it runs within each year.
  */
-export function historyNote(v: Pick<Variable, 'name' | 'sum'> | undefined): string {
-  if (v?.name === WIND_DIRECTION) return 'Daily values, each year as its own set of dots.'
-  return v?.sum ? 'Daily values, one line per year, as a running total within each year.' : 'Daily values, one line per year.'
+export function historyNote(v: Pick<Variable, 'name' | 'sum'> | undefined, waterYear = false): string {
+  const year = waterYear ? 'water year (Oct 1 – Sep 30)' : 'year'
+  if (v?.name === WIND_DIRECTION) return `Daily values, each ${year} as its own set of dots.`
+  return v?.sum ? `Daily values, one line per ${year}, as a running total within each ${waterYear ? 'water year' : 'year'}.` : `Daily values, one line per ${year}.`
 }
+
+/** The Calendar | Water year row under All years (`wy=1`). */
+export const YEAR_CHIPS = [
+  { id: 'calendar', label: 'Calendar' },
+  { id: 'water', label: 'Water year' },
+] as const
+export type YearChip = (typeof YEAR_CHIPS)[number]['id']
+
+/** The year (calendar or water) `today` (YYYY-MM-DD) falls in: All years' current, highlighted line. */
+export const currentHistoryYear = (today: string, waterYear: boolean): number => (waterYear ? waterYearOf(today) : Number(today.slice(0, 4)))
 
 /** Years drawn at most (newest first); older years stay in Download. */
 export const HISTORY_MAX_YEARS = 10
@@ -86,7 +97,12 @@ export async function historyRows(fetch: () => Promise<ObservationRow[]>): Promi
  * daily rows contribute the variable's primary column (shallowest depth), in
  * the display units. Null until a year has a value.
  */
-export function historyModel(v: Variable, years: readonly (readonly ObservationRow[])[], currentYear: number): (AnnualModel & { column: string }) | null {
+export function historyModel(
+  v: Variable,
+  years: readonly (readonly ObservationRow[])[],
+  currentYear: number,
+  waterYear = false,
+): (AnnualModel & { column: string }) | null {
   const byDate = new Map<string, number | null>()
   let column: string | null = null
   for (const rows of years) {
@@ -103,7 +119,7 @@ export function historyModel(v: Variable, years: readonly (readonly ObservationR
   }
   if (!column || ![...byDate.values()].some((x) => x !== null)) return null
   const dates = [...byDate.keys()]
-  const traces = groupByYear(dates, dates.map((d) => byDate.get(d) ?? null), { cumulative: v.sum })
+  const traces = groupByYear(dates, dates.map((d) => byDate.get(d) ?? null), { cumulative: v.sum, waterYear })
   const axis = axisTitle(v.id, v.name)
-  return { traces, yLabel: v.sum ? cumulativeTitle(axis) : axis, currentYear, column, variable: v.name }
+  return { traces, yLabel: v.sum ? cumulativeTitle(axis) : axis, currentYear, column, variable: v.name, ...(waterYear ? { waterYear } : {}) }
 }

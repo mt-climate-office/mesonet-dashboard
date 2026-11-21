@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getStationRecord, type ObservationRow } from '../api'
 import { stationVariables } from './catalog'
 import { setUnitsSource } from '../units'
-import { HISTORY_MAX_YEARS, historyModel, historyNote, historyRequest, historyRows, historyYears, requestGroups } from './history'
+import { HISTORY_MAX_YEARS, currentHistoryYear, historyModel, historyNote, historyRequest, historyRows, historyYears, requestGroups } from './history'
 
 const ELEMENTS = [
   ['air_temp_0200', 'Air Temperature @ 2 m'],
@@ -53,6 +53,17 @@ describe('historyModel', () => {
     expect(m.traces.map((t) => t.year)).toEqual([2025, 2026])
     expect(m.traces[1]).toMatchObject({ doy: [1, 2, 3], values: [30, 31, 32] })
     expect(m).toMatchObject({ currentYear: 2026, yLabel: 'Air temperature (°F)', column: 'Air Temperature [°F]' })
+  })
+  it('by water year: the same rows regrouped Oct 1 – Sep 30, the total restarting on Oct 1', () => {
+    // 2025-09-29 … 2025-10-03, 1 in a day: two days in WY 2025, three in WY 2026.
+    const rows = Array.from({ length: 5 }, (_, i) => ({ station: 'acebozem', datetime: `2025-${i < 2 ? `09-${29 + i}` : `10-0${i - 1}`}`, 'Precipitation [in]': 1 })) as ObservationRow[]
+    const m = historyModel(PPT, [rows], currentHistoryYear('2025-11-21', true), true)!
+    expect(m).toMatchObject({ currentYear: 2026, waterYear: true })
+    expect(m.traces.map((t) => [t.year, t.values])).toEqual([[2025, [1, 2]], [2026, [1, 2, 3]]])
+    expect(m.traces[1].doy).toEqual([1, 2, 3])
+    expect(currentHistoryYear('2025-09-30', true)).toBe(2025)
+    expect(currentHistoryYear('2025-11-21', false)).toBe(2025)
+    expect(historyNote(PPT, true)).toContain('water year (Oct 1 – Sep 30)')
   })
   it('summed variables accumulate within each year', () => {
     const m = historyModel(PPT, [daily(2026, 3, 'Precipitation [in]', (i) => (i === 1 ? null : 0.5))], 2026)!

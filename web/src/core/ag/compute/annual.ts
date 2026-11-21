@@ -40,6 +40,20 @@ export interface AnnualOptions {
    * previous total; leading nulls stay null). Defaults to false.
    */
   cumulative?: boolean
+  /**
+   * Group by water year (Oct 1 – Sep 30, named for the year it ends: WY 2027 starts Oct 1, 2026)
+   * instead of calendar year; `doy` is then the day of the water year (Oct 1 = 1). Defaults to false.
+   */
+  waterYear?: boolean
+}
+
+/** The water year `date` falls in: its calendar year, plus one from October on. */
+export const waterYearOf = (date: LocalDate): number => Number(date.slice(0, 4)) + (Number(date.slice(5, 7)) >= 10 ? 1 : 0)
+
+/** Day of the water year (Oct 1 = 1; Sep 30 = 365, or 366 when the water year holds a Feb 29). */
+export function dayOfWaterYear(date: LocalDate): number {
+  const start = Date.UTC(waterYearOf(date) - 1, 9, 1)
+  return Math.round((Date.parse(`${date}T00:00Z`) - start) / 86_400_000) + 1
 }
 
 /**
@@ -58,7 +72,7 @@ export function groupByYear(
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
       throw new Error(`groupByYear expects daily YYYY-MM-DD dates, got "${d}" (use hourlyToDaily first)`)
     }
-    const y = Number(d.slice(0, 4))
+    const y = opts.waterYear ? waterYearOf(d) : Number(d.slice(0, 4))
     let m = byYear.get(y)
     if (!m) byYear.set(y, (m = new Map()))
     if (m.has(d)) throw new Error(`groupByYear: duplicate date ${d}`)
@@ -69,7 +83,7 @@ export function groupByYear(
     .map(([year, m]) => {
       const date = [...m.keys()].sort()
       const raw = date.map((d) => m.get(d) ?? null)
-      return { year, date, doy: date.map(dayOfYear), values: opts.cumulative ? cumulativeSum(raw) : raw }
+      return { year, date, doy: date.map(opts.waterYear ? dayOfWaterYear : dayOfYear), values: opts.cumulative ? cumulativeSum(raw) : raw }
     })
 }
 

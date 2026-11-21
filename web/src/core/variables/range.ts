@@ -1,10 +1,12 @@
 /**
- * The variable page's range chips (24 h · 7 d · 14 d · 30 d · 1 y · All
- * years). A preset is a window of whole local days ending today, stored in
+ * The variable page's range chips (24 h · 7 d · 14 d · 30 d · 1 y · YTD ·
+ * Water year · All years). A preset is a window of whole local days ending
+ * today (from N days back, or from Jan 1 / Oct 1 for the calendar ones), stored in
  * `from`/`to` (Compare reads them too); All years is `view=history`. The URL
  * is read back to tell which chip (if any) is pressed; any other window is a
  * custom range (⋯ → Custom dates…). The interval is separate (interval.ts).
  */
+import type { Dayjs } from 'dayjs'
 import { denverDay } from '../today'
 import { dateRangeText } from '../ag/view/summary'
 import { datesPatch, todayIso } from '../latest/sidebar'
@@ -14,21 +16,31 @@ import type { UrlState } from '../url-schema'
 import { rawAllowed, spanDays } from './interval'
 
 export interface RangePreset {
-  id: '24h' | '7d' | '14d' | '30d' | '1y'
+  id: '24h' | '7d' | '14d' | '30d' | '1y' | 'ytd' | 'wy'
   label: string
-  /** Days before today where the window starts. */
-  days: number
+  /** The window's first day, given today. */
+  start: (today: Dayjs) => Dayjs
   /** "Last 7 days": the range label under the title. */
   long: string
 }
 
-/** 14 d is the default window (absent from/to), so it keeps a clean URL. */
+const daysBack = (n: number) => (today: Dayjs) => today.subtract(n, 'day')
+
+/** The water year's first day: Oct 1 of this year from October on, else of last year. */
+export const waterYearStart = (today: Dayjs): Dayjs => today.month(9).date(1).subtract(today.month() >= 9 ? 0 : 1, 'year')
+
+/**
+ * 14 d is the default window (absent from/to), so it keeps a clean URL. On a day two presets share a
+ * window (Oct 2: 24 h and Water year both start Oct 1), the URL reads back as the first.
+ */
 export const RANGE_PRESETS: readonly RangePreset[] = [
-  { id: '24h', label: '24 h', days: 1, long: 'Last 24 hours' },
-  { id: '7d', label: '7 d', days: 7, long: 'Last 7 days' },
-  { id: '14d', label: '14 d', days: 14, long: 'Last 14 days' },
-  { id: '30d', label: '30 d', days: 30, long: 'Last 30 days' },
-  { id: '1y', label: '1 y', days: 365, long: 'Last year' },
+  { id: '24h', label: '24 h', start: daysBack(1), long: 'Last 24 hours' },
+  { id: '7d', label: '7 d', start: daysBack(7), long: 'Last 7 days' },
+  { id: '14d', label: '14 d', start: daysBack(14), long: 'Last 14 days' },
+  { id: '30d', label: '30 d', start: daysBack(30), long: 'Last 30 days' },
+  { id: '1y', label: '1 y', start: daysBack(365), long: 'Last year' },
+  { id: 'ytd', label: 'YTD', start: (today) => today.startOf('year'), long: 'Year to date' },
+  { id: 'wy', label: 'Water year', start: waterYearStart, long: 'Water year to date' },
 ]
 
 export type RangeId = RangePreset['id'] | 'custom'
@@ -46,7 +58,7 @@ const HOUR = 3_600_000
 /** A preset's window, `start`/`end` (YYYY-MM-DD, `today` injectable for tests). */
 export function presetWindow(id: RangePreset['id'], today = denverDay()): { start: string; end: string } {
   const p = RANGE_PRESETS.find((x) => x.id === id) ?? RANGE_PRESETS[2]
-  return { start: today.subtract(p.days, 'day').format('YYYY-MM-DD'), end: todayIso(today) }
+  return { start: p.start(today).format('YYYY-MM-DD'), end: todayIso(today) }
 }
 
 /** `from`/`to` for a preset (`today` injectable for tests). */
@@ -68,7 +80,7 @@ export function windowPatch(start: string, end: string, agg: UrlState['agg'], to
 export function activePreset(state: Pick<UrlState, 'from' | 'to'>, today = denverDay()): RangeId {
   const w = chartWindow(state.from, state.to, today)
   if (!w.valid || w.end !== todayIso(today)) return 'custom'
-  return RANGE_PRESETS.find((x) => w.start === today.subtract(x.days, 'day').format('YYYY-MM-DD'))?.id ?? 'custom'
+  return RANGE_PRESETS.find((x) => w.start === x.start(today).format('YYYY-MM-DD'))?.id ?? 'custom'
 }
 
 /** The page's range: All years (`view=history`), else the window's preset or 'custom'. */

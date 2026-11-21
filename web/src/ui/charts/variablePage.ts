@@ -20,6 +20,7 @@ import {
   RANGE_CHIPS,
   ROSE_ALL_YEARS_REASON,
   WIND_VIEW_CHIPS,
+  YEAR_CHIPS,
   arraysNote,
   arraysPatch,
   currentReading,
@@ -47,6 +48,7 @@ import {
   windViewPatch,
   withBand,
   type ArrayChip,
+  type YearChip,
   type IntervalChip,
   type PageRange,
   type StatRow,
@@ -165,6 +167,19 @@ export function variablePage() {
     /** This page offers the Combined | Separate arrays row (soil depths, as a time series or its table). */
     offersArrays(): boolean {
       return offersArrays(this.variable) && !this.all() && !this.rose()
+    },
+    /** All years offers the Calendar | Water year row (`wy=1`; kept when leaving All years, so it comes back as left). */
+    offersYears(): boolean {
+      return this.all() && !this.rose()
+    },
+    yearChips: YEAR_CHIPS,
+    yearView(): YearChip {
+      return url().state.wy ? 'water' : 'calendar'
+    },
+    setYearView(id: YearChip): void {
+      if (id === this.yearView()) return
+      url().set({ wy: id === 'water' })
+      countEvent(`years/${id}`, 'All years grouping chosen')
     },
     arrayChips: ARRAY_CHIPS,
     arrayView(): ArrayChip {

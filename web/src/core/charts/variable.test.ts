@@ -26,6 +26,39 @@ const week = model(168, ['Air Temperature'], [view[0], view[0] + 7 * DAY])
 type Opt = { grid: Record<string, number>[]; series: { type: string; color: string }[]; dataZoom: { type: string; disabled?: boolean; startValue?: number; endValue?: number }[]; tooltip: { triggerOn?: string } }
 
 describe('variableChart', () => {
+  it('an accumulation gets its running total: a line on a right axis, a tooltip row and a table column', () => {
+    const wet = [0.1, 0, 0.25, null, 0.05]
+    const ts = buildTimeseriesModel({
+      rows: wet.map((v, i) => ({ station: 'acebozem', datetime: `2026-07-0${i + 1}`, 'Precipitation [in]': v })) as ObservationRow[],
+      vars: ['Precipitation'],
+      period: 'daily',
+    })!
+    const m: VariableModel = { ts, period: 'daily', view: [Date.UTC(2026, 6, 1), Date.UTC(2026, 6, 6)] }
+    const o = variableChart(m, testCtx('light')) as unknown as {
+      grid: { right: number }[]
+      yAxis: { name?: string; position?: string; min?: number }[]
+      series: { id?: string; type: string; yAxisIndex?: number; data: [number, number | null][] }[]
+      tooltip: { formatter: (p: unknown) => string }
+    }
+    const line = o.series.find((x) => x.id === 'cumulative')!
+    expect(line.type).toBe('line')
+    expect(line.data.map((d) => d[1]).filter((v) => v != null).map((v) => Number(v!.toFixed(2)))).toEqual([0.1, 0.1, 0.35, 0.4])
+    const y2 = o.yAxis[line.yAxisIndex!]
+    expect(y2).toMatchObject({ position: 'right', min: 0 })
+    expect(y2.name).toMatch(/^Cumulative precipitation/)
+    expect(o.grid[0].right).toBeGreaterThan(16)
+    const x = line.data[2][0]
+    const html = o.tooltip.formatter([
+      { seriesId: o.series.find((s) => s.type === 'bar')!.id, value: [x, 0.25], axisValue: x, marker: '' },
+      { seriesId: 'cumulative', value: [x, 0.35], axisValue: x, marker: '' },
+    ])
+    expect(html).toContain('Cumulative')
+    expect(html).toContain('0.35 in')
+    expect(variableTable(m).columns.at(-1)).toMatch(/^Cumulative precipitation/)
+    // Not for other variables.
+    expect((variableChart(model(), testCtx('light')) as unknown as typeof o).series.some((x) => x.id === 'cumulative')).toBe(false)
+    expect(variableTable(model()).columns.some((c) => c.startsWith('Cumulative'))).toBe(false)
+  })
   it('draws the Compare panel for one variable, its plot filling the host height', () => {
     for (const theme of THEMES) {
       const o = variableChart(model(), testCtx(theme)) as unknown as Opt

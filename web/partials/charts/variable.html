@@ -119,6 +119,16 @@
           </template>
         </div>
       </template>
+      <!-- All years only: Calendar | Water year (wy=1; Oct 1 – Sep 30). -->
+      <template x-if="offersYears()">
+        <div class="chart-interval" role="group" aria-labelledby="var-years-label" data-no-swipe data-testid="year-chips">
+          <span class="chart-interval-label" id="var-years-label">Years</span>
+          <template x-for="c in yearChips" :key="c.id">
+            <button type="button" class="dash-chip dash-chip--quiet" :aria-pressed="yearView() === c.id" @click="setYearView(c.id)"
+                    :data-testid="'years-' + c.id" x-text="c.label"></button>
+          </template>
+        </div>
+      </template>
       <!-- Soil depths only: Combined | Separate (arrays=1; array B dashed). -->
       <template x-if="offersArrays()">
         <div class="chart-interval" role="group" aria-labelledby="var-arrays-label" data-no-swipe data-testid="array-chips">

@@ -25,6 +25,8 @@
  *                         its window (core/variables/rose); absent = the time series
  *              arrays     1 = a soil page draws each depth per sensor array
  *                         (A solid, B dashed; core/variables/arrays); absent = combined
+ *              wy         1 = All years by water year (Oct 1 – Sep 30;
+ *                         core/variables/history); absent = calendar years
  *              cmp        1 = the Compare (stacked) chart; `#latest` links map
  *                         here (core/router.ts). It reads the Latest keys.
  *              dl         1 = the Download sheet is open over Charts; old
@@ -193,6 +195,7 @@ export const URL_SCHEMA = {
   tbl: flag(),
   wd: oneOf(WIND_VIEWS, null),
   arrays: flag(),
+  wy: flag(),
   cmp: flag(),
   dl: flag(),
   // Latest (Compare)

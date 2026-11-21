@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { groupByYear, hourlyToDaily, hoursInLocalDay, isCumulativeVariable } from './annual'
+import { dayOfWaterYear, groupByYear, hourlyToDaily, hoursInLocalDay, isCumulativeVariable, waterYearOf } from './annual'
 
 describe('groupByYear', () => {
+  it('by water year: Oct 1 starts the next-numbered year, day 1; a Feb 29 makes Sep 30 day 366', () => {
+    expect(['2026-09-30', '2026-10-01', '2026-12-31', '2027-01-01'].map(waterYearOf)).toEqual([2026, 2027, 2027, 2027])
+    expect(['2025-10-01', '2025-12-31', '2026-01-01', '2026-09-30', '2024-09-30'].map(dayOfWaterYear)).toEqual([1, 92, 93, 365, 366])
+    const out = groupByYear(['2026-09-30', '2026-10-01', '2026-10-02', '2027-01-01'], [1, 2, 3, 4], { cumulative: true, waterYear: true })
+    expect(out.map((t) => t.year)).toEqual([2026, 2027])
+    expect(out[1]).toEqual({ year: 2027, date: ['2026-10-01', '2026-10-02', '2027-01-01'], doy: [1, 2, 93], values: [2, 5, 9] })
+  })
   it('splits by local calendar year with leap-aware DOY', () => {
     const out = groupByYear(['2024-03-01', '2023-12-31', '2024-12-31', '2023-03-01'], [1, 2, 3, 4])
     expect(out.map((t) => t.year)).toEqual([2023, 2024])
