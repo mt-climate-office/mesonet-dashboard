@@ -101,7 +101,7 @@ const manifest = {
       transform: 'None (copied verbatim). One row per primary core (station, depthCm); see the mesonet-soils README.',
       data2_url: 'https://data2.climate.umt.edu/mesonet/soils/soil_params.json',
       license:
-        'Montana Climate Office / Montana Mesonet soil laboratory data; public, see https://climate.umt.edu/about/agreement/',
+        'CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Montana Mesonet soil laboratory data; see https://climate.umt.edu/mesonet/citation/',
     },
     'gdd_stages.json': {
       source_repo: 'mt-climate-office/mesonet-db-rds',
