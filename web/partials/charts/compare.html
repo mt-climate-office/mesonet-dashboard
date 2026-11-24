@@ -1,4 +1,6 @@
-<!-- Compare (cmp=1; legacy #latest links land here; "Compare variables" in the list): back · title,
+<!-- Compare (cmp=1; legacy #latest links land here; "Compare variables" in the list): back · title ·
+     Download data (x-data="compareDownload", ui/charts/compareDownload.ts: the sheet prefilled with the plot's
+     variables, dates and interval),
      the stacked station plot, one panel per variable (x-data="compare", ui/charts/compare.ts) and its
      options (x-data="compareControls", ui/charts/compareControls.ts) in a disclosure (its chevron turns
      when open): beside the plot and open on desktop, above it and closed otherwise. Flat surfaces, as
@@ -9,6 +11,11 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
     </a>
     <h2 class="chart-title" id="charts-compare-title" tabindex="-1">Compare variables</h2>
+    <template x-if="compareReady()">
+      <div class="chart-download-wrap" x-data="compareDownload">
+        <!-- @include partials/charts/download-button.html -->
+      </div>
+    </template>
   </div>
   <p class="chart-sub">Several variables stacked on one time axis.</p>
 

@@ -12,6 +12,7 @@ import { LABELS, LIST_AG_TOOLS, chartHeading, chartPatch, listRequest, matchesQu
 import { latestObs } from '../station/resources'
 import { component } from '../component'
 import { follow } from '../shell/navigate'
+import { openSheet } from '../shell/sheet'
 import { chartVariables, elementsResource, recordResource, stationElements, variablesError } from './resources'
 
 type State = 'none' | 'loading' | 'error' | 'ready'
@@ -84,6 +85,10 @@ export function variableList() {
     /** Compare variables: push Compare, focusing its heading. */
     openCompare(e: MouseEvent): void {
       follow(e, 'charts', { patch: { v: null, cmp: true }, drillDown: true, target: 'charts-compare-title' })
+    },
+    /** Data → Download data: the Download sheet, nothing prefilled; focus returns to the row on close. */
+    openDownload(e: MouseEvent): void {
+      openSheet('download', e.currentTarget as HTMLElement)
     },
   })
 }

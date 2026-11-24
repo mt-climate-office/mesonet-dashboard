@@ -39,11 +39,11 @@ are untouched.
 ```
 Station view (?s=<id>; remembered in localStorage mco-dashboard-station)
 ├─ Now       #now (default)  current-conditions overview
-├─ Charts    #charts         the list: search · variable groups · Ag tools · More (Compare variables)
+├─ Charts    #charts         the list: search · variable groups · Ag tools · More (Compare variables) · Data (Download data)
 │                            → a variable page (v=<family>; view=history: All years; tbl=1: as a table)
 │                            → an Ag tool (v=<Ag tool id>): option chips + chart, the same frame
 │                            → Compare (cmp=1)
-│            &dl=1           the Download sheet over any of them (a chart's ⋯ → Download data)
+│            &dl=1           the Download sheet over any of them (a chart's Download data button or ⋯ item, the list's Data card, About's row)
 └─ About     #about          metadata, all current readings, locator map
 Header ⋯ menu: Share this view · Install app (where it can be installed) · Theme · Help · Send feedback
 Station picker: inline drawer (desktop), overlay drawer (tablet) or full-height panel under the header (phones):
@@ -245,7 +245,8 @@ big screen opens normally on a phone. The header's section control is hidden.
   in a narrow stack) open its chart page on the same window and interval; Back, or the page's "Dashboard"
   back link, returns. Under the stacks, **More**: the Ag tools and Compare as quiet chips.
 - **Right:** About's details card, the locator map, **all current readings** inline (`partials/about/readings.html`,
-  the readings sheet's content; it scrolls inside its own region) and Sensor changes (opens its sheet).
+  the readings sheet's content; it scrolls inside its own region), Sensor changes (opens its sheet) and Download
+  data (About's row: every variable selected).
 - **Loading / errors:** each stack shows a skeleton until the shared request lands; one error state above
   the stacks if it fails. Nothing mounts or fetches on smaller screens.
 
@@ -267,7 +268,8 @@ big screen opens normally on a phone. The header's section control is hidden.
   (`matchesQuery`: every word in the name, sub-label or group) over one card per group: the station's
   variables from `/elements/{s}` (Weather · Rain and evaporation · Soil · Well · Other), then **Ag tools**
   (`#charts-ag-tools`, `LIST_AG_TOOLS`: every tool but Annual comparison and Reference ET, which is listed once,
-  under Rain and evaporation) and **More** (Compare variables). A row: plain name over a sub-label ("at 2 in",
+  under Rain and evaporation), **More** (Compare variables) and **Data** (Download data: a button row that opens the
+  sheet empty; hidden while searching). A row: plain name over a sub-label ("at 2 in",
   "last 24 h", what an Ag tool is) · the current value in plain units and precision (`formatReading`; the
   last 24 h total for totals; none for Ag tools) · a 48 h sparkline (none for Rain and Rain rate when all 48 h are dry, as on Now; one 72 h hourly request for every listed
   variable). Every row opens its page through `chartPatch(id)` (core/variables).
@@ -295,7 +297,7 @@ big screen opens normally on a phone. The header's section control is hidden.
     the variable's plain unit (`panelStats(…, id)`); on Daily, Low and High are the band's true extremes, and
     today's partial day counts as "Today, so far" above says. One
     line per sensor at every width (equal columns up to 7 rem; a text value such as a growth stage takes two on phones); values in the UI font with `tabular-nums`.
-  - **⋯ menu:** Download data (the sheet prefilled: `core/downloader/fromChart`, the variable's element codes,
+  - **⋯ menu:** Download data (also a visible button in the header, before the ⋯; the sheet prefilled: `core/downloader/fromChart`, the variable's element codes,
     the window (All years: install date … today) and the interval, 5-min as hourly) · Show as table / Show as
     chart (`tbl`, pushed, so Back returns; replaces the chart in place; All years tables its years; the table
     also has a visible **Show as chart** button above it, right-aligned, which returns focus to the heading;
@@ -328,7 +330,8 @@ big screen opens normally on a phone. The header's section control is hidden.
     twice as sideways as vertical) opens the previous or next variable in list order; the page is
     `touch-action: pan-y pinch-zoom`, so vertical scrolling is untouched. ⋯ → Previous / Next is its keyboard twin.
 - **Compare** (`partials/charts/compare.html`, `ui/charts/compare.ts` + `compareControls.ts`): back · "Compare
-  variables", then the stacked chart in a flat card with its options (dates, period of record, aggregation,
+  variables" · Download data (`ui/charts/compareDownload.ts`: the sheet prefilled with the selected variables the
+  station reports, `compareElements`, the dates and the interval, 5-min as hourly; no normals), then the stacked chart in a flat card with its options (dates, period of record, aggregation,
   normals, variable chips) in an "Options" disclosure, beside the plot on desktop and closed above it on phones.
   It reads `agg` absent as hourly (`latestAgg`), as the old Latest tab did.
 - **Labels:** tooltips, table headers and y-axis titles use the plain name and unit (`plainSeries` in
@@ -464,13 +467,16 @@ Screenshots (phase B, in the session scratchpad `rd-charts/`): `<390|1440>-<ligh
 
 ## Download (a sheet)
 
-The Download sheet (`partials/sheets/download.html`) is open while `dl=1`: from a chart's ⋯ → Download data
-(prefilled by `core/downloader/fromChart`, then `openSheet('download', opener)`), from an old `#download` / `#downloader` link, or any URL with
+The Download sheet (`partials/sheets/download.html`) is open while `dl=1`: from a chart's Download data button
+(`partials/charts/download-button.html`, in the header before the ⋯; icon-only on compact screens) or ⋯ item
+(prefilled by `core/downloader/fromChart`, then `openSheet('download', opener)`), from the Charts list's Data card
+(empty), from About's (and the dashboard's) Download data row (every variable the station offers selected:
+`core/downloader/view` `allElements`; the row waits for the element list), from an old `#download` / `#downloader` link, or any URL with
 `dl=1`. Closing (×, Esc, the scrim, a drag down on phones) clears `dl` and returns focus to the opener (to
 `<main>` when the URL opened it); once it has slid away it also clears the prefill keys (`els`, `dl_from`,
 `dl_to`, `period`: `PREFILL_RESET`, core/downloader/fromChart), whether a chart or an old link wrote them. It is a bottom sheet on phones and a centred panel (34 rem) from 641 px;
 its body scrolls on its own. Every value comes from the URL's existing keys, so whatever opened it (a chart's
-⋯ menu writing `els`, `dl_from`, `dl_to`, `period`), the form shows that. A URL with `dl=1` over a variable page or Ag tool
+⋯ menu writing `els`, `dl_from`, `dl_to`, `period`), the form shows that. A URL with `dl=1` over a variable page, Ag tool or Compare
 that carries none of those keys (`?s=acebozem&v=air_temp&dl=1#charts`) is prefilled from that chart as ⋯ would
 (`prefillsFromChart`); an old `#downloader` link keeps exactly what it carries.
 
@@ -519,7 +525,7 @@ an sr-only heading).
 |---|---|---|
 | Details | Station (name, id in mono), Network, Location (county · coordinates), Elevation (ft and m), Record (install date – "today", or the newest report's date; "Since …" until `/latest` answers): `core/about/details.ts`. Then a **Station one-pager (PDF)** row when one is listed. This is where the old "network · county · elevation" meta line lives now. | `/stations`, `/latest`, one-pagers.json |
 | Map | `locatorMap` (ui/map/presets) in a flat frame with the card radius: the station map framed on the station and its nearest neighbour (`locatorFrame`) at zoom 7–8 (`locatorZoom`: never closer than the former fixed zoom 8, at most one level further out), legend collapsed, **cooperative gestures** (one finger and a plain wheel scroll the page; two fingers or Ctrl/⌘ move the map) | `/stations` |
-| Rows | **All current readings · N** (N readings now, Observed not counted) and **Sensor changes · latest date**: `<button class="about-row" aria-haspopup="dialog">`, each opening a modal sheet | as the sheets |
+| Rows | **All current readings · N** (N readings now, Observed not counted), **Sensor changes · latest date** and **Download data · CSV** (the Download sheet with every variable selected; disabled until the element list is in): `<button class="about-row" aria-haspopup="dialog">`, each opening a modal sheet | as the sheets |
 | About the data | QC level 2, provisional data (the corrected wording), time and units; links to the API docs and this station's requests (`core/about/apiLinks.ts`) | — |
 
 **Sheets** (`partials/sheets/about-readings.html`, `about-history.html`; the modal sheet primitive, `--sheet-w`

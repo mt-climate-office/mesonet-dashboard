@@ -61,6 +61,8 @@
 .charts-row .dash-spark { margin-top: 0; }
 /* Ag tools and More: name over a one-line description, no value or sparkline. */
 .charts-row--tool { grid-template-columns: minmax(0, 1fr); }
+/* Data → Download data is a button (it opens a dialog), drawn as the link rows. */
+button.charts-row { width: 100%; background: none; border: 0; border-radius: 0; font: inherit; text-align: left; cursor: pointer; }
 /* A bare legacy #ag link scrolls the Ag tools group under the sticky header. */
 .charts-group { scroll-margin-top: calc(var(--chrome-h, 52px) + var(--gap)); }
 /* Loading: the search pill and two group cards of row-sized lines, about the list's final height. */
@@ -81,6 +83,12 @@
 .chart-title { flex: 1; min-width: 0; margin: 0; font-size: var(--dash-fs-xl); font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; color: var(--text-primary); text-wrap: balance; }
 .chart-head .dash-icon-btn svg { fill: none; }
 .chart-head .dash-menu .dash-icon-btn svg { fill: currentColor; }
+/* Download data (partials/charts/download-button.html, the kit's .nav-btn): icon + label beside the ⋮; icon only, 44 px, on compact screens. */
+.chart-download-wrap { display: contents; }
+@media (max-width: 640px), (max-height: 560px) {
+  .chart-download { min-width: 44px; min-height: 44px; justify-content: center; padding: 0.4rem; }
+  .chart-download-label { display: none; }
+}
 .chart-sub { margin: 0; font-size: var(--dash-fs-sm); color: var(--text-secondary); }
 /* The plot keeps a thin frame; ECharts lays out its own axis margins. */
 .chart-card { padding: calc(2 * var(--gap-tight)); }

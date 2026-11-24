@@ -1,0 +1,9 @@
+<!-- The chart pages' visible Download data button (variable page, Ag tool, Compare): in the header before
+     the ⋮ menu; opens the Download sheet prefilled from the chart (the including component's
+     download() and downloadDisabled()). The label hides on compact screens (charts.css); the
+     aria-label keeps the name. -->
+<button type="button" class="nav-btn chart-download" aria-haspopup="dialog" aria-label="Download data"
+        :disabled="downloadDisabled()" @click="download($event)" data-testid="chart-download">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10M7.5 9.5L12 14l4.5-4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+  <span class="chart-download-label" aria-hidden="true">Download data</span>
+</button>

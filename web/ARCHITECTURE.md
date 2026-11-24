@@ -291,9 +291,12 @@ prefixed `<id>_` in the schema. Most new places are a Charts entry instead
 open after it (like Theme). A new ⋯ menu elsewhere is the same markup with its
 own `x-data="menu"` wrapper (DESIGN.md "Components"): the chart pages' ⋯ menus
 (`partials/charts/variable.html`, `partials/ag/index.html`) call their page
-component (`variablePage`, `agTab`). A chart's Download data writes
-`core/downloader/fromChart(…)` (its element codes, dates and interval as
-`els`/`dl_from`/`dl_to`/`period`), then `openSheet('download')`.
+component (`variablePage`, `agTab`). A chart's Download data (the ⋯ item, and
+the header button `partials/charts/download-button.html`, which calls the
+including component's `download($event)` and `downloadDisabled()`; Compare's is
+`compareDownload`) writes `core/downloader/fromChart(…)` (its element codes,
+dates and interval as `els`/`dl_from`/`dl_to`/`period`), then
+`openSheet('download', opener)`.
 
 **Add a sheet.** Copy `partials/sheets/dates.html` (the smallest) to
 `partials/sheets/<id>.html`: a scrim `<div class="mco-scrim dash-scrim

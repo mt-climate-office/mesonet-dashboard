@@ -21,6 +21,7 @@ import { chartTable } from './ui/charts/chartTable'
 import { chartsView } from './ui/charts/chartsView'
 import { compare } from './ui/charts/compare'
 import { compareControls } from './ui/charts/compareControls'
+import { compareDownload } from './ui/charts/compareDownload'
 import { customDates } from './ui/charts/customDates'
 import { variableHistory } from './ui/charts/variableHistory'
 import { variableRose } from './ui/charts/variableRose'
@@ -189,6 +190,7 @@ Alpine.data('chartTable', chartTable)
 Alpine.data('customDates', customDates)
 Alpine.data('compare', compare)
 Alpine.data('compareControls', compareControls)
+Alpine.data('compareDownload', compareDownload)
 
 // Now (ui/now): the overview section.
 Alpine.data('nowView', nowView)

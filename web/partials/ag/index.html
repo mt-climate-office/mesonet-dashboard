@@ -1,6 +1,6 @@
 <!-- An Ag tool inside Charts (x-data="agTab", ui/ag/agTab.ts), shown while `v` is an Ag tool id
      (core/variables chartsMode 'ag'; partials/charts/index.html), in the variable page's frame: back ·
-     title · ⋮ menu (as the variable page's); the station; the option chips (partials/ag/options.html), only where the tool
+     title · Download data (partials/charts/download-button.html) · ⋮ menu (as the variable page's); the station; the option chips (partials/ag/options.html), only where the tool
      applies; the chart card (Reference ET adds All years under it, partials/ag/history-chip.html) (or its table with tbl=1) and, where meaningful, a stats card. Without a
      station, or for an SWP tool at a station without soil parameters, the card says why and opens the
      header's station picker. -->
@@ -10,6 +10,7 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
     </a>
     <h2 class="chart-title" id="ag-chart-title" tabindex="-1" x-text="title()"></h2>
+    <!-- @include partials/charts/download-button.html -->
     <div class="dash-menu" x-data="menu" data-testid="ag-menu">
       <button type="button" class="dash-icon-btn" data-menu-button aria-expanded="false" aria-label="More for this chart" data-testid="ag-menu-button">
         <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>

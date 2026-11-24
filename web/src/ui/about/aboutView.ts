@@ -1,14 +1,17 @@
 /**
  * `x-data="aboutView"` on the About section (partials/about/index.html):
- * whether a station is ready, the two rows
- * that open the readings and sensor-change sheets (with their count and
- * latest date), and the data notes' API links. The details card is its own
+ * whether a station is ready, the rows that open the readings and
+ * sensor-change sheets (with their count and latest date) and the Download
+ * sheet, and the data notes' API links. The details card is its own
  * component; the sheets live in partials/sheets/.
  */
 import Alpine from 'alpinejs'
 import { apiLinks, type ApiLink } from '../../core/about'
+import { allElements } from '../../core/downloader/view'
 import { loadErrorText } from '../../core/loadError'
+import { stationHasSwp } from '../../core/stations'
 import { component } from '../component'
+import { stationElements } from '../charts/resources'
 import { closeSheet, openSheet } from '../shell/sheet'
 import { sensorChanges } from './history'
 import { currentReadings } from './readings'
@@ -49,6 +52,26 @@ export function aboutView() {
     /** A row: open its sheet; focus returns to the row on close. */
     open(e: Event, id: (typeof SHEETS)[number]): void {
       openSheet(id, e.currentTarget as HTMLElement)
+    },
+
+    /**
+     * Download data waits for the station's element list. Reading it here starts that request when About
+     * mounts, so the row is ready by the time anyone reaches it.
+     */
+    get downloadReady(): boolean {
+      return !!stationElements(Alpine.store('station').id)
+    },
+    /**
+     * Download data: the Download sheet with every variable the station offers selected (measured, then
+     * derived), its default dates and interval. Its URL key (`dl`) owns the sheet, so leaving About does
+     * not close it here.
+     */
+    openDownload(e: Event): void {
+      const st = Alpine.store('station')
+      const els = stationElements(st.id)
+      if (!els) return
+      Alpine.store('url').set({ els: allElements(els, stationHasSwp(st.current)) })
+      openSheet('download', e.currentTarget as HTMLElement)
     },
 
     /** Leaving About (Back while a sheet is open) closes its sheets. */

@@ -29,7 +29,9 @@
   background: none; border: 0; border-radius: 0; font: inherit; font-weight: 500;
   color: var(--text-primary); text-align: left; text-decoration: none; cursor: pointer;
 }
-.about-row:hover { background: var(--accent-hover); }
+.about-row:hover:not(:disabled) { background: var(--accent-hover); }
+/* Download data, until the station's element list is in. */
+.about-row:disabled { opacity: 0.4; cursor: not-allowed; }
 .about-row + .about-row, .about-dl + .about-row { border-top: 1px solid var(--border); }
 .about-row-meta { font-weight: 400; color: var(--text-muted); white-space: nowrap; }
 .about-rows .about-row:first-of-type { border-radius: var(--card-radius, 16px) var(--card-radius, 16px) 0 0; }

@@ -75,6 +75,11 @@ export function standardOptions(elements: readonly StationElement[]): Multiselec
   return out.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: 'base' }))
 }
 
+/** Every variable the picker offers at a station, measured then derived (About's Download data selects them all). */
+export function allElements(elements: readonly StationElement[], hasSwp: boolean): string[] {
+  return [...standardOptions(elements).map((o) => o.value), ...derivedOptionsFor(hasSwp).map((o) => o.value)]
+}
+
 /** The two picker groups; SWP-only derived variables only at `has_swp` stations. */
 export function elementGroups(standard: MultiselectOption[], hasSwp: boolean): MultiselectGroup[] {
   return [

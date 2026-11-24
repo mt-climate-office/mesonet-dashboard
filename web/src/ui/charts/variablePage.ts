@@ -261,8 +261,12 @@ export function variablePage() {
     },
     share: () => shareView(),
     /** Download data: the sheet prefilled with this variable, these dates and this interval (core/downloader/fromChart). */
-    download(): void {
-      if (this.prefill()) openSheet('download')
+    download(e?: Event): void {
+      if (this.prefill()) openSheet('download', (e?.currentTarget as HTMLElement | undefined) ?? null)
+    },
+    /** The header's Download data button is off until there is something to prefill. */
+    downloadDisabled(): boolean {
+      return !this.variable || !stations().id
     },
     /** Write the Downloader keys for this chart; false while the variable is unknown. */
     prefill(): boolean {
