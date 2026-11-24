@@ -32,13 +32,13 @@ export const PREFILL_RESET: Pick<UrlState, 'els' | 'dl_from' | 'dl_to' | 'period
 
 /**
  * Whether the Download sheet, opened by the URL (`dl=1`), takes its prefill
- * from the chart behind it: Charts shows a variable or an Ag tool (`v`, not
- * Compare) and the URL carries none of the prefill keys. An old `#downloader`
+ * from the chart behind it: Charts shows a variable, an Ag tool or Compare
+ * (not the list) and the URL carries none of the prefill keys. An old `#downloader`
  * link that carries its own `els`, dates or interval keeps exactly those.
  */
 export function prefillsFromChart(state: Pick<UrlState, 'dl' | 'v' | 'cmp' | 'els' | 'dl_from' | 'dl_to' | 'period'>): boolean {
   const carries = state.els.length > 0 || state.dl_from !== null || state.dl_to !== null || state.period !== PREFILL_RESET.period
-  return state.dl && !carries && chartsMode(state) !== 'list' && chartsMode(state) !== 'compare'
+  return state.dl && !carries && chartsMode(state) !== 'list'
 }
 
 /** The Downloader keys for a chart (see the header). */
@@ -58,6 +58,11 @@ export function variableElements(name: string, elements: readonly ElementRow[]):
     .map((e) => e.element)
   return [...new Set(out)]
 }
+
+/** Compare's element codes: each selected variable's (`variableElements`), in selection order without repeats. */
+export const compareElements = (vars: readonly string[], elements: readonly ElementRow[]): string[] => [
+  ...new Set(vars.flatMap((v) => variableElements(v, elements))),
+]
 
 /** The element codes behind a wind rose: wind direction, then wind speed (the rose needs both). */
 export const windRoseElements = (elements: readonly ElementRow[]): string[] => [

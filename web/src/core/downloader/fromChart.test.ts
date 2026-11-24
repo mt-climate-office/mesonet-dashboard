@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readUrlState } from '../url-schema'
-import { agDownloadInterval, PREFILL_RESET, agToolElements, fromChart, prefillsFromChart, variableElements, windRoseElements } from './fromChart'
+import { agDownloadInterval, PREFILL_RESET, agToolElements, compareElements, fromChart, prefillsFromChart, variableElements, windRoseElements } from './fromChart'
 
 const els = [
   { element: 'air_temp_0200', description_short: 'Air Temperature @ 2 m' },
@@ -43,6 +43,15 @@ describe('variableElements', () => {
   })
 })
 
+describe('compareElements', () => {
+  it("joins each selected variable's elements in selection order, without repeats", () => {
+    expect(compareElements(['Precipitation', 'Soil VWC', 'Precipitation'], els)).toEqual(['ppt', 'soil_vwc_0005', 'soil_vwc_0010'])
+    expect(compareElements(['Air Temperature', 'Reference ET'], els)).toEqual(['air_temp_0200', 'etr'])
+    expect(compareElements(['Snow Depth'], els)).toEqual([])
+    expect(compareElements([], els)).toEqual([])
+  })
+})
+
 describe('windRoseElements', () => {
   it('wind direction and wind speed, the two a rose is drawn from', () => {
     const wind = [...els, { element: 'wind_spd', description_short: 'Wind Speed @ 10 m' }, { element: 'wind_dir', description_short: 'Wind Direction @ 10 m' }]
@@ -68,14 +77,14 @@ describe('agToolElements', () => {
 
 describe('prefillsFromChart', () => {
   const at = (q: string) => readUrlState(q)
-  it('prefills a URL-opened sheet over a variable page or an Ag tool', () => {
+  it('prefills a URL-opened sheet over a variable page, an Ag tool or Compare', () => {
     expect(prefillsFromChart(at('?s=acebozem&v=air_temp&dl=1'))).toBe(true)
     expect(prefillsFromChart(at('?s=acebozem&v=gdd&dl=1'))).toBe(true)
+    expect(prefillsFromChart(at('?s=acebozem&cmp=1&dl=1'))).toBe(true)
   })
-  it('not when the sheet is closed, or over the list or Compare', () => {
+  it('not when the sheet is closed, or over the list', () => {
     expect(prefillsFromChart(at('?s=acebozem&v=air_temp'))).toBe(false)
     expect(prefillsFromChart(at('?s=acebozem&dl=1'))).toBe(false)
-    expect(prefillsFromChart(at('?s=acebozem&v=air_temp&cmp=1&dl=1'))).toBe(false)
   })
   it('keeps whatever an old link (or an earlier prefill) carries', () => {
     expect(prefillsFromChart(at('?v=air_temp&dl=1&els=ppt'))).toBe(false)

@@ -95,7 +95,7 @@
     </nav>
   </section>
 
-  <!-- About: details, the locator map, all current readings, sensor changes (x-data="aboutView" opens its sheet). -->
+  <!-- About: details, the locator map, all current readings, sensor changes and Download data (x-data="aboutView" opens their sheets). -->
   <div class="dash-about" x-data="aboutView">
     <!-- @include partials/about/details.html -->
     <section class="dash-card about-map dash-map" aria-label="Location">
@@ -107,11 +107,15 @@
       <h3 class="dash-card-title" id="dash-readings-title">All current readings</h3>
       <!-- @include partials/about/readings.html -->
     </section>
-    <section class="dash-card about-rows" aria-label="Sensors">
+    <section class="dash-card about-rows" aria-label="Sensors and data">
       <button type="button" class="about-row" aria-haspopup="dialog" aria-controls="sheet-about-history"
               @click="open($event, 'about-history')" data-testid="dashboard-history-row">
         <span>Sensor changes</span>
         <span class="about-row-meta"><template x-if="changesMeta"><span><span class="sr-only">, latest </span><span x-text="changesMeta"></span></span></template><span aria-hidden="true"> ›</span></span>
+      </button>
+      <button type="button" class="about-row" aria-haspopup="dialog" aria-controls="sheet-download" :disabled="!downloadReady" @click="openDownload($event)" data-testid="dashboard-download-row">
+        <span>Download data</span>
+        <span class="about-row-meta"><span><span class="sr-only">, </span>CSV</span><span aria-hidden="true"> ›</span></span>
       </button>
     </section>
   </div>

@@ -2,7 +2,8 @@
      rows (the field itself is the pill, so the kit's focus ring follows its shape; one app clear
      button replaces each engine's own), then the station's variables by group (Weather · Precipitation and evaporation · Soil · …), each row
      a link to its page: plain name over a sub-label, the current value, a 48 h sparkline. Then Ag
-     tools (#charts-ag-tools; a bare legacy #ag link scrolls here) and More (Compare variables). -->
+     tools (#charts-ag-tools; a bare legacy #ag link scrolls here), More (Compare variables) and Data
+     (Download data: the Download sheet, empty; hidden while searching). -->
 <div class="charts-list" x-data="variableList" data-testid="charts-list">
   <div class="dash-section-head">
     <h2 class="dash-section-title" id="charts-list-title" tabindex="-1">Charts</h2>
@@ -83,6 +84,17 @@
               <a class="charts-row charts-row--tool" :href="compareHref()" @click="openCompare($event)" data-testid="charts-compare-link">
                 <span class="charts-row-name"><span>Compare variables</span><span class="charts-row-sub">Stack several on one time axis</span></span>
               </a>
+            </li>
+          </ul>
+        </section>
+
+        <section class="dash-card charts-group" aria-labelledby="charts-data-title" data-testid="charts-download" x-show="!query.trim()">
+          <h3 class="charts-group-title" id="charts-data-title">Data</h3>
+          <ul class="charts-rows">
+            <li>
+              <button type="button" class="charts-row charts-row--tool" aria-haspopup="dialog" aria-controls="sheet-download" @click="openDownload($event)" data-testid="charts-download-open">
+                <span class="charts-row-name"><span>Download data</span><span class="charts-row-sub">Any variables and dates, as a CSV file</span></span>
+              </button>
             </li>
           </ul>
         </section>

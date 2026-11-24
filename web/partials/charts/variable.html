@@ -1,5 +1,6 @@
 <!-- Variable page (x-data="variablePage", ui/charts/variablePage.ts; DESIGN.md "Charts"):
-     back (to the list) · title (takes focus when a tile or list row opens the page) · ⋮
+     back (to the list) · title (takes focus when a tile or list row opens the page) · Download data
+     (partials/charts/download-button.html, the same action as the menu's) · ⋮
      menu (vertical, so it never reads as the header's ⋯ just above it on a phone; its glyphs share one
      16-unit footprint and stroke: Download data, Show as table / chart, Custom dates…, Share this chart, Previous / Next);
      "value now · range"; the chart (All years: partials/charts/history.html; Wind direction's
@@ -33,6 +34,7 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
         </a>
         <h2 class="chart-title" id="var-title" tabindex="-1" x-text="title()" data-testid="variable-title"></h2>
+        <!-- @include partials/charts/download-button.html -->
         <div class="dash-menu" x-data="menu" data-testid="var-menu">
           <button type="button" class="dash-icon-btn" data-menu-button aria-expanded="false" aria-label="More for this chart" data-testid="var-menu-button">
             <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>

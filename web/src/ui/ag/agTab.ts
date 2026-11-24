@@ -105,8 +105,17 @@ export function agTab() {
       return learnMoreUrl(t.variable, t.crop)
     },
     /** Download data: the sheet prefilled with the tool's elements, dates and interval (core/downloader/fromChart). */
-    download(): void {
-      if (this.prefill()) openSheet('download')
+    download(e?: Event): void {
+      if (this.prefill()) openSheet('download', (e?.currentTarget as HTMLElement | undefined) ?? null)
+    },
+    /**
+     * The header's Download data button is off until the station's element list is in. Asking for it here
+     * also starts that request when the tool mounts (the tools' charts do not need it), so the prefill
+     * (here or ⋮ → Download data) never runs on an empty list.
+     */
+    downloadDisabled(): boolean {
+      const id = stations().id
+      return !id || !stationElements(id)
     },
     /** Write the Downloader keys for this tool; false before a station is confirmed. */
     prefill(): boolean {

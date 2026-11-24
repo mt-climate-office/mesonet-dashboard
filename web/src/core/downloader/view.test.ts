@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Station, StationElement } from '../api'
 import {
+  allElements,
   dailyMeansNote,
   confirmKey,
   dateWindow,
@@ -46,6 +47,16 @@ describe('installDateOf', () => {
     expect(installDateOf(st('a', 'A', { date_installed: '2017-06-01 00:00:00' }))).toBe('2017-06-01')
     expect(installDateOf(st('a', 'A', { date_installed: null }))).toBeNull()
     expect(installDateOf(undefined)).toBeNull()
+  })
+})
+
+describe('allElements', () => {
+  const els = [el('ppt', 'Precipitation'), el('air_temp_0200', 'Air Temperature @ 2 m'), el('ppt', 'Precipitation'), el('etr', 'Reference ET')]
+  it('selects every measured variable once (no derived codes from /elements), then the derived ones', () => {
+    expect(allElements(els, false)).toEqual(['air_temp_0200', 'ppt', 'feels_like', 'etr', 'cci'])
+  })
+  it('adds the SWP-only derived variables at an SWP station', () => {
+    expect(allElements(els, true)).toEqual(['air_temp_0200', 'ppt', 'feels_like', 'etr', 'cci', 'swp', 'percent_saturation'])
   })
 })
 
