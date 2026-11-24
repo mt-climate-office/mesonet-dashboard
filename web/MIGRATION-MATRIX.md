@@ -47,7 +47,7 @@ Settled precedents (MIGRATING.md) and pure-WCAG fixes are applied without asking
 | State | localStorage | none | `mco-theme` shared, `mco-<app>-*` | KIT-NEW | `mco-theme` + `mco-dashboard-*` |
 | Time | Stamps | dayjs local | MT helpers | IDENTICAL | MT everywhere (settled) |
 | Fetch | Cache / retry | TanStack Query | `MCO.promiseCache`, `fetchJSON` | APP-SPECIFIC | `core/cache.ts` (reactive, TTL, retry policy the kit lacks) |
-| Footer | Credit | none | "Montana Climate Office · climate.umt.edu" | KIT-NEW | adopted; Downloader keeps BLM footer |
+| Footer | Credit | none | "Montana Climate Office · climate.umt.edu" | KIT-NEW | adopted; the legacy Downloader's BLM footer is dropped (2026-11-24) |
 
 ## Questions for Kyle (batch 1)
 

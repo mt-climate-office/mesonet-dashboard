@@ -1,7 +1,7 @@
 <!-- The Download sheet's form (ui/downloader/downloader.ts), inside partials/sheets/download.html:
      summary rows (label left, value right) that expand in place one at a time to show their
      control, a fixed Station line (the header picks the station), one primary button
-     (Preview, then "Download CSV · N rows"), the preview, the BLM funding line.
+     (Preview, then "Download CSV · N rows"), the preview.
      Controls follow ui/controls/README.md. Mounted only while the sheet is open. -->
 <div class="dl-tab" x-data="downloader" data-testid="downloader">
   <form class="dl-form" aria-label="Download request" novalidate @submit.prevent="act()">
@@ -201,7 +201,4 @@
     </template>
   </section>
 
-  <footer class="dl-funding" data-testid="dl-funding-footer">
-    <p>Supported by Bureau of Land Management <span class="dl-nowrap">(RM-CESU Award L16AC00359)</span></p>
-  </footer>
 </div>

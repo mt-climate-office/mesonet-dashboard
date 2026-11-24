@@ -1,6 +1,6 @@
 /* The Download sheet's form (partials/downloader/index.html): flat summary rows (label left,
    value right) that expand in place, the primary button and its one-line reason, notices,
-   the preview and the BLM funding line. One column at every width; the sheet body scrolls.
+   the preview. One column at every width; the sheet body scrolls.
    Kit tokens, the --dash-fs-* scale and the shared spacing tokens (--gap, --gap-tight, --card-pad) only. */
 
 /* A short form: a narrow centred panel from tablet up (ui/layout/sheet.css reads --sheet-w). */
@@ -111,11 +111,6 @@
 }
 .dl-preview-status.is-error { color: var(--text-primary); }
 .dl-preview-status.is-error::before { content: "\26A0\FE0E  " / ""; white-space: pre; }
-
-/* Funder attribution (legacy DL-020), as a quiet line under the form. */
-.dl-funding { font-size: var(--dash-fs-xs); color: var(--text-secondary); text-align: center; }
-/* The award reference wraps as one piece, never "(RM-CESU Award" / "L16AC00359)". */
-.dl-nowrap { white-space: nowrap; }
 
 /* Element checklists by thumb: 44 px rows (WCAG 2.5.5), above the 40 px control minimum. */
 @media (max-width: 640px), (max-height: 560px), (hover: none) {

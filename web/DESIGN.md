@@ -509,7 +509,7 @@ every width, flat on the sheet's surface:
   "Request finished: N rows, M columns. Download CSV is ready."; focus stays on the button.
 - **Notices** under the rows, always visible: SWP variables dropped at a non-SWP station, variables that
   failed to load (Retry), the large-hourly warning.
-- **Below:** the BLM funding line (legacy DL-020), a quiet centred caption.
+- **No funding line:** the legacy BLM award footer (DL-020) was removed on 2026-11-24.
 - **Touch:** rows and the button are ≥ 48 px; inputs 16 px (controls.css); checklist rows 44 px; the
   checklist grows with the sheet body instead of scrolling inside its panel. Fits 390 × 844 with no sideways
   scroll.

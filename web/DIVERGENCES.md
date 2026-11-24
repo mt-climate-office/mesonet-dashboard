@@ -350,8 +350,8 @@ below, which stay for the record and name what replaced them.
   error, …), which replaces web/'s "Please select a station and at least one variable first!" and "Please
   'Run Request' before attempting to download." (DL-015, DL-016). Plain labels: Interval Hourly / Daily /
   Monthly (finest first); Quality "Quality-controlled", "Provisional (basic checks)", "Unchecked" for
-  levels 2 / 1 / 0 (was "Quality-controlled", "Provisional", "Raw"). The funding line (DL-020) is a quiet
-  caption under the form, not an accent bar. After Preview, focus stays on the button (no scroll to the
+  levels 2 / 1 / 0 (was "Quality-controlled", "Provisional", "Raw"). The legacy BLM funding footer (DL-020) is
+  not shown (removed 2026-11-24). After Preview, focus stays on the button (no scroll to the
   preview); the row-count announcement is unchanged. A station change from the header no longer resets the
   start date (`dl_from`); the date window still clamps to the new station's install date.
 - **Why two steps, not one "Download CSV" that fetches and saves:** the save is a click on a blob link,
@@ -1518,11 +1518,8 @@ recorded here as well.
 
 #### Funding footer (DL-020)
 
-The footer "Supported by Bureau of Land Management (RM-CESU Award
-L16AC00359)" is in bold, on `#129dff`, with a minimum height of 40px. It
-is part of the tab's normal flow, at the bottom of the tab. It is not
-`position: fixed` as in legacy, because a fixed bar would cover the controls
-and the preview on small screens. It wraps to two lines at 375px.
+Removed on 2026-11-24, at the office's request. The legacy app's fixed
+funding bar has no counterpart in the new dashboard.
 
 ### Downloads (CSV)
 
@@ -1577,7 +1574,7 @@ and the preview on small screens. It wraps to two lines at 375px.
 - **New:** one button cycles dark → light → high contrast. Its icon and `aria-label` ("Switch to light theme") name the theme a click switches to, a matching tooltip shows on hover, and the new theme is announced in the live region. `MCO.setTheme` saves the choice in the shared `mco-theme` key.
 
 ### Footer
-- **New:** every tab ends with "Data from the Montana Mesonet, quality-controlled and served by the Mesonet API." and "Montana Climate Office · climate.umt.edu" (HOUSE-STYLE §1 voice), with underlined links. The Downloader's BLM funding footer stays on that tab only.
+- **New:** every tab ends with "Data from the Montana Mesonet, quality-controlled and served by the Mesonet API." and "Montana Climate Office · climate.umt.edu" (HOUSE-STYLE §1 voice), with underlined links. The legacy Downloader's BLM funding footer is not carried over (removed 2026-11-24).
 
 ## Maps
 
@@ -1854,9 +1851,7 @@ join, monthly and CSV code is the same `core/downloader/request.ts`,
 - **Live region (new).** Run announces "Requesting … data for {station}…" and
   then "Request finished: N rows, M columns. Download CSV is ready." (or no
   data / failed).
-- **Funding footer (DL-020)** keeps its text and in-flow placement, as a
-  quiet centred caption under the form (`--text-secondary`) instead of a bold
-  `#129dff` bar.
+- **Funding footer (DL-020)** removed (2026-11-24).
 - **Run always refetches.** Download requests bypass `$store.data` (the one
   exception to the shared cache): the component keeps only the latest result,
   drops it when the station changes, and ignores a response from an older Run.
